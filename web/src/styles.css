@@ -1,0 +1,147 @@
+:root { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6f9; font-synthesis: none; --topbar-h: 82px; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 1100px; background: #f4f6f9; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.app-shell { display: flex; min-height: 100vh; }
+.rail { width: 76px; flex: 0 0 76px; background: #152233; color: #aebdcd; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 18px; }
+.brand-mark { width: 38px; height: 38px; border: 1px solid #4c8ba7; color: #a3d4df; display: grid; place-items: center; font-weight: 700; font-size: 21px; margin-bottom: 40px; }
+.rail nav { display: grid; gap: 18px; }
+.rail-item { width: 54px; height: 58px; border: 0; background: transparent; color: inherit; display: grid; place-items: center; gap: 3px; font-size: 19px; border-radius: 6px; }
+.rail-item span { font-size: 11px; }
+.rail-item.active { background: #24415a; color: #d9f1f3; }
+.rail-item:hover { color: #fff; background: #20374b; }
+.rail-bottom { margin-top: auto; }
+.workspace { flex: 1; min-width: 0; }
+.topbar { height: var(--topbar-h); background: #fff; border-bottom: 1px solid #e1e6ec; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.product-name { color: #5d7087; font-size: 12px; letter-spacing: 0.04em; }
+.workspace-title { font-size: 21px; font-weight: 650; margin-top: 5px; }
+.top-actions { display: flex; align-items: center; gap: 9px; color: #6e7d8e; font-size: 12px; }
+.connection-dot { width: 7px; height: 7px; border-radius: 50%; background: #2eaf7d; }.connection-dot.offline { background: #d7895b; }
+.blind-toggle { margin-left: 16px; padding: 8px 12px; color: #38596d; background: #edf5f6; border: 1px solid #c7e0e1; border-radius: 4px; font-size: 12px; }.blind-toggle:not(.on) { background: #f6f7f8; border-color: #dce2e8; color: #5d6877; }
+.toolbar { display: flex; align-items: center; height: 58px; padding: 0 30px; gap: 16px; background: #f8fafc; border-bottom: 1px solid #e4e9ef; }
+.stock-search { position: relative; width: 250px; }.search-icon { position: absolute; left: 11px; top: 7px; font-size: 21px; color: #8291a4; }.stock-search input { width: 100%; height: 34px; border: 1px solid #d5dde7; background: #fff; border-radius: 4px; padding: 0 12px 0 34px; color: #233044; outline: none; font-size: 13px; }.stock-search input:focus { border-color: #6d9aaf; box-shadow: 0 0 0 2px #e0eff1; }
+.suggestions { position: absolute; top: 39px; left: 0; width: 100%; z-index: 4; background: #fff; border: 1px solid #d5dde7; box-shadow: 0 8px 20px #1c2d3e1c; }.suggestions button { width: 100%; border: 0; border-bottom: 1px solid #eff2f5; background: #fff; text-align: left; display: grid; grid-template-columns: 65px 1fr 28px; gap: 8px; padding: 9px 11px; color: #243348; font-size: 12px; }.suggestions button:hover { background: #f4f8fa; }.suggestions small { color: #94a2b2; }
+.timeframe-tabs { display: flex; gap: 2px; }.timeframe-tabs button { border: 0; background: transparent; padding: 8px 11px; color: #77869a; font-size: 13px; border-bottom: 2px solid transparent; }.timeframe-tabs button.selected { color: #245a72; border-bottom-color: #2e8191; font-weight: 600; }
+.toolbar-spacer { flex: 1; }.view-count { color: #8a98aa; font-size: 12px; }.icon-button { width: 30px; height: 30px; border: 1px solid #d8e0e8; background: #fff; color: #617286; border-radius: 4px; font-size: 18px; }.icon-button:hover { color: #1c6076; border-color: #94bec5; }
+.status-strip { height: 35px; display: flex; align-items: center; gap: 10px; color: #8291a1; padding: 0 30px; font-size: 12px; background: #fff; border-bottom: 1px solid #e5e9ef; }.status-label { color: #2e7c8c; font-weight: 650; }.status-separator { color: #bbc4ce; }.loading-dot { color: #be7d3c; margin-left: auto; }
+.content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; padding: 18px 30px 30px; height: calc(100vh - 175px); min-height: 0; overflow: hidden; }.chart-panel { position: relative; background: #fff; border: 1px solid #dfe5eb; display: flex; flex-direction: column; min-width: 0; min-height: 0; }.chart-host { flex: 1; min-height: 0; }.chart-empty { position: absolute; inset: 0 0 34px; display: grid; place-content: center; justify-items: center; gap: 8px; background: #ffffffec; color: #64748a; }.chart-empty strong { color: #3c4d62; font-size: 14px; }.chart-empty span { font-size: 12px; color: #98a5b4; }.empty-icon { color: #9ebdc4; font-size: 38px; }.chart-footer { height: 34px; flex: 0 0 34px; display: flex; align-items: center; gap: 18px; border-top: 1px solid #e5eaf0; padding: 0 13px; font-size: 11px; color: #66829b; }.chart-footer span:nth-child(1) { color: #e09b43; }.chart-footer span:nth-child(2) { color: #3b9eaa; }.chart-footer span:nth-child(3) { color: #bd6b8a; }.volume-legend { color: #8291a1 !important; }
+.trade-panel { background: #fff; border: 1px solid #dfe5eb; padding: 20px 18px; color: #25364b; min-height: 0; overflow-y: auto; }.panel-heading, .order-heading { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 650; }.live-mark { color: #2e9e78; font-size: 11px; font-weight: 500; }.equity-block { padding: 23px 0 20px; border-bottom: 1px solid #eef1f4; }.equity-block span, .account-stats span { display: block; color: #8a98a9; font-size: 11px; }.equity-block strong { display: block; font-size: 25px; letter-spacing: 0.01em; margin: 5px 0 4px; }.equity-block em { color: #2d9a75; font-size: 12px; font-style: normal; }.account-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 17px 10px; padding: 18px 0; }.account-stats strong { display: block; margin-top: 4px; font-size: 13px; font-weight: 600; }.panel-divider { height: 1px; background: #e9edf2; margin: 1px 0 18px; }.order-heading small { font-size: 10px; color: #a1adba; font-weight: 400; }.weight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 17px 0 12px; }.weight-grid button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 7px 0; color: #5c7187; font-size: 11px; border-radius: 3px; }.weight-grid button:hover { border-color: #83b7bd; color: #2a7381; background: #eff8f8; }.trade-action { width: 100%; border: 0; height: 37px; border-radius: 3px; color: #fff; margin-top: 7px; font-size: 13px; font-weight: 600; }.trade-action.buy { background: #c95752; }.trade-action.sell { background: #31937b; }.trade-action:hover { filter: brightness(1.06); }.advance-action { width: 100%; display: flex; justify-content: space-between; align-items: center; height: 39px; margin-top: 18px; border: 1px solid #326f7c; color: #2e6979; background: #f1f8f8; border-radius: 3px; padding: 0 12px; font-size: 13px; font-weight: 600; }.advance-action span { font-size: 10px; font-weight: 400; color: #71939c; }
+/* ===== 训练视图 / 启动页（M2） ===== */
+.env-error { margin: 14px 30px 0; padding: 10px 14px; background: #fdf2ee; border: 1px solid #ecc9b8; color: #a2502e; font-size: 12px; border-radius: 4px; }
+.boot-loading { display: grid; place-items: center; height: 60vh; color: #7d8b9c; font-size: 13px; }
+.launcher { padding: 34px 40px; max-width: 860px; }
+.launcher-head h1 { margin: 0 0 8px; font-size: 22px; }
+.launcher-head p { margin: 0 0 24px; color: #71809287; color: #718092; font-size: 13px; }
+.launcher-form { background: #fff; border: 1px solid #dfe5eb; padding: 26px 26px 30px; display: grid; gap: 20px; }
+.form-field { display: flex; flex-direction: column; gap: 8px; position: relative; }
+.form-field.wide { grid-column: 1 / -1; }
+.form-field label { font-size: 12px; color: #62748a; font-weight: 600; }
+.form-field input { height: 36px; border: 1px solid #d5dde7; border-radius: 4px; padding: 0 12px; outline: none; font-size: 13px; background: #fff; }
+.form-field input:focus { border-color: #6d9aaf; box-shadow: 0 0 0 2px #e0eff1; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-hint { color: #94a2b2; font-size: 11px; }
+.tier-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+.tier-grid button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 8px 14px; color: #5c7187; font-size: 12px; border-radius: 3px; }
+.tier-grid button.selected { border-color: #2e8191; color: #245a72; background: #eaf5f6; font-weight: 600; }
+.submit-button { height: 42px; border: 0; background: #24697a; color: #fff; font-size: 14px; font-weight: 650; border-radius: 4px; margin-top: 4px; }
+.submit-button:hover { filter: brightness(1.06); }
+.error-text { color: #b3413a; font-size: 12px; margin: 0; }
+/* 训练视图严格按视口布局：高度 = 100vh − 全局顶栏，主图+副图+交易面板默认一屏放下，无需滚动 */
+.training-shell { display: flex; flex-direction: column; height: calc(100vh - var(--topbar-h)); min-height: 0; }
+.training-topbar { background: #fff; border-bottom: 1px solid #e1e6ec; display: flex; align-items: center; justify-content: space-between; padding: 10px 30px; }
+.training-meta { display: flex; gap: 16px; color: #718092; font-size: 12px; margin-top: 6px; }
+.training-meta strong { color: #245a72; }
+.training-actions { display: flex; gap: 8px; }
+.ghost-button { border: 1px solid #d8e0e8; background: #fff; color: #51637a; padding: 8px 14px; font-size: 12px; border-radius: 4px; }
+.ghost-button:hover { border-color: #94bec5; color: #1c6076; }
+.ghost-button.danger:hover { border-color: #d78f89; color: #b3413a; }
+.advance-button { border: 1px solid #326f7c; color: #2e6979; background: #f1f8f8; border-radius: 3px; padding: 8px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.advance-button span { font-size: 10px; font-weight: 400; color: #71939c; }
+.advance-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.training-toolbar { display: flex; align-items: center; height: 50px; padding: 0 30px; gap: 16px; background: #f8fafc; border-bottom: 1px solid #e4e9ef; }
+.training-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; padding: 14px 30px 16px; flex: 1; min-height: 0; overflow: hidden; }
+.chart-panel { position: relative; background: #fff; border: 1px solid #dfe5eb; min-width: 0; min-height: 0; }
+.trade-log { display: grid; gap: 6px; max-height: 180px; overflow-y: auto; font-size: 11px; color: #55677c; }
+.trade-row { display: grid; grid-template-columns: 30px 78px 1fr; gap: 6px; }
+.trade-row .up { color: #c95752; font-weight: 700; }
+.trade-row .down { color: #31937b; font-weight: 700; }
+.trade-empty { color: #a1adba; }
+.weight-grid input { height: 30px; border: 1px solid #d7dfe7; border-radius: 3px; padding: 0 8px; font-size: 11px; min-width: 0; }
+.weight-grid button.selected { border-color: #2e8191; color: #245a72; background: #eaf5f6; font-weight: 650; }
+.shares-row { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; }
+.shares-row input { flex: 1; height: 30px; border: 1px solid #d7dfe7; border-radius: 3px; padding: 0 8px; font-size: 11px; min-width: 0; }
+.shares-row small { color: #a1adba; font-size: 10px; white-space: nowrap; }
+.trade-actions { display: flex; gap: 8px; margin-top: 4px; }
+.trade-actions .trade-action { flex: 1; margin-top: 0; }
+.theme-toggle { border: 1px solid #d8e0e8; background: #fff; color: #51637a; padding: 7px 12px; font-size: 12px; border-radius: 4px; margin-right: 6px; }
+.theme-toggle:hover { border-color: #94bec5; color: #1c6076; }
+
+/* ===== 深色主题（body.dark），默认启用 ===== */
+body.dark { background: #101823; color: #d5e0ec; }
+body.dark .topbar, body.dark .status-strip, body.dark .chart-panel, body.dark .trade-panel,
+body.dark .launcher-form, body.dark .settle-panel, body.dark .training-topbar { background: #1b2836; border-color: #2c3f57; }
+body.dark .training-meta { color: #8fa3b8; }
+body.dark .toolbar, body.dark .training-toolbar { background: #16202d; border-color: #26364a; }
+body.dark .product-name { color: #7f93a8; }
+body.dark .workspace-title, body.dark .launcher-head h1 { color: #e8eff6; }
+body.dark .connection-text, body.dark .training-meta, body.dark .status-strip, body.dark .view-count,
+body.dark .boot-loading { color: #8fa3b8; }
+body.dark .status-label { color: #6fb4c4; }
+body.dark .timeframe-tabs button { color: #7f93a8; }
+body.dark .timeframe-tabs button.selected { color: #7fd0dd; border-bottom-color: #3a8ba0; }
+body.dark .account-stats span, body.dark .equity-block span, body.dark .order-heading small,
+body.dark .form-hint, body.dark .shares-row small, body.dark .trade-log, body.dark .launcher-head p { color: #8fa3b8; }
+body.dark .equity-block, body.dark .account-stats, body.dark .trade-panel { color: #d5e0ec; }
+body.dark .panel-divider { background: #2c3f57; }
+body.dark .weight-grid button { background: #223349; border-color: #32465f; color: #aebfd2; }
+body.dark .weight-grid button:hover { background: #273c55; border-color: #43607f; color: #cfe3f2; }
+body.dark .weight-grid button.selected { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
+body.dark .weight-grid input, body.dark .shares-row input, body.dark .form-field input { background: #223349; border-color: #32465f; color: #d5e0ec; }
+body.dark .weight-grid input:focus, body.dark .form-field input:focus { border-color: #4a8fa5; box-shadow: 0 0 0 2px #1d4253; }
+body.dark .icon-button, body.dark .ghost-button, body.dark .theme-toggle { background: #1b2836; border-color: #32465f; color: #aebfd2; }
+body.dark .icon-button:hover, body.dark .ghost-button:hover, body.dark .theme-toggle:hover { border-color: #4a8fa5; color: #9adbe8; }
+body.dark .ghost-button.danger:hover { border-color: #a05248; color: #e08a80; }
+body.dark .advance-button { background: #173038; border-color: #2f7382; color: #7fc7d4; }
+body.dark .advance-button span { color: #5b8f9c; }
+body.dark .advance-button:disabled { opacity: 0.5; }
+body.dark .tier-grid button { background: #223349; border-color: #32465f; color: #aebfd2; }
+body.dark .tier-grid button.selected { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
+body.dark .suggestions { background: #1b2836; border-color: #32465f; box-shadow: 0 8px 20px #00000066; }
+body.dark .suggestions button { background: #1b2836; border-color: #26364a; color: #c9d6e4; }
+body.dark .suggestions button:hover { background: #243550; }
+body.dark .suggestions small { color: #71818f; }
+body.dark .form-field label, body.dark .settle-grid span { color: #8fa3b8; }
+body.dark .trade-row { color: #b9c8d8; }
+body.dark .settle-mask { background: #0a111acc; }
+body.dark .env-error { background: #33221c; border-color: #6b4230; color: #e0a18a; }
+body.dark .up { color: #e08a80; }
+body.dark .down { color: #52b394; }
+body.dark .training-grid, body.dark .chart-panel { background: #101923; }
+.settle-mask { position: fixed; inset: 0; background: #16202ecc; display: grid; place-items: center; z-index: 20; }
+.settle-panel { width: 480px; background: #fff; border-radius: 6px; padding: 30px 34px; }
+.settle-panel h2 { margin: 0 0 20px; font-size: 19px; }
+.settle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; margin-bottom: 24px; }
+.settle-grid span { display: block; color: #8a98a9; font-size: 11px; margin-bottom: 4px; }
+.settle-grid strong { font-size: 15px; }
+.up { color: #c95752; }
+.down { color: #31937b; }
+
+
+
+@media (max-width: 1180px) { body { min-width: 960px; }.content-grid { grid-template-columns: minmax(0, 1fr) 270px; padding-left: 20px; padding-right: 20px; }.toolbar, .status-strip, .topbar { padding-left: 20px; padding-right: 20px; } }
+@media (max-height: 780px) {
+  :root { --topbar-h: 68px; }
+  .topbar { height: 68px; }
+  .toolbar { height: 50px; }
+  .status-strip { height: 32px; }
+  .content-grid { height: calc(100vh - 150px); padding-top: 12px; padding-bottom: 16px; }
+  .trade-panel { padding-top: 14px; padding-bottom: 14px; }
+  .equity-block { padding: 12px 0; }
+  .account-stats { gap: 10px; padding: 12px 0; }
+  .panel-divider { margin-bottom: 12px; }
+  .weight-grid { margin: 10px 0 7px; gap: 4px; }
+  .weight-grid button { padding: 5px 0; }
+  .trade-action { height: 34px; margin-top: 5px; }
+  .advance-action { height: 35px; margin-top: 10px; }
+}

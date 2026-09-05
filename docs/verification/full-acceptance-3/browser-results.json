@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-09-04T15:58:54.234Z",
+  "base": "http://127.0.0.1:8791",
+  "viewport": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "mobile": [
+      390,
+      844
+    ]
+  },
+  "checks": [
+    {
+      "id": "identity",
+      "label": "页面身份与首屏非空",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "search",
+      "label": "搜索并选择股票",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "create",
+      "label": "创建盲训并进入训练页",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "blind",
+      "label": "进行中遮蔽股票身份和真实日期",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "zoom",
+      "label": "方向键缩放",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "periods",
+      "label": "日周月周期切换",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "advance-buy",
+      "label": "推进并使用 B 快捷键买入",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "t1",
+      "label": "S 快捷键遵守 T+1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "drawing",
+      "label": "线段绘制并自动持久化",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "text-confirm",
+      "label": "文本面板确定后关闭并保存",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "theme",
+      "label": "深浅主题切换",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "settle",
+      "label": "提前结算后恢复真实信息并返回首页",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "mobile",
+      "label": "移动端首屏非空",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    }
+  ],
+  "pageErrors": []
+}
