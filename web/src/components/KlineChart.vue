@@ -17,9 +17,11 @@ const props = withDefaults(defineProps<{
   hasMoreBars?: boolean
   /** 视窗移到已加载窗口之前时取更早历史（每批独立请求） */
   fetchEarlier?: (before: string, count: number) => Promise<{ bars: Bar[]; hasMore: boolean }>
-}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false })
+  /** 当前画线工具（null＝默认模式）：画线模式下框选手势与 Space/B/S 热键被隔离 */
+  drawTool?: string | null
+}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null })
 
-const emit = defineEmits<{ visibleCount: [number] }>()
+const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null] }>()
 const host = ref<HTMLElement | null>(null)
 let chart: Chart | null = null
 // 缩放范围：1~420 为"同屏可见根数"上下限；420 不是加载总量，更早历史按需动态加载
@@ -34,6 +36,9 @@ let crossIndex = -1
 let selecting = false
 let selectStartX = 0
 let hostRect: DOMRect | null = null
+// 框选绘图区边界（每次框选启动时计算）：水平止于价格轴左缘、垂直止于时间轴上缘——
+// 价格轴/时间轴是 K 线图外部的坐标轴，选中框与选点坐标不得侵入（用户 D1 验收反馈）
+let plotBounds: { right: number; top: number; bottom: number } | null = null
 // 组件内持有累进后的全量数据（初始窗口 + 动态加载的更早历史）
 let loadedData: KLineData[] = []
 let hasMoreForward = false
@@ -118,12 +123,22 @@ function zoomBy(factor: number): void { if (!chart) return; const range = chart.
 function moveCrosshair(delta: number): void { if (!chart) return; const range = chart.getVisibleRange(); if (crossIndex < range.from || crossIndex >= range.to) crossIndex = range.to - 1; crossIndex = Math.min(range.to - 1, Math.max(range.from, crossIndex + delta)); const bar = chart.getDataList()[crossIndex]; if (!bar) return; const pixel = chart.convertToPixel({ dataIndex: crossIndex, value: bar.close }, { paneId: 'candle_pane' }); const pane = chart.getSize('candle_pane'); chart.executeAction('onCrosshairChange', { x: pixel?.x ?? 0, y: pane ? pane.height / 2 : 100, paneId: 'candle_pane' }) }
 function resetView(): void { if (!chart) return; crossIndex = -1; chart.executeAction('onCrosshairChange', {}); restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(Math.max(2, (width - RIGHT_MARGIN) / props.defaultCount)); chart.scrollToRealTime(0); emit('visibleCount', props.defaultCount) }
 function selectionRect(): HTMLElement | null { return host.value?.parentElement?.querySelector('.select-rect') ?? null }
-// 框选坐标钳制在图表宿主内：指针拖出主副图区域（如进入右侧训练控制台）时，
-// 选中框与缩放范围都止步于图表边界，不侵入其他页面区域。
+// 计算框选绘图区边界：右缘＝主图价格轴 bounding.left（getSize 的 right/bottom 恒 0，只能用 left+width），
+// 底缘＝时间轴 pane（x_axis_pane）的 top，顶缘＝主图 pane 的 top。
+function computePlotBounds(): void {
+  plotBounds = null
+  if (!chart || !hostRect) return
+  const yAxis = chart.getSize('candle_pane', 'yAxis')
+  const xAxis = chart.getSize('x_axis_pane')
+  const pane = chart.getSize('candle_pane')
+  if (!yAxis || !xAxis || !pane) return
+  plotBounds = { right: yAxis.left, top: pane.top, bottom: xAxis.top }
+}
+// 框选坐标钳制在绘图区内：指针拖进价格轴/训练控制台时，选中框与缩放范围都止步于绘图区边界。
 function hostX(clientX: number): number {
   if (!hostRect) hostRect = host.value?.getBoundingClientRect() ?? null
   const x = clientX - (hostRect?.left ?? 0)
-  return Math.max(0, Math.min(hostRect?.width ?? x, x))
+  return Math.max(0, Math.min(plotBounds?.right ?? hostRect?.width ?? x, x))
 }
 function paneIdAt(clientY: number): string | null {
   if (!chart) return null
@@ -154,13 +169,18 @@ function isOverPriceAxis(clientX: number, clientY: number): boolean {
 }
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0 || !chart) return
+  // 画线模式下不启动框选：事件放行给 klinecharts overlay 取点交互（三态模式机隔离）
+  if (props.drawTool) return
   if (paneIdAt(event.clientY) !== 'candle_pane') return
   hostRect = host.value?.getBoundingClientRect() ?? null
+  // 指针命中用户画线：放行给库内选择/拖拽，不启动框选——否则拖动已画线段会触发框选缩放（用户 D1 验收反馈）
+  if (isOverUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) return
   selecting = true
+  computePlotBounds()
   selectStartX = hostX(event.clientX)
   chart.setScrollEnabled(false)
-  const rect = selectionRect(); if (rect) { rect.style.left = `${selectStartX}px`; rect.style.width = '0px'; rect.style.display = 'block' }
+  const rect = selectionRect(); if (rect) { rect.style.left = `${selectStartX}px`; rect.style.width = '0px'; rect.style.display = 'block'; if (plotBounds) { rect.style.top = `${plotBounds.top}px`; rect.style.height = `${Math.max(0, plotBounds.bottom - plotBounds.top)}px` } }
 }
 function onPointerMove(event: PointerEvent): void {
   if (!selecting) return
@@ -203,8 +223,37 @@ function onPaneDblClick(event: MouseEvent): void {
   for (const pane of list) if (pane.state === 'maximize' && pane.id !== paneId) chart.setPaneOptions({ id: pane.id, state: 'normal' })
   chart.setPaneOptions({ id: paneId, state: maximized ? 'normal' : 'maximize' })
 }
-function onWheel(event: WheelEvent): void {
-  event.preventDefault()
+// 用户画线命中判定：指针落在画线锚点（±8px）或线体（点到线段距离≤7px）上时，放行给库内选择/拖拽，
+// 不启动框选——否则拖动已画线段会与框选缩放重叠（用户 D1 验收反馈）。阈值与计划 D25 hover 加粗一致。
+// 仅检测用户画线（排除引擎标记与取点中的 overlay），点位经 convertToPixel 还原为像素后做几何判定。
+function isOverUserOverlay(clientX: number, clientY: number): boolean {
+  if (!chart || !hostRect) return false
+  const x = clientX - hostRect.left
+  const y = clientY - hostRect.top
+  const engineMarks = new Set(['bsMark', 'costLine'])
+  const overlays = (chart.getOverlays() as Array<{ name: string; isDrawing: () => boolean; points: Array<{ timestamp?: number; value?: number }> }>)
+    .filter(overlay => !engineMarks.has(overlay.name) && !overlay.isDrawing())
+  for (const overlay of overlays) {
+    const coords = overlay.points
+      .filter(point => point.timestamp !== undefined && point.value !== undefined)
+      .map(point => chart.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
+    for (const coordinate of coords) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return true
+    for (let i = 0; i + 1 < coords.length; i++) {
+      const a = coords[i]; const b = coords[i + 1]
+      if (!a || !b) continue
+      if (distanceToSegment(x, y, a, b) <= 7) return true
+    }
+  }
+  return false
+}
+function distanceToSegment(px: number, py: number, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = b.x - a.x; const dy = b.y - a.y
+  const lengthSq = dx * dx + dy * dy
+  if (lengthSq === 0) return Math.hypot(px - a.x, py - a.y)
+  const t = Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / lengthSq))
+  return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy))
+}
+function onWheel(event: WheelEvent): void {  event.preventDefault()
   // 价格轴上滚轮＝klinecharts 原生纵轴比例缩放（不平移）；其余区域滚轮＝K 线平移
   if (isOverPriceAxis(event.clientX, event.clientY)) return
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
@@ -212,12 +261,33 @@ function onWheel(event: WheelEvent): void {
 
 onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('dblclick', onPaneDblClick); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); feedData(); resetView() })
 onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); chart?.destroy(); chart = null })
+// 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
+// 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
+// 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
+function cancelDrawing(): void {
+  if (!chart) return
+  const drawing = (chart.getOverlays() as Array<{ id: string; isDrawing?: () => boolean }>).find(o => o.isDrawing?.())
+  if (drawing) chart.removeOverlay({ id: drawing.id })
+}
+watch(() => props.drawTool, tool => {
+  if (!chart) return
+  cancelDrawing()
+  if (tool) {
+    chart.setScrollEnabled(false)
+    chart.createOverlay({ name: tool, mode: 'normal', onDrawEnd: () => emit('toolChange', null) })
+  } else {
+    chart.setScrollEnabled(true)
+  }
+})
 watch(() => props.bars, feedData); watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
 defineExpose({ zoomBy, moveCrosshair, resetView })
 </script>
 
 <template>
-  <div class="chart-wrap"><div ref="host" class="chart-host"></div><div class="select-rect"></div></div>
+  <div class="chart-wrap">
+    <div ref="host" class="chart-host"></div>
+    <div class="select-rect"></div>
+  </div>
 </template>
 
 <style scoped>

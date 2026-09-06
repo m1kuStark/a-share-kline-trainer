@@ -13,9 +13,14 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/current \* drawable \/ dragWidth/)
   })
 
-  it('confines box-select visuals and zoom range to the chart host (no leaking into the console)', async () => {
+  it('confines box-select visuals and zoom range to the chart plot area, clear of the price/time axes (no leaking into the console)', async () => {
     const source = await readFile(chartPath, 'utf8')
-    expect(source).toMatch(/Math\.max\(0, Math\.min\(hostRect\?\.width \?\? x, x\)\)/)
+    // 绘图区边界：右缘＝价格轴左缘、底缘＝时间轴上缘（用户 D1 验收反馈：选中框不得侵入坐标轴）
+    expect(source).toMatch(/function computePlotBounds\(\): void/)
+    expect(source).toMatch(/getSize\('x_axis_pane'\)/)
+    expect(source).toMatch(/plotBounds = \{ right: yAxis\.left, top: pane\.top, bottom: xAxis\.top \}/)
+    expect(source).toMatch(/Math\.max\(0, Math\.min\(plotBounds\?\.right \?\? hostRect\?\.width \?\? x, x\)\)/)
+    expect(source).toMatch(/rect\.style\.top = `\$\{plotBounds\.top\}px`/)
     expect(source).toMatch(/\.chart-wrap \{[^}]*overflow: hidden/)
   })
 
@@ -29,11 +34,31 @@ describe('M2 chart interaction contract', () => {
     expect(themeSource).toMatch(/last: \{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8'/)
   })
 
-  it('keeps the text annotation feature removed (M3 leftover guard)', async () => {
+  it('runs drawings through the M3 mode machine: console-docked toolbar, box-select isolated, trade hotkeys disabled (D1)', async () => {
     const source = await readFile(chartPath, 'utf8')
-    expect(source).not.toMatch(/textPanel|absoluteTexts|startDraw|__absoluteText/)
-    const overlays = await readFile(new URL('../../web/src/overlays.ts', import.meta.url), 'utf8')
-    expect(overlays).not.toMatch(/name: 'text'/)
+    // 画线模式下不启动框选：事件放行给 klinecharts overlay 取点交互
+    expect(source).toMatch(/if \(props\.drawTool\) return/)
+    // 指针命中用户画线（锚点±8px/线体≤7px）时同样放行：拖动已画线段不得触发框选（用户 D1 验收反馈）
+    expect(source).toMatch(/if \(isOverUserOverlay\(event\.clientX, event\.clientY\)\) return/)
+    expect(source).toMatch(/function distanceToSegment\(/)
+    // 取点期间锁定平移；退出/切换前取消未完成取点（库不处理 Esc，取消自行实现）
+    expect(source).toMatch(/function cancelDrawing\(\): void/)
+    expect(source).toMatch(/isDrawing\?\.\(\)/)
+    expect(source).toMatch(/onDrawEnd: \(\) => emit\('toolChange', null\)/)
+    const trainingSource = await readFile(trainingPath, 'utf8')
+    // 工具条停靠训练控制台底部（用户 D1 验收反馈改定：不遮挡图表），内容区滚动观察
+    expect(trainingSource).toMatch(/class="console-scroll"/)
+    expect(trainingSource).toMatch(/class="draw-toolbar"/)
+    expect(trainingSource).toMatch(/DRAW_TOOLS/)
+    expect(trainingSource).toMatch(/drawTool = drawTool === tool\.name \? null : tool\.name/)
+    // 画线模式下 Space/B/S 禁用（防误推进/误交易）、Esc 退出、状态条提示
+    expect(trainingSource).toMatch(/if \(drawTool\.value\) \{/)
+    expect(trainingSource).toMatch(/event\.key === 'Escape'/)
+    expect(trainingSource).toMatch(/\['b', 'B', 's', 'S'\]\.includes\(event\.key\)/)
+    expect(trainingSource).toMatch(/画线模式：/)
+    expect(trainingSource).toMatch(/:draw-tool="drawTool"/)
+    // 绝对定位文本为已裁剪功能（M3 拍板），不得回潮
+    expect(source).not.toMatch(/absoluteTexts|__absoluteText/)
   })
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {

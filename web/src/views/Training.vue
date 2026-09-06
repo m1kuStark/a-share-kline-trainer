@@ -5,6 +5,7 @@ import {
   abandonTraining, advanceTraining, fetchTrainingBars, settleTraining, tradeTraining,
   type Bar, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
+import { DRAW_TOOLS } from '../drawTools'
 
 const props = defineProps<{ snapshot: TrainingSnapshot }>()
 const emit = defineEmits<{ ended: [] }>()
@@ -23,12 +24,20 @@ const customWeight = ref<number | null>(null)
 const sellShares = ref<number | null>(null)
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
 const settledView = ref<TrainingSnapshot | null>(null)
+// 画线模式状态：null＝默认模式；非 null＝画线模式（控制台工具条点击切换，Esc 退出）
+const drawTool = ref<string | null>(null)
+const toolbarCollapsed = ref(false)
 
 const training = computed(() => snapshot.value.training)
 const account = computed(() => snapshot.value.account)
 const returnPct = computed(() => ((account.value.equity - training.value.initialCash) / training.value.initialCash) * 100)
 const isTyping = (event: KeyboardEvent) => ['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName)
 const tierLabel = computed(() => ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier))
+const statusText = computed(() => {
+  if (!drawTool.value) return message.value
+  const label = DRAW_TOOLS.find(tool => tool.name === drawTool.value)?.label ?? drawTool.value
+  return `画线模式：${label}（Esc 退出）`
+})
 
 async function load(): Promise<void> {
   loading.value = true
@@ -129,6 +138,11 @@ function backToLauncher(): void {
 
 function onKeydown(event: KeyboardEvent): void {
   if (isTyping(event)) return
+  // 画线模式下 Space/B/S 禁用（防误推进/误交易），Esc 退出画线模式；方向键/Home 照常
+  if (drawTool.value) {
+    if (event.key === 'Escape') { event.preventDefault(); drawTool.value = null; return }
+    if (event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key)) { event.preventDefault(); return }
+  }
   if (event.code === 'Space') { event.preventDefault(); void advance() }
   // 对齐通达信模拟训练习惯：B 买入、S 卖出（与按钮同一撮合路径）
   if (event.key === 'b' || event.key === 'B') { event.preventDefault(); void trade('buy') }
@@ -181,7 +195,7 @@ void load()
 
     <section class="status-strip">
       <span class="status-label">{{ training.blind ? '盲训' : training.code ?? '' }}</span>
-      <span>{{ message }}</span>
+      <span>{{ statusText }}</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </section>
 
@@ -193,11 +207,14 @@ void load()
           ref="chartRef" :bars="bars" :trades="snapshot.trades"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
+          :draw-tool="drawTool"
           @visible-count="visibleCount = $event"
+          @tool-change="drawTool = $event"
         />
       </div>
 
       <aside class="trade-panel">
+        <div class="console-scroll">
         <div class="panel-heading"><span>训练账户</span><span class="live-mark">● {{ training.status === 'running' ? '进行中' : '已结束' }}</span></div>
         <div class="equity-block">
           <span>账户权益</span>
@@ -235,6 +252,19 @@ void load()
             <span>{{ item.shares }}股 @ {{ item.price.toFixed(2) }}</span>
           </div>
           <div v-if="!snapshot.trades.length" class="trade-empty">暂无成交</div>
+        </div>
+        </div>
+        <!-- 画线工具条：停靠训练控制台底部（用户 D1 验收反馈改定），不遮挡图表；工具随交付单元逐个上线 -->
+        <div class="draw-toolbar">
+          <button class="tool-collapse" :title="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" @click="toolbarCollapsed = !toolbarCollapsed">{{ toolbarCollapsed ? '»' : '«' }}</button>
+          <template v-if="!toolbarCollapsed">
+            <button
+              v-for="tool in DRAW_TOOLS" :key="tool.name"
+              :class="{ active: drawTool === tool.name }" :title="tool.label"
+              @mousedown.prevent
+              @click="drawTool = drawTool === tool.name ? null : tool.name"
+            >{{ tool.label }}</button>
+          </template>
         </div>
       </aside>
     </section>

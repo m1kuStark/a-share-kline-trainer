@@ -11,6 +11,10 @@ function initialTheme(): UiTheme {
 
 export const theme = ref<UiTheme>(initialTheme())
 
+// 用户画线默认黄色（口径：上轮 M3 拍板沿用）：深浅主题下均可读；
+// 引擎标记 bsMark/costLine 逐 figure 显式样式，不受全局 overlay 默认影响
+export const DRAW_DEFAULT_COLOR = '#f5c343'
+
 // 主图图例（candle tooltip）只显示开高低收四个价格，配色用主题文本色
 const candleLegendTemplate: CandleTooltipLegendsCustomCallback = data => {
   const bar = data.current
@@ -96,6 +100,14 @@ export function chartStyles(t: UiTheme) {
     crosshair: {
       horizontal: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
       vertical: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
+    },
+    // 用户画线全局默认样式：线体与锚点统一黄色；选中/激活锚点同色
+    overlay: {
+      line: { color: DRAW_DEFAULT_COLOR, size: 2 },
+      point: {
+        color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5,
+        activeColor: DRAW_DEFAULT_COLOR, activeBorderColor: '#ffffff', activeBorderSize: 1, activeRadius: 6,
+      },
     },
   }
 }
