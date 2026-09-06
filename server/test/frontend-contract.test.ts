@@ -73,7 +73,7 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/type: 'color'|type="color"/)
     expect(source).toMatch(/端点\{\{ i \+ 1 \}\}价位/)
     expect(source).toMatch(/value="solid">实线/)
-    expect(source).toMatch(/overrideOverlay\(\{ id, styles: \{ line \}, points \}\)/)
+    expect(source).toMatch(/overrideOverlay\(\{ id: form\.id, styles: \{ line \}, points \}\)/)
     // Delete 删除选中画线（选中态由 onSelected/onDeselected 跟踪）
     expect(source).toMatch(/function deleteSelected\(\): boolean/)
     expect(source).toMatch(/onSelected: event => \{ selectedOverlayId\.value = event\.overlay\.id \}/)
@@ -86,8 +86,10 @@ describe('M2 chart interaction contract', () => {
     // 默认样式（用户 D2 验收反馈）：1px 虚线；端点价位回读按价格两位小数取整
     const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
     expect(themeSource).toMatch(/line: \{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed', dashedValue: \[4, 4\] \}/)
-    expect(source).toMatch(/editForm = ref\(\{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' as 'solid' \| 'dashed' \| 'dotted', values: \[\] as number\[\] \}\)/)
+    expect(source).toMatch(/size: line\.size \?\? 1/)
     expect(source).toMatch(/Number\(\(point\.value \?\? 0\)\.toFixed\(2\)\)/)
+    // 编辑表单状态：多选选项卡式（每选中对象一表单）；默认 1px 虚线
+    expect(source).toMatch(/type EditForm = \{ id: string; label: string; color: string; size: number; style: 'solid' \| 'dashed' \| 'dotted'; values: number\[\] \}/)
     // D2 补丁：编辑面板标题栏可拖拽（避免遮挡 K 线），拖动中钳制在图表宿主内
     expect(source).toMatch(/function onPanelTitlePointerDown\(event: PointerEvent\): void/)
     expect(source).toMatch(/setPointerCapture\?\.\(event\.pointerId\)/)
@@ -108,10 +110,12 @@ describe('M2 chart interaction contract', () => {
     // D3 验收反馈修复：中键纵向平移不受 Space/Home 限制（强制手动模式）＋中键不拖画线（临时锁定）＋射线/直线命中延伸
     expect(source).toMatch(/forEach\(axis => axis\.setAutoCalcTickFlag\(false\)\)/)
     expect(source).toMatch(/userOverlays\.forEach\(overlay => \{ overlay\.lock = true \}\)/)
-    expect(source).toMatch(/overlay\.name === 'rayLine' \|\| overlay\.name === 'straightLine'/)
+    // 射线/直线命中几何按图元覆盖范围延伸（overlayHitGeometry）
+    expect(source).toMatch(/overlay\.name === 'rayLine'/)
+    expect(source).toMatch(/overlay\.name === 'straightLine'/)
     // 虚线段长统一为库默认 [4,4]（编辑前后渲染一致）；字段改无关联 div 结构（label 点击区溢出修复）
     expect(themeSource).toMatch(/dashedValue: \[4, 4\]/)
-    expect(source).toMatch(/dashedValue: editForm\.value\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)
+    expect(source).toMatch(/dashedValue: form\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)
     expect(source).toMatch(/class="field-row"/)
     expect(source).not.toMatch(/<label/)
   })
@@ -121,6 +125,29 @@ describe('M2 chart interaction contract', () => {
     const drawToolsSource = await readFile(new URL('../../web/src/drawTools.ts', import.meta.url), 'utf8')
     expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线' \}/)
     expect(drawToolsSource).toMatch(/\{ name: 'straightLine', label: '直线' \}/)
+  })
+
+  it('supports drawing multi-select: ctrl+click, multi-mode box select, batch delete, tabbed edit panel', async () => {
+    const source = await readFile(chartPath, 'utf8')
+    // Ctrl+左键点选画线：加入/移出多选集合（点空白清空）
+    expect(source).toMatch(/if \(event\.ctrlKey && !props\.drawTool\) \{/)
+    expect(source).toMatch(/function toggleMultiSelect\(id: string\): void/)
+    // 多选模式：主图空白框选拖拽变为划线批量选中（不缩放 K 线）
+    expect(source).toMatch(/multiSelect\?: boolean/)
+    expect(source).toMatch(/if \(props\.multiSelect\) \{/)
+    expect(source).toMatch(/function selectDrawingsInRect\(/)
+    expect(source).toMatch(/class="multi-rect"/)
+    // 选项卡式编辑面板：标签＝类型+中文序号，确定批量应用全部表单
+    expect(source).toMatch(/class="edit-tabs"/)
+    expect(source).toMatch(/label: labelBase \+ \(cnNums\[n - 1\] \?\? String\(n\)\)/)
+    // 批量删除：多选集合优先
+    expect(source).toMatch(/const ids = \[\.\.\.multiSelectedIds\.value\]/)
+    // 多选模式关闭：清空多选集合与选中标识
+    expect(source).toMatch(/watch\(\(\) => props\.multiSelect, on => \{ if \(!on\) clearMultiSelection\(\) \}\)/)
+    const trainingSource = await readFile(trainingPath, 'utf8')
+    expect(trainingSource).toMatch(/:multi-select="multiSelectMode"/)
+    expect(trainingSource).toMatch(/function toggleMultiSelectMode\(\): void/)
+    expect(trainingSource).toMatch(/多选模式：框选批量选中画线/)
   })
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {
@@ -147,7 +174,8 @@ describe('M2 chart interaction contract', () => {
     // 滚轮：轴上直接返回（交给库原生纵轴缩放），不平移
     expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,160}scrollByDistance/s)
     // 按下：轴上不进入框选
-    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,40}selecting = true/s)
+    // 按下：轴上不进入框选；多选模式分支在框选启动之前（框选缩放被多选模式接管）
+    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,160}if \(props\.multiSelect\) \{[\s\S]{0,420}selecting = true/s)
   })
 
   it('restores y-axis auto-fit before programmatic zooms so box select never drifts the chart out of view', async () => {

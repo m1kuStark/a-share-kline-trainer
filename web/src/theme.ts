@@ -14,6 +14,8 @@ export const theme = ref<UiTheme>(initialTheme())
 // 用户画线默认黄色（口径：上轮 M3 拍板沿用）：深浅主题下均可读；
 // 引擎标记 bsMark/costLine 逐 figure 显式样式，不受全局 overlay 默认影响
 export const DRAW_DEFAULT_COLOR = '#f5c343'
+// 多选选中标识色：多选集合内的画线临时改为此色（松开恢复原色），深浅主题均可读且不增加遮挡物
+export const DRAW_MULTI_SELECT_COLOR = '#38bdf8'
 
 // 主图图例（candle tooltip）只显示开高低收四个价格，配色用主题文本色
 const candleLegendTemplate: CandleTooltipLegendsCustomCallback = data => {

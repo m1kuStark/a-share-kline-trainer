@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { init, type Chart, type DataLoadMore, type KLineData } from 'klinecharts'
 import '../overlays'
 import '../indicators'
-import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
+import { chartStyles, theme, DRAW_DEFAULT_COLOR, DRAW_MULTI_SELECT_COLOR } from '../theme'
 import type { Bar, Timeframe, TradeView } from '../api'
 
 const props = withDefaults(defineProps<{
@@ -19,7 +19,9 @@ const props = withDefaults(defineProps<{
   fetchEarlier?: (before: string, count: number) => Promise<{ bars: Bar[]; hasMore: boolean }>
   /** 当前画线工具（null＝默认模式）：画线模式下框选手势与 Space/B/S 热键被隔离 */
   drawTool?: string | null
-}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null })
+  /** 多选模式：主图空白处框选拖拽变为划线批量选中（不缩放 K 线），平移与键盘缩放不受影响 */
+  multiSelect?: boolean
+}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null] }>()
 const host = ref<HTMLElement | null>(null)
@@ -176,6 +178,14 @@ function onPointerDown(event: PointerEvent): void {
   // 指针命中用户画线：放行给库内选择/拖拽，不启动框选——否则拖动已画线段会触发框选缩放（用户 D1 验收反馈）
   if (hitTestUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) return
+  // 多选模式：主图空白的框选拖拽变为划线批量选中（不缩放 K 线；平移走中键、缩放走键盘）
+  if (props.multiSelect) {
+    const sx = event.clientX - (hostRect?.left ?? 0)
+    const sy = event.clientY - (hostRect?.top ?? 0)
+    multiDragStart = { x: sx, y: sy }
+    multiRect = { left: sx, top: sy, width: 0, height: 0 }
+    return
+  }
   selecting = true
   computePlotBounds()
   selectStartX = hostX(event.clientX)
@@ -185,6 +195,17 @@ function onPointerDown(event: PointerEvent): void {
 function onPointerMove(event: PointerEvent): void {
   // 纵轴缩放拖拽中：把指针位置重路由回轴区域，库原生缩放持续生效（与框选互斥）
   if (axisScaleDrag) { dispatchSyntheticAxisMove(event); return }
+  // 多选模式橡皮筋矩形更新
+  if (multiDragStart) {
+    const cur = { x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }
+    multiRect = {
+      left: Math.min(multiDragStart.x, cur.x),
+      top: Math.min(multiDragStart.y, cur.y),
+      width: Math.abs(cur.x - multiDragStart.x),
+      height: Math.abs(cur.y - multiDragStart.y),
+    }
+    return
+  }
   if (!selecting) return
   const current = hostX(event.clientX); const rect = selectionRect()
   if (rect) { rect.style.left = `${Math.min(selectStartX, current)}px`; rect.style.width = `${Math.abs(current - selectStartX)}px` }
@@ -198,6 +219,21 @@ function onPointerUp(event: PointerEvent): void {
   }
   // 纵轴缩放拖拽结束（松手才算完成一次交互）
   if (axisScaleDrag) { axisScaleDrag = false; return }
+  // 多选模式框选结束：矩形相交的画线加入多选集合；极小框选＝点空白，清空多选
+  if (multiDragStart) {
+    const cur = { x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }
+    const rect = {
+      left: Math.min(multiDragStart.x, cur.x),
+      top: Math.min(multiDragStart.y, cur.y),
+      width: Math.abs(cur.x - multiDragStart.x),
+      height: Math.abs(cur.y - multiDragStart.y),
+    }
+    if (rect.width > 4 && rect.height > 4) selectDrawingsInRect(rect)
+    else clearMultiSelection()
+    multiDragStart = null
+    multiRect = null
+    return
+  }
   if (!selecting || !chart) return
   selecting = false; chart.setScrollEnabled(true)
   const rect = selectionRect(); if (rect) rect.style.display = 'none'
@@ -236,40 +272,18 @@ function onPaneDblClick(event: MouseEvent): void {
 // 用户画线命中判定：指针落在画线锚点（±8px）或线体（点到线段距离≤7px）上时，放行给库内选择/拖拽，
 // 不启动框选——否则拖动已画线段会与框选缩放重叠（用户 D1 验收反馈）。阈值与计划 D25 hover 加粗一致。
 // 返回命中的 overlay 实例（库内同一实例，供按下状态补齐），未命中返回 null。
-function hitTestUserOverlay(clientX: number, clientY: number): { id: string; lock: boolean; isDrawing: () => boolean; startPressedMove: (point: { dataIndex?: number; value?: number }) => void } | null {
+function hitTestUserOverlay(clientX: number, clientY: number): OverlayLike | null {
   if (!chart || !hostRect) return null
   const x = clientX - hostRect.left
   const y = clientY - hostRect.top
-  const engineMarks = new Set(['bsMark', 'costLine'])
-  const overlays = (chart.getOverlays() as unknown as Array<{ id: string; name: string; lock: boolean; isDrawing: () => boolean; startPressedMove: (point: { dataIndex?: number; value?: number }) => void; points: Array<{ timestamp?: number; value?: number }> }>)
-    .filter(overlay => !engineMarks.has(overlay.name) && !overlay.isDrawing())
+  const overlays = (chart.getOverlays() as unknown as OverlayLike[]).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing())
   for (const overlay of overlays) {
-    const pts = overlay.points
-      .filter(point => point.timestamp !== undefined && point.value !== undefined)
-      .map(point => chart.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
-    if (!pts.length) continue
+    const { anchors, segs } = overlayHitGeometry(overlay)
     // 锚点命中（±8px，始终用真实端点）
-    for (const coordinate of pts) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return overlay
-    // 线体命中：射线/直线的命中几何按图元实际覆盖范围延伸——库内 figure attrs 已延长到面板边缘，
-    // 若仍按两端点线段判定，延伸段无法选中（用户 D3 验收反馈）
-    let linePts = pts
-    if ((overlay.name === 'rayLine' || overlay.name === 'straightLine') && pts.length >= 2) {
-      const a = pts[0]; const b = pts[1]
-      if (overlay.name === 'rayLine') {
-        // 射线：从第一锚点出发穿过第二锚点无限延伸，命中几何只向延伸方向放开
-        linePts = [a, { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 }]
-      }
-      else {
-        // 直线：两端无限延伸
-        linePts = [
-          { x: a.x + (a.x - b.x) * 50, y: a.y + (a.y - b.y) * 50 },
-          { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 },
-        ]
-      }
-    }
-    for (let i = 0; i + 1 < linePts.length; i++) {
-      const a = linePts[i]; const b = linePts[i + 1]
-      if (!a || !b) continue
+    for (const c of anchors) if (Math.hypot(c.x - x, c.y - y) <= 8) return overlay
+    // 线体命中（≤7px）：射线/直线的线段已按图元覆盖范围延伸——延伸段同样可选中（用户 D3 验收反馈）
+    for (const seg of segs) {
+      const [a, b] = seg
       if (distanceToSegment(x, y, a, b) <= 7) return overlay
     }
   }
@@ -321,64 +335,87 @@ watch(() => props.drawTool, tool => {
     chart.setScrollEnabled(true)
   }
 })
+// 多选模式关闭：清空多选集合与选中标识
+watch(() => props.multiSelect, on => { if (!on) clearMultiSelection() })
 
 // D2 右键菜单与编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七）。
 // 库默认行为是"右键命中画线即删除"，已在 createOverlay 的 onRightClick 里 preventDefault 接管。
-const ctxMenu = ref<{ x: number; y: number; overlayId: string } | null>(null)
-const editPanel = ref<{ x: number; y: number; overlayId: string } | null>(null)
+const ctxMenu = ref<{ x: number; y: number; overlayId: string; batch: boolean } | null>(null)
+const editPanel = ref<{ x: number; y: number } | null>(null)
 const selectedOverlayId = ref<string | null>(null)
-const editForm = ref({ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' as 'solid' | 'dashed' | 'dotted', values: [] as number[] })
+type EditForm = { id: string; label: string; color: string; size: number; style: 'solid' | 'dashed' | 'dotted'; values: number[] }
+const editForms = ref<EditForm[]>([])
+const activeEditIndex = ref(0)
 function clampToHost(value: number, size: number, limit: number): number { return Math.max(4, Math.min(value, Math.max(4, limit - size - 4))) }
 function closePanels(): void { ctxMenu.value = null; editPanel.value = null }
 function openCtxMenu(overlayId: string, x: number, y: number): void {
   if (!host.value) return
   const rect = host.value.getBoundingClientRect()
-  ctxMenu.value = { overlayId, x: clampToHost(x, 150, rect.width), y: clampToHost(y, 92, rect.height) }
+  ctxMenu.value = { overlayId, batch: isMultiSelected(overlayId), x: clampToHost(x, 150, rect.width), y: clampToHost(y, 92, rect.height) }
   editPanel.value = null
 }
 function removeViaMenu(): void {
   if (!chart || !ctxMenu.value) return
-  const id = ctxMenu.value.overlayId
-  if (selectedOverlayId.value === id) selectedOverlayId.value = null
-  chart.removeOverlay({ id })
+  const ids = ctxMenu.value.batch ? [...multiSelectedIds.value] : [ctxMenu.value.overlayId]
+  ids.forEach(id => { origLineColors.delete(id); chart.removeOverlay({ id }) })
+  multiSelectedIds.value = multiSelectedIds.value.filter(id => !ids.includes(id))
+  if (selectedOverlayId.value && ids.includes(selectedOverlayId.value)) selectedOverlayId.value = null
   closePanels()
 }
-function openEditPanel(): void {
-  if (!chart || !ctxMenu.value) return
-  const { overlayId, x, y } = ctxMenu.value
-  const overlay = chart.getOverlays({ id: overlayId })[0]
-  if (!overlay) { closePanels(); return }
-  const line = (overlay.styles?.line ?? {}) as { color?: string; size?: number; style?: string; dashedValue?: number[] }
-  // 库内像素→价格换算产生长浮点，回读按价格精度（两位小数）取整
-  editForm.value = {
-    color: line.color ?? DRAW_DEFAULT_COLOR,
-    size: line.size ?? 1,
-    style: (line.style ?? 'dashed') === 'dashed' ? ((line.dashedValue?.[0] ?? 4) <= 3 ? 'dotted' : 'dashed') : 'solid',
-    values: overlay.points.map(point => Number((point.value ?? 0).toFixed(2))),
+// 选项卡式编辑面板：单个选中＝单表单（无标签行）；多选＝每个选中对象一个标签
+// （标签＝类型+中文序号，如“线段一”），确定时批量应用全部表单（用户 D3 追加需求）
+function openEditPanel(targetIds: string[], x: number, y: number): void {
+  if (!chart || !host.value) return
+  const forms: EditForm[] = []
+  const typeCount = new Map<string, number>()
+  for (const id of targetIds) {
+    const overlay = (chart.getOverlays({ id }) as unknown as Array<OverlayLike & { styles?: { line?: { color?: string; size?: number; style?: string; dashedValue?: number[] } } }>)[0]
+    if (!overlay) continue
+    const line = overlay.styles?.line ?? {}
+    const labelBase = typeLabel(overlay.name)
+    const n = (typeCount.get(labelBase) ?? 0) + 1
+    typeCount.set(labelBase, n)
+    forms.push({
+      id,
+      label: labelBase + (cnNums[n - 1] ?? String(n)),
+      color: line.color ?? origLineColors.get(id) ?? DRAW_DEFAULT_COLOR,
+      size: line.size ?? 1,
+      style: (line.style ?? 'dashed') === 'dashed' ? ((line.dashedValue?.[0] ?? 4) <= 3 ? 'dotted' : 'dashed') : 'solid',
+      values: overlay.points.map(point => Number((point.value ?? 0).toFixed(2))),
+    })
   }
-  if (!host.value) return
+  if (!forms.length) { closePanels(); return }
+  editForms.value = forms
+  activeEditIndex.value = 0
   const rect = host.value.getBoundingClientRect()
-  editPanel.value = { overlayId, x: clampToHost(x, 214, rect.width), y: clampToHost(y, 300, rect.height) }
+  editPanel.value = { x: clampToHost(x, 214, rect.width), y: clampToHost(y, 360, rect.height) }
   ctxMenu.value = null
 }
 function applyEdit(): void {
-  if (!chart || !editPanel.value) return
-  const id = editPanel.value.overlayId
-  const overlay = chart.getOverlays({ id })[0]
-  if (overlay) {
-    const line = { color: editForm.value.color, size: editForm.value.size, style: (editForm.value.style === 'solid' ? 'solid' : 'dashed') as 'solid' | 'dashed', dashedValue: editForm.value.style === 'dotted' ? [2, 4] : [4, 4] }
-    const points = overlay.points.map((point, index) => ({ ...point, value: editForm.value.values[index] }))
-    chart.overrideOverlay({ id, styles: { line }, points })
+  if (!chart) return
+  for (const form of editForms.value) {
+    const overlay = (chart.getOverlays({ id: form.id }) as unknown as Array<OverlayLike & { styles?: { line?: { color?: string; size?: number; style?: string; dashedValue?: number[] } } }>)[0]
+    if (!overlay) continue
+    const line = { color: form.color, size: form.size, style: (form.style === 'solid' ? 'solid' : 'dashed') as 'solid' | 'dashed', dashedValue: form.style === 'dotted' ? [2, 4] : [4, 4] }
+    const points = overlay.points.map((point, index) => ({ ...point, value: form.values[index] }))
+    chart.overrideOverlay({ id: form.id, styles: { line }, points })
   }
+  // 批量应用完成：清除多选标识（恢复各画线应用后的颜色）
+  multiSelectedIds.value = []
+  origLineColors.clear()
   closePanels()
 }
-// Delete 键删除选中画线（选中态来自 onSelected/onDeselected；引擎标记不可选中、不受影响）
+// Delete 删除选中画线：多选集合优先（批量），否则单击选中的单个；引擎标记不可选中、不受影响
 function deleteSelected(): boolean {
-  if (!chart || !selectedOverlayId.value) return false
-  const id = selectedOverlayId.value
+  if (!chart) return false
+  const ids = [...multiSelectedIds.value]
+  if (selectedOverlayId.value && !ids.includes(selectedOverlayId.value)) ids.push(selectedOverlayId.value)
+  if (!ids.length) { closePanels(); return false }
+  ids.forEach(id => { origLineColors.delete(id); chart.removeOverlay({ id }) })
+  multiSelectedIds.value = []
   selectedOverlayId.value = null
   closePanels()
-  return chart.removeOverlay({ id })
+  return true
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
@@ -415,6 +452,98 @@ function onGlobalPointerDown(event: PointerEvent): void {
   if (target?.closest('.ctx-menu, .overlay-edit-panel')) return
   closePanels()
 }
+// D3 追加：划线多选支持。multiSelectedIds＝多选集合；origLineColors＝选中前线色（恢复用）；
+// multiRect＝多选模式下的橡皮筋矩形。选中标识＝线体临时改为天蓝色（恢复原色），不增加遮挡物。
+const multiSelectedIds = ref<string[]>([])
+const origLineColors = new Map<string, string | undefined>()
+const multiRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
+let multiDragStart: { x: number; y: number } | null = null
+type OverlayLike = {
+  id: string
+  name: string
+  lock: boolean
+  isDrawing: () => boolean
+  startPressedMove: (point: { dataIndex?: number; value?: number }) => void
+  points: Array<{ timestamp?: number; value?: number }>
+}
+const engineMarkNames = new Set(['bsMark', 'costLine'])
+const cnNums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+function typeLabel(name: string): string {
+  return ({ segment: '线段', rayLine: '射线', straightLine: '直线' } as Record<string, string>)[name] ?? name
+}
+function isMultiSelected(id: string): boolean { return multiSelectedIds.value.includes(id) }
+function applySelectionVisual(id: string): void {
+  const overlay = (chart?.getOverlays({ id }) as unknown as Array<{ styles?: { line?: { color?: string } } }>)[0]
+  if (!origLineColors.has(id)) origLineColors.set(id, overlay?.styles?.line?.color)
+  chart?.overrideOverlay({ id, styles: { line: { color: DRAW_MULTI_SELECT_COLOR } } })
+}
+function clearSelectionVisual(id: string): void {
+  const orig = origLineColors.get(id)
+  chart?.overrideOverlay({ id, styles: { line: { color: orig ?? DRAW_DEFAULT_COLOR } } })
+  origLineColors.delete(id)
+}
+function toggleMultiSelect(id: string): void {
+  if (isMultiSelected(id)) {
+    multiSelectedIds.value = multiSelectedIds.value.filter(x => x !== id)
+    clearSelectionVisual(id)
+  }
+  else {
+    multiSelectedIds.value = [...multiSelectedIds.value, id]
+    applySelectionVisual(id)
+  }
+}
+function clearMultiSelection(): void {
+  multiSelectedIds.value.forEach(id => clearSelectionVisual(id))
+  multiSelectedIds.value = []
+}
+// 框选矩形与画线的相交判定：端点落在矩形内，或线体采样点（含射线/直线延伸段）落在矩形内
+function selectDrawingsInRect(rect: { left: number; top: number; width: number; height: number }): void {
+  if (!chart) return
+  const overlays = (chart.getOverlays() as unknown as OverlayLike[]).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing())
+  const inside = (p: { x: number; y: number }) => p.x >= rect.left && p.x <= rect.left + rect.width && p.y >= rect.top && p.y <= rect.top + rect.height
+  for (const overlay of overlays) {
+    if (isMultiSelected(overlay.id)) continue
+    const { anchors, segs } = overlayHitGeometry(overlay)
+    const hit = anchors.some(inside) || segs.some(seg => {
+      const steps = 24
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps
+        const p = { x: seg[0].x + (seg[1].x - seg[0].x) * t, y: seg[0].y + (seg[1].y - seg[0].y) * t }
+        if (inside(p)) return true
+      }
+      return false
+    })
+    if (hit) {
+      multiSelectedIds.value = [...multiSelectedIds.value, overlay.id]
+      applySelectionVisual(overlay.id)
+    }
+  }
+}
+// 画线命中/框选几何：anchors＝真实端点像素，segs＝线体覆盖线段（射线/直线按图元覆盖范围延伸）
+function overlayHitGeometry(overlay: OverlayLike): { anchors: Array<{ x: number; y: number }>; segs: Array<Array<{ x: number; y: number }>> } {
+  const pts = overlay.points
+    .filter(point => point.timestamp !== undefined && point.value !== undefined)
+    .map(point => chart!.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
+    .filter(c => !!c) as Array<{ x: number; y: number }>
+  const anchors = pts
+  const segs: Array<Array<{ x: number; y: number }>> = []
+  if (pts.length >= 2) {
+    const a = pts[0]; const b = pts[1]
+    if (overlay.name === 'rayLine') {
+      segs.push([a, { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 }])
+    }
+    else if (overlay.name === 'straightLine') {
+      segs.push([
+        { x: a.x + (a.x - b.x) * 50, y: a.y + (a.y - b.y) * 50 },
+        { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 },
+      ])
+    }
+    else {
+      for (let i = 0; i + 1 < pts.length; i++) segs.push([pts[i], pts[i + 1]])
+    }
+  }
+  return { anchors, segs }
+}
 function suppressNativeContextMenu(event: MouseEvent): void { event.preventDefault() }
 
 // D3 验收反馈修复：纵轴拖拽缩放持续到松手。
@@ -435,6 +564,16 @@ let axisScaleDragX = 0
 function onHostMouseDown(event: MouseEvent): void {
   // 中键合成的左键 mousedown：直接放行给库（跳过本拦截器与冒泡修补，避免自我拦截）
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
+  // Ctrl+左键点选画线：加入/移出多选集合（点空白清空多选），拦截库的单选与平移
+  if (event.ctrlKey && !props.drawTool) {
+    if (paneIdAt(event.clientY) !== 'candle_pane') return
+    hostRect = host.value?.getBoundingClientRect() ?? null
+    const hit = hitTestUserOverlay(event.clientX, event.clientY)
+    if (hit) toggleMultiSelect(hit.id)
+    else clearMultiSelection()
+    event.stopPropagation()
+    return
+  }
   if (event.button === 1) {
     event.preventDefault()
     if (!chart) return
@@ -497,17 +636,24 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
   <div class="chart-wrap">
     <div ref="host" class="chart-host"></div>
     <div class="select-rect"></div>
+    <!-- 多选模式橡皮筋矩形：框选划线批量选中（不缩放 K 线） -->
+    <div v-if="multiRect" class="multi-rect" :style="{ left: `${multiRect.left}px`, top: `${multiRect.top}px`, width: `${multiRect.width}px`, height: `${multiRect.height}px` }"></div>
     <!-- 右键菜单/编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七） -->
     <div v-if="ctxMenu" class="ctx-menu" :style="{ left: `${ctxMenu.x}px`, top: `${ctxMenu.y}px` }">
-      <button @click="openEditPanel">编辑划线</button>
-      <button @click="removeViaMenu">删除画线</button>
+      <button @click="openEditPanel(ctxMenu.batch ? multiSelectedIds : [ctxMenu.overlayId], ctxMenu.x, ctxMenu.y)">{{ ctxMenu.batch ? `编辑划线（${multiSelectedIds.length}）` : '编辑划线' }}</button>
+      <button @click="removeViaMenu">{{ ctxMenu.batch ? `删除画线（${multiSelectedIds.length}）` : '删除画线' }}</button>
     </div>
     <div v-if="editPanel" class="overlay-edit-panel" :style="{ left: `${editPanel.x}px`, top: `${editPanel.y}px` }">
-      <div class="panel-title" title="按住标题栏拖动面板" @pointerdown="onPanelTitlePointerDown" @pointermove="onPanelTitlePointerMove" @pointerup="onPanelTitlePointerUp">编辑划线</div>
-      <div class="field-row"><span class="field-label">颜色</span><input v-model="editForm.color" type="color"></div>
-      <div class="field-row"><span class="field-label">粗细</span><select v-model.number="editForm.size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></div>
-      <div class="field-row"><span class="field-label">样式</span><select v-model="editForm.style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></div>
-      <div v-for="(_, i) in editForm.values" :key="i" class="field-row"><span class="field-label">端点{{ i + 1 }}价位</span><input v-model.number="editForm.values[i]" type="number" step="0.01"></div>
+      <div class="panel-title" title="按住标题栏拖动面板" @pointerdown="onPanelTitlePointerDown" @pointermove="onPanelTitlePointerMove" @pointerup="onPanelTitlePointerUp">编辑划线<span v-if="editForms.length > 1" class="panel-count">（{{ editForms.length }} 个）</span></div>
+      <div v-if="editForms.length > 1" class="edit-tabs">
+        <button v-for="(f, i) in editForms" :key="f.id" :class="{ active: activeEditIndex === i }" @click="activeEditIndex = i">{{ f.label }}</button>
+      </div>
+      <template v-if="editForms[activeEditIndex]">
+        <div class="field-row"><span class="field-label">颜色</span><input v-model="editForms[activeEditIndex].color" type="color"></div>
+        <div class="field-row"><span class="field-label">粗细</span><select v-model.number="editForms[activeEditIndex].size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></div>
+        <div class="field-row"><span class="field-label">样式</span><select v-model="editForms[activeEditIndex].style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></div>
+        <div v-for="(_, i) in editForms[activeEditIndex].values" :key="i" class="field-row"><span class="field-label">端点{{ i + 1 }}价位</span><input v-model.number="editForms[activeEditIndex].values[i]" type="number" step="0.01"></div>
+      </template>
       <div class="panel-actions"><button @click="applyEdit">确定</button><button @click="closePanels">取消</button></div>
     </div>
   </div>
@@ -537,4 +683,12 @@ body.dark .overlay-edit-panel input[type='number'], body.dark .overlay-edit-pane
 body.dark .overlay-edit-panel input[type='color'] { background: #223349; border-color: #32465f; }
 body.dark .overlay-edit-panel .panel-actions button { background: #223349; border-color: #32465f; color: #aebfd2; }
 body.dark .overlay-edit-panel .panel-actions button:first-child { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
+.multi-rect { position: absolute; border: 1px dashed #38bdf8; background: rgba(56,189,248,.08); pointer-events: none; z-index: 5; }
+.edit-tabs { display: flex; flex-wrap: wrap; gap: 3px; }
+.edit-tabs button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 3px 8px; font-size: 11px; color: #5c7187; border-radius: 3px; }
+.edit-tabs button.active { border-color: #2e8191; background: #eaf5f6; color: #245a72; font-weight: 600; }
+.panel-count { color: #8a98aa; font-size: 11px; font-weight: 400; }
+body.dark .edit-tabs button { background: #223349; border-color: #32465f; color: #aebfd2; }
+body.dark .edit-tabs button.active { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
+body.dark .panel-count { color: #71818f; }
 </style>

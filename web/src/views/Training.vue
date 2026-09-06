@@ -27,6 +27,13 @@ const settledView = ref<TrainingSnapshot | null>(null)
 // 画线模式状态：null＝默认模式；非 null＝画线模式（控制台工具条点击切换，Esc 退出）
 const drawTool = ref<string | null>(null)
 const toolbarCollapsed = ref(false)
+// 多选模式：框选拖拽变为划线批量选中（与画线取点模式互斥）
+const multiSelectMode = ref(false)
+function toggleMultiSelectMode(): void {
+  multiSelectMode.value = !multiSelectMode.value
+  if (multiSelectMode.value) drawTool.value = null
+}
+watch(drawTool, tool => { if (tool) multiSelectMode.value = false })
 
 const training = computed(() => snapshot.value.training)
 const account = computed(() => snapshot.value.account)
@@ -34,6 +41,7 @@ const returnPct = computed(() => ((account.value.equity - training.value.initial
 const isTyping = (event: KeyboardEvent) => ['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName)
 const tierLabel = computed(() => ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier))
 const statusText = computed(() => {
+  if (multiSelectMode.value) return '多选模式：框选批量选中画线，Delete 批量删除（Esc 退出）'
   if (!drawTool.value) return message.value
   const label = DRAW_TOOLS.find(tool => tool.name === drawTool.value)?.label ?? drawTool.value
   return `画线模式：${label}（Esc 退出）`
@@ -138,6 +146,13 @@ function backToLauncher(): void {
 
 function onKeydown(event: KeyboardEvent): void {
   if (isTyping(event)) return
+  // 多选模式：Esc 退出并清空多选（KlineChart 内部处理面板 Esc）；其余键照常（Delete 走批量删除）
+  if (multiSelectMode.value && event.key === 'Escape') {
+    event.preventDefault()
+    multiSelectMode.value = false
+    chartRef.value?.clearMultiSelection()
+    return
+  }
   // 画线模式下 Space/B/S 禁用（防误推进/误交易），Esc 退出画线模式；方向键/Home 照常
   if (drawTool.value) {
     if (event.key === 'Escape') { event.preventDefault(); drawTool.value = null; return }
@@ -209,7 +224,7 @@ void load()
           ref="chartRef" :bars="bars" :trades="snapshot.trades"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
-          :draw-tool="drawTool"
+          :draw-tool="drawTool" :multi-select="multiSelectMode"
           @visible-count="visibleCount = $event"
           @tool-change="drawTool = $event"
         />
@@ -266,6 +281,11 @@ void load()
               @mousedown.prevent
               @click="drawTool = drawTool === tool.name ? null : tool.name"
             >{{ tool.label }}</button>
+            <button
+              :class="{ active: multiSelectMode }" title="多选模式：框选批量选中划线后批量编辑/删除"
+              @mousedown.prevent
+              @click="multiSelectMode = !multiSelectMode"
+            >多选</button>
           </template>
         </div>
       </aside>
