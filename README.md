@@ -34,6 +34,8 @@ $env:TDX_ROOT = 'D:\MySoftWares\TDX'
 
 ## 验证
 
+> 自动化用户旅程（六幕 13 测试，真实 Edge 事件）：`npm run journey`（内部先 build:journey）。提验前必须 npm test / build / journey 全绿。
+
 ```powershell
 npm test
 npm run build

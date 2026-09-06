@@ -40,7 +40,15 @@
 
 ## Journey 运行
 
-- 前置：`npm run build:journey`（--mode journey 构建，注入 window.__trainerChart 测试钩子；生产构建零钩子）。
-- 运行：`npm run journey`（global-setup 自动 spawn 隔离服务端：TRAINER_DB=临时库、PORT=8791；teardown 清理）。
+- 前置：`npm run build:journey`（--mode journey 构建，注入 window.__trainerChart 测试钩子；生产构建零钩子。注意：`import.meta.env.DEV` 在 build 时恒 false，钩子条件用 `MODE === 'journey'`）。
+- 运行：`npm run journey`（= build:journey + playwright test；global-setup 自动 spawn 隔离服务端：TRAINER_DB=临时库、PORT=8791；端口被占用时直接报错——清理孤儿进程后重跑；teardown 清理）。
 - 失败：自动附截图与 trace（test-results/），retries 1。
-- 断言纪律：优先 `__trainerChart` 状态断言；截图仅存档不比对；禁止用 dispatchEvent 合成事件验证交互（与真实事件不同构，历史教训）。
+- 断言纪律：优先 `__trainerChart` 状态断言（overlayCount/selectedCount/mode/yRange/hitTest）；截图仅存档不比对；禁止用 dispatchEvent 合成事件验证交互（与真实事件不同构，历史教训）。
+- 库残留训练：journey 库跨重试存活，每个测试开头必须 `resetToLauncher`（API 层放弃活动训练；UI confirm 会被 Playwright 自动 dismiss，不可靠）。
+- 画线点位纪律：两点绘制间隔 >500ms（库双击判定窗口）；Ctrl+点选与框选的坐标必须按当前视图比例精算在线上（±7px），锚点 ±8px。
+
+## 当前状态（2026-09-06）
+
+- vitest：16 文件 **88/88**（含 klinecharts-pin 版本哨兵）
+- journey：**13/13**（Act1 闭环 / Act2a-c 画线生命周期 / Act3a-d 交互矩阵 / Act4a-c 多选 / Act5 交易 / Act6 主题）
+- journey 已抓出并修复的真实回归：**多选 Delete 误删第三条**（画线完成时库的 onSelected 态被追加进删除集合）——首个由 journey 而非用户发现的 bug，验证了本体系的价值。

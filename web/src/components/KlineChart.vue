@@ -457,7 +457,7 @@ function onGlobalPointerDown(event: PointerEvent): void {
 // multiRect＝多选模式下的橡皮筋矩形。选中标识＝线体临时改为天蓝色（恢复原色），不增加遮挡物。
 const multiSelectedIds = ref<string[]>([])
 const origLineColors = new Map<string, string | undefined>()
-const multiRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
+let multiRect: { left: number; top: number; width: number; height: number } | null = null
 let multiDragStart: { x: number; y: number } | null = null
 type OverlayLike = {
   id: string
