@@ -174,7 +174,7 @@ function onPointerDown(event: PointerEvent): void {
   if (paneIdAt(event.clientY) !== 'candle_pane') return
   hostRect = host.value?.getBoundingClientRect() ?? null
   // 指针命中用户画线：放行给库内选择/拖拽，不启动框选——否则拖动已画线段会触发框选缩放（用户 D1 验收反馈）
-  if (isOverUserOverlay(event.clientX, event.clientY)) return
+  if (hitTestUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) return
   selecting = true
   computePlotBounds()
@@ -190,6 +190,12 @@ function onPointerMove(event: PointerEvent): void {
   if (rect) { rect.style.left = `${Math.min(selectStartX, current)}px`; rect.style.width = `${Math.abs(current - selectStartX)}px` }
 }
 function onPointerUp(event: PointerEvent): void {
+  // 中键释放：库的 mouseUp 处理只认左键（button=1 直接 return），补发合成左键 mouseup
+  // 让库完成滚动状态清理——否则残留的 _startScrollCoordinate 会让松键后的自由移动鼠标持续平移
+  if (event.button === 1 && chart) {
+    const container = host.value?.firstElementChild as HTMLElement | null
+    container?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY }))
+  }
   // 纵轴缩放拖拽结束（松手才算完成一次交互）
   if (axisScaleDrag) { axisScaleDrag = false; return }
   if (!selecting || !chart) return
@@ -229,26 +235,26 @@ function onPaneDblClick(event: MouseEvent): void {
 }
 // 用户画线命中判定：指针落在画线锚点（±8px）或线体（点到线段距离≤7px）上时，放行给库内选择/拖拽，
 // 不启动框选——否则拖动已画线段会与框选缩放重叠（用户 D1 验收反馈）。阈值与计划 D25 hover 加粗一致。
-// 仅检测用户画线（排除引擎标记与取点中的 overlay），点位经 convertToPixel 还原为像素后做几何判定。
-function isOverUserOverlay(clientX: number, clientY: number): boolean {
-  if (!chart || !hostRect) return false
+// 返回命中的 overlay 实例（库内同一实例，供按下状态补齐），未命中返回 null。
+function hitTestUserOverlay(clientX: number, clientY: number): { id: string; lock: boolean; isDrawing: () => boolean; startPressedMove: (point: { dataIndex?: number; value?: number }) => void } | null {
+  if (!chart || !hostRect) return null
   const x = clientX - hostRect.left
   const y = clientY - hostRect.top
   const engineMarks = new Set(['bsMark', 'costLine'])
-  const overlays = (chart.getOverlays() as Array<{ name: string; isDrawing: () => boolean; points: Array<{ timestamp?: number; value?: number }> }>)
+  const overlays = (chart.getOverlays() as unknown as Array<{ id: string; name: string; lock: boolean; isDrawing: () => boolean; startPressedMove: (point: { dataIndex?: number; value?: number }) => void; points: Array<{ timestamp?: number; value?: number }> }>)
     .filter(overlay => !engineMarks.has(overlay.name) && !overlay.isDrawing())
   for (const overlay of overlays) {
     const coords = overlay.points
       .filter(point => point.timestamp !== undefined && point.value !== undefined)
       .map(point => chart.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
-    for (const coordinate of coords) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return true
+    for (const coordinate of coords) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return overlay
     for (let i = 0; i + 1 < coords.length; i++) {
       const a = coords[i]; const b = coords[i + 1]
       if (!a || !b) continue
-      if (distanceToSegment(x, y, a, b) <= 7) return true
+      if (distanceToSegment(x, y, a, b) <= 7) return overlay
     }
   }
-  return false
+  return null
 }
 function distanceToSegment(px: number, py: number, a: { x: number; y: number }, b: { x: number; y: number }): number {
   const dx = b.x - a.x; const dy = b.y - a.y
@@ -263,8 +269,8 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView() })
-onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView() })
+onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
@@ -401,18 +407,53 @@ let axisScaleDragX = 0
 // host 捕获阶段拦截 mousedown：主图空白的按下＝框选接管，拦截库的 mousedown——
 // 否则库会在拖拽中对手动模式纵轴叠加纵向平移（框选时所有画线整体上下移动的根因）；
 // 轴上按下与画线命中照常放行给库（轴缩放起点/画线选中拖拽不受影响）
+// host 捕获阶段拦截 mousedown：
+// ① 中键按下＝平移整个主图：合成左键 mousedown 交给库的原生滚动管线（横向平移＋手动纵轴纵向平移），
+//    并 preventDefault 阻止浏览器中键自动滚动；
+// ② 主图空白的左键按下＝框选接管，拦截库的 mousedown——否则库会在拖拽中对手动模式纵轴叠加纵向平移
+//    （框选时所有画线整体上下移动的根因）；
+// ③ 轴上按下与画线命中照常放行给库（轴缩放起点/画线选中拖拽不受影响），画线模式的取点交互也不受影响
 function onHostMouseDown(event: MouseEvent): void {
+  // 中键合成的左键 mousedown：直接放行给库（跳过本拦截器与冒泡修补，避免自我拦截）
+  if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
+  if (event.button === 1) {
+    event.preventDefault()
+    const container = host.value?.firstElementChild as HTMLElement | null
+    const synthetic = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY })
+    ;(synthetic as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic = true
+    container?.dispatchEvent(synthetic)
+    return
+  }
   if (event.button !== 0 || !chart) return
   if (props.drawTool) return
   if (paneIdAt(event.clientY) !== 'candle_pane') return
   hostRect = host.value?.getBoundingClientRect() ?? null
-  if (isOverUserOverlay(event.clientX, event.clientY)) return
+  if (hitTestUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) {
     axisScaleDrag = true
     axisScaleDragX = event.clientX
     return
   }
   event.stopPropagation()
+}
+// host 冒泡阶段（库的 mousedown 处理之后）补齐按下状态：我们的命中门限 7px 比库内 figure 命中（2px）
+// 更宽，按下点落在 2~7px 环带时库未命中画线而进入滚动拖拽（整个主图跟随移动的根因）。此处检测到
+// "我们命中但库未命中"时，调 startPressedMove＋setPressedOverlayInfo 补齐，库的 pressedMouseMoveEvent
+// 管线随即整线拖拽（eventPressedOtherMove）并消费事件，滚动平移被自然抑制
+function onHostMouseDownBubble(event: MouseEvent): void {
+  if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
+  if (event.button !== 0 || !chart) return
+  if (props.drawTool) return
+  if (paneIdAt(event.clientY) !== 'candle_pane') return
+  const hit = hitTestUserOverlay(event.clientX, event.clientY)
+  if (!hit) return
+  const store = (chart as unknown as { getChartStore: () => { setPressedOverlayInfo: (info: Record<string, unknown>) => void; getPressedOverlayInfo: () => { overlay: unknown } | null } }).getChartStore()
+  if (store.getPressedOverlayInfo()?.overlay) return
+  hostRect = host.value?.getBoundingClientRect() ?? null
+  const coord = chart.convertFromPixel([{ x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }], { paneId: 'candle_pane' })[0]
+  if (!coord || coord.dataIndex === undefined) return
+  hit.startPressedMove({ dataIndex: coord.dataIndex, value: coord.value })
+  store.setPressedOverlayInfo({ paneId: 'candle_pane', overlay: hit, figureType: 'other', figureIndex: -1, figure: null })
 }
 // 拖拽中：把指针位置重路由为轴区域内的合成 mousemove（x 固定在按下点，y 用真实值——
 // 库的缩放公式按 pageY 比例计算），真实移动事件本身因 widget 名称不匹配已被库忽略

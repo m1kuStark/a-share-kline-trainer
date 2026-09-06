@@ -39,7 +39,7 @@ describe('M2 chart interaction contract', () => {
     // 画线模式下不启动框选：事件放行给 klinecharts overlay 取点交互
     expect(source).toMatch(/if \(props\.drawTool\) return/)
     // 指针命中用户画线（锚点±8px/线体≤7px）时同样放行：拖动已画线段不得触发框选（用户 D1 验收反馈）
-    expect(source).toMatch(/if \(isOverUserOverlay\(event\.clientX, event\.clientY\)\) return/)
+    expect(source).toMatch(/if \(hitTestUserOverlay\(event\.clientX, event\.clientY\)\) return/)
     expect(source).toMatch(/function distanceToSegment\(/)
     // 取点期间锁定平移；退出/切换前取消未完成取点（库不处理 Esc，取消自行实现）
     expect(source).toMatch(/function cancelDrawing\(\): void/)
@@ -99,6 +99,12 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/let axisScaleDrag = false/)
     expect(source).toMatch(/clientX: axisScaleDragX, clientY: event\.clientY/)
     expect(source).toMatch(/host\.value\.addEventListener\('mousedown', onHostMouseDown, true\)/)
+    // D3 验收反馈修复：7px 命中与库 2px figure 命中的落差补齐（按画线不再触发整图平移）＋中键拖拽平移整个主图
+    expect(source).toMatch(/function onHostMouseDownBubble\(event: MouseEvent\): void/)
+    expect(source).toMatch(/hit\.startPressedMove\(\{ dataIndex: coord\.dataIndex, value: coord\.value \}\)/)
+    expect(source).toMatch(/store\.setPressedOverlayInfo\(\{ paneId: 'candle_pane', overlay: hit, figureType: 'other', figureIndex: -1, figure: null \}\)/)
+    expect(source).toMatch(/if \(event\.button === 1\) \{/)
+    expect(source).toMatch(/function hitTestUserOverlay\(clientX: number, clientY: number\)/)
     // 虚线段长统一为库默认 [4,4]（编辑前后渲染一致）；字段改无关联 div 结构（label 点击区溢出修复）
     expect(themeSource).toMatch(/dashedValue: \[4, 4\]/)
     expect(source).toMatch(/dashedValue: editForm\.value\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)
