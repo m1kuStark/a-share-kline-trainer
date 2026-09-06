@@ -140,8 +140,8 @@ describe('M2 chart interaction contract', () => {
     // 选项卡式编辑面板：标签＝类型+中文序号，确定批量应用全部表单
     expect(source).toMatch(/class="edit-tabs"/)
     expect(source).toMatch(/label: labelBase \+ \(cnNums\[n - 1\] \?\? String\(n\)\)/)
-    // 批量删除：多选集合优先
-    expect(source).toMatch(/const ids = \[\.\.\.multiSelectedIds\.value\]/)
+    // 批量删除：多选集合非空＝只删集合（画线完成时库的选中态不追加，防误删第三条——journey 抓出）
+    expect(source).toMatch(/const ids = multiSelectedIds\.value\.length \? \[\.\.\.multiSelectedIds\.value\] : \(selectedOverlayId\.value \? \[selectedOverlayId\.value\] : \[\]\)/)
     // 多选模式关闭：清空多选集合与选中标识
     expect(source).toMatch(/watch\(\(\) => props\.multiSelect, on => \{ if \(!on\) clearMultiSelection\(\) \}\)/)
     const trainingSource = await readFile(trainingPath, 'utf8')

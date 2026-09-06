@@ -79,6 +79,8 @@ async function openTraining(page: import('@playwright/test').Page): Promise<void
 async function pickTool(page: import('@playwright/test').Page, label: string): Promise<void> {
   await page.locator('.draw-toolbar button', { hasText: label }).click()
   await expect(page.locator('.status-strip')).toContainText(`画线模式：${label}`)
+  // watch(props.drawTool) 的 createOverlay 在微任务中完成：等一拍再开始取点，避免工具激活竞态
+  await page.waitForTimeout(300)
 }
 
 async function drawTwoPointLine(page: import('@playwright/test').Page, x1: number, y1: number, x2: number, y2: number): Promise<void> {
@@ -209,4 +211,89 @@ test('Act3d 中键平移整图且松键不残留', async ({ page }) => {
   await page.waitForTimeout(300)
   const barsAfter = await page.getByText(/根（缩放 1~420）/).textContent()
   expect(barsAfter).toBe(barsBefore)
+})
+
+// ---------- Act 4：划线多选（Ctrl+点选/框选批量/批量删除/选项卡面板） ----------
+
+async function drawThreeLines(page: import('@playwright/test').Page): Promise<void> {
+  await pickTool(page, '线段')
+  await drawTwoPointLine(page, 380, 480, 680, 350)
+  await pickTool(page, '射线')
+  await drawTwoPointLine(page, 380, 570, 630, 430)
+  await pickTool(page, '直线')
+  await drawTwoPointLine(page, 450, 570, 650, 430)
+}
+
+test('Act4a 多选模式框选批量选中且不缩放', async ({ page }) => {
+  await openTraining(page)
+  await drawThreeLines(page)
+  // 进入多选模式
+  await page.locator('.draw-toolbar button', { hasText: '多选' }).click()
+  await expect(page.locator('.status-strip')).toContainText('多选模式')
+  // 框选扫过三条画线
+  await page.mouse.move(300, 300)
+  await page.mouse.down()
+  await page.mouse.move(800, 530, { steps: 6 })
+  await page.mouse.up()
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(3)
+  // K 线根数不变（框选不缩放）
+  const bars = await page.getByText(/根（缩放 1~420）/).textContent()
+  expect(bars).toContain('154 / 420')
+})
+
+test('Act4b Ctrl+点选累加与批量删除', async ({ page }) => {
+  await openTraining(page)
+  await drawThreeLines(page)
+  // Ctrl+点选两条（各自线体上的点：线段 x=500 处 y≈428，射线 x=500 处 y≈503）
+  await page.keyboard.down('Control')
+  await page.mouse.click(500, 428)
+  await page.waitForTimeout(200)
+  await page.mouse.click(500, 503)
+  await page.keyboard.up('Control')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(2)
+  // Delete 批量删除
+  await page.keyboard.press('Delete')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('segment') + (window as any).__trainerChart.overlayCount('rayLine') + (window as any).__trainerChart.overlayCount('straightLine'))).toBe(1)
+})
+
+test('Act4c 选项卡式批量编辑', async ({ page }) => {
+  await openTraining(page)
+  await drawThreeLines(page)
+  // 多选模式框选三条 → 右键其中一条 → 批量编辑
+  await page.locator('.draw-toolbar button', { hasText: '多选' }).click()
+  await page.mouse.move(300, 300)
+  await page.mouse.down()
+  await page.mouse.move(800, 530, { steps: 6 })
+  await page.mouse.up()
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(3)
+  await page.mouse.click(550, 406, { button: 'right' })
+  await page.getByText(/编辑划线（3）|编辑划线/).first().click()
+  // 选项卡面板：3 个标签（线段一/射线一/直线一）
+  await expect(page.locator('.edit-tabs button')).toHaveCount(3)
+  await expect(page.locator('.edit-tabs button')).toContainText(['线段一', '射线一', '直线一'])
+  // 逐标签改颜色 → 确定批量应用
+  const tabs = page.locator('.edit-tabs button')
+  for (let i = 0; i < 3; i++) {
+    await tabs.nth(i).click()
+    await page.locator('.overlay-edit-panel input[type="color"]').nth(0).fill(i === 0 ? '#ff4d4f' : i === 1 ? '#22c55e' : '#3b82f6')
+  }
+  await page.getByRole('button', { name: '确定' }).click()
+  await page.waitForTimeout(400)
+  // 批量应用后多选清除
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(0)
+})
+
+// ---------- Act 6：主题切换 ----------
+
+test('Act6 主题切换持久化', async ({ page }) => {
+  await openTraining(page)
+  // 默认深色
+  expect(await page.evaluate(() => document.body.classList.contains('dark'))).toBe(true)
+  // 切浅色
+  await page.getByRole('button', { name: /浅色/ }).click()
+  expect(await page.evaluate(() => document.body.classList.contains('dark'))).toBe(false)
+  expect(await page.evaluate(() => localStorage.getItem('trainer_theme'))).toBe('light')
+  // 切回深色
+  await page.getByRole('button', { name: /深色/ }).click()
+  expect(await page.evaluate(() => document.body.classList.contains('dark'))).toBe(true)
 })
