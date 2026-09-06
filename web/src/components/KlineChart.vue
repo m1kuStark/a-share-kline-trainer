@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { init, type Chart, type DataLoadMore, type KLineData } from 'klinecharts'
 import '../overlays'
 import '../indicators'
-import { chartStyles, theme } from '../theme'
+import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import type { Bar, Timeframe, TradeView } from '../api'
 
 const props = withDefaults(defineProps<{
@@ -259,11 +259,12 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('dblclick', onPaneDblClick); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); feedData(); resetView() })
-onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); chart?.destroy(); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView() })
+onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
+// D2：所有用户画线挂 onSelected/onDeselected（Delete 删除依据）与 onRightClick（接管库默认"右键即删除"）。
 function cancelDrawing(): void {
   if (!chart) return
   const drawing = (chart.getOverlays() as Array<{ id: string; isDrawing?: () => boolean }>).find(o => o.isDrawing?.())
@@ -274,19 +275,118 @@ watch(() => props.drawTool, tool => {
   cancelDrawing()
   if (tool) {
     chart.setScrollEnabled(false)
-    chart.createOverlay({ name: tool, mode: 'normal', onDrawEnd: () => emit('toolChange', null) })
+    chart.createOverlay({
+      name: tool,
+      mode: 'normal',
+      onDrawEnd: () => emit('toolChange', null),
+      onSelected: event => { selectedOverlayId.value = event.overlay.id },
+      onDeselected: event => { if (selectedOverlayId.value === event.overlay.id) selectedOverlayId.value = null },
+      onRightClick: event => {
+        event.preventDefault?.()
+        // 取点中右键＝取消绘制；取消后取点交互已随 overlay 移除终止，须同步退出画线模式避免死态
+        if (event.overlay.isDrawing()) { cancelDrawing(); emit('toolChange', null); return }
+        openCtxMenu(event.overlay.id, event.x, event.y)
+      },
+    })
   } else {
     chart.setScrollEnabled(true)
   }
 })
+
+// D2 右键菜单与编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七）。
+// 库默认行为是"右键命中画线即删除"，已在 createOverlay 的 onRightClick 里 preventDefault 接管。
+const ctxMenu = ref<{ x: number; y: number; overlayId: string } | null>(null)
+const editPanel = ref<{ x: number; y: number; overlayId: string } | null>(null)
+const selectedOverlayId = ref<string | null>(null)
+const editForm = ref({ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' as 'solid' | 'dashed' | 'dotted', values: [] as number[] })
+function clampToHost(value: number, size: number, limit: number): number { return Math.max(4, Math.min(value, Math.max(4, limit - size - 4))) }
+function closePanels(): void { ctxMenu.value = null; editPanel.value = null }
+function openCtxMenu(overlayId: string, x: number, y: number): void {
+  if (!host.value) return
+  const rect = host.value.getBoundingClientRect()
+  ctxMenu.value = { overlayId, x: clampToHost(x, 150, rect.width), y: clampToHost(y, 92, rect.height) }
+  editPanel.value = null
+}
+function removeViaMenu(): void {
+  if (!chart || !ctxMenu.value) return
+  const id = ctxMenu.value.overlayId
+  if (selectedOverlayId.value === id) selectedOverlayId.value = null
+  chart.removeOverlay({ id })
+  closePanels()
+}
+function openEditPanel(): void {
+  if (!chart || !ctxMenu.value) return
+  const { overlayId, x, y } = ctxMenu.value
+  const overlay = chart.getOverlays({ id: overlayId })[0]
+  if (!overlay) { closePanels(); return }
+  const line = (overlay.styles?.line ?? {}) as { color?: string; size?: number; style?: string; dashedValue?: number[] }
+  // 库内像素→价格换算产生长浮点，回读按价格精度（两位小数）取整
+  editForm.value = {
+    color: line.color ?? DRAW_DEFAULT_COLOR,
+    size: line.size ?? 1,
+    style: (line.style ?? 'dashed') === 'dashed' ? ((line.dashedValue?.[0] ?? 4) <= 3 ? 'dotted' : 'dashed') : 'solid',
+    values: overlay.points.map(point => Number((point.value ?? 0).toFixed(2))),
+  }
+  if (!host.value) return
+  const rect = host.value.getBoundingClientRect()
+  editPanel.value = { overlayId, x: clampToHost(x, 214, rect.width), y: clampToHost(y, 300, rect.height) }
+  ctxMenu.value = null
+}
+function applyEdit(): void {
+  if (!chart || !editPanel.value) return
+  const id = editPanel.value.overlayId
+  const overlay = chart.getOverlays({ id })[0]
+  if (overlay) {
+    const line: { color: string; size: number; style: 'solid' | 'dashed'; dashedValue?: number[] } = { color: editForm.value.color, size: editForm.value.size, style: editForm.value.style === 'solid' ? 'solid' : 'dashed' }
+    if (editForm.value.style !== 'solid') line.dashedValue = editForm.value.style === 'dotted' ? [2, 4] : [6, 4]
+    const points = overlay.points.map((point, index) => ({ ...point, value: editForm.value.values[index] }))
+    chart.overrideOverlay({ id, styles: { line }, points })
+  }
+  closePanels()
+}
+// Delete 键删除选中画线（选中态来自 onSelected/onDeselected；引擎标记不可选中、不受影响）
+function deleteSelected(): boolean {
+  if (!chart || !selectedOverlayId.value) return false
+  const id = selectedOverlayId.value
+  selectedOverlayId.value = null
+  closePanels()
+  return chart.removeOverlay({ id })
+}
+// 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
+function onPanelKeydown(event: KeyboardEvent): void {
+  if (!ctxMenu.value && !editPanel.value) return
+  if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closePanels(); return }
+  if (event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key) || event.key === 'Delete') { event.preventDefault(); event.stopPropagation() }
+}
+// 点击菜单/面板以外区域时关闭（capture 阶段，先于其他处理）
+function onGlobalPointerDown(event: PointerEvent): void {
+  if (!ctxMenu.value && !editPanel.value) return
+  const target = event.target as HTMLElement | null
+  if (target?.closest('.ctx-menu, .overlay-edit-panel')) return
+  closePanels()
+}
+function suppressNativeContextMenu(event: MouseEvent): void { event.preventDefault() }
 watch(() => props.bars, feedData); watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
-defineExpose({ zoomBy, moveCrosshair, resetView })
+defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
 </script>
 
 <template>
   <div class="chart-wrap">
     <div ref="host" class="chart-host"></div>
     <div class="select-rect"></div>
+    <!-- 右键菜单/编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七） -->
+    <div v-if="ctxMenu" class="ctx-menu" :style="{ left: `${ctxMenu.x}px`, top: `${ctxMenu.y}px` }">
+      <button @click="openEditPanel">编辑划线</button>
+      <button @click="removeViaMenu">删除画线</button>
+    </div>
+    <div v-if="editPanel" class="overlay-edit-panel" :style="{ left: `${editPanel.x}px`, top: `${editPanel.y}px` }">
+      <div class="panel-title">编辑划线</div>
+      <label>颜色<input v-model="editForm.color" type="color"></label>
+      <label>粗细<select v-model.number="editForm.size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></label>
+      <label>样式<select v-model="editForm.style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></label>
+      <label v-for="(_, i) in editForm.values" :key="i">端点{{ i + 1 }}价位<input v-model.number="editForm.values[i]" type="number" step="0.01"></label>
+      <div class="panel-actions"><button @click="applyEdit">确定</button><button @click="closePanels">取消</button></div>
+    </div>
   </div>
 </template>
 
@@ -294,4 +394,22 @@ defineExpose({ zoomBy, moveCrosshair, resetView })
 .chart-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; }
 .chart-host { width: 100%; height: 100%; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
+.ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }
+.ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: 12px; color: #334155; border-radius: 4px; }
+.ctx-menu button:hover { background: #eef2f7; }
+.overlay-edit-panel { position: absolute; z-index: 8; width: 208px; padding: 12px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); display: grid; gap: 8px; font-size: 12px; color: #334155; }
+.overlay-edit-panel .panel-title { font-weight: 650; }
+.overlay-edit-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.overlay-edit-panel input[type='number'], .overlay-edit-panel select { flex: 1; min-width: 0; height: 26px; border: 1px solid #d5dde7; border-radius: 3px; padding: 0 6px; background: #fff; color: #233044; }
+.overlay-edit-panel input[type='color'] { width: 40px; height: 26px; padding: 1px; border: 1px solid #d5dde7; border-radius: 3px; background: #fff; }
+.overlay-edit-panel .panel-actions { display: flex; gap: 8px; margin-top: 2px; }
+.overlay-edit-panel .panel-actions button { flex: 1; height: 28px; border: 1px solid #d7dfe7; border-radius: 3px; background: #fafcfd; color: #5c7187; }
+.overlay-edit-panel .panel-actions button:first-child { border-color: #2e8191; background: #eaf5f6; color: #245a72; font-weight: 600; }
+body.dark .ctx-menu, body.dark .overlay-edit-panel { background: #1b2836; border-color: #2c3f57; color: #d5e0ec; }
+body.dark .ctx-menu button { color: #c9d6e4; }
+body.dark .ctx-menu button:hover { background: #243550; }
+body.dark .overlay-edit-panel input[type='number'], body.dark .overlay-edit-panel select { background: #223349; border-color: #32465f; color: #d5e0ec; }
+body.dark .overlay-edit-panel input[type='color'] { background: #223349; border-color: #32465f; }
+body.dark .overlay-edit-panel .panel-actions button { background: #223349; border-color: #32465f; color: #aebfd2; }
+body.dark .overlay-edit-panel .panel-actions button:first-child { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
 </style>

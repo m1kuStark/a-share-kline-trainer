@@ -61,6 +61,35 @@ describe('M2 chart interaction contract', () => {
     expect(source).not.toMatch(/absoluteTexts|__absoluteText/)
   })
 
+  it('replaces the library right-click delete with an edit/delete context menu and supports Delete-key removal (D2)', async () => {
+    const source = await readFile(chartPath, 'utf8')
+    // 右键接管：preventDefault 抑制库默认"右键即删除"，改为弹出菜单；取点中右键＝取消绘制
+    expect(source).toMatch(/onRightClick: event => \{/)
+    expect(source).toMatch(/event\.preventDefault\?\.\(\)/)
+    expect(source).toMatch(/if \(event\.overlay\.isDrawing\(\)\) \{ cancelDrawing\(\); emit\('toolChange', null\); return \}/)
+    expect(source).toMatch(/编辑划线/)
+    expect(source).toMatch(/删除画线/)
+    // 编辑面板四类参数：颜色/粗细/样式/端点价位（不编辑横坐标），确定走 overrideOverlay
+    expect(source).toMatch(/type: 'color'|type="color"/)
+    expect(source).toMatch(/端点\{\{ i \+ 1 \}\}价位/)
+    expect(source).toMatch(/value="solid">实线/)
+    expect(source).toMatch(/overrideOverlay\(\{ id, styles: \{ line \}, points \}\)/)
+    // Delete 删除选中画线（选中态由 onSelected/onDeselected 跟踪）
+    expect(source).toMatch(/function deleteSelected\(\): boolean/)
+    expect(source).toMatch(/onSelected: event => \{ selectedOverlayId\.value = event\.overlay\.id \}/)
+    // 菜单/面板锚定图表宿主层内（口径修订七），打开期间拦截训练热键
+    expect(source).toMatch(/function onGlobalPointerDown\(event: PointerEvent\): void/)
+    expect(source).toMatch(/function onPanelKeydown\(event: KeyboardEvent\): void/)
+    const trainingSource = await readFile(trainingPath, 'utf8')
+    expect(trainingSource).toMatch(/event\.key === 'Delete'/)
+    expect(trainingSource).toMatch(/deleteSelected\(\)/)
+    // 默认样式（用户 D2 验收反馈）：1px 虚线；端点价位回读按价格两位小数取整
+    const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
+    expect(themeSource).toMatch(/line: \{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' \}/)
+    expect(source).toMatch(/editForm = ref\(\{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' as 'solid' \| 'dashed' \| 'dotted', values: \[\] as number\[\] \}\)/)
+    expect(source).toMatch(/Number\(\(point\.value \?\? 0\)\.toFixed\(2\)\)/)
+  })
+
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {
     const source = await readFile(trainingPath, 'utf8')
     expect(source).toMatch(/ArrowUp[\s\S]{0,120}?zoomBy\(1 \/ 1\.3\)/)

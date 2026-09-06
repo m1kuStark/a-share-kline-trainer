@@ -144,6 +144,8 @@ function onKeydown(event: KeyboardEvent): void {
     if (event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key)) { event.preventDefault(); return }
   }
   if (event.code === 'Space') { event.preventDefault(); void advance() }
+  // Delete 删除选中的用户画线（引擎标记不可选中、不受影响）
+  if (event.key === 'Delete') { event.preventDefault(); chartRef.value?.deleteSelected() }
   // 对齐通达信模拟训练习惯：B 买入、S 卖出（与按钮同一撮合路径）
   if (event.key === 'b' || event.key === 'B') { event.preventDefault(); void trade('buy') }
   if (event.key === 's' || event.key === 'S') { event.preventDefault(); void trade('sell') }
