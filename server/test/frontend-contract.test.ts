@@ -105,6 +105,10 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/store\.setPressedOverlayInfo\(\{ paneId: 'candle_pane', overlay: hit, figureType: 'other', figureIndex: -1, figure: null \}\)/)
     expect(source).toMatch(/if \(event\.button === 1\) \{/)
     expect(source).toMatch(/function hitTestUserOverlay\(clientX: number, clientY: number\)/)
+    // D3 验收反馈修复：中键纵向平移不受 Space/Home 限制（强制手动模式）＋中键不拖画线（临时锁定）＋射线/直线命中延伸
+    expect(source).toMatch(/forEach\(axis => axis\.setAutoCalcTickFlag\(false\)\)/)
+    expect(source).toMatch(/userOverlays\.forEach\(overlay => \{ overlay\.lock = true \}\)/)
+    expect(source).toMatch(/overlay\.name === 'rayLine' \|\| overlay\.name === 'straightLine'/)
     // 虚线段长统一为库默认 [4,4]（编辑前后渲染一致）；字段改无关联 div 结构（label 点击区溢出修复）
     expect(themeSource).toMatch(/dashedValue: \[4, 4\]/)
     expect(source).toMatch(/dashedValue: editForm\.value\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)

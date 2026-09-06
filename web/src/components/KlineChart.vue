@@ -244,12 +244,31 @@ function hitTestUserOverlay(clientX: number, clientY: number): { id: string; loc
   const overlays = (chart.getOverlays() as unknown as Array<{ id: string; name: string; lock: boolean; isDrawing: () => boolean; startPressedMove: (point: { dataIndex?: number; value?: number }) => void; points: Array<{ timestamp?: number; value?: number }> }>)
     .filter(overlay => !engineMarks.has(overlay.name) && !overlay.isDrawing())
   for (const overlay of overlays) {
-    const coords = overlay.points
+    const pts = overlay.points
       .filter(point => point.timestamp !== undefined && point.value !== undefined)
       .map(point => chart.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
-    for (const coordinate of coords) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return overlay
-    for (let i = 0; i + 1 < coords.length; i++) {
-      const a = coords[i]; const b = coords[i + 1]
+    if (!pts.length) continue
+    // 锚点命中（±8px，始终用真实端点）
+    for (const coordinate of pts) if (coordinate && Math.hypot(coordinate.x - x, coordinate.y - y) <= 8) return overlay
+    // 线体命中：射线/直线的命中几何按图元实际覆盖范围延伸——库内 figure attrs 已延长到面板边缘，
+    // 若仍按两端点线段判定，延伸段无法选中（用户 D3 验收反馈）
+    let linePts = pts
+    if ((overlay.name === 'rayLine' || overlay.name === 'straightLine') && pts.length >= 2) {
+      const a = pts[0]; const b = pts[1]
+      if (overlay.name === 'rayLine') {
+        // 射线：从第一锚点出发穿过第二锚点无限延伸，命中几何只向延伸方向放开
+        linePts = [a, { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 }]
+      }
+      else {
+        // 直线：两端无限延伸
+        linePts = [
+          { x: a.x + (a.x - b.x) * 50, y: a.y + (a.y - b.y) * 50 },
+          { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 },
+        ]
+      }
+    }
+    for (let i = 0; i + 1 < linePts.length; i++) {
+      const a = linePts[i]; const b = linePts[i + 1]
       if (!a || !b) continue
       if (distanceToSegment(x, y, a, b) <= 7) return overlay
     }
@@ -418,10 +437,18 @@ function onHostMouseDown(event: MouseEvent): void {
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
   if (event.button === 1) {
     event.preventDefault()
+    if (!chart) return
+    // 纵轴强制进入手动模式：库仅对手动模式纵轴记录值域基准并随拖拽纵向平移，
+    // 否则自动模式下（Space/Home 之后）中键拖拽只有横向生效（用户 D3 验收反馈）
+    ;(chart.getYAxes({ paneId: 'candle_pane' }) as unknown as Array<{ setAutoCalcTickFlag: (flag: boolean) => void }>).forEach(axis => axis.setAutoCalcTickFlag(false))
+    // 中键只做画面平移：临时锁定用户画线，让合成按下不命中画线拖拽（用户 D3 验收反馈：功能重叠）
+    const userOverlays = (chart.getOverlays() as unknown as Array<{ name: string; lock: boolean; isDrawing: () => boolean }>).filter(overlay => overlay.name !== 'bsMark' && overlay.name !== 'costLine')
+    userOverlays.forEach(overlay => { overlay.lock = true })
     const container = host.value?.firstElementChild as HTMLElement | null
     const synthetic = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY })
     ;(synthetic as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic = true
     container?.dispatchEvent(synthetic)
+    userOverlays.forEach(overlay => { overlay.lock = false })
     return
   }
   if (event.button !== 0 || !chart) return
