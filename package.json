@@ -17,7 +17,9 @@
     "test": "vitest run --config server/vitest.config.ts",
     "test:watch": "vitest --config server/vitest.config.ts",
     "verify:m1": "powershell -ExecutionPolicy Bypass -File scripts/verify-m1.ps1",
-    "verify:m2": "npm test && npm run build && npx --no-install tsx scripts/verify-m2.ts"
+    "verify:m2": "npm test && npm run build && npx --no-install tsx scripts/verify-m2.ts",
+    "build:journey": "npm run build:server && vite build --config web/vite.config.ts --mode journey",
+    "journey": "npm run build:journey && npx playwright test"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
@@ -28,6 +30,7 @@
     "vue": "^3.5.42"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.3.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "concurrently": "^9.2.1",

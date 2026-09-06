@@ -5,3 +5,5 @@ web/dist/
 .env
 *.log
 /output/
+test-results/
+playwright-report/
