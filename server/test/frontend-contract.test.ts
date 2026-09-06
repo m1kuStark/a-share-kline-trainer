@@ -117,9 +117,10 @@ describe('M2 chart interaction contract', () => {
   })
 
   it('registers the ray tool in the drawing registry (D3)', async () => {
-    // D3：射线工具入注册表（第一锚点固定、过第二点无限延伸，库内置 rayLine）
+    // D3/D4：射线与直线工具入注册表（库内置 rayLine/straightLine；命中几何延伸见 hitTestUserOverlay）
     const drawToolsSource = await readFile(new URL('../../web/src/drawTools.ts', import.meta.url), 'utf8')
     expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'straightLine', label: '直线' \}/)
   })
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {
