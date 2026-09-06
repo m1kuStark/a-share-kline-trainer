@@ -358,6 +358,28 @@ function onPanelKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closePanels(); return }
   if (event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key) || event.key === 'Delete') { event.preventDefault(); event.stopPropagation() }
 }
+// D2 补丁：编辑划线面板可拖拽（按住标题栏移动，避免遮挡 K 线；全程钳制在图表宿主内，口径修订七）。
+// 标题栏 setPointerCapture 后拖动中 pointermove 持续派发到标题元素，指针移出面板也不丢。
+const panelDragging = ref(false)
+const panelDragOffset = { x: 0, y: 0 }
+function onPanelTitlePointerDown(event: PointerEvent): void {
+  if (!editPanel.value || !host.value) return
+  const rect = host.value.getBoundingClientRect()
+  panelDragOffset.x = event.clientX - rect.left - editPanel.value.x
+  panelDragOffset.y = event.clientY - rect.top - editPanel.value.y
+  panelDragging.value = true
+  ;(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
+}
+function onPanelTitlePointerMove(event: PointerEvent): void {
+  if (!panelDragging.value || !editPanel.value || !host.value) return
+  const rect = host.value.getBoundingClientRect()
+  editPanel.value = {
+    ...editPanel.value,
+    x: clampToHost(event.clientX - rect.left - panelDragOffset.x, 214, rect.width),
+    y: clampToHost(event.clientY - rect.top - panelDragOffset.y, 300, rect.height),
+  }
+}
+function onPanelTitlePointerUp(): void { panelDragging.value = false }
 // 点击菜单/面板以外区域时关闭（capture 阶段，先于其他处理）
 function onGlobalPointerDown(event: PointerEvent): void {
   if (!ctxMenu.value && !editPanel.value) return
@@ -380,7 +402,7 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
       <button @click="removeViaMenu">删除画线</button>
     </div>
     <div v-if="editPanel" class="overlay-edit-panel" :style="{ left: `${editPanel.x}px`, top: `${editPanel.y}px` }">
-      <div class="panel-title">编辑划线</div>
+      <div class="panel-title" title="按住标题栏拖动面板" @pointerdown="onPanelTitlePointerDown" @pointermove="onPanelTitlePointerMove" @pointerup="onPanelTitlePointerUp">编辑划线</div>
       <label>颜色<input v-model="editForm.color" type="color"></label>
       <label>粗细<select v-model.number="editForm.size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></label>
       <label>样式<select v-model="editForm.style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></label>
@@ -398,7 +420,7 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
 .ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: 12px; color: #334155; border-radius: 4px; }
 .ctx-menu button:hover { background: #eef2f7; }
 .overlay-edit-panel { position: absolute; z-index: 8; width: 208px; padding: 12px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); display: grid; gap: 8px; font-size: 12px; color: #334155; }
-.overlay-edit-panel .panel-title { font-weight: 650; }
+.overlay-edit-panel .panel-title { font-weight: 650; cursor: move; user-select: none; touch-action: none; }
 .overlay-edit-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .overlay-edit-panel input[type='number'], .overlay-edit-panel select { flex: 1; min-width: 0; height: 26px; border: 1px solid #d5dde7; border-radius: 3px; padding: 0 6px; background: #fff; color: #233044; }
 .overlay-edit-panel input[type='color'] { width: 40px; height: 26px; padding: 1px; border: 1px solid #d5dde7; border-radius: 3px; background: #fff; }
