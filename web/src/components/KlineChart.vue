@@ -183,11 +183,15 @@ function onPointerDown(event: PointerEvent): void {
   const rect = selectionRect(); if (rect) { rect.style.left = `${selectStartX}px`; rect.style.width = '0px'; rect.style.display = 'block'; if (plotBounds) { rect.style.top = `${plotBounds.top}px`; rect.style.height = `${Math.max(0, plotBounds.bottom - plotBounds.top)}px` } }
 }
 function onPointerMove(event: PointerEvent): void {
+  // 纵轴缩放拖拽中：把指针位置重路由回轴区域，库原生缩放持续生效（与框选互斥）
+  if (axisScaleDrag) { dispatchSyntheticAxisMove(event); return }
   if (!selecting) return
   const current = hostX(event.clientX); const rect = selectionRect()
   if (rect) { rect.style.left = `${Math.min(selectStartX, current)}px`; rect.style.width = `${Math.abs(current - selectStartX)}px` }
 }
 function onPointerUp(event: PointerEvent): void {
+  // 纵轴缩放拖拽结束（松手才算完成一次交互）
+  if (axisScaleDrag) { axisScaleDrag = false; return }
   if (!selecting || !chart) return
   selecting = false; chart.setScrollEnabled(true)
   const rect = selectionRect(); if (rect) rect.style.display = 'none'
@@ -259,8 +263,8 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView() })
-onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView() })
+onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
@@ -337,8 +341,7 @@ function applyEdit(): void {
   const id = editPanel.value.overlayId
   const overlay = chart.getOverlays({ id })[0]
   if (overlay) {
-    const line: { color: string; size: number; style: 'solid' | 'dashed'; dashedValue?: number[] } = { color: editForm.value.color, size: editForm.value.size, style: editForm.value.style === 'solid' ? 'solid' : 'dashed' }
-    if (editForm.value.style !== 'solid') line.dashedValue = editForm.value.style === 'dotted' ? [2, 4] : [6, 4]
+    const line = { color: editForm.value.color, size: editForm.value.size, style: (editForm.value.style === 'solid' ? 'solid' : 'dashed') as 'solid' | 'dashed', dashedValue: editForm.value.style === 'dotted' ? [2, 4] : [4, 4] }
     const points = overlay.points.map((point, index) => ({ ...point, value: editForm.value.values[index] }))
     chart.overrideOverlay({ id, styles: { line }, points })
   }
@@ -388,6 +391,36 @@ function onGlobalPointerDown(event: PointerEvent): void {
   closePanels()
 }
 function suppressNativeContextMenu(event: MouseEvent): void { event.preventDefault() }
+
+// D3 验收反馈修复：纵轴拖拽缩放持续到松手。
+// 库按 widget 名称路由拖拽事件：轴上起拖后指针移入主图即"中断"（名称不匹配不再分发）。
+// 补丁＝轴上按下后，把真实指针的纵向位置重路由为"轴区域内"的合成 mousemove，
+// 让库的原生缩放管线（_processYAxisScalingEvent，含其自身重绘）持续工作，直到松手。
+let axisScaleDrag = false
+let axisScaleDragX = 0
+// host 捕获阶段拦截 mousedown：主图空白的按下＝框选接管，拦截库的 mousedown——
+// 否则库会在拖拽中对手动模式纵轴叠加纵向平移（框选时所有画线整体上下移动的根因）；
+// 轴上按下与画线命中照常放行给库（轴缩放起点/画线选中拖拽不受影响）
+function onHostMouseDown(event: MouseEvent): void {
+  if (event.button !== 0 || !chart) return
+  if (props.drawTool) return
+  if (paneIdAt(event.clientY) !== 'candle_pane') return
+  hostRect = host.value?.getBoundingClientRect() ?? null
+  if (isOverUserOverlay(event.clientX, event.clientY)) return
+  if (isOverPriceAxis(event.clientX, event.clientY)) {
+    axisScaleDrag = true
+    axisScaleDragX = event.clientX
+    return
+  }
+  event.stopPropagation()
+}
+// 拖拽中：把指针位置重路由为轴区域内的合成 mousemove（x 固定在按下点，y 用真实值——
+// 库的缩放公式按 pageY 比例计算），真实移动事件本身因 widget 名称不匹配已被库忽略
+function dispatchSyntheticAxisMove(event: PointerEvent): void {
+  const container = host.value?.firstElementChild as HTMLElement | null
+  if (!container) return
+  container.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: axisScaleDragX, clientY: event.clientY }))
+}
 watch(() => props.bars, feedData); watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
 </script>
@@ -403,10 +436,10 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
     </div>
     <div v-if="editPanel" class="overlay-edit-panel" :style="{ left: `${editPanel.x}px`, top: `${editPanel.y}px` }">
       <div class="panel-title" title="按住标题栏拖动面板" @pointerdown="onPanelTitlePointerDown" @pointermove="onPanelTitlePointerMove" @pointerup="onPanelTitlePointerUp">编辑划线</div>
-      <label>颜色<input v-model="editForm.color" type="color"></label>
-      <label>粗细<select v-model.number="editForm.size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></label>
-      <label>样式<select v-model="editForm.style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></label>
-      <label v-for="(_, i) in editForm.values" :key="i">端点{{ i + 1 }}价位<input v-model.number="editForm.values[i]" type="number" step="0.01"></label>
+      <div class="field-row"><span class="field-label">颜色</span><input v-model="editForm.color" type="color"></div>
+      <div class="field-row"><span class="field-label">粗细</span><select v-model.number="editForm.size"><option v-for="s in [1, 2, 3, 4, 5]" :key="s" :value="s">{{ s }}px</option></select></div>
+      <div class="field-row"><span class="field-label">样式</span><select v-model="editForm.style"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></div>
+      <div v-for="(_, i) in editForm.values" :key="i" class="field-row"><span class="field-label">端点{{ i + 1 }}价位</span><input v-model.number="editForm.values[i]" type="number" step="0.01"></div>
       <div class="panel-actions"><button @click="applyEdit">确定</button><button @click="closePanels">取消</button></div>
     </div>
   </div>
@@ -421,9 +454,11 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
 .ctx-menu button:hover { background: #eef2f7; }
 .overlay-edit-panel { position: absolute; z-index: 8; width: 208px; padding: 12px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); display: grid; gap: 8px; font-size: 12px; color: #334155; }
 .overlay-edit-panel .panel-title { font-weight: 650; cursor: move; user-select: none; touch-action: none; }
-.overlay-edit-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.overlay-edit-panel .field-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.overlay-edit-panel .field-label { flex: 0 0 auto; }
 .overlay-edit-panel input[type='number'], .overlay-edit-panel select { flex: 1; min-width: 0; height: 26px; border: 1px solid #d5dde7; border-radius: 3px; padding: 0 6px; background: #fff; color: #233044; }
 .overlay-edit-panel input[type='color'] { width: 40px; height: 26px; padding: 1px; border: 1px solid #d5dde7; border-radius: 3px; background: #fff; }
+.overlay-edit-panel input[type='number']:hover, .overlay-edit-panel select:hover { border-color: #94bec5; }
 .overlay-edit-panel .panel-actions { display: flex; gap: 8px; margin-top: 2px; }
 .overlay-edit-panel .panel-actions button { flex: 1; height: 28px; border: 1px solid #d7dfe7; border-radius: 3px; background: #fafcfd; color: #5c7187; }
 .overlay-edit-panel .panel-actions button:first-child { border-color: #2e8191; background: #eaf5f6; color: #245a72; font-weight: 600; }

@@ -7,4 +7,5 @@ export interface DrawTool {
 
 export const DRAW_TOOLS: DrawTool[] = [
   { name: 'segment', label: '线段' },
+  { name: 'rayLine', label: '射线' },
 ]

@@ -85,9 +85,31 @@ describe('M2 chart interaction contract', () => {
     expect(trainingSource).toMatch(/deleteSelected\(\)/)
     // 默认样式（用户 D2 验收反馈）：1px 虚线；端点价位回读按价格两位小数取整
     const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
-    expect(themeSource).toMatch(/line: \{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' \}/)
+    expect(themeSource).toMatch(/line: \{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed', dashedValue: \[4, 4\] \}/)
     expect(source).toMatch(/editForm = ref\(\{ color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' as 'solid' \| 'dashed' \| 'dotted', values: \[\] as number\[\] \}\)/)
     expect(source).toMatch(/Number\(\(point\.value \?\? 0\)\.toFixed\(2\)\)/)
+    // D2 补丁：编辑面板标题栏可拖拽（避免遮挡 K 线），拖动中钳制在图表宿主内
+    expect(source).toMatch(/function onPanelTitlePointerDown\(event: PointerEvent\): void/)
+    expect(source).toMatch(/setPointerCapture\?\.\(event\.pointerId\)/)
+    expect(source).toMatch(/panel-title" title="按住标题栏拖动面板"/)
+    // D3 验收反馈修复：纵轴缩放自研接管——轴上起拖持续到松手（不随指针移出轴中断），
+    // 且框选拖拽不再叠加库对手动纵轴的纵向平移（画线整体上下移动的根因）
+    expect(source).toMatch(/function onHostMouseDown\(event: MouseEvent\): void/)
+    expect(source).toMatch(/function dispatchSyntheticAxisMove\(event: PointerEvent\): void/)
+    expect(source).toMatch(/let axisScaleDrag = false/)
+    expect(source).toMatch(/clientX: axisScaleDragX, clientY: event\.clientY/)
+    expect(source).toMatch(/host\.value\.addEventListener\('mousedown', onHostMouseDown, true\)/)
+    // 虚线段长统一为库默认 [4,4]（编辑前后渲染一致）；字段改无关联 div 结构（label 点击区溢出修复）
+    expect(themeSource).toMatch(/dashedValue: \[4, 4\]/)
+    expect(source).toMatch(/dashedValue: editForm\.value\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)
+    expect(source).toMatch(/class="field-row"/)
+    expect(source).not.toMatch(/<label/)
+  })
+
+  it('registers the ray tool in the drawing registry (D3)', async () => {
+    // D3：射线工具入注册表（第一锚点固定、过第二点无限延伸，库内置 rayLine）
+    const drawToolsSource = await readFile(new URL('../../web/src/drawTools.ts', import.meta.url), 'utf8')
+    expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线' \}/)
   })
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {

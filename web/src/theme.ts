@@ -101,9 +101,10 @@ export function chartStyles(t: UiTheme) {
       horizontal: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
       vertical: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
     },
-    // 用户画线全局默认样式（用户 D2 验收反馈）：1px 虚线、统一黄色；选中/激活锚点同色
+    // 用户画线全局默认样式（用户 D2 验收反馈）：1px 虚线、统一黄色；选中/激活锚点同色。
+    // dashedValue 显式固定为库默认 [4,4]，与编辑应用时的值保持同一常量（避免编辑前后虚线段长不一致）
     overlay: {
-      line: { color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed' },
+      line: { color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed', dashedValue: [4, 4] },
       point: {
         color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5,
         activeColor: DRAW_DEFAULT_COLOR, activeBorderColor: '#ffffff', activeBorderSize: 1, activeRadius: 6,
