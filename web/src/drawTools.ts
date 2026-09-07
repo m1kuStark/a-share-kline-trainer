@@ -9,4 +9,7 @@ export const DRAW_TOOLS: DrawTool[] = [
   { name: 'segment', label: '线段' },
   { name: 'rayLine', label: '射线' },
   { name: 'straightLine', label: '直线' },
+  { name: 'horizontalStraightLine', label: '水平直线' },
+  { name: 'horizontalSegment', label: '水平线段' },
+  { name: 'horizontalRayLine', label: '水平射线' },
 ]

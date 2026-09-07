@@ -43,12 +43,25 @@
 - 前置：`npm run build:journey`（--mode journey 构建，注入 window.__trainerChart 测试钩子；生产构建零钩子。注意：`import.meta.env.DEV` 在 build 时恒 false，钩子条件用 `MODE === 'journey'`）。
 - 运行：`npm run journey`（= build:journey + playwright test；global-setup 自动 spawn 隔离服务端：TRAINER_DB=临时库、PORT=8791；端口被占用时直接报错——清理孤儿进程后重跑；teardown 清理）。
 - 失败：自动附截图与 trace（test-results/），retries 1。
-- 断言纪律：优先 `__trainerChart` 状态断言（overlayCount/selectedCount/mode/yRange/hitTest）；截图仅存档不比对；禁止用 dispatchEvent 合成事件验证交互（与真实事件不同构，历史教训）。
+- 断言纪律：优先 `__trainerChart` 状态断言（overlayCount/selectedCount/mode/yRange/hitTest/overlayInfo）；**临时视觉元素（橡皮筋矩形/菜单/面板）必须加 toBeVisible 可见性断言**——multiRect 不可见缺陷两连（const 报错→let 丢响应性）证明状态断言覆盖不到"元素是否渲染"；截图仅存档不比对；禁止用 dispatchEvent 合成事件验证交互（与真实事件不同构，历史教训）。
 - 库残留训练：journey 库跨重试存活，每个测试开头必须 `resetToLauncher`（API 层放弃活动训练；UI confirm 会被 Playwright 自动 dismiss，不可靠）。
-- 画线点位纪律：两点绘制间隔 >500ms（库双击判定窗口）；Ctrl+点选与框选的坐标必须按当前视图比例精算在线上（±7px），锚点 ±8px。
+- 画线点位纪律：两点绘制间隔 >500ms（库双击判定窗口）；Ctrl+点选与框选的坐标必须按当前视图比例精算在线上（±7px），锚点 ±8px；副图（MACD 窗格约 y[757,857]）画线第一击所在 pane 即落点。
+
+## D4 验收反馈三项（2026-09-06，用户发现→回归转化记录）
+
+1. multiRect 不可见（pattern C 视觉，第二次踩中）：根因＝multiRect 被"修复"为普通 let 变量丢响应性。回归＝journey Act4a/Act4d 拖拽中途 `.multi-rect` toBeVisible＋宽度>20；contract 断言 `const multiRect = ref<...>` 与 `.value` 赋值。
+2. 多选变色与用户线色冲突（口径变更＋pattern C）：选中标识统一为锚点选中态。回归＝journey Act4b 断言 overlayInfo().lineColor 为 null；contract 禁变色常量回潮。
+3. 多选/框选不覆盖副图（pattern B 组合未遍历）：主副图同权改造。回归＝journey Act4d（副图画线→副图框选选中且不缩放）。
+
+## D4 验收反馈·选中状态机（2026-09-08，用户发现→回归转化记录）
+
+4. **持久选中不解除**（pattern B）：库仅在收到空白 click 时自解选中态，而框选拦截 stopPropagation 吞掉该链路→端点常显假选中。修复＝空白按下时主动 `deselectLibrarySelected()`（store.setClickOverlayInfo(overlay:null)＋必传 onDeselected 回调）。回归＝journey Act2d（点线选中→singleSelected 非空→点空白→null）。
+5. **box 多选无端点视觉**（pattern C＋库行为 A）：库 drawDefaultFigures 仅为 hover/click 选中态绘制锚点，box 选中成员两者皆非、point 样式覆盖无效。修复＝自绘锚点层（.anchor-dot，黄芯白圈 18px，随选中/可见范围/指针拖动重算）。回归＝journey Act4b 断言 `.anchor-dot` toHaveCount(6)。
+6. **journey 自身教训（Act2a 暴露）**：旧 Act2a 的 Delete 前点选坐标在编辑后已脱靶，靠"画线完成后的残留选中态"误打误撞通过——**测试隐性依赖 bug 行为**；修复 deselect 后立刻暴露。已改点选到编辑后线体真实位置。教训：断言前先确认状态来源，不依赖副作用链。
 
 ## 当前状态（2026-09-06）
 
 - vitest：16 文件 **88/88**（含 klinecharts-pin 版本哨兵）
-- journey：**13/13**（Act1 闭环 / Act2a-c 画线生命周期 / Act3a-d 交互矩阵 / Act4a-c 多选 / Act5 交易 / Act6 主题）
-- journey 已抓出并修复的真实回归：**多选 Delete 误删第三条**（画线完成时库的 onSelected 态被追加进删除集合）——首个由 journey 而非用户发现的 bug，验证了本体系的价值。
+- journey：**16/16**（Act1 闭环 / Act2a-e 画线生命周期含水平线系＋选中状态机 / Act3a-d 交互矩阵 / Act4a-d 多选＋副图同权 / Act5 交易 / Act6 主题）
+- journey 已抓出并修复的真实回归：**多选 Delete 误删第三条**（库 onSelected 态追加）、**multiRect 不可见**（const→let 丢响应性）——两个由自动化而非用户发现的 bug。
+- D4 验收反馈三项的教训沉淀（详见上节）：**convertToPixel/convertFromPixel 默认返回 pane 相对 y，副图必须 `absolute: true`**（主图 pane top=0 掩盖差异，副图命中几何全错）——已录入 architecture.md 内部 API 登记表复查项。

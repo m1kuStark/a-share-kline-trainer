@@ -14,8 +14,10 @@ export const theme = ref<UiTheme>(initialTheme())
 // 用户画线默认黄色（口径：上轮 M3 拍板沿用）：深浅主题下均可读；
 // 引擎标记 bsMark/costLine 逐 figure 显式样式，不受全局 overlay 默认影响
 export const DRAW_DEFAULT_COLOR = '#f5c343'
-// 多选选中标识色：多选集合内的画线临时改为此色（松开恢复原色），深浅主题均可读且不增加遮挡物
-export const DRAW_MULTI_SELECT_COLOR = '#38bdf8'
+// 锚点常态/选中态样式常量（同源：chartStyles 全局默认与多选选中标识两处必须引用同一值）。
+// 多选选中标识＝锚点呈选中态（变大变亮），线体颜色绝不变动（用户 D4 验收拍板：变色会与用户自定义颜色冲突）
+export const DRAW_POINT_DEFAULT = { color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5 }
+export const DRAW_POINT_ACTIVE = { color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 2, radius: 7 }
 
 // 主图图例（candle tooltip）只显示开高低收四个价格，配色用主题文本色
 const candleLegendTemplate: CandleTooltipLegendsCustomCallback = data => {
@@ -103,14 +105,11 @@ export function chartStyles(t: UiTheme) {
       horizontal: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
       vertical: { line: { color: crossColor }, text: { backgroundColor: crossColor, color: '#ffffff' } },
     },
-    // 用户画线全局默认样式（用户 D2 验收反馈）：1px 虚线、统一黄色；选中/激活锚点同色。
+    // 用户画线全局默认样式（用户 D2 验收反馈）：1px 虚线、统一黄色；锚点常态/选中态引用同源常量。
     // dashedValue 显式固定为库默认 [4,4]，与编辑应用时的值保持同一常量（避免编辑前后虚线段长不一致）
     overlay: {
       line: { color: DRAW_DEFAULT_COLOR, size: 1, style: 'dashed', dashedValue: [4, 4] },
-      point: {
-        color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5,
-        activeColor: DRAW_DEFAULT_COLOR, activeBorderColor: '#ffffff', activeBorderSize: 1, activeRadius: 6,
-      },
+      point: { ...DRAW_POINT_DEFAULT, activeColor: DRAW_POINT_ACTIVE.color, activeBorderColor: DRAW_POINT_ACTIVE.borderColor, activeBorderSize: DRAW_POINT_ACTIVE.borderSize, activeRadius: DRAW_POINT_ACTIVE.radius },
     },
   }
 }

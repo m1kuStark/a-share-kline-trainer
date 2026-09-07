@@ -64,6 +64,7 @@ Ctrl+左键 → 画线多选 toggle（命中→加入/移出集合；空白→�
 | forward 前插自锚定 | 动态历史加载禁止补偿滚动 | KlineChart loadEarlierBars |
 | drawText 强制左上对齐 | B/S 字母偏移手工补偿 | overlays.ts |
 | getSize bounding right/bottom 恒 0 | 只能 left+width/top+height | KlineChart isOverPriceAxis |
+| `convertToPixel/convertFromPixel` 默认 pane 相对 y（absolute=false 不加/不减 bounding.top） | 副图 pane top≠0，命中几何/按点换算必须 `absolute: true` 才是 host 坐标（主图 top=0 掩盖差异）；取点第一击所在 pane 即 overlay 落点（库同步 overlay.paneId） | KlineChart overlayHitGeometry / onHostMouseDownBubble |
 
 ## 测试钩子
 

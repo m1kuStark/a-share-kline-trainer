@@ -27,10 +27,10 @@ test('Act1 创建训练并进入训练视图', async ({ page }) => {
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
   // 工具条与多选开关就绪
-  await expect(page.locator('.draw-toolbar button', { hasText: '线段' })).toBeVisible()
-  await expect(page.locator('.draw-toolbar button', { hasText: '射线' })).toBeVisible()
-  await expect(page.locator('.draw-toolbar button', { hasText: '直线' })).toBeVisible()
-  await expect(page.locator('.draw-toolbar button', { hasText: '多选' })).toBeVisible()
+  await expect(toolButton(page, '线段')).toBeVisible()
+  await expect(toolButton(page, '射线')).toBeVisible()
+  await expect(toolButton(page, '直线')).toBeVisible()
+  await expect(toolButton(page, '多选')).toBeVisible()
   // 模式机初始状态
   const mode = await page.evaluate(() => (window as any).__trainerChart.mode())
   expect(mode).toEqual({ draw: null, multiSelect: false, axisScaleDrag: false })
@@ -76,8 +76,13 @@ async function openTraining(page: import('@playwright/test').Page): Promise<void
   await page.locator('.console-scroll').evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
 }
 
+// 工具按钮精确定位（'线段' 与 '水平线段' 等互为子串，hasText 会 strict 冲突）
+function toolButton(page: import('@playwright/test').Page, label: string): import('@playwright/test').Locator {
+  return page.locator('.draw-toolbar button').filter({ has: page.locator(`text="${label}"`) })
+}
+
 async function pickTool(page: import('@playwright/test').Page, label: string): Promise<void> {
-  await page.locator('.draw-toolbar button', { hasText: label }).click()
+  await toolButton(page, label).click()
   await expect(page.locator('.status-strip')).toContainText(`画线模式：${label}`)
   // watch(props.drawTool) 的 createOverlay 在微任务中完成：等一拍再开始取点，避免工具激活竞态
   await page.waitForTimeout(300)
@@ -107,10 +112,26 @@ test('Act2a 线段绘制编辑删除', async ({ page }) => {
   await v.fill('1250')
   await page.getByRole('button', { name: '确定' }).click()
   await page.waitForTimeout(300)
-  // Delete 删除（先左键点选）
-  await page.mouse.click(550, 415)
+  // Delete 删除（先左键点选编辑后的线体：端点1 已改价 1250、线体已移位，点未移动的端点2 精确位置保证命中。
+  // 旧坐标 (550,415) 在编辑后脱靶——旧流程靠"画线完成后的残留选中态"误打误撞删除，正是 Act2d 修掉的缺陷）
+  await page.mouse.click(700, 350)
+  await page.waitForTimeout(200)
   await page.keyboard.press('Delete')
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('segment'))).toBe(before)
+})
+
+test('Act2d 空白点击解除持久选中（选中状态机）', async ({ page }) => {
+  await openTraining(page)
+  await pickTool(page, '线段')
+  await drawTwoPointLine(page, 400, 480, 700, 350)
+  // 左键点选线体 → 持久选中态（库 click 选中，端点显示）
+  await page.mouse.click(550, 415)
+  await page.waitForTimeout(300)
+  const selectedId = await page.evaluate(() => (window as any).__trainerChart.singleSelected())
+  expect(selectedId).not.toBeNull()
+  // 左键点击主图空白（图内、远离线体）→ 持久选中立即解除（框选拦截不得吞掉解除链路——端点常显假选中回归）
+  await page.mouse.click(400, 300)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.singleSelected())).toBeNull()
 })
 
 test('Act2b 射线延伸段可选中', async ({ page }) => {
@@ -127,10 +148,39 @@ test('Act2c 直线两端延伸段可选中', async ({ page }) => {
   await openTraining(page)
   await pickTool(page, '直线')
   await drawTwoPointLine(page, 450, 550, 650, 400)
-  // 左下延伸段（p1 之外、主图窗格内）点击选中 → Delete
-  await page.mouse.click(200, 610)
+  // 左下延伸段（p1 之外）：线方向 (0.8,-0.6)，x=330 处 y=640（主图窗格内；旧坐标 (200,610) 实际距线 102px，
+  // 旧流程靠"画线完成后的残留选中态"误打误撞删除——正是 Act2d 修掉的缺陷）
+  await page.mouse.click(330, 640)
   await page.keyboard.press('Delete')
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('straightLine'))).toBe(0)
+})
+
+test('Act2e 水平线系三工具（D5~D7）', async ({ page }) => {
+  await openTraining(page)
+  // 水平直线：单点完成（totalStep 2），线体全宽
+  await pickTool(page, '水平直线')
+  await page.mouse.click(500, 380)
+  await page.waitForTimeout(650)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('horizontalStraightLine'))).toBe(1)
+  // 水平线段：两点之间
+  await pickTool(page, '水平线段')
+  await page.mouse.click(420, 430)
+  await page.waitForTimeout(650)
+  await page.mouse.click(700, 430)
+  await page.waitForTimeout(400)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('horizontalSegment'))).toBe(1)
+  // 水平射线：点1 沿点2 方向延伸到边
+  await pickTool(page, '水平射线')
+  await page.mouse.click(450, 470)
+  await page.waitForTimeout(650)
+  await page.mouse.click(700, 470)
+  await page.waitForTimeout(400)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('horizontalRayLine'))).toBe(1)
+  // 线体命中（远离锚点的位置点击水平直线线体）→ 选中 → Delete 删除
+  await page.mouse.click(250, 380)
+  await page.waitForTimeout(200)
+  await page.keyboard.press('Delete')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('horizontalStraightLine'))).toBe(0)
 })
 
 // ---------- Act 3：交互矩阵（Pattern B 组合遍历，全部真实事件） ----------
@@ -228,17 +278,25 @@ test('Act4a 多选模式框选批量选中且不缩放', async ({ page }) => {
   await openTraining(page)
   await drawThreeLines(page)
   // 进入多选模式
-  await page.locator('.draw-toolbar button', { hasText: '多选' }).click()
+  await toolButton(page, '多选').click()
   await expect(page.locator('.status-strip')).toContainText('多选模式')
   // 框选扫过三条画线
   await page.mouse.move(300, 300)
   await page.mouse.down()
   await page.mouse.move(800, 530, { steps: 6 })
+  // 拖拽中途：橡皮筋矩形必须可见且有尺寸（multiRect 不可见缺陷两连的回归断言——状态断言覆盖不到视觉可见性）
+  await expect(page.locator('.multi-rect')).toBeVisible()
+  expect(await page.locator('.multi-rect').evaluate((el: HTMLElement) => el.getBoundingClientRect().width)).toBeGreaterThan(20)
   await page.mouse.up()
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(3)
   // K 线根数不变（框选不缩放）
   const bars = await page.getByText(/根（缩放 1~420）/).textContent()
   expect(bars).toContain('154 / 420')
+  // 多选模式下普通左键直接点选（无需 Ctrl——用户 D4 验收反馈）：点已选中线 → 移出；再点 → 加回
+  await page.mouse.click(500, 428)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(2)
+  await page.mouse.click(500, 428)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(3)
 })
 
 test('Act4b Ctrl+点选累加与批量删除', async ({ page }) => {
@@ -250,7 +308,11 @@ test('Act4b Ctrl+点选累加与批量删除', async ({ page }) => {
   await page.waitForTimeout(200)
   await page.mouse.click(500, 503)
   await page.keyboard.up('Control')
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(2)
+  // 选中标识＝锚点高亮：线体颜色绝不变动（用户拍板：变色与自定义线色冲突；null＝继承全局默认黄）
+  const lineColors = await page.evaluate(() => [0, 1, 2].map((i: number) => (window as any).__trainerChart.overlayInfo(i).lineColor))
+  for (const color of lineColors) expect(color).toBeNull()
+  // 多选成员锚点层：选中 2 条 × 每条 2 端点＝4 个锚点全部可见（box 选中的画线库不绘制锚点，自绘层负责视觉反馈）
+  await expect(page.locator('.anchor-dot')).toHaveCount(4)
   // Delete 批量删除
   await page.keyboard.press('Delete')
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('segment') + (window as any).__trainerChart.overlayCount('rayLine') + (window as any).__trainerChart.overlayCount('straightLine'))).toBe(1)
@@ -260,7 +322,7 @@ test('Act4c 选项卡式批量编辑', async ({ page }) => {
   await openTraining(page)
   await drawThreeLines(page)
   // 多选模式框选三条 → 右键其中一条 → 批量编辑
-  await page.locator('.draw-toolbar button', { hasText: '多选' }).click()
+  await toolButton(page, '多选').click()
   await page.mouse.move(300, 300)
   await page.mouse.down()
   await page.mouse.move(800, 530, { steps: 6 })
@@ -281,6 +343,37 @@ test('Act4c 选项卡式批量编辑', async ({ page }) => {
   await page.waitForTimeout(400)
   // 批量应用后多选清除
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(0)
+})
+
+// ---------- Act 4 追加：副图同权 ----------
+// MACD 副图窗格约 y[757,857]（画布栈探针实测）；副图画线取点第一击所在 pane 即落点（库同步 overlay.paneId）
+test('Act4d 副图画线与多选框选（主副图同权）', async ({ page }) => {
+  await openTraining(page)
+  // 在 MACD 副图画一条线段
+  await pickTool(page, '线段')
+  await drawTwoPointLine(page, 350, 790, 750, 830)
+  const info = await page.evaluate(() => (window as any).__trainerChart.overlayInfo(0))
+  expect(info.paneId).not.toBe('candle_pane')
+  // 多选模式：框选扫过 MACD 副图区域
+  await toolButton(page, '多选').click()
+  await expect(page.locator('.status-strip')).toContainText('多选模式')
+  await page.mouse.move(300, 770)
+  await page.mouse.down()
+  await page.mouse.move(820, 850, { steps: 6 })
+  // 中途矩形可见（同 Act4a 的可见性回归）
+  await expect(page.locator('.multi-rect')).toBeVisible()
+  await page.mouse.up()
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.selectedCount())).toBe(1)
+  // 副图框选不缩放 K 线
+  const bars = await page.getByText(/根（缩放 1~420）/).textContent()
+  expect(bars).toContain('154 / 420')
+  // 多选模式下主图框选同样不缩放（门限放开不破坏原语义）
+  await page.mouse.move(300, 300)
+  await page.mouse.down()
+  await page.mouse.move(800, 530, { steps: 6 })
+  await page.mouse.up()
+  const bars2 = await page.getByText(/根（缩放 1~420）/).textContent()
+  expect(bars2).toContain('154 / 420')
 })
 
 // ---------- Act 6：主题切换 ----------

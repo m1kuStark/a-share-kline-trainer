@@ -5,9 +5,10 @@ const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
 
 describe('M2 chart interaction contract', () => {
-  it('starts box select only on the main-pane layer and supports right-drag zoom-in / left-drag zoom-out', async () => {
+  it('starts box select only on the draw-pane layer and supports right-drag zoom-in / left-drag zoom-out', async () => {
     const source = await readFile(chartPath, 'utf8')
-    expect(source).toMatch(/paneIdAt\(event\.clientY\) !== 'candle_pane'/)
+    // 框选在任一绘图 pane 启动（主副图同权，用户 D4 验收拍板），x 轴除外
+    expect(source).toMatch(/if \(!isDrawPane\(paneIdAt\(event\.clientY\)\)\) return/)
     expect(source).toMatch(/if \(end >= selectStartX\)/)
     expect(source).toMatch(/const dragWidth = selectStartX - end/)
     expect(source).toMatch(/current \* drawable \/ dragWidth/)
@@ -104,7 +105,9 @@ describe('M2 chart interaction contract', () => {
     // D3 验收反馈修复：7px 命中与库 2px figure 命中的落差补齐（按画线不再触发整图平移）＋中键拖拽平移整个主图
     expect(source).toMatch(/function onHostMouseDownBubble\(event: MouseEvent\): void/)
     expect(source).toMatch(/hit\.startPressedMove\(\{ dataIndex: coord\.dataIndex, value: coord\.value \}\)/)
-    expect(source).toMatch(/store\.setPressedOverlayInfo\(\{ paneId: 'candle_pane', overlay: hit, figureType: 'other', figureIndex: -1, figure: null \}\)/)
+    expect(source).toMatch(/store\.setPressedOverlayInfo\(\{ paneId, overlay: hit, figureType: 'other', figureIndex: -1, figure: null \}\)/)
+    // 选中态补齐：库 figure 点击分派对水平全宽线体等几何不可靠（Act2e 实证），命中即补齐持久选中
+    expect(source).toMatch(/if \(store\.getClickOverlayInfo\(\)\?\.overlay\?\.id !== hit\.id\) \{/)
     expect(source).toMatch(/if \(event\.button === 1\) \{/)
     expect(source).toMatch(/function hitTestUserOverlay\(clientX: number, clientY: number\)/)
     // D3 验收反馈修复：中键纵向平移不受 Space/Home 限制（强制手动模式）＋中键不拖画线（临时锁定）＋射线/直线命中延伸
@@ -121,22 +124,50 @@ describe('M2 chart interaction contract', () => {
   })
 
   it('registers the ray tool in the drawing registry (D3)', async () => {
-    // D3/D4：射线与直线工具入注册表（库内置 rayLine/straightLine；命中几何延伸见 hitTestUserOverlay）
+    // D3/D4/D5~D7：射线/直线/水平线系入注册表（库内置；命中几何延伸见 overlayHitGeometry）
     const drawToolsSource = await readFile(new URL('../../web/src/drawTools.ts', import.meta.url), 'utf8')
     expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线' \}/)
     expect(drawToolsSource).toMatch(/\{ name: 'straightLine', label: '直线' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalStraightLine', label: '水平直线' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalSegment', label: '水平线段' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalRayLine', label: '水平射线' \}/)
+    const chartSource = await readFile(chartPath, 'utf8')
+    // 水平系命中几何与库渲染范围一致：水平直线单点全宽、水平射线沿点2方向延伸到边
+    expect(chartSource).toMatch(/overlay\.name === 'horizontalStraightLine' && pts\.length >= 1/)
+    expect(chartSource).toMatch(/overlay\.name === 'horizontalRayLine' && pts\.length >= 2/)
+    expect(chartSource).toMatch(/horizontalStraightLine: '水平直线', horizontalSegment: '水平线段', horizontalRayLine: '水平射线'/)
   })
 
   it('supports drawing multi-select: ctrl+click, multi-mode box select, batch delete, tabbed edit panel', async () => {
     const source = await readFile(chartPath, 'utf8')
-    // Ctrl+左键点选画线：加入/移出多选集合（点空白清空）
-    expect(source).toMatch(/if \(event\.ctrlKey && !props\.drawTool\) \{/)
+    // 左键点选画线（Ctrl 组合或多选模式下普通左键——用户 D4 验收反馈）：加入/移出多选集合（点空白清空）
+    expect(source).toMatch(/if \(\(event\.ctrlKey \|\| props\.multiSelect\) && !props\.drawTool && event\.button === 0\) \{/)
     expect(source).toMatch(/function toggleMultiSelect\(id: string\): void/)
     // 多选模式：主图空白框选拖拽变为划线批量选中（不缩放 K 线）
     expect(source).toMatch(/multiSelect\?: boolean/)
     expect(source).toMatch(/if \(props\.multiSelect\) \{/)
     expect(source).toMatch(/function selectDrawingsInRect\(/)
     expect(source).toMatch(/class="multi-rect"/)
+    // 橡皮筋矩形必须是 ref（multiRect 不可见缺陷两连：const 赋值报错→let 丢响应性；视觉元素必须可断言）
+    expect(source).toMatch(/const multiRect = ref<\{ left: number; top: number; width: number; height: number \} \| null>\(null\)/)
+    expect(source).toMatch(/multiRect\.value = \{/)
+    expect(source).toMatch(/multiRect\.value = null/)
+    // 选中标识＝自绘锚点层（库只为 hover/click 选中态绘制锚点，box 选中的画线两者皆非）；
+    // 线体绝不变色（与用户自定义线色不冲突）；点空白解除库持久选中（框选拦截吞掉库解除链路的回归）
+    expect(source).toMatch(/const anchorDots = ref<Array<\{ key: string; x: number; y: number \}>>\(\[\]\)/)
+    expect(source).toMatch(/function updateAnchorDots\(\): void/)
+    expect(source).toMatch(/function deselectLibrarySelected\(\): void/)
+    expect(source).toMatch(/deselectLibrarySelected\(\)/)
+    expect(source).toMatch(/class="anchor-dot"/)
+    expect(source).toMatch(/if \(multiSelectedIds\.value\.length\) updateAnchorDots\(\)/)
+    expect(source).not.toMatch(/DRAW_MULTI_SELECT_COLOR/)
+    expect(source).not.toMatch(/applySelectionVisual|clearSelectionVisual/)
+    // 主副图同权：框选/多选/Ctrl 点选/冒泡补齐的门限用 isDrawPane（非 x 轴 pane 一律生效）
+    expect(source).toMatch(/function isDrawPane\(paneId: string \| null\): boolean/)
+    expect(source).toMatch(/if \(!isDrawPane\(paneIdAt\(event\.clientY\)\)\) return/)
+    // 画线命中几何按 overlay.paneId 转换（副图画线的坐标在自己 pane 内）；absolute:true＝host 坐标系（副图 pane top≠0）
+    expect(source).toMatch(/\{ paneId: overlay\.paneId \|\| 'candle_pane', absolute: true \}/)
+    expect(source).toMatch(/\{ paneId, absolute: true \}/)
     // 选项卡式编辑面板：标签＝类型+中文序号，确定批量应用全部表单
     expect(source).toMatch(/class="edit-tabs"/)
     expect(source).toMatch(/label: labelBase \+ \(cnNums\[n - 1\] \?\? String\(n\)\)/)
@@ -144,6 +175,10 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/const ids = multiSelectedIds\.value\.length \? \[\.\.\.multiSelectedIds\.value\] : \(selectedOverlayId\.value \? \[selectedOverlayId\.value\] : \[\]\)/)
     // 多选模式关闭：清空多选集合与选中标识
     expect(source).toMatch(/watch\(\(\) => props\.multiSelect, on => \{ if \(!on\) clearMultiSelection\(\) \}\)/)
+    const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
+    // 锚点常态/选中态常量同源（theme 全局默认供库 hover/click 选中锚点引用；多选视觉走自绘层，颜色与之一致）
+    expect(themeSource).toMatch(/export const DRAW_POINT_DEFAULT = \{ color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5 \}/)
+    expect(themeSource).toMatch(/export const DRAW_POINT_ACTIVE = \{ color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 2, radius: 7 \}/)
     const trainingSource = await readFile(trainingPath, 'utf8')
     expect(trainingSource).toMatch(/:multi-select="multiSelectMode"/)
     expect(trainingSource).toMatch(/function toggleMultiSelectMode\(\): void/)
@@ -169,13 +204,13 @@ describe('M2 chart interaction contract', () => {
   it('keeps price-axis wheel scaling separate from chart panning and out of box select', async () => {
     const source = await readFile(chartPath, 'utf8')
     expect(source).toMatch(/function isOverPriceAxis\(/)
-    expect(source).toMatch(/getSize\('candle_pane', 'yAxis'\)/)
-    expect(source).toMatch(/zone\.left \+ zone\.width && y >= zone\.top && y <= zone\.top \+ zone\.height/)
+    // 主副图同权：轴判定遍历全部绘图 pane 的 y 轴矩形（left+width/top+height，right/bottom 恒 0 不可用）
+    expect(source).toMatch(/const zone = chart\.getSize\(pane\.id, 'yAxis'\)/)
+    expect(source).toMatch(/x >= zone\.left && x <= zone\.left \+ zone\.width && y >= zone\.top && y <= zone\.top \+ zone\.height/)
     // 滚轮：轴上直接返回（交给库原生纵轴缩放），不平移
     expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,160}scrollByDistance/s)
-    // 按下：轴上不进入框选
-    // 按下：轴上不进入框选；多选模式分支在框选启动之前（框选缩放被多选模式接管）
-    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,160}if \(props\.multiSelect\) \{[\s\S]{0,420}selecting = true/s)
+    // 按下：轴上不进入框选；空白按下先解除持久选中，多选模式分支在框选启动之前（框选缩放被多选模式接管）
+    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,240}if \(props\.multiSelect\) \{[\s\S]{0,460}selecting = true/s)
   })
 
   it('restores y-axis auto-fit before programmatic zooms so box select never drifts the chart out of view', async () => {

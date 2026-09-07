@@ -3,7 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { init, type Chart, type DataLoadMore, type KLineData } from 'klinecharts'
 import '../overlays'
 import '../indicators'
-import { chartStyles, theme, DRAW_DEFAULT_COLOR, DRAW_MULTI_SELECT_COLOR } from '../theme'
+import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import type { Bar, Timeframe, TradeView } from '../api'
 
 const props = withDefaults(defineProps<{
@@ -163,27 +163,44 @@ function paneIdAt(clientY: number): string | null {
 function isOverPriceAxis(clientX: number, clientY: number): boolean {
   if (!chart) return false
   if (!hostRect) hostRect = host.value?.getBoundingClientRect() ?? null
-  const zone = chart.getSize('candle_pane', 'yAxis')
-  if (!zone || !hostRect) return false
   const x = clientX - hostRect.left
   const y = clientY - hostRect.top
-  return x >= zone.left && x <= zone.left + zone.width && y >= zone.top && y <= zone.top + zone.height
+  // 主图与副图地位相同（用户 D4 验收拍板）：任一绘图 pane 的 y 轴区域都按"轴"处理
+  const panes = chart.getPaneOptions()
+  const list = (Array.isArray(panes) ? panes : [panes]) as Array<{ id: string }>
+  for (const pane of list) {
+    if (pane.id === 'x_axis_pane') continue
+    const zone = chart.getSize(pane.id, 'yAxis')
+    if (!zone) continue
+    if (x >= zone.left && x <= zone.left + zone.width && y >= zone.top && y <= zone.top + zone.height) return true
+  }
+  return false
+}
+// 绘图 pane 判定：主图与副图同权（x 轴除外）——框选/多选/Ctrl 点选/按线补齐在各绘图 pane 同规则
+function isDrawPane(paneId: string | null): boolean {
+  return !!paneId && paneId !== 'x_axis_pane'
 }
 function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0 || !chart) return
   // 画线模式下不启动框选：事件放行给 klinecharts overlay 取点交互（三态模式机隔离）
   if (props.drawTool) return
-  if (paneIdAt(event.clientY) !== 'candle_pane') return
+  // 主图与副图同权：框选缩放/多选框选在任一绘图 pane 启动（用户 D4 验收拍板：操作逻辑主副图一致）
+  if (!isDrawPane(paneIdAt(event.clientY))) return
   hostRect = host.value?.getBoundingClientRect() ?? null
   // 指针命中用户画线：放行给库内选择/拖拽，不启动框选——否则拖动已画线段会触发框选缩放（用户 D1 验收反馈）
   if (hitTestUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) return
-  // 多选模式：主图空白的框选拖拽变为划线批量选中（不缩放 K 线；平移走中键、缩放走键盘）
+  // 空白按下＝点击了画线以外区域：立即解除库内持久选中态（用户 D4 验收拍板，
+  // 框选拦截会吞掉库的空白 click 解除链路，必须主动解除——否则端点常显假选中）
+  deselectLibrarySelected()
+  // 多选模式：绘图 pane 空白的框选拖拽变为划线批量选中（不缩放 K 线；平移走中键、缩放走键盘）
   if (props.multiSelect) {
     const sx = event.clientX - (hostRect?.left ?? 0)
     const sy = event.clientY - (hostRect?.top ?? 0)
     multiDragStart = { x: sx, y: sy }
-    multiRect = { left: sx, top: sy, width: 0, height: 0 }
+    computePlotBounds()
+    multiBounds = plotBounds
+    multiRect.value = { left: sx, top: sy, width: 0, height: 0 }
     return
   }
   selecting = true
@@ -195,10 +212,15 @@ function onPointerDown(event: PointerEvent): void {
 function onPointerMove(event: PointerEvent): void {
   // 纵轴缩放拖拽中：把指针位置重路由回轴区域，库原生缩放持续生效（与框选互斥）
   if (axisScaleDrag) { dispatchSyntheticAxisMove(event); return }
-  // 多选模式橡皮筋矩形更新
+  // 有多选成员时实时跟随（拖拽画线/端点时库移动 points，dots 须同步）
+  if (multiSelectedIds.value.length) updateAnchorDots()
+  // 多选模式橡皮筋矩形更新（钳制在绘图区内，口径修订七）
   if (multiDragStart) {
-    const cur = { x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }
-    multiRect = {
+    const cur = {
+      x: Math.min(Math.max(event.clientX - (hostRect?.left ?? 0), 0), multiBounds?.right ?? Number.MAX_SAFE_INTEGER),
+      y: Math.min(Math.max(event.clientY - (hostRect?.top ?? 0), multiBounds?.top ?? 0), multiBounds?.bottom ?? Number.MAX_SAFE_INTEGER),
+    }
+    multiRect.value = {
       left: Math.min(multiDragStart.x, cur.x),
       top: Math.min(multiDragStart.y, cur.y),
       width: Math.abs(cur.x - multiDragStart.x),
@@ -221,7 +243,10 @@ function onPointerUp(event: PointerEvent): void {
   if (axisScaleDrag) { axisScaleDrag = false; return }
   // 多选模式框选结束：矩形相交的画线加入多选集合；极小框选＝点空白，清空多选
   if (multiDragStart) {
-    const cur = { x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }
+    const cur = {
+      x: Math.min(Math.max(event.clientX - (hostRect?.left ?? 0), 0), multiBounds?.right ?? Number.MAX_SAFE_INTEGER),
+      y: Math.min(Math.max(event.clientY - (hostRect?.top ?? 0), multiBounds?.top ?? 0), multiBounds?.bottom ?? Number.MAX_SAFE_INTEGER),
+    }
     const rect = {
       left: Math.min(multiDragStart.x, cur.x),
       top: Math.min(multiDragStart.y, cur.y),
@@ -231,7 +256,7 @@ function onPointerUp(event: PointerEvent): void {
     if (rect.width > 4 && rect.height > 4) selectDrawingsInRect(rect)
     else clearMultiSelection()
     multiDragStart = null
-    multiRect = null
+    multiRect.value = null
     return
   }
   if (!selecting || !chart) return
@@ -302,7 +327,7 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => emit('visibleCount', visibleCount())); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }} } })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }); const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) layout.barSpaceLimit.max = BAR_SPACE_MAX; chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
 onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); chart?.destroy(); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
@@ -357,9 +382,10 @@ function openCtxMenu(overlayId: string, x: number, y: number): void {
 function removeViaMenu(): void {
   if (!chart || !ctxMenu.value) return
   const ids = ctxMenu.value.batch ? [...multiSelectedIds.value] : [ctxMenu.value.overlayId]
-  ids.forEach(id => { origLineColors.delete(id); chart.removeOverlay({ id }) })
+  ids.forEach(id => chart.removeOverlay({ id }))
   multiSelectedIds.value = multiSelectedIds.value.filter(id => !ids.includes(id))
   if (selectedOverlayId.value && ids.includes(selectedOverlayId.value)) selectedOverlayId.value = null
+  updateAnchorDots()
   closePanels()
 }
 // 选项卡式编辑面板：单个选中＝单表单（无标签行）；多选＝每个选中对象一个标签
@@ -378,7 +404,7 @@ function openEditPanel(targetIds: string[], x: number, y: number): void {
     forms.push({
       id,
       label: labelBase + (cnNums[n - 1] ?? String(n)),
-      color: line.color ?? origLineColors.get(id) ?? DRAW_DEFAULT_COLOR,
+      color: line.color ?? DRAW_DEFAULT_COLOR,
       size: line.size ?? 1,
       style: (line.style ?? 'dashed') === 'dashed' ? ((line.dashedValue?.[0] ?? 4) <= 3 ? 'dotted' : 'dashed') : 'solid',
       values: overlay.points.map(point => Number((point.value ?? 0).toFixed(2))),
@@ -400,9 +426,9 @@ function applyEdit(): void {
     const points = overlay.points.map((point, index) => ({ ...point, value: form.values[index] }))
     chart.overrideOverlay({ id: form.id, styles: { line }, points })
   }
-  // 批量应用完成：清除多选标识（恢复各画线应用后的颜色）
+  // 批量应用完成：清除多选（锚点层随集合清空而消失）
   multiSelectedIds.value = []
-  origLineColors.clear()
+  updateAnchorDots()
   closePanels()
 }
 // Delete 删除选中画线：多选集合非空＝只删集合（画线完成/点击时库会把 overlay 置为选中态，
@@ -412,9 +438,10 @@ function deleteSelected(): boolean {
   if (!chart) return false
   const ids = multiSelectedIds.value.length ? [...multiSelectedIds.value] : (selectedOverlayId.value ? [selectedOverlayId.value] : [])
   if (!ids.length) { closePanels(); return false }
-  ids.forEach(id => { origLineColors.delete(id); chart.removeOverlay({ id }) })
+  ids.forEach(id => chart.removeOverlay({ id }))
   multiSelectedIds.value = []
   selectedOverlayId.value = null
+  updateAnchorDots()
   closePanels()
   return true
 }
@@ -453,15 +480,19 @@ function onGlobalPointerDown(event: PointerEvent): void {
   if (target?.closest('.ctx-menu, .overlay-edit-panel')) return
   closePanels()
 }
-// D3 追加：划线多选支持。multiSelectedIds＝多选集合；origLineColors＝选中前线色（恢复用）；
-// multiRect＝多选模式下的橡皮筋矩形。选中标识＝线体临时改为天蓝色（恢复原色），不增加遮挡物。
+// D3 追加：划线多选支持。multiSelectedIds＝多选集合；multiRect＝多选模式下的橡皮筋矩形。
+// 选中标识（用户 D4 验收拍板）：锚点呈选中态（变大变亮，与单选选中态同一设计），线体颜色绝不变动——
+// 此前天蓝变色方案与用户自定义线色冲突，已废弃。multiRect 必须是 ref：普通变量赋值不触发模板重渲染
+// （multiRect 不可见缺陷的最终根因——const→let 只修了报错，丢掉响应性；教训：视觉元素必须配可见性断言）。
 const multiSelectedIds = ref<string[]>([])
-const origLineColors = new Map<string, string | undefined>()
-let multiRect: { left: number; top: number; width: number; height: number } | null = null
+const multiRect = ref<{ left: number; top: number; width: number; height: number } | null>(null)
 let multiDragStart: { x: number; y: number } | null = null
+// 框选/橡皮筋的纵向边界随起点 pane 变化前先取全绘图区（主图顶～时间轴顶），横向钳制在价格轴左缘内
+let multiBounds: { right: number; top: number; bottom: number } | null = null
 type OverlayLike = {
   id: string
   name: string
+  paneId: string
   lock: boolean
   isDrawing: () => boolean
   startPressedMove: (point: { dataIndex?: number; value?: number }) => void
@@ -470,32 +501,52 @@ type OverlayLike = {
 const engineMarkNames = new Set(['bsMark', 'costLine'])
 const cnNums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
 function typeLabel(name: string): string {
-  return ({ segment: '线段', rayLine: '射线', straightLine: '直线' } as Record<string, string>)[name] ?? name
+  return ({ segment: '线段', rayLine: '射线', straightLine: '直线', horizontalStraightLine: '水平直线', horizontalSegment: '水平线段', horizontalRayLine: '水平射线' } as Record<string, string>)[name] ?? name
 }
 function isMultiSelected(id: string): boolean { return multiSelectedIds.value.includes(id) }
-function applySelectionVisual(id: string): void {
-  const overlay = (chart?.getOverlays({ id }) as unknown as Array<{ styles?: { line?: { color?: string } } }>)[0]
-  if (!origLineColors.has(id)) origLineColors.set(id, overlay?.styles?.line?.color)
-  chart?.overrideOverlay({ id, styles: { line: { color: DRAW_MULTI_SELECT_COLOR } } })
+// 多选成员的端点视觉＝自绘锚点层（anchor-dot）：库 drawDefaultFigures 只为 hover/click 选中态绘制锚点，
+// box 选中的画线两者皆非、锚点根本不渲染（point 样式覆盖因此无效——用户验收实证）。dot 位置随
+// 选中集合变化/可见范围变化/指针拖动实时重算，视觉与库单选选中态锚点一致（黄芯白圈 18px）。
+const anchorDots = ref<Array<{ key: string; x: number; y: number }>>([])
+function updateAnchorDots(): void {
+  if (!chart) { anchorDots.value = []; return }
+  const dots: Array<{ key: string; x: number; y: number }> = []
+  for (const id of multiSelectedIds.value) {
+    const overlay = (chart.getOverlays({ id }) as unknown as OverlayLike[])[0]
+    if (!overlay) continue
+    overlayHitGeometry(overlay).anchors.forEach((p, i) => dots.push({ key: `${id}:${i}`, x: p.x, y: p.y }))
+  }
+  anchorDots.value = dots
 }
-function clearSelectionVisual(id: string): void {
-  const orig = origLineColors.get(id)
-  chart?.overrideOverlay({ id, styles: { line: { color: orig ?? DRAW_DEFAULT_COLOR } } })
-  origLineColors.delete(id)
+// 解除库内持久选中态（用户 D4 验收拍板：点击空白即解除）。库仅在收到空白 click 时自解，
+// 而我们的框选接管 stopPropagation 拦掉了该链路——画线端点常显（假选中）的根因。
+// 必须传 onDeselected 回调：setClickOverlayInfo 在新旧 id 不同时直接调用它（不判空）。
+function deselectLibrarySelected(): void {
+  if (!chart) return
+  const store = (chart as unknown as { getChartStore: () => {
+    getClickOverlayInfo: () => { overlay: { id: string; onDeselected?: (e: unknown) => void } | null }
+    setClickOverlayInfo: (info: Record<string, unknown>, onSel?: (o: unknown, f: unknown) => void, onDes?: (o: unknown, f: unknown) => void) => void
+  } }).getChartStore()
+  const prev = store.getClickOverlayInfo()
+  if (!prev?.overlay) return
+  store.setClickOverlayInfo(
+    { paneId: 'candle_pane', overlay: null, figureType: 'none', figureIndex: -1, figure: null },
+    undefined,
+    o => { (o as { onDeselected?: (e: unknown) => void }).onDeselected?.({ overlay: o }) },
+  )
 }
 function toggleMultiSelect(id: string): void {
   if (isMultiSelected(id)) {
     multiSelectedIds.value = multiSelectedIds.value.filter(x => x !== id)
-    clearSelectionVisual(id)
   }
   else {
     multiSelectedIds.value = [...multiSelectedIds.value, id]
-    applySelectionVisual(id)
   }
+  updateAnchorDots()
 }
 function clearMultiSelection(): void {
-  multiSelectedIds.value.forEach(id => clearSelectionVisual(id))
   multiSelectedIds.value = []
+  updateAnchorDots()
 }
 // 框选矩形与画线的相交判定：端点落在矩形内，或线体采样点（含射线/直线延伸段）落在矩形内
 function selectDrawingsInRect(rect: { left: number; top: number; width: number; height: number }): void {
@@ -516,18 +567,29 @@ function selectDrawingsInRect(rect: { left: number; top: number; width: number; 
     })
     if (hit) {
       multiSelectedIds.value = [...multiSelectedIds.value, overlay.id]
-      applySelectionVisual(overlay.id)
     }
   }
+  updateAnchorDots()
 }
-// 画线命中/框选几何：anchors＝真实端点像素，segs＝线体覆盖线段（射线/直线按图元覆盖范围延伸）
+// 画线命中/框选几何：anchors＝真实端点像素，segs＝线体覆盖线段（射线/直线按图元覆盖范围延伸）。
+// 坐标按 overlay.paneId 转换——画线可落在主图或副图（取点第一击所在 pane 即落点，库同步 overlay.paneId）。
+// absolute:true 必须带：库默认返回 pane 相对 y（主图 pane top=0 掩盖此差异，副图必须加 bounding.top 才是 host 坐标）
 function overlayHitGeometry(overlay: OverlayLike): { anchors: Array<{ x: number; y: number }>; segs: Array<Array<{ x: number; y: number }>> } {
   const pts = overlay.points
     .filter(point => point.timestamp !== undefined && point.value !== undefined)
-    .map(point => chart!.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: 'candle_pane' }))
-    .filter(c => !!c) as Array<{ x: number; y: number }>
+    .map(point => chart!.convertToPixel({ timestamp: point.timestamp, value: point.value }, { paneId: overlay.paneId || 'candle_pane', absolute: true }))
+    .filter(c => !!c && isFinite(c.x) && isFinite(c.y)) as Array<{ x: number; y: number }>
   const anchors = pts
   const segs: Array<Array<{ x: number; y: number }>> = []
+  // 水平系命中几何（与库渲染范围一致）：水平直线单点全宽、水平射线从点1沿点2方向延伸到边、水平线段两点之间
+  const paneWidth = chart!.getSize(overlay.paneId || 'candle_pane')?.width ?? 2000
+  if (overlay.name === 'horizontalStraightLine' && pts.length >= 1) {
+    segs.push([{ x: 0, y: pts[0].y }, { x: paneWidth, y: pts[0].y }])
+  }
+  else if (overlay.name === 'horizontalRayLine' && pts.length >= 2) {
+    const rightward = pts[1].x >= pts[0].x
+    segs.push([{ x: pts[0].x, y: pts[0].y }, { x: rightward ? paneWidth : 0, y: pts[0].y }])
+  }
   if (pts.length >= 2) {
     const a = pts[0]; const b = pts[1]
     if (overlay.name === 'rayLine') {
@@ -539,7 +601,7 @@ function overlayHitGeometry(overlay: OverlayLike): { anchors: Array<{ x: number;
         { x: b.x + (b.x - a.x) * 50, y: b.y + (b.y - a.y) * 50 },
       ])
     }
-    else {
+    else if (overlay.name !== 'horizontalStraightLine' && overlay.name !== 'horizontalRayLine') {
       for (let i = 0; i + 1 < pts.length; i++) segs.push([pts[i], pts[i + 1]])
     }
   }
@@ -565,13 +627,14 @@ let axisScaleDragX = 0
 function onHostMouseDown(event: MouseEvent): void {
   // 中键合成的左键 mousedown：直接放行给库（跳过本拦截器与冒泡修补，避免自我拦截）
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
-  // Ctrl+左键点选画线：加入/移出多选集合（点空白清空多选），拦截库的单选与平移
-  if (event.ctrlKey && !props.drawTool) {
-    if (paneIdAt(event.clientY) !== 'candle_pane') return
+  // 左键点选画线（Ctrl 组合，或多选模式下普通左键——用户 D4 验收反馈：仅靠 Ctrl 无法凸显多选价值）：
+  // 加入/移出多选集合（点空白清空多选），拦截库的单选与平移；主副图同权。仅左键（右键放行给库的菜单链路）
+  if ((event.ctrlKey || props.multiSelect) && !props.drawTool && event.button === 0) {
+    if (!isDrawPane(paneIdAt(event.clientY))) return
     hostRect = host.value?.getBoundingClientRect() ?? null
     const hit = hitTestUserOverlay(event.clientX, event.clientY)
     if (hit) toggleMultiSelect(hit.id)
-    else clearMultiSelection()
+    else { clearMultiSelection(); deselectLibrarySelected() }
     event.stopPropagation()
     return
   }
@@ -593,7 +656,7 @@ function onHostMouseDown(event: MouseEvent): void {
   }
   if (event.button !== 0 || !chart) return
   if (props.drawTool) return
-  if (paneIdAt(event.clientY) !== 'candle_pane') return
+  if (!isDrawPane(paneIdAt(event.clientY))) return
   hostRect = host.value?.getBoundingClientRect() ?? null
   if (hitTestUserOverlay(event.clientX, event.clientY)) return
   if (isOverPriceAxis(event.clientX, event.clientY)) {
@@ -603,24 +666,39 @@ function onHostMouseDown(event: MouseEvent): void {
   }
   event.stopPropagation()
 }
-// host 冒泡阶段（库的 mousedown 处理之后）补齐按下状态：我们的命中门限 7px 比库内 figure 命中（2px）
-// 更宽，按下点落在 2~7px 环带时库未命中画线而进入滚动拖拽（整个主图跟随移动的根因）。此处检测到
-// "我们命中但库未命中"时，调 startPressedMove＋setPressedOverlayInfo 补齐，库的 pressedMouseMoveEvent
-// 管线随即整线拖拽（eventPressedOtherMove）并消费事件，滚动平移被自然抑制
+// host 冒泡阶段（库的 mousedown 处理之后）补齐按下与选中状态：
+// ① 压下态补齐：我们 7px 命中比库内 figure 命中（DEVIATION=2）宽，2~7px 环带库未命中会进滚动拖拽（整图平移 bug）；
+// ② 选中态补齐：库 figure 点击分派对部分几何（水平全宽线体，Act2e 实证）不可靠——点击后 click 选中态未切换。
+//    点击画线＝持久选中是用户拍板的确定性模型，命中即补齐（库已选中同一画线时不重复触发回调）。
 function onHostMouseDownBubble(event: MouseEvent): void {
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
   if (event.button !== 0 || !chart) return
   if (props.drawTool) return
-  if (paneIdAt(event.clientY) !== 'candle_pane') return
+  if (!isDrawPane(paneIdAt(event.clientY))) return
   const hit = hitTestUserOverlay(event.clientX, event.clientY)
   if (!hit) return
-  const store = (chart as unknown as { getChartStore: () => { setPressedOverlayInfo: (info: Record<string, unknown>) => void; getPressedOverlayInfo: () => { overlay: unknown } | null } }).getChartStore()
-  if (store.getPressedOverlayInfo()?.overlay) return
+  const store = (chart as unknown as { getChartStore: () => {
+    setPressedOverlayInfo: (info: Record<string, unknown>) => void
+    getPressedOverlayInfo: () => { overlay: unknown } | null
+    setClickOverlayInfo: (info: Record<string, unknown>, onSel?: (o: unknown, f: unknown) => void, onDes?: (o: unknown, f: unknown) => void) => void
+    getClickOverlayInfo: () => { overlay: { id: string } | null }
+  } }).getChartStore()
+  const paneId = hit.paneId || 'candle_pane'
   hostRect = host.value?.getBoundingClientRect() ?? null
-  const coord = chart.convertFromPixel([{ x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }], { paneId: 'candle_pane' })[0]
-  if (!coord || coord.dataIndex === undefined) return
-  hit.startPressedMove({ dataIndex: coord.dataIndex, value: coord.value })
-  store.setPressedOverlayInfo({ paneId: 'candle_pane', overlay: hit, figureType: 'other', figureIndex: -1, figure: null })
+  if (!store.getPressedOverlayInfo()?.overlay) {
+    // absolute:true：输入为 host 坐标（库内部对副图会先减 bounding.top，主图 top=0 行为不变）
+    const coord = chart.convertFromPixel([{ x: event.clientX - (hostRect?.left ?? 0), y: event.clientY - (hostRect?.top ?? 0) }], { paneId, absolute: true })[0]
+    if (!coord || coord.dataIndex === undefined) return
+    hit.startPressedMove({ dataIndex: coord.dataIndex, value: coord.value })
+    store.setPressedOverlayInfo({ paneId, overlay: hit, figureType: 'other', figureIndex: -1, figure: null })
+  }
+  if (store.getClickOverlayInfo()?.overlay?.id !== hit.id) {
+    store.setClickOverlayInfo(
+      { paneId, overlay: hit, figureType: 'other', figureIndex: -1, figure: null },
+      o => { (o as { onSelected?: (e: unknown) => void }).onSelected?.({ overlay: o }) },
+      o => { (o as { onDeselected?: (e: unknown) => void }).onDeselected?.({ overlay: o }) },
+    )
+  }
 }
 // 拖拽中：把指针位置重路由为轴区域内的合成 mousemove（x 固定在按下点，y 用真实值——
 // 库的缩放公式按 pageY 比例计算），真实移动事件本身因 widget 名称不匹配已被库忽略
@@ -644,6 +722,8 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected })
       <button @click="openEditPanel(ctxMenu.batch ? multiSelectedIds : [ctxMenu.overlayId], ctxMenu.x, ctxMenu.y)">{{ ctxMenu.batch ? `编辑划线（${multiSelectedIds.length}）` : '编辑划线' }}</button>
       <button @click="removeViaMenu">{{ ctxMenu.batch ? `删除画线（${multiSelectedIds.length}）` : '删除画线' }}</button>
     </div>
+    <!-- 多选成员锚点层：box 选中的画线库不绘制锚点（仅 hover/click 选中态绘制），自绘端点与单选选中态同视觉 -->
+    <div v-for="dot in anchorDots" :key="dot.key" class="anchor-dot" :style="{ left: `${dot.x - 9}px`, top: `${dot.y - 9}px` }"></div>
     <div v-if="editPanel" class="overlay-edit-panel" :style="{ left: `${editPanel.x}px`, top: `${editPanel.y}px` }">
       <div class="panel-title" title="按住标题栏拖动面板" @pointerdown="onPanelTitlePointerDown" @pointermove="onPanelTitlePointerMove" @pointerup="onPanelTitlePointerUp">编辑划线<span v-if="editForms.length > 1" class="panel-count">（{{ editForms.length }} 个）</span></div>
       <div v-if="editForms.length > 1" class="edit-tabs">
@@ -685,6 +765,8 @@ body.dark .overlay-edit-panel input[type='color'] { background: #223349; border-
 body.dark .overlay-edit-panel .panel-actions button { background: #223349; border-color: #32465f; color: #aebfd2; }
 body.dark .overlay-edit-panel .panel-actions button:first-child { background: #1d4253; border-color: #3a8ba0; color: #9adbe8; }
 .multi-rect { position: absolute; border: 1px dashed #38bdf8; background: rgba(56,189,248,.08); pointer-events: none; z-index: 5; }
+/* 多选成员锚点：黄芯白圈 18px，与库单选选中态锚点（activeRadius 7 + border 2）同视觉；随 updateAnchorDots 重算 */
+.anchor-dot { position: absolute; width: 18px; height: 18px; border: 2px solid #ffffff; border-radius: 50%; background: #f5c343; pointer-events: none; z-index: 6; box-sizing: border-box; }
 .edit-tabs { display: flex; flex-wrap: wrap; gap: 3px; }
 .edit-tabs button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 3px 8px; font-size: 11px; color: #5c7187; border-radius: 3px; }
 .edit-tabs button.active { border-color: #2e8191; background: #eaf5f6; color: #245a72; font-weight: 600; }
