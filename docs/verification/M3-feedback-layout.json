@@ -1,0 +1,43 @@
+{
+  "states": [
+    "待保存",
+    "保存中",
+    "保存失败",
+    "重试后已保存"
+  ],
+  "identicalDimensionsAndScroll": true,
+  "measurements": [
+    {
+      "selector": ".draw-toolbar",
+      "x": 1147,
+      "y": 637,
+      "width": 262,
+      "height": 236,
+      "scrollTop": 0
+    },
+    {
+      "selector": ".console-scroll",
+      "x": 1147,
+      "y": 113,
+      "width": 262,
+      "height": 512,
+      "scrollTop": 0
+    },
+    {
+      "selector": ".drawing-save-footer",
+      "x": 1147,
+      "y": 845,
+      "width": 262,
+      "height": 28,
+      "scrollTop": 0
+    },
+    {
+      "selector": ".toolbar-tool-lists",
+      "x": 1147,
+      "y": 678,
+      "width": 262,
+      "height": 131,
+      "scrollTop": 0
+    }
+  ]
+}

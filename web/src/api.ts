@@ -1,4 +1,5 @@
 export type Timeframe = '1D' | '1W' | '1M'
+import type { Drawing } from './drawingState'
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 
 export interface Stock {
@@ -131,4 +132,54 @@ export function settleTraining(id: number): Promise<TrainingSnapshot & { equityC
 
 export function abandonTraining(id: number): Promise<{ training: TrainingMeta }> {
   return request(`/api/trainings/${id}/abandon`, { method: 'POST' })
+}
+
+export function fetchDrawings(id: number): Promise<{ drawings: Drawing[] }> {
+  return request(`/api/trainings/${id}/drawings`)
+}
+
+export async function saveDrawings(id: number, drawings: Drawing[], keepalive = false): Promise<void> {
+  await request(`/api/trainings/${id}/drawings`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(drawings), keepalive,
+  })
+}
+
+// ===== 日线数据更新（R1：状态检查 + 触发更新） =====
+
+export type DataState = 'idle' | 'running' | 'unchanged' | 'updated' | 'failed'
+
+export interface DataSourceInfo {
+  kind: 'tdx' | 'online' | 'none'
+  name: string
+  available: boolean
+}
+
+export interface DataRefreshResult {
+  finishedAt: string
+  outcome: 'unchanged' | 'updated' | 'failed'
+  added: number
+  removed: number
+  revised: number
+  message: string
+}
+
+export interface DataStatus {
+  state: DataState
+  needsUpdate: boolean
+  reason: string
+  source: DataSourceInfo
+  tdx: { available: boolean; root: string | null }
+  online: { configured: boolean; provider: string | null }
+  sourceMaxDate: string | null
+  lastCheckedAt: string | null
+  lastResult: DataRefreshResult | null
+  revisionWarning: string | null
+}
+
+export function fetchDataStatus(): Promise<DataStatus> {
+  return request('/api/data/status')
+}
+
+export function postDataRefresh(): Promise<{ taskId: string; state: DataState; joined: boolean }> {
+  return request('/api/data/refresh', { method: 'POST' })
 }

@@ -1,0 +1,25 @@
+{
+  "kind": "architecture-and-status-audit",
+  "date": "2026-09-17",
+  "branch": "m3-complete-tools",
+  "head": "43982ea2d0df72162eb078005b57dc624e705cb5",
+  "dirtyWorktree": true,
+  "scope": "Read source and project records, run unit/type checks and list browser tests, synchronize documentation. No application changes or Git integration.",
+  "environment": { "os": "Windows", "node": "v24.15.0", "npm": "11.12.1" },
+  "checks": [
+    { "command": "npm test", "exitCode": 0, "files": 30, "passed": 242, "failed": 0, "headroomKey": "8a1b88ea9530" },
+    { "command": "npm run typecheck:web", "exitCode": 0, "headroomKey": "051d5321b301" },
+    { "command": "npx --no-install tsc -p server/tsconfig.json --noEmit", "exitCode": 0, "note": "Confirmed directly after empty-log compressor statistics failed with KeyError: kept_breakdown; compiler itself succeeded." },
+    { "command": "npx --no-install playwright test --list", "exitCode": 0, "files": 8, "listed": 57, "executed": 0, "headroomKey": "9730bb4e438b" }
+  ],
+  "notRun": ["production build", "verify:m1", "verify:m2", "browser journeys", "visual acceptance", "live source refresh"],
+  "historicalEvidence": "docs/ai/testing.md records earlier R0/R1 build, M2 24/24 and Playwright 57/57; not rerun in this audit.",
+  "findings": [
+    { "id": "DATA-01", "basis": "static-source", "summary": "Catalog, adjustment cache and scan baseline publish in separate transactions; catalog failures result is not inspected by coordinator." },
+    { "id": "DATA-02", "basis": "source-vs-spec", "summary": "Market-wide tail is used as sufficient coverage evidence despite the plan requiring target-stock completeness." },
+    { "id": "DATA-03", "basis": "static-source", "summary": "Metadata-only revision detection does not retain readable historical versions; append plus historical rewrite can be classified as addition." },
+    { "id": "DATA-04", "basis": "static-source", "summary": "Scan provider interface does not decouple training reads from TDX; independent API refresh paths remain." },
+    { "id": "TRAIN-01", "basis": "static-source", "summary": "Trade settings are read globally and corporate-action application depends on adjustment display mode." },
+    { "id": "DEV-01", "basis": "configuration-review", "summary": "Branches alone do not isolate fixed ports, default personal database, build destinations and report output." }
+  ]
+}

@@ -1,0 +1,52 @@
+
+> a-share-kline-trainer@0.1.0 test
+> vitest run --config server/vitest.config.ts
+
+
+ RUN  v3.2.7 D:/Superlinear_Academy/Stock_WorkSpace/a-share-kline-trainer
+
+ ✓ server/test/klinecharts-pin.test.ts (2 tests) 8ms
+ ✓ server/test/frontend-data-status-contract.test.ts (14 tests) 18ms
+ ✓ server/test/frontend-contract.test.ts (15 tests) 23ms
+ ✓ server/test/symbol.test.ts (3 tests) 6ms
+ ✓ server/test/kline.test.ts (3 tests) 7ms
+ ✓ server/test/names.test.ts (1 test) 17ms
+ ✓ server/test/train-account.test.ts (7 tests) 5ms
+ ✓ server/test/verification.test.ts (18 tests) 13ms
+ ✓ server/test/gbbq.test.ts (5 tests) 17ms
+ ✓ server/test/discover.test.ts (2 tests) 40ms
+ ✓ server/test/dayfile.test.ts (7 tests) 42ms
+ ✓ server/test/drawing-hit.test.ts (3 tests) 3ms
+ ✓ server/test/drawing-outbox.test.ts (4 tests) 7ms
+ ✓ server/test/stocks.test.ts (2 tests) 3ms
+ ✓ server/test/drawing-state.test.ts (6 tests) 26ms
+ ✓ server/test/trade-marker-layout.test.ts (14 tests) 27ms
+ ✓ server/test/adjustment-cache.test.ts (1 test) 36ms
+ ✓ server/test/catalog.test.ts (2 tests) 76ms
+ ✓ server/test/catalog-protection.test.ts (3 tests) 133ms
+ ✓ server/test/tool-favorites.test.ts (7 tests) 9ms
+ ✓ server/test/chart-cost-basis.test.ts (5 tests) 27ms
+ ✓ server/test/drawing-geometry.test.ts (60 tests) 41ms
+ ✓ server/test/rights-cost-basis.test.ts (12 tests) 37ms
+ ✓ server/test/chart-navigation.test.ts (3 tests) 3ms
+ ✓ server/test/drawings-migration.test.ts (1 test) 244ms
+ ✓ server/test/train-engine.test.ts (18 tests) 853ms
+ ✓ server/test/drawings.test.ts (5 tests) 367ms
+ ✓ server/test/full-acceptance.test.ts (3 tests) 431ms
+ ✓ server/test/api.test.ts (6 tests) 523ms
+ ✓ server/test/data-refresh.test.ts (10 tests) 854ms
+   ✓ data refresh service > a) scans a synthetic TDX fixture: baseline updated, then unchanged on rescan  342ms
+ ✓ server/test/docs-tooling.test.ts (27 tests) 17462ms
+   ✓ documentation CLI > requires declared documentation updates for tracked working-tree source changes  2713ms
+   ✓ documentation CLI > includes untracked runtime files and rejects paths outside the assigned scope  2059ms
+   ✓ documentation CLI > rejects empty no-impact reasons but accepts a concrete internal-change explanation  2473ms
+   ✓ documentation CLI > uses the requested base through HEAD, index and working tree, not only staged files  2434ms
+   ✓ documentation CLI > allows documentation-only changes without manufacturing source changes  2004ms
+   ✓ documentation CLI > executes the CLI and rejects unknown arguments without writing status  790ms
+   ✓ documentation CLI > uses normalized scope globs for untracked files and rejects invalid base commits  2110ms
+   ✓ documentation CLI > treats test fixtures and shipped assets as runtime inputs, even with text or image extensions  2040ms
+
+ Test Files  31 passed (31)
+      Tests  269 passed (269)
+   Start at  02:48:06
+   Duration  20.93s (transform 6.69s, setup 0ms, collect 25.67s, tests 21.36s, environment 5ms, prepare 13.30s)

@@ -1,0 +1,32 @@
+[
+  {
+    "path": "T0002\\hq_cache\\gbbq",
+    "size": 5783619,
+    "sha256": "74EEFF7A3B9519CB0B9705B2438A847357E1D151F716CE7FEEE8A59F96921921"
+  },
+  {
+    "path": "T0002\\hq_cache\\shs.tnf",
+    "size": 10051250,
+    "sha256": "3D6297EEEFF418011B34DB532354E3AF401F177190BE371EE4CFA8C8175C63A1"
+  },
+  {
+    "path": "T0002\\hq_cache\\szs.tnf",
+    "size": 8738330,
+    "sha256": "AAFAFF65E78672F95EB509238DE3D04B3ABAE2B4399EAA67E2E28AE93B72A5FC"
+  },
+  {
+    "path": "vipdoc\\sh\\lday\\sh000300.day",
+    "size": 168736,
+    "sha256": "59200872D8D02625B58FF9C3E4E81D47EEACBEEBD0672762FC0834A44BDBCF2A"
+  },
+  {
+    "path": "vipdoc\\sh\\lday\\sh600519.day",
+    "size": 192192,
+    "sha256": "751558C9C9E3C7172E13DCE7D4EB8FECA18BD9BB4A2B6287181436337ABCC057"
+  },
+  {
+    "path": "vipdoc\\sz\\lday\\sz300857.day",
+    "size": 47744,
+    "sha256": "616D9738DAB69BE945454C64E99F0A2E2B5D5FA08A7A27B95B96125C5186968F"
+  }
+]

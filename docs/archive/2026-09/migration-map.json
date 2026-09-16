@@ -1,0 +1,87 @@
+[
+  {
+    "source": "docs/ai/architecture-parallel-proposal.md",
+    "archive": "docs/archive/2026-09/ai-architecture-parallel-proposal.md",
+    "original_sha256": "d974c3661cb950ce513fc7e50227603f39e371166fd7a7740defc3ce30fac8dc"
+  },
+  {
+    "source": "docs/ai/architecture.md",
+    "archive": "docs/archive/2026-09/ai-architecture.md",
+    "original_sha256": "6b9a7023fbfe4308953c9b5ac42d3e4323de18bc1da8d6be0b5f0328aa50432e"
+  },
+  {
+    "source": "docs/ai/changelog.md",
+    "archive": "docs/archive/2026-09/ai-changelog.md",
+    "original_sha256": "3fd3be2f396afefc635f91c80155e405d8ea965905a21144b6d6f088c6942ef0"
+  },
+  {
+    "source": "docs/ai/development-plan-history-2026-09-16.md",
+    "archive": "docs/archive/2026-09/ai-development-plan-history-2026-09-16.md",
+    "original_sha256": "6e99349e51dceffae7a7a392d348577837e491940dcd15939cb6945a857c1de4"
+  },
+  {
+    "source": "docs/ai/known-invariants.md",
+    "archive": "docs/archive/2026-09/ai-known-invariants.md",
+    "original_sha256": "9a870903d1d8688d99f4aacbb841b7c9d8228d41f52fd3d8fa30c4345738d499"
+  },
+  {
+    "source": "docs/ai/m3-execution.md",
+    "archive": "docs/archive/2026-09/ai-m3-execution.md",
+    "original_sha256": "b9de9813cba591e605375fc8327db7d06945c9d1f286e8af6f9be474c2d51d9f"
+  },
+  {
+    "source": "docs/ai/m3-feedback-2026-09-09.md",
+    "archive": "docs/archive/2026-09/ai-m3-feedback-2026-09-09.md",
+    "original_sha256": "2314609b23e7a6103c97bd531635b06f6f11b22ee51a07116ce4f7bdbe35f0e6"
+  },
+  {
+    "source": "docs/ai/m3-feedback-2026-09-11.md",
+    "archive": "docs/archive/2026-09/ai-m3-feedback-2026-09-11.md",
+    "original_sha256": "7702f0cf0d4cbbe7a83da2c5bacfcaa2b1070209f745fb31d03ddcf481ef4ff4"
+  },
+  {
+    "source": "docs/ai/m3-feedback-2026-09-13.md",
+    "archive": "docs/archive/2026-09/ai-m3-feedback-2026-09-13.md",
+    "original_sha256": "02330aa72acd95ab7c3d221c0978f72b704804463e7977d10c83af7c79d317e1"
+  },
+  {
+    "source": "docs/ai/product-specs.md",
+    "archive": "docs/archive/2026-09/ai-product-specs.md",
+    "original_sha256": "67dcf0deb020c747149a081aabd08e83fc6adaba691ab0df2a5f378ab2dfd353"
+  },
+  {
+    "source": "docs/ai/testing.md",
+    "archive": "docs/archive/2026-09/ai-testing.md",
+    "original_sha256": "a6b48404165d1f61d08ccfbbb48e02db7b6554bf2f0488ad9c84e8749361e866"
+  },
+  {
+    "source": "docs/开发计划.md",
+    "archive": "docs/archive/2026-09/开发计划.md",
+    "original_sha256": "0bd41cae5a3d31cb23197dce6590008c8f504058bfa09dbc750a7055556cc6ec"
+  },
+  {
+    "source": "docs/日线更新与数据源适配-开发计划.md",
+    "archive": "docs/archive/2026-09/日线更新与数据源适配-开发计划.md",
+    "original_sha256": "cfdcdea61fae2c6094786425d9a75e582e1c2dbb48135ca42ecb4b822aa84557"
+  },
+  {
+    "source": "docs/M3-画线工具链-开发计划.md",
+    "archive": "docs/archive/2026-09/M3-画线工具链-开发计划.md",
+    "original_sha256": "d3e8cb2cadb6437646c2a728f2e3ac4c236bc84dc34ba331f5a7e09cb26db89d"
+  },
+  {
+    "source": "docs/bug-pattern-分析与journey自动化设计.md",
+    "archive": "docs/archive/2026-09/bug-pattern-分析与journey自动化设计.md",
+    "original_sha256": "cfa357343dfbfcdc754432840aa2187226152b9ef86bdde0d7070fb8ebf506ab"
+  },
+  {
+    "source": "docs/调研与架构讨论稿.md",
+    "archive": "docs/archive/2026-09/调研与架构讨论稿.md",
+    "original_sha256": "e8c04dc8f7b162671f7688074307233af6e9b8bfd9b512c5181a66ae8a50a4ac"
+  },
+  {
+    "source": "docs/status.md",
+    "archive": "docs/archive/2026-09/status.md",
+    "original_sha256": "7b3e2d654572eef8e235a64c7220cf1ffb127feae2168ed499a9f942f5fa0e75"
+  }
+]

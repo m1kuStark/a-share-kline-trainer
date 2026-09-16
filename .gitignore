@@ -7,3 +7,4 @@ web/dist/
 /output/
 test-results/
 playwright-report/
+.runs/

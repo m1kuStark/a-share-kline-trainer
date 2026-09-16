@@ -1,0 +1,10 @@
+D:\Superlinear_Academy\Stock_WorkSpace\a-share-kline-trainer\.runs\doc-baseline\server\src\verification.ts:140
+    throw new Error(`Cannot compare ${actual.length} actual bars with ${tdx.length} TDX bars`)
+          ^
+
+Error: Cannot compare 6006 actual bars with 5996 TDX bars
+    at compareTdxExportBars (D:\Superlinear_Academy\Stock_WorkSpace\a-share-kline-trainer\.runs\doc-baseline\server\src\verification.ts:140:11)
+    at main (D:\Superlinear_Academy\Stock_WorkSpace\a-share-kline-trainer\.runs\doc-baseline\scripts\verify-m1.ts:235:29)
+    at async <anonymous> (D:\Superlinear_Academy\Stock_WorkSpace\a-share-kline-trainer\.runs\doc-baseline\scripts\verify-m1.ts:491:1)
+
+Node.js v24.15.0

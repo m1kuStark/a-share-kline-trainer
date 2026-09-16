@@ -8,7 +8,7 @@ import { applyForwardAdjustment, buildForwardAdjustmentSegments } from '../tdx/g
 import { aggregateBars, type KlineBar, type Timeframe } from '../tdx/kline.js'
 import { parseTdxSymbol } from '../tdx/symbol.js'
 import {
-  applyTrade, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell, replayAccount,
+  applyTrade, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 
@@ -17,9 +17,9 @@ export type TrainingStatus = 'running' | 'settled' | 'abandoned'
 
 export const TIERS: Tier[] = ['1M', '3M', '6M', '1Y', '2Y']
 export const TIER_MONTHS: Record<Tier, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, '2Y': 24 }
-export const VISIBLE_BARS = 420
+export const VISIBLE_BARS = 840
 export const MA_WARMUP_BARS = 200
-// 服务端发放的 K 线上限：可见 420 根 + 左侧 MA 暖机余量；任何情况下不含推进日之后的数据。
+// 服务端发放的 K 线上限：可见 840 根 + 左侧 MA 暖机余量；任何情况下不含推进日之后的数据。
 export const TRAINING_LOAD_BARS = VISIBLE_BARS + MA_WARMUP_BARS
 
 export class HttpError extends Error {
@@ -236,7 +236,7 @@ export async function trainingBars(database: DatabaseSync, config: AppConfig, id
   return series.slice(-TRAINING_LOAD_BARS)
 }
 
-// 动态历史加载：420 限定的是同屏最大可见根数（缩放下限），不是加载总量。
+// 动态历史加载：840 限定的是同屏最大可见根数（缩放下限），不是加载总量。
 // 用户把视窗移动到已加载窗口之前时，前端按 before 分批取更早的历史（严格早于 before 的最近 count 根，升序）。
 export async function trainingBarsBefore(database: DatabaseSync, config: AppConfig, id: number, timeframe: Timeframe, before: string, count: number): Promise<{ bars: KlineBar[]; hasMore: boolean }> {
   const series = await buildTrainingSeries(database, config, id, timeframe)
@@ -247,23 +247,41 @@ export async function trainingBarsBefore(database: DatabaseSync, config: AppConf
 
 function replayState(database: DatabaseSync, row: TrainingRow): AccountState {
   const tradeRows = database.prepare(
-    'SELECT trade_date AS date, side, shares, amount, fee FROM trades WHERE training_id = ? ORDER BY seq',
-  ).all(row.id) as unknown as Array<{ date: string; side: 'buy' | 'sell'; shares: number; amount: number; fee: number }>
+    'SELECT seq, trade_date AS date, side, shares, amount, fee FROM trades WHERE training_id = ? ORDER BY seq',
+  ).all(row.id) as unknown as Array<{ seq: number; date: string; side: 'buy' | 'sell'; shares: number; amount: number; fee: number }>
   const eventRows = database.prepare(
-    'SELECT date, shares_delta, cash_delta FROM position_events WHERE training_id = ? ORDER BY seq',
-  ).all(row.id) as unknown as Array<{ date: string; shares_delta: number; cash_delta: number }>
+    'SELECT seq, date, shares_delta, cash_delta, cost_delta FROM position_events WHERE training_id = ? ORDER BY seq',
+  ).all(row.id) as unknown as Array<{ seq: number; date: string; shares_delta: number; cash_delta: number; cost_delta: number | null }>
+  const legacyAdjustments = new Map((eventRows.some(event => event.cost_delta === null)
+    ? loadAdjustmentEvents(database, row.market as 'sh' | 'sz' | 'bj', row.code)
+    : []).map(event => [event.date, event]))
   // 按日期归并成交与权息入账（同日先事件后成交；跨日事件只可能落在推进日，成交在事件之后）
-  const merged: Array<{ date: string; kind: 'trade' | 'event'; trade?: typeof tradeRows[number]; event?: typeof eventRows[number] }> = [
-    ...tradeRows.map(trade => ({ date: trade.date, kind: 'trade' as const, trade })),
-    ...eventRows.map(event => ({ date: event.date, kind: 'event' as const, event })),
-  ].sort((left, right) => left.date.localeCompare(right.date) || (left.kind === 'event' ? -1 : 1))
+  const merged: Array<{ date: string; seq: number; kind: 'trade' | 'event'; trade?: typeof tradeRows[number]; event?: typeof eventRows[number] }> = [
+    ...tradeRows.map(trade => ({ date: trade.date, seq: trade.seq, kind: 'trade' as const, trade })),
+    ...eventRows.map(event => ({ date: event.date, seq: event.seq, kind: 'event' as const, event })),
+  ].sort((left, right) => left.date.localeCompare(right.date)
+    || (left.kind === right.kind ? left.seq - right.seq : left.kind === 'event' ? -1 : 1))
   let state = initialAccountState(row.initial_cash)
   for (const item of merged) {
     if (item.kind === 'event' && item.event) {
+      let costDelta = item.event.cost_delta ?? 0
+      const adjustment = item.event.cost_delta === null ? legacyAdjustments.get(item.date) : undefined
+      if (adjustment && state.shares > 0 && adjustment.rightsShares > 0) {
+        // Legacy rows record only net cash. Restore a subscription only when both
+        // share and cash movements match the factor, without rewriting old rows.
+        const bonusShares = adjustment.bonusShares / 10 * state.shares
+        const rightsShares = adjustment.rightsShares / 10 * state.shares
+        const rightsCost = adjustment.rightsPrice * rightsShares
+        const paid = adjustment.dividend / 10 * state.shares - item.event.cash_delta
+        if (paid > 0 && Math.abs(item.event.shares_delta - bonusShares - rightsShares) < 1e-6
+          && Math.abs(paid - rightsCost) < 1e-6) {
+          costDelta = paid
+        }
+      }
       state = {
         cash: state.cash + item.event.cash_delta,
         shares: state.shares + item.event.shares_delta,
-        costTotal: state.costTotal,
+        costTotal: state.costTotal + costDelta,
       }
     } else if (item.trade) {
       state = applyTrade(state, { side: item.trade.side, price: 0, shares: item.trade.shares, amount: item.trade.amount, fee: item.trade.fee, tax: 0 })
@@ -333,9 +351,9 @@ export function getActiveTraining(database: DatabaseSync): TrainingMeta | null {
   return row ? toMeta(row) : null
 }
 
-// 图表空间换算：训练 K 线按"前复权、基准=推进日"绘制，跨除权日后历史价整体平移，
-// B/S 标记与成本线若用原始成交价就会错位。这里把每笔成交价换算到当前基准的复权价，
-// 并用调整后价格重放出"图表空间的摊薄成本"。raw 模式下原样返回（chartPrice 为空、成本线用原值）。
+// 历史 B/S 标记换算到推进日的前复权基准；当前持仓成本由含权息入账的账户重放取得。
+// 前复权末日价格等于原始价，当前成本无需复权；用历史复权买价重放会丢失送转股数。
+// raw 或无有效权息时保持原有回退合同（chartPrice 为空、成本线用账户原值）。
 export function buildChartSpace(database: DatabaseSync, id: number, trades: TradeView[]): { trades: TradeView[]; costPrice: number | null } {
   const row = loadTrainingRow(database, id)
   if (row.adjust_mode !== 'forward') return { trades, costPrice: null }
@@ -351,9 +369,7 @@ export function buildChartSpace(database: DatabaseSync, id: number, trades: Trad
     const { a, b } = segmentFor(trade.date)
     return { ...trade, chartPrice: trade.price * a + b }
   })
-  const state = replayAccount(row.initial_cash, chartTrades.map(trade => ({
-    side: trade.side, shares: trade.shares, amount: trade.chartPrice! * trade.shares, fee: trade.fee,
-  })))
+  const state = replayState(database, row)
   return { trades: chartTrades, costPrice: dilutedCostPrice(state) }
 }
 
@@ -374,27 +390,43 @@ export function applyPositionEvents(
     const sharesBefore = result.shares
     let cashDelta = (event.dividend / 10) * sharesBefore
     let sharesDelta = (event.bonusShares / 10) * sharesBefore
+    let costDelta = 0
     const rightsShares = (event.rightsShares / 10) * sharesBefore
     const rightsCost = event.rightsPrice * rightsShares
     if (rightsShares > 0 && result.cash + cashDelta >= rightsCost) {
       cashDelta -= rightsCost
       sharesDelta += rightsShares
+      costDelta = rightsCost
     }
     if (sharesDelta === 0 && cashDelta === 0) continue
     const seqRow = database.prepare(
       'SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM position_events WHERE training_id = ?',
     ).get(row.id) as unknown as { seq: number }
     database.prepare(`
-      INSERT INTO position_events (training_id, seq, date, kind, shares_delta, cash_delta)
-      VALUES (?, ?, ?, 'corporate_action', ?, ?)
-    `).run(row.id, seqRow.seq, date, sharesDelta, cashDelta)
+      INSERT INTO position_events (training_id, seq, date, kind, shares_delta, cash_delta, cost_delta)
+      VALUES (?, ?, ?, 'corporate_action', ?, ?, ?)
+    `).run(row.id, seqRow.seq, date, sharesDelta, cashDelta, costDelta)
     result = {
       cash: result.cash + cashDelta,
       shares: result.shares + sharesDelta,
-      costTotal: result.costTotal,
+      costTotal: result.costTotal + costDelta,
     }
   }
   return result
+}
+
+// 判断 (from, to] 是否全部落在周六/周日：A 股周末从不交易，缺口若只含周末，
+// 说明本地数据实际已完整覆盖到 to，缺线确属非交易日（不做节假日猜测，保守）。
+function isWeekendBridge(from: string, to: string): boolean {
+  const cursor = new Date(`${from}T00:00:00Z`)
+  const end = new Date(`${to}T00:00:00Z`)
+  while (cursor.getTime() < end.getTime()) {
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+    if (cursor.getTime() > end.getTime()) break
+    const weekday = cursor.getUTCDay()
+    if (weekday !== 0 && weekday !== 6) return false
+  }
+  return true
 }
 
 export async function advanceTraining(database: DatabaseSync, config: AppConfig, id: number): Promise<{ snapshot: TrainingSnapshot; settled: boolean; bar: KlineBar | null }> {
@@ -405,6 +437,20 @@ export async function advanceTraining(database: DatabaseSync, config: AppConfig,
   const current = row.current_date ?? row.start_date
   const next = daily.find(bar => bar.date > current && bar.date <= row.planned_end)
   if (!next) {
+    // 数据尾守卫：找不到下一根时，必须先确认本地数据确实覆盖到计划结束、且缺线区间属正常缺线
+    // （结束日恰为数据末日 / 缺口只含周末 / 全市场数据尾已越过计划结束即个股停牌或结束日后有记录），
+    // 才允许到期结算；否则按"等待日线数据"保守等待：保持 running、保留当前日，更新数据后可继续或提前结算。
+    // 防未来说明：这里只读取"数据末日"这类元信息做判定，不读取推进日之后的任何价格数据，结算仍用既有推进状态。
+    const tail = daily.at(-1)?.date ?? null
+    const marketTail = (database.prepare('SELECT MAX(last_date) AS tail FROM stocks').get() as unknown as { tail: string | null }).tail
+    const covered = tail !== null && (
+      tail >= row.planned_end
+      || isWeekendBridge(tail, row.planned_end)
+      || (marketTail !== null && marketTail >= row.planned_end)
+    )
+    if (!covered) {
+      throw new HttpError(409, `等待日线数据：本地日线数据尚未覆盖至计划结束（数据末日 ${tail ?? '未知'} < 计划结束 ${row.planned_end}），更新数据后可继续推进，也可提前结算`)
+    }
     // 到期结算：个股在到期日前没有更多交易日时，取最后交易日结算
     database.prepare(
       "UPDATE trainings SET status = 'settled', settle_date = ?, early_settle = 0 WHERE id = ?",
@@ -485,5 +531,3 @@ export function equityCurveOf(database: DatabaseSync, id: number): Array<{ date:
     'SELECT date, equity FROM equity_curve WHERE training_id = ? ORDER BY date',
   ).all(id) as unknown as Array<{ date: string; equity: number }>
 }
-
-

@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     const initialPayload = initialBars.json()
     const maxInitialDate = initialPayload.bars.at(-1).date
     record('载入历史：全部 ≤ 推进日', `≤ ${created.currentDate}`, maxInitialDate, maxInitialDate <= created.currentDate)
-    record('载入历史上限 620 根（420 可见＋200 暖机）', `≤ ${TRAINING_LOAD_BARS}`, initialPayload.bars.length, initialPayload.bars.length <= TRAINING_LOAD_BARS)
+    record('载入历史上限 1040 根（840 可见＋200 暖机）', `≤ ${TRAINING_LOAD_BARS}`, initialPayload.bars.length, initialPayload.bars.length <= TRAINING_LOAD_BARS)
 
     // 手算 ①：起始日收盘 1286.00，买入 50% → 目标 500,000 → 388 手 = 38,800 股
     const startClose = closeAt(created.currentDate)

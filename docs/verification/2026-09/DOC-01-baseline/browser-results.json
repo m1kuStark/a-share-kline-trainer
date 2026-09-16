@@ -1,0 +1,30 @@
+{
+  "kind": "combined-browser-evidence",
+  "date": "2026-09-17",
+  "browser": "Microsoft Edge channel",
+  "dataFingerprint": "trainer-browser-data-fingerprint.json",
+  "runs": [
+    {
+      "command": "npx playwright test --retries=0 --reporter=line,json",
+      "scope": "all 8 spec files",
+      "result": "45 expected, 11 serially skipped after one readiness failure, 1 initial unexpected",
+      "failure": "journey Act2b hit 5s UI readiness while POST create was still pending; preserved under journey-attempt-1"
+    },
+    {
+      "command": "npx playwright test e2e/journey.spec.ts --retries=0 --reporter=line,json",
+      "scope": "16 journey tests",
+      "result": "16 expected, 0 skipped, 0 unexpected",
+      "fix": "training-flow waits for POST /api/trainings and allows 30s source scan"
+    }
+  ],
+  "effectiveCoverage": "All 57 listed tests covered across the two runs; the initial failed readiness path was rerun and passed. This is combined evidence, not a single 57-test process.",
+  "visualReview": [
+    "compact-1440.png",
+    "compact-light.png",
+    "compact-1024.png",
+    "compact-1280.png",
+    "compact-840.png",
+    "compact-details.png"
+  ],
+  "userAcceptance": "not recorded"
+}

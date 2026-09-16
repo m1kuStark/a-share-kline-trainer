@@ -115,6 +115,15 @@ describe('full acceptance matrix', () => {
       expect(created.statusCode).toBe(201)
       const id = created.json().training.id
       expect(created.json().training).toMatchObject({ blind: true, code: null, name: null, currentDate: null })
+      const runningSnapshot = await app.inject({ method: 'GET', url: `/api/trainings/${id}` })
+      expect(runningSnapshot.statusCode).toBe(200)
+      expect(runningSnapshot.json().training).toMatchObject({ id, status: 'running', blind: true, code: null, name: null, currentDate: null })
+      expect(runningSnapshot.json().account.equity).toBe(1_000_000)
+      expect(runningSnapshot.json().bars).toBeUndefined()
+      for (const invalidId of ['bad', '1.5', '0', '-1', '9007199254740992']) {
+        expect((await app.inject({ method: 'GET', url: `/api/trainings/${invalidId}` })).statusCode).toBe(400)
+      }
+      expect((await app.inject({ method: 'GET', url: '/api/trainings/9876' })).statusCode).toBe(404)
 
       const conflict = await app.inject({
         method: 'POST', url: '/api/trainings',
@@ -149,11 +158,17 @@ describe('full acceptance matrix', () => {
         expect(response.json().bars.every((bar: { date: string }) => bar.date <= dates[3])).toBe(true)
       }
 
-      // 文本标注/画线持久化属于已撤销的 M3 功能：接口必须不存在，bars 响应不带 drawings
-      const drawingsPut = await app.inject({ method: 'PUT', url: `/api/trainings/${id}/drawings`, payload: { payload: [{ name: 'segment' }] } })
-      expect(drawingsPut.statusCode).toBe(404)
+      const drawings = [{
+        id: 'acceptance-line', name: 'segment', paneId: 'candle_pane',
+        points: [{ timestamp: Date.parse(`${dates[2]}T00:00:00Z`), value: 10.2 }, { timestamp: Date.parse(`${dates[3]}T00:00:00Z`), value: 10.3 }],
+        styles: { line: { color: '#facc15', size: 1, style: 'dashed', dashedValue: [4, 4] } },
+      }]
+      const drawingsPut = await app.inject({ method: 'PUT', url: `/api/trainings/${id}/drawings`, payload: drawings })
+      expect(drawingsPut.statusCode).toBe(200)
+      expect(drawingsPut.json()).toEqual({ drawings })
       const drawingsGet = await app.inject({ method: 'GET', url: `/api/trainings/${id}/drawings` })
-      expect(drawingsGet.statusCode).toBe(404)
+      expect(drawingsGet.statusCode).toBe(200)
+      expect(drawingsGet.json()).toEqual({ drawings })
       expect(bars.json().drawings).toBeUndefined()
 
       // 动态历史加载：before/count 分批取更早历史 + 参数校验
@@ -179,12 +194,22 @@ describe('full acceptance matrix', () => {
       expect(settled.statusCode).toBe(200)
       expect(settled.json().training).toMatchObject({ status: 'settled', earlySettle: true, code: '600000', name: '600000' })
       expect(settled.json().trades[0].blindLabel).toBeUndefined()
+      expect((await app.inject({ method: 'GET', url: `/api/trainings/${id}/drawings` })).json()).toEqual({ drawings })
+      const settledSnapshot = await app.inject({ method: 'GET', url: `/api/trainings/${id}` })
+      expect(settledSnapshot.statusCode).toBe(200)
+      expect(settledSnapshot.json().training).toEqual(settled.json().training)
+      expect(settledSnapshot.json().account).toEqual(settled.json().account)
+      const settledBars = await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D` })
+      expect(settledBars.json().bars.at(-1).date).toBe(dates[3])
+      expect((await app.inject({ method: 'GET', url: '/api/trainings/active' })).json()).toEqual({ training: null })
 
       const reopened = await app.inject({ method: 'GET', url: '/api/kline/600000?adjust=raw' })
       expect(reopened.statusCode).toBe(200)
 
       const second = await app.inject({ method: 'POST', url: '/api/trainings', payload: { tier: '1M', code: '600000', start_date: dates[5] } })
       expect(second.statusCode).toBe(201)
+      expect((await app.inject({ method: 'GET', url: `/api/trainings/${id}` })).json().training.id).toBe(id)
+      expect((await app.inject({ method: 'GET', url: '/api/trainings/active' })).json().training.id).toBe(second.json().training.id)
       const abandoned = await app.inject({ method: 'POST', url: `/api/trainings/${second.json().training.id}/abandon` })
       expect(abandoned.statusCode).toBe(200)
       expect(abandoned.json().training.status).toBe('abandoned')

@@ -9,6 +9,8 @@ import { loadAdjustmentEvents, refreshAdjustmentCache } from './tdx/adjustment-c
 import { applyForwardAdjustment } from './tdx/gbbq.js'
 import { parseTdxSymbol } from './tdx/symbol.js'
 import { getActiveTraining } from './train/engine.js'
+import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
+import { createDataRefreshCoordinator } from './data/refresh.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
   equityCurveOf, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
@@ -163,6 +165,23 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     return snapshot
   })
 
+  app.get('/api/trainings/:id', async request => {
+    const { id } = request.params as { id: string }
+    const trainingId = Number(id)
+    if (!Number.isSafeInteger(trainingId) || trainingId < 1) throw new HttpError(400, 'id 必须是正整数')
+    return trainingSnapshot(database, trainingId)
+  })
+
+  app.get('/api/trainings/:id/drawings', async request => {
+    const { id } = request.params as { id: string }
+    return { drawings: readDrawings(database, Number(id)) }
+  })
+
+  app.put('/api/trainings/:id/drawings', { bodyLimit: DRAWINGS_BODY_LIMIT }, async request => {
+    const { id } = request.params as { id: string }
+    return { drawings: writeDrawings(database, Number(id), request.body) }
+  })
+
   app.get('/api/trainings/:id/bars', async (request, reply) => {
     const params = request.params as { id: string }
     const query = request.query as { tf?: Timeframe; before?: string; count?: string }
@@ -263,5 +282,16 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
       if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message })
       throw error
     }
+  })
+
+  // ===== R1 统一日线更新服务：状态查询 + 手动/启动/激活共用的单飞行刷新任务 =====
+  const dataRefresh = createDataRefreshCoordinator(database, config)
+
+  app.get('/api/data/status', async () => dataRefresh.getStatus())
+
+  app.post('/api/data/refresh', async (_request, reply) => {
+    const started = await dataRefresh.start()
+    if (!started) return reply.code(409).send({ error: '未检测到通达信数据目录，且未配置在线数据源' })
+    return reply.code(started.joined ? 200 : 202).send({ taskId: started.taskId, state: started.state, joined: started.joined })
   })
 }

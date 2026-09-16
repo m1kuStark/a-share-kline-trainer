@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { createTraining, searchStocks, type Stock, type Tier } from '../api'
+import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 
 const emit = defineEmits<{ created: [] }>()
 
@@ -13,6 +14,9 @@ const initialCash = ref<number>(1_000_000)
 const adjustMode = ref<'forward' | 'raw'>('forward')
 const submitting = ref(false)
 const errorMessage = ref('')
+// 开始训练守卫：needsUpdate=true 时先弹确认框（needsUpdate=false 零打扰）
+const showDataConfirm = ref(false)
+const dataCutoff = computed(() => dataStatus.value?.sourceMaxDate ?? '未知')
 
 const tiers: Array<{ value: Tier; label: string }> = [
   { value: '1M', label: '1个月' },
@@ -39,6 +43,16 @@ function choose(stock: Stock): void {
 }
 
 async function submit(): Promise<void> {
+  if (submitting.value) return
+  // 守卫加在提交路径最前端：数据待更新时先弹"建议先更新日线数据"确认框，不直接创建
+  if (dataStatus.value?.needsUpdate && !dataUpdating.value) {
+    showDataConfirm.value = true
+    return
+  }
+  await performCreate()
+}
+
+async function performCreate(): Promise<void> {
   if (submitting.value) return
   errorMessage.value = ''
   if (!selected.value) {
@@ -69,6 +83,18 @@ async function submit(): Promise<void> {
   } finally {
     submitting.value = false
   }
+}
+
+/** 弹窗主按钮【先更新数据】：触发 refresh、关弹窗、不开始训练 */
+function confirmUpdateFirst(): void {
+  showDataConfirm.value = false
+  void refreshDataNow()
+}
+
+/** 弹窗次按钮【仍要开始训练】：关弹窗，照常提交创建训练 */
+function confirmStartAnyway(): void {
+  showDataConfirm.value = false
+  void performCreate()
 }
 </script>
 
@@ -102,7 +128,7 @@ async function submit(): Promise<void> {
         <div class="form-field">
           <label>起始日</label>
           <input v-model="startDate" type="date" />
-          <small class="form-hint">起始日之前最多 420 根 K 线作为可见历史</small>
+          <small class="form-hint">起始日之前最多 840 根 K 线同屏显示</small>
         </div>
         <div class="form-field">
           <label>初始资金</label>
@@ -123,5 +149,20 @@ async function submit(): Promise<void> {
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
       <button class="submit-button" :disabled="submitting" @click="submit">{{ submitting ? '创建中…' : '开始训练' }}</button>
     </section>
+
+    <!-- 建议先更新日线数据：复用结算面板的模态风格（settle-mask/settle-panel） -->
+    <div v-if="showDataConfirm" class="settle-mask" role="dialog" aria-modal="true" aria-label="建议先更新日线数据" @click.self="showDataConfirm = false">
+      <div class="settle-panel data-confirm-panel">
+        <h2>建议先更新日线数据</h2>
+        <p class="data-confirm-text">
+          <template v-if="dataStatus?.sourceMaxDate">本地日线数据截止 <strong>{{ dataCutoff }}</strong>，可能落后于最新交易日。建议先更新数据再开始训练，避免用缺失的最近行情练习。</template>
+          <template v-else>尚未完成首次数据扫描，暂无法确认本地日线是否最新。建议先执行一次“更新日线”再开始训练，避免用缺失的最近行情练习。</template>
+        </p>
+        <div class="data-confirm-actions">
+          <button class="trade-action buy" @click="confirmUpdateFirst">先更新数据</button>
+          <button class="ghost-button" @click="confirmStartAnyway">仍要开始训练</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

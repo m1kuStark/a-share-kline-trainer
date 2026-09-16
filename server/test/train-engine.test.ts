@@ -74,6 +74,42 @@ async function withFixture(run: (context: { database: DatabaseSync; config: AppC
   }
 }
 
+// 自定义数据尾夹具：按给定末日写一只或多只股票的日线（用于构造"数据未更新到位/停牌"等场景）
+async function createCustomFixture(stocks: Array<{ file: string; dates: string[] }>): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), 'tdx-train-tail-'))
+  await mkdir(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true })
+  await mkdir(join(root, 'T0002', 'hq_cache'), { recursive: true })
+  for (const stock of stocks) {
+    const records = stock.dates.map((date, index) => dayRecord(
+      Number(date.replaceAll('-', '')),
+      10 + index * 0.1 - 0.05,
+      10 + index * 0.1,
+    ))
+    await writeFile(join(root, 'vipdoc', 'sh', 'lday', stock.file), Buffer.concat(records))
+  }
+  const gbbq = Buffer.alloc(4 + encryptedGbbqRecord.length)
+  gbbq.writeUInt32LE(1, 0)
+  encryptedGbbqRecord.copy(gbbq, 4)
+  await writeFile(join(root, 'T0002', 'hq_cache', 'gbbq'), gbbq)
+  return root
+}
+
+async function withCustomFixture(
+  stocks: Array<{ file: string; dates: string[] }>,
+  run: (context: { database: DatabaseSync; config: AppConfig }) => Promise<void>,
+): Promise<void> {
+  const root = await createCustomFixture(stocks)
+  const database = new DatabaseSync(':memory:')
+  migrateDatabase(database)
+  const config = createAppConfig(root)
+  try {
+    await run({ database, config })
+  } finally {
+    database.close()
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
 describe('training engine', () => {
   it('clamps month ends when computing planned_end', () => {
     expect(addMonths('2026-07-06', 1)).toBe('2026-08-06')
@@ -330,7 +366,7 @@ describe('training engine', () => {
     })
   })
 
-  it('maps trade prices into chart space across an ex-date', async () => {
+  it('adjusts historical trade markers while retaining current acquisition cost across a dividend', async () => {
     await withFixture(async ({ database, config, dates }) => {
       const training = await createTraining(database, config, {
         tier: '1M', code: '600000', start_date: dates[0],
@@ -345,22 +381,170 @@ describe('training engine', () => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       // 手算：除权前买入 1000 股@10.0 → 图表价 10−2=8；除权后卖出 500 股@11 → 原价 11
-      insertTrade.run(training.id, 1, '2026-07-06', 'buy', 10, 1000, 10000, 0, 990_000, 1000, 10_000)
-      insertTrade.run(training.id, 2, '2026-07-13', 'sell', 11, 500, 5500, 0, 995_500, 500, 5000)
-      const snapshot = trainingSnapshot(database, training.id)
-      expect(snapshot.trades[0].price).toBe(10)
-      // 推进到除权日之后（当前日 ≥ 2026-07-10），事件才进入复权基准——这正是实盘错位出现的时机
       let guard = 0
-      while (trainingSnapshot(database, training.id).training.currentDate < '2026-07-10' && guard < 10) {
+      while (trainingSnapshot(database, training.id).training.currentDate < '2026-07-06' && guard < 10) {
         await advanceTraining(database, config, training.id)
         guard += 1
       }
-      expect(trainingSnapshot(database, training.id).training.currentDate).toBe('2026-07-10')
+      expect(trainingSnapshot(database, training.id).training.currentDate).toBe('2026-07-06')
+      insertTrade.run(training.id, 1, '2026-07-06', 'buy', 10, 1000, 10000, 0, 990_000, 1000, 10_000)
+      while (trainingSnapshot(database, training.id).training.currentDate < '2026-07-13' && guard < 10) {
+        await advanceTraining(database, config, training.id)
+        guard += 1
+      }
+      expect(trainingSnapshot(database, training.id).training.currentDate).toBe('2026-07-13')
+      insertTrade.run(training.id, 2, '2026-07-13', 'sell', 11, 500, 5500, 0, 997_500, 500, 5000)
+      const snapshot = trainingSnapshot(database, training.id)
+      expect(snapshot.trades[0].price).toBe(10)
+      expect(snapshot.account.cash).toBe(997_500)
+      expect(snapshot.account.shares).toBe(500)
+      expect(snapshot.account.costPrice).toBe(10)
       const chart = buildChartSpace(database, training.id, snapshot.trades)
       expect(chart.trades[0].chartPrice).toBeCloseTo(8, 10)
       expect(chart.trades[1].chartPrice).toBeCloseTo(11, 10)
-      // 图表空间摊薄成本：买入 8×1000=8000，卖出减半 → 4000/500 股 = 8
-      expect(chart.costPrice).toBeCloseTo(8, 10)
+      // 分红进入现金；剩余持仓保留取得成本，不能用历史复权买价替代。
+      expect(chart.costPrice).toBe(10)
+    })
+  })
+
+  // ── R0 数据尾守卫：找不到下一根时区分"真到期"与"数据未更新到位" ──
+
+  it('keeps running and reports waiting-for-data when the local tail is before planned_end', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      // 数据末日 = dates[31] = 2026-08-13，1M 计划结束 = 2026-08-20：来源未覆盖计划结束
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[13],
+      })
+      expect(training.plannedEnd).toBe('2026-08-20')
+      for (let index = 0; index < 18; index += 1) {
+        await advanceTraining(database, config, training.id)
+      }
+      expect(trainingSnapshot(database, training.id).training.currentDate).toBe('2026-08-13')
+      const curveBefore = equityCurveOf(database, training.id)
+      let waited: HttpError | null = null
+      try {
+        await advanceTraining(database, config, training.id)
+      } catch (error) {
+        waited = error as HttpError
+      }
+      expect(waited).toBeInstanceOf(HttpError)
+      expect(waited?.statusCode).toBe(409)
+      expect(waited?.message).toContain('等待日线数据')
+      expect(waited?.message).toContain('2026-08-13')
+      expect(waited?.message).toContain('2026-08-20')
+      // 保守等待：状态仍 running，当前日与权益曲线原样保留
+      const snapshot = trainingSnapshot(database, training.id)
+      expect(snapshot.training.status).toBe('running')
+      expect(snapshot.training.currentDate).toBe('2026-08-13')
+      expect(equityCurveOf(database, training.id)).toEqual(curveBefore)
+    })
+  })
+
+  it('still allows early settlement after waiting for daily data', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[13],
+      })
+      for (let index = 0; index < 18; index += 1) {
+        await advanceTraining(database, config, training.id)
+      }
+      await expect(advanceTraining(database, config, training.id)).rejects.toThrow(/等待日线数据/)
+      // 用户主动提前结算仍然可用，结算日保留在当前推进日
+      const settled = settleTraining(database, training.id)
+      expect(settled.status).toBe('settled')
+      expect(settled.earlySettle).toBe(true)
+      expect(settled.settleDate).toBe('2026-08-13')
+    })
+  })
+
+  it('settles at maturity when the local tail covers planned_end (regression)', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      // 数据末日 2026-08-13 >= 计划结束 2026-08-01：正常到期结算，不触发等待
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0],
+      })
+      let settled = false
+      let guard = 0
+      while (!settled && guard < 40) {
+        settled = (await advanceTraining(database, config, training.id)).settled
+        guard += 1
+      }
+      expect(settled).toBe(true)
+      const snapshot = trainingSnapshot(database, training.id)
+      expect(snapshot.training.status).toBe('settled')
+      expect(snapshot.training.earlySettle).toBe(false)
+      expect(snapshot.training.settleDate).toBe(dates[22])
+    })
+  })
+
+  it('settles when planned_end falls on a weekend with the last weekday bar present (regression)', async () => {
+    // 本地日线恰好停在 2026-07-31（周五），计划结束 2026-08-01（周六）：缺口只含周末，正常到期结算
+    await withCustomFixture([{ file: 'sh600000.day', dates: weekdayDates('2026-07-01', 23) }], async ({ database, config }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: '2026-07-01',
+      })
+      expect(training.plannedEnd).toBe('2026-08-01')
+      let settled = false
+      let guard = 0
+      while (!settled && guard < 40) {
+        settled = (await advanceTraining(database, config, training.id)).settled
+        guard += 1
+      }
+      expect(settled).toBe(true)
+      const snapshot = trainingSnapshot(database, training.id)
+      expect(snapshot.training.status).toBe('settled')
+      expect(snapshot.training.earlySettle).toBe(false)
+      expect(snapshot.training.settleDate).toBe('2026-07-31')
+      expect(snapshot.training.currentDate).toBe('2026-07-31')
+    })
+  })
+
+  it('settles a suspended stock at its last bar once the market tail passes planned_end', async () => {
+    // 600000 停在 7-31，600001 交易到 8-05：计划结束 8-03（周一）时全市场数据尾已越过
+    // → 个股缺线确属停牌，按最后交易日正常结算
+    await withCustomFixture([
+      { file: 'sh600000.day', dates: weekdayDates('2026-07-01', 23) },
+      { file: 'sh600001.day', dates: weekdayDates('2026-07-01', 26) },
+    ], async ({ database, config }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: '2026-07-03',
+      })
+      expect(training.plannedEnd).toBe('2026-08-03')
+      let settled = false
+      let guard = 0
+      while (!settled && guard < 40) {
+        settled = (await advanceTraining(database, config, training.id)).settled
+        guard += 1
+      }
+      expect(settled).toBe(true)
+      const snapshot = trainingSnapshot(database, training.id)
+      expect(snapshot.training.status).toBe('settled')
+      expect(snapshot.training.earlySettle).toBe(false)
+      expect(snapshot.training.settleDate).toBe('2026-07-31')
+      expect(snapshot.training.currentDate).toBe('2026-07-31')
+    })
+  })
+
+  it('leaves settled trainings untouched on further advance attempts (regression)', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0],
+      })
+      for (let index = 0; index < 3; index += 1) {
+        await advanceTraining(database, config, training.id)
+      }
+      const settled = settleTraining(database, training.id)
+      expect(settled.settleDate).toBe(dates[3])
+      const curve = equityCurveOf(database, training.id)
+      await expect(advanceTraining(database, config, training.id)).rejects.toThrow(new HttpError(409, '训练已结束，无法推进'))
+      // 重放不变：状态、终点、权益曲线均保持结算时原样
+      const replay = trainingSnapshot(database, training.id)
+      expect(replay.training.status).toBe('settled')
+      expect(replay.training.settleDate).toBe(dates[3])
+      expect(replay.training.currentDate).toBe(dates[3])
+      expect(equityCurveOf(database, training.id)).toEqual(curve)
+      await expect(tradeTraining(database, training.id, { side: 'buy', weightPct: 10 }))
+        .rejects.toThrow(new HttpError(409, '训练已结束，无法交易'))
     })
   })
 })

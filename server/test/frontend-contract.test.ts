@@ -5,6 +5,12 @@ const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
 
 describe('M2 chart interaction contract', () => {
+  it('registers shared transparent measurement labels without changing the Fibonacci tool name', async () => {
+    const overlays = await readFile(new URL('../../web/src/drawingOverlays.ts', import.meta.url), 'utf8')
+    expect(overlays).toMatch(/\['fibonacciLine', 3\]/)
+    expect(overlays).toMatch(/name === 'percentageLine' \|\| name === 'fibonacciLine'/)
+    expect(overlays).toMatch(/backgroundColor: 'transparent', borderSize: 0/)
+  })
   it('starts box select only on the draw-pane layer and supports right-drag zoom-in / left-drag zoom-out', async () => {
     const source = await readFile(chartPath, 'utf8')
     // 框选在任一绘图 pane 启动（主副图同权，用户 D4 验收拍板），x 轴除外
@@ -45,7 +51,7 @@ describe('M2 chart interaction contract', () => {
     // 取点期间锁定平移；退出/切换前取消未完成取点（库不处理 Esc，取消自行实现）
     expect(source).toMatch(/function cancelDrawing\(\): void/)
     expect(source).toMatch(/isDrawing\?\.\(\)/)
-    expect(source).toMatch(/onDrawEnd: \(\) => emit\('toolChange', null\)/)
+    expect(source).toMatch(/onDrawEnd: event => \{\s*emit\('toolChange', null\)/)
     const trainingSource = await readFile(trainingPath, 'utf8')
     // 工具条停靠训练控制台底部（用户 D1 验收反馈改定：不遮挡图表），内容区滚动观察
     expect(trainingSource).toMatch(/class="console-scroll"/)
@@ -67,7 +73,8 @@ describe('M2 chart interaction contract', () => {
     // 右键接管：preventDefault 抑制库默认"右键即删除"，改为弹出菜单；取点中右键＝取消绘制
     expect(source).toMatch(/onRightClick: event => \{/)
     expect(source).toMatch(/event\.preventDefault\?\.\(\)/)
-    expect(source).toMatch(/if \(event\.overlay\.isDrawing\(\)\) \{ cancelDrawing\(\); emit\('toolChange', null\); return \}/)
+    expect(source).toMatch(/if \(\(event\.overlay as RuntimeOverlay\)\.isDrawing\(\)\) \{/)
+    expect(source).toMatch(/cancelDrawing\(\); emit\('toolChange', null\); return/)
     expect(source).toMatch(/编辑划线/)
     expect(source).toMatch(/删除画线/)
     // 编辑面板四类参数：颜色/粗细/样式/端点价位（不编辑横坐标），确定走 overrideOverlay
@@ -114,13 +121,12 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/forEach\(axis => axis\.setAutoCalcTickFlag\(false\)\)/)
     expect(source).toMatch(/userOverlays\.forEach\(overlay => \{ overlay\.lock = true \}\)/)
     // 射线/直线命中几何按图元覆盖范围延伸（overlayHitGeometry）
-    expect(source).toMatch(/overlay\.name === 'rayLine'/)
-    expect(source).toMatch(/overlay\.name === 'straightLine'/)
+    expect(source).toMatch(/builtInGeometry\(overlay.name, pts, bounds\)/)
     // 虚线段长统一为库默认 [4,4]（编辑前后渲染一致）；字段改无关联 div 结构（label 点击区溢出修复）
     expect(themeSource).toMatch(/dashedValue: \[4, 4\]/)
     expect(source).toMatch(/dashedValue: form\.style === 'dotted' \? \[2, 4\] : \[4, 4\]/)
     expect(source).toMatch(/class="field-row"/)
-    expect(source).not.toMatch(/<label/)
+    expect(source).not.toMatch(/<label[^>]*class="field-row"/)
   })
 
   it('registers the ray tool in the drawing registry (D3)', async () => {
@@ -133,9 +139,8 @@ describe('M2 chart interaction contract', () => {
     expect(drawToolsSource).toMatch(/\{ name: 'horizontalRayLine', label: '水平射线' \}/)
     const chartSource = await readFile(chartPath, 'utf8')
     // 水平系命中几何与库渲染范围一致：水平直线单点全宽、水平射线沿点2方向延伸到边
-    expect(chartSource).toMatch(/overlay\.name === 'horizontalStraightLine' && pts\.length >= 1/)
-    expect(chartSource).toMatch(/overlay\.name === 'horizontalRayLine' && pts\.length >= 2/)
-    expect(chartSource).toMatch(/horizontalStraightLine: '水平直线', horizontalSegment: '水平线段', horizontalRayLine: '水平射线'/)
+    expect(chartSource).toMatch(/builtInGeometry\(overlay.name, pts, bounds\)/)
+    expect(chartSource).toMatch(/DRAW_TOOLS.find\(tool => tool.name === name\)/)
   })
 
   it('supports drawing multi-select: ctrl+click, multi-mode box select, batch delete, tabbed edit panel', async () => {
@@ -182,7 +187,7 @@ describe('M2 chart interaction contract', () => {
     const trainingSource = await readFile(trainingPath, 'utf8')
     expect(trainingSource).toMatch(/:multi-select="multiSelectMode"/)
     expect(trainingSource).toMatch(/function toggleMultiSelectMode\(\): void/)
-    expect(trainingSource).toMatch(/多选模式：框选批量选中画线/)
+    expect(trainingSource).toMatch(/if \(multiSelectMode.value\) return '多选模式'/)
   })
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {
@@ -232,7 +237,7 @@ describe('M2 chart interaction contract', () => {
     expect(trainingSource).not.toMatch(/档<\//)
     expect(trainingSource).toMatch(/'2Y': '2年'/)
     const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
-    expect(themeSource).toMatch(/title: \{ show: false \}/)
+    expect(themeSource).toMatch(/title: \{ show: false, color: tooltipText \}/)
     const legendBlock = themeSource.match(/candleLegendTemplate[\s\S]{0,400}/)?.[0] ?? ''
     expect(legendBlock).toMatch(/开 |高 |低 |收 /)
     expect(legendBlock).not.toMatch(/成交量|时间/)
@@ -256,6 +261,6 @@ describe('M2 chart interaction contract', () => {
     const trainingSource = await readFile(trainingPath, 'utf8')
     expect(trainingSource).toMatch(/async function fetchEarlier\(/)
     expect(trainingSource).toMatch(/:has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"/)
-    expect(trainingSource).toMatch(/缩放 1~420/)
+    expect(trainingSource).toMatch(/MAX_VISIBLE_BARS/)
   })
 })

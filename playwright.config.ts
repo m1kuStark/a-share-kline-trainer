@@ -9,6 +9,8 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:8791',
     channel: 'msedge',
     viewport: { width: 1440, height: 900 },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   workers: 1,
   retries: 1,

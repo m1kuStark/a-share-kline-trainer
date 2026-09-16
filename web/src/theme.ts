@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { CandleTooltipLegendsCustomCallback } from 'klinecharts'
+import type { CandleTooltipLegendsCustomCallback, DeepPartial, Styles } from 'klinecharts'
 
 export type UiTheme = 'light' | 'dark'
 
@@ -42,17 +42,17 @@ export function toggleTheme(): void {
 }
 
 // klinecharts v10 Styles：键为 grid/candle/indicator/xAxis/yAxis/separator/crosshair/overlay
-export function chartStyles(t: UiTheme) {
+export function chartStyles(t: UiTheme): DeepPartial<Styles> {
   const dark = t === 'dark'
-  const lineColor = dark ? '#2c3f57' : '#e6ebf2'
-  const axisText = dark ? '#8fa3b8' : '#7c8ba0'
-  const crossColor = dark ? '#5d7390' : '#7a8ba0'
-  const tooltipText = dark ? '#c9d6e4' : '#2c3c50'
+  const lineColor = dark ? '#292929' : '#e6ebf2'
+  const axisText = dark ? '#adadad' : '#7c8ba0'
+  const crossColor = dark ? '#727272' : '#7a8ba0'
+  const tooltipText = dark ? '#dedede' : '#2c3c50'
   return {
     grid: {
       show: true,
       horizontal: { color: lineColor },
-      vertical: { color: dark ? '#243550' : '#eef2f6' },
+      vertical: { color: dark ? '#202020' : '#eef2f6' },
     },
     separator: { color: lineColor },
     candle: {
@@ -67,23 +67,22 @@ export function chartStyles(t: UiTheme) {
         upWickColor: '#ef4444', downWickColor: '#16a34a', noChangeWickColor: '#94a3b8',
       },
       priceMark: {
-        high: { text: { color: axisText } },
-        low: { text: { color: axisText } },
+        high: { color: axisText },
+        low: { color: axisText },
         // 最新价线方向色（国内口径红涨绿跌平灰）：klinecharts v10 线体与轴标签的
         // 颜色按 compareRule（默认相对前收）从 upColor/downColor/noChangeColor 取值，
         // line.color/text.backgroundColor 不参与方向色；默认值是国际惯例绿涨红跌，必须显式覆盖。
         last: { upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8', text: { color: '#ffffff' } },
       },
       tooltip: {
-        text: { color: tooltipText },
         // 标题行 "{ticker} · {period}"（training · 1天）无意义，隐藏；
         // 图例只保留开高低收——"时间"与信息栏/底部时间轴重复，"成交量"VOL 副图已有
-        title: { show: false },
-        legend: { template: candleLegendTemplate },
+        title: { show: false, color: tooltipText },
+        legend: { template: candleLegendTemplate, color: tooltipText },
       },
     },
     indicator: {
-      tooltip: { text: { color: tooltipText } },
+      tooltip: { title: { color: tooltipText }, legend: { color: tooltipText } },
       lastValueMark: { text: { color: tooltipText } },
       lines: [
         { color: '#f5a623' },

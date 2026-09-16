@@ -10,7 +10,8 @@
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch server/src/index.ts",
     "dev:web": "vite --config web/vite.config.ts",
-    "build": "npm run build:server && npm run build:web",
+    "build": "npm run typecheck:web && npm run build:server && npm run build:web",
+    "typecheck:web": "vue-tsc --noEmit -p web/tsconfig.json",
     "build:server": "tsc -p server/tsconfig.json",
     "build:web": "vite build --config web/vite.config.ts",
     "start": "node server/dist/index.js",
@@ -19,13 +20,18 @@
     "verify:m1": "powershell -ExecutionPolicy Bypass -File scripts/verify-m1.ps1",
     "verify:m2": "npm test && npm run build && npx --no-install tsx scripts/verify-m2.ts",
     "build:journey": "npm run build:server && vite build --config web/vite.config.ts --mode journey",
-    "journey": "npm run build:journey && npx playwright test"
+    "journey": "npm run build:journey && npx playwright test",
+    "docs:check": "tsx scripts/docs.ts check",
+    "docs:impact": "tsx scripts/docs.ts impact",
+    "docs:status": "tsx scripts/docs.ts status",
+    "verify:baseline": "powershell -ExecutionPolicy Bypass -File scripts/verify-baseline.ps1"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
     "@fastify/static": "^10.1.3",
     "fastify": "^5.6.0",
-    "klinecharts": "^10.0.3",
+    "klinecharts": "10.0.3",
+    "lucide-vue-next": "^0.577.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.42"
   },
@@ -37,6 +43,7 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vite": "^7.1.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vue-tsc": "^3.3.11"
   }
 }
