@@ -4,37 +4,43 @@
 {
   "id": "DEV-01",
   "title": "工作副本运行与测试资源隔离",
-  "owner": "unassigned",
-  "state": "planned",
+  "owner": "integrator",
+  "state": "active",
   "milestone": "DEV",
-  "summary": "固定端口、个人默认库及共享构建/报告使并行验收不安全。",
-  "next_action": "独立端口、数据库、静态目录、报告和进程身份；两个工作副本互不污染。",
+  "summary": "落实任务worktree、运行隔离、固定样本和候选集成门禁。",
+  "next_action": "运行层和Git层并行实现，验证双实例与合并故障路径。",
   "allowed_paths": [
     "scripts/**",
     "server/src/config.ts",
     "server/src/index.ts",
+    "server/test/**",
+    "web/vite.config.ts",
     "e2e/**",
     "playwright.config.ts",
-    "web/vite.config.ts",
     "package.json",
-    "server/test/**",
-    "docs/work-items/tasks/DEV-01.md",
-    "docs/engineering/parallel-development.md",
-    "e2e/README.md"
+    ".gitignore",
+    "AGENTS.md",
+    "README.md",
+    "docs/**",
+    "web/AGENTS.md",
+    "web/README.md"
   ],
   "depends_on": [],
   "docs_impact": {
     "update": [
       "docs/engineering/parallel-development.md",
-      "e2e/README.md"
+      "docs/engineering/testing.md",
+      "e2e/README.md",
+      "scripts/README.md"
     ],
-    "reason": "未来实施时按实际diff同步行为和边界。"
+    "reason": "运行路径和候选门禁改变，文档需明确已实施能力及自动化证据边界。"
   },
   "verification_refs": [
     "docs/verification/architecture-audit-2026-09-17.json"
   ],
   "integration_ref": null,
-  "acceptance_ref": null
+  "acceptance_ref": null,
+  "base_commit": "746a8f6a8cf6f6b413f80b71d4b17e08e3e3857f"
 }
 ```
 
