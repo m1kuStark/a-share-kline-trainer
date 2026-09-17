@@ -5,10 +5,10 @@
   "id": "DEV-01",
   "title": "工作副本运行与测试资源隔离",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "DEV",
-  "summary": "Git任务/候选与独立运行层已实现，正在执行完整候选验收。",
-  "next_action": "全套验证和视觉复核后推进main，保存证据并清理工作副本。",
+  "summary": "本地Git工作副本、独立运行、候选门禁已实现并通过真实集成流程。",
+  "next_action": "后续任务从main创建worktree；录像机按REC-01另行实施。",
   "allowed_paths": [
     "scripts/**",
     "server/src/config.ts",
@@ -36,9 +36,9 @@
     "reason": "运行路径和候选门禁改变，文档需明确已实施能力及自动化证据边界。"
   },
   "verification_refs": [
-    "docs/verification/architecture-audit-2026-09-17.json"
+    "docs/verification/2026-09/DEV-01-parallel/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "4a257c7ebf6a1665ed70d6f533113ebe1a96186c",
   "acceptance_ref": null,
   "base_commit": "746a8f6a8cf6f6b413f80b71d4b17e08e3e3857f"
 }

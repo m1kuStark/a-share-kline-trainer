@@ -1,6 +1,6 @@
 # 并行开发后续建议
 
-状态：待实施提案；当前执行约束见[现行协议](../engineering/parallel-development.md)。
+状态：设计历史。2026-09-18 DEV-01的Git与运行隔离已实现，当前命令以[现行协议](../engineering/parallel-development.md)为准；其余业务架构事项仍待实施。
 
 ## 4. 并行开发模型
 

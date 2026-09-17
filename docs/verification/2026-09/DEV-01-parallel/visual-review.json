@@ -1,0 +1,16 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "4a257c7ebf6a1665ed70d6f533113ebe1a96186c",
+  "outcome": "passed",
+  "reviewer": "Codex /root",
+  "artifacts": [
+    "docs/verification/2026-09/DEV-01-parallel/screenshots/compact-1440.png",
+    "docs/verification/2026-09/DEV-01-parallel/screenshots/compact-light.png"
+  ],
+  "notes": "Inspected fresh candidate screenshots: dark 1440 and light 840, no blank screen or error overlay; chart, panes, controls and saved-state layout visible. Automated interaction evidence remains separately required.",
+  "originalArtifactPaths": [
+    ".runs/run-bec54278-de01-49cd-afe5-dd20ee82e674/artifacts/screenshots/compact-1440.png",
+    ".runs/run-bec54278-de01-49cd-afe5-dd20ee82e674/artifacts/screenshots/compact-light.png"
+  ],
+  "note": "Paths relocated for archival after successful promotion; original paths were checked in the candidate."
+}

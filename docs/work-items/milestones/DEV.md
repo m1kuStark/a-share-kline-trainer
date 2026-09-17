@@ -4,14 +4,16 @@
 {
   "id": "DEV",
   "title": "并行开发基础设施",
-  "state": "review",
-  "summary": "Git任务/候选与独立运行层已实现，正在执行完整候选验收。",
+  "state": "closed",
+  "summary": "本地并行开发与串行候选集成可用；未配置远端保护或自动push。",
   "task_ids": [
     "DEV-01"
   ],
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/DEV-01-parallel/report.md"
+  ],
   "acceptance_ref": null,
-  "next_action": "全套验证和视觉复核后推进main，保存证据并清理工作副本。"
+  "next_action": "按任务所有权和候选流程接续开发。"
 }
 ```
 

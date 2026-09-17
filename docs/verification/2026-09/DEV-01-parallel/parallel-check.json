@@ -1,0 +1,77 @@
+{
+  "run": {
+    "schemaVersion": 1,
+    "runId": "run-21dc0629-8c59-463f-9954-ccaf57348ecc",
+    "mode": "dev",
+    "root": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01",
+    "runDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc",
+    "manifestPath": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\manifest.json",
+    "databasePath": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\trainer.sqlite",
+    "webDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\web",
+    "serverDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\server",
+    "artifactsDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\artifacts",
+    "readyFile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\ready.json",
+    "commit": "f372afe76b3e3b208d16ddc85dcaf89291389924",
+    "createdAt": "2026-09-17T16:21:40.606Z",
+    "tdxRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\DEV-01\\.runs\\run-21dc0629-8c59-463f-9954-ccaf57348ecc\\tdx-snapshot",
+    "port": 10794,
+    "baseURL": "http://127.0.0.1:10794"
+  },
+  "before": {
+    "training": {
+      "id": 1,
+      "tier": "3M",
+      "code": "600519",
+      "name": "贵州茅台",
+      "market": "sh",
+      "startDate": "2026-09-01",
+      "plannedEnd": "2026-12-01",
+      "currentDate": "2026-09-01",
+      "status": "running",
+      "settleDate": null,
+      "earlySettle": false,
+      "blind": false,
+      "adjustMode": "forward",
+      "initialCash": 1000000,
+      "createdAt": "2026-09-17T16:21:49.391Z"
+    },
+    "account": {
+      "cash": 1000000,
+      "shares": 0,
+      "availableShares": 0,
+      "costPrice": null,
+      "marketValue": 0,
+      "equity": 1000000
+    },
+    "trades": []
+  },
+  "after": {
+    "training": {
+      "id": 1,
+      "tier": "3M",
+      "code": "600519",
+      "name": "贵州茅台",
+      "market": "sh",
+      "startDate": "2026-09-01",
+      "plannedEnd": "2026-12-01",
+      "currentDate": "2026-09-01",
+      "status": "running",
+      "settleDate": null,
+      "earlySettle": false,
+      "blind": false,
+      "adjustMode": "forward",
+      "initialCash": 1000000,
+      "createdAt": "2026-09-17T16:21:49.391Z"
+    },
+    "account": {
+      "cash": 1000000,
+      "shares": 0,
+      "availableShares": 0,
+      "costPrice": null,
+      "marketValue": 0,
+      "equity": 1000000
+    },
+    "trades": []
+  },
+  "unchangedByOtherWorktree": true
+}

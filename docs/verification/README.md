@@ -4,6 +4,8 @@
 
 ## 当前入口
 
+- [DEV-01并行基线](2026-09/DEV-01-parallel/report.md)：精确合并候选、完整验收和两个worktree并发证据。
+
 - [文档架构设计接受记录](2026-09/DOC-design-acceptance/record.json)：只接受治理设计及执行授权。
 - [架构审查](architecture-audit-2026-09-17.json)：业务缺口的发现依据。
 - [9月13日成本及分隔拖拽](M3-成本线与副图拖拽验收-2026-09-13.md)：M3历史工程证据。

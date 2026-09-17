@@ -1,0 +1,56 @@
+{
+  "testedCommit": "4a257c7ebf6a1665ed70d6f533113ebe1a96186c",
+  "browserStats": {
+    "startTime": "2026-09-17T16:24:30.167Z",
+    "duration": 730511.664,
+    "expected": 57,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "unitPassed": 310,
+  "m2Passed": 24,
+  "parallelRun": "run-21dc0629-8c59-463f-9954-ccaf57348ecc",
+  "candidateRun": "run-bec54278-de01-49cd-afe5-dd20ee82e674",
+  "distinctPorts": [
+    10794,
+    1446
+  ],
+  "parallelTrainingUnchanged": true,
+  "rawEvidencePrivateArchive": ".git/trainer-integration/evidence/DEV-01-721df0e2b4b7/run",
+  "note": "Code verification precedes the subsequent documentation-only evidence commit."
+}

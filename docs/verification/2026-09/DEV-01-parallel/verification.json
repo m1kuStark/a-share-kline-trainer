@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "DEV-01",
+  "baseCommit": "85b6e0c3da3988bffc433ea71648dc39232cfc23",
+  "testedCommit": "4a257c7ebf6a1665ed70d6f533113ebe1a96186c",
+  "tree": "c718a2bffaace6f75b73df33c208f179840bf145",
+  "passed": true,
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "runManifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\DEV-01-721df0e2b4b7\\.runs\\run-bec54278-de01-49cd-afe5-dd20ee82e674\\manifest.json",
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "createdAt": "2026-09-17T16:36:41.174Z"
+}

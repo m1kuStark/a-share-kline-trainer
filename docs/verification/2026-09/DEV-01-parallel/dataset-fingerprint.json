@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "kind": "tdx-browser-sample",
+  "cutoff": "2026-09-16",
+  "files": [
+    {
+      "path": "vipdoc/sh/lday/sh600519.day",
+      "bytes": 192192,
+      "sha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057"
+    },
+    {
+      "path": "vipdoc/sz/lday/sz300857.day",
+      "bytes": 47744,
+      "sha256": "616d9738dab69be945454c64e99f0a2e2b5d5fa08a7a27b95b96125c5186968f"
+    },
+    {
+      "path": "vipdoc/sh/lday/sh000300.day",
+      "bytes": 168736,
+      "sha256": "59200872d8d02625b58ff9c3e4e81d47eeacbeebd0672762fc0834a44bdbcf2a"
+    },
+    {
+      "path": "T0002/hq_cache/gbbq",
+      "bytes": 5785562,
+      "sha256": "79b7fba2548395cd2e2e8af54b830f307fb2940b713e69fa16ae0e3ee9a70dde"
+    },
+    {
+      "path": "T0002/hq_cache/shs.tnf",
+      "bytes": 10056290,
+      "sha256": "eafb5a5ab8efd03bc4b66c4d48505f509d461b55882b9e1d7f8f5fb41b42a147"
+    },
+    {
+      "path": "T0002/hq_cache/szs.tnf",
+      "bytes": 8742290,
+      "sha256": "10d9eadafd440f8748904db606f13c01ccfb46d63e09825931d1e3ab033284da"
+    }
+  ]
+}
