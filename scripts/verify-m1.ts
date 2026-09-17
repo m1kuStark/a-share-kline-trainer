@@ -27,10 +27,10 @@ import {
   type TdxExportComparison,
 } from '../server/src/verification.js'
 
-const OUTPUT_DIRECTORY = resolve('docs', 'verification')
+const OUTPUT_DIRECTORY = process.env.TRAINER_VERIFY_DIR ? resolve(process.env.TRAINER_VERIFY_DIR) : resolve('docs', 'verification')
 const REPORT_PATH = join(OUTPUT_DIRECTORY, 'M1-verification-report.md')
 const COMPARISON_PATH = join(OUTPUT_DIRECTORY, 'M1-tdx-manual-comparison.csv')
-const TDX_EXPORT_DIRECTORY = join(OUTPUT_DIRECTORY, 'tdx-export')
+const TDX_EXPORT_DIRECTORY = resolve('docs', 'verification', 'tdx-export')
 const TDX_DAILY_EXPORT_PATH = join(TDX_EXPORT_DIRECTORY, 'tdx_qfq_600519.txt')
 const TDX_WEEKLY_EXPORT_PATH = join(TDX_EXPORT_DIRECTORY, 'tdx_weekly_600519.xls')
 const TDX_MONTHLY_EXPORT_PATH = join(TDX_EXPORT_DIRECTORY, 'tdx_monthly_600519.xls')

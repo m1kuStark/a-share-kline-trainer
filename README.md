@@ -40,6 +40,6 @@ npm test
 npm run build
 ```
 
-完整交付门禁见[测试协议](docs/engineering/testing.md)，统一命令为 `npm run verify:baseline`；实源M1和任务文档影响核对另行执行。Journey使用临时库但当前固定8791、共享构建目录，不能与日常页面构建/另一验收同时运行；永久隔离待DEV-01。
+完整交付门禁见[测试协议](docs/engineering/testing.md)，统一命令为 `npm run verify:baseline`；实源M1和任务文档影响核对另行执行。Agent用 `npm run agent:dev` 启动隔离预览；Journey自动隔离端口、数据库、构建与证据。Git并行开发见[操作协议](docs/engineering/parallel-development.md)。
 
 文档治理现行机制见[更新协议](docs/engineering/documentation.md)。旧长计划与过程已归档，后续开发从新提交基线接续，停止向旧入口追加进度。

@@ -1,3 +1,4 @@
+import { evidencePath } from './runtime'
 import { expect, test, type Page } from '@playwright/test'
 import { join } from 'node:path'
 
@@ -126,7 +127,7 @@ for (const mode of ['default', 'multi'] as const) {
       await resizePane(page, index, -65, -24, 1)
       await resizePane(page, index, 65, 24, 5)
       await resizePane(page, index, 0, -20, 3)
-      await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3', `pane-resize-${index}-${mode}.png`) })
+      await page.screenshot({ path: evidencePath(`pane-resize-${index}-${mode}.png`) })
       if (mode === 'multi') await page.locator('.draw-toolbar').getByRole('button', { name: '多选', exact: true }).click()
       await normalBoxSelect(page)
     })

@@ -1,0 +1,17 @@
+{
+  "format": "trainer-session",
+  "schemaVersion": 1,
+  "illustrativeOnly": true,
+  "sessionId": "example-session",
+  "app": { "version": "0.1.0", "gitCommit": "example-build-sha", "dirty": false, "chartLibrary": "10.0.3", "ruleEngineVersion": 1 },
+  "environment": { "timeZone": "Asia/Shanghai", "viewport": { "width": 1440, "height": 900 }, "dpr": 1, "theme": "dark" },
+  "dataset": { "ref": "data/market-snapshot.json", "sha256": "example-data-and-actions-hash", "symbol": "sh600519" },
+  "rules": { "tPlusOne": true, "lotSize": 100, "feesEnabled": false, "execution": "same-day-raw-close" },
+  "initialStateRef": "checkpoints/0000.json",
+  "events": [
+    { "seq": 1, "opId": "op-1", "elapsedMs": 1200, "source": "user", "phase": "started", "action": "trade.buy", "args": { "weightPct": 25 }, "input": { "kind": "keyboard", "key": "b" } },
+    { "seq": 2, "opId": "op-1", "elapsedMs": 1250, "phase": "finished", "outcome": "accepted", "result": { "tradeId": "trade-1", "shares": 100, "price": "1000.00" }, "stateRevision": 1, "checkpointRef": "checkpoints/0001.json" },
+    { "seq": 3, "opId": "op-2", "elapsedMs": 2200, "phase": "started", "action": "chart.timeframe", "args": { "value": "1W" }, "input": { "role": "button", "name": "周K" } },
+    { "seq": 4, "opId": "op-2", "elapsedMs": 2300, "phase": "finished", "outcome": "accepted", "result": { "timeframe": "1W", "dataRevision": 2 }, "checkpointRef": "checkpoints/0002.json" }
+  ]
+}

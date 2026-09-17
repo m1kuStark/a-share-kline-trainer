@@ -1,3 +1,4 @@
+import { evidencePath } from './runtime'
 import { startTrainingFromForm } from './training-flow'
 import { test, expect, type Page } from '@playwright/test'
 import { join } from 'node:path'
@@ -7,7 +8,7 @@ const runtimeErrors = new WeakMap<Page, string[]>()
 test.beforeEach(({ page }) => { const errors: string[] = []; runtimeErrors.set(page, errors); page.on('pageerror', error => errors.push(error.message)) })
 test.afterEach(({ page }) => { expect(runtimeErrors.get(page) ?? []).toEqual([]) })
 
-const screenshot = (page: Page, name: string) => page.screenshot({ path: join(process.cwd(), 'docs/verification/m3', `feedback-${name}.png`) })
+const screenshot = (page: Page, name: string) => page.screenshot({ path: evidencePath(`feedback-${name}.png`) })
 async function open(page: Page): Promise<void> {
   await page.goto('/')
   const active = await (await page.request.get('/api/trainings/active')).json()
@@ -99,7 +100,7 @@ test('自动保存待保存进行中失败重试成功不改变工具区或账�
   await page.getByRole('button', { name: '重试保存', exact: true }).click()
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   expect(await dims(page)).toEqual(expected)
-  writeFileSync(join(process.cwd(), 'docs/verification/M3-feedback-layout.json'), JSON.stringify({ states: ['待保存', '保存中', '保存失败', '重试后已保存'], identicalDimensionsAndScroll: true, measurements: expected }, null, 2))
+  writeFileSync(evidencePath('M3-feedback-layout.json'), JSON.stringify({ states: ['待保存', '保存中', '保存失败', '重试后已保存'], identicalDimensionsAndScroll: true, measurements: expected }, null, 2))
   await page.getByRole('button', { name: '提前结算', exact: true }).click()
   await page.getByRole('button', { name: '继续查看图表', exact: true }).click()
   await draw(page, 'segment', .7)
