@@ -1,9 +1,12 @@
-import { readFile } from 'node:fs/promises'
+import { readFile as readBytes } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 
 // 日线数据更新前端契约：源码正则断言（与 frontend-contract.test.ts 同风格）。
 // 覆盖：启动检查/60s 节流/隐藏不轮询/running 轮询上限、顶栏控件状态机（needsUpdate 醒目、
 // 已最新隐藏按钮）、开始训练守卫、训练页固定尺寸小按钮、监听器 onUnmounted 配对、双主题配色。
+
+// Git worktrees on Windows may checkout CRLF; source contracts compare normalized text.
+const readFile = async (path: URL, _encoding: 'utf8') => (await readBytes(path, 'utf8')).replace(/\r\n/g, '\n')
 
 const storePath = new URL('../../web/src/dataStatus.ts', import.meta.url)
 const apiPath = new URL('../../web/src/api.ts', import.meta.url)

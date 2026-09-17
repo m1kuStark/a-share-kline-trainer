@@ -1,10 +1,11 @@
+import { evidencePath } from './runtime'
 import { expect, test, type Page } from '@playwright/test'
 import { join } from 'node:path'
 
 const errors = new WeakMap<Page, string[]>()
 test.beforeEach(({ page }) => { const list: string[] = []; errors.set(page, list); page.on('pageerror', e => list.push(e.message)) })
 test.afterEach(({ page }) => { expect(errors.get(page)).toEqual([]) })
-const shot = (page: Page, name: string) => page.screenshot({ path: join(process.cwd(), 'docs/verification/m3', `round3-${name}.png`) })
+const shot = (page: Page, name: string) => page.screenshot({ path: evidencePath(`round3-${name}.png`) })
 
 async function open(page: Page): Promise<number> {
   const active = await (await page.request.get('/api/trainings/active')).json()

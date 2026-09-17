@@ -4,14 +4,14 @@
 {
   "id": "DEV",
   "title": "并行开发基础设施",
-  "state": "planned",
-  "summary": "当前验收仍需串行，共享资源待隔离。",
+  "state": "review",
+  "summary": "Git任务/候选与独立运行层已实现，正在执行完整候选验收。",
   "task_ids": [
     "DEV-01"
   ],
   "verification_refs": [],
   "acceptance_ref": null,
-  "next_action": "从新提交基线建立隔离启动器。"
+  "next_action": "全套验证和视觉复核后推进main，保存证据并清理工作副本。"
 }
 ```
 

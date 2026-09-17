@@ -1,3 +1,4 @@
+import { evidencePath } from './runtime'
 import { expect, test } from '@playwright/test'
 import { join } from 'node:path'
 
@@ -19,7 +20,7 @@ test('紧凑行情栏释放主图高度，详情覆盖显示不挤动图表', as
     expect(chart!.height).toBeGreaterThan(size.height - 200)
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(size.height)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(size.width)
-    await page.screenshot({ path: join(process.cwd(), `docs/verification/m3/compact-${size.width}.png`) })
+    await page.screenshot({ path: evidencePath(`compact-${size.width}.png`) })
   }
   const before = await page.locator('.chart-host').boundingBox()
   const currentDate = await page.locator('.training-current-date').innerText()
@@ -28,10 +29,10 @@ test('紧凑行情栏释放主图高度，详情覆盖显示不挤动图表', as
   await expect(page.locator('.training-meta')).toBeVisible()
   expect(await page.locator('.training-current-date').innerText()).toBe(currentDate)
   expect(await page.locator('.chart-host').boundingBox()).toEqual(before)
-  await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3/compact-details.png') })
+  await page.screenshot({ path: evidencePath('compact-details.png') })
   await page.getByLabel('训练详情', { exact: true }).click()
   await page.locator('.theme-toggle').click()
-  await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3/compact-light.png') })
+  await page.screenshot({ path: evidencePath('compact-light.png') })
   expect(errors).toEqual([])
 })
 
@@ -64,7 +65,7 @@ test('刷新读取新增本地行情但不越过推进日，日期可见且可�
     return bars[Math.min(range.to - 1, bars.length - 1)].date
   })
   expect(last).toBe('2026-09-11')
-  await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3/latest-date-300857.png') })
+  await page.screenshot({ path: evidencePath('latest-date-300857.png') })
   await page.keyboard.press('BracketRight')
   await expect(page.locator('.timeframe-tabs [aria-selected="true"]')).toHaveText('周K')
   await expect(page.locator('.chart-date-status')).toContainText('右端周K 2026-09-07')

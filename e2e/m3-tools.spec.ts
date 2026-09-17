@@ -1,7 +1,8 @@
+import { evidencePath } from './runtime'
 import { startTrainingFromForm } from './training-flow'
 import { expect, test, type Page } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 type Point = { x: number; y: number }
 type Drawing = {
@@ -14,7 +15,7 @@ type Geometry = { id: string; name: string; anchors: Point[]; segs: Point[][] }
 type Pane = { id: string; name: string; top: number; height: number; left: number; width: number }
 type ToolCase = { label: string; name: string; unit: string; points: Point[] }
 
-const evidenceDir = join(process.cwd(), 'docs', 'verification', 'm3')
+const evidenceDir = dirname(evidencePath('placeholder.png'))
 const runtimeErrors = new WeakMap<Page, string[]>()
 test.beforeEach(({ page }) => {
   const errors: string[] = []

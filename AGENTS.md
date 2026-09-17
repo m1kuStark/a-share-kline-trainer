@@ -21,6 +21,7 @@ Vue3＋Fastify＋Node24/SQLite独立工程。先确定任务，再沿模块逐�
 | 浏览器测试 | [e2e规则](e2e/AGENTS.md) → [套件索引](e2e/README.md) |
 | 文档 | [docs规则](docs/AGENTS.md) → [索引](docs/README.md) |
 | 跨模块设计 | [架构](docs/architecture/README.md)；未实现设计在[提案](docs/proposals/README.md) |
+| 模型委派 | [Z code／GLM协作](docs/engineering/model-delegation.md)：小任务、1M上下文与最高支持思考设置；先验证接口 |
 
 改文件前读取其路径适用的局部AGENTS，不依赖客户端自动加载。局部规则不得放松父级硬边界。
 

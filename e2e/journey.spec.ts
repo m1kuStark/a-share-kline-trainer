@@ -10,12 +10,8 @@ test.use({ viewport: { width: 1440, height: 940 } })
 // 重试/复跑时临时库中可能残留上次的活动训练（库随 global-setup 只建一次）：
 // 直接调 API 放弃残留训练（UI confirm 弹窗的自动 dismiss 会吞掉放弃流程），保证从启动页开始。
 async function resetToLauncher(page: import('@playwright/test').Page): Promise<void> {
-  const base = 'http://127.0.0.1:8791'
-  const active = await page.evaluate(async base => {
-    const r = await fetch(`${base}/api/trainings/active`)
-    return (await r.json()).training
-  }, base)
-  if (active) await page.evaluate(([base, id]) => fetch(`${base}/api/trainings/${id}/abandon`, { method: 'POST' }), [base, active.id])
+  const active = (await (await page.request.get('/api/trainings/active')).json()).training
+  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
   await page.waitForTimeout(400)
   await expect(page.getByRole('button', { name: '开始训练' })).toBeVisible()

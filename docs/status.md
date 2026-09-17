@@ -10,7 +10,7 @@
 | 阶段 | 状态 | 摘要 / 下一步 | 验证记录 | 用户验收记录 |
 |---|---|---|---|---|
 | [BASE · M0/M1/M2](<work-items/milestones/BASE.md>) | closed | 已有用户验收记录，M2冻结提交12cba72；历史验收不等于今日数据对照。 / 保持回归，不重新解释既有用户结论。 | [docs/archive/2026-09/ai-changelog.md](<archive/2026-09/ai-changelog.md>) | 未记录 |
-| [DEV · 并行开发基础设施](<work-items/milestones/DEV.md>) | planned | 当前验收仍需串行，共享资源待隔离。 / 从新提交基线建立隔离启动器。 | 未记录 | 未记录 |
+| [DEV · 并行开发基础设施](<work-items/milestones/DEV.md>) | review | Git任务/候选与独立运行层已实现，正在执行完整候选验收。 / 全套验证和视觉复核后推进main，保存证据并清理工作副本。 | 未记录 | 未记录 |
 | [DOC · 文档架构基线](<work-items/milestones/DOC.md>) | closed | 设计已获用户确认，实施分层文档与检查工具。 / 以本提交为后续开发文档基线；业务架构任务按各自任务卡推进。 | 未记录 | [docs/verification/2026-09/DOC-design-acceptance/record.json](<verification/2026-09/DOC-design-acceptance/record.json>) |
 | [M3 · 图表工具链](<work-items/milestones/M3.md>) | review | 23工具和多轮修复已有工程验证，最终用户验收/冻结未记录。 / 汇总用户最终整体意见。 | [docs/verification/M3-成本线与副图拖拽验收-2026-09-13.md](<verification/M3-成本线与副图拖拽验收-2026-09-13.md>) | 未记录 |
 | [M4 · 指标排行复盘](<work-items/milestones/M4.md>) | planned | 完整功能尚未实现。 / 固定数值和生命周期边界。 | 未记录 | 未记录 |
@@ -26,7 +26,7 @@
 | [DATA-02 · 个股覆盖与到期结算](<work-items/tasks/DATA-02.md>) | planned / unassigned | 全市场末日及单一源尾不能证明个股区间无漏数。 / 加入他股更新但目标漏数、结束日后有记录但中间漏数样例；未知保持running。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-03 · 可读取的历史版本保护](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 / 建立迁移时基线与旧版读取；无法恢复时明确阻断，不改旧流水。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-04 · 统一行情读取与更新入口](<work-items/tasks/DATA-04.md>) | planned / unassigned | DailySource仅扫描；训练直读TDX，env/stocks独立刷新仍在。 / 统一bars/actions/coverage/version读取；用非TDX夹具运行训练，再接真实来源。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [DEV-01 · 工作副本运行与测试资源隔离](<work-items/tasks/DEV-01.md>) | active / integrator | 落实任务worktree、运行隔离、固定样本和候选集成门禁。 / 运行层和Git层并行实现，验证双实例与合并故障路径。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
+| [DEV-01 · 工作副本运行与测试资源隔离](<work-items/tasks/DEV-01.md>) | review / integrator | Git任务/候选与独立运行层已实现，正在执行完整候选验收。 / 全套验证和视觉复核后推进main，保存证据并清理工作副本。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M4-01 · 指标排行与复盘](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 / 先固定部分平仓、零交易、费用权息、稳定排序和防未来样例。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01 · 设置与完整交付](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 / 完成TRAIN-01后开发默认设置、首次使用及全链路交付。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01 · 真实替代来源](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 / DATA-03/04后选择来源，验证无TDX环境及单位、覆盖、权息合约。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |

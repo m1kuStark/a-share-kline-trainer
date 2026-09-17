@@ -10,4 +10,4 @@ SQLite保存settings、stocks、adj_factors、cache_meta、trainings、trades、
 
 文件快照＋日志事务不等于全部数据原子发布，[DATA-01](../work-items/tasks/DATA-01.md)未修复；旧行情版本保护见[DATA-03](../work-items/tasks/DATA-03.md)。
 
-API/迁移/全局样式/锁文件/图表入口属于共享修改点。当前没有工作副本启动器、端口自动分配或生产与journey永久构建隔离；[DEV-01](../work-items/tasks/DEV-01.md)待实施。
+API/迁移/全局样式/锁文件/图表入口属于共享修改点。工作副本及候选由Git工具管理，Agent预览/Journey按run隔离数据库、实际绑定端口及产物；现行命令见[并行开发](../engineering/parallel-development.md)。业务数据版本保护仍独立于运行隔离。

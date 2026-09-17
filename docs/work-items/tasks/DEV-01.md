@@ -5,10 +5,10 @@
   "id": "DEV-01",
   "title": "工作副本运行与测试资源隔离",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "DEV",
-  "summary": "落实任务worktree、运行隔离、固定样本和候选集成门禁。",
-  "next_action": "运行层和Git层并行实现，验证双实例与合并故障路径。",
+  "summary": "Git任务/候选与独立运行层已实现，正在执行完整候选验收。",
+  "next_action": "全套验证和视觉复核后推进main，保存证据并清理工作副本。",
   "allowed_paths": [
     "scripts/**",
     "server/src/config.ts",

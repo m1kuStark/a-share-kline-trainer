@@ -1,3 +1,4 @@
+import { evidencePath } from './runtime'
 import { test, expect } from '@playwright/test'
 import { join } from 'node:path'
 
@@ -41,7 +42,7 @@ test('协创数据送转后成本线与账户一致，清仓再买及日周月�
       return { cost: api.costLine().y, current: api.pointToPixel(last.timestamp, last.close).y }
     })
     expect(pixels.cost).toBeGreaterThan(pixels.current)
-    if (label === '日K') await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3/cost-bonus-profitable.png') })
+    if (label === '日K') await page.screenshot({ path: evidencePath('cost-bonus-profitable.png') })
   }
   await page.route(`**/api/trainings/${id}/bars?**`, route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ message: '模拟行情刷新失败' }) }))
   await page.getByRole('button', { name: '卖出', exact: true }).click()
@@ -58,6 +59,6 @@ test('协创数据送转后成本线与账户一致，清仓再买及日周月�
   await page.reload()
   await expect(page.locator('.training-current-date')).toBeVisible({ timeout: 15_000 })
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.costLine()?.value)).toBeCloseTo(reopened.account.costPrice, 7)
-  await page.screenshot({ path: join(process.cwd(), 'docs/verification/m3/cost-liquidate-reopen.png') })
+  await page.screenshot({ path: evidencePath('cost-liquidate-reopen.png') })
   expect(errors).toEqual([])
 })

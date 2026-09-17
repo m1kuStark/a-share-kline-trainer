@@ -1,19 +1,19 @@
-# 工程脚本
+# 脚本入口
 
-从仓库根运行。TDX只读，运行数据库不得指向个人训练库。
-
-| 命令 | 输入/输出与副作用 |
+| 命令 | 用途/副作用 |
 |---|---|
-| docs:check | 当前Markdown与任务卡；检查链接/锚点/ID/引用，历史引用警示 |
-| docs:impact -- --base SHA --task ID | Git基线、工作树及untracked；检查允许路径和文档更新声明 |
-| docs:status / -- --check | 任务/阶段卡；生成status标记区或只检查是否过期 |
-| verify:baseline | 文档、单测、构建、M2、Journey；finally恢复生产web产物 |
-| verify:m1 | 单测/构建＋真实TDX对照；覆盖固定M1报告路径，事先保存历史 |
-| verify:m2 | 单测/构建＋真实账户闭环；覆盖固定M2报告路径 |
-| tsx scripts/audit-training-cost.ts ID before或after | 内存核对指定历史流水，特定样本模型，不能泛化成所有配股验证 |
+| task -- create/list/prepare/verify/promote/cleanup | [工作副本与候选集成](../docs/engineering/parallel-development.md)，不push、不reset |
+| agent:dev | 独立构建预览、数据库和动态端口；Ctrl+C结束服务 |
+| journey -- 参数 | 冻结真实样本、独立构建/服务、浏览器与独立证据 |
+| build:journey | 仅生成独立journey构建及manifest，不启动服务 |
+| verify:baseline | 文档、单测、类型、隔离生产构建、样本M2、完整Journey；不写个人库/生产dist |
+| verify:candidate -- --base SHA --task ID | 增加范围影响检查，干净精确提交通过才生成候选证明 |
+| docs:check / docs:impact | 链接/任务结构与基础SHA差异检查 |
+| docs:status / -- --check | 生成或验证派生状态，禁止手改生成区 |
+| verify:m1 / verify:m2 | 既有全量实源核验；可设TRAINER_VERIFY_DIR指定输出目录，默认保留原路径兼容 |
 
-docs工具由 `docs.ts` 入口及 `docs/` 模块组成，行为回归在server/test/docs-tooling.test.ts。不新增依赖。
+运行结果在`.runs/run-*/artifacts`，manifest记录版本/路径，snapshot.json记录实际样本内容。工具退出后保留诊断；正式证据复制到verification再清理该run。不要盲删运行中的目录，不按端口杀未知进程。完整候选命令保留单测、构建、M2和全量浏览器闸门，M1另按数据变更范围运行。
 
-大型验收当前先在隔离副本运行，所有日志/截图归本次run，选定证据再收入docs/verification。基线命令不检查M1原生导出是否新鲜，应单独执行并报告；文档影响核对需显式任务和基础SHA，不能省略。
+源码入口：[运行层](runtime.ts)、[Git层](worktree.ts)、[候选验证](verify-candidate.ts)、[文档工具](docs.ts)。配置不覆盖用户全局设置、真实TDX或个人训练数据库。
 
-实现细则见[更新协议](../docs/engineering/documentation.md)、[测试门禁](../docs/engineering/testing.md)。
+Z code未来小任务委派遵循[模型协作规则](../docs/engineering/model-delegation.md)，本轮未调用。

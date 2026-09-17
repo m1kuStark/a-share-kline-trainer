@@ -18,4 +18,4 @@ Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装
 
 图表相关纯函数目前仍在 `src/`：几何、overlay 注册、画线快照、工具偏好、周期导航和成交聚合各自独立。`components/` 当前只有图表组件，尚无独立 chart adapter 目录。
 
-仓库根目录执行 `npm run dev` 启动开发服务；`npm run typecheck:web` 检查 Vue 类型，`npm run build:web` 生成生产页面。开发端口为 5173，API 为 8787；Journey 使用 8791，并覆盖同一 `web/dist`，不能并发构建或运行，见 [DEV-01](../docs/work-items/tasks/DEV-01.md)。
+仓库根目录执行 `npm run dev` 启动开发服务；`npm run typecheck:web` 检查 Vue 类型，`npm run build:web` 生成生产页面。开发端口为 5173，API 为 8787；Agent使用npm run agent:dev，Journey使用独立动态端口与产物；见[运行协议](../docs/engineering/parallel-development.md)。

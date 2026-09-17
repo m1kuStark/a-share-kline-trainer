@@ -19,12 +19,15 @@
     "test:watch": "vitest --config server/vitest.config.ts",
     "verify:m1": "powershell -ExecutionPolicy Bypass -File scripts/verify-m1.ps1",
     "verify:m2": "npm test && npm run build && npx --no-install tsx scripts/verify-m2.ts",
-    "build:journey": "npm run build:server && vite build --config web/vite.config.ts --mode journey",
-    "journey": "npm run build:journey && npx playwright test",
+    "build:journey": "tsx scripts/runtime.ts build-journey",
+    "journey": "tsx scripts/runtime.ts journey",
+    "agent:dev": "tsx scripts/runtime.ts preview",
+    "task": "tsx scripts/worktree.ts",
     "docs:check": "tsx scripts/docs.ts check",
     "docs:impact": "tsx scripts/docs.ts impact",
     "docs:status": "tsx scripts/docs.ts status",
-    "verify:baseline": "powershell -ExecutionPolicy Bypass -File scripts/verify-baseline.ps1"
+    "verify:baseline": "tsx scripts/verify-candidate.ts",
+    "verify:candidate": "tsx scripts/verify-candidate.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

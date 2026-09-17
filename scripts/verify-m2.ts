@@ -8,7 +8,7 @@ import { registerApi } from '../server/src/api.js'
 import { readDayFile } from '../server/src/tdx/dayfile.js'
 import { TRAINING_LOAD_BARS } from '../server/src/train/engine.js'
 
-const OUTPUT_DIRECTORY = resolve('docs', 'verification')
+const OUTPUT_DIRECTORY = process.env.TRAINER_VERIFY_DIR ? resolve(process.env.TRAINER_VERIFY_DIR) : resolve('docs', 'verification')
 const REPORT_PATH = join(OUTPUT_DIRECTORY, 'M2-e2e-report.md')
 const SAMPLE_CODE = '600519'
 const TIER = '1M'

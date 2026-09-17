@@ -4,7 +4,7 @@
 
 临时 `.multi-rect`、菜单、面板要 `toBeVisible`，矩形再查宽高；布局/保存回归同时检查几何和 scrollTop。选择与删除前确认状态来自本次真实命中，不借库残留选中态通过。840 上限检查真实 range，等窗口布局与校正完成后断言。
 
-失败截图与 trace 默认保存在 `test-results/`，HTML 报告在 `playwright-report/`；基础成功路径不自动截图，部分扩展测试主动写 `docs/verification/m3/`。这些是运行产物，正式证据应写明命令、提交或差异快照、范围、首次失败和复跑结果。截图需由主代理实际查看，自动化通过不代替 `UI-VISUAL-ACCEPTANCE`，也不代表 M3/R1 已获用户验收。
+截图、trace、HTML和JSON报告全部保存在本run的artifacts目录；扩展测试用evidencePath，禁止写docs历史证据。这些是运行产物，正式证据应写明命令、提交或差异快照、范围、首次失败和复跑结果。截图需由主代理实际查看，自动化通过不代替 `UI-VISUAL-ACCEPTANCE`，也不代表 M3/R1 已获用户验收。
 
 
 创建训练通用旅程使用training-flow.ts，通过真实按钮显式处理数据更新守卫；data-update套件独立核验弹窗双路径。
