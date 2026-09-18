@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Recorder } from '../../web/src/recording/recorder'
 import { MemoryRecordingStorage } from '../../web/src/recording/storage'
+import { validateRecording } from '../../web/src/recording/validation'
 import type {
   ChartCapture,
   CheckpointInput,
@@ -340,6 +341,105 @@ describe('restore', () => {
     const failing = makeRecorder(broken)
     await expect(failing.recorder.restore('any')).rejects.toThrow('存储读取被拒绝')
     expect(failing.recorder.getStatus().state).toBe('error')
+  })
+
+  it('restore 后墙钟 +100ms 的事件 elapsed 严格等于基准 +100（anchorWall 只减一次）', async () => {
+    const storage = new MemoryRecordingStorage()
+    const first = makeRecorder(storage)
+    await first.recorder.start('k', makeCheckpointInput())
+    const opId = first.recorder.begin('chart.load', undefined, 'chart')
+    first.recorder.finish(opId!, 'accepted')
+    await first.recorder.flush()
+    const sessionId = first.recorder.getStatus().sessionId
+    const persisted = await storage.load(sessionId)
+    const maxElapsedBefore = persisted!.events.reduce((max, event) => Math.max(max, event.elapsedMs), 0)
+
+    let mockNow = 1_700_000_000_000
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => mockNow)
+    try {
+      const second = makeRecorder(storage)
+      await second.recorder.restore(sessionId)
+      mockNow += 100
+      const next = second.recorder.begin('ui.theme', undefined, 'ui')
+      second.recorder.finish(next!, 'accepted')
+      const events = second.recorder.getFile().events
+      expect(events.at(-2)!.elapsedMs).toBe(maxElapsedBefore + 100)
+      expect(events.at(-1)!.elapsedMs).toBe(maxElapsedBefore + 100)
+    } finally {
+      nowSpy.mockRestore()
+    }
+  })
+})
+
+describe('export 与 validateRecording 交叉', () => {
+  it('初始 enabled=false 的会话文件通过 validateRecording', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeCheckpointInput(), false)
+    expect(recorder.getFile().gaps).toEqual([{ afterSeq: 0, resumedAtSeq: null }])
+    expect(() => validateRecording(recorder.getFile())).not.toThrow()
+  })
+
+  it('pause 与 resume 后 export 均通过 validateRecording', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeCheckpointInput())
+    const opId = recorder.begin('training.trade', { side: 'buy' }, 'ui')
+    await recorder.pause(makeCheckpointInput())
+    expect(() => validateRecording(recorder.getFile())).not.toThrow()
+
+    await recorder.resume(makeCheckpointInput())
+    const next = recorder.begin('ui.theme', undefined, 'ui')
+    recorder.finish(next!, 'accepted')
+    const exported = await recorder.export()
+    expect(() => validateRecording(exported)).not.toThrow()
+  })
+
+  it('restore 沿用停止时 segment 续录，capture 后 export 通过 validateRecording', async () => {
+    const storage = new MemoryRecordingStorage()
+    const first = makeRecorder(storage)
+    await first.recorder.start('k', makeCheckpointInput())
+    const dangling = first.recorder.begin('training.trade', { side: 'buy' }, 'ui')
+    const closed = first.recorder.begin('chart.load', undefined, 'chart')
+    first.recorder.finish(closed!, 'accepted')
+    await first.recorder.flush()
+    const sessionId = first.recorder.getStatus().sessionId
+
+    const second = makeRecorder(storage)
+    await second.recorder.restore(sessionId)
+    const restored = second.recorder.getFile()
+    const stoppedSegment = restored.events.at(-1)!.segmentId
+    const patched = restored.events.find(event => event.opId === dangling && event.phase === 'finished')!
+    expect(patched.outcome).toBe('interrupted')
+    expect(patched.segmentId).toBe(stoppedSegment)
+    expect(() => validateRecording(restored)).not.toThrow()
+
+    second.recorder.capture(makeCheckpointInput({ chart: structuredClone(SAMPLE_CHART) }))
+    expect(second.recorder.getFile().checkpoints.at(-1)!.segmentId).toBe(stoppedSegment)
+    expect(() => validateRecording(second.recorder.getFile())).not.toThrow()
+
+    const next = second.recorder.begin('ui.theme', undefined, 'ui')
+    second.recorder.finish(next!, 'accepted')
+    const exported = await second.recorder.export()
+    expect(() => validateRecording(exported)).not.toThrow()
+    expect(exported.checkpoints.at(-1)!.segmentId).toBe(stoppedSegment)
+  })
+
+  it('损坏的存量会话被 restore 拒绝并进入 error 状态', async () => {
+    const storage = new MemoryRecordingStorage()
+    const first = makeRecorder(storage)
+    await first.recorder.start('k', makeCheckpointInput())
+    const opId = first.recorder.begin('ui.theme', undefined, 'ui')
+    first.recorder.finish(opId!, 'accepted')
+    await first.recorder.flush()
+    const sessionId = first.recorder.getStatus().sessionId
+
+    const persisted = await storage.load(sessionId)
+    persisted!.events[0].seq = 9
+    storage.records.set(sessionId, persisted!)
+
+    const second = makeRecorder(storage)
+    await expect(second.recorder.restore(sessionId)).rejects.toThrow('未通过校验')
+    expect(second.recorder.getStatus().state).toBe('error')
+    expect(second.statuses.at(-1)?.state).toBe('error')
   })
 })
 

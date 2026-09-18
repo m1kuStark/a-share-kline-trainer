@@ -1,5 +1,5 @@
 // REC-01 录制状态机：会话生命周期、事件配对、检查点、暂停缺口与串行持久化
-// 接口合同见 docs/engineering/recording-contract.md；只依赖 ./types 的纯类型。
+// 接口合同见 docs/engineering/recording-contract.md；只依赖 ./types 的纯类型与 ./validation 的载入校验。
 import type {
   Action,
   CheckpointInput,
@@ -14,6 +14,7 @@ import type {
   RecordingFile,
   RecordingStorage,
 } from './types'
+import { validateRecording } from './validation'
 
 function clone<T>(value: T): T {
   return structuredClone(value)
@@ -229,13 +230,22 @@ export class Recorder {
       this.fail(`读取录制会话 ${id} 失败：存储中不存在该会话。`)
       throw new Error(`存储中不存在 ID 为 ${id} 的录制会话，无法恢复。`)
     }
+    try {
+      validateRecording(loaded)
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error)
+      this.fail(`录制会话 ${id} 未通过校验：${reason}`)
+      throw new Error(`录制会话 ${id} 未通过校验：${reason}`)
+    }
     this.file = loaded
     this.patchDanglingOperations()
-    this.segmentId = createId()
+    // 续录沿用停止时所在 segment（最后一个事件优先，首次无事件用初始 checkpoint），
+    // 避免 capture 产出事件中不存在的 segmentId；真正 resume() 才开启新 segment。
+    this.segmentId = this.file.events.at(-1)?.segmentId ?? this.file.checkpoints.at(-1)?.segmentId ?? createId()
     this.openOps.clear()
     const maxElapsed = this.file.events.reduce((max, event) => Math.max(max, event.elapsedMs), 0)
     this.anchorWall = Date.now()
-    this.elapsedOffset = maxElapsed - this.anchorWall
+    this.elapsedOffset = maxElapsed
     this.lastElapsed = maxElapsed
     this.operationalState = this.file.gaps.some(gap => gap.resumedAtSeq === null) ? 'paused' : 'recording'
     this.lastError = null
@@ -291,7 +301,9 @@ export class Recorder {
   }
 
   private currentElapsed(): number {
-    const elapsed = Math.max(this.lastElapsed, Date.now() + this.elapsedOffset - this.anchorWall)
+    // start 时 offset=0、anchorWall=起点；restore 时 offset=maxElapsed、anchorWall=恢复时刻，
+    // 两种情况均为 offset + (now - anchorWall)，anchorWall 只减一次。
+    const elapsed = Math.max(this.lastElapsed, this.elapsedOffset + Date.now() - this.anchorWall)
     this.lastElapsed = elapsed
     return elapsed
   }
