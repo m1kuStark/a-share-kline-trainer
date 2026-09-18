@@ -8,6 +8,7 @@ import type {
   TrainingSnapshot,
 } from '../../web/src/recording/types'
 import { exportRecording, parseRecording, validateRecording } from '../../web/src/recording/validation'
+import { DRAW_TOOLS } from '../../web/src/drawTools'
 
 const CURRENT_DATE = '2026-03-31'
 const MIB = 1024 * 1024
@@ -141,13 +142,13 @@ describe('recording file acceptance', () => {
   it('accepts a fully valid file and keeps checkpoints in original order with duplicate afterSeq states', () => {
     const file = makeFile({
       checkpoints: [
+        makeCheckpoint(2, { id: 'cp-3', chart: makeChart() }),
         makeCheckpoint(4, { id: 'cp-1', chart: makeChart({ bars: [{ date: CURRENT_DATE, open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }] }) }),
         makeCheckpoint(4, { id: 'cp-2', chart: makeChart() }),
-        makeCheckpoint(2, { id: 'cp-3', chart: makeChart() }),
       ],
     })
     const result = validateRecording(file)
-    expect(result.checkpoints.map(cp => cp.id)).toEqual(['cp-1', 'cp-2', 'cp-3'])
+    expect(result.checkpoints.map(cp => cp.id)).toEqual(['cp-3', 'cp-1', 'cp-2'])
   })
 
   it('round-trips through export and parse', () => {
@@ -430,33 +431,70 @@ describe('bars cutoff against training current date', () => {
     expectFail(() => validateRecording(withBars('1M', '2026-04-01')), 'currentDate')
   })
 
-  it('skips the cutoff when training or currentDate is absent', () => {
-    const noTraining = makeFile({ checkpoints: [makeCheckpoint(4, { id: 'cp-1', training: null, chart: makeChart({ bars: [{ date: '2030-01-01', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }] }) })] })
-    expect(() => validateRecording(noTraining)).not.toThrow()
-
+  it('falls back to startDate as the cutoff when currentDate is null so blind mode cannot smuggle future bars', () => {
     const blind = makeFile({ checkpoints: [makeCheckpoint(4, { id: 'cp-1', training: makeSnapshot() })] })
-    ;(((blind.checkpoints[0] as { training: TrainingSnapshot | null })!.training as TrainingSnapshot).training as { currentDate: unknown }).currentDate = null
-    ;(((blind.checkpoints[0] as { training: TrainingSnapshot | null })!.training as TrainingSnapshot).training as { blind: unknown }).blind = true
+    const meta = ((blind.checkpoints[0] as { training: TrainingSnapshot | null })!.training as TrainingSnapshot).training as { currentDate: unknown; blind: unknown }
+    meta.currentDate = null
+    meta.blind = true
+    const chart = (blind.checkpoints[0] as { chart: ChartCapture | null }).chart as ChartCapture
+
+    chart.bars = [{ date: '2026-01-05', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }]
     expect(() => validateRecording(blind)).not.toThrow()
+
+    chart.bars = [{ date: '2026-06-01', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }]
+    expectFail(() => validateRecording(blind), 'startDate')
   })
 })
 
 describe('gaps ordering and range', () => {
-  it('accepts ordered gaps with null or in-range resume seqs', () => {
-    const file = makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 3 }, { afterSeq: 3, resumedAtSeq: null }] })
-    expect(() => validateRecording(file)).not.toThrow()
+  it('accepts ordered gaps including a leading from-the-start gap and adjacent resumes', () => {
+    expect(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 3 }, { afterSeq: 3, resumedAtSeq: 4 }] }))).not.toThrow()
+    expect(() => validateRecording(makeFile({ gaps: [{ afterSeq: 0, resumedAtSeq: 1 }] }))).not.toThrow()
+    expect(() => validateRecording(makeFile({ events: makeBulkEvents(6), gaps: [{ afterSeq: 2, resumedAtSeq: 4 }, { afterSeq: 4, resumedAtSeq: 6 }] }))).not.toThrow()
   })
 
-  it('rejects gaps out of order or with duplicate afterSeq', () => {
+  it('rejects gaps out of order or with duplicate afterSeq, so afterSeq 0 can only lead', () => {
     expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 3, resumedAtSeq: 4 }, { afterSeq: 2, resumedAtSeq: 3 }] })), '递增')
     expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 3 }, { afterSeq: 2, resumedAtSeq: 4 }] })), '递增')
+    expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 3 }, { afterSeq: 0, resumedAtSeq: null }] })), 'afterSeq')
+  })
+
+  it('rejects overlapping gaps', () => {
+    expectFail(() => validateRecording(makeFile({ events: makeBulkEvents(6), gaps: [{ afterSeq: 2, resumedAtSeq: 4 }, { afterSeq: 3, resumedAtSeq: 5 }] })), '重叠')
+  })
+
+  it('requires an open gap to be last and to forbid complete', () => {
+    expect(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 3 }, { afterSeq: 3, resumedAtSeq: null }], complete: false }))).not.toThrow()
+    expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: null }, { afterSeq: 3, resumedAtSeq: 4 }] })), '末尾')
+    expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: null }], complete: true })), 'complete')
   })
 
   it('rejects gap seqs outside event ranges', () => {
-    expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 0, resumedAtSeq: 1 }] })), 'afterSeq')
     expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 5, resumedAtSeq: null }] })), 'afterSeq')
     expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 2 }] })), 'afterSeq')
     expectFail(() => validateRecording(makeFile({ gaps: [{ afterSeq: 2, resumedAtSeq: 5 }] })), 'resumedAtSeq')
+  })
+
+  it('accepts the enabled=false initial state and round-trips it without fabricated events', () => {
+    const file = makeFile({
+      events: [],
+      checkpoints: [makeCheckpoint(0, { training: null, chart: null, segmentId: 'seg-bootstrap' })],
+      gaps: [{ afterSeq: 0, resumedAtSeq: null }],
+      complete: false,
+    })
+    expect(validateRecording(file)).toBeDefined()
+    expect(parseRecording(exportRecording(file))).toEqual(file)
+  })
+
+  it('accepts the normal initial checkpoint state and round-trips it', () => {
+    const file = makeFile({
+      events: [],
+      checkpoints: [makeCheckpoint(0, { training: null, chart: null })],
+      gaps: [],
+      complete: false,
+    })
+    expect(validateRecording(file)).toBeDefined()
+    expect(parseRecording(exportRecording(file))).toEqual(file)
   })
 })
 
@@ -479,6 +517,140 @@ describe('capacity limits', () => {
       checkpoints: Array.from({ length: 2001 }, (_, index) => makeCheckpoint(4, { id: `cp-${index}`, training: null, chart: null })),
     })
     expectFail(() => validateRecording(file), '2000')
+  })
+})
+
+function fileWithChart(chart: ChartCapture): RecordingFile {
+  return validateRecording(makeFile({ checkpoints: [makeCheckpoint(4, { id: 'cp-1', chart })] }))
+}
+
+function drawingOf(id: string, name: string, paneId: string, pointCount = 1): Drawing {
+  return {
+    id,
+    name,
+    paneId,
+    points: Array.from({ length: pointCount }, (_, index) => ({ timestamp: 1000 + index, value: 10 })),
+  }
+}
+
+describe('opId pairing consistency and elapsedMs', () => {
+  it('rejects started/finished with mismatched action source or segmentId', () => {
+    const action = makeFile()
+    action.events[2].action = 'training.create'
+    expectFail(() => validateRecording(action), 'action')
+
+    const source = makeFile()
+    source.events[2].source = 'system'
+    expectFail(() => validateRecording(source), 'source')
+
+    const segment = makeFile()
+    segment.events[2].segmentId = 'seg-2'
+    expectFail(() => validateRecording(segment), 'segmentId')
+  })
+
+  it('requires outcome on finished and forbids it on started', () => {
+    const missing = makeFile()
+    delete (missing.events[3] as Partial<RecordingEvent>).outcome
+    expectFail(() => validateRecording(missing), 'outcome')
+
+    const started = makeFile()
+    started.events[2].outcome = 'accepted'
+    expectFail(() => validateRecording(started), 'started')
+  })
+
+  it('enforces globally non-decreasing elapsedMs across events', () => {
+    const decreasing = makeFile()
+    decreasing.events[3].elapsedMs = decreasing.events[2].elapsedMs - 1000
+    expectFail(() => validateRecording(decreasing), 'elapsedMs')
+
+    const equal = makeFile()
+    equal.events[3].elapsedMs = equal.events[2].elapsedMs
+    expect(() => validateRecording(equal)).not.toThrow()
+  })
+})
+
+describe('checkpoint ordering and reference direction', () => {
+  it('rejects checkpoints whose afterSeq decreases', () => {
+    expectFail(() => validateRecording(makeFile({
+      checkpoints: [makeCheckpoint(4, { id: 'cp-1' }), makeCheckpoint(2, { id: 'cp-2' })],
+    })), 'afterSeq')
+  })
+
+  it('rejects an event referencing a checkpoint captured after the event', () => {
+    const file = makeFile()
+    file.events[1].checkpointId = 'cp-1'
+    expectFail(() => validateRecording(file), '未来')
+  })
+
+  it('allows an initial afterSeq=0 checkpoint with a segment that never appears in events', () => {
+    const file = makeFile({ checkpoints: [makeCheckpoint(0, { id: 'cp-1', segmentId: 'seg-bootstrap' })] })
+    expect(() => validateRecording(file)).not.toThrow()
+  })
+})
+
+describe('positivity and chart payload limits', () => {
+  it('requires positive viewport dpr barSpace and pane heights', () => {
+    expectFail(() => validateRecording(makeFile({ environment: { timezone: 'Asia/Shanghai', viewport: { width: 0, height: 1080 }, dpr: 1 } })), 'width')
+    expectFail(() => validateRecording(makeFile({ environment: { timezone: 'Asia/Shanghai', viewport: { width: 1920, height: -1 }, dpr: 1 } })), 'height')
+    expectFail(() => validateRecording(makeFile({ environment: { timezone: 'Asia/Shanghai', viewport: { width: 1920, height: 1080 }, dpr: 0 } })), 'dpr')
+    expectFail(() => fileWithChart(makeChart({ view: { fromTimestamp: null, toTimestamp: null, barSpace: 0, paneHeights: { candle_pane: 400 } } })), 'barSpace')
+    expectFail(() => fileWithChart(makeChart({ view: { fromTimestamp: null, toTimestamp: null, barSpace: 8, paneHeights: { candle_pane: 0 } } })), 'paneHeights')
+  })
+
+  it('requires bars strictly increasing by date', () => {
+    expect(() => fileWithChart(makeChart({ bars: [
+      { date: '2026-03-30', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-03-31', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] }))).not.toThrow()
+    expectFail(() => fileWithChart(makeChart({ bars: [
+      { date: '2026-03-31', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-03-31', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] })), '递增')
+    expectFail(() => fileWithChart(makeChart({ bars: [
+      { date: '2026-03-31', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-03-30', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] })), '递增')
+  })
+
+  it('caps drawings at 500 per capture and points at 256 per drawing', () => {
+    expect(() => fileWithChart(makeChart({ drawings: Array.from({ length: 500 }, (_, index) => drawingOf(`d-${index}`, 'segment', 'candle_pane')) }))).not.toThrow()
+    expectFail(() => fileWithChart(makeChart({ drawings: Array.from({ length: 501 }, (_, index) => drawingOf(`d-${index}`, 'segment', 'candle_pane')) })), '500')
+    expect(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'polyline', 'candle_pane', 256)] }))).not.toThrow()
+    expectFail(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'polyline', 'candle_pane', 257)] })), '256')
+  })
+
+  it('restricts drawing panes and names to the registered draw tools, rejecting engine drawings', () => {
+    for (const pane of ['candle_pane', 'VOL', 'MACD']) {
+      expect(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'segment', pane)] }))).not.toThrow()
+    }
+    expectFail(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'segment', 'MAIN')] })), 'pane')
+    for (const tool of DRAW_TOOLS) {
+      expect(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', tool.name, 'VOL')] }))).not.toThrow()
+    }
+    expectFail(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'bsMark', 'candle_pane')] })), 'name')
+    expectFail(() => fileWithChart(makeChart({ drawings: [drawingOf('d-1', 'costLine', 'candle_pane')] })), 'name')
+  })
+})
+
+describe('monthly month-key bars', () => {
+  it('accepts real YYYY-MM monthly bars for ordering and cutoff via month-start normalization', () => {
+    expect(() => fileWithChart(makeChart({ timeframe: '1M', bars: [
+      { date: '2026-02', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-03', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] }))).not.toThrow()
+    expectFail(() => fileWithChart(makeChart({ timeframe: '1M', bars: [
+      { date: '2026-02', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-02', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] })), '递增')
+    expectFail(() => fileWithChart(makeChart({ timeframe: '1M', bars: [
+      { date: '2026-03', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+      { date: '2026-04', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 },
+    ] })), 'currentDate')
+  })
+
+  it('keeps daily and weekly bars on full dates', () => {
+    expectFail(() => fileWithChart(makeChart({ timeframe: '1D', bars: [{ date: '2026-03', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }] })), 'YYYY-MM-DD')
+    expectFail(() => fileWithChart(makeChart({ timeframe: '1W', bars: [{ date: '2026-03', open: 1, high: 1, low: 1, close: 1, volume: 1, amount: 1 }] })), 'YYYY-MM-DD')
   })
 })
 

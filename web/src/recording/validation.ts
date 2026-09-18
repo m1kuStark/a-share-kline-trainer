@@ -1,6 +1,7 @@
 // REC-VALIDATE：RecordingFile 校验/解析/导出（docs/engineering/recording-contract.md）
 // parse 与 export 统一走 validateRecording；本模块只做纯数据校验，不执行输入中的任何代码或 URL。
 import { ACTIONS } from './types'
+import { DRAW_TOOLS } from '../drawTools'
 import type { ChartCapture, RecordingFile } from './types'
 import type { TrainingSnapshot } from '../api'
 
@@ -8,8 +9,12 @@ const MAX_BYTES = 25 * 1024 * 1024
 const MAX_EVENTS = 50_000
 const MAX_CHECKPOINTS = 2_000
 const MAX_DEPTH = 40
+const MAX_DRAWINGS = 500
+const MAX_DRAWING_POINTS = 256
 
 const ACTION_SET: ReadonlySet<string> = new Set(ACTIONS)
+const DRAWING_NAMES: ReadonlySet<string> = new Set(DRAW_TOOLS.map(tool => tool.name))
+const DRAWING_PANES: ReadonlySet<string> = new Set(['candle_pane', 'VOL', 'MACD'])
 const PHASES: ReadonlySet<string> = new Set(['started', 'finished'])
 const SOURCES: ReadonlySet<string> = new Set(['ui', 'keyboard', 'chart', 'system'])
 const OUTCOMES: ReadonlySet<string> = new Set(['accepted', 'rejected', 'failed', 'cancelled', 'interrupted', 'unknown'])
@@ -19,6 +24,7 @@ const TRAINING_STATUS: ReadonlySet<string> = new Set(['running', 'settled', 'aba
 const ADJUST_MODES: ReadonlySet<string> = new Set(['forward', 'raw'])
 const TRADE_SIDES: ReadonlySet<string> = new Set(['buy', 'sell'])
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const MONTH_PATTERN = /^\d{4}-\d{2}$/
 const OHLC_KEYS = ['open', 'high', 'low', 'close', 'volume', 'amount'] as const
 const ACCOUNT_KEYS = ['cash', 'shares', 'availableShares', 'marketValue', 'equity'] as const
 
@@ -108,6 +114,12 @@ function assertInteger(value: unknown, field: string): number {
   return value
 }
 
+function assertPositive(value: unknown, field: string): number {
+  const number = assertFinite(value, field)
+  if (number <= 0) fail(field, `必须是正数（收到 ${number}）`)
+  return number
+}
+
 function assertEnum(value: unknown, field: string, allowed: ReadonlySet<string>): string {
   if (typeof value !== 'string' || !allowed.has(value)) {
     fail(field, `必须是 ${[...allowed].join('/')} 之一（收到 ${JSON.stringify(value)}）`)
@@ -131,6 +143,16 @@ function assertDateOrNull(value: unknown, field: string): string | null {
   return assertDate(value, field)
 }
 
+/** bar 日期：1D/1W 为 YYYY-MM-DD；1M 允许后端月键 YYYY-MM，统一归一月月初便于截止比较 */
+function assertBarDate(value: unknown, field: string, timeframe: string): string {
+  if (typeof value === 'string' && timeframe === '1M' && MONTH_PATTERN.test(value)) {
+    const month = Number(value.slice(5, 7))
+    if (month >= 1 && month <= 12) return `${value}-01`
+    fail(field, `不是有效的月份（${value}）`)
+  }
+  return assertDate(value, field)
+}
+
 function assertTimestamp(value: unknown, field: string): string {
   const text = assertString(value, field)
   if (Number.isNaN(Date.parse(text))) fail(field, `时间须为可解析的日期时间字符串（收到 ${JSON.stringify(text)}）`)
@@ -140,6 +162,7 @@ function assertTimestamp(value: unknown, field: string): string {
 interface CheckedEvent {
   segmentId: string
   checkpointId: string | undefined
+  elapsedMs: number
 }
 
 function assertEvent(raw: unknown, field: string, index: number): CheckedEvent {
@@ -150,43 +173,61 @@ function assertEvent(raw: unknown, field: string, index: number): CheckedEvent {
   }
   assertString(event.opId, `${field}.opId`)
   const segmentId = assertString(event.segmentId, `${field}.segmentId`)
-  if (assertFinite(event.elapsedMs, `${field}.elapsedMs`) < 0) fail(`${field}.elapsedMs`, '不能为负数')
-  assertEnum(event.phase, `${field}.phase`, PHASES)
+  const elapsedMs = assertFinite(event.elapsedMs, `${field}.elapsedMs`)
+  if (elapsedMs < 0) fail(`${field}.elapsedMs`, '不能为负数')
+  const phase = assertEnum(event.phase, `${field}.phase`, PHASES)
   if (typeof event.action !== 'string' || !ACTION_SET.has(event.action)) {
     fail(`${field}.action`, `不在动作白名单内（收到 ${JSON.stringify(event.action)}）`)
   }
   assertEnum(event.source, `${field}.source`, SOURCES)
-  if (event.outcome !== undefined) assertEnum(event.outcome, `${field}.outcome`, OUTCOMES)
+  if (phase === 'started') {
+    if (event.outcome !== undefined) fail(`${field}.outcome`, 'started 事件不得携带 outcome')
+  } else if (event.outcome === undefined) {
+    fail(`${field}.outcome`, 'finished 事件必须携带 outcome')
+  } else {
+    assertEnum(event.outcome, `${field}.outcome`, OUTCOMES)
+  }
   const checkpointId = event.checkpointId === undefined ? undefined : assertString(event.checkpointId, `${field}.checkpointId`)
   // params/result 为 JsonValue，已由 assertJson 全树校验
-  return { segmentId, checkpointId }
+  return { segmentId, checkpointId, elapsedMs }
+}
+
+interface PairingKey {
+  action: unknown
+  source: unknown
+  segmentId: unknown
 }
 
 function assertEventPairing(events: unknown[], complete: boolean): void {
-  const started = new Set<string>()
+  const started = new Map<string, PairingKey>()
   const finished = new Set<string>()
   events.forEach((raw, index) => {
-    const event = raw as { opId: string; phase: string }
+    const event = raw as { opId: string; phase: string; action: unknown; source: unknown; segmentId: unknown }
     const field = `events[${index}].opId`
     if (event.phase === 'started') {
       if (started.has(event.opId)) fail(field, `started 重复（opId ${event.opId}）`)
-      started.add(event.opId)
+      started.set(event.opId, { action: event.action, source: event.source, segmentId: event.segmentId })
       return
     }
-    if (!started.has(event.opId)) fail(field, `finished 缺少配对的 started（opId ${event.opId}）`)
+    const opened = started.get(event.opId)
+    if (!opened) fail(field, `finished 缺少配对的 started（opId ${event.opId}）`)
     if (finished.has(event.opId)) fail(field, `finished 重复（opId ${event.opId}）`)
+    if (opened && (opened.action !== event.action || opened.source !== event.source || opened.segmentId !== event.segmentId)) {
+      fail(field, `finished 与 started 的 action/source/segmentId 必须一致（opId ${event.opId}）`)
+    }
     finished.add(event.opId)
   })
-  const dangling = [...started].filter(opId => !finished.has(opId))
+  const dangling = [...started.keys()].filter(opId => !finished.has(opId))
   if (dangling.length > 0 && complete) {
     fail('complete', `存在未闭合的 started 操作（opId ${dangling.join('、')}），中断尾段未闭合时 complete 不能为 true`)
   }
 }
 
-function assertBar(raw: unknown, field: string): void {
+function assertBar(raw: unknown, field: string, timeframe: string): string {
   const bar = assertRecord(raw, field)
-  assertDate(bar.date, `${field}.date`)
+  const date = assertBarDate(bar.date, `${field}.date`, timeframe)
   for (const key of OHLC_KEYS) assertFinite(bar[key], `${field}.${key}`)
+  return date
 }
 
 function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): void {
@@ -194,9 +235,18 @@ function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): vo
   const id = assertString(drawing.id, `${field}.id`)
   if (drawingIds.has(id)) fail(`${field}.id`, `画线 id 重复（${id}）`)
   drawingIds.add(id)
-  assertString(drawing.name, `${field}.name`)
-  assertString(drawing.paneId, `${field}.paneId`)
+  const name = assertString(drawing.name, `${field}.name`)
+  if (!DRAWING_NAMES.has(name)) {
+    fail(`${field}.name`, `不在 drawTools 注册集合内（收到 ${name}，引擎内置 bsMark/costLine 不得进入录制）`)
+  }
+  const paneId = assertString(drawing.paneId, `${field}.paneId`)
+  if (!DRAWING_PANES.has(paneId)) {
+    fail(`${field}.paneId`, `仅允许 candle_pane/VOL/MACD（收到 ${paneId}）`)
+  }
   const points = assertArray(drawing.points, `${field}.points`)
+  if (points.length > MAX_DRAWING_POINTS) {
+    fail(`${field}.points`, `单条画线点数 ${points.length} 超过上限 ${MAX_DRAWING_POINTS}`)
+  }
   points.forEach((point, index) => {
     const item = assertRecord(point, `${field}.points[${index}]`)
     assertFinite(item.timestamp, `${field}.points[${index}].timestamp`)
@@ -208,23 +258,36 @@ function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): vo
   // extendData 为任意 JsonValue，已由 assertJson 全树校验
 }
 
-function assertChartCapture(raw: unknown, field: string): void {
+/** 返回归一化（月键归月初）的 bar 日期，供严格递增与截止比较 */
+function assertChartCapture(raw: unknown, field: string): string[] {
   const chart = assertRecord(raw, field)
-  assertEnum(chart.timeframe, `${field}.timeframe`, TIMEFRAMES)
-  assertArray(chart.bars, `${field}.bars`).forEach((bar, index) => assertBar(bar, `${field}.bars[${index}]`))
+  const timeframe = assertEnum(chart.timeframe, `${field}.timeframe`, TIMEFRAMES)
+  const barDates = assertArray(chart.bars, `${field}.bars`).map((bar, index) =>
+    assertBar(bar, `${field}.bars[${index}]`, timeframe),
+  )
+  barDates.forEach((date, index) => {
+    if (index > 0 && date <= barDates[index - 1]) {
+      fail(`${field}.bars[${index}].date`, `必须严格按日期递增（前值 ${barDates[index - 1]}，收到 ${date}）`)
+    }
+  })
+  const drawings = assertArray(chart.drawings, `${field}.drawings`)
+  if (drawings.length > MAX_DRAWINGS) {
+    fail(`${field}.drawings`, `画线数量 ${drawings.length} 超过上限 ${MAX_DRAWINGS}`)
+  }
   const drawingIds = new Set<string>()
-  assertArray(chart.drawings, `${field}.drawings`).forEach((drawing, index) => {
+  drawings.forEach((drawing, index) => {
     assertDrawing(drawing, `${field}.drawings[${index}]`, drawingIds)
   })
   const view = assertRecord(chart.view, `${field}.view`)
   assertNumberOrNull(view.fromTimestamp, `${field}.view.fromTimestamp`)
   assertNumberOrNull(view.toTimestamp, `${field}.view.toTimestamp`)
-  assertFinite(view.barSpace, `${field}.view.barSpace`)
+  assertPositive(view.barSpace, `${field}.view.barSpace`)
   const paneHeights = assertRecord(view.paneHeights, `${field}.view.paneHeights`)
   for (const [key, height] of Object.entries(paneHeights)) {
-    assertFinite(height, `${field}.view.paneHeights.${key}`)
+    assertPositive(height, `${field}.view.paneHeights.${key}`)
   }
   assertNumberOrNull(chart.costPrice, `${field}.costPrice`)
+  return barDates
 }
 
 function assertTrade(raw: unknown, field: string): void {
@@ -270,8 +333,10 @@ function assertTrainingSnapshot(raw: unknown, field: string): void {
 }
 
 interface CheckedCheckpoint {
+  afterSeq: number
   training: TrainingSnapshot | null
   chart: ChartCapture | null
+  barDates: string[]
 }
 
 function assertCheckpoint(
@@ -279,34 +344,38 @@ function assertCheckpoint(
   field: string,
   eventCount: number,
   segmentIds: ReadonlySet<string>,
-  checkpointIds: Set<string>,
+  checkpointIds: Map<string, number>,
 ): CheckedCheckpoint {
   const checkpoint = assertRecord(raw, field)
   const id = assertString(checkpoint.id, `${field}.id`)
   if (checkpointIds.has(id)) fail(`${field}.id`, `检查点 id 重复（${id}）`)
-  checkpointIds.add(id)
   const afterSeq = assertInteger(checkpoint.afterSeq, `${field}.afterSeq`)
   if (afterSeq < 0 || afterSeq > eventCount) {
     fail(`${field}.afterSeq`, `须在 0..${eventCount} 范围内（收到 ${afterSeq}）`)
   }
+  checkpointIds.set(id, afterSeq)
   const segmentId = assertString(checkpoint.segmentId, `${field}.segmentId`)
-  if (eventCount > 0 && !segmentIds.has(segmentId)) {
+  // afterSeq=0 的初始检查点先于任何事件，segmentId 允许独立；afterSeq>0 必须能在事件中证实
+  if (afterSeq > 0 && !segmentIds.has(segmentId)) {
     fail(`${field}.segmentId`, `未出现在任何事件中（${segmentId}）`)
   }
   assertTimestamp(checkpoint.capturedAt, `${field}.capturedAt`)
   const training = checkpoint.training === null
     ? null
     : (assertTrainingSnapshot(checkpoint.training, `${field}.training`), checkpoint.training as TrainingSnapshot)
-  const chart = checkpoint.chart === null
-    ? null
-    : (assertChartCapture(checkpoint.chart, `${field}.chart`), checkpoint.chart as ChartCapture)
+  let chart: ChartCapture | null = null
+  let barDates: string[] = []
+  if (checkpoint.chart !== null) {
+    barDates = assertChartCapture(checkpoint.chart, `${field}.chart`)
+    chart = checkpoint.chart as ChartCapture
+  }
   const ui = assertRecord(checkpoint.ui, `${field}.ui`)
   assertString(ui.theme, `${field}.ui.theme`)
   assertStringOrNull(ui.tool, `${field}.ui.tool`)
   assertString(ui.magnet, `${field}.ui.magnet`)
   assertBoolean(ui.multiSelect, `${field}.ui.multiSelect`)
   // context 为 JsonValue | null，已由 assertJson 全树校验
-  return { training, chart }
+  return { afterSeq, training, chart, barDates }
 }
 
 /** 校验录制文件；失败抛中文可行动错误，通过则原样返回（不重排 checkpoints） */
@@ -332,9 +401,9 @@ export function validateRecording(value: unknown): RecordingFile {
   const environment = assertRecord(value.environment, 'environment')
   assertString(environment.timezone, 'environment.timezone')
   const viewport = assertRecord(environment.viewport, 'environment.viewport')
-  assertFinite(viewport.width, 'environment.viewport.width')
-  assertFinite(viewport.height, 'environment.viewport.height')
-  assertFinite(environment.dpr, 'environment.dpr')
+  assertPositive(viewport.width, 'environment.viewport.width')
+  assertPositive(viewport.height, 'environment.viewport.height')
+  assertPositive(environment.dpr, 'environment.dpr')
 
   assertStringOrNull(value.trainingKey, 'trainingKey')
   assertBoolean(value.complete, 'complete')
@@ -346,55 +415,87 @@ export function validateRecording(value: unknown): RecordingFile {
   const gaps = assertArray(value.gaps, 'gaps')
 
   const segmentIds = new Set<string>()
-  const checkpointRefs: Array<string | undefined> = []
+  const checkpointRefs: Array<{ checkpointId: string | undefined; seq: number }> = []
+  let lastElapsedMs = Number.NEGATIVE_INFINITY
   events.forEach((raw, index) => {
     const checked = assertEvent(raw, `events[${index}]`, index)
+    if (checked.elapsedMs < lastElapsedMs) {
+      fail(`events[${index}].elapsedMs`, `须全局单调不减（前一事件 ${lastElapsedMs}，本事件 ${checked.elapsedMs}）`)
+    }
+    lastElapsedMs = checked.elapsedMs
     segmentIds.add(checked.segmentId)
-    checkpointRefs.push(checked.checkpointId)
+    checkpointRefs.push({ checkpointId: checked.checkpointId, seq: index + 1 })
   })
   assertEventPairing(events, value.complete as boolean)
 
-  const checkpointIds = new Set<string>()
-  const checkedCheckpoints = checkpoints.map((raw, index) =>
-    assertCheckpoint(raw, `checkpoints[${index}]`, events.length, segmentIds, checkpointIds),
-  )
+  const checkpointIds = new Map<string, number>()
+  const checkedCheckpoints: CheckedCheckpoint[] = []
+  let previousCheckpointAfterSeq = 0
+  checkpoints.forEach((raw, index) => {
+    const checked = assertCheckpoint(raw, `checkpoints[${index}]`, events.length, segmentIds, checkpointIds)
+    if (checked.afterSeq < previousCheckpointAfterSeq) {
+      fail(`checkpoints[${index}].afterSeq`, `须按 afterSeq 非递减（前值 ${previousCheckpointAfterSeq}，收到 ${checked.afterSeq}），同 seq 允许多个更完整状态`)
+    }
+    previousCheckpointAfterSeq = checked.afterSeq
+    checkedCheckpoints.push(checked)
+  })
 
-  checkpointRefs.forEach((checkpointId, index) => {
-    if (checkpointId !== undefined && !checkpointIds.has(checkpointId)) {
+  checkpointRefs.forEach(({ checkpointId, seq }, index) => {
+    if (checkpointId === undefined) return
+    const afterSeq = checkpointIds.get(checkpointId)
+    if (afterSeq === undefined) {
       fail(`events[${index}].checkpointId`, `引用了不存在的检查点 id（${checkpointId}）`)
+    }
+    if (afterSeq > seq) {
+      fail(`events[${index}].checkpointId`, `指向未来快照（检查点 afterSeq=${afterSeq} 晚于事件 seq=${seq}）`)
     }
   })
 
-  // bars 截止不晚于推进日；周/月 bar 的 date 为周期起点，同样不得越过边界
+  // bars 截止不晚于推进日；currentDate 为 null（双盲）时回退 startDate，不得借 null 导出未来；
+  // 周/月 bar 为周期起点，月键归一月月初后同样不得越过边界
   checkedCheckpoints.forEach((checked, index) => {
-    const currentDate = checked.training?.training.currentDate ?? null
-    if (currentDate === null || checked.chart === null) return
-    checked.chart.bars.forEach((bar, barIndex) => {
-      if (bar.date > currentDate) {
-        fail(`checkpoints[${index}].chart.bars[${barIndex}].date`, `晚于 training.currentDate（${currentDate}），不得包含未来数据`)
+    const cutoff = checked.training === null
+      ? null
+      : checked.training.training.currentDate ?? checked.training.training.startDate
+    if (cutoff === null || checked.chart === null) return
+    checked.barDates.forEach((date, barIndex) => {
+      if (date > cutoff) {
+        fail(`checkpoints[${index}].chart.bars[${barIndex}].date`, `晚于行情截止（截止 ${cutoff}，currentDate 为 null 时按 startDate 比较），不得包含未来数据`)
       }
     })
   })
 
-  let previousAfterSeq = 0
+  let previousGapAfterSeq = -1
+  let hasOpenGap = false
   gaps.forEach((raw, index) => {
     const gap = assertRecord(raw, `gaps[${index}]`)
-    const afterSeq = assertInteger(gap.afterSeq, `gaps[${index}].afterSeq`)
-    if (afterSeq < 1 || afterSeq > events.length) {
-      fail(`gaps[${index}].afterSeq`, `须在 1..${events.length} 范围内（收到 ${afterSeq}）`)
+    const field = `gaps[${index}]`
+    const afterSeq = assertInteger(gap.afterSeq, `${field}.afterSeq`)
+    if (afterSeq < 0 || afterSeq > events.length) {
+      fail(`${field}.afterSeq`, `须在 0..${events.length} 范围内（0 表示自开始未录制，收到 ${afterSeq}）`)
     }
-    if (afterSeq <= previousAfterSeq) {
-      fail(`gaps[${index}].afterSeq`, `gaps 须按 afterSeq 严格递增（前值 ${previousAfterSeq}，收到 ${afterSeq}）`)
+    if (afterSeq <= previousGapAfterSeq) {
+      fail(`${field}.afterSeq`, `gaps 须按 afterSeq 严格递增（前值 ${previousGapAfterSeq}，收到 ${afterSeq}），afterSeq=0 仅允许用于首个 gap`)
     }
-    previousAfterSeq = afterSeq
-    if (gap.resumedAtSeq !== null) {
-      const resumedAtSeq = assertInteger(gap.resumedAtSeq, `gaps[${index}].resumedAtSeq`)
-      if (resumedAtSeq <= afterSeq) fail(`gaps[${index}].resumedAtSeq`, `必须大于 afterSeq（${afterSeq}）`)
+    if (hasOpenGap) fail(field, '未闭合 gap（resumedAtSeq=null）必须位于末尾，其后不得再有 gap')
+    if (gap.resumedAtSeq === null) {
+      hasOpenGap = true
+    } else {
+      const resumedAtSeq = assertInteger(gap.resumedAtSeq, `${field}.resumedAtSeq`)
+      if (resumedAtSeq <= afterSeq) fail(`${field}.resumedAtSeq`, `必须大于 afterSeq（${afterSeq}）`)
       if (resumedAtSeq > events.length) {
-        fail(`gaps[${index}].resumedAtSeq`, `超出事件范围（最大 ${events.length}，收到 ${resumedAtSeq}）`)
+        fail(`${field}.resumedAtSeq`, `超出事件范围（最大 ${events.length}，收到 ${resumedAtSeq}）`)
+      }
+      const previous = gaps[index - 1] as { resumedAtSeq?: unknown } | undefined
+      if (index > 0 && typeof previous?.resumedAtSeq === 'number' && previous.resumedAtSeq > afterSeq) {
+        fail(`${field}.afterSeq`, `与前一个 gap 重叠（前一 gap 恢复于 seq ${previous.resumedAtSeq}，本 gap 开始于 seq ${afterSeq}）`)
       }
     }
+    previousGapAfterSeq = afterSeq
   })
+  if (hasOpenGap && (value.complete as boolean)) {
+    fail('complete', '存在未闭合的 gap（resumedAtSeq=null，录制自该处停止），complete 不能为 true')
+  }
 
   return value as unknown as RecordingFile
 }
