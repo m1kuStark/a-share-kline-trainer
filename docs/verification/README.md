@@ -10,6 +10,7 @@
 - [v2编解码首轮审查](2026-09/REC-01-v2-codec-review/report.md)：真实样本往返通过、恢复缺陷待修及三任务并行隔离。
 - [GLM长无活动诊断](2026-09/REC-01-monitor-health/report.md)：请求/工具分开观察、输出预算续接及旧修正任务关联。
 - [v2并行批次验收](2026-09/REC-01-v2-batch-review/report.md)：codec已合，validator/storage精确返修与两年Journey的RED基线。
+- [v2模块联合验收](2026-09/REC-01-v2-modules/report.md)：校验/存储修复通过、真实录制迁移无损、gzip取消死锁待修。
 
 - [DEV-01并行基线](2026-09/DEV-01-parallel/report.md)：精确合并候选、完整验收和两个worktree并发证据。
 

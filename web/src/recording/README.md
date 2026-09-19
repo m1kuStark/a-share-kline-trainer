@@ -12,6 +12,8 @@
 | [replay](replay.ts) | 检查点选择、真实暂停时间缺口和播放时距；[回放页](../views/recording-replay.md) |
 | [chartCapture](chartCapture.ts) / [drawingOperations](drawingOperations.ts) | 图表与画线语义捕获，实际价格/日期与手势结果 |
 | [compactTypes](compactTypes.ts) / [compactCodec](compactCodec.ts) | 已验收的v2纯编解码、行情/图形版本和轻量引用；[实现](compact-codec.md)，尚未替换页面v1接线 |
+| [compactValidation](compactValidation.ts) | v2引用/历史截止/还原集合预算；[校验说明](compact-validation.md) |
+| [compactStorage](compactStorage.ts) | v2增量事务、revision冲突和旧sessions保留；[存储说明](compact-storage.md) |
 
 图表只捕获实际已加载且训练可见的数据。训练推进后的账户结果与图表加载是两个独立操作；交易成功后图表加载失败不能改写成交结论。加载期间的账户检查点允许chart=null，不能给新账户配旧周期或旧复权基准的行情。
 

@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "codec修复已验收合入；3个GLM并行处理validator四项边界返修、存储header冲突返修、gzip文件封装；随后CompactRecorder与页面迁移及两年真实旅程。",
+  "next_action": "codec/validator/storage已联合验收145测试及真实IDB，第三批3GLM并行：gzip取消死锁返修、CompactRecorder、按需回放页；随后根统一接线及两年全流程。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",

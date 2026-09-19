@@ -1,0 +1,62 @@
+{
+  "testedCommit": "7edbed9",
+  "scope": "pure compact codec/validation and storage; UI still v1; file packaging blocked",
+  "unitPassed": 145,
+  "typesExitCode": 0,
+  "previousInvalidProbesRejected": 4,
+  "realIndexedDb": {
+    "roundtrip": true,
+    "append": true,
+    "contentConflict": true,
+    "metadataConflict": true,
+    "persistedVersion": "left"
+  },
+  "realRecordings": [
+    {
+      "name": "first-trade-recorded.json",
+      "checkpoints": 6,
+      "events": 6,
+      "gaps": 0,
+      "oldBytes": 841958,
+      "compactBytes": 173162,
+      "gzipBytes": 35200,
+      "allCheckpointsEqual": true
+    },
+    {
+      "name": "recorded-session.json",
+      "checkpoints": 26,
+      "events": 34,
+      "gaps": 1,
+      "oldBytes": 3158784,
+      "compactBytes": 410849,
+      "gzipBytes": 94394,
+      "allCheckpointsEqual": true
+    },
+    {
+      "name": "initially-paused-session.json",
+      "checkpoints": 3,
+      "events": 2,
+      "gaps": 1,
+      "oldBytes": 503670,
+      "compactBytes": 170275,
+      "gzipBytes": 34576,
+      "allCheckpointsEqual": true
+    },
+    {
+      "name": "storage-recovery-session.json",
+      "checkpoints": 6,
+      "events": 4,
+      "gaps": 1,
+      "oldBytes": 1006863,
+      "compactBytes": 172279,
+      "gzipBytes": 34763,
+      "allCheckpointsEqual": true
+    }
+  ],
+  "gzipFile": {
+    "review": "changes_requested",
+    "commit": "5fd5e59",
+    "originalTestsPassed": 16,
+    "failure": "65-byte high-compression gzip with output budget64 stalls past750ms due to backpressure cancellation order"
+  }
+}
