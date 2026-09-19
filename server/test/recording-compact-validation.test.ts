@@ -504,3 +504,104 @@ describe('events gaps and pairing reuse', () => {
     expectFail(() => validateCompactRecording(makeCompactFile({ checkpoints })), '非递减')
   })
 })
+
+describe('restored budgets and cross-resource consistency', () => {
+  function drawing(id: string) {
+    return { id, name: 'segment', paneId: 'candle_pane', points: [{ timestamp: 1, value: 1 }, { timestamp: 2, value: 2 }] }
+  }
+
+  it('rejects a derived series whose firstCheckpoint precedes its base even when asOf is null', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [
+      { id: 's0', timeframe: '1D', asOf: null, firstCheckpoint: 1, base: null, bars: [bar(dateStr(0))] },
+      { id: 's1', timeframe: '1D', asOf: null, firstCheckpoint: 0, base: 's0', upsert: [], remove: [] },
+    ]
+    resources.drawings = [{ id: 'dw1', base: null, items: [] }]
+    expectFail(() =>
+      validateCompactRecording(makeCompactFile({
+        checkpoints: [
+          minimalCheckpoint('cp-0', { chart: chartRef('s1') }),
+          minimalCheckpoint('cp-1', { chart: chartRef('s0') }),
+        ],
+        resources,
+      })),
+    '基础版本firstCheckpoint')
+  })
+
+  it('allows a derived series whose firstCheckpoint equals its base', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [
+      { id: 's0', timeframe: '1D', asOf: null, firstCheckpoint: 1, base: null, bars: [bar(dateStr(0))] },
+      { id: 's1', timeframe: '1D', asOf: null, firstCheckpoint: 1, base: 's0', upsert: [bar(dateStr(1))], remove: [] },
+    ]
+    resources.drawings = [{ id: 'dw1', base: null, items: [] }]
+    expect(() =>
+      validateCompactRecording(makeCompactFile({
+        checkpoints: [minimalCheckpoint('cp-0'), minimalCheckpoint('cp-1', { chart: chartRef('s1') })],
+        resources,
+      })),
+    ).not.toThrow()
+  })
+
+  it('rejects a checkpoint chart timeframe that differs from the referenced series', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [seriesVersion({ id: 's1', timeframe: '1M', bars: [bar('2026-02'), bar('2026-03')] })]
+    resources.drawings = [{ id: 'dw1', base: null, items: [] }]
+    expectFail(() =>
+      validateCompactRecording(makeCompactFile({
+        checkpoints: [minimalCheckpoint('cp-1', { afterSeq: 2, segmentId: 'seg-1', chart: chartRef('s1') })],
+        resources,
+      })),
+    '周期须与引用的行情版本一致')
+  })
+
+  it('rejects a drawing chain whose restored id set exceeds 500', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [seriesVersion()]
+    resources.drawings = [
+      { id: 'dw0', base: null, items: Array.from({ length: 500 }, (_, index) => drawing(`d${index}`)) },
+      { id: 'dw1', base: 'dw0', upsert: [drawing('d500')], remove: [] },
+    ]
+    expectFail(() =>
+      validateCompactRecording(makeCompactFile({
+        checkpoints: [minimalCheckpoint('cp-1', { afterSeq: 2, segmentId: 'seg-1', chart: chartRef('s1', 'dw1') })],
+        resources,
+      })),
+    '还原后画线数量')
+  })
+
+  it('allows drawing replace and remove deltas that keep the restored set within 500', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [seriesVersion()]
+    resources.drawings = [
+      { id: 'dw0', base: null, items: Array.from({ length: 500 }, (_, index) => drawing(`d${index}`)) },
+      { id: 'dw1', base: 'dw0', upsert: [drawing('d0'), drawing('d1')], remove: [] },
+      { id: 'dw2', base: 'dw1', upsert: [drawing('d-new')], remove: ['d2'] },
+    ]
+    expect(() =>
+      validateCompactRecording(makeCompactFile({
+        checkpoints: [minimalCheckpoint('cp-1', { afterSeq: 2, segmentId: 'seg-1', chart: chartRef('s1', 'dw2') })],
+        resources,
+      })),
+    ).not.toThrow()
+  })
+
+  it('rejects a delta whose restored bar array exceeds 20000', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [
+      seriesVersion({ id: 's0', bars: Array.from({ length: 20000 }, (_, index) => bar(dateStr(index))) }),
+      { id: 's1', timeframe: '1D', asOf: null, firstCheckpoint: 0, base: 's0', upsert: [bar(dateStr(20000))], remove: [] },
+    ]
+    expectFail(() => validateCompactRecording(makeCompactFile({ resources })), '还原后bar数量')
+  })
+
+  it('allows replace and remove deltas that keep restored bars within 20000', () => {
+    const resources = { ...emptyResources() }
+    resources.series = [
+      seriesVersion({ id: 's0', bars: Array.from({ length: 20000 }, (_, index) => bar(dateStr(index))) }),
+      { id: 's1', timeframe: '1D', asOf: null, firstCheckpoint: 0, base: 's0', upsert: [bar(dateStr(0), 11)], remove: [] },
+      { id: 's2', timeframe: '1D', asOf: null, firstCheckpoint: 0, base: 's1', upsert: [bar(dateStr(20000))], remove: [dateStr(1)] },
+    ]
+    expect(() => validateCompactRecording(makeCompactFile({ resources }))).not.toThrow()
+  })
+})
