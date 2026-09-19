@@ -20,7 +20,6 @@ async function createApp(seed: (database: DatabaseSync) => void = () => {}) {
   const app = Fastify()
   const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath, tdxRoot: null }
   await registerApi(app, config, database)
-  await registerRecordingContextRoutes(app, config, database)
   return { app, database, root, databasePath }
 }
 

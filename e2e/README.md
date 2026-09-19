@@ -6,6 +6,7 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [recording](recording.spec.ts) | 默认录制、交易拒单、周期/绘图、暂停刷新、导出与只读回放 |
 | [journey](journey.spec.ts) | 创建、交易、画线、手势、多选、周期、主题 |
 | [m3-tools](m3-tools.spec.ts) | 23工具、保存恢复、跨窗格、故障注入 |
 | [m3-feedback](m3-feedback.spec.ts) | 收藏拖拽、自定义隔离、保存栏布局 |

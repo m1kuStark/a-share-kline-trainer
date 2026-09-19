@@ -11,6 +11,7 @@ Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装
 | 改页面布局、周期请求、账户同步或快捷键 | [views 页面编排](./src/views/README.md) |
 | 改图表命中、手势、画线或库依赖 | [components 图表入口](./src/components/README.md) |
 | 改自动保存、撤销、刷新恢复 | [画线持久化](./src/components/docs/drawing-persistence.md) |
+| 改操作录制、导入导出与离线回放 | [recording 模块](./src/recording/README.md) |
 | 改颜色、蜡烛、日期、成交标记或显示根数 | [显示规格](../docs/specs/chart/display.md)，再定位 [theme.ts](./src/theme.ts)、[indicators.ts](./src/indicators.ts)、[TradeMarkerRail.vue](./src/TradeMarkerRail.vue) |
 | 加界面回归或执行浏览器验收 | [E2E 入口](../e2e/README.md) 与 [测试协议](../docs/engineering/testing.md) |
 

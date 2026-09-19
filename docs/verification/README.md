@@ -6,6 +6,7 @@
 
 - [REC-01容量立项评估](2026-09/REC-01-capacity/report.md)：撤回自动停录；区分两年测算与真实录制器导出失败。
 - [REC-01结构与压缩实测](2026-09/REC-01-compression/report.md)：文件构成、增量/gzip对比和逐检查点还原。
+- [REC-01迁移前基线](2026-09/REC-01-v1-baseline/report.md)：已合回放/存储修复、初始化假缺口的失败回归与4条真实录制旅程；不是v2最终验收。
 
 - [DEV-01并行基线](2026-09/DEV-01-parallel/report.md)：精确合并候选、完整验收和两个worktree并发证据。
 

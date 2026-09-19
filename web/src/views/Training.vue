@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { theme } from '../theme'
+import { useRecording } from '../recording/useRecording'
 import KlineChart from '../components/KlineChart.vue'
 import {
   abandonTraining, advanceTraining, fetchTrainingBars, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
@@ -13,7 +15,7 @@ import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavori
 import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
-const props = defineProps<{ snapshot: TrainingSnapshot }>()
+const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, string | number> } }>()
 const emit = defineEmits<{ ended: [] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
@@ -56,6 +58,23 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined
 let drawingRevision = 0
 let closing = false
 const drawingTrainingId = props.snapshot.training.id
+const recording = useRecording({
+  snapshot: () => snapshot.value,
+  ui: () => ({ theme: theme.value, tool: drawTool.value, magnet: magnet.value, multiSelect: multiSelectMode.value }),
+  enabled: props.recordingOptions?.enabled ?? true,
+  createdParams: props.recordingOptions?.params,
+  ready: () => !loading.value && initialDrawings.value !== null,
+  readChart: () => chartRef.value?.captureState() ?? null,
+})
+const preparingRecording = computed(() => !recording.ready.value && !recording.error.value)
+async function captureRecording(): Promise<void> {
+  await nextTick()
+  try {
+    const capture = chartRef.value?.captureState()
+    if (capture) recording.capture(capture)
+  } catch (error) { recording.fail(error) }
+}
+watch(theme, value => { const op = recording.begin('ui.theme', { theme: value }); recording.finish(op, 'accepted') })
 const outbox = new DrawingOutbox(localStorage, `trainer.drawings.${drawingTrainingId}.${props.snapshot.training.createdAt}`)
 const saver = new SerialDrawingSaver(items => saveDrawings(drawingTrainingId, items, closing && new TextEncoder().encode(JSON.stringify(items)).length < 60_000))
 async function loadDrawings(): Promise<void> {
@@ -67,6 +86,7 @@ async function loadDrawings(): Promise<void> {
     initialDrawings.value = recovered ?? remote
     drawingSaveStatus.value = '已保存'
     if (recovered) onDrawingsChange(recovered)
+    await captureRecording()
   } catch (error) {
     drawingLoadError.value = true
     drawingSaveStatus.value = '画线加载失败'
@@ -88,12 +108,15 @@ async function flushDrawings(): Promise<boolean> {
   const revision = drawingRevision
   drawingSaveStatus.value = '保存中'
   drawingSaveError.value = ''
+  const recordingOp = recording.begin('drawings.save', { revision, count: items.length })
   try {
     await saver.save(items)
     outbox.acknowledge(items)
     if (revision === drawingRevision) { pendingDrawings = null; drawingSaveStatus.value = '已保存' }
+    recording.finish(recordingOp, 'accepted')
     return true
   } catch (error) {
+    recording.rejected(recordingOp, error)
     drawingSaveStatus.value = '保存失败'
     drawingSaveError.value = error instanceof Error ? error.message : '无法连接本地服务'
     return false
@@ -191,14 +214,21 @@ async function load(): Promise<void> {
   const timeframe = tf.value
   loading.value = true
   errorMessage.value = ''
+  const recordingOp = recording.begin('chart.load', { timeframe })
   try {
     const payload = await fetchTrainingBars(training.value.id, timeframe)
-    if (requestVersion !== loadVersion) return
+    if (requestVersion !== loadVersion) { recording.finish(recordingOp, 'cancelled', { reason: '已被新请求替代' }); return }
     snapshot.value = { training: payload.training, account: payload.account, trades: payload.trades }
     bars.value = payload.bars
     chartCostPrice.value = payload.chartCostPrice ?? null
     hasMoreBars.value = payload.hasMore
+    await nextTick()
+    if (requestVersion !== loadVersion) { recording.finish(recordingOp, 'cancelled'); return }
+    loading.value = false
+    recording.finish(recordingOp, 'accepted', { timeframe, bars: payload.bars.length })
+    await captureRecording()
   } catch (error) {
+    recording.rejected(recordingOp, error)
     if (requestVersion !== loadVersion) return
     errorMessage.value = error instanceof Error ? error.message : '加载失败'
   } finally {
@@ -213,13 +243,16 @@ async function fetchEarlier(before: string, count: number): Promise<{ bars: Bar[
 }
 
 async function advance(): Promise<void> {
-  if (loading.value || training.value.status !== 'running') return
+  if (loading.value || preparingRecording.value || training.value.status !== 'running') return
   loading.value = true
   errorMessage.value = ''
+  const recordingOp = recording.begin('training.advance')
   try {
     const result = await advanceTraining(training.value.id)
     snapshot.value = result.snapshot
     chartCostPrice.value = result.snapshot.account.costPrice
+    recording.finish(recordingOp, 'accepted', { settled: result.settled })
+    await recording.refreshContext()
     if (result.settled) {
       settledView.value = result.snapshot
       setTrainingUrl()
@@ -229,6 +262,7 @@ async function advance(): Promise<void> {
     }
     await load()
   } catch (error) {
+    recording.rejected(recordingOp, error)
     errorMessage.value = error instanceof Error ? error.message : '推进失败'
   } finally {
     loading.value = false
@@ -236,21 +270,24 @@ async function advance(): Promise<void> {
 }
 
 async function trade(side: 'buy' | 'sell'): Promise<void> {
-  if (loading.value || training.value.status !== 'running') return
+  if (loading.value || preparingRecording.value || training.value.status !== 'running') return
   loading.value = true
   errorMessage.value = ''
+  const payload = side === 'sell' && sellShares.value
+    ? { side, shares: sellShares.value }
+    : { side, weightPct: customWeight.value ?? weight.value }
+  const recordingOp = recording.begin('training.trade', payload)
   try {
-    const payload = side === 'sell' && sellShares.value
-      ? { side, shares: sellShares.value }
-      : { side, weightPct: customWeight.value ?? weight.value }
     const result = await tradeTraining(training.value.id, payload)
     snapshot.value = result.snapshot
     chartCostPrice.value = result.snapshot.account.costPrice
+    recording.finish(recordingOp, 'accepted', { plan: result.plan })
     message.value = `${side === 'buy' ? '买入' : '卖出'}成交：${result.plan.shares} 股 @ ${result.plan.price.toFixed(2)}`
     sellShares.value = null
     customWeight.value = null
     await load()
   } catch (error) {
+    recording.rejected(recordingOp, error)
     errorMessage.value = error instanceof Error ? error.message : '交易失败'
   } finally {
     loading.value = false
@@ -258,15 +295,19 @@ async function trade(side: 'buy' | 'sell'): Promise<void> {
 }
 
 async function settle(): Promise<void> {
-  if (loading.value || training.value.status !== 'running') return
+  if (loading.value || preparingRecording.value || training.value.status !== 'running') return
   loading.value = true
+  const recordingOp = recording.begin('training.settle')
   try {
     const result = await settleTraining(training.value.id)
+    snapshot.value = result
+    recording.finish(recordingOp, 'accepted')
     settledView.value = result
     setTrainingUrl()
     message.value = `已提前结算：结算日 ${result.training.settleDate}`
     await load()
   } catch (error) {
+    recording.rejected(recordingOp, error)
     errorMessage.value = error instanceof Error ? error.message : '结算失败'
   } finally {
     loading.value = false
@@ -274,13 +315,18 @@ async function settle(): Promise<void> {
 }
 
 async function abandon(): Promise<void> {
-  if (loading.value || training.value.status !== 'running') return
+  if (loading.value || preparingRecording.value || training.value.status !== 'running') return
   if (!window.confirm('确认放弃当前训练？放弃成绩不入排行榜。')) return
   loading.value = true
+  const recordingOp = recording.begin('training.abandon')
   try {
     await abandonTraining(training.value.id)
+    snapshot.value = { ...snapshot.value, training: { ...snapshot.value.training, status: 'abandoned' } }
+    recording.finish(recordingOp, 'accepted')
+    await recording.flush()
     emit('ended')
   } catch (error) {
+    recording.rejected(recordingOp, error)
     errorMessage.value = error instanceof Error ? error.message : '操作失败'
   } finally {
     loading.value = false
@@ -289,6 +335,7 @@ async function abandon(): Promise<void> {
 
 async function backToLauncher(): Promise<void> {
   if (!await flushDrawings()) return
+  await recording.flush()
   emit('ended')
 }
 function setTrainingUrl(): void {
@@ -298,6 +345,7 @@ function setTrainingUrl(): void {
 }
 
 function onKeydown(event: KeyboardEvent): void {
+  if (preparingRecording.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
     if (event.code === 'Space' || ['b', 'B', 's', 'S', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Home'].includes(event.key)) event.preventDefault()
@@ -372,13 +420,19 @@ function onMiniRefresh(): void {
   void refreshDataNow()
 }
 
-watch(tf, () => { void load() })
+watch(tf, (value, previous) => {
+  const op = recording.begin('chart.timeframe', { from: previous, to: value })
+  // Chart data will be captured only after the matching load finishes.
+  loading.value = true
+  recording.finish(op, 'accepted')
+  void load()
+})
 void load()
 </script>
 
 <template>
   <div class="training-shell">
-    <header class="training-topbar" @keydown.space.stop>
+    <header class="training-topbar" :inert="preparingRecording" @keydown.space.stop>
       <div class="training-context">
         <div class="workspace-title" :title="training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}`">
           {{ training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}` }}
@@ -408,6 +462,14 @@ void load()
       </div>
     </header>
 
+    <div class="recording-strip" @keydown.space.stop>
+      <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
+      <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.status.value.eventCount }} 条事件</span>
+      <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
+      <span v-if="recording.error.value || recording.status.value.error" class="error-text">{{ recording.error.value || recording.status.value.error }}</span>
+      <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
+    </div>
+
     <section class="status-strip" aria-live="polite">
       <span class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
       <span v-if="loading" class="loading-dot">处理中</span>
@@ -418,7 +480,7 @@ void load()
 
 
 
-    <section class="training-grid">
+    <section class="training-grid" :inert="preparingRecording">
       <div class="chart-panel">
         <KlineChart
           ref="chartRef" :bars="bars" :trades="snapshot.trades"
@@ -426,6 +488,7 @@ void load()
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"
           :magnet="magnet" :saved-drawings="initialDrawings"
+          @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
           @tool-change="drawTool = $event"
@@ -558,8 +621,16 @@ void load()
           <div><span>训练区间</span><strong>{{ settledView.training.startDate }} ~ {{ settledView.training.settleDate }}</strong></div>
         </div>
         <button class="trade-action buy" @click="backToLauncher">完成，返回首页</button>
+        <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出本场录制</button>
         <button class="ghost-button" @click="settledView = null">继续查看图表</button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.recording-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; padding: 5px 12px; border-bottom: 1px solid var(--surface-border, #dfe5eb); font-size: 12px; }
+.recording-strip label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.recording-strip .ghost-button { padding: 3px 8px; font-size: 12px; }
+.recording-strip .error-text { overflow-wrap: anywhere; }
+</style>

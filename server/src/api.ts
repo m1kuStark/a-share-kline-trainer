@@ -11,12 +11,14 @@ import { parseTdxSymbol } from './tdx/symbol.js'
 import { getActiveTraining } from './train/engine.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
+import { registerRecordingContextRoutes } from './recording-context.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
   equityCurveOf, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 
 export async function registerApi(app: FastifyInstance, config: AppConfig, database: DatabaseSync): Promise<void> {
+  await registerRecordingContextRoutes(app, config, database)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null

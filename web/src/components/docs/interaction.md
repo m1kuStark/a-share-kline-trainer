@@ -32,6 +32,7 @@
 | 图表 host | wheel（非 passive）；pointerdown capture；mousedown capture/bubble；dblclick；contextmenu | `onUnmounted` 对应移除 |
 | 图表 window | pointermove；pointerup 手势处理；pointerup 历史记录；pointercancel 分隔取消；keydown capture；pointerdown capture 全局关闭 | 两处 `onUnmounted` 成对移除 |
 | 图表实例与尺寸 | visible-range 订阅；ResizeObserver；待执行微任务 | 库公开 `dispose(host)`；observer disconnect；微任务检查 `disposed` |
+| 图表录制与回放 | 150ms尾沿捕获/用户视窗操作计时器；回放恢复requestAnimationFrame | `cancelChartCapture()`、`cancelViewportOperation()`、`cancelReplayRestore()`；只读/卸载/程序恢复时不发捕获反馈 |
 | Training | keydown；pagehide；document visibilitychange；保存/短提示计时器 | 卸载移除、清计时器并尝试 flush |
 | App / dataStatus | window focus；document visibilitychange；状态轮询；提醒动画计时器 | 卸载移除并 `cancelDataWatchers()`、清动画计时器 |
 

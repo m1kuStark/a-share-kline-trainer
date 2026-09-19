@@ -1,0 +1,3 @@
+极小任务REC-CHART-C：readonly+capture已有，仅KlineChart.vue及server/test/recording-chart-actions.test.ts、components/docs/recording.md。新增emit operation:[{action:Action,params?:JsonValue}]。在已有成功create/edit/move/delete/undo/redo/clear/cancel/tool点发明确标签；不要把所有recordDrawings都笼统写edit。自动restore、feedData、loadedhistory不冒充用户；text新建只有确认后create，取消cancel；被放弃未完成线cancel；引擎B/S和成本不入日志。parameters保留对象IDs/图形名/points语义，JSON必须有限，不把库实例传出。
+captureState已完成，所以操作事件可带capture或父级按下一帧capture，但防同一完成事件重复上报。readonly禁止operation写动作发出。视窗尾沿capture可在真实用户手势后发chart.viewport，程序化初始化不刷操作。
+不改Training/App/Recorder/types或package，不git提交不浏览器。写必要合同回归，跑对应测试及typecheck，更新短模块说明后返回。

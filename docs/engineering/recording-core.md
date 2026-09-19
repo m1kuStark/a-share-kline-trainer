@@ -1,12 +1,12 @@
 # 录制核心实现说明（recorder.ts / storage.ts）
 
-实现[共享接口合同](recording-contract.md)的录制状态机与存储层；类型在 `web/src/recording/types.ts`。recorder 仅在 restore 载入时调用 validator 的 `validateRecording` 拒绝损坏文件，其余不依赖 validator 存在；页面接入与 KlineChart emit 由其他任务负责。
+本文记录v1兼容基线，实现[原接口合同](recording-contract.md)；类型在 `web/src/recording/types.ts`。recorder 在restore载入时调用validateRecording拒绝损坏文件。用户已确认[v2紧凑迁移](recording-v2-contract.md)，生产接线完成前本页仍描述现行v1实现。
 
 ## 模块划分
 
 - `web/src/recording/recorder.ts`：`Recorder` 类，唯一维护 seq、elapsed、segment、gap、complete 与保存调度。
 - `web/src/recording/storage.ts`：`MemoryRecordingStorage`（测试/无持久化环境，可注入保存/读取故障与 onSave 观察钩子）与 `IndexedDbRecordingStorage`（生产）。两者只实现合同接口 `save/load/list`。
-- 服务端 SQL、validator、页面均不得耦合进这两个模块；跨文件只用 `./types` 的类型。
+- 不依赖服务端SQL或页面。recorder可使用纯validator，storage只负责存取，不反向依赖UI。
 
 ## 状态机
 
@@ -14,7 +14,7 @@
 - `begin/finish` 按 opId 配对；`finish` 对未知或重复 opId 抛中文错误，不产生幽灵事件。
 - `pause(checkpoint)`：先把所有进行中的 started 闭合为 `outcome:'interrupted'` 的 finished（不带 result，不猜测请求结果），再记录 `recording.pause` started/finished 标记对、追加 gap、写入 pause checkpoint，await flush 后才返回。
 - `resume(checkpoint)`：要求存在未闭合 gap；开启新 segment，记录 `recording.resume` 标记对与完整 checkpoint，回填 `gap.resumedAtSeq` 后回到 recording。
-- `complete` 派生：存在悬空 started 或未闭合 gap 即 false；正常落定的会话为 true。begin 与 finish 之间 complete=false 属预期。
+- `complete` 派生：存在悬空 started 或未闭合 gap 即 false；begin 与 finish 之间 complete=false 属预期。历史已闭合gap仍可与complete=true共存；它只描述当前尾段，不代表全过程无缺口。播放器必须独立展示gaps。
 
 ## restore 语义
 
@@ -33,6 +33,6 @@
 
 ## 已知边界
 
-- `IndexedDbRecordingStorage` 无自动化测试（测试环境为 node、且本任务不使用真实 DB/浏览器）；其行为约定以本文件与合同为准，接入页面后由主代理按测试门禁做真实检查。
+- `IndexedDbRecordingStorage`已补打开失败、close、versionchange、blocked迟到连接、事务完成和错误原因回归；打开失败清缓存使重试生效。真实浏览器持久化故障/恢复由recording.spec.ts覆盖，证据仍须关联当次run。
 - `export()` 产物能通过 `validateRecording`（enabled=false 初始态、pause/resume、restore 后 capture 均有交叉测试）；restore 同时以 validator 拒绝损坏的存量文件。
 - 定向测试：`npm test -- server/test/recording-core.test.ts`（覆盖 begin/finish 配对与深拷贝、默认开关与初始 gap、暂停恢复与 interrupted 闭合、保存串行与故障上报恢复、restore 悬空修补/paused 保留/失败上报、restore 后 elapsed 严格续走、export 与 validateRecording 交叉含损坏 load 拒绝）、`npm test -- server/test/recording-validation.test.ts`。

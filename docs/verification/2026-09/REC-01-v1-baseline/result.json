@@ -1,0 +1,43 @@
+{
+  "kind": "working-tree-verification",
+  "testedCommit": "ab0858d7f14ec03fa1c3d420acbe6b84f74bbd68",
+  "fingerprints": {
+    "web/src/App.vue": "b9f59275cc01ab62e423dd3aac23794966b857aefc407130231f805986b289d9",
+    "web/src/views/Launcher.vue": "4b79e969c58ad00b4c61d48e09227dc66416570482c28601956ba4c12d9c6203",
+    "web/src/views/Training.vue": "780c724caa58dfe48d0242c4e0126960bf5c44631a0b9e4d2631050efaf464e7",
+    "web/src/recording/useRecording.ts": "dad0e13881162bba9bb8e58a151beed02d4796d5e7c62a1f0b03a0d32bd32a85",
+    "web/src/api.ts": "57a34020ae7d945c765902b06311fced26a9081411c2e337bab38a899607575d",
+    "server/src/api.ts": "a2fd46eee3cbefa6d8f4396c229eaa84d8cecb26ebfd9ee4a50b3659c68608eb",
+    "server/test/recording-context.test.ts": "7ae30eb41a4d1fb55e94e5fb3ae6c76599d24c0d0de846222ca85659bc0daa8a",
+    "e2e/recording.spec.ts": "92a1f043e4b16fddaa4899933a6147b4e98e10063769f445dded7434aa231191"
+  },
+  "checks": [
+    {
+      "command": "npm test -- server/test/recording-replay.test.ts server/test/recording-core.test.ts server/test/recording-storage.test.ts",
+      "exitCode": 0,
+      "passed": 49
+    },
+    {
+      "command": "npm run typecheck:web",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run journey -- e2e/recording.spec.ts --retries=0",
+      "exitCode": 0,
+      "passed": 4,
+      "run": "run-a708c8ea-c89c-4774-b167-6d9a136ea399"
+    },
+    {
+      "command": "npm test",
+      "exitCode": 1,
+      "error": "ERR_IPC_CHANNEL_CLOSED",
+      "log": "headroom-cache/rec-v1-integrated-unit.log"
+    },
+    {
+      "command": "npm test -- --maxWorkers=4",
+      "status": "pending",
+      "log": "headroom-cache/rec-v1-unit-workers4.log"
+    }
+  ],
+  "scope": "v1 baseline only; v2 and final candidate acceptance outstanding"
+}
