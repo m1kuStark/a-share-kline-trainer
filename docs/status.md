@@ -32,6 +32,7 @@
 | [DRAW-02](<work-items/tasks/DRAW-02.md>) | review / GLM-5.3-Flash | 价格基准修复已合入ACCEPT-01。 / 等待集成分支完整候选验收。 | [证据1](<../server/test/drawing-price-basis.test.ts>)；[证据2](<../server/test/drawings.test.ts>)；[证据3](<../server/test/drawing-state.test.ts>)；[证据4](<../web/src/components/docs/drawing-persistence.md>) | 3a3421f | 未记录 |
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 / 等待用户明确验收本次阶段版本后再推进；先固定部分平仓、零交易、费用权息、稳定排序和防未来样例。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 / 等待用户明确验收本次阶段版本后再推进；完成TRAIN-01后开发默认设置、首次使用及全链路交付。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
+| [MON-02](<work-items/tasks/MON-02.md>) | active / GLM-5.3-Flash | Separate superseded failures from current work. / Review chain status and visible task summary. | 未记录 | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 / DATA-03/04后选择来源，验证无TDX环境及单位、覆盖、权息合约。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REC-01](<work-items/tasks/REC-01.md>) | review / integrator | 紧凑录制已集成，用户返修见ACCEPT-01。 / 等待本轮返修及用户最终验收。 | [证据1](<verification/2026-09/REC-01-stage-release/report.md>) | 35a1671804bfe7ec17cd66a8a8295ee8991933e0 | 未记录 |
 | [REC-02](<work-items/tasks/REC-02.md>) | review / GLM-5.3-Flash | 录制保存/丢弃与业务筛选已合入ACCEPT-01。 / 等待集成分支完整候选验收。 | 未记录 | 4e8eae0 | 未记录 |

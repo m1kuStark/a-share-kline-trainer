@@ -19,3 +19,5 @@ state取planned、active、blocked、review、closed或cancelled，表示工作�
 复制相近任务卡后改ID、范围、基础和验收要求；不要复制他人的通过证据。无影响正文也要有docs_impact.reason；有影响时列确实要更新的现行正文。owner代表职责，不代表文件访问权限。
 
 - [ACCEPT-E2E](tasks/ACCEPT-E2E.md)：本轮交互变化的既有浏览器回归适配。
+
+- [MON-02](tasks/MON-02.md): current versus superseded dashboard attempts.

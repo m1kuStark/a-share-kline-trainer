@@ -27,3 +27,5 @@
 - [按日回放复核返修](rec-03-review-fix.md)。
 
 - [夜间回归适配](accept-e2e-night.md)。
+
+- [MON-02 dashboard repair](mon-02-successors.md).

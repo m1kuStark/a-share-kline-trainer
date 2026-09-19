@@ -211,6 +211,7 @@ export async function startServer(run: RunManifest, options: { timeoutMs?: numbe
       resolveDone()
     }))
     const deadline = Date.now() + (options.timeoutMs ?? 30_000)
+    let lastConnectionError: string | undefined
     while (Date.now() < deadline) {
       if (failure || exited) throw failure ?? new Error('Server exited before readiness')
       let ready: { runId?: unknown; pid?: unknown; baseURL?: unknown; port?: unknown } | undefined
@@ -223,7 +224,21 @@ export async function startServer(run: RunManifest, options: { timeoutMs?: numbe
           || ready.baseURL !== `http://127.0.0.1:${ready.port}`) {
           throw new Error('Server readiness identity does not match the child process')
         }
-        const response = await fetch(`${ready.baseURL}/api/health`, { signal: AbortSignal.timeout(1000) })
+        let response: Response
+        try {
+          response = await fetch(`${ready.baseURL}/api/health`, { signal: AbortSignal.timeout(Math.max(1, Math.min(1000, deadline - Date.now()))) })
+        } catch (error) {
+          // Readiness identity has already pinned this URL to our own child.
+          // Windows loopback can reset/refuse a connection briefly at startup;
+          // retry only transport failures within the original startup deadline.
+          const cause = (error as { cause?: { code?: string } })?.cause?.code
+          const transient = ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT'].includes(cause ?? '')
+            || (error as { name?: string })?.name === 'TimeoutError'
+          if (!transient) throw error
+          lastConnectionError = `${String(error)}${cause ? ` (${cause})` : ''}`
+          await Promise.race([done, delay(25)])
+          continue
+        }
         const health = await response.json() as { status?: unknown; runId?: unknown; pid?: unknown }
         if (!response.ok || health.status !== 'ok' || health.runId !== run.runId || health.pid !== child.pid) {
           throw new Error('Server health identity does not match the child process')
@@ -236,7 +251,7 @@ export async function startServer(run: RunManifest, options: { timeoutMs?: numbe
       }
       await Promise.race([done, delay(25)])
     }
-    throw new Error(`Server readiness timed out; see ${join(run.artifactsDir, 'server.log')}`)
+    throw new Error(`Server readiness timed out${lastConnectionError ? `; last health error: ${lastConnectionError}` : ''}; see ${join(run.artifactsDir, 'server.log')}`)
   } catch (error) {
     await stop()
     throw error

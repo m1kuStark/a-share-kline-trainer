@@ -36,3 +36,5 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。
 
 The docs-tooling test file uses a20second per-test integration budget: it starts real Git processes and commits temporary repositories. All assertions remain; this is not a product latency SLO. Other unit defaults and full candidate checks are unchanged.
+
+Owned runtime readiness retries transient loopback connection errors only within the original deadline, after child identity checks. Persistent errors report the last cause; wrong PID/runId/health and malformed responses remain failures.

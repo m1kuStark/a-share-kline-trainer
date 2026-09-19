@@ -118,6 +118,32 @@ describe('runtime namespaces', () => {
 })
 
 describe('runtime processes', () => {
+  it('retries a transient health connection failure within the owned startup deadline', async () => {
+    const { createRun, startServer } = await import('../../scripts/runtime/run.js')
+    const run = await createRun(await temporaryRoot(), 'verify')
+    await writeFile(join(run.serverDir, 'index.js'), `
+      const fs = require('node:fs');
+      const server = require('node:http').createServer((req,res) => {
+        res.setHeader('content-type','application/json');
+        res.end(JSON.stringify({status:'ok',runId:process.env.TRAINER_RUN_ID,pid:process.pid}));
+      });
+      server.listen(0,'127.0.0.1',()=>{
+        const port=server.address().port;
+        fs.writeFileSync(process.env.TRAINER_READY_FILE,JSON.stringify({runId:process.env.TRAINER_RUN_ID,pid:process.pid,port,baseURL:'http://127.0.0.1:'+port}));
+      });
+      process.on('message',()=>server.close(()=>process.exit(0)));
+    `)
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(
+      new TypeError('fetch failed', { cause: Object.assign(new Error('connection reset'), { code: 'ECONNRESET' }) }),
+    )
+    try {
+      const server = await startServer(run, { timeoutMs: 2000 })
+      activeServers.push(server)
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
+      expect((await fetch(`${run.baseURL}/api/health`)).status).toBe(200)
+    } finally { fetchSpy.mockRestore() }
+  })
+
   it('rejects another process readiness record before contacting its service', async () => {
     const { createRun, startServer } = await import('../../scripts/runtime/run.js')
     const run = await createRun(await temporaryRoot(), 'verify')
