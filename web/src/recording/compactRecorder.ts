@@ -111,6 +111,9 @@ export class CompactRecorder {
     }
   }
 
+  /** Cheap operational state, including when persistence failure overlays the displayed status. */
+  isRecording(): boolean { return this.session !== null && this.operationalState === 'recording' }
+
   /** 完整深拷贝，仅供导出/检查；常规 UI 状态请走 getStatus，不得用 getFile */
   getFile(): CompactRecordingFile {
     this.requireSession()
