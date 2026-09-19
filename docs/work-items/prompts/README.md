@@ -18,3 +18,7 @@
 | 只读规则/权息上下文 | [上下文](rec-context.md)、[审查修正](rec-context-fix.md) |
 
 子分支在REC-01功能集成分支顺序合并，完整功能再经候选门禁进入main。账户实际限流后模型请求改为串行，Git隔离与本地审查/测试仍保留并行能力。
+
+- [DRAW-02](draw-02-feedback.md): drawing basis repair.
+- [REC-02](rec-02-feedback.md): retention and semantic filtering.
+- [REC-03](rec-03-feedback.md): independent day replay.
