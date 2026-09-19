@@ -71,7 +71,26 @@ export async function inflateGzipWithBudget(
   let total = 0
   let budgetHit = false
   let decompressError: unknown = null
-  // 并发消费解压输出：每到一个chunk就计数，越界立即置位并结束读取端
+  let interrupted = false
+  let fireFatal!: (err: unknown) => void
+  // 输出端死亡信号：主循环所有悬挂的 write/close 都与之赛跑，保证总能被唤醒
+  const fatal = new Promise<never>((_, reject) => {
+    fireFatal = reject
+  })
+  fatal.catch(() => {})
+  // 输出端越界/出错时立即同时打断三端，绝不顺序await：
+  // 输出无人排空时挂起的 writer.write/writer.close 永不返回，且 abort 无法挽救已挂起的
+  // close（实测唯一可靠出口是 cancel 解压读出端，close 会以 cancel 原因被拒绝）。
+  // 各动作只触发不等待，任何一端悬挂都不会阻塞其余两端。
+  const interrupt = (err: unknown) => {
+    if (interrupted) return
+    interrupted = true
+    fireFatal(err)
+    outReader.cancel(err).catch(() => {})
+    sourceReader.cancel().catch(() => {})
+    writer.abort(err).catch(() => {})
+  }
+  // 并发消费解压输出：每到一个chunk就计数，越界立即置位、打断并抛出
   const draining = (async () => {
     try {
       for (;;) {
@@ -81,11 +100,15 @@ export async function inflateGzipWithBudget(
         chunks.push(value)
         if (total > maxBytes) {
           budgetHit = true
+          interrupt(new Error(budgetMessage))
           throw new Error(budgetMessage)
         }
       }
     } catch (err) {
-      decompressError = err
+      if (!budgetHit) {
+        decompressError = err
+        interrupt(err)
+      }
       throw err
     }
   })()
@@ -94,21 +117,28 @@ export async function inflateGzipWithBudget(
   let inputError: unknown = null
   try {
     for (;;) {
-      if (budgetHit) break
+      if (budgetHit || decompressError !== null) break
       const { done, value } = await sourceReader.read()
       if (done) {
-        await writer.close()
+        // close可能在输出未排空时悬挂，必须与死亡信号赛跑，不能裸await
+        const closed = writer.close()
+        closed.catch(() => {})
+        await Promise.race([closed, fatal])
         break
       }
-      await writer.write(value)
+      // 背压下的write同理：越界/出错时靠fatal唤醒，不能裸await
+      const written = writer.write(value)
+      written.catch(() => {})
+      await Promise.race([written, fatal])
     }
   } catch (err) {
     inputError = err
   }
-  // 越界/出错后立即取消上游并中止解压端，停止一切读取
-  await sourceReader.cancel().catch(() => {})
-  await writer.abort().catch(() => {})
-  await outReader.cancel().catch(() => {})
+  // 兜底收尾：正常/中断路径到此各端都已了结或被interrupt打断，逐项幂等清理；
+  // 只触发不await——abort在close挂起时自身不settle，此时主流程已不被任何一端阻塞
+  sourceReader.cancel().catch(() => {})
+  writer.abort().catch(() => {})
+  outReader.cancel().catch(() => {})
   try {
     await draining
   } catch {

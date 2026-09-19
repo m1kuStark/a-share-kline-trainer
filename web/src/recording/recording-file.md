@@ -20,7 +20,9 @@
 
 解压预算 256MiB（外层，含 v1 兼容），判定 v2 后收紧到 128MiB（解析后按实际字节数复查，测试注入小阈值验证与 v1 的差异）。
 
-实现**不用 `pipeThrough`**：其后台管道会急切拉满整个源流，且 Node 24 中取消 DecompressionStream 的 readable 不向源传播。改为手动泵送：源 chunk → `gunzip.writable.getWriter().write()`（写完成才拉下一块，背压生效），并发 `for await` 排空 `gunzip.readable` 逐 chunk 累计解压字节数；越界立即置位、取消源 reader、abort 解压端并抛中文错误——绝不先完整解压再判断，也不先 `arrayBuffer` 后检查。
+实现**不用 `pipeThrough`**：其后台管道会急切拉满整个源流，且 Node 24 中取消 DecompressionStream 的 readable 不向源传播。改为手动泵送：源 chunk → `gunzip.writable.getWriter().write()`（写完成才拉下一块，背压生效），并发 `for await` 排空 `gunzip.readable` 逐 chunk 累计解压字节数；越界立即置位、打断两端并抛中文错误——绝不先完整解压再判断，也不先 `arrayBuffer` 后检查。
+
+**取消语义（高压缩率死锁回归）**：解压输出跨多个 chunk 时，若输出端（draining）越界或解压异常后停止读，主循环可能正悬挂在 `writer.write()`/`writer.close()`——输出未排空时 close **永不返回**，且 `writer.abort()` 救不了已挂起的 close（Node 24 实测唯一可靠出口是 cancel 解压读出端，close 会以 cancel 原因被拒绝）。因此越界/异常瞬间在输出端同步触发 `interrupt`：**立即同时**（不顺序 await，否则任一端悬挂都会互相等待）fire 挂起的 write/close 共用的死亡信号、`outReader.cancel(reason)`、`sourceReader.cancel()`、`writer.abort(reason)`；主循环所有 `write`/`close` 一律与死亡信号 `Promise.race`，不裸 await，等待中的 write 被立即打断。兜底清理对三端只触发不 await（abort 在 close 挂起时自身不 settle）。错误优先级保持预算错误 > 解压损坏，成功输出不受影响；所有 fire-and-forget promise 均挂空 catch，无 unhandled rejection。
 
 ## 写出自洽
 
@@ -33,7 +35,7 @@
 
 ## 测试证据（server/test/recording-file.test.ts）
 
-真实 Blob gzip 往返逐 checkpoint 深等（实际 codec/validator）、unicode 无损、v1 迁移（2001 检查点 > 旧默认 2000 仍 ≤ 20000）保持旧数据、未压缩 v2、magic 与类型无关、截断 gzip/JSON、未知 schema、NaN 导出失败、write 先校验、三档预算分层差异、明文 size 先拦、超预算 cancel reader（128KB 跨多 deflate 块的不可压缩字节注入 64B 阈值：小文件 zlib 在 close 才一次性吐出，源已读完，cancel 不可观测）。
+真实 Blob gzip 往返逐 checkpoint 深等（实际 codec/validator）、unicode 无损、v1 迁移（2001 检查点 > 旧默认 2000 仍 ≤ 20000）保持旧数据、未压缩 v2、magic 与类型无关、截断 gzip/JSON、未知 schema、NaN 导出失败、write 先校验、三档预算分层差异、明文 size 先拦、超预算 cancel reader（128KB 跨多 deflate 块的不可压缩字节注入 64B 阈值：小文件 zlib 在 close 才一次性吐出，源已读完，cancel 不可观测）。死锁回归（`Promise.race` 时限包装，超时明确失败并清理，不悬挂进程）：高压缩率 65B gzip→32KiB/64B 与 1MiB/65536 预算在时限内以预算错误拒绝（修复前挂死于 `writer.close()`）、16384/64 正常拒绝不回归、1MiB 随机正常 gzip 按 1/16/16384/65536/1MiB 输入块逐字节往返无损、多块源流截断 gzip 及时拒绝；单字节块用例带显式 120s 测试超时（约 17s）。
 
 ## 本轮不做
 

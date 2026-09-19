@@ -230,6 +230,21 @@ async function gzipMagic(blob: Blob): Promise<[number, number]> {
   return [head[0] as number, head[1] as number]
 }
 
+/** 测试时限包装：超时以明确错误失败并在finally清理定时器；悬挂的底层promise不持有事件循环，不会拖住Vitest进程 */
+async function withDeadline<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      p,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}：${ms}ms 内未完成，疑似解压取消死锁`)), ms)
+      }),
+    ])
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
+  }
+}
+
 describe('writeRecordingFile/readRecordingFile 往返', () => {
   it('write默认gzip（1f 8b开头），read逐checkpoint深等且资源一致', async () => {
     const { file, checkpoints } = buildCompactFile()
@@ -419,5 +434,54 @@ describe('预算分层与流式取消', () => {
     await expect(inflateGzipWithBudget(stream, 64)).rejects.toThrow(/解压预算|取消解压/)
     expect(cancelCount()).toBe(1)
     expect(readBytes()).toBeLessThan(gz.byteLength)
+  })
+})
+
+describe('解压取消时限（高压缩率死锁回归）', () => {
+  // 死锁机制：解压输出跨多个chunk时，draining越界抛错后无人继续读输出，
+  // 主循环悬挂在 writer.write()/writer.close()（输出未排空时close永不返回，
+  // 且abort救不了已挂起的close），导入永久挂死。65B gzip(32768×'A') 64B预算可复现。
+  const DEADLINE_MS = 750
+
+  it('高压缩率gzip解压超预算：悬挂在close时也能在时限内拒绝（65B→32KiB，64B预算）', async () => {
+    const gz = await gzipOfBytes(new Uint8Array(32768).fill(65))
+    expect(gz.byteLength).toBeLessThan(4096)
+    await expect(
+      withDeadline(inflateGzipWithBudget(new Blob([gz]).stream(), 64), DEADLINE_MS, '32KiB高压缩率解压'),
+    ).rejects.toThrow(/解压预算|取消解压/)
+  })
+
+  it('高压缩率多输出chunk+预算：1MiB原文/65536预算越界同样及时拒绝，16384仍正常拒绝', async () => {
+    const gz = await gzipOfBytes(new Uint8Array(1024 * 1024).fill(65))
+    expect(gz.byteLength).toBeLessThan(4096)
+    await expect(
+      withDeadline(inflateGzipWithBudget(new Blob([gz]).stream(), 65536), DEADLINE_MS, '1MiB高压缩率解压'),
+    ).rejects.toThrow(/解压预算|取消解压/)
+    const small = await gzipOfBytes(new Uint8Array(16384).fill(65))
+    await expect(
+      withDeadline(inflateGzipWithBudget(new Blob([small]).stream(), 64), DEADLINE_MS, '16384高压缩率解压'),
+    ).rejects.toThrow(/解压预算|取消解压/)
+  })
+
+  it('1MiB正常gzip按1/16/16384/65536/1MiB输入块往返无损', { timeout: 120_000 }, async () => {
+    const plain = new Uint8Array(randomBytes(1024 * 1024))
+    const gz = await gzipOfBytes(plain)
+    expect(gz.byteLength).toBeGreaterThan(512 * 1024)
+    for (const chunkSize of [1, 16, 16384, 65536, 1024 * 1024]) {
+      const { stream } = trackedChunks(gz, chunkSize)
+      const out = await withDeadline(inflateGzipWithBudget(stream, 2 * 1024 * 1024), 30_000, `1MiB往返(块=${chunkSize})`)
+      expect(out.byteLength).toBe(plain.byteLength)
+      expect(Buffer.from(out).equals(Buffer.from(plain))).toBe(true)
+    }
+  })
+
+  it('多块源流上的截断gzip同样及时拒绝', async () => {
+    const random = new Uint8Array(randomBytes(128 * 1024))
+    const gz = await gzipOfBytes(random)
+    const cut = gz.slice(0, Math.floor(gz.byteLength * 0.6))
+    const { stream } = trackedChunks(cut, 16 * 1024)
+    await expect(
+      withDeadline(inflateGzipWithBudget(stream, 256 * 1024 * 1024), 5_000, '多块截断gzip'),
+    ).rejects.toThrow(/gzip 解压失败|损坏|截断/)
   })
 })
