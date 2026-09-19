@@ -338,6 +338,13 @@ async function backToLauncher(): Promise<void> {
   await recording.flush()
   emit('ended')
 }
+async function prepareForLibrary(): Promise<boolean> {
+  if (loading.value || preparingRecording.value || drawTool.value || textPanelOpen.value) return false
+  if (!await flushDrawings()) return false
+  await recording.flush()
+  return !recording.error.value && !recording.status.value.error
+}
+defineExpose({ prepareForLibrary })
 function setTrainingUrl(): void {
   const url = new URL(location.href)
   url.searchParams.set('training', String(drawingTrainingId))
@@ -465,6 +472,7 @@ void load()
 
     <section class="status-strip" aria-live="polite">
       <span class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
+      <span class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
       <span v-if="loading" class="loading-dot">处理中</span>
       <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ chartViewport.visibleDate }}</span>
       <span v-if="chartViewport.latestDate && chartViewport.latestDate !== chartViewport.visibleDate" class="viewport-date latest-date">{{ tf === '1D' ? '末根' : tf === '1W' ? '最新周K' : '最新月K' }} {{ chartViewport.latestDate }}</span>
@@ -490,15 +498,15 @@ void load()
       </div>
 
       <aside class="trade-panel">
+        <Teleport to="#training-recording-controls">
         <div class="recording-strip" @keydown.space.stop>
           <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
-          <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.status.value.eventCount }} 条事件</span>
+          <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }}</span>
           <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
-          <details class="recording-export-options"><summary aria-label="更多录制导出方式">更多</summary><button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile(undefined, false)">导出可读 JSON</button></details>
-          <span v-if="recording.notice.value">{{ recording.notice.value }}</span>
-          <span v-if="recording.error.value || recording.status.value.error" class="error-text">{{ recording.error.value || recording.status.value.error }}</span>
+          <span v-if="recording.notice.value || recording.error.value || recording.status.value.error" class="recording-feedback" :class="{ 'error-text': recording.error.value || recording.status.value.error }" role="alert">{{ recording.error.value || recording.status.value.error || recording.notice.value }}</span>
           <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
         </div>
+        </Teleport>
         <div class="console-scroll">
         <div class="panel-heading"><span>训练账户</span><span class="live-mark">● {{ training.status === 'running' ? '进行中' : '已结束' }}</span></div>
         <div class="equity-block">
@@ -631,11 +639,9 @@ void load()
 </template>
 
 <style scoped>
-.recording-strip { display: flex; flex: 0 0 auto; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 0 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--surface-border, #dfe5eb); font-size: 12px; }
+.recording-strip { position: relative; display: flex; align-items: center; gap: 8px; font-size: 11px; white-space: nowrap; }
 .recording-strip label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.recording-strip .ghost-button { padding: 3px 8px; font-size: 12px; }
-.recording-strip .error-text { overflow-wrap: anywhere; }
-.recording-export-options summary { cursor: pointer; }
-.recording-export-options[open] { flex-basis: 100%; }
-.recording-export-options[open] button { margin-top: 6px; }
+.recording-strip .ghost-button { padding: 2px 7px; font-size: 11px; }
+.recording-feedback { position: absolute; right: 0; top: 28px; z-index: 30; max-width: min(360px, 70vw); padding: 8px; white-space: normal; overflow-wrap: anywhere; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; }
+.shortcut-hint { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 </style>

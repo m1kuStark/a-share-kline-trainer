@@ -1,0 +1,12 @@
+{
+  "baseCommit": "e8bdddf5e0092539daae83da3178fed5d90014e7",
+  "scope": "working-tree targeted only",
+  "tests": 3,
+  "run": "run-824082e8-2ffc-40e6-a9bc-0f5f9d543338",
+  "exitCode": 0,
+  "files": {
+    "web/src/App.vue": "b810b5308aceb1a0aaeb79b2c7c06fd9c4faed180b744a0541e48396e12ae672",
+    "web/src/views/Training.vue": "9fac46ca70be4ed74a93ab8db17377d2fc303c331430f5fece3af29ce197957e",
+    "e2e/acceptance-feedback.spec.ts": "3c5da0272f68165555b25c22c52835b7dbdcfa05b7f992e38059f6cb32eebc8a"
+  }
+}

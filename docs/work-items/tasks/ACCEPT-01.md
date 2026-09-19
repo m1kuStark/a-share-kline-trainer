@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "阶段验收反馈集成",
-  "next_action": "按返修合同和专属Prompt实现，定向测试后提交集成人审查。",
+  "next_action": "入口/布局定向通过；合入三个GLM模块，完成保存确认、日线与价格基准接线后全量验收。",
   "allowed_paths": [
     "web/**",
     "server/**",
@@ -26,7 +26,9 @@
     ],
     "reason": "依据用户阶段反馈实施，集成人统一更新规格与证据。"
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/ACCEPT-01-ui/report.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

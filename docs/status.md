@@ -23,7 +23,7 @@
 
 | 任务 | 状态 / 负责人 | 摘要 / 下一步 | 验证记录 | 集成引用 | 用户验收记录 |
 |---|---|---|---|---|---|
-| [ACCEPT-01 · 阶段验收反馈集成](<work-items/tasks/ACCEPT-01.md>) | active / integrator | 阶段验收反馈集成 / 按返修合同和专属Prompt实现，定向测试后提交集成人审查。 | 未记录 | 未记录 | 未记录 |
+| [ACCEPT-01 · 阶段验收反馈集成](<work-items/tasks/ACCEPT-01.md>) | active / integrator | 阶段验收反馈集成 / 入口/布局定向通过；合入三个GLM模块，完成保存确认、日线与价格基准接线后全量验收。 | [docs/verification/2026-09/ACCEPT-01-ui/report.md](<verification/2026-09/ACCEPT-01-ui/report.md>) | 未记录 | 未记录 |
 | [DATA-01 · 数据整批发布与超时屏障](<work-items/tasks/DATA-01.md>) | planned / unassigned | 目录、权息和快照各自提交；catalog失败结果未统一拦截。 / 复现目录已改后权息失败、超时迟到提交；所有已发布表保持同一版本。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-02 · 个股覆盖与到期结算](<work-items/tasks/DATA-02.md>) | planned / unassigned | 全市场末日及单一源尾不能证明个股区间无漏数。 / 加入他股更新但目标漏数、结束日后有记录但中间漏数样例；未知保持running。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-03 · 可读取的历史版本保护](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 / 建立迁移时基线与旧版读取；无法恢复时明确阻断，不改旧流水。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
