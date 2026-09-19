@@ -6,6 +6,8 @@ import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import type { Bar, Timeframe, TradeView } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
+import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
+import type { ChartCapture, ChartCaptureView } from '../recording/types'
 import { DRAW_TOOLS } from '../drawTools'
 import { MAX_VISIBLE_BARS } from '../chartNavigation'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
@@ -34,9 +36,11 @@ const props = withDefaults(defineProps<{
   magnet?: 'normal' | 'weak_magnet' | 'strong_magnet'
   /** 只读展示（录制回放）：保存画线照常显示，但禁全部编辑写入口、右键菜单与图形拖动；平移/缩放/十字线不受影响 */
   readOnly?: boolean
+  /** 回放视窗（录制检查点）：feed 完成布局后按时间戳恢复右侧锚点、barSpace 与语义窗格高度 */
+  replayView?: ChartCaptureView
 }>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
-const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }] }>()
+const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string] }>()
 const host = ref<HTMLElement | null>(null)
 type RuntimeOverlay = Overlay & { isDrawing(): boolean; forceComplete(): void }
 type ConvertFilter = Parameters<Chart['convertToPixel']>[1]
@@ -151,8 +155,10 @@ function enforceVisibleLimit(): void {
   if (chart.getBarSpace().bar < min) chart.setBarSpace(min)
 }
 function dateTimestamp(date: string): number { return Date.parse(`${date.length === 7 ? `${date}-01` : date}T00:00:00Z`) }
-// date 必须随对象保留：动态加载的 before 参数取自 loadedData[0].date（KLineData 本身只有 timestamp）
-function toK(bar: Bar): KLineData & { date: string } { return { timestamp: dateTimestamp(bar.date), open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume, date: bar.date } }
+// date 必须随对象保留：动态加载的 before 参数取自 loadedData[0].date（KLineData 本身只有 timestamp）；
+// amount 同理：捕获还原 Bar 需要原始成交额，toK 丢弃会让捕获假造/缺额。
+// 字段顺序保持 volume→date 收尾（M2 frontend-contract 断言依赖该字面量结尾）
+function toK(bar: Bar): KLineData & { date: string; amount: number } { return { timestamp: dateTimestamp(bar.date), open: bar.open, high: bar.high, low: bar.low, close: bar.close, amount: bar.amount, volume: bar.volume, date: bar.date } }
 
 async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore) => void): Promise<void> {
   const first = loadedData[0] as (KLineData & { date?: string }) | undefined
@@ -168,6 +174,7 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
     if (older.length) loadedData = [...older, ...loadedData]
     hasMoreForward = result.hasMore
     callback(older, { forward: result.hasMore })
+    scheduleChartCapture()
   } catch {
     if (!disposed && version === dataVersion) callback([], { forward: hasMoreForward })
   } finally {
@@ -178,6 +185,8 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
 function feedData(): void {
   if (!chart) return
   dataVersion++
+  // 新数据版本＝视窗布局重建：同 view 也必须重放（appliedReplayView 去重只作用于同一数据版本内）
+  appliedReplayView = null
   loadingForward = false
   chart.setPeriod({ type: props.timeframe === '1W' ? 'week' : props.timeframe === '1M' ? 'month' : 'day', span: 1 })
   loadedData = props.bars.map(toK)
@@ -186,13 +195,98 @@ function feedData(): void {
     getBars: ({ type, callback }) => {
       if (type === 'forward') { void loadEarlierBars(callback); return }
       if (type === 'update') return
+      // 10.0.3 在 callback 内同步应用初始数据：回放恢复排到一帧之后（等本次 feed 的默认视窗与
+      // 布局落定，挂载时不被 resetView 覆盖），恢复完成后再调度首次捕获
       callback(loadedData, { forward: hasMoreForward, backward: false })
+      scheduleReplayRestore()
+      scheduleChartCapture()
     },
   })
   applyLastPriceStyle()
   refreshMarks()
 }
 
+// REC-CHART 图表捕获（docs/engineering/recording-contract.md）：captureState 只读库内已加载数据
+// （含补载历史，绝不限 props.bars）；feed 完成/补历史/视窗变化后 150ms 尾沿外发不可变 chartCapture；
+// 只读回放与 replayView 程序恢复期间静默，避免捕获-恢复反馈循环。
+function semanticPaneHeights(): Record<string, number> {
+  const heights: Record<string, number> = {}
+  if (!chart) return heights
+  const panes = chart.getPaneOptions()
+  const list = (Array.isArray(panes) ? panes : [panes]) as Array<{ id: string }>
+  for (const pane of list) {
+    if (pane.id === 'x_axis_pane') continue
+    const height = chart.getSize(pane.id)?.height ?? 0
+    if (Number.isFinite(height) && height > 0) heights[paneName(pane.id)] = height
+  }
+  return heights
+}
+function captureState(): ChartCapture {
+  if (!chart) throw new Error('K线图未初始化，无法生成图表捕获')
+  const data = chart.getDataList() as Array<CaptureSourceBar>
+  const range = chart.getVisibleRange()
+  const view = captureView({ fromIndex: range.from, toIndex: range.to, data, barSpace: chart.getBarSpace().bar, paneHeights: semanticPaneHeights() })
+  return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(data), drawings: drawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
+}
+let captureTimer: ReturnType<typeof setTimeout> | null = null
+function cancelChartCapture(): void {
+  if (captureTimer !== null) { clearTimeout(captureTimer); captureTimer = null }
+}
+function scheduleChartCapture(): void {
+  if (props.readOnly || restoringView || disposed || !chart) return
+  cancelChartCapture()
+  captureTimer = setTimeout(() => {
+    captureTimer = null
+    if (disposed || props.readOnly || restoringView || !chart) return
+    try {
+      emit('chartCapture', captureState())
+    } catch (error) {
+      // 定时器里的抛错父层接不到（emit 未执行、无处 try/catch）：转成 captureError 供录制层展示；
+      // 只读回放静默；直接调用 captureState（expose）依旧原样抛出
+      if (!disposed && !props.readOnly) emit('captureError', error instanceof Error ? error.message : String(error))
+    }
+  }, VIEWPORT_CAPTURE_THROTTLE_MS)
+}
+// replayView 恢复：feed 完成布局后按时间戳重定位右侧锚点（不套旧 dataIndex）、恢复 barSpace
+// 与语义窗格高度；相同 view 不重复恢复，恢复期间静默捕获（库的视窗 action 为同步派发）。
+let appliedReplayView: string | null = null
+let restoringView = false
+function applyReplayView(view: ChartCaptureView | undefined): void {
+  if (!view || !chart || disposed || !loadedData.length) return
+  const key = JSON.stringify(view)
+  if (appliedReplayView === key) return
+  appliedReplayView = key
+  restoringView = true
+  cancelChartCapture()
+  try {
+    for (const [name, height] of Object.entries(view.paneHeights)) {
+      if (!Number.isFinite(height) || height <= 0) continue
+      chart.setPaneOptions({ id: actualPaneId(name), height })
+    }
+    if (Number.isFinite(view.barSpace) && view.barSpace > 0) chart.setBarSpace(view.barSpace)
+    const anchor = view.toTimestamp ?? view.fromTimestamp
+    if (anchor !== null && Number.isFinite(anchor)) chart.scrollToTimestamp(anchor)
+  } finally {
+    queueMicrotask(() => { restoringView = false })
+  }
+}
+// 回放恢复的排程：挂载序是 feedData→resetView 同步完成，loader 回调内若同步恢复会被默认视窗覆盖，
+// 因此借 rAF 排到本次 feed 的同步收尾与布局之后；恢复完成再补调度捕获（applyReplayView 会先取消恢复前的旧定时器）。
+let replayRestoreFrame: number | null = null
+function cancelReplayRestore(): void {
+  if (replayRestoreFrame !== null) { cancelAnimationFrame(replayRestoreFrame); replayRestoreFrame = null }
+}
+function scheduleReplayRestore(): void {
+  if (!props.replayView) return
+  cancelReplayRestore()
+  replayRestoreFrame = requestAnimationFrame(() => {
+    replayRestoreFrame = null
+    if (disposed || !chart || !props.replayView) return
+    applyReplayView(props.replayView)
+    scheduleChartCapture()
+  })
+}
+watch(() => props.replayView, view => { if (view) applyReplayView(view) })
 // 国内口径：最新价线线体/轴标签的方向色由 klinecharts 按 priceMark.last.upColor 系
 // （相对前收，见 theme.ts）自动计算；这里按同一口径（涨跌相对前收）重涂标签底色，
 // 保证标签与线体一致。跳空日阴阳与涨跌可能相反，不能按当日阴阳取色。
@@ -485,8 +579,8 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
-onUnmounted(() => { host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
@@ -956,7 +1050,7 @@ onMounted(() => {
 })
 onUnmounted(() => { disposed = true; markerResizeObserver?.disconnect(); window.removeEventListener('pointerup', completePointerAction); window.removeEventListener('pointercancel', onPaneResizeCancel) })
 watch(() => props.bars, feedData); watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
-defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings })
+defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 
 <template>
