@@ -35,7 +35,7 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   const recording = page.getByRole('status').filter({ hasText: '正在记录' })
   await expect(recording).toBeVisible()
   // Fail early against the old implementation, before the costly two-year journey.
-  await exported(page, '导出录制', 'two-year-initial.json.gz')
+  const initialRecording = await exported(page, '导出录制', 'two-year-initial.json.gz')
   await page.getByRole('button', { name: '买入', exact: true }).click()
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: '卖出', exact: true }).click()
@@ -51,7 +51,7 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   let finalSnapshot: any = null
   for (let count = 1; count <= 510; count++) {
     const started = Date.now()
-    const response = page.waitForResponse(r => /\/api\/trainings\/\d+\/advance$/.test(r.url()) && r.request().method() === 'POST')
+    const response = page.waitForResponse(r => /\/api\/trainings\/\d+\/next$/.test(r.url()) && r.request().method() === 'POST', { timeout: 20_000 })
     await page.getByRole('button', { name: '推进下一日', exact: true }).click()
     const result = await (await response).json()
     expect(result.snapshot).toBeTruthy()
@@ -73,18 +73,24 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
     }
     if (count === 240) {
       await page.reload()
-      await expect(recording).toBeVisible()
+      await expect(page.locator('.training-topbar')).toBeVisible({ timeout: 30_000 })
+      await expect(recording).toBeVisible({ timeout: 30_000 })
     }
   }
   expect(finalSnapshot.training.status).toBe('settled')
   expect(advanceTimes.length).toBeGreaterThan(450)
   const output = await exported(page, '导出本场录制', 'two-year-final.json.gz')
   const file = output.file
+  expect(file.sessionId).toBe(initialRecording.file.sessionId)
+  expect(file.events.filter(event => event.action === 'training.advance' && event.phase === 'started')).toHaveLength(advanceTimes.length)
   expect(file.gaps).toEqual([])
   const reader = new CompactReader(file)
   const last = reader.checkpointAt(file.checkpoints.length - 1)
   expect(last.training?.account).toEqual(finalSnapshot.account)
-  expect(last.training?.trades).toEqual(finalSnapshot.trades)
+  // The chart query additionally supplies chartPrice in the current adjustment basis.
+  const displayed = await (await page.request.get(`/api/trainings/${finalSnapshot.training.id}/bars?tf=1D`)).json()
+  expect(last.training?.trades).toEqual(displayed.trades)
+  expect(last.training?.trades.map(({ chartPrice: _chartPrice, ...trade }) => trade)).toEqual(finalSnapshot.trades)
   expect(last.chart?.drawings.length).toBe(1)
   expect(file.events.some(e => e.action === 'training.trade' && e.outcome === 'rejected')).toBe(true)
   for (let i = 0; i < file.checkpoints.length; i++) {

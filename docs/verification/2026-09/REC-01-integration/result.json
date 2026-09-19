@@ -1,0 +1,54 @@
+{
+  "kind": "integration-working-tree",
+  "head": "6ac1d917904eed8f970c529334e20c8c0ec40821",
+  "fingerprints": {
+    "web/src/App.vue": "48a7e47229b12d4c47c2aa8dac1d8af1f4984a689d090e7588dfbc33098b4a8c",
+    "web/src/recording/useRecording.ts": "0c3137d33c08a160e8a08f497f88c2fdac7a540d24683143f17a7677531f9698",
+    "web/src/recording/recordingRepository.ts": "4f809a598b1c3a69063b242ec2f121501f69ee0ee39a95e6f59b47f56c3d03e0",
+    "web/src/recording/recordingLease.ts": "62df8d7ba689b110af4828f36aa51d6d168190d8b403b29ffb56923c79f95845",
+    "web/src/recording/compactRecorder.ts": "a8259b7b87b7520daf3a900abcb355355de9f098c184e63fc6a556b213ffd4da",
+    "web/src/views/Training.vue": "aebd6a3b8bee4716562037182bc66d078bcb6ea354d187354e1c8cd3c2901c48",
+    "e2e/recording-long.spec.ts": "4de87691c2ccb0bda959f6fb81ae8bcd018868aec84eac1927646e0f4802ec6c",
+    "e2e/recording.spec.ts": "54f36a671704c651e4287d96ab082b3b6c6c238cc0a0688573a6472549037f2f",
+    "e2e/recording-migration.spec.ts": "599b6788105afb23fa84e10d4470064f735ef2ab6f195bf37bc6120486d45bb4",
+    "server/vitest.config.ts": "f57f3b3ba0edf71242b9b805fdb531ddc9065a9240cf46ae688932862e42131e"
+  },
+  "scope": "v2 integrated code; candidate gates still required",
+  "twoYearMetrics": {
+    "steps": 483,
+    "events": 2046,
+    "checkpoints": 1025,
+    "fileBytes": 957325,
+    "jsonBytes": 5376107,
+    "exportMs": 523,
+    "importMs": 300,
+    "advanceP95Ms": 110,
+    "restoredCheckpoints": 1025,
+    "unexpectedPageErrors": []
+  },
+  "browserRuns": [
+    {
+      "run": "run-ecb9a782-21ca-440e-8a80-f769a152906d",
+      "tests": 6,
+      "exitCode": 0
+    },
+    {
+      "run": "run-3727841e-368b-4f91-a1e9-549b28d93a33",
+      "tests": 1,
+      "exitCode": 0
+    }
+  ],
+  "recorderAtomicFix": {
+    "commit": "3b5dafa",
+    "unitTests": 23,
+    "joinedUnitTests": 110,
+    "exitCode": 0
+  },
+  "gzipBrowser": {
+    "gzipBytes": 94394,
+    "schema": 2,
+    "events": 34,
+    "budgetRejected": true,
+    "cancelMs": 0.5
+  }
+}

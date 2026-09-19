@@ -466,6 +466,8 @@ void load()
       <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
       <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.status.value.eventCount }} 条事件</span>
       <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
+      <details class="recording-export-options"><summary aria-label="更多录制导出方式">更多</summary><button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile(undefined, false)">导出可读 JSON</button></details>
+      <span v-if="recording.notice.value">{{ recording.notice.value }}</span>
       <span v-if="recording.error.value || recording.status.value.error" class="error-text">{{ recording.error.value || recording.status.value.error }}</span>
       <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
     </div>

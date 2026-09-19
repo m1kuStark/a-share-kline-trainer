@@ -17,7 +17,7 @@
 | [M5 · 设置与交付](<work-items/milestones/M5.md>) | planned | 设置待做，先冻结规则和核查权益。 / 完成TRAIN-01。 | 未记录 | 未记录 |
 | [R1 · 本地数据更新与保护](<work-items/milestones/R1.md>) | active | 入口和首批保护已实现；完整发布、覆盖与历史版本仍有缺口。 / 先完成DATA-01/02，再补版本保护。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 |
 | [R2 · 替代来源](<work-items/milestones/R2.md>) | planned | 扫描注册点已有，真实来源未接，训练读取未解耦。 / 先补DATA-03/04。 | 未记录 | 未记录 |
-| [REC · 操作录制与回放](<work-items/milestones/REC.md>) | planned | 用户要求默认开启、可暂停和分享；本轮仅完成方案讨论。 / 确认首批格式与范围后实施REC-01。 | 未记录 | 未记录 |
+| [REC · 操作录制与回放](<work-items/milestones/REC.md>) | active | v2紧凑录制、gzip分享和按需回放已接线，两年真实旅程通过，正在完整候选验收。 / 完整候选门禁与主代理视觉通过后交用户验收，不自动记用户通过。 | 未记录 | 未记录 |
 
 ### 未关闭任务
 
@@ -30,7 +30,7 @@
 | [M4-01 · 指标排行与复盘](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 / 先固定部分平仓、零交易、费用权息、稳定排序和防未来样例。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01 · 设置与完整交付](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 / 完成TRAIN-01后开发默认设置、首次使用及全链路交付。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01 · 真实替代来源](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 / DATA-03/04后选择来源，验证无TDX环境及单位、覆盖、权息合约。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [REC-01 · 默认操作录制与分享复盘首批](<work-items/tasks/REC-01.md>) | active / integrator | GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。 / codec/validator/storage已联合验收145测试及真实IDB，第三批3GLM并行：gzip取消死锁返修、CompactRecorder、按需回放页；随后根统一接线及两年全流程。 | [docs/verification/2026-09/REC-01-capacity/report.md](<verification/2026-09/REC-01-capacity/report.md>)；[docs/verification/2026-09/REC-01-compression/report.md](<verification/2026-09/REC-01-compression/report.md>) | 未记录 | 未记录 |
+| [REC-01 · 默认操作录制与分享复盘首批](<work-items/tasks/REC-01.md>) | active / integrator | GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。 / 第三批已合入并接线，Recorder原子性返修已复验；两年483次推进和六条迁移/录制流程通过，进行完整候选门禁及用户最终版本准备。 | [docs/verification/2026-09/REC-01-capacity/report.md](<verification/2026-09/REC-01-capacity/report.md>)；[docs/verification/2026-09/REC-01-compression/report.md](<verification/2026-09/REC-01-compression/report.md>) | 未记录 | 未记录 |
 | [TRAIN-01 · 冻结训练规则并统一权息入账](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 / 默认设置变化不改旧训练；raw/forward账户权益一致，兼容旧数据。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [UI-01 · 待复核交互与体验边界](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 / 先用真实手势复核Ctrl/多选轴区域，再确定修复；不把静态推断当已证实故障。 | [docs/verification/architecture-audit-2026-09-17.json](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 <!-- generated:status:end -->

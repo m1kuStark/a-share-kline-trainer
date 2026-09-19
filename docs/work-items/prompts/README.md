@@ -14,6 +14,7 @@
 | v2并行批次 | [codec修正](rec-v2-codec-review-fix.md)、[校验器](rec-v2-validator-parallel.md)、[增量存储](rec-v2-storage-parallel.md)，独立工作树和修改范围 |
 | v2第二批 | [校验返修](rec-v2-validator-review-fix.md)、[存储返修](rec-v2-storage-review-fix.md)、[gzip文件](rec-v2-file-parallel.md)，codec已验收后继续 |
 | v2第三批 | [解压取消返修](rec-v2-file-cancel-fix.md)、[紧凑录制器](rec-v2-recorder.md)、[按需回放](rec-v2-replay.md)，独立模块并行 |
+| 集成审查修复 | [Recorder输入原子性](rec-v2-recorder-atomic-fix.md)，异常输入拒绝后仍可继续正常记录 |
 | 只读规则/权息上下文 | [上下文](rec-context.md)、[审查修正](rec-context-fix.md) |
 
 子分支在REC-01功能集成分支顺序合并，完整功能再经候选门禁进入main。账户实际限流后模型请求改为串行，Git隔离与本地审查/测试仍保留并行能力。

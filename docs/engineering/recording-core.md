@@ -1,6 +1,6 @@
 # 录制核心实现说明（recorder.ts / storage.ts）
 
-本文记录v1兼容基线，实现[原接口合同](recording-contract.md)；类型在 `web/src/recording/types.ts`。recorder 在restore载入时调用validateRecording拒绝损坏文件。用户已确认[v2紧凑迁移](recording-v2-contract.md)，生产接线完成前本页仍描述现行v1实现。
+本文仅记录v1兼容基线，实现[原接口合同](recording-contract.md)。现行页面已改用[CompactRecorder](../../web/src/recording/compact-recorder.md)及[v2合同](recording-v2-contract.md)，不再用旧整会话快照存储；此页用于旧版回归追溯。
 
 ## 模块划分
 

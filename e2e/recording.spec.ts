@@ -32,6 +32,14 @@ test('录制上下文准备期间不会漏掉第一笔交易', async ({ page }) 
   expect(file.gaps).toEqual([])
   expect(file.events.filter((event: any) => event.action === 'training.create').map((event: any) => event.phase)).toEqual(['started', 'finished'])
   expect(file.events.filter((event: any) => event.action === 'training.trade').map((event: any) => event.phase)).toEqual(['started', 'finished'])
+  await page.getByLabel('更多录制导出方式', { exact: true }).click()
+  const plainPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出可读 JSON', exact: true }).click()
+  const plainDownload = await plainPending, plainPath = evidencePath('readable-recording.json')
+  await plainDownload.saveAs(plainPath)
+  const readable = await readRecordingArtifact(plainPath)
+  expect(readable.schemaVersion).toBe(2)
+  expect(readable.sessionId).toBe(file.sessionId)
 })
 
 test('默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放', async ({ page }) => {
@@ -71,6 +79,14 @@ test('默认录制交易拒单、周期和画线，暂停恢复后可导出并�
   await page.getByRole('tab', { name: '周K', exact: true }).click()
   await page.getByLabel('记录操作', { exact: true }).check()
   await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  await page.screenshot({ path: evidencePath('recording-training-dark.png') })
+  await page.getByRole('button', { name: '切换到浅色主题', exact: true }).click()
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: evidencePath('recording-training-light.png') })
+  await page.getByRole('button', { name: '切换到深色主题', exact: true }).click()
+  await page.setViewportSize({ width: 1440, height: 900 })
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: '导出录制', exact: true }).click()
   const download = await pending
@@ -102,6 +118,10 @@ test('默认录制交易拒单、周期和画线，暂停恢复后可导出并�
   await page.mouse.click(replayHost!.x + 260, replayHost!.y + 150, { button: 'right' })
   expect(await page.evaluate(() => (window as any).__trainerChart.drawings())).toEqual(drawingsBefore)
   await page.screenshot({ path: evidencePath('recording-replay.png') })
+  await page.getByRole('button', { name: '切换到浅色主题', exact: true }).click()
+  await page.setViewportSize({ width: 1280, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: evidencePath('recording-replay-light.png') })
   expect(writes).toEqual([])
 })
 
@@ -137,6 +157,7 @@ test('浏览器存储恢复后可重试录制，错误不伪装成正在记录',
 })
 
 test('首页关闭仅影响本场，刷新保留暂停且恢复后可导出', async ({ page }) => {
+  test.setTimeout(60_000)
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
@@ -148,6 +169,7 @@ test('首页关闭仅影响本场，刷新保留暂停且恢复后可导出', as
   await startTrainingFromForm(page)
   await expect(page.getByRole('status').filter({ hasText: '已暂停记录' })).toBeVisible()
   await page.reload()
+  await expect(page.locator('.training-topbar')).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('status').filter({ hasText: '已暂停记录' })).toBeVisible()
   await page.getByLabel('记录操作', { exact: true }).check()
   await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()

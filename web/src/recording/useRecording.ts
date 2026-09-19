@@ -1,11 +1,12 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { ApiError, fetchRecordingContext, type RecordingContext, type TrainingSnapshot } from '../api'
-import { Recorder } from './recorder'
-import { IndexedDbRecordingStorage } from './storage'
-import { exportRecording } from './validation'
+import { CompactRecorder } from './compactRecorder'
+import { recordingStorage, loadLocalRecording } from './recordingRepository'
+import { acquireRecordingLease } from './recordingLease'
+import { writeRecordingFile } from './recordingFile'
 import type { Action, ChartCapture, CheckpointInput, JsonValue, RecorderStatus, RecordingEventSource } from './types'
 
-export const recordingStorage = new IndexedDbRecordingStorage()
+export { recordingStorage } from './recordingRepository'
 /** Vue objects may contain proxies; serialize only the known public DTOs. */
 export function recordingPlain<T>(value: T): T {
   return JSON.parse(JSON.stringify(value, (_key, item) => {
@@ -13,8 +14,8 @@ export function recordingPlain<T>(value: T): T {
     return item
   })) as T
 }
-export function downloadRecording(text: string, name: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+export function downloadRecording(blob: Blob, name: string): void {
+  const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
@@ -29,7 +30,9 @@ export function useRecording(options: {
 }) {
   const status = ref<RecorderStatus>({ state: 'paused', error: null, eventCount: 0, sessionId: '' })
   const ready = ref(false), enabled = ref(options.enabled), error = ref('')
-  let recorder: Recorder | null = null, context: RecordingContext | null = null, chart: ChartCapture | null = null
+  let recorder: CompactRecorder | null = null, context: RecordingContext | null = null, chart: ChartCapture | null = null
+  let releaseLease: (() => void) | null = null
+  const notice = ref('')
   let initializing: Promise<void> | null = null, disposed = false, signature = ''
   let initializationInterrupted = false
   let recoveryPreference: boolean | null = null
@@ -45,27 +48,40 @@ export function useRecording(options: {
         const snapshot = options.snapshot()
         context = await fetchRecordingContext(snapshot.training.id)
         if (disposed) return
-        recorder ??= new Recorder(recordingStorage, {
+        recorder ??= new CompactRecorder(recordingStorage, {
           app: context.app, environment: { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, viewport: { width: innerWidth, height: innerHeight }, dpr: devicePixelRatio },
           onChange: value => {
             status.value = value
             if (value.state === 'paused') enabled.value = false
             else if (value.state === 'recording') enabled.value = true
-            else if (value.sessionId && recorder) enabled.value = !recorder.getFile().gaps.some(gap => gap.resumedAtSeq === null)
+            else if (value.sessionId && recorder) enabled.value = recorder.isRecording()
           },
         })
         const key = `${snapshot.training.id}.${snapshot.training.createdAt}`
         const storageKey = `trainer.recording.${key}`
-        const saved = sessionStorage.getItem(storageKey)
+        let saved = sessionStorage.getItem(storageKey)
+        let initialEnabled = options.enabled
         if (!recorder.getStatus().sessionId) {
           if (saved) {
+            const local = await loadLocalRecording(saved)
+            if (!local) throw new Error('本场录制已不存在，无法安全续录')
+            if (disposed) return
+            releaseLease ??= await acquireRecordingLease(saved)
+            if (disposed) { releaseLease?.(); releaseLease = null; return }
+            if (!releaseLease) {
+              initialEnabled = !local.gaps.some(gap => gap.resumedAtSeq === null)
+              saved = null
+              notice.value = '另一标签页正在续录，本页已建立独立录制'
+            }
+          }
+          if (saved) {
             await recorder.restore(saved)
-            recoveryPreference = !recorder.getFile().gaps.some(gap => gap.resumedAtSeq === null)
+            recoveryPreference = recorder.isRecording()
           }
           else {
             // Retain the session pointer even if its first disk write fails; retry the same recorder.
-            recoveryPreference = options.enabled
-            const starting = recorder.start(key, checkpoint(), options.enabled && !initializationInterrupted)
+            recoveryPreference = initialEnabled
+            const starting = recorder.start(key, checkpoint(), initialEnabled && !initializationInterrupted)
             sessionStorage.setItem(storageKey, recorder.getStatus().sessionId)
             await starting
             if (options.createdParams && enabled.value && !initializationInterrupted) {
@@ -74,13 +90,18 @@ export function useRecording(options: {
             }
           }
         } else await recorder.flush()
+        if (!releaseLease) {
+          releaseLease = await acquireRecordingLease(recorder.getStatus().sessionId)
+          if (!releaseLease) throw new Error('录制会话被其他标签页占用，请重试')
+        }
+        if (disposed) { releaseLease(); releaseLease = null; return }
         if (initializationInterrupted) {
-          if (!recorder.getFile().gaps.some(gap => gap.resumedAtSeq === null)) await recorder.pause(checkpoint())
+          if (recorder.isRecording()) await recorder.pause(checkpoint())
           if (recoveryPreference) await recorder.resume(checkpoint())
           initializationInterrupted = false
         }
         sessionStorage.setItem(storageKey, recorder.getStatus().sessionId)
-        enabled.value = !recorder.getFile().gaps.some(gap => gap.resumedAtSeq === null)
+        enabled.value = recorder.isRecording()
         ready.value = true
         // A restored session starts observing the actual current state; no invented past operations.
         if (saved && enabled.value) recorder.capture(checkpoint())
@@ -128,15 +149,16 @@ export function useRecording(options: {
       if (enabled.value) { pending.clear(); await recorder.pause(checkpoint()) }
       else await recorder.resume(checkpoint())
     } catch (reason) { fail(reason) }
-    finally { enabled.value = !recorder.getFile().gaps.some(gap => gap.resumedAtSeq === null) }
+    finally { enabled.value = recorder.isRecording() }
   }
-  async function exportFile(): Promise<void> {
+  async function exportFile(_event?: Event, compressed = true): Promise<void> {
     if (!recorder) return
     error.value = ''
     try {
       if (enabled.value) recorder.capture(checkpoint())
       const file = await recorder.export()
-      downloadRecording(exportRecording(file), `训练录制-${file.sessionId}.trainer-session.json`)
+      const blob = await writeRecordingFile(file, compressed !== false)
+      downloadRecording(blob, `训练录制-${file.sessionId}.trainer-session.json${compressed !== false ? '.gz' : ''}`)
     } catch (reason) { fail(reason) }
   }
   async function flush(): Promise<void> { try { await recorder?.flush() } catch (reason) { fail(reason) } }
@@ -156,8 +178,9 @@ export function useRecording(options: {
     try { context = await fetchRecordingContext(options.snapshot().training.id) } catch (reason) { fail(reason) }
   }
   const label = computed(() => error.value || status.value.state === 'error' ? '记录失败' : !ready.value ? '准备录制' : enabled.value ? '正在记录' : '已暂停记录')
-  const onHide = () => { void flush() }
+  const release = async () => { await flush(); releaseLease?.(); releaseLease = null }
+  const onHide = () => { void release() }
   window.addEventListener('pagehide', onHide)
-  onUnmounted(() => { disposed = true; window.removeEventListener('pagehide', onHide); void flush() })
-  return { status, ready, enabled, error, label, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, refreshContext, retry, fail }
+  onUnmounted(() => { disposed = true; window.removeEventListener('pagehide', onHide); void release() })
+  return { status, ready, enabled, error, notice, label, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, refreshContext, retry, fail }
 }

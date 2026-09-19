@@ -4,16 +4,16 @@
 
 | 模块 | 职责 |
 |---|---|
-| [types](types.ts) | JSON语义事件、检查点和存储接口 |
-| [validation](validation.ts) | 导入校验、大小/版本/时间/引用边界 |
-| [recorder](recorder.ts) | seq、segment、暂停缺口、串行保存；[实现说明](../../../docs/engineering/recording-core.md) |
-| [storage](storage.ts) | 浏览器IndexedDB与单测内存存储 |
+| [types](types.ts) / [validation](validation.ts) | 共享语义类型与v1兼容校验；旧[recorder](recorder.ts)/[storage](storage.ts)保留兼容测试 |
+| [compactRecorder](compactRecorder.ts) | 现行seq、segment、暂停缺口、检查点去重及增量保存；[实现说明](compact-recorder.md) |
 | [useRecording](useRecording.ts) | Vue页面接线、DTO复制、同场恢复和导出 |
 | [replay](replay.ts) | 检查点选择、真实暂停时间缺口和播放时距；[回放页](../views/recording-replay.md) |
 | [chartCapture](chartCapture.ts) / [drawingOperations](drawingOperations.ts) | 图表与画线语义捕获，实际价格/日期与手势结果 |
 | [compactTypes](compactTypes.ts) / [compactCodec](compactCodec.ts) | 已验收的v2纯编解码、行情/图形版本和轻量引用；[实现](compact-codec.md)，尚未替换页面v1接线 |
 | [compactValidation](compactValidation.ts) | v2引用/历史截止/还原集合预算；[校验说明](compact-validation.md) |
 | [compactStorage](compactStorage.ts) | v2增量事务、revision冲突和旧sessions保留；[存储说明](compact-storage.md) |
+| [recordingFile](recordingFile.ts) | JSON/gzip读写、旧版迁移、流式解压取消；[文件说明](recording-file.md) |
+| [recordingRepository](recordingRepository.ts) / [recordingLease](recordingLease.ts) | 浏览器旧记录迁移和跨标签单写者管理 |
 
 图表只捕获实际已加载且训练可见的数据。训练推进后的账户结果与图表加载是两个独立操作；交易成功后图表加载失败不能改写成交结论。加载期间的账户检查点允许chart=null，不能给新账户配旧周期或旧复权基准的行情。
 
@@ -21,4 +21,4 @@
 
 同标签页sessionStorage保留本场sessionId，IndexedDB保存录制正文。JSON分享不带浏览器存储标识之外的本地路径，不自动上传。录制只含语义状态，未记录的区间始终显示缺口。
 
-v1完整快照现用于兼容基线。用户已确认v2紧凑实现，新增模块依[v2合同](../../../docs/engineering/recording-v2-contract.md)推进；迁移完成之前不要把评估中的压缩率描述为产品已支持。
+页面已接v2紧凑记录，正式验收状态与证据见REC-01任务。默认gzip导出，更多菜单可读JSON；App用shallowRef承载已校验文件，回放按需还原单检查点、每窗最多100条事件。旧sessions按需转换成功后另存v2，原条目不删；数据错误和revision冲突都显式提示。

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { fetchActiveTraining, fetchEnv } from './api'
 import type { TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
@@ -8,9 +8,10 @@ import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
-import { recordingStorage } from './recording/useRecording'
-import { parseRecording, validateRecording } from './recording/validation'
-import type { RecordingFile, RecordingSummary } from './recording/types'
+import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
+import { readRecordingFile } from './recording/recordingFile'
+import type { RecordingSummary } from './recording/types'
+import type { CompactRecordingFile } from './recording/compactTypes'
 
 type View = 'loading' | 'launcher' | 'training' | 'replay'
 const view = ref<View>('loading')
@@ -18,7 +19,7 @@ const snapshot = ref<TrainingSnapshot | null>(null)
 const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
 const recordingOptions = ref<{ enabled: boolean; params?: Record<string, string | number> }>({ enabled: true })
-const replay = ref<RecordingFile | null>(null)
+const replay = shallowRef<CompactRecordingFile | null>(null)
 const recentRecordings = ref<RecordingSummary[]>([])
 const recordingError = ref('')
 async function loadRecordings(): Promise<void> {
@@ -37,15 +38,15 @@ async function importRecording(event: Event): Promise<void> {
   if (!file) return
   recordingError.value = ''
   try {
-    if (file.size > 25 * 1024 * 1024) throw new Error('录制文件超过 25 MiB，请选择较小的文件')
-    replay.value = parseRecording(await file.text())
+    replay.value = await readRecordingFile(file)
     view.value = 'replay'
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法导入录制文件' }
 }
 async function openRecording(id: string): Promise<void> {
   recordingError.value = ''
   try {
-    replay.value = validateRecording(await recordingStorage.load(id))
+    replay.value = await loadLocalRecording(id)
+    if (!replay.value) throw new Error('找不到这份本机录制')
     view.value = 'replay'
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法打开录制' }
 }
@@ -182,7 +183,7 @@ function onTrainingEnded(): void {
 
       <template v-if="view === 'launcher'">
         <section class="recording-library" aria-label="操作录制">
-          <label>打开操作录制 <input type="file" accept=".json,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
+          <label>打开操作录制 <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
           <details v-if="recentRecordings.length"><summary>本机最近录制（{{ recentRecordings.length }}）</summary>
             <button v-for="item in recentRecordings" :key="item.sessionId" class="ghost-button" @click="openRecording(item.sessionId)">{{ new Date(item.createdAt).toLocaleString() }} · {{ item.eventCount }} 条事件</button>
           </details>
