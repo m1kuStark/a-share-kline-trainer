@@ -11,7 +11,9 @@
   "next_action": "CORE固定接口后，CHART/PLAYER并行，最后INTEGRATE接线。",
   "allowed_paths": [
     "web/src/**",
+    "web/README.md",
     "server/src/**",
+    "server/README.md",
     "server/test/**",
     "e2e/**",
     "docs/specs/recording.md",
