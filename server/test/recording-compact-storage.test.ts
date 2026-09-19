@@ -234,6 +234,26 @@ describe('MemoryCompactStorage 增量语义', () => {
     await expect(storage.load('s-mem')).resolves.toEqual(appended)
   })
 
+  it('save 后就地更新 gaps/app 不改已持久镜像，下次 save 才作为 header 批次提交', async () => {
+    const storage = new MemoryCompactStorage()
+    const file = makeCompactFile('s-snap')
+    file.gaps.push({ afterSeq: 1, resumedAtSeq: null })
+    await storage.save(file)
+    const savedView = await storage.load('s-snap')
+
+    // 原地更新但未 save：持久镜像必须保持保存瞬间状态（与生产 IDB put 结构化克隆语义一致）
+    file.gaps[0]!.resumedAtSeq = 5
+    file.app.version = 'mutated'
+    await expect(storage.load('s-snap')).resolves.toEqual(savedView)
+
+    // 再次 save 才把就地变化作为 header-only 批次写入
+    await storage.save(file)
+    expect(storage.revisionOf('s-snap')).toBe(2)
+    const committed = await storage.load('s-snap')
+    expect(committed!.gaps).toEqual([{ afterSeq: 1, resumedAtSeq: 5 }])
+    expect(committed!.app.version).toBe('mutated')
+  })
+
   it('list 返回按 createdAt 排序的摘要', async () => {
     const storage = new MemoryCompactStorage()
     const later = { ...makeCompactFile('b'), createdAt: '2026-01-02T00:00:00.000Z' }
@@ -468,5 +488,202 @@ describe('IndexedDbCompactStorage 增量与冲突', () => {
     await expect(loadVia(idb, storage, 'mix')).resolves.toEqual(makeCompactFile('mix'))
     // 旧库未被删除或改写
     expect(idb.recordCount('sessions')).toBe(2)
+  })
+})
+
+describe('header 批次身份与采纳核实', () => {
+  /** 双实例同 revision load 后仅改 header 某一字段分叉：先写者落盘，后写者必须拒绝且 0 写入 */
+  async function expectHeaderForkRejected(
+    sessionId: string,
+    mutate: (file: CompactRecordingFile, tag: string) => CompactRecordingFile,
+  ): Promise<void> {
+    const idb = installCompactIdbStub()
+    const a = new IndexedDbCompactStorage()
+    const base = makeCompactFile(sessionId)
+    await saveVia(idb, a, base)
+    const b = new IndexedDbCompactStorage()
+    const loadedB = (await loadVia(idb, b, sessionId))!
+    const c = new IndexedDbCompactStorage()
+    const loadedC = (await loadVia(idb, c, sessionId))!
+
+    await saveVia(idb, b, mutate(loadedB, 'left'))
+
+    const putsBefore = idb.putCalls.length
+    await expect(saveVia(idb, c, mutate(loadedC, 'right'))).rejects.toThrow(
+      /已被其他实例推进|批次不一致/,
+    )
+    expect(idb.putCalls.length).toBe(putsBefore)
+
+    // 磁盘保留先写者，后写者的分叉内容未落盘
+    const fresh = new IndexedDbCompactStorage()
+    await expect(loadVia(idb, fresh, sessionId)).resolves.toEqual(mutate(loadedB, 'left'))
+  }
+
+  it('仅 app 版本分叉（空记录批次）：后写者拒绝，磁盘保留先写者', async () => {
+    await expectHeaderForkRejected('s-fork-app', (file, tag) => ({
+      ...file,
+      app: { ...file.app, version: tag },
+    }))
+  })
+
+  it('仅 environment 分叉（空记录批次）：后写者拒绝，磁盘保留先写者', async () => {
+    await expectHeaderForkRejected('s-fork-env', (file, tag) => ({
+      ...file,
+      environment: { ...file.environment, dpr: tag === 'left' ? 2 : 3 },
+    }))
+  })
+
+  it('仅 createdAt 分叉（空记录批次）：后写者拒绝，磁盘保留先写者', async () => {
+    await expectHeaderForkRejected('s-fork-created', (file, tag) => ({
+      ...file,
+      createdAt: tag === 'left' ? '2026-03-01T00:00:00.000Z' : '2026-04-01T00:00:00.000Z',
+    }))
+  })
+
+  it('相同 header-only 批次（空记录行）另一实例重试：采纳成功、0 写入', async () => {
+    const idb = installCompactIdbStub()
+    const a = new IndexedDbCompactStorage()
+    const base = makeCompactFile('s-hdr-adopt')
+    await saveVia(idb, a, base)
+    const b = new IndexedDbCompactStorage()
+    const loadedB = (await loadVia(idb, b, 's-hdr-adopt'))!
+
+    const changed = { ...loadedB, app: { ...loadedB.app, version: 'left' } }
+    await saveVia(idb, a, changed)
+
+    const putsBefore = idb.putCalls.length
+    await saveVia(idb, b, changed)
+    expect(idb.putCalls.length).toBe(putsBefore)
+
+    const fresh = new IndexedDbCompactStorage()
+    await expect(loadVia(idb, fresh, 's-hdr-adopt')).resolves.toEqual(changed)
+  })
+})
+
+interface StoredCompactRow {
+  sessionId: string
+  kind: string
+  index: number
+  value: unknown
+}
+
+function recordStoreEntries(idb: FakeIndexedDb): Map<string, { key: unknown; value: unknown }> {
+  return idb.sharedStores.get('compactRecords')!.entries
+}
+
+function storedRowKey(sessionId: string, kind: string, index: number): string {
+  return [sessionId, kind, index].join('\u0000')
+}
+
+function findStoredRow(
+  idb: FakeIndexedDb,
+  sessionId: string,
+  kind: string,
+  index: number,
+): StoredCompactRow | null {
+  for (const entry of recordStoreEntries(idb).values()) {
+    const row = entry.value as StoredCompactRow
+    if (row.sessionId === sessionId && row.kind === kind && row.index === index) return row
+  }
+  return null
+}
+
+/** 直接改写持久行，模拟磁盘上的存储损坏 */
+function deleteStoredRow(idb: FakeIndexedDb, sessionId: string, kind: string, index: number): void {
+  expect(findStoredRow(idb, sessionId, kind, index)).not.toBeNull()
+  recordStoreEntries(idb).delete(storedRowKey(sessionId, kind, index))
+}
+
+function reindexStoredRow(
+  idb: FakeIndexedDb,
+  sessionId: string,
+  kind: string,
+  from: number,
+  to: number,
+): void {
+  const row = findStoredRow(idb, sessionId, kind, from)!
+  row.index = to
+  recordStoreEntries(idb).delete(storedRowKey(sessionId, kind, from))
+  recordStoreEntries(idb).set(storedRowKey(sessionId, kind, to), {
+    key: [sessionId, kind, to],
+    value: row,
+  })
+}
+
+function addStoredRow(
+  idb: FakeIndexedDb,
+  sessionId: string,
+  kind: string,
+  index: number,
+  value: unknown,
+): void {
+  recordStoreEntries(idb).set(storedRowKey(sessionId, kind, index), {
+    key: [sessionId, kind, index],
+    value: { sessionId, kind, index, value },
+  })
+}
+
+function storedHeader(idb: FakeIndexedDb, sessionId: string): { counts: Record<string, number> } {
+  return idb.sharedStores.get('compactSessions')!.entries.get(sessionId)!.value as {
+    counts: Record<string, number>
+  }
+}
+
+describe('load 损坏检测', () => {
+  it('记录行缺失时 load 明确拒绝，不静默返回部分录制', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    const file = withAppend(makeCompactFile('s-corrupt'), makeEvent(2), makeCheckpoint(2))
+    await saveVia(idb, storage, file)
+
+    deleteStoredRow(idb, 's-corrupt', 'event', 1)
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
+  })
+
+  it('header counts 与实际行数不一致（counts 偏大）时 load 拒绝', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    await saveVia(idb, storage, makeCompactFile('s-corrupt'))
+
+    storedHeader(idb, 's-corrupt').counts.events = 2
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
+  })
+
+  it('行下标不连续（0 与 2 缺 1）时 load 拒绝', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    const file = withAppend(makeCompactFile('s-corrupt'), makeEvent(2), makeCheckpoint(2))
+    await saveVia(idb, storage, file)
+
+    reindexStoredRow(idb, 's-corrupt', 'event', 1, 2)
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
+  })
+
+  it('超出 counts 的多余行时 load 拒绝', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    await saveVia(idb, storage, makeCompactFile('s-corrupt'))
+
+    addStoredRow(idb, 's-corrupt', 'event', 1, makeEvent(2))
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
+  })
+
+  it('未知 kind 行时 load 拒绝', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    await saveVia(idb, storage, makeCompactFile('s-corrupt'))
+
+    addStoredRow(idb, 's-corrupt', 'bogus', 0, { id: 'x' })
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
+  })
+
+  it('行条目缺少合法 id/opId 时 load 拒绝', async () => {
+    const idb = installCompactIdbStub()
+    const storage = new IndexedDbCompactStorage()
+    await saveVia(idb, storage, makeCompactFile('s-corrupt'))
+
+    const row = findStoredRow(idb, 's-corrupt', 'event', 0)!
+    row.value = { ...(row.value as Record<string, unknown>), opId: '' }
+    await expect(loadVia(idb, storage, 's-corrupt')).rejects.toThrow('损坏')
   })
 })

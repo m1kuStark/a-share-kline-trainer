@@ -152,19 +152,25 @@ function stableStringify(value: unknown): string {
 }
 
 /**
- * 批次身份 = base revision + 追加内容 + header 关键位的规范化指纹（FNV-1a 32位 + 长度）。
- * 仅作快速预筛：采纳路径仍逐条深比持久记录行，防哈希碰撞掩盖分叉。
+ * 批次身份 = base revision + 新增行 + 被保存 header 全部内容（除系统字段 revision/batchId 外
+ * 逐项纳入：sessionId/createdAt/app/environment/trainingKey/gaps/complete/counts）的规范化指纹
+ * （FNV-1a 32位 + 长度）。仅作快速预筛：采纳路径仍对 header 逐字段深比、记录行逐条深比，
+ * 防哈希碰撞掩盖分叉。
  */
 function batchIdOf(expectedRevision: number, file: CompactRecordingFile, batch: PendingBatch): string {
   const canonical = stableStringify({
     base: expectedRevision,
+    sessionId: file.sessionId,
+    createdAt: file.createdAt,
+    app: file.app,
+    environment: file.environment,
+    trainingKey: file.trainingKey,
+    gaps: file.gaps,
+    complete: file.complete,
     counts: batch.countsAfter,
     events: batch.events,
     checkpoints: batch.checkpoints,
     resources: batch.resourceEntries.map(entry => ({ kind: entry.kind, value: entry.value })),
-    gaps: file.gaps,
-    complete: file.complete,
-    trainingKey: file.trainingKey,
   })
   let hash = 0x811c9dc5
   for (let i = 0; i < canonical.length; i++) {
@@ -316,7 +322,8 @@ function rowKeyOf(kind: CompactRecordKind, index: number): string {
  * 纯决策（只依赖持久 header，不读记录行）：
  * - 实例未持有会话而持久已存在 → 拒绝（禁止未 load 直接覆盖他人会话）；
  * - revision 匹配 → 写新增 + header（空批次且 header 未变则 no-op）；
- * - revision 恰好 +1 且批次身份吻合 → 待读记录行核实后采纳（同一成功批次的重试）；
+ * - revision 恰好 +1 且批次身份（哈希预筛）吻合 → 待读记录行与 header 逐字段核实后采纳
+ *   （同一成功批次的重试）；
  * - 其余 → 冲突拒绝，不自动抢锁。
  */
 function decideFromHeader(
@@ -354,12 +361,39 @@ function decideFromHeader(
   )
 }
 
-/** 采纳核实：持久记录行与计划新增逐条深比，一致返回持久 header，否则视为分叉冲突 */
-function verifyAdoptRows(
+/** header 除系统字段（revision/batchId）外的逐字段深等：采纳路径的权威证据，哈希仅预筛 */
+function headerContentEqual(a: CompactSessionHeader, b: CompactSessionHeader): boolean {
+  return (
+    a.format === b.format &&
+    a.schemaVersion === b.schemaVersion &&
+    a.sessionId === b.sessionId &&
+    a.createdAt === b.createdAt &&
+    deepEqual(a.app, b.app) &&
+    deepEqual(a.environment, b.environment) &&
+    a.trainingKey === b.trainingKey &&
+    deepEqual(a.gaps, b.gaps) &&
+    a.complete === b.complete &&
+    countsEqual(a.counts, b.counts)
+  )
+}
+
+/**
+ * 采纳核实（同一成功批次的重试）：持久 header 与本实例将写出的 header 逐字段深等
+ * （空记录批次同样不可绕过），持久记录行与计划新增逐条深比；
+ * 一致返回持久 header，否则视为分叉冲突。
+ */
+function verifyAdopt(
   persisted: CompactSessionHeader,
-  persistedRows: CompactRecordRow[],
+  plannedHeader: CompactSessionHeader,
   plannedRows: CompactRecordRow[],
+  persistedRows: CompactRecordRow[],
 ): CompactSessionHeader {
+  if (!headerContentEqual(persisted, plannedHeader)) {
+    throw new Error(
+      `会话 ${persisted.sessionId} 的 header 与本实例批次不一致（持久 revision ${persisted.revision}）；` +
+        '已保留本实例内存数据，请重新 load 后再保存。',
+    )
+  }
   const byKey = new Map(persistedRows.map(row => [rowKeyOf(row.kind, row.index), row.value]))
   for (const row of plannedRows) {
     const value = byKey.get(rowKeyOf(row.kind, row.index))
@@ -383,7 +417,63 @@ function committedFrom(file: CompactRecordingFile, header: CompactSessionHeader)
   }
 }
 
+/** 记录行 kind 全集；六张资源表名与 CompactCounts 键一致，event/checkpoint 之外直接查 counts */
+const RECORD_KINDS = ['event', 'checkpoint', ...RESOURCE_KINDS] as const
+
+/** 行条目身份：event 用 opId，其余表用 id；必须为非空字符串，损坏行在此拒绝 */
+function entryIdentityOf(kind: CompactRecordKind, value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null
+  const id = (value as Record<string, unknown>)[kind === 'event' ? 'opId' : 'id']
+  return typeof id === 'string' && id !== '' ? id : null
+}
+
+function countsKeyOf(kind: CompactRecordKind): keyof CompactCounts {
+  return kind === 'event' ? 'events' : kind === 'checkpoint' ? 'checkpoints' : kind
+}
+
+/**
+ * 重组紧凑文件：对每 kind 校验行下标连续 0..counts-1、条目身份合法、行数与 header.counts
+ * 精确一致；缺行/多行/重复/未知 kind/非法 id 均明确拒绝，不静默返回部分录制。
+ * 行 value 引用直接使用（IDB getAll 已结构化克隆），不深拷贝。
+ */
 function assemble(header: CompactSessionHeader, rows: CompactRecordRow[]): CompactRecordingFile {
+  const byKind = new Map<CompactRecordKind, Map<number, unknown>>(RECORD_KINDS.map(kind => [kind, new Map()]))
+  for (const row of rows) {
+    const bucket = byKind.get(row.kind)
+    if (!bucket) {
+      throw new Error(`会话 ${header.sessionId} 持久记录损坏：存在未知 kind「${String(row.kind)}」的记录行，拒绝加载。`)
+    }
+    if (entryIdentityOf(row.kind, row.value) === null) {
+      throw new Error(
+        `会话 ${header.sessionId} 持久记录损坏：${row.kind} #${row.index} 的条目缺少合法 id/opId，拒绝加载。`,
+      )
+    }
+    if (!Number.isSafeInteger(row.index) || row.index < 0) {
+      throw new Error(
+        `会话 ${header.sessionId} 持久记录损坏：${row.kind} 行下标 ${String(row.index)} 非法，拒绝加载。`,
+      )
+    }
+    if (bucket.has(row.index)) {
+      throw new Error(`会话 ${header.sessionId} 持久记录损坏：${row.kind} #${row.index} 出现重复行，拒绝加载。`)
+    }
+    bucket.set(row.index, row.value)
+  }
+  for (const kind of RECORD_KINDS) {
+    const bucket = byKind.get(kind)!
+    const count = header.counts[countsKeyOf(kind)]
+    if (bucket.size !== count) {
+      throw new Error(
+        `会话 ${header.sessionId} 持久记录损坏：${kind} 行数 ${bucket.size} 与 header.counts ${count} 不一致，拒绝加载。`,
+      )
+    }
+    for (let index = 0; index < count; index++) {
+      if (!bucket.has(index)) {
+        throw new Error(
+          `会话 ${header.sessionId} 持久记录损坏：${kind} 缺少下标 ${index} 的记录行（counts=${count}），拒绝加载。`,
+        )
+      }
+    }
+  }
   const events: RecordingEvent[] = []
   const checkpoints: CompactCheckpoint[] = []
   const resources: CompactResources = {
@@ -394,13 +484,18 @@ function assemble(header: CompactSessionHeader, rows: CompactRecordRow[]): Compa
     trades: [],
     contexts: [],
   }
-  const sorted = [...rows].sort((a, b) =>
-    a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : a.index - b.index,
-  )
-  for (const row of sorted) {
-    if (row.kind === 'event') events.push(row.value as RecordingEvent)
-    else if (row.kind === 'checkpoint') checkpoints.push(row.value as CompactCheckpoint)
-    else (resources[row.kind] as unknown[]).push(row.value)
+  for (let index = 0; index < header.counts.events; index++) {
+    events.push(byKind.get('event')!.get(index) as RecordingEvent)
+  }
+  for (let index = 0; index < header.counts.checkpoints; index++) {
+    checkpoints.push(byKind.get('checkpoint')!.get(index) as CompactCheckpoint)
+  }
+  for (const kind of RESOURCE_KINDS) {
+    const list = resources[kind] as unknown[]
+    const bucket = byKind.get(kind)!
+    for (let index = 0; index < header.counts[kind]; index++) {
+      list.push(bucket.get(index))
+    }
   }
   return {
     format: 'trainer-session',
@@ -504,7 +599,7 @@ function saveInTransaction(
   db: IDBDatabase,
   sessionId: string,
   decide: (persisted: CompactSessionHeader | null) => HeaderDecision,
-  plannedRows: CompactRecordRow[],
+  verifyAdoptRows: (persisted: CompactSessionHeader, persistedRows: CompactRecordRow[]) => CompactSessionHeader,
 ): Promise<SaveOutcome> {
   return new Promise<SaveOutcome>((resolve, reject) => {
     const tx = db.transaction([COMPACT_SESSIONS_STORE, COMPACT_RECORDS_STORE], 'readwrite')
@@ -556,7 +651,7 @@ function saveInTransaction(
         const rowsRequest = records.getAll(sessionRange(sessionId)) as IDBRequest<CompactRecordRow[]>
         rowsRequest.onsuccess = () => {
           try {
-            const header = verifyAdoptRows(persisted, rowsRequest.result ?? [], plannedRows)
+            const header = verifyAdoptRows(persisted, rowsRequest.result ?? [])
             tx.oncomplete = () => settleResolve({ op: 'adopt', header })
           } catch (error) {
             settleReject(error instanceof Error ? error : new Error(String(error)))
@@ -635,7 +730,14 @@ export class IndexedDbCompactStorage implements CompactRecordingStorage {
       db,
       file.sessionId,
       persisted => decideFromHeader(persisted, committed, file, batch, batchId),
-      plannedRows,
+      // 核实闭包：持久 header 逐字段深等 + 记录行逐条深比，哈希（batchId）仅预筛
+      (persisted, persistedRows) =>
+        verifyAdopt(
+          persisted,
+          buildHeader(file, batch.countsAfter, persisted.revision, persisted.batchId),
+          plannedRows,
+          persistedRows,
+        ),
     )
     // 仅在事务 complete 成功后推进本地游标；no-op 与采纳均以持久 header 为准
     if (outcome.op === 'write' || outcome.op === 'adopt') {
@@ -699,6 +801,20 @@ export class IndexedDbCompactStorage implements CompactRecordingStorage {
 }
 
 /**
+ * 持久镜像 header 快照：clone 可变部分（app/environment/gaps），保证保存瞬间语义——
+ * save 完成后调用者就地更新（如 resume 补 gaps[i].resumedAtSeq）不得改写已持久镜像
+ * （生产 IDB put 本就结构化克隆，此处对齐）。事件/资源条目按调用者不可变契约共享，不做全历史深拷贝。
+ */
+function persistedHeaderSnapshot(header: CompactSessionHeader): CompactSessionHeader {
+  return {
+    ...header,
+    app: structuredClone(header.app),
+    environment: structuredClone(header.environment),
+    gaps: structuredClone(header.gaps),
+  }
+}
+
+/**
  * 内存实现：语义与 IndexedDbCompactStorage 一致（未 load 拒覆盖、revision 比对、幂等 no-op），
  * 供测试与无持久化环境使用。failWith 注入保存故障；revisionOf/storedRecordCount 供测试观察增量。
  */
@@ -739,11 +855,16 @@ export class MemoryCompactStorage implements CompactRecordingStorage {
     if (decision.op === 'noop') return
     if (decision.op === 'write') {
       const rows = persisted ? [...persisted.rows, ...decision.rows] : decision.rows
-      this.persisted.set(file.sessionId, { header: decision.header, rows })
+      this.persisted.set(file.sessionId, { header: persistedHeaderSnapshot(decision.header), rows })
       this.sessions.set(file.sessionId, committedFrom(file, decision.header))
       return
     }
-    const header = verifyAdoptRows(persisted!.header, persisted!.rows, buildRows(file, batch))
+    const header = verifyAdopt(
+      persisted!.header,
+      buildHeader(file, batch.countsAfter, persisted!.header.revision, persisted!.header.batchId),
+      buildRows(file, batch),
+      persisted!.rows,
+    )
     this.sessions.set(file.sessionId, committedFrom(file, header))
   }
 
