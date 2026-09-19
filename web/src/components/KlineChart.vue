@@ -32,7 +32,9 @@ const props = withDefaults(defineProps<{
   multiSelect?: boolean
   savedDrawings?: Drawing[] | null
   magnet?: 'normal' | 'weak_magnet' | 'strong_magnet'
-}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false })
+  /** 只读展示（录制回放）：保存画线照常显示，但禁全部编辑写入口、右键菜单与图形拖动；平移/缩放/十字线不受影响 */
+  readOnly?: boolean
+}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }] }>()
 const host = ref<HTMLElement | null>(null)
@@ -106,7 +108,7 @@ function drawings(): Drawing[] {
 }
 function notifyHistory(): void { emit('historyChange', { undo: drawingHistory.canUndo, redo: drawingHistory.canRedo }) }
 function recordDrawings(): void {
-  if (restoringDrawings || disposed || !restoredDrawings) return
+  if (props.readOnly || restoringDrawings || disposed || !restoredDrawings) return
   const snapshot = drawings()
   if (drawingHistory.record(snapshot)) { notifyHistory(); emit('drawingsChange', snapshot) }
 }
@@ -118,7 +120,8 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   cancelDrawing()
   for (const overlay of chart.getOverlays()) if (!engineMarkNames.has(overlay.name)) chart.removeOverlay({ id: overlay.id })
   for (const item of items) {
-    const id = chart.createOverlay({ ...item, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet' } as OverlayCreate)
+    // 只读＝纯展示：lock+ignoreEvent 让保存画线只渲染，不进库的选中/拖动/右键交互链
+    const id = chart.createOverlay({ ...item, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
     if (item.name === 'polyline' && id) {
       const overlay = chart.getOverlays({ id: id as string })[0] as unknown as { forceComplete: () => void }
       overlay?.forceComplete()
@@ -131,10 +134,10 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   if (resetHistory) { restoredDrawings = true; drawingHistory.reset(items); notifyHistory() }
   updateAnchorDots()
 }
-function undoDrawing(): void { const state = drawingHistory.undo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
-function redoDrawing(): void { const state = drawingHistory.redo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
+function undoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.undo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
+function redoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.redo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
 function clearDrawings(): void {
-  if (!chart || !drawings().length || !window.confirm('清空当前训练的全部画线？')) return
+  if (props.readOnly || !chart || !drawings().length || !window.confirm('清空当前训练的全部画线？')) return
   restoreDrawings([])
   recordDrawings()
 }
@@ -530,7 +533,7 @@ function finishPolyline(event: OverlayEvent<unknown>): void {
   queueMicrotask(() => { deselectLibrarySelected(); selectedOverlayId.value = null })
 }
 watch(() => props.drawTool, tool => {
-  if (!chart) return
+  if (!chart || props.readOnly) return
   cancelDrawing()
   if (tool) {
     resetLibraryClick()
@@ -563,13 +566,13 @@ const activeEditIndex = ref(0)
 function clampToHost(value: number, size: number, limit: number): number { return Math.max(4, Math.min(value, Math.max(4, limit - size - 4))) }
 function closePanels(): void { ctxMenu.value = null; editPanel.value = null; cancelTextPanel() }
 function openCtxMenu(overlayId: string, x: number, y: number): void {
-  if (!host.value) return
+  if (props.readOnly || !host.value) return
   const rect = host.value.getBoundingClientRect()
   ctxMenu.value = { overlayId, batch: isMultiSelected(overlayId), x: clampToHost(x, 150, rect.width), y: clampToHost(y, 92, rect.height) }
   editPanel.value = null
 }
 function removeViaMenu(): void {
-  if (!chart || !ctxMenu.value) return
+  if (props.readOnly || !chart || !ctxMenu.value) return
   const ids = ctxMenu.value.batch ? [...multiSelectedIds.value] : [ctxMenu.value.overlayId]
   ids.forEach(id => chart!.removeOverlay({ id }))
   multiSelectedIds.value = multiSelectedIds.value.filter(id => !ids.includes(id))
@@ -612,7 +615,7 @@ function openEditPanel(targetIds: string[], x: number, y: number): void {
   ctxMenu.value = null
 }
 function applyEdit(): void {
-  if (!chart) return
+  if (props.readOnly || !chart) return
   if (editForms.value.some(form => form.values.some(value => typeof value !== 'number' || !Number.isFinite(value)))) return
   if (editForms.value.some(form => form.text && (!form.text.text.trim() || !Number.isFinite(form.text.size)))) return
   for (const form of editForms.value) {
@@ -633,7 +636,7 @@ function applyEdit(): void {
 // selectedOverlayId 可能指向不在多选集合里的画线，多选场景下追加它会误删第三条——用户 journey 抓出）；
 // 空集合＝删单击选中的单个。引擎标记不可选中、不受影响。
 function deleteSelected(): boolean {
-  if (!chart) return false
+  if (props.readOnly || !chart) return false
   const ids = multiSelectedIds.value.length ? [...multiSelectedIds.value] : (selectedOverlayId.value ? [selectedOverlayId.value] : [])
   if (!ids.length) { closePanels(); return false }
   ids.forEach(id => chart!.removeOverlay({ id }))
@@ -665,7 +668,7 @@ function cancelTextPanel(): void {
 }
 function confirmTextPanel(): void {
   const form = textPanel.value
-  if (!chart || !form || !form.text.trim() || !Number.isFinite(form.size)) return
+  if (props.readOnly || !chart || !form || !form.text.trim() || !Number.isFinite(form.size)) return
   chart.overrideOverlay({ id: form.id, extendData: { text: form.text.trim(), color: form.color, size: Math.max(10, Math.min(36, form.size)), bold: form.bold, italic: form.italic } })
   textPanel.value = null
   emit('panelChange', false)
@@ -813,7 +816,7 @@ function overlayHitGeometry(overlay: OverlayLike): { anchors: Array<{ x: number;
 }
 function suppressNativeContextMenu(event: MouseEvent): void {
   event.preventDefault()
-  if (props.drawTool) return
+  if (props.readOnly || props.drawTool) return
   hostRect = host.value?.getBoundingClientRect() ?? null
   const hit = hitTestUserOverlay(event.clientX, event.clientY)
   if (hit) openCtxMenu(hit.id, event.clientX - (hostRect?.left ?? 0), event.clientY - (hostRect?.top ?? 0))
@@ -863,7 +866,7 @@ function onHostMouseDown(event: MouseEvent): void {
     const synthetic = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY })
     ;(synthetic as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic = true
     container?.dispatchEvent(synthetic)
-    userOverlays.forEach(overlay => { overlay.lock = false })
+    userOverlays.forEach(overlay => { overlay.lock = props.readOnly })
     return
   }
   if (event.button !== 0 || !chart) return
@@ -884,6 +887,8 @@ function onHostMouseDown(event: MouseEvent): void {
 //    点击画线＝持久选中是用户拍板的确定性模型，命中即补齐（库已选中同一画线时不重复触发回调）。
 function onHostMouseDownBubble(event: MouseEvent): void {
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
+  // 只读：这里的手动按下/选中补齐会绕过库的 ignoreEvent 强开拖拽与选中链，必须整段拦下
+  if (props.readOnly) return
   if (event.button !== 0 || !chart) return
   if (paneResizePointerId !== null || isOverPaneSeparator(event)) return
   if (props.drawTool) return
