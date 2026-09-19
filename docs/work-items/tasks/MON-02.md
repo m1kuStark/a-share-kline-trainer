@@ -5,10 +5,10 @@
   "id": "MON-02",
   "title": "Task dashboard successor-aware status",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
-  "summary": "Separate superseded failures from current work.",
-  "next_action": "Review chain status and visible task summary.",
+  "summary": "Current task/history display integrated.",
+  "next_action": "Keep original failure evidence.",
   "allowed_paths": [
     "scripts/agent-monitor/index.html",
     "scripts/agent-monitor/monitor.py",
@@ -25,9 +25,9 @@
     "reason": "User reports historical failed candidates look like4current GLM failures."
   },
   "verification_refs": [
-    "scripts/agent-monitor/test_monitor.py"
+    "docs/verification/2026-09/MON-02-review/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "1495ce0",
   "acceptance_ref": null
 }
 ```

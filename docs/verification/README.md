@@ -34,3 +34,5 @@
 其余旧截图/TDX导出保持原路径，避免破坏证据链；旧报告不是当前工作指令。按任务ID/规则ID检索，不默认读取整个证据目录。
 
 用户验收独立保存scope、决定、日期、来源；测试全绿不生成用户accepted。代码提交C被测试后，文档提交E收录其报告可引用C，不能改写成测试过E。提交前工作树验证须用指纹核对最终提交，明确写出这种证据边界。
+
+- [MON-02 dashboard review](2026-09/MON-02-review/report.md): successor chains and current-state counts.

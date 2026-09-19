@@ -23,3 +23,5 @@
 凭据由现有Z code登录/安全存储使用，不把token写进prompt、代码、报告或Git。避免未经确认修改全局配置，优先项目或单次调用参数。用户授权的是工程工作委派，不是向外部服务发送个人训练数据库或无关文件。
 
 2026-09-20用户授权睡觉期间自主推进本轮返修和工具修复，不再对常规开发/验收反复询问；积极使用GLM5.3Flash，最高思考档。工程验收与用户阶段验收仍分开，M4/M5等待用户明确通过。已授权主代理审查既有Mimosa告警后正常提交，真实缺口先修复，不关闭安全检查；worker遇同一基线拦截只交接一次，不反复全库扫描。
+
+When a worker commit is blocked, stop after the first rejection and hand off staged changes. Never try --no-verify, low-level Git plumbing, environment switches or alternative tools to bypass the same gate. Only the integrator may disposition findings within the explicit user authorization.
