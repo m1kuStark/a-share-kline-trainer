@@ -6,6 +6,7 @@ import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import type { Bar, Timeframe, TradeView } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
+import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import type { ChartCapture, ChartCaptureView } from '../recording/types'
 import type { Action, JsonValue } from '../recording/types'
@@ -40,6 +41,8 @@ const props = withDefaults(defineProps<{
   readOnly?: boolean
   /** 回放视窗（录制检查点）：feed 完成布局后按时间戳恢复右侧锚点、barSpace 与语义窗格高度 */
   replayView?: ChartCaptureView
+  /** 画线前复权基准（已发生权息累计仿射变换，随 bars 同源到达）：缺省＝不启用基准投影（旧行为） */
+  drawingPriceBasis?: DrawingPriceBasis | null
 }>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
@@ -76,6 +79,13 @@ let hasMoreForward = false
 let loadingForward = false
 let dataVersion = 0
 const drawingHistory = new DrawingHistory()
+// 画线数值所属的前复权基准（DRAW-02）：恢复时按各画线存储基准投影/采用当前基准；
+// 喂新K线基准变化时，先按旧基准捕获画线，喂完统一投影到新基准。null＝基准未知（prop 未
+// 接线或只读回放），一切保持旧行为，绝不二次复权。
+let renderedBasis: DrawingPriceBasis | null = null
+function currentDrawingPriceBasis(): DrawingPriceBasis | null {
+  return props.readOnly || !isDrawingPriceBasis(props.drawingPriceBasis) ? null : { ...props.drawingPriceBasis }
+}
 let restoringDrawings = false
 let restoredDrawings = false
 let disposed = false
@@ -110,7 +120,7 @@ function actualPaneId(name: string): string {
   return ['VOL', 'MACD'].includes(name) ? chart?.getIndicators({ name })[0]?.paneId ?? 'candle_pane' : 'candle_pane'
 }
 function drawings(): Drawing[] {
-  return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName) : []
+  return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined) : []
 }
 function notifyHistory(): void { emit('historyChange', { undo: drawingHistory.canUndo, redo: drawingHistory.canRedo }) }
 function recordDrawings(): void {
@@ -147,6 +157,10 @@ function emitDrawingAction(action: Action, id: string): void {
 function restoreDrawings(items: Drawing[], resetHistory = false): void {
   if (!chart) return
   restoringDrawings = true
+  // 首个可靠载入基准：旧无基准画线保留原值并采用之，带基准画线投影到当前基准（不猜创建日期）；
+  // 撤销/重做恢复的历史快照各带自身基准，同路径投影回当前基准。
+  if (!renderedBasis) renderedBasis = currentDrawingPriceBasis()
+  if (renderedBasis) items = adoptDrawings(items, renderedBasis)
   deselectLibrarySelected()
   closePanels()
   cancelDrawing()
@@ -1142,7 +1156,27 @@ onMounted(() => {
   })
 })
 onUnmounted(() => { disposed = true; markerResizeObserver?.disconnect(); window.removeEventListener('pointerup', completePointerAction); window.removeEventListener('pointercancel', onPaneResizeCancel) })
-watch(() => props.bars, feedData); watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+// 前复权推进（DRAW-02）：喂新K线前按旧基准捕获画线快照，喂完再统一投影到新基准。
+// 基准推进与图形数量解耦（advanceRenderedBasis）：图上无画线（空图/清空/撤销到空）也必须
+// 推进目标基准，否则跨权息后新建画线被盖印旧基准，下次普通刷新遭二次投影错位；
+// 有画线时才恢复投影并恰好外发一次 drawingsChange 让持久化层保存新基准数值。
+// 基准未变（刷新/周期切换/无权息推进）绝不重复投影；推进不清撤销历史（历史状态各带基准，
+// 恢复时再投影）；投影走 restoreDrawings——restoringDrawings 静默语义操作并重播种上报基线，
+// 不产生 drawing.move。只读回放快照永不按当前行情二次复权；prop 缺省时整段跳过＝旧行为。
+watch(() => props.bars, () => {
+  const from = renderedBasis
+  const to = currentDrawingPriceBasis()
+  const stale = from && to && !sameDrawingPriceBasis(from, to) && restoredDrawings ? drawings() : null
+  feedData()
+  const { basis, changed } = advanceRenderedBasis(from, to)
+  if (!basis || basis === from) return
+  renderedBasis = basis
+  if (changed && stale?.length) {
+    restoreDrawings(projectDrawings(stale, from!, basis))
+    emit('drawingsChange', drawings())
+  }
+})
+watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 

@@ -103,6 +103,51 @@ describe('training drawing persistence', () => {
     }
   })
 
+  it('stores optional priceBasis metadata verbatim for basis-aware persistence', async () => {
+    const { app, database, close } = await openApp()
+    try {
+      const url = `/api/trainings/${insertTraining(database)}/drawings`
+      const based = { ...segment, priceBasis: { scale: 0.5, offset: -0.12 } }
+      const saved = await app.inject({ method: 'PUT', url, payload: [based] })
+      expect(saved.statusCode).toBe(200)
+      expect(saved.json()).toEqual({ drawings: [based] })
+      expect((await app.inject({ method: 'GET', url })).json()).toEqual({ drawings: [based] })
+    } finally {
+      await close()
+    }
+  })
+
+  it('rejects invalid priceBasis metadata without overwriting the saved drawings', async () => {
+    const { app, database, close } = await openApp()
+    try {
+      const id = insertTraining(database)
+      const url = `/api/trainings/${id}/drawings`
+      const based = { ...segment, priceBasis: { scale: 0.5, offset: -0.12 } }
+      await app.inject({ method: 'PUT', url, payload: [based] })
+      const invalidBases: Array<[string, unknown]> = [
+        ['null basis', null],
+        ['string basis', 'identity'],
+        ['array basis', [1, 0]],
+        ['zero scale', { scale: 0, offset: 0 }],
+        ['negative scale', { scale: -1, offset: 0 }],
+        ['string scale', { scale: '1', offset: 0 }],
+        ['missing offset', { scale: 1 }],
+        ['missing scale', { offset: 0 }],
+        ['extra key', { scale: 1, offset: 0, mode: 'forward' }],
+        ['null offset', { scale: 1, offset: null }],
+        ['infinite scale', { scale: Number.POSITIVE_INFINITY, offset: 0 }],
+      ]
+      for (const [label, priceBasis] of invalidBases) {
+        const response = await app.inject({ method: 'PUT', url, payload: [{ ...segment, priceBasis }], headers: { 'content-type': 'application/json' } })
+        expect(response.statusCode, label).toBe(400)
+        expect(response.json().error, label).toEqual(expect.any(String))
+        expect((await app.inject({ method: 'GET', url })).json(), label).toEqual({ drawings: [based] })
+      }
+    } finally {
+      await close()
+    }
+  })
+
   it('enforces the 256 KiB wire limit without corrupting the previous save', async () => {
     const { app, database, close } = await openApp()
     try {

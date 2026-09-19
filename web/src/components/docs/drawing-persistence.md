@@ -2,6 +2,12 @@
 
 本页解释 `DRAWING-PERSISTENCE` 的当前实现；保存上限、工具行为等产品要求见 [交互规格](../../../../docs/specs/chart/interaction.md)。链路为：KlineChart → DrawingHistory → Training → DrawingOutbox → SerialDrawingSaver → drawings API/SQLite。
 
+## 前复权基准（DRAW-02）
+
+画线数值属于某个[前复权基准](../../drawingPriceBasis.ts) `priceBasis={scale,offset}`：显示价 = 原始价 × scale + offset，由服务端 `/bars` 的 `drawingPriceBasis`（已发生权息累计仿射变换；无事件或 raw 为 1/0）随 K 线同次发放。旧到新基准统一按 `(value - old.offset) / old.scale * new.scale + new.offset` 投影，不四舍五入；只换主图锚点，VOL/MACD 副图数值不动；`simpleTag` 的纯数字字符串 extendData 价格标签随锚点同步刷新。
+
+序列化时每条画线盖印当前渲染基准；保存、outbox、撤销/重做历史快照因此各带自身基准。恢复（载入、撤销、重做）走同一入口：带合法基准的画线投影到当前基准，旧无基准画线保留原值并采用首个可靠载入基准，不猜创建日期。KlineChart 喂新 K 线时基准若变化，先按旧基准捕获画线，喂完统一投影到新基准并恰好外发一次 `drawingsChange`；图上无画线（空图、清空、撤销到空）同样推进目标基准，只是不发 `drawingsChange`——否则跨权息后新建画线被盖印旧基准，下次刷新遭二次投影错位。基准未变（刷新、周期切换、无权息推进）不重复投影，推进不清撤销历史，投影不产生 `drawing.move`。只读回放快照永不二次复权；`drawingPriceBasis` prop 缺省时整段关闭＝旧格式兼容。锚定在部分权息之后的K线同样正确：相邻两次图表级基准的投影恰好抵消共有的早先事件，只施加新发生事件。
+
 ## 对象与本地历史
 
 [drawingState.ts](../../drawingState.ts) 只序列化已完成的用户图形，排除 `bsMark`、`costLine` 和未完成取点。每个锚点仅保留有限数值的 `timestamp + value`，不能保存 `dataIndex`；动态补历史与周期切换后仍以时间定位。窗格保存 `candle_pane`、`VOL`、`MACD` 语义名，恢复时映射回库当前 pane id。
@@ -30,4 +36,4 @@ localStorage 写入失败会显示“本地备份失败”；这时不能声称�
 
 服务端按 training_id 保存至 SQLite，限制为 256 KiB、500 个对象、单对象 256 锚点。存量表只增补 updated_at 列，未知旧时间保留空串，真实 PUT 后更新；不得为了迁移删旧线或重建旧表。
 
-回归入口：[drawing-state](../../../../server/test/drawing-state.test.ts)、[drawing-outbox](../../../../server/test/drawing-outbox.test.ts)、[m3-tools](../../../../e2e/m3-tools.spec.ts)、[m3-feedback](../../../../e2e/m3-feedback.spec.ts)。测试需覆盖保存竞态、损坏恢复副本、远端加载失败和旧库兼容；历史通过记录见验证目录，不代表新变更已经验证。
+回归入口：[drawing-state](../../../../server/test/drawing-state.test.ts)、[drawing-price-basis](../../../../server/test/drawing-price-basis.test.ts)、[drawing-outbox](../../../../server/test/drawing-outbox.test.ts)、[m3-tools](../../../../e2e/m3-tools.spec.ts)、[m3-feedback](../../../../e2e/m3-feedback.spec.ts)。测试需覆盖保存竞态、损坏恢复副本、远端加载失败和旧库兼容；历史通过记录见验证目录，不代表新变更已经验证。

@@ -16,6 +16,7 @@ import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
   equityCurveOf, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
+import { drawingPriceBasis } from './train/drawing-price-basis.js'
 
 export async function registerApi(app: FastifyInstance, config: AppConfig, database: DatabaseSync): Promise<void> {
   await registerRecordingContextRoutes(app, config, database)
@@ -222,6 +223,8 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
         chartCostPrice: chart.costPrice,
         timeframe,
         bars,
+        // 画线前复权基准：bars 计算后读取（权息缓存已刷新）；与 bars 同次返回，不含未来权息。
+        drawingPriceBasis: drawingPriceBasis(database, id),
         hasMore: chunk ? chunk.hasMore : bars.length >= TRAINING_LOAD_BARS,
       }
     } catch (error) {
