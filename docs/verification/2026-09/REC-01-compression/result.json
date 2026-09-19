@@ -1,0 +1,590 @@
+{
+  "kind": "recording-compression-experiment",
+  "date": "2026-09-19",
+  "runtime": "v24.15.0",
+  "source": {
+    "daySha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057",
+    "rightsSha256": "2373763845653d997d7a69966fb2560ce740e962cd02f12add6b359a579628df",
+    "from": "2024-09-18",
+    "to": "2026-09-16",
+    "loadedBars": 1040,
+    "rightsInPeriod": [
+      "2024-12-20",
+      "2025-06-26",
+      "2025-12-19",
+      "2026-06-26"
+    ]
+  },
+  "method": [
+    "Offline corpus mirrors current three-checkpoint-per-advance wiring, with real frozen OHLC and project forward-adjustment/aggregation functions.",
+    "No trades, drawings or loaded earlier history in corpus; separate drawing example measured below.",
+    "Experimental codecs preserve all events and chart snapshots; full anchor at most every 32 versions, or when patch is larger than full array.",
+    "Whole-series dedup and delta sizes do not deduplicate training/account metadata.",
+    "gzip level 6; all versions decompressed and every chart snapshot deep-equal verified. Not production codec, browser timing or product capacity promise."
+  ],
+  "cases": [
+    {
+      "label": "120 advances raw daily",
+      "events": 480,
+      "checkpoints": 361,
+      "barCopies": 241,
+      "composition": {
+        "jsonBytes": 28786060,
+        "barBytes": 28376956,
+        "barPercent": 98.58,
+        "operationBytes": 109701,
+        "trainingBytes": 156674,
+        "drawingBytes": 482,
+        "remainingBytes": 142247
+      },
+      "variants": [
+        {
+          "name": "current-json",
+          "bytes": 28786060
+        },
+        {
+          "name": "current-json-gzip",
+          "bytes": 7026978
+        },
+        {
+          "name": "whole-series-dedup-json",
+          "bytes": 14666161,
+          "gzipBytes": 3456231,
+          "versionCount": 121,
+          "verification": {
+            "exactCheckpoints": 361,
+            "exactChartSnapshots": 241,
+            "fullVersions": 121,
+            "deltaVersions": 0,
+            "deltaRows": 0,
+            "maxDeltaRows": 0,
+            "replacementSamples": []
+          },
+          "offlineTotalMs": 732,
+          "offlineDecodeAndVerifyMs": 299
+        },
+        {
+          "name": "versioned-deltas-json",
+          "bytes": 907831,
+          "gzipBytes": 147177,
+          "versionCount": 121,
+          "verification": {
+            "exactCheckpoints": 361,
+            "exactChartSnapshots": 241,
+            "fullVersions": 4,
+            "deltaVersions": 117,
+            "deltaRows": 117,
+            "maxDeltaRows": 1,
+            "replacementSamples": []
+          },
+          "offlineTotalMs": 372,
+          "offlineDecodeAndVerifyMs": 95
+        }
+      ]
+    },
+    {
+      "label": "two-year raw daily",
+      "events": 1936,
+      "checkpoints": 1453,
+      "barCopies": 969,
+      "composition": {
+        "jsonBytes": 116003317,
+        "barBytes": 114353672,
+        "barPercent": 98.58,
+        "operationBytes": 444998,
+        "trainingBytes": 630602,
+        "drawingBytes": 1938,
+        "remainingBytes": 572107
+      },
+      "variants": [
+        {
+          "name": "current-json",
+          "bytes": 116003317
+        },
+        {
+          "name": "current-json-gzip",
+          "bytes": 28173167
+        },
+        {
+          "name": "whole-series-dedup-json",
+          "bytes": 58925272,
+          "gzipBytes": 13806886,
+          "versionCount": 485,
+          "verification": {
+            "exactCheckpoints": 1453,
+            "exactChartSnapshots": 969,
+            "fullVersions": 485,
+            "deltaVersions": 0,
+            "deltaRows": 0,
+            "maxDeltaRows": 0,
+            "replacementSamples": []
+          },
+          "offlineTotalMs": 3216,
+          "offlineDecodeAndVerifyMs": 1318
+        },
+        {
+          "name": "versioned-deltas-json",
+          "bytes": 3650520,
+          "gzipBytes": 583862,
+          "versionCount": 485,
+          "verification": {
+            "exactCheckpoints": 1453,
+            "exactChartSnapshots": 969,
+            "fullVersions": 16,
+            "deltaVersions": 469,
+            "deltaRows": 469,
+            "maxDeltaRows": 1,
+            "replacementSamples": []
+          },
+          "offlineTotalMs": 1672,
+          "offlineDecodeAndVerifyMs": 420
+        }
+      ]
+    },
+    {
+      "label": "120 advances forward daily",
+      "events": 480,
+      "checkpoints": 361,
+      "barCopies": 241,
+      "composition": {
+        "jsonBytes": 39932153,
+        "barBytes": 39521605,
+        "barPercent": 98.97,
+        "operationBytes": 109701,
+        "trainingBytes": 158118,
+        "drawingBytes": 482,
+        "remainingBytes": 142247
+      },
+      "variants": [
+        {
+          "name": "current-json",
+          "bytes": 39932153
+        },
+        {
+          "name": "current-json-gzip",
+          "bytes": 8011969
+        },
+        {
+          "name": "whole-series-dedup-json",
+          "bytes": 20263785,
+          "gzipBytes": 3951814,
+          "versionCount": 121,
+          "verification": {
+            "exactCheckpoints": 361,
+            "exactChartSnapshots": 241,
+            "fullVersions": 121,
+            "deltaVersions": 0,
+            "deltaRows": 0,
+            "maxDeltaRows": 0,
+            "replacementSamples": [
+              {
+                "timeframe": "1D",
+                "cutoff": "2024-12-20",
+                "changedRows": 1039
+              }
+            ]
+          },
+          "offlineTotalMs": 947,
+          "offlineDecodeAndVerifyMs": 355
+        },
+        {
+          "name": "versioned-deltas-json",
+          "bytes": 1097004,
+          "gzipBytes": 163624,
+          "versionCount": 121,
+          "verification": {
+            "exactCheckpoints": 361,
+            "exactChartSnapshots": 241,
+            "fullVersions": 4,
+            "deltaVersions": 117,
+            "deltaRows": 117,
+            "maxDeltaRows": 1,
+            "replacementSamples": [
+              {
+                "timeframe": "1D",
+                "cutoff": "2024-12-20",
+                "changedRows": 1039
+              }
+            ]
+          },
+          "offlineTotalMs": 530,
+          "offlineDecodeAndVerifyMs": 99
+        }
+      ]
+    },
+    {
+      "label": "two-year forward with weekly/monthly views every 20 days",
+      "events": 2224,
+      "checkpoints": 1669,
+      "barCopies": 1113,
+      "composition": {
+        "jsonBytes": 180273642,
+        "barBytes": 178371849,
+        "barPercent": 98.95,
+        "operationBytes": 511382,
+        "trainingBytes": 731022,
+        "drawingBytes": 2226,
+        "remainingBytes": 657163
+      },
+      "variants": [
+        {
+          "name": "current-json",
+          "bytes": 180273642
+        },
+        {
+          "name": "current-json-gzip",
+          "bytes": 36624716
+        },
+        {
+          "name": "whole-series-dedup-json",
+          "bytes": 87258070,
+          "gzipBytes": 17223522,
+          "versionCount": 533,
+          "verification": {
+            "exactCheckpoints": 1669,
+            "exactChartSnapshots": 1113,
+            "fullVersions": 533,
+            "deltaVersions": 0,
+            "deltaRows": 0,
+            "maxDeltaRows": 0,
+            "replacementSamples": [
+              {
+                "timeframe": "1W",
+                "cutoff": "2024-11-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2024-11-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2024-12-18",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2024-12-18",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2024-12-20",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-01-16",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-01-16",
+                "changedRows": 280
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-02-21",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-02-21",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-03-21",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-04-21",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-05-22",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-05-22",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-06-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-06-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2025-06-26",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-07-18",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-07-18",
+                "changedRows": 286
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-08-15",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-09-12",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-10-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-11-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-11-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-12-15",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-12-15",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2025-12-19",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-01-14",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-01-14",
+                "changedRows": 292
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-02-11",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-02-11",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-03-19",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-03-19",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-04-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-04-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-05-20",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-06-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-06-17",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2026-06-26",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-07-16",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-07-16",
+                "changedRows": 298
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-08-13",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-08-13",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-09-10",
+                "changedRows": 1
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-09-10",
+                "changedRows": 1
+              }
+            ]
+          },
+          "offlineTotalMs": 4296,
+          "offlineDecodeAndVerifyMs": 1570
+        },
+        {
+          "name": "versioned-deltas-json",
+          "bytes": 5773843,
+          "gzipBytes": 956871,
+          "versionCount": 533,
+          "verification": {
+            "exactCheckpoints": 1669,
+            "exactChartSnapshots": 1113,
+            "fullVersions": 26,
+            "deltaVersions": 507,
+            "deltaRows": 601,
+            "maxDeltaRows": 6,
+            "replacementSamples": [
+              {
+                "timeframe": "1D",
+                "cutoff": "2024-12-20",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-01-16",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-01-16",
+                "changedRows": 280
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2025-06-26",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2025-07-18",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2025-07-18",
+                "changedRows": 286
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2025-12-19",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-01-14",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-01-14",
+                "changedRows": 292
+              },
+              {
+                "timeframe": "1D",
+                "cutoff": "2026-06-26",
+                "changedRows": 1039
+              },
+              {
+                "timeframe": "1W",
+                "cutoff": "2026-07-16",
+                "changedRows": 1036
+              },
+              {
+                "timeframe": "1M",
+                "cutoff": "2026-07-16",
+                "changedRows": 298
+              }
+            ]
+          },
+          "offlineTotalMs": 2500,
+          "offlineDecodeAndVerifyMs": 441
+        }
+      ]
+    }
+  ],
+  "syntheticCodecCheck": {
+    "exactCheckpoints": 16,
+    "exactChartSnapshots": 11,
+    "fullVersions": 1,
+    "deltaVersions": 5,
+    "deltaRows": 5,
+    "maxDeltaRows": 1,
+    "replacementSamples": [],
+    "gapsPreserved": true,
+    "covers": [
+      "changed drawing anchors",
+      "text/style payloads",
+      "delete/restore drawing states",
+      "theme and rule context",
+      "pause gap metadata"
+    ],
+    "note": "Synthetic metadata fixture; no actual UI drawing, trade execution or gap validator assertions."
+  },
+  "exampleBytes": {
+    "lineDrawing": 214,
+    "advanceCommand": 57,
+    "buyCommand": 128
+  },
+  "testedCommit": "fcfd4a61a5ae7526f5e34bad6e39e659c87916ef",
+  "workingTreeAssessment": true,
+  "sourceFingerprints": {
+    "scripts/assess-recording-compression.ts": "9b52160af893f3649677613a274287698010ad193c05a90a2192365b50416db5",
+    "web/src/views/Training.vue": "780c724caa58dfe48d0242c4e0126960bf5c44631a0b9e4d2631050efaf464e7",
+    "web/src/recording/useRecording.ts": "df8028026f8f31c3003026a55ac48cd01086d98dde3dacf830baf7e5163aa0af",
+    "server/src/train/engine.ts": "53c3ec2033cbebdd2615a0d930c2635b83acc5ec01f3972f9fdccc9e11ee2fa6",
+    "server/src/tdx/gbbq.ts": "94340f05ff668bd2b6929d311bd425f838ea40ef67e0e5ff561ab860c18f02e7",
+    "server/src/tdx/kline.ts": "6567b94f989945fae6ca2183c6e1586c0e1949a00c40e0e334919bcccceb5fb4"
+  }
+}

@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "存储修复已合入；修复回放缺口提示并验收真实旅程。自动停录已撤回，先据两年容量测量评估存储表示方案。",
+  "next_action": "继续复核回放缺口修复；容量评估已提出语义事件+行情版本增量+轻量检查点+gzip，待定稿后再迁移格式，不恢复自动停录。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",
@@ -34,7 +34,7 @@
     ],
     "reason": "实现时同步覆盖边界、格式版本和验收要求。"
   },
-  "verification_refs": ["docs/verification/2026-09/REC-01-capacity/report.md"],
+  "verification_refs": ["docs/verification/2026-09/REC-01-capacity/report.md", "docs/verification/2026-09/REC-01-compression/report.md"],
   "integration_ref": null,
   "acceptance_ref": null
 }
