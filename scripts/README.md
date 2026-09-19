@@ -16,4 +16,4 @@
 
 源码入口：[运行层](runtime.ts)、[Git层](worktree.ts)、[候选验证](verify-candidate.ts)、[文档工具](docs.ts)。配置不覆盖用户全局设置、真实TDX或个人训练数据库。
 
-Z code未来小任务委派遵循[模型协作规则](../docs/engineering/model-delegation.md)，本轮未调用。
+Z code小任务委派遵循[模型协作规则](../docs/engineering/model-delegation.md)；通过[GLM任务看板与后台派发](agent-monitor/README.md)查看Prompt、最近活动、完成答复和独立复核状态。

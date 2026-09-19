@@ -1,0 +1,27 @@
+# GLM 任务看板与后台派发
+
+面向人查看的本机窗口，与Codex是否处于活动轮次无关。[monitor.py](monitor.py)提供只读HTTP页面，[index.html](index.html)显示登记任务、Prompt、最近工具描述、最终答复和独立的复核状态。[run_glm.py](run_glm.py)派发小任务并自动登记、更新完成标志。
+
+## 查看
+
+本机已安装桌面快捷方式“GLM 任务看板”。双击会复用已有服务或重新启动，在独立Edge窗口打开。关闭窗口不结束GLM任务。运行副本和状态在`$CODEX_HOME/headroom-cache/glm-monitor/`，不依赖临时worktree存活。
+
+页面可见时每5秒读取本机状态，不发送模型请求。仅监听127.0.0.1，随机路径、Host检查、不开放CORS、不提供写接口。读取Zcode SQLite使用mode=ro，只查任务登记指定的会话，核对worktree目录；不扫描展示其他个人对话。展示工具名/描述与时间，不输出原始工具参数、结果、请求头或思考全文。Prompt与完成答复纯文本呈现，并遮蔽常见凭据格式。
+
+“运行中”由登记进程与创建时间判定；无新活动只作提示，不能证明卡死。“开发完成”是模型退出与完整答复；“模块已复核”须由集成人写入review，不自动等同整项功能验收。读库失败、断开、进程异常退出分别显示，不假装正在正常推进。
+
+## 派发
+
+从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行的会话。
+
+必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。相同批次不能覆盖，worker.lock拒绝重叠模型调用，不自动抢占遗留锁。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
+
+派发后结束Codex轮次。当前线程的heartbeat读取完成标志再验收，读到running立即退出；完整交接和其他待复核批次不能因派发新任务被遗忘。异常退出保留日志、改动和批次记录；确认无运行进程后才能处理遗留锁或重试。
+
+## 测试与维护
+
+`py -3.9 -m unittest discover -s scripts/agent-monitor -p test_monitor.py`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、互斥及真实短子进程完成/唤醒标志。UI验收检查任务切换、Prompt、深浅主题、无溢出、文本注入、HTTP拒绝未知路径及pageerror。
+
+本机2026-09-19 Zcode3.12.3/CLI0.16.5：CLI记录在`.zcode/cli/db/db.sqlite`，桌面另有`.zcode/v2/tasks-index.sqlite`；本工程worktree在桌面索引未登记。未找到CLI session直接进入GUI的入口；不手改桌面数据库。SQLite结构属本机适配，升级后需复查；优先在将来采用官方公开任务观察接口。
+
+与[模型协作规则](../../docs/engineering/model-delegation.md)、[并行协议](../../docs/engineering/parallel-development.md)配合使用。
