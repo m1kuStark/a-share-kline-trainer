@@ -4,6 +4,8 @@
 
 ## 当前入口
 
+- [REC-01容量立项评估](2026-09/REC-01-capacity/report.md)：撤回自动停录；区分两年测算与真实录制器导出失败。
+
 - [DEV-01并行基线](2026-09/DEV-01-parallel/report.md)：精确合并候选、完整验收和两个worktree并发证据。
 
 - [文档架构设计接受记录](2026-09/DOC-design-acceptance/record.json)：只接受治理设计及执行授权。

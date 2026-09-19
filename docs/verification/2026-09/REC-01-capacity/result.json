@@ -1,0 +1,90 @@
+{
+  "kind": "recording-size-assessment",
+  "source": {
+    "path": "frozen-tdx-snapshot/vipdoc/sh/lday/sh600519.day",
+    "sha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057",
+    "stock": "600519",
+    "from": "2024-09-18",
+    "to": "2026-09-16",
+    "loadedBars": 1040,
+    "advanceSteps": 484
+  },
+  "assumptions": [
+    "raw OHLC frozen sample",
+    "daily advance only; no trades, drawings, viewport interaction or additional history",
+    "one null-chart checkpoint and two full-chart checkpoints per advance from current Training/useRecording wiring",
+    "not a measured browser journey or IndexedDB performance benchmark"
+  ],
+  "estimates": [
+    {
+      "advanceSteps": 20,
+      "date": "2024-10-23",
+      "chartCopiesPerStep": 2,
+      "chartArrayBytes": 4942492,
+      "chartArrayMiB": 4.71,
+      "checkpointsEstimate": 61,
+      "eventsEstimate": 80
+    },
+    {
+      "advanceSteps": 60,
+      "date": "2024-12-18",
+      "chartCopiesPerStep": 2,
+      "chartArrayBytes": 14359496,
+      "chartArrayMiB": 13.69,
+      "checkpointsEstimate": 181,
+      "eventsEstimate": 240
+    },
+    {
+      "advanceSteps": 120,
+      "date": "2025-03-21",
+      "chartCopiesPerStep": 2,
+      "chartArrayBytes": 28494632,
+      "chartArrayMiB": 27.17,
+      "checkpointsEstimate": 361,
+      "eventsEstimate": 480
+    },
+    {
+      "advanceSteps": 240,
+      "date": "2025-09-12",
+      "chartCopiesPerStep": 2,
+      "chartArrayBytes": 56783318,
+      "chartArrayMiB": 54.15,
+      "checkpointsEstimate": 721,
+      "eventsEstimate": 960
+    },
+    {
+      "advanceSteps": 484,
+      "date": "2026-09-16",
+      "chartCopiesPerStep": 2,
+      "chartArrayBytes": 114471348,
+      "chartArrayMiB": 109.17,
+      "checkpointsEstimate": 1453,
+      "eventsEstimate": 1936
+    }
+  ],
+  "twoYearOneCopyChartMiB": 54.58,
+  "twoYearTwoCopiesChartMiB": 109.17,
+  "chartBytesCross25MiB": {
+    "date": "2025-03-10",
+    "steps": 111
+  },
+  "uniqueObservedBars": 1524,
+  "rawSingleUnionMiB": 0.165,
+  "realRecorderProbe": {
+    "advanceSteps": 120,
+    "events": 480,
+    "checkpoints": 361,
+    "jsonMiB": 27.45,
+    "exportResult": "Error: 录制文件校验失败：导出大小 28784972 字节超过上限 26214400 字节（25MiB）"
+  },
+  "testedCommit": "38a07a9dbd2c847ec3a105ddf77fcc47da167fb5",
+  "workingTreeAssessment": true,
+  "sourceFingerprints": {
+    "web/src/recording/recorder.ts": "5fd80e67b76fecb1229bdda4cf55595446b02f786c84334dea2f06cc3d85852d",
+    "web/src/recording/validation.ts": "cebc11d48a4bbc8906f1ba82d20a3b90d15b2bc1f1516cb9d0723765dd49d9dc",
+    "web/src/recording/useRecording.ts": "df8028026f8f31c3003026a55ac48cd01086d98dde3dacf830baf7e5163aa0af",
+    "web/src/views/Training.vue": "780c724caa58dfe48d0242c4e0126960bf5c44631a0b9e4d2631050efaf464e7",
+    "server/src/train/engine.ts": "53c3ec2033cbebdd2615a0d930c2635b83acc5ec01f3972f9fdccc9e11ee2fa6",
+    "scripts/assess-recording-size.ts": "f78bf1e0458092ae063299376c2cb20fa34841b0e92f9d47ddbbf2565d47f74d"
+  }
+}
