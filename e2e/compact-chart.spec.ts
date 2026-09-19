@@ -15,6 +15,8 @@ test('紧凑行情栏释放主图高度，详情覆盖显示不挤动图表', as
   for (const size of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 1280, height: 800 }, { width: 840, height: 768 }]) {
     await page.setViewportSize(size)
     await page.waitForTimeout(250)
+    await expect(page.getByLabel('记录操作', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: '导出录制', exact: true })).toBeVisible()
     const chart = await page.locator('.chart-host').boundingBox()
     expect(chart!.y).toBeLessThanOrEqual(size.width <= 960 ? 120 : 95)
     expect(chart!.height).toBeGreaterThan(size.height - 200)

@@ -25,6 +25,8 @@
 | `getSize` 的 bounding | right/bottom 恒为 0；命中只能使用 left+width / top+height，不能拿空字段作边界。 |
 | `convertToPixel/convertFromPixel` 默认 `absolute=false` | y 默认相对 pane，不加/减 bounding.top。命中几何、按点换算等 host 坐标必须 `absolute: true`；主图 top=0 会掩盖副图错误。第一击所在 pane 决定 overlay 落点。 |
 | `getYAxes({ paneId })[0]` | 当前单右轴。启用双轴前重查可见轴、命中与缩放目标，不得沿用首轴假设。 |
+| `setPaneOptions({id,height})` / `scrollToTimestamp` | 回放依赖公开API重排语义窗格并以右缘时间定位；10.0.3 scrollToTimestamp使用最近数据点。恢复必须在默认reset与布局后执行，数据版本变化重新应用。 |
+| `getDataList()`保留Bar附加字段 | 录制从完整已加载列表还原真实date/amount（含前插历史）；升级验证字段未被库丢弃。捕获不使用仅含最近批次的props.bars。 |
 
 生命周期与释放登记见 [事件仲裁](./interaction.md)。样式语义、透明测量标签、成交标记和国内配色由 [显示规格](../../../../docs/specs/chart/display.md) 定义，默认虚线参数必须在主题和编辑应用间同源。
 

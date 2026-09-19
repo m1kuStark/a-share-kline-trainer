@@ -1,0 +1,68 @@
+{
+  "codecCommit": "2f2f95b",
+  "codecUnitPassed": 25,
+  "integratedUnitPassed": 65,
+  "typesExitCode": 0,
+  "codecRealData": [
+    {
+      "scenario": "120 advances raw daily",
+      "bytes": 813520,
+      "gzipBytes": 148305,
+      "verifiedCheckpoints": 361,
+      "seriesVersions": 121,
+      "accountVersions": 1,
+      "totalMs": 1803
+    },
+    {
+      "scenario": "two-year raw daily",
+      "bytes": 3271128,
+      "gzipBytes": 585614,
+      "verifiedCheckpoints": 1453,
+      "seriesVersions": 485,
+      "accountVersions": 1,
+      "totalMs": 6381
+    },
+    {
+      "scenario": "120 advances forward daily",
+      "bytes": 1001733,
+      "gzipBytes": 164533,
+      "verifiedCheckpoints": 361,
+      "seriesVersions": 121,
+      "accountVersions": 1,
+      "totalMs": 1802
+    },
+    {
+      "scenario": "two-year forward with weekly/monthly views every 20 days",
+      "bytes": 5309669,
+      "gzipBytes": 958575,
+      "verifiedCheckpoints": 1669,
+      "seriesVersions": 533,
+      "accountVersions": 1,
+      "totalMs": 8473
+    }
+  ],
+  "validator": {
+    "commit": "e4858c6",
+    "targetedPassed": 83,
+    "adversarialProbesIncorrectlyAccepted": 4,
+    "review": "changes_requested"
+  },
+  "storage": {
+    "commit": "de3f4e2",
+    "targetedPassed": 19,
+    "realIndexedDb": {
+      "roundtrip": true,
+      "append": true,
+      "contentConflict": true,
+      "metadataConflict": false,
+      "persistedVersion": "left"
+    },
+    "review": "changes_requested"
+  },
+  "longJourney": {
+    "run": "run-d201e945-4a40-4e19-ac0a-46d50a11029a",
+    "exitCode": 1,
+    "expectedFailure": "gzip magic expected [31,139], got v1 JSON [123,34]",
+    "twoYearLoopExecuted": false
+  }
+}

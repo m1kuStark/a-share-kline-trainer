@@ -10,6 +10,8 @@
 | 画线/多选/工具自定义 | 页面切模式与工具，图表裁决画布事件。自定义期间隔离绘图和交易热键；常用工具保存在本机浏览器。 |
 | 快捷键 | 输入、编辑面板、自定义和未完成绘图各有守卫；中括号周期循环由 [chartNavigation.ts](../chartNavigation.ts) 处理。完整行为见交互规格。 |
 | 保存状态 | 读取失败禁用绘图；异步写入和离页恢复见 [持久化](../components/docs/drawing-persistence.md)。 |
+| 操作录制 | [recording入口](../recording/README.md)；首页每场默认开启，Training负责请求结果和失败语义，图表负责实际手势。准备期间锁交互，失败提供重试。 |
+| 离线回放 | [SessionReplay实现](recording-replay.md)，独立只读图表、按检查点前进；历史暂停缺口常驻显示，不重新成交 |
 
 [App.vue](../App.vue) 按训练 id 重建 Training；URL `training` 参数可重开已结算训练，离开时清参数。全局 dataStatus 检查与轮询不由每个页面重复启动。训练页数据更新按钮固定宽度，终态短提示不改变栏高。
 

@@ -1,4 +1,6 @@
-# REC-01 共享接口合同
+# REC-01 v1兼容接口合同
+
+本页描述旧版完整快照格式和共用事件语义。新训练已接[v2紧凑格式](recording-v2-contract.md)，不得依据本页的旧25MiB/2000检查点预算限制新v2流程；此页用于旧文件兼容与历史测试。
 
 本批以web/src/recording/types.ts为公共类型。跨文件import只用类型，不将服务端SQL实现耦入浏览器。schemaVersion=1，format=trainer-session。
 
@@ -24,7 +26,7 @@ start(trainingKey:string|null, initial:CheckpointInput, enabled=true):Promise<vo
 
 ## 图表接口
 
-KlineChart新增可选readOnly=false；新增emit operation:{action:Action,params?:JsonValue}，chartCapture:ChartCapture。expose captureState():ChartCapture。readOnly保留导航/缩放，但禁绘图、编辑、删除、undo/redo和绘图恢复后的自动保存事件。捕获完整loadedData、不可变复制、语义窗格；高频视窗事件节流到手势结束或150ms。
+KlineChart新增可选readOnly=false；新增emit operation:{action:Action,params?:JsonValue}，chartCapture:ChartCapture，captureError:string。expose captureState():ChartCapture。同步捕获抛错由调用者处理，异步捕获失败通过captureError显示录制错误，不能成为无人处理的定时器异常。readOnly保留导航/缩放，但禁绘图、编辑、删除、undo/redo和绘图恢复后的自动保存事件。捕获完整loadedData、不可变复制、语义窗格；高频视窗事件节流到手势结束或150ms。
 
 ## 回放接口
 

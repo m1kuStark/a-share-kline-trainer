@@ -1,0 +1,68 @@
+{
+  "reviewedCommit": "2f773c9",
+  "outcome": "changes_requested",
+  "targetedTests": 17,
+  "typesExitCode": 0,
+  "realDataCases": [
+    {
+      "scenario": "120 advances raw daily",
+      "bytes": 813520,
+      "gzipBytes": 148320,
+      "verifiedCheckpoints": 361,
+      "seriesVersions": 121,
+      "accountVersions": 1,
+      "totalMs": 1874
+    },
+    {
+      "scenario": "two-year raw daily",
+      "bytes": 3271128,
+      "gzipBytes": 585473,
+      "verifiedCheckpoints": 1453,
+      "seriesVersions": 485,
+      "accountVersions": 1,
+      "totalMs": 6304
+    },
+    {
+      "scenario": "120 advances forward daily",
+      "bytes": 1001733,
+      "gzipBytes": 164550,
+      "verifiedCheckpoints": 361,
+      "seriesVersions": 121,
+      "accountVersions": 1,
+      "totalMs": 1932
+    },
+    {
+      "scenario": "two-year forward with weekly/monthly views every 20 days",
+      "bytes": 5309606,
+      "gzipBytes": 958483,
+      "verifiedCheckpoints": 1669,
+      "seriesVersions": 533,
+      "accountVersions": 1,
+      "totalMs": 8241
+    }
+  ],
+  "source": {
+    "daySha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057",
+    "rightsSha256": "2373763845653d997d7a69966fb2560ce740e962cd02f12add6b359a579628df",
+    "from": "2024-09-18",
+    "to": "2026-09-16",
+    "loadedBars": 1040,
+    "rightsInPeriod": [
+      "2024-12-20",
+      "2025-06-26",
+      "2025-12-19",
+      "2026-06-26"
+    ]
+  },
+  "failures": [
+    "restored series depth resets: existing30 plus2 reaches32",
+    "unknown-to-known identical bars can extend31 to32",
+    "restored content indexes do not dedup existing resources",
+    "fingerprint buckets retain duplicate canonical strings"
+  ],
+  "positiveEvidence": [
+    "all sampled checkpoints deep equal in forward and reverse seeks",
+    "reader caches bounded to8 in independent probe"
+  ],
+  "scope": "pure codec review only; fixes in progress, not production acceptance"
+}

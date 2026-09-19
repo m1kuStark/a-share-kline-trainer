@@ -3,7 +3,8 @@ import { computed, ref } from 'vue'
 import { createTraining, searchStocks, type Stock, type Tier } from '../api'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 
-const emit = defineEmits<{ created: [] }>()
+const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number> }] }>()
+const recordingEnabled = ref(true)
 
 const query = ref('')
 const suggestions = ref<Stock[]>([])
@@ -70,14 +71,15 @@ async function performCreate(): Promise<void> {
   }
   submitting.value = true
   try {
-    await createTraining({
+    const params = {
       tier: tier.value,
       code: selected.value.code,
       start_date: startDate.value,
       initial_cash: cash,
       adjust_mode: adjustMode.value,
-    })
-    emit('created')
+    }
+    await createTraining(params)
+    emit('created', { enabled: recordingEnabled.value, params })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '创建失败'
   } finally {
@@ -146,6 +148,8 @@ function confirmStartAnyway(): void {
         </div>
       </div>
 
+      <label class="recording-choice"><input v-model="recordingEnabled" type="checkbox" aria-label="记录操作" />记录操作</label>
+      <small class="form-hint">建议保持开启，方便复盘、分享操作和排查问题。记录保存在本机浏览器，可随时暂停。</small>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
       <button class="submit-button" :disabled="submitting" @click="submit">{{ submitting ? '创建中…' : '开始训练' }}</button>
     </section>

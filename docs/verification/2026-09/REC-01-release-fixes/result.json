@@ -1,0 +1,29 @@
+{
+  "baseCommit": "3f2939c6bec9a24d11b4157243f792e08442167b",
+  "scope": "working-tree targeted checks, candidate pending",
+  "files": {
+    "scripts/runtime/run.ts": "0519c0cb84dab046f3c7c11a6ecabba3aaedc268ba992d8eeddbbdba60004c6c",
+    "server/test/runtime-shutdown.test.ts": "987cbd290a6a8c9112892e53f03c87527b793a4c9c268cccaa3bface53d0e4ac",
+    "e2e/compact-chart.spec.ts": "d90ad8831be2dc04a866287b27ca8d780aa5a5592508dc715ca75a7abd790f65",
+    "web/src/views/Training.vue": "47217eb48ed5d5b742069d54e130582781b26035f898de2b5a4b6455b842e099"
+  },
+  "checks": [
+    {
+      "command": "npm test -- server/test/runtime-shutdown.test.ts",
+      "exitCode": 1,
+      "log": ".runs/shutdown-red.log"
+    },
+    {
+      "command": "npm test -- server/test/runtime-isolation.test.ts server/test/runtime-shutdown.test.ts",
+      "exitCode": 0,
+      "passed": 15,
+      "log": ".runs/shutdown-green.log"
+    },
+    {
+      "command": "npm run journey -- e2e/compact-chart.spec.ts e2e/recording.spec.ts e2e/recording-migration.spec.ts --retries=0",
+      "exitCode": 0,
+      "passed": 8,
+      "run": "run-fe4ae210-5ab1-4eb2-8918-2db52afea2ec"
+    }
+  ]
+}

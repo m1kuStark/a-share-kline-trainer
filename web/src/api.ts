@@ -72,11 +72,24 @@ export interface Bar {
 
 export interface EquityPoint { date: string; equity: number }
 
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) { super(message); this.name = 'ApiError' }
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
   const payload = await response.json().catch(() => ({})) as T & { error?: string; message?: string }
-  if (!response.ok) throw new Error(payload.message ?? payload.error ?? `请求失败（${response.status}）`)
+  if (!response.ok) throw new ApiError(payload.message ?? payload.error ?? `请求失败（${response.status}）`, response.status)
   return payload
+}
+
+export interface RecordingContext {
+  app: { version: string; gitCommit: string; dirty: boolean; chartLibrary: string }
+  rules: { [key: string]: string | number | boolean }
+  positionEvents: Array<{ seq: number; date: string; kind: string; sharesDelta: number; cashDelta: number; costDelta: number | null }>
+}
+export function fetchRecordingContext(id: number): Promise<RecordingContext> {
+  return request(`/api/trainings/${id}/recording-context`)
 }
 
 export function fetchEnv(): Promise<{ status: string; tdxRoot: string | null; dataCutoff: string | null; stockCount: number; capabilities: Record<string, boolean>; activeTrainingId: number | null }> {

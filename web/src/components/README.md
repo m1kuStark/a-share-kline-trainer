@@ -13,6 +13,7 @@
 | 改创建/编辑/撤销/恢复/保存 | [画线持久化](./docs/drawing-persistence.md)；[drawingState.ts](../drawingState.ts)、[drawingOutbox.ts](../drawingOutbox.ts) |
 | 改工具形状与命中 | [drawingOverlays.ts](../drawingOverlays.ts)、[drawingGeometry.ts](../drawingGeometry.ts)、[builtInGeometry.ts](../builtInGeometry.ts) |
 | 改成交聚合与图表外标记 | [TradeMarkerRail.vue](../TradeMarkerRail.vue)、[tradeMarkerLayout.ts](../tradeMarkerLayout.ts) |
+| 改录制捕获或只读回放 | [录制契约](docs/recording.md)：真实动作标签、captureError、用户与程序复位 |
 
 行为定义只维护在 [交互规格](../../../docs/specs/chart/interaction.md) 与 [显示规格](../../../docs/specs/chart/display.md)；此处记录当前接线方式和维护风险。页面输入由 [Training.vue](../views/Training.vue) 编排，交易/推进成功后同步账户成本，再读取行情。
 

@@ -13,6 +13,8 @@
 
 生产代码交付保持单测＋构建＋全量Journey；改变数据解析/复权时另跑M1，改变账户/训练时另跑M2。新基线收录跨模块既有改动时执行M2和浏览器全量，M1外部证据过期必须单独记录，不能以其他绿灯替代。
 
+Vitest默认最多4个worker，控制本机多个Agent运行时的进程压力；此前无界并发发生过IPC中断，同集合4worker重跑通过。测试集合不缩减，单独GLM定向测试可用maxWorkers=2；Journey每run仍1worker。
+
 ## UI-VISUAL-ACCEPTANCE
 
 每次功能或bug交付，主代理负责真实页面、无错误覆盖层、pageerror、深浅主题、桌面尺寸、空间利用、溢出、控件状态切换及交互截图检查；子代理自验不能免除。M3无需逐工具用户确认，工程整批自验后交用户整体验收。
@@ -30,3 +32,5 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 `npm run verify:baseline`执行文档、单测、类型、独立生产构建、样本M2和全量Journey，不修改个人库、原dist或历史报告。`npm run verify:candidate -- --base SHA --task ID`额外运行impact；所有检查通过且提交/工作树不变才产生候选proof。M1在改解析/复权时额外执行，旧导出差异不能当作通过。主代理视觉记录是promote前的独立条件，不等于用户验收。
 
 新增bug先有失败回归再改生产逻辑；低影响文档编辑不写镜像测试。源码形状断言逐步迁移到行为测试时，先补等价保护再移除旧断言。测试数仅在[证据记录](../verification/README.md)维护。
+
+隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。

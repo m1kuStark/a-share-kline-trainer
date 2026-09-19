@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { fetchActiveTraining, fetchEnv } from './api'
 import type { TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
@@ -7,12 +7,49 @@ import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, data
 import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
+import SessionReplay from './views/SessionReplay.vue'
+import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
+import { readRecordingFile } from './recording/recordingFile'
+import type { RecordingSummary } from './recording/types'
+import type { CompactRecordingFile } from './recording/compactTypes'
 
-type View = 'loading' | 'launcher' | 'training'
+type View = 'loading' | 'launcher' | 'training' | 'replay'
 const view = ref<View>('loading')
 const snapshot = ref<TrainingSnapshot | null>(null)
 const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
+const recordingOptions = ref<{ enabled: boolean; params?: Record<string, string | number> }>({ enabled: true })
+const replay = shallowRef<CompactRecordingFile | null>(null)
+const recentRecordings = ref<RecordingSummary[]>([])
+const recordingError = ref('')
+async function loadRecordings(): Promise<void> {
+  try { recentRecordings.value = (await recordingStorage.list()).reverse().slice(0, 8) }
+  catch (error) { recordingError.value = error instanceof Error ? error.message : '无法读取本机录制' }
+}
+watch(view, value => { if (value === 'launcher') void loadRecordings() })
+async function onCreated(options: { enabled: boolean; params: Record<string, string | number> }): Promise<void> {
+  recordingOptions.value = options
+  await refresh()
+}
+async function importRecording(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  recordingError.value = ''
+  try {
+    replay.value = await readRecordingFile(file)
+    view.value = 'replay'
+  } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法导入录制文件' }
+}
+async function openRecording(id: string): Promise<void> {
+  recordingError.value = ''
+  try {
+    replay.value = await loadLocalRecording(id)
+    if (!replay.value) throw new Error('找不到这份本机录制')
+    view.value = 'replay'
+  } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法打开录制' }
+}
 
 watchEffect(() => applyThemeClass())
 
@@ -87,6 +124,7 @@ onUnmounted(() => {
   if (shakeTimer !== undefined) { clearInterval(shakeTimer); shakeTimer = undefined }
 })
 function onTrainingEnded(): void {
+  recordingOptions.value = { enabled: true }
   history.replaceState(null, '', location.pathname)
   void refresh()
 }
@@ -143,9 +181,27 @@ function onTrainingEnded(): void {
 
       <div v-if="envError" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
-      <Launcher v-if="view === 'launcher'" @created="refresh" />
-      <Training v-else-if="view === 'training' && snapshot" :key="snapshot.training.id" :snapshot="snapshot" @ended="onTrainingEnded" />
+      <template v-if="view === 'launcher'">
+        <section class="recording-library" aria-label="操作录制">
+          <label>打开操作录制 <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
+          <details v-if="recentRecordings.length"><summary>本机最近录制（{{ recentRecordings.length }}）</summary>
+            <button v-for="item in recentRecordings" :key="item.sessionId" class="ghost-button" @click="openRecording(item.sessionId)">{{ new Date(item.createdAt).toLocaleString() }} · {{ item.eventCount }} 条事件</button>
+          </details>
+          <p v-if="recordingError" class="error-text" role="alert">{{ recordingError }}</p>
+        </section>
+        <Launcher @created="onCreated" />
+      </template>
+      <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'launcher'; replay = null" />
+      <Training v-else-if="view === 'training' && snapshot" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>
   </div>
 </template>
+
+<style scoped>
+.recording-library { margin: 10px 28px 0; padding: 10px 14px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
+.recording-library label { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.recording-library input { max-width: 100%; }
+.recording-library details { margin-top: 8px; }
+.recording-library details button { display: block; margin-top: 6px; }
+</style>
