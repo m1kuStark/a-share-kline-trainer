@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 import KlineChart from '../components/KlineChart.vue'
 import type { RecordingFile } from '../recording/types'
-import { checkpointForSeq, describeEvent, describeGap, gapCoveringSeq, stepWaitMs, summarizeGaps } from '../recording/replay'
+import type { CompactRecordingFile } from '../recording/compactTypes'
+import { CompactReader, compactRecording } from '../recording/compactCodec'
+import {
+  compactCheckpointIndexForSeq,
+  replayEventWindow,
+  replayNextWindowAnchor,
+  replayPrevWindowAnchor,
+  replayStepInWindow,
+} from '../recording/compactReplay'
+import { describeEvent, describeGap, gapCoveringSeq, stepWaitMs, summarizeGaps } from '../recording/replay'
 
-// REC-PLAYER：只读录制回放。完全离线：只消费传入的 RecordingFile 检查点数据，
+// REC-PLAYER：只读录制回放。完全离线：只消费传入的已校验录制（v1 或 v2 紧凑），
 // 不引存储/录制器/训练与交易 API，不注册任何快捷键，不写任何训练状态。
-const props = defineProps<{ recording: RecordingFile }>()
+// v1 只在入口做一次紧凑迁移，之后统一按 v2 按需还原，不把 v2 转回完整 v1。
+const props = defineProps<{ recording: RecordingFile | CompactRecordingFile }>()
 const emit = defineEmits<{ close: [] }>()
 
 const SPEEDS = [0.5, 1, 2, 4, 8] as const
@@ -15,30 +26,53 @@ const SPEEDS = [0.5, 1, 2, 4, 8] as const
 const seq = ref(0)
 const playing = ref(false)
 const speed = ref<number>(1)
+// 操作列表窗口锚点：窗口边界只随锚点变化；seq 离开当前窗口时回锚到当前步
+const windowAnchor = ref(0)
 let timer: ReturnType<typeof setTimeout> | undefined
 
-const total = computed(() => props.recording.events.length)
-const activeCheckpoint = computed(() => checkpointForSeq(props.recording.checkpoints, seq.value))
+const compactFile = computed(() =>
+  props.recording.schemaVersion === 2 ? props.recording : compactRecording(props.recording),
+)
+// 单个 Reader 复用：内部自带有界缓存，每个步只按需解码一个检查点
+const reader = computed(() => new CompactReader(compactFile.value))
+
+const total = computed(() => compactFile.value.events.length)
+const activeCheckpoint = computed(() => {
+  const index = compactCheckpointIndexForSeq(compactFile.value.checkpoints, seq.value)
+  return index === null ? null : reader.value.checkpointAt(index)
+})
 const activeChart = computed(() => activeCheckpoint.value?.chart ?? null)
 const activeTraining = computed(() => activeCheckpoint.value?.training ?? null)
-const currentEvent = computed(() => (seq.value > 0 ? props.recording.events[seq.value - 1] ?? null : null))
-const gapHint = computed(() => gapCoveringSeq(props.recording.gaps, seq.value))
+const currentEvent = computed(() => (seq.value > 0 ? compactFile.value.events[seq.value - 1] ?? null : null))
+const gapHint = computed(() => gapCoveringSeq(compactFile.value.gaps, seq.value))
 // 常驻摘要：不受当前步影响，恢复之后同样保留全部历史缺口提示
-const gapSummary = computed(() => summarizeGaps(props.recording.gaps))
+const gapSummary = computed(() => summarizeGaps(compactFile.value.gaps))
 const atStart = computed(() => seq.value <= 0)
 const atEnd = computed(() => seq.value >= total.value)
+const eventWindow = computed(() => replayEventWindow(windowAnchor.value, total.value))
+const windowEvents = computed(() => {
+  const events = compactFile.value.events
+  const list: typeof events = []
+  for (let eventSeq = eventWindow.value.first; eventSeq <= eventWindow.value.last; eventSeq += 1) {
+    const event = events[eventSeq - 1]
+    if (event) list.push(event)
+  }
+  return list
+})
+const atFirstGroup = computed(() => eventWindow.value.first <= 1)
+const atLastGroup = computed(() => eventWindow.value.last >= total.value)
 
 const metaText = computed(() => {
-  const app = props.recording.app
+  const app = compactFile.value.app
   const parts = [
-    `会话 ${props.recording.sessionId}`,
+    `会话 ${compactFile.value.sessionId}`,
     `版本 ${app.version}`,
     `提交 ${app.gitCommit}`,
     // complete 只表示尾段无悬空 started/未闭合缺口，不代表没有未记录区间
-    props.recording.complete ? '尾段已闭合' : '尾段未闭合',
-    `${total.value} 个事件 · ${props.recording.checkpoints.length} 个检查点`,
+    compactFile.value.complete ? '尾段已闭合' : '尾段未闭合',
+    `${total.value} 个事件 · ${compactFile.value.checkpoints.length} 个检查点`,
   ]
-  if (props.recording.trainingKey) parts.unshift(`训练 ${props.recording.trainingKey}`)
+  if (compactFile.value.trainingKey) parts.unshift(`训练 ${compactFile.value.trainingKey}`)
   return parts.join(' · ')
 })
 
@@ -72,7 +106,7 @@ function onRangeInput(event: Event): void {
 
 // 播放调度：等待时长按当前倍速实时计算；等待期间不可打断（组件卸载/手动操作统一清计时器）
 function scheduleNext(): void {
-  const wait = stepWaitMs(props.recording.events, seq.value, speed.value)
+  const wait = stepWaitMs(compactFile.value.events, seq.value, speed.value)
   timer = setTimeout(() => {
     timer = undefined
     if (!playing.value || seq.value >= total.value) {
@@ -104,6 +138,19 @@ watch(speed, () => {
   }
 })
 
+// 当前步离开展示窗口（手动浏览他组或大幅跳步）时回锚到当前步，播放推进总能回到当前窗口
+watch(seq, () => {
+  if (!replayStepInWindow(seq.value, eventWindow.value)) windowAnchor.value = seq.value
+})
+
+function showPrevGroup(): void {
+  windowAnchor.value = replayPrevWindowAnchor(eventWindow.value)
+}
+
+function showNextGroup(): void {
+  windowAnchor.value = replayNextWindowAnchor(eventWindow.value, total.value)
+}
+
 onBeforeUnmount(stopPlayback)
 </script>
 
@@ -117,7 +164,7 @@ onBeforeUnmount(stopPlayback)
       <button class="replay-close" type="button" aria-label="关闭回放" @click="emit('close')">关闭回放</button>
     </header>
 
-    <p v-if="props.recording.checkpoints.length === 0" class="replay-empty">
+    <p v-if="compactFile.checkpoints.length === 0" class="replay-empty">
       <strong>暂无可展示状态</strong>
       <span>录制文件中没有检查点，无法回放图表与账户。</span>
     </p>
@@ -209,19 +256,38 @@ onBeforeUnmount(stopPlayback)
         <section class="replay-panel replay-events">
           <h3>操作列表</h3>
           <p v-if="total === 0" class="replay-panel-empty">录制中没有任何事件。</p>
-          <ol v-else class="replay-event-list">
-            <li v-for="event in props.recording.events" :key="event.seq">
+          <template v-else>
+            <div class="replay-window-nav">
               <button
                 type="button"
-                :class="{ active: event.seq === seq }"
-                :aria-current="event.seq === seq ? 'true' : undefined"
-                @click="stepTo(event.seq)"
-              >
-                <span class="event-seq">{{ event.seq }}</span>
-                <span class="event-text">{{ describeEvent(event) }}</span>
-              </button>
-            </li>
-          </ol>
+                :disabled="atFirstGroup"
+                title="上一组事件"
+                aria-label="上一组事件"
+                @click="showPrevGroup"
+              ><ChevronUp :size="14" aria-hidden="true" />上一组</button>
+              <span class="replay-window-range">事件 {{ eventWindow.first }}–{{ eventWindow.last }}</span>
+              <button
+                type="button"
+                :disabled="atLastGroup"
+                title="下一组事件"
+                aria-label="下一组事件"
+                @click="showNextGroup"
+              >下一组<ChevronDown :size="14" aria-hidden="true" /></button>
+            </div>
+            <ol class="replay-event-list">
+              <li v-for="event in windowEvents" :key="event.seq">
+                <button
+                  type="button"
+                  :class="{ active: event.seq === seq }"
+                  :aria-current="event.seq === seq ? 'true' : undefined"
+                  @click="stepTo(event.seq)"
+                >
+                  <span class="event-seq">{{ event.seq }}</span>
+                  <span class="event-text">{{ describeEvent(event) }}</span>
+                </button>
+              </li>
+            </ol>
+          </template>
         </section>
       </aside>
     </div>
@@ -421,6 +487,35 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   text-overflow: ellipsis;
 }
 .replay-events { flex: 1; min-height: 0; }
+.replay-window-nav {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.replay-window-nav button {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid var(--surface-border, #d8e0e8);
+  background: var(--control-background, #ffffff);
+  color: var(--text-secondary, #38596d);
+  white-space: nowrap;
+}
+.replay-window-nav button:hover:not(:disabled) { border-color: #94bec5; color: var(--text-primary, #1c6076); }
+.replay-window-nav button:disabled { opacity: 0.45; cursor: not-allowed; }
+.replay-window-range {
+  font-size: 11px;
+  color: var(--text-muted, #8a98a9);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .replay-event-list {
   margin: 0;
   padding: 0;
