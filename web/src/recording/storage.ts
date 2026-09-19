@@ -46,12 +46,13 @@ function describeDbError(error: DOMException | null): string {
   return error?.message ?? '未知错误'
 }
 
-function openRecordingDb(): Promise<IDBDatabase> {
+function openRecordingDb(onVersionChange: (db: IDBDatabase) => void): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       reject(new Error('当前环境不支持 IndexedDB，无法持久化录制会话。'))
       return
     }
+    let settled = false
     const request = indexedDB.open(RECORDING_DB_NAME, 1)
     request.onupgradeneeded = () => {
       const db = request.result
@@ -61,11 +62,28 @@ function openRecordingDb(): Promise<IDBDatabase> {
     }
     request.onsuccess = () => {
       const db = request.result
-      db.onversionchange = () => db.close()
+      db.onversionchange = () => {
+        db.close()
+        onVersionChange(db)
+      }
+      if (settled) {
+        // onblocked 已定案拒绝后迟到的 success：连接立即关闭，避免泄漏
+        db.close()
+        return
+      }
+      settled = true
       resolve(db)
     }
-    request.onerror = () => reject(new Error(`打开录制会话数据库失败：${describeDbError(request.error)}`))
-    request.onblocked = () => reject(new Error('录制会话数据库被其他标签页占用，请关闭本站点其他标签页后重试。'))
+    request.onerror = () => {
+      if (settled) return
+      settled = true
+      reject(new Error(`打开录制会话数据库失败：${describeDbError(request.error)}`))
+    }
+    request.onblocked = () => {
+      if (settled) return
+      settled = true
+      reject(new Error('录制会话数据库被其他标签页占用，请关闭本站点其他标签页后重试。'))
+    }
   })
 }
 
@@ -112,6 +130,8 @@ function toSummary(file: RecordingFile): RecordingSummary {
  * 生产 IndexedDB 存储：单 objectStore，以 sessionId 为 keyPath。
  * 每个标签页的 Recorder 生成各自 sessionId，put 按 sessionId 覆盖互不影响。
  * save 仅在事务 complete 后 resolve（put 成功不代表事务已提交）。
+ * 连接缓存只保留可用连接：open 失败、close() 与 versionchange 均使其失效，
+ * 下次访问重新 open；versionchange 后旧连接必须关闭以放行新版本请求。
  */
 export class IndexedDbRecordingStorage implements RecordingStorage {
   private dbPromise: Promise<IDBDatabase> | null = null
@@ -121,8 +141,20 @@ export class IndexedDbRecordingStorage implements RecordingStorage {
   }
 
   private open(): Promise<IDBDatabase> {
-    if (!this.dbPromise) this.dbPromise = openRecordingDb()
+    if (!this.dbPromise) this.dbPromise = this.startOpen()
     return this.dbPromise
+  }
+
+  private startOpen(): Promise<IDBDatabase> {
+    const opening = openRecordingDb(() => {
+      // versionchange 关闭连接后缓存同步失效，下次访问重新打开
+      if (this.dbPromise === opening) this.dbPromise = null
+    })
+    // 打开失败不缓存 rejected promise，下次访问重新尝试
+    void opening.catch(() => {
+      if (this.dbPromise === opening) this.dbPromise = null
+    })
+    return opening
   }
 
   async save(file: RecordingFile): Promise<void> {
@@ -146,6 +178,8 @@ export class IndexedDbRecordingStorage implements RecordingStorage {
 
   close(): void {
     if (!this.dbPromise) return
-    void this.dbPromise.then(db => db.close()).catch(() => {})
+    const opening = this.dbPromise
+    this.dbPromise = null
+    void opening.then(db => db.close()).catch(() => {})
   }
 }
