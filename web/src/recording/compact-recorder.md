@@ -4,7 +4,8 @@
 
 ## 检查点与输入隔离
 
-- 输入先经 `toSafeInput` 深拷贝为纯 DTO（caller 的响应式代理/可变对象在此转换隔离），再交给 builder；循环/非 JSON 输入在改动任何状态前显式失败，不留半初始化不可重试状态。
+- 输入先经 `toSafeInput` 三步校验再克隆为纯 DTO（caller 的响应式代理/可变对象在此转换隔离）：① 循环引用预检——`assertJson` 遇自引用会栈溢出，先以 WeakSet 走树（离开撤销标记，共享子对象不误报），环在具体字段路径显式报错；② `assertJson` 全树有限/深度/类型检查——JSON.stringify 会把 NaN/Infinity 静默写成 null、丢弃 undefined，必须在克隆前显式失败；③ 单检查点结构检查——复用 validation 纯 helper（assertTrainingMeta/assertAccountView/assertTrade/assertBar/assertDrawing/assertChartView 等）按 v1 语义检查 ui/training/chart，保证 `builder.capture` 对通过检查的输入不可能中途抛错（builder 会先消耗检查点序号并可能追加资源，无回滚手段），也把导出校验必然失败的输入（bar 乱序、画线超限等）拒绝在追加之前。只检查当前这一份输入，不回看文件/历史；合理 null optional 值（training/chart/context 整体为 null、tool/costPrice 等可选字段）语义不变。params/result/app/env 走 structuredClone，不经此 JSON 无损路径，语义不变。
+- 失败原子性：start/pause/resume/finish 都先完整验证并准备输入，再改动状态、openOps、gaps、事件序号或 builder——输入失败时原状态原样保留（文件深等不变、start 保持未初始化），修正输入后合法重试直接成功，资源不增、编号不跳；禁止用清空录制恢复。
 - `capture` 先判重再调用 builder：仅保留「最近一次 checkpoint」的输入签名（afterSeq + 规范化内容串，不持久化、不保存全部输入）。同 afterSeq 且内容完全相同的冗余 capture 整体忽略（检查点与资源全表不增，builder 的 firstCheckpoint 不跳号）；不同 afterSeq 相同内容正常追加保留时序，行情/画线版本由 builder 复用不重复存储。判重签名在任何 checkpoint 追加路径（start/finish/pause/resume）统一刷新，不会误吞真实变化。
 - `finish` 带 checkpoint 时：检查点先于事件完成（afterSeq=本条 finished 事件 seq），事件带 `checkpointId` 一次性成形再追加；已持久事件/检查点从不回填修改。
 
@@ -20,7 +21,7 @@
 
 ## 测试
 
-`server/test/recording-compact-recorder.test.ts`：旧 16 核心行为移植（begin/finish 配对与深拷贝、默认开/初始关 gap0、capture 不可变、暂停恢复、严格串行 [0,2]、失败上报与恢复不丢数据、export 深拷贝与持久相等、restore 悬空修补/paused 保留/elapsed anchor/segment 沿用/损坏拒绝）+ CompactReader 逐步还原相等 + builder 链续（restore 后同内容复用版本、新内容增量 firstCheckpoint 正确）+ 同 afterSeq 冗余 capture 去重资源不增 + 慢保存后追加不污染前批快照 + onChange 异常隔离 + 500 次推进（总 bar 条目 < 逐 cp 平铺的 1/10，逐 checkpoint 还原正确，通过 v2 校验）。controlled 存储端口在测试内实现（串行 + onSave 观察/延迟 + failWith + records 注入）。运行：`npm test -- server/test/recording-compact-recorder.test.ts --maxWorkers=2`。
+`server/test/recording-compact-recorder.test.ts`：旧 16 核心行为移植（begin/finish 配对与深拷贝、默认开/初始关 gap0、capture 不可变、暂停恢复、严格串行 [0,2]、失败上报与恢复不丢数据、export 深拷贝与持久相等、restore 悬空修补/paused 保留/elapsed anchor/segment 沿用/损坏拒绝）+ CompactReader 逐步还原相等 + builder 链续（restore 后同内容复用版本、新内容增量 firstCheckpoint 正确）+ 同 afterSeq 冗余 capture 去重资源不增 + 慢保存后追加不污染前批快照 + onChange 异常隔离 + 500 次推进（总 bar 条目 < 逐 cp 平铺的 1/10，逐 checkpoint 还原正确，通过 v2 校验）+ 输入失败原子性（循环引用/NaN/Infinity/坏 chart 各入口抛错前后文件深等或保持未初始化，重试成功且 validate/Reader 还原正确，builder 序号不跳、导出保留错误前有效会话）。controlled 存储端口在测试内实现（串行 + onSave 观察/延迟 + failWith + records 注入）。运行：`npm test -- server/test/recording-compact-recorder.test.ts --maxWorkers=2`。
 
 ## 本轮不做
 

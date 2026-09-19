@@ -92,6 +92,39 @@ function makeFullInput(barCount: number, drawings: Drawing[] = []): CheckpointIn
   })
 }
 
+/** context 自引用的坏输入：无损路径必须显式报错，不得静默截断或半提交 */
+function makeCircularInput(): CheckpointInput {
+  const input = makeCheckpointInput()
+  const context: Record<string, unknown> = { label: 'self' }
+  context.self = context
+  input.context = context as unknown as CheckpointInput['context']
+  return input
+}
+
+/** chart.drawings=null 的坏输入：结构不完整，builder 中途必抛错且序号/资源无法回滚 */
+function makeBadChartInput(): CheckpointInput {
+  const input = makeCheckpointInput()
+  input.chart = {
+    timeframe: '1D',
+    bars: [makeBar(0)],
+    drawings: null as unknown as Drawing[],
+    view: { fromTimestamp: null, toTimestamp: null, barSpace: 8, paneHeights: {} },
+    costPrice: null,
+  }
+  return input
+}
+
+/** context 含 NaN/Infinity 的坏输入：JSON.stringify 会静默写成 null，必须在克隆前拒绝 */
+function makeNonFiniteContextInput(): CheckpointInput {
+  const input = makeCheckpointInput()
+  input.context = {
+    measuredPrice: Number.NaN,
+    quantity: Number.POSITIVE_INFINITY,
+    negative: Number.NEGATIVE_INFINITY,
+  } as unknown as CheckpointInput['context']
+  return input
+}
+
 /**
  * 小型controlled存储端口：内部串行、onSave 可观察/延迟每批快照、failWith 注入保存故障、
  * records 公开供损坏注入。提交发生在 onSave 完成之后（结构化克隆边界与生产 IDB 对齐）。
@@ -670,6 +703,136 @@ describe('冗余 capture 去重', () => {
     expect(reader.checkpointAt(2).chart?.bars).toEqual(makeChart(4).bars)
     expect(reader.checkpointAt(2).afterSeq).toBe(2)
     expect(() => validateCompactRecording(file)).not.toThrow()
+  })
+})
+
+describe('输入失败原子性', () => {
+  it('start 传循环引用 context：保持未初始化可重试，成功会话经 validate/Reader 还原', async () => {
+    const { recorder } = makeRecorder()
+    await expect(recorder.start('k', makeCircularInput())).rejects.toThrow('循环引用')
+    expect(recorder.getStatus().error).toContain('尚未初始化')
+
+    // 修正输入后干净启动：无残留事件/检查点/资源
+    await recorder.start('k', makeCheckpointInput())
+    expect(recorder.getStatus().state).toBe('recording')
+    const file = recorder.getFile()
+    expect(file.checkpoints).toHaveLength(1)
+    expect(file.events).toHaveLength(0)
+    expect(resourceTableLengths(file)).toEqual([0, 0, 0, 0, 0, 0])
+    const opId = recorder.begin('training.advance')
+    recorder.finish(opId!, 'accepted')
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    expect(new CompactReader(exported).checkpointAt(0).context).toBeNull()
+  })
+
+  it('start/capture 传 NaN/Infinity context：显式拒绝而非静默转 null，资源不增', async () => {
+    const { recorder } = makeRecorder()
+    await expect(recorder.start('k', makeNonFiniteContextInput())).rejects.toThrow('有限')
+    expect(recorder.getStatus().error).toContain('尚未初始化')
+
+    await recorder.start('k', makeCheckpointInput())
+    const before = recorder.getFile()
+    expect(() => recorder.capture(makeNonFiniteContextInput())).toThrow('有限')
+    expect(recorder.getStatus().state).toBe('recording')
+    expect(recorder.getFile()).toEqual(before)
+
+    recorder.capture(makeCheckpointInput({ context: { measuredPrice: 10.5 } }))
+    const file = recorder.getFile()
+    expect(file.checkpoints).toHaveLength(2)
+    expect(new CompactReader(file).checkpointAt(1).context).toEqual({ measuredPrice: 10.5 })
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    expect(exported.checkpoints).toHaveLength(2)
+    expect(new CompactReader(exported).checkpointAt(0).context).toBeNull()
+  })
+
+  it('capture 传坏 chart（drawings=null）：失败前后文件深等，builder 序号/资源不消耗，合法 capture 编号不跳', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeFullInput(3, [makeSegmentDrawing('dw-a', 5)]))
+    const before = recorder.getFile()
+    expect(() => recorder.capture(makeBadChartInput())).toThrow('必须是数组')
+    expect(recorder.getStatus().state).toBe('recording')
+    expect(recorder.getFile()).toEqual(before)
+
+    // 合法 capture：新行情增量的 firstCheckpoint 精确等于新检查点下标（序号未被失败消耗）
+    recorder.capture(makeFullInput(4, [makeSegmentDrawing('dw-a', 5)]))
+    const file = recorder.getFile()
+    expect(file.checkpoints).toHaveLength(2)
+    expect(file.resources.series.map(version => version.id)).toEqual(['s1', 's2'])
+    expect(file.resources.series[1]!.base).toBe('s1')
+    expect(file.resources.series[1]!.firstCheckpoint).toBe(1)
+    expect(file.resources.drawings.map(version => version.id)).toEqual(['dw1'])
+
+    // 导出保留错误前的有效会话（cp0 原样），全部检查点经 Reader 还原正确
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    expect(exported.checkpoints).toHaveLength(2)
+    const reader = new CompactReader(exported)
+    expect(reader.checkpointAt(0).chart?.bars).toEqual(makeChart(3).bars)
+    expect(reader.checkpointAt(1).chart?.bars).toEqual(makeChart(4).bars)
+  })
+
+  it('finish 传坏 checkpoint：openOps/事件原样保留可重试，重试成功且链接正确', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeCheckpointInput())
+    const opId = recorder.begin('training.advance')
+    const before = recorder.getFile()
+    expect(() => recorder.finish(opId!, 'accepted', undefined, makeBadChartInput())).toThrow('必须是数组')
+    expect(recorder.getFile()).toEqual(before)
+    expect(recorder.getFile().complete).toBe(false)
+
+    recorder.finish(opId!, 'accepted', undefined, makeCheckpointInput({ chart: makeChart(2) }))
+    const file = recorder.getFile()
+    expect(file.events.map(event => event.phase)).toEqual(['started', 'finished'])
+    expect(file.events[1]!.checkpointId).toBe(file.checkpoints[1]!.id)
+    expect(file.checkpoints[1]!.afterSeq).toBe(2)
+    expect(recorder.getFile().complete).toBe(true)
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    expect(new CompactReader(exported).checkpointAt(1).chart).toEqual(makeChart(2))
+  })
+
+  it('pause 传循环引用 context：不闭合 openOps/不写事件/不开 gap，操作与暂停均可重试', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeCheckpointInput())
+    const opId = recorder.begin('training.trade', { side: 'buy' })
+    const before = recorder.getFile()
+    await expect(recorder.pause(makeCircularInput())).rejects.toThrow('循环引用')
+    expect(recorder.getStatus().state).toBe('recording')
+    expect(recorder.getFile()).toEqual(before)
+
+    // 进行中操作未被误闭合：finish 正常完成；随后合法 pause/resume 成功
+    recorder.finish(opId!, 'accepted')
+    await recorder.pause(makeCheckpointInput())
+    expect(recorder.getStatus().state).toBe('paused')
+    expect(recorder.getFile().gaps).toEqual([{ afterSeq: 4, resumedAtSeq: null }])
+    await recorder.resume(makeCheckpointInput())
+    expect(recorder.getStatus().state).toBe('recording')
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    assertSeqAndElapsedMonotonic(exported.events)
+  })
+
+  it('resume 传循环引用 context：gap 保持未闭合仍 paused，修正后可重试 resume', async () => {
+    const { recorder } = makeRecorder()
+    await recorder.start('k', makeCheckpointInput())
+    await recorder.pause(makeCheckpointInput())
+    const before = recorder.getFile()
+    await expect(recorder.resume(makeCircularInput())).rejects.toThrow('循环引用')
+    expect(recorder.getStatus().state).toBe('paused')
+    expect(recorder.getFile()).toEqual(before)
+    expect(recorder.begin('ui.theme')).toBeNull()
+
+    await recorder.resume(makeCheckpointInput())
+    expect(recorder.getStatus().state).toBe('recording')
+    const file = recorder.getFile()
+    expect(file.gaps).toHaveLength(1)
+    expect(file.gaps[0]!.resumedAtSeq).not.toBeNull()
+    expect(recorder.begin('ui.theme')).not.toBeNull()
+    const exported = await recorder.export()
+    expect(() => validateCompactRecording(exported)).not.toThrow()
+    expect(new CompactReader(exported).checkpointAt(2).context).toBeNull()
   })
 })
 
