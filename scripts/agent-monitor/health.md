@@ -8,4 +8,6 @@ finishReason=length单独提示输出预算耗尽，CLI可能自动续接；不�
 
 旧needs_changes结果保留；登记followupId后链接后续修复批次及其独立状态。后续通过不自动改写旧review。修复ID缺失时提示登记不可读，不猜测已恢复。
 
+看板按followupId在有界图内解析链尾：被有效后继取代的轮次归入"历史轮次"折叠区，原始失败与验收原文保留，不计入当前运行/待验收/需关注计数。仅当链尾phase为reviewed才显示已解决；环链接与后继缺失如实标注，绝不视为已修复。历史徽章按链尾实际状态区分（修复执行中/已待验收/已复核通过/仍在修正），不一律标绿。model登记为本机自动门禁（Local automated gates或等价中文）的任务按本地门禁呈现，不发送模型请求；标题与答复区不再把所有结果统称GLM。最新失败轮次始终留在当前列表顶部并可操作。
+
 源码/桌面入口见[README](README.md)。本机首次诊断证据见[REC-01记录](../../docs/verification/2026-09/REC-01-monitor-health/report.md)。
