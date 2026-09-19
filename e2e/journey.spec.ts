@@ -45,15 +45,24 @@ test('Act5 买入推进卖出结算', async ({ page }) => {
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
   // B 买入：B/S 标记 overlay 出现（引擎标记不可选中，不在多选集合）。
+  // A visible training page can still be waiting for recording initialization;
+  // keyboard actions must wait for the same readiness guard as real controls.
+  await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  await expect(page.locator('.training-grid')).not.toHaveAttribute('inert', '')
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   // 注意：expect(promise).resolves 不做重试，此处成交→快照刷新→refreshMarks 有异步链，改轮询断言
   await page.keyboard.press('b')
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.overlayCount('bsMark')), { timeout: 5000 }).toBe(1)
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   // Space 推进：当前日期前进
   const metaBefore = await page.locator('.training-current-date').innerText()
   await page.keyboard.press('Space')
   await expect(page.locator('.training-current-date')).not.toHaveText(metaBefore)
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   // S 卖出
   await page.keyboard.press('s')
+  await expect(page.locator('.status-message')).toContainText('卖出成交')
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   // 提前结算：结束训练确认弹窗（真实点击确认结算一次）→ 结算面板 → 返回首页
   await settleThroughConfirmation(page)
   await expect(page.getByRole('heading', { name: '创建训练' })).toBeVisible()
