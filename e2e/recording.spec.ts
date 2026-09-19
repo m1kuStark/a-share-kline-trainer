@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { readFile } from 'node:fs/promises'
+import { readRecordingArtifact } from './recording-file'
 import { startTrainingFromForm } from './training-flow'
 import { evidencePath } from './runtime'
 
@@ -28,7 +28,7 @@ test('录制上下文准备期间不会漏掉第一笔交易', async ({ page }) 
   const download = await pending
   const output = evidencePath('first-trade-recorded.json')
   await download.saveAs(output)
-  const file = JSON.parse(await readFile(output, 'utf8'))
+  const file = await readRecordingArtifact(output)
   expect(file.gaps).toEqual([])
   expect(file.events.filter((event: any) => event.action === 'training.create').map((event: any) => event.phase)).toEqual(['started', 'finished'])
   expect(file.events.filter((event: any) => event.action === 'training.trade').map((event: any) => event.phase)).toEqual(['started', 'finished'])
@@ -76,7 +76,7 @@ test('默认录制交易拒单、周期和画线，暂停恢复后可导出并�
   const download = await pending
   const output = evidencePath('recorded-session.json')
   await download.saveAs(output)
-  const recording = JSON.parse(await readFile(output, 'utf8'))
+  const recording = await readRecordingArtifact(output)
   expect(recording.format).toBe('trainer-session')
   expect(recording.app.gitCommit).not.toBe('unknown')
   expect(recording.events.some((e: any) => e.action === 'training.trade' && e.outcome === 'accepted')).toBe(true)
@@ -130,7 +130,7 @@ test('浏览器存储恢复后可重试录制，错误不伪装成正在记录',
   const download = await pending
   const output = evidencePath('storage-recovery-session.json')
   await download.saveAs(output)
-  const file = JSON.parse(await readFile(output, 'utf8'))
+  const file = await readRecordingArtifact(output)
   expect(file.gaps.length).toBeGreaterThan(0)
   expect(file.gaps.at(-1).resumedAtSeq).not.toBeNull()
   await page.screenshot({ path: evidencePath('recording-storage-recovered.png') })
@@ -156,7 +156,7 @@ test('首页关闭仅影响本场，刷新保留暂停且恢复后可导出', as
   const download = await pending
   const output = evidencePath('initially-paused-session.json')
   await download.saveAs(output)
-  const file = JSON.parse(await readFile(output, 'utf8'))
+  const file = await readRecordingArtifact(output)
   expect(file.gaps[0].afterSeq).toBe(0)
   expect(file.gaps[0].resumedAtSeq).toBeGreaterThan(0)
   await page.getByRole('button', { name: '提前结算', exact: true }).click()

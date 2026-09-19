@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "3个GLM独立工作树并行：codec审查修正、v2 validator、增量存储；逐分支联合验收串行合并，再完成文件封装/Recorder/页面与最终验收。",
+  "next_action": "codec修复已验收合入；3个GLM并行处理validator四项边界返修、存储header冲突返修、gzip文件封装；随后CompactRecorder与页面迁移及两年真实旅程。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",
