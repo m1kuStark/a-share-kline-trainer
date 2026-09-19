@@ -15,6 +15,7 @@
     "server/src/**",
     "server/README.md",
     "server/test/**",
+    "server/vitest.config.ts",
     "e2e/**",
     "docs/specs/recording.md",
     "docs/proposals/session-recorder/**",
