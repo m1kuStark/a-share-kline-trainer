@@ -1,6 +1,6 @@
 # 操作录制、复盘与分享
 
-状态：首批实施中；工程完成与验收证据以[REC-01任务](../work-items/tasks/REC-01.md)为准。
+状态：首批已集成，等待用户阶段验收；工程完成与验收证据以[REC-01任务](../work-items/tasks/REC-01.md)为准。
 
 ## RECORDING-DEFAULT
 

@@ -2,6 +2,8 @@
 
 基于通达信本地日线和权息的离线逐日训练工具。Node24＋TypeScript＋Fastify＋SQLite；Vue3＋Vite＋klinecharts10.0.3。
 
+当前阶段版本已完成工程验收，等待用户最终验收；[验收说明](docs/verification/2026-09/REC-01-stage-release/acceptance.md)。M4/M5将在用户明确通过后再开发。
+
 ## 从哪里开始
 
 - [当前开发状态](docs/status.md)：阶段、任务及验收证据。

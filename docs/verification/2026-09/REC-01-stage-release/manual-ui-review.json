@@ -1,0 +1,13 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "35a1671804bfe7ec17cd66a8a8295ee8991933e0",
+  "outcome": "passed",
+  "reviewer": "Codex",
+  "artifacts": [
+    ".runs/run-8fc79f1e-f62b-4485-a198-3b6ff728aa84/artifacts/live-dark.png",
+    ".runs/run-8fc79f1e-f62b-4485-a198-3b6ff728aa84/artifacts/live-light.png",
+    ".runs/run-8fc79f1e-f62b-4485-a198-3b6ff728aa84/artifacts/live-replay.png",
+    ".runs/run-8fc79f1e-f62b-4485-a198-3b6ff728aa84/artifacts/live-review.json"
+  ],
+  "note": "Live TDX review in separate preview run; default recording, actual trades/drawing/timeframes, pause/reload, gzip and offline read-only replay. Candidate full gates checked separately before promotion."
+}

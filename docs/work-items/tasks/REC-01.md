@@ -5,10 +5,10 @@
   "id": "REC-01",
   "title": "默认操作录制与分享复盘首批",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
-  "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "退出超时与录制区布局已修复；重建候选跑完整门禁后交用户验收。",
+  "summary": "默认紧凑录制、gzip分享、迁移和只读回放已集成；完整工程验收通过，待用户验收。",
+  "next_action": "等待用户阶段版本最终验收；通过后记录明确决定，再解锁M4/M5。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",
@@ -36,11 +36,9 @@
     "reason": "实现时同步覆盖边界、格式版本和验收要求。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/REC-01-capacity/report.md",
-    "docs/verification/2026-09/REC-01-compression/report.md",
-    "docs/verification/2026-09/REC-01-release-fixes/report.md"
+    "docs/verification/2026-09/REC-01-stage-release/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "35a1671804bfe7ec17cd66a8a8295ee8991933e0",
   "acceptance_ref": null
 }
 ```

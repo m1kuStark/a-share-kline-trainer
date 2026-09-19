@@ -1,0 +1,47 @@
+{
+  "testedCommit": "35a1671804bfe7ec17cd66a8a8295ee8991933e0",
+  "reviewer": "Codex",
+  "source": "live local TDX read only",
+  "sourceRoot": "D:\\MySoftWares\\TDX",
+  "sourceMaxDate": "2026-09-18",
+  "stock": "600519",
+  "trainingDates": [
+    "2026-09-01",
+    "2026-09-02"
+  ],
+  "browser": "Playwright desktop browser",
+  "viewports": [
+    "1440x900 dark",
+    "1280x800 light"
+  ],
+  "flows": [
+    "default recording",
+    "buy",
+    "same-day sell rejected",
+    "advance",
+    "sell",
+    "day/week/month",
+    "line drawing",
+    "pause and reload",
+    "resume",
+    "gzip export",
+    "settle",
+    "import with API blocked",
+    "last step replay"
+  ],
+  "pageErrors": [],
+  "replayWrites": [],
+  "chartTop": 93,
+  "horizontalOverflow": false,
+  "exportBytes": 94551,
+  "schemaVersion": 2,
+  "events": 40,
+  "checkpoints": 22,
+  "gaps": 1,
+  "screenshots": [
+    "live-dark.png",
+    "live-light.png",
+    "live-replay.png"
+  ],
+  "note": "First automation waited for training without handling existing data-freshness dialog and timed out. After inspecting DOM, selected the real UI continue action; no product change required. Expected trading HTTP400 is separate from pageerror."
+}

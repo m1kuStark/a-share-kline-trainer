@@ -1,0 +1,12 @@
+{
+  "steps": 483,
+  "events": 2046,
+  "checkpoints": 1025,
+  "fileBytes": 957616,
+  "jsonBytes": 5377081,
+  "exportMs": 496,
+  "importMs": 258,
+  "advanceP95Ms": 113,
+  "restoredCheckpoints": 1025,
+  "unexpectedPageErrors": []
+}
