@@ -23,4 +23,6 @@
 
 ## 尚未通过的整体验证
 
-全量`npm test`首次在测试执行进程通信层中断，`ERR_IPC_CHANNEL_CLOSED`（退出1，日志rec-v1-integrated-unit.log）。已按相同测试集合使用`--maxWorkers=4`重跑，结果以result.json记录为准；进程异常不能算绿。正式候选仍执行全量单测、生产构建、样本M2和完整Journey，不能用本页4条定向路径替代。
+全量`npm test`首次在测试执行进程通信层中断，`ERR_IPC_CHANNEL_CLOSED`（退出1，日志rec-v1-integrated-unit.log）。相同测试集合使用`--maxWorkers=4`重跑，退出0、45文件476/476通过（213.21s，rec-v1-unit-workers4.log）；首次异常保留，不据此断言根因已经确证。主代理核对改动源码/测试SHA256与55c2842一致，映射见result.json。看板11项标准库测试也通过。
+
+正式候选仍须执行全量单测、生产构建、样本M2和完整Journey，不能用本页4条定向路径替代。新格式实施后必须重新验证，这些结果只描述迁移前基线。

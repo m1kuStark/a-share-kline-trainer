@@ -35,9 +35,14 @@
     },
     {
       "command": "npm test -- --maxWorkers=4",
-      "status": "pending",
-      "log": "headroom-cache/rec-v1-unit-workers4.log"
+      "log": "headroom-cache/rec-v1-unit-workers4.log",
+      "exitCode": 0,
+      "passed": 476,
+      "files": 45,
+      "durationSeconds": 213.21
     }
   ],
-  "scope": "v1 baseline only; v2 and final candidate acceptance outstanding"
+  "scope": "v1 baseline only; v2 and final candidate acceptance outstanding",
+  "mappedCodeCommit": "55c2842",
+  "mapping": "Changed runtime/test files match captured SHA256; later evidence edits are documentation only."
 }
