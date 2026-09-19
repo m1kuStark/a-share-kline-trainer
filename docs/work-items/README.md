@@ -8,6 +8,8 @@
 - 后续：[TRAIN-01](tasks/TRAIN-01.md)、[DEV-01](tasks/DEV-01.md)、[UI-01](tasks/UI-01.md)、[M4-01](tasks/M4-01.md)、[M5-01](tasks/M5-01.md)、[R2-01](tasks/R2-01.md)。
 - 阶段：[BASE](milestones/BASE.md)、[M3](milestones/M3.md)、[R1](milestones/R1.md)、[M4](milestones/M4.md)、[M5](milestones/M5.md)、[R2](milestones/R2.md)、[DOC](milestones/DOC.md)、[DEV](milestones/DEV.md)。
 
+本轮用户返修：[ACCEPT-01](tasks/ACCEPT-01.md)、[DRAW-02](tasks/DRAW-02.md)、[REC-02](tasks/REC-02.md)、[REC-03](tasks/REC-03.md)。
+
 ## 卡片格式
 
 首个json代码块为结构化元信息，后面只写必要验收条件和接续信息。任务含id/title/owner/state/milestone/summary/next_action/allowed_paths/depends_on/docs_impact/verification_refs/integration_ref/acceptance_ref；阶段用task_ids关联任务。
