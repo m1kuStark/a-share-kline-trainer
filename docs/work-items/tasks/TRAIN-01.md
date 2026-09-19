@@ -8,7 +8,7 @@
   "state": "planned",
   "milestone": "M5",
   "summary": "费用/T+1每笔读全局设置，raw显示路径不入账权息。",
-  "next_action": "默认设置变化不改旧训练；raw/forward账户权益一致，兼容旧数据。",
+  "next_action": "等待用户明确验收本次阶段版本后再推进；默认设置变化不改旧训练；raw/forward账户权益一致，兼容旧数据。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/db.ts",
@@ -17,7 +17,9 @@
     "docs/specs/training/rules.md",
     "server/src/train/docs/accounting.md"
   ],
-  "depends_on": [],
+  "depends_on": [
+    "REC-01"
+  ],
   "docs_impact": {
     "update": [
       "docs/specs/training/rules.md",

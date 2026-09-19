@@ -462,15 +462,6 @@ void load()
       </div>
     </header>
 
-    <div class="recording-strip" @keydown.space.stop>
-      <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
-      <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.status.value.eventCount }} 条事件</span>
-      <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
-      <details class="recording-export-options"><summary aria-label="更多录制导出方式">更多</summary><button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile(undefined, false)">导出可读 JSON</button></details>
-      <span v-if="recording.notice.value">{{ recording.notice.value }}</span>
-      <span v-if="recording.error.value || recording.status.value.error" class="error-text">{{ recording.error.value || recording.status.value.error }}</span>
-      <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
-    </div>
 
     <section class="status-strip" aria-live="polite">
       <span class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
@@ -499,6 +490,15 @@ void load()
       </div>
 
       <aside class="trade-panel">
+        <div class="recording-strip" @keydown.space.stop>
+          <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
+          <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.status.value.eventCount }} 条事件</span>
+          <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
+          <details class="recording-export-options"><summary aria-label="更多录制导出方式">更多</summary><button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile(undefined, false)">导出可读 JSON</button></details>
+          <span v-if="recording.notice.value">{{ recording.notice.value }}</span>
+          <span v-if="recording.error.value || recording.status.value.error" class="error-text">{{ recording.error.value || recording.status.value.error }}</span>
+          <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
+        </div>
         <div class="console-scroll">
         <div class="panel-heading"><span>训练账户</span><span class="live-mark">● {{ training.status === 'running' ? '进行中' : '已结束' }}</span></div>
         <div class="equity-block">
@@ -631,8 +631,11 @@ void load()
 </template>
 
 <style scoped>
-.recording-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; padding: 5px 12px; border-bottom: 1px solid var(--surface-border, #dfe5eb); font-size: 12px; }
+.recording-strip { display: flex; flex: 0 0 auto; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding: 0 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--surface-border, #dfe5eb); font-size: 12px; }
 .recording-strip label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .recording-strip .ghost-button { padding: 3px 8px; font-size: 12px; }
 .recording-strip .error-text { overflow-wrap: anywhere; }
+.recording-export-options summary { cursor: pointer; }
+.recording-export-options[open] { flex-basis: 100%; }
+.recording-export-options[open] button { margin-top: 6px; }
 </style>

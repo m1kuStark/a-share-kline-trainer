@@ -132,13 +132,21 @@ async function stopChild(child: ChildProcess, done: Promise<unknown>, runId?: st
     await Promise.race([done, delay(3000)])
   }
   if (child.exitCode === null && child.signalCode === null) {
-    if (process.platform === 'win32') {
+    if (runId) {
+      // The isolated server is one Node process (OPEN_BROWSER=0). Killing it
+      // directly avoids Windows taskkill's potentially unbounded tree scan.
+      // Generic commands below still need tree cleanup for their descendants.
+      child.kill('SIGKILL')
+    } else if (process.platform === 'win32') {
       await exec('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }).catch(() => {})
     } else child.kill('SIGTERM')
     await Promise.race([done, delay(3000)])
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
   }
-  await done
+  if (runId) {
+    const closed = await Promise.race([done.then(() => true), delay(3000).then(() => false)])
+    if (!closed) throw new Error(`Owned server ${child.pid} did not close after forced shutdown`)
+  } else await done
 }
 
 /** Execute only this worktree's installed Node entry points, without a command shell. */
