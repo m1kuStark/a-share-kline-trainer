@@ -1,4 +1,4 @@
-import { startTrainingFromForm } from './training-flow'
+import { startTrainingFromForm, settleThroughConfirmation } from './training-flow'
 import { expect, test, type Page } from '@playwright/test'
 
 // Playwright 用户旅程（真实受信任事件，与用户输入同构）。
@@ -54,10 +54,8 @@ test('Act5 买入推进卖出结算', async ({ page }) => {
   await expect(page.locator('.training-current-date')).not.toHaveText(metaBefore)
   // S 卖出
   await page.keyboard.press('s')
-  // 提前结算 → 结算面板 → 返回首页
-  await page.getByRole('button', { name: '提前结算' }).click()
-  await expect(page.locator('.settle-panel')).toBeVisible()
-  await page.getByRole('button', { name: '完成，返回首页' }).click()
+  // 提前结算：结束训练确认弹窗（真实点击确认结算一次）→ 结算面板 → 返回首页
+  await settleThroughConfirmation(page)
   await expect(page.getByRole('heading', { name: '创建训练' })).toBeVisible()
 })
 

@@ -1,5 +1,5 @@
 import { evidencePath } from './runtime'
-import { startTrainingFromForm } from './training-flow'
+import { startTrainingFromForm, settleThroughConfirmation } from './training-flow'
 import { expect, test, type Page } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -641,10 +641,8 @@ test('M3 D31 已结算训练继续查看刷新保留画线并返回首页', asyn
   const line = await drawTool(page, segmentTool)
   const active = await (await page.request.get('/api/trainings/active')).json()
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
-  await page.getByRole('button', { name: '提前结算', exact: true }).click()
-  await expect(page.locator('.settle-panel')).toBeVisible()
-  await page.locator('.settle-panel').getByRole('button', { name: '继续查看图表', exact: true }).click()
-  await expect(page.locator('.settle-panel')).not.toBeVisible()
+  // 结束训练确认弹窗真实点击确认结算 → 结算面板继续查看图表
+  await settleThroughConfirmation(page, 'chart')
   await expect(page.getByRole('button', { name: '返回首页', exact: true })).toBeVisible()
   await expect(page).toHaveURL(new RegExp(`[?&]training=${active.training.id}(?:&|$)`))
   await expect.poll(() => drawings(page)).toEqual([line])
