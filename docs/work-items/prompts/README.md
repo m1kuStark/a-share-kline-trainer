@@ -22,3 +22,6 @@
 - [DRAW-02](draw-02-feedback.md): drawing basis repair.
 - [REC-02](rec-02-feedback.md): retention and semantic filtering.
 - [REC-03](rec-03-feedback.md): independent day replay.
+
+- [画线空集合返修](draw-02-empty-basis-fix.md)。
+- [按日回放复核返修](rec-03-review-fix.md)。

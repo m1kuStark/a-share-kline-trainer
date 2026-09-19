@@ -1,4 +1,5 @@
 import type { DrawingPriceBasis } from './drawingPriceBasis'
+import { adoptDrawings } from './drawingPriceBasis'
 
 export interface Drawing {
   id: string
@@ -39,6 +40,11 @@ export class DrawingHistory {
   get canUndo(): boolean { return this.index > 0 }
   get canRedo(): boolean { return this.index < this.states.length - 1 }
   reset(drawings: Drawing[]): void { this.states = [copy(drawings)]; this.index = 0 }
+  rebasePriceBasis(basis: DrawingPriceBasis): void {
+    // A market basis change is not a user edit. Keep all undo/redo states in the
+    // rendered basis so a later pointer-up cannot record a phantom edit.
+    this.states = this.states.map(state => adoptDrawings(state, basis))
+  }
   record(drawings: Drawing[]): boolean {
     if (JSON.stringify(drawings) === JSON.stringify(this.states[this.index])) return false
     this.states = this.states.slice(0, this.index + 1)

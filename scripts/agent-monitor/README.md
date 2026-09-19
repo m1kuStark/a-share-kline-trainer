@@ -26,6 +26,8 @@
 
 `py -3.9 -m unittest discover -s scripts/agent-monitor -p 'test_*.py'`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、同树排他/并发槽位（含双进程）、并行禁止共享唤醒文件、真实短子进程完成、生命周期跨请求/跨session/轮转及修复关联。UI验收另查无新JSON时跨过提示阈值、修复跳转、Prompt、深浅主题、溢出、文本注入及pageerror。
 
-本机2026-09-19 Zcode3.12.3/CLI0.16.5：CLI记录在`.zcode/cli/db/db.sqlite`，桌面另有`.zcode/v2/tasks-index.sqlite`；本工程worktree在桌面索引未登记。未找到CLI session直接进入GUI的入口；不手改桌面数据库。SQLite结构属本机适配，升级后需复查；优先在将来采用官方公开任务观察接口。
+CLI与Zcode桌面会话索引不同，观察限制见[模型CLI经验](../../docs/engineering/zcode-cli.md)。升级后复查，不手改桌面数据库。
 
 与[模型协作规则](../../docs/engineering/model-delegation.md)、[并行协议](../../docs/engineering/parallel-development.md)配合使用。
+
+复用既有窗口前验证server.json中的URL为精确127.0.0.1、合法端口和单层token路径；健康请求禁重定向、禁环境代理，不能让损坏元数据发起外部请求。

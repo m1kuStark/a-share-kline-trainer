@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { evidencePath } from './runtime'
 import { startTrainingFromForm } from './training-flow'
+import { readRecordingArtifact } from './recording-file'
+import { CompactReader } from '../web/src/recording/compactCodec'
 
 test('用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户', async ({ page }) => {
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
@@ -41,4 +43,102 @@ test('用户能找到录像入口，往返录像库保持训练，顶部显示�
   expect(after.currentDate).toBe(before.currentDate)
   expect(after.status).toBe('running')
   expect(errors).toEqual([])
+})
+
+test('周月观察时仍记录同期日线，界面和开关操作不增加业务计数', async ({ page }) => {
+  const active = (await (await page.request.get('/api/trainings/active')).json()).training
+  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  const created = await page.request.post('/api/trainings', { data: { code: '600519', tier: '1M', start_date: '2026-09-01' } })
+  expect(created.status()).toBe(201)
+  await page.goto('/')
+  await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  await page.getByRole('tab', { name: '月K', exact: true }).click()
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+  await page.getByLabel('记录操作', { exact: true }).uncheck()
+  await page.getByLabel('记录操作', { exact: true }).check()
+  await page.getByRole('button', { name: '买入', exact: true }).click()
+  await expect(page.locator('.status-message')).toContainText('成交')
+  await expect(page.locator('.recording-strip')).toContainText('1 次操作')
+  await page.getByRole('button', { name: '推进下一日', exact: true }).click()
+  await expect(page.locator('.training-current-date')).toContainText('2026-09-02')
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+  const downloading = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出录制', exact: true }).click()
+  const download = await downloading
+  const path = evidencePath('canonical-daily.json.gz')
+  await download.saveAs(path)
+  const file = await readRecordingArtifact(path)
+  expect(file.events.filter((event: any) => ['chart.load', 'chart.timeframe', 'chart.tool', 'ui.theme', 'drawings.save'].includes(event.action))).toEqual([])
+  const reader = new CompactReader(file)
+  for (let i = 0; i < file.checkpoints.length; i++) {
+    const checkpoint = reader.checkpointAt(i)
+    if (!checkpoint.chart) continue
+    expect(checkpoint.chart.timeframe).toBe('1D')
+    expect(checkpoint.chart.bars.at(-1)!.date <= checkpoint.training!.training.currentDate!).toBe(true)
+  }
+  expect(reader.checkpointAt(file.checkpoints.length - 1).chart!.bars.at(-1)!.date).toBe('2026-09-02')
+})
+
+test('放弃可丢弃录像但保留训练与画线，结算默认保存且可从历史回放', async ({ page }) => {
+  test.setTimeout(90_000)
+  const active = (await (await page.request.get('/api/trainings/active')).json()).training
+  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  await page.goto('/')
+  async function start() {
+    await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
+    await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+    await page.locator('input[type="date"]').fill('2026-09-01')
+    await startTrainingFromForm(page)
+    await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  }
+  await start()
+  const id = (await (await page.request.get('/api/trainings/active')).json()).training.id
+  await page.locator('.draw-toolbar').getByRole('button', { name: '价位线', exact: true }).click()
+  const chart = await page.locator('.chart-host').boundingBox()
+  await page.mouse.click(chart!.x + chart!.width * .5, chart!.y + 140)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(1)
+  await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
+  await page.getByRole('button', { name: '放弃训练', exact: true }).click()
+  const end = page.getByRole('dialog', { name: '结束训练', exact: true })
+  await expect(end).toBeVisible()
+  await expect(end.getByLabel('保留到本机训练历史', { exact: true })).toBeChecked()
+  await end.getByLabel('保留到本机训练历史', { exact: true }).uncheck()
+  await end.getByRole('button', { name: '确认放弃', exact: true }).click()
+  await expect(page.getByRole('button', { name: '查看训练录像', exact: true })).toBeVisible()
+  expect((await (await page.request.get(`/api/trainings/${id}`)).json()).training.status).toBe('abandoned')
+  expect((await (await page.request.get(`/api/trainings/${id}/drawings`)).json()).drawings).toHaveLength(1)
+  await page.reload()
+  await page.getByRole('button', { name: '查看训练录像', exact: true }).click()
+  await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
+  await page.getByRole('button', { name: '返回训练', exact: true }).click()
+  await start()
+  await page.getByRole('button', { name: '买入', exact: true }).click()
+  await expect(page.locator('.status-message')).toContainText('成交')
+  await page.getByRole('button', { name: '提前结算', exact: true }).click()
+  await expect(end).toBeVisible()
+  await expect(end.getByLabel('保留到本机训练历史', { exact: true })).toBeChecked()
+  await end.getByRole('button', { name: '确认结算', exact: true }).click()
+  await page.getByRole('button', { name: '完成，返回首页', exact: true }).click()
+  await page.getByRole('button', { name: '查看训练录像', exact: true }).click()
+  await expect(page.locator('.recording-history-item')).toHaveCount(1)
+  await page.locator('.recording-history-item').click()
+  await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
+})
+
+test('结算确认时丢弃立即生效，刷新已结束训练不重新创建录像', async ({ page }) => {
+  const active = (await (await page.request.get('/api/trainings/active')).json()).training
+  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  await page.request.post('/api/trainings', { data: { code: '600519', tier: '1M', start_date: '2026-09-01' } })
+  await page.goto('/')
+  await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
+  await page.getByRole('button', { name: '提前结算', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '结束训练', exact: true })
+  await dialog.getByLabel('保留到本机训练历史', { exact: true }).uncheck()
+  await dialog.getByRole('button', { name: '确认结算', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: '训练结算', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.locator('.training-topbar')).toBeVisible()
+  await page.getByRole('button', { name: '返回首页', exact: true }).click()
+  await page.getByRole('button', { name: '查看训练录像', exact: true }).click()
+  await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
 })

@@ -5,6 +5,7 @@ import { CompactRecorder } from './compactRecorder'
 import { recordingStorage, loadLocalRecording } from './recordingRepository'
 import { acquireRecordingLease } from './recordingLease'
 import { writeRecordingFile } from './recordingFile'
+import type { CompactRecordingFile } from './compactTypes'
 import type { Action, ChartCapture, CheckpointInput, JsonValue, RecorderStatus, RecordingEventOutcome, RecordingEventSource } from './types'
 
 export { recordingStorage } from './recordingRepository'
@@ -62,6 +63,9 @@ export function useRecording(options: {
   const pendingActions = new Map<string, Action>()
   // finishSession 成功后冻结全部录制入口；失败解除冻结允许整段重试
   let sessionEnded = false
+  const finalized = ref(false)
+  const hasRetainedFile = ref(false)
+  let retainedFile: CompactRecordingFile | null = null
   const businessCount = ref(0)
   /** 业务事件计数（完成的买卖与图形/文字变更），不深拷贝资源即可随操作推进 */
   const businessEventCount = computed(() => businessCount.value)
@@ -83,6 +87,20 @@ export function useRecording(options: {
       try {
         error.value = ''
         const snapshot = options.snapshot()
+        // Viewing a finished training is not a new recording session. Reuse its
+        // retained file for export only; discarded sessions must stay deleted.
+        if (snapshot.training.status !== 'running' && !recorder) {
+          const id = sessionStorage.getItem(storageKeyFor())
+          retainedFile = id ? await loadLocalRecording(id) : null
+          if (disposed) return
+          hasRetainedFile.value = retainedFile !== null
+          businessCount.value = retainedFile ? businessEvents(retainedFile.events).length : 0
+          sessionEnded = true
+          finalized.value = true
+          enabled.value = false
+          ready.value = true
+          return
+        }
         context = await fetchRecordingContext(snapshot.training.id)
         if (disposed) return
         recorder ??= new CompactRecorder(recordingStorage, {
@@ -168,7 +186,7 @@ export function useRecording(options: {
     catch (reason) { fail(reason); return null }
   }
   function finish(opId: string | null, outcome: RecordingEventOutcome, result?: unknown): void {
-    if (!opId || !recorder) return
+    if (sessionEnded || !opId || !recorder) return
     const action = pendingActions.get(opId)
     if (!pendingActions.delete(opId)) return
     try {
@@ -196,11 +214,11 @@ export function useRecording(options: {
     finally { enabled.value = recorder.isRecording() }
   }
   async function exportFile(_event?: Event, compressed = true): Promise<void> {
-    if (!recorder || sessionEnded) return
+    if (sessionEnded && !retainedFile || !sessionEnded && !recorder) return
     error.value = ''
     try {
-      if (enabled.value) recorder.capture(checkpoint())
-      const file = await recorder.export()
+      if (!sessionEnded && enabled.value) recorder!.capture(checkpoint())
+      const file = sessionEnded ? retainedFile! : await recorder!.export()
       const blob = await writeRecordingFile(file, compressed !== false)
       downloadRecording(blob, `训练录制-${file.sessionId}.trainer-session.json${compressed !== false ? '.gz' : ''}`)
     } catch (reason) { fail(reason) }
@@ -234,11 +252,13 @@ export function useRecording(options: {
    */
   async function finishSession(keep: boolean): Promise<void> {
     if (sessionEnded) return
+    if (pendingActions.size) throw new Error('操作尚未完成，请稍后重试保存录像')
     sessionEnded = true
     error.value = ''
     try {
       if (initializing) await initializing.catch(() => {})
       const sessionId = recorder?.getStatus().sessionId ?? ''
+      if (keep && (!ready.value || !recorder || !sessionId)) throw new Error('录像尚未准备完成，无法确认保存；请重试或取消保留')
       if (recorder && sessionId) {
         if (keep && enabled.value) recorder.capture(checkpoint())
         try {
@@ -247,6 +267,7 @@ export function useRecording(options: {
           if (keep) throw reason
           // 丢弃路径：最终批次保存失败不阻塞清理，此前已落盘批次由 remove 统一删除
         }
+        if (keep) retainedFile = await recorder.export()
       }
       if (!keep && sessionId) {
         if (typeof recordingStorage.remove !== 'function') {
@@ -254,7 +275,13 @@ export function useRecording(options: {
         }
         await recordingStorage.remove(sessionId)
       }
-      try { sessionStorage.removeItem(storageKeyFor()) } catch { /* 隐私模式下指针本就不持久 */ }
+      if (!keep) {
+        retainedFile = null
+        try { sessionStorage.removeItem(storageKeyFor()) } catch { /* finished training never auto-creates a session */ }
+      }
+      hasRetainedFile.value = retainedFile !== null
+      finalized.value = true
+      enabled.value = false
       releaseLease?.()
       releaseLease = null
     } catch (reason) {
@@ -263,7 +290,7 @@ export function useRecording(options: {
       throw reason instanceof Error ? reason : new Error(String(reason))
     }
   }
-  const label = computed(() => error.value || status.value.state === 'error' ? '记录失败' : !ready.value ? '准备录制' : enabled.value ? '正在记录' : '已暂停记录')
+  const label = computed(() => error.value || status.value.state === 'error' ? '记录失败' : finalized.value ? hasRetainedFile.value ? '录像已保存' : '未保留录像' : !ready.value ? '准备录制' : enabled.value ? '正在记录' : '已暂停记录')
   const release = async () => {
     // finishSession 成功后录制器已定案（丢弃的会话绝不能被 flush 复活）
     if (sessionEnded) { releaseLease?.(); releaseLease = null; return }
@@ -272,5 +299,5 @@ export function useRecording(options: {
   const onHide = () => { void release() }
   window.addEventListener('pagehide', onHide)
   onUnmounted(() => { disposed = true; window.removeEventListener('pagehide', onHide); void release() })
-  return { status, ready, enabled, error, notice, label, businessEventCount, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, finishSession, refreshContext, retry, fail }
+  return { status, ready, enabled, error, notice, label, finalized, hasRetainedFile, businessEventCount, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, finishSession, refreshContext, retry, fail }
 }

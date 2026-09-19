@@ -37,3 +37,5 @@ localStorage 写入失败会显示“本地备份失败”；这时不能声称�
 服务端按 training_id 保存至 SQLite，限制为 256 KiB、500 个对象、单对象 256 锚点。存量表只增补 updated_at 列，未知旧时间保留空串，真实 PUT 后更新；不得为了迁移删旧线或重建旧表。
 
 回归入口：[drawing-state](../../../../server/test/drawing-state.test.ts)、[drawing-price-basis](../../../../server/test/drawing-price-basis.test.ts)、[drawing-outbox](../../../../server/test/drawing-outbox.test.ts)、[m3-tools](../../../../e2e/m3-tools.spec.ts)、[m3-feedback](../../../../e2e/m3-feedback.spec.ts)。测试需覆盖保存竞态、损坏恢复副本、远端加载失败和旧库兼容；历史通过记录见验证目录，不代表新变更已经验证。
+
+基准推进时同时重投影全部undo/redo状态并保留索引，避免下次全局pointerup把自动复权当成用户编辑；实际语义操作不增加。

@@ -1171,6 +1171,7 @@ watch(() => props.bars, () => {
   const { basis, changed } = advanceRenderedBasis(from, to)
   if (!basis || basis === from) return
   renderedBasis = basis
+  if (changed) drawingHistory.rebasePriceBasis(basis)
   if (changed && stale?.length) {
     restoreDrawings(projectDrawings(stale, from!, basis))
     emit('drawingsChange', drawings())

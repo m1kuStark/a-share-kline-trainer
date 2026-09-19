@@ -6,7 +6,7 @@ const START = '<!-- generated:status:start -->'
 const END = '<!-- generated:status:end -->'
 const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ')
 const link = (path: string, label = path) => `[${cell(label)}](<${posix.relative('docs', path)}>)`
-const evidence = (paths: string[]) => paths.length ? paths.map(path => link(path)).join('；') : '未记录'
+const evidence = (paths: string[]) => paths.length ? paths.map((path, index) => link(path, `证据${index + 1}`)).join('；') : '未记录'
 
 function render(cards: Card[]): string {
   const ordered = [...cards].sort((a, b) => a.data.id.localeCompare(b.data.id, 'en'))

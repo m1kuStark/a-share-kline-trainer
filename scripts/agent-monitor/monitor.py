@@ -178,6 +178,28 @@ def open_window(url):
         webbrowser.open(url)
 
 
+def validate_instance_url(value):
+    parsed = urlparse(value)
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1'
+            or parsed.username is not None or parsed.password is not None
+            or not parsed.port or parsed.port > 65535 or parsed.query or parsed.fragment
+            or not re.fullmatch(r'/[A-Za-z0-9_-]{24,64}/', parsed.path)):
+        raise ValueError('Monitor instance URL must be an exact loopback token URL')
+    return parsed
+
+
+class NoInstanceRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def read_instance_health(url):
+    validate_instance_url(url)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoInstanceRedirect())
+    with opener.open(url + 'health', timeout=2) as response:
+        return json.load(response)
+
+
 def serve(home, database, launch, reuse_address=False):
     home.mkdir(parents=True, exist_ok=True)
     metadata = home / 'server.json'
@@ -185,8 +207,7 @@ def serve(home, database, launch, reuse_address=False):
     try:
         previous = json.loads(metadata.read_text(encoding='utf-8'))
         if process_alive(previous['pid'], previous.get('startedAt')):
-            with urllib.request.urlopen(previous['url'] + 'health', timeout=2) as response:
-                valid = json.load(response).get('instance') == previous['instance']
+            valid = read_instance_health(previous['url']).get('instance') == previous['instance']
             if valid:
                 if launch:
                     open_window(previous['url'])
@@ -196,10 +217,11 @@ def serve(home, database, launch, reuse_address=False):
     token = secrets.token_urlsafe(24)
     port = 0
     if reuse_address and previous and not process_alive(previous['pid'], previous.get('startedAt')):
-        parsed = urlparse(previous['url'])
-        candidate = parsed.path.strip('/')
-        if parsed.scheme == 'http' and parsed.hostname == '127.0.0.1' and parsed.port and re.fullmatch(r'[A-Za-z0-9_-]{24,64}', candidate):
-            port, token = parsed.port, candidate
+        try:
+            parsed = validate_instance_url(previous['url'])
+            port, token = parsed.port, parsed.path.strip('/')
+        except (TypeError, ValueError, KeyError):
+            pass
     instance = secrets.token_hex(16)
 
     class Handler(BaseHTTPRequestHandler):

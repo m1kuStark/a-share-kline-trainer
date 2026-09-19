@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { theme } from '../theme'
 import { useRecording } from '../recording/useRecording'
+import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
   abandonTraining, advanceTraining, fetchTrainingBars, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
@@ -10,6 +11,7 @@ import {
 import { DRAW_TOOLS } from '../drawTools'
 import { SerialDrawingSaver, type Drawing } from '../drawingState'
 import { DrawingOutbox } from '../drawingOutbox'
+import type { DrawingPriceBasis } from '../drawingPriceBasis'
 import { cycleDirection, nextTimeframe, MAX_VISIBLE_BARS } from '../chartNavigation'
 import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavoriteTools } from '../toolFavorites'
 import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
@@ -20,9 +22,13 @@ const emit = defineEmits<{ ended: [] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
 const bars = ref<Bar[]>([])
+// Recording always uses daily bars observed at this exact advance date. A weekly
+// or monthly viewing choice must not make the shared recording lose daily detail.
+const dailyForRecording = shallowRef<{ date: string | null; bars: Bar[] } | null>(null)
 const hasMoreBars = ref(true)
 const tf = ref<Timeframe>('1D')
 const chartCostPrice = ref<number | null>(null)
+const drawingPriceBasis = ref<DrawingPriceBasis | null>(null)
 const loading = ref(false)
 const message = ref(props.snapshot.training.status === 'running' ? '训练就绪' : '已结束')
 const errorMessage = ref('')
@@ -33,6 +39,10 @@ const customWeight = ref<number | null>(null)
 const sellShares = ref<number | null>(null)
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
 const settledView = ref<TrainingSnapshot | null>(null)
+const endAction = ref<'settle' | 'abandon' | null>(null)
+const keepRecording = ref(true)
+const finishingSession = ref(false)
+const endError = ref('')
 // 画线模式状态：null＝默认模式；非 null＝画线模式（控制台工具条点击切换，Esc 退出）
 const drawTool = ref<string | null>(null)
 const toolbarCollapsed = ref(false)
@@ -65,7 +75,20 @@ const recording = useRecording({
   createdParams: props.recordingOptions?.params,
   ready: () => !loading.value && initialDrawings.value !== null,
   readChart: () => chartRef.value?.captureState() ?? null,
+  canonicalChart: canonicalRecordingChart,
 })
+function canonicalRecordingChart(): ChartCapture | null {
+  if (loading.value || initialDrawings.value === null) return null
+  const capture = chartRef.value?.captureState()
+  const daily = dailyForRecording.value
+  if (!capture || !daily || daily.date !== snapshot.value.training.currentDate) return null
+  const source = tf.value === '1D' ? capture.bars : daily.bars
+  if (!source.length) return null
+  const timestamp = (date: string) => Date.parse(`${date}T00:00:00Z`)
+  return { ...capture, timeframe: '1D', bars: source,
+    // Replay owns its viewport, so viewing gestures do not become timeline noise.
+    view: { fromTimestamp: timestamp(source[Math.max(0, source.length - 150)].date), toTimestamp: timestamp(source[source.length - 1].date), barSpace: 6, paneHeights: {} } }
+}
 const preparingRecording = computed(() => !recording.ready.value && !recording.error.value)
 async function captureRecording(): Promise<void> {
   await nextTick()
@@ -216,9 +239,16 @@ async function load(): Promise<void> {
   errorMessage.value = ''
   const recordingOp = recording.begin('chart.load', { timeframe })
   try {
-    const payload = await fetchTrainingBars(training.value.id, timeframe)
+    const [payload, daily] = await Promise.all([
+      fetchTrainingBars(training.value.id, timeframe),
+      timeframe === '1D' ? Promise.resolve(null) : fetchTrainingBars(training.value.id, '1D'),
+    ])
     if (requestVersion !== loadVersion) { recording.finish(recordingOp, 'cancelled', { reason: '已被新请求替代' }); return }
+    const canonical = daily ?? payload
+    if (canonical.training.currentDate !== payload.training.currentDate) throw new Error('训练日期已改变，请刷新图表后继续录制')
+    dailyForRecording.value = { date: canonical.training.currentDate, bars: canonical.bars }
     snapshot.value = { training: payload.training, account: payload.account, trades: payload.trades }
+    drawingPriceBasis.value = payload.drawingPriceBasis ?? null
     bars.value = payload.bars
     chartCostPrice.value = payload.chartCostPrice ?? null
     hasMoreBars.value = payload.hasMore
@@ -316,7 +346,6 @@ async function settle(): Promise<void> {
 
 async function abandon(): Promise<void> {
   if (loading.value || preparingRecording.value || training.value.status !== 'running') return
-  if (!window.confirm('确认放弃当前训练？放弃成绩不入排行榜。')) return
   loading.value = true
   const recordingOp = recording.begin('training.abandon')
   try {
@@ -324,7 +353,6 @@ async function abandon(): Promise<void> {
     snapshot.value = { ...snapshot.value, training: { ...snapshot.value.training, status: 'abandoned' } }
     recording.finish(recordingOp, 'accepted')
     await recording.flush()
-    emit('ended')
   } catch (error) {
     recording.rejected(recordingOp, error)
     errorMessage.value = error instanceof Error ? error.message : '操作失败'
@@ -333,10 +361,40 @@ async function abandon(): Promise<void> {
   }
 }
 
+function requestEnd(action: 'settle' | 'abandon'): void {
+  if (loading.value || preparingRecording.value || training.value.status !== 'running') return
+  keepRecording.value = true
+  endError.value = ''
+  endAction.value = action
+}
+async function confirmEnd(): Promise<void> {
+  if (!endAction.value || finishingSession.value) return
+  finishingSession.value = true
+  endError.value = ''
+  try {
+    if (!await flushDrawings()) throw new Error(drawingSaveError.value || '请先重试保存画线')
+    const action = endAction.value
+    if (training.value.status === 'running') {
+      if (action === 'settle') await settle()
+      else await abandon()
+    }
+    if (training.value.status === 'running') throw new Error(errorMessage.value || '训练尚未结束，请重试')
+    await recording.finishSession(keepRecording.value)
+    endAction.value = null
+    if (action === 'abandon') emit('ended')
+  } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
+  finally { finishingSession.value = false }
+}
 async function backToLauncher(): Promise<void> {
-  if (!await flushDrawings()) return
-  await recording.flush()
-  emit('ended')
+  if (finishingSession.value) return
+  finishingSession.value = true
+  endError.value = ''
+  try {
+    if (!await flushDrawings()) throw new Error(drawingSaveError.value || '请先重试保存画线')
+    await recording.finishSession(keepRecording.value)
+    emit('ended')
+  } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
+  finally { finishingSession.value = false }
 }
 async function prepareForLibrary(): Promise<boolean> {
   if (loading.value || preparingRecording.value || drawTool.value || textPanelOpen.value) return false
@@ -352,7 +410,7 @@ function setTrainingUrl(): void {
 }
 
 function onKeydown(event: KeyboardEvent): void {
-  if (preparingRecording.value) return
+  if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
     if (event.code === 'Space' || ['b', 'B', 's', 'S', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Home'].includes(event.key)) event.preventDefault()
@@ -464,7 +522,7 @@ void load()
         <button class="ghost-button compact-icon-button" title="刷新图表" aria-label="刷新图表" :disabled="loading" @click="load"><RefreshCw :size="14" /></button>
         <button class="ghost-button compact-icon-button" title="回到最新K线" aria-label="回到最新K线" :disabled="loading" @click="chartRef?.resetView()"><SkipForward :size="14" /></button>
         <button class="advance-button" :disabled="loading || training.status !== 'running'" title="推进下一日（空格）" @click="advance"><StepForward :size="14" />推进下一日</button>
-        <template v-if="training.status === 'running'"><button class="ghost-button" @click="settle">提前结算</button><button class="ghost-button danger" @click="abandon">放弃训练</button></template>
+        <template v-if="training.status === 'running'"><button class="ghost-button" @click="requestEnd('settle')">提前结算</button><button class="ghost-button danger" @click="requestEnd('abandon')">放弃训练</button></template>
         <button v-else class="ghost-button" @click="backToLauncher">返回首页</button>
       </div>
     </header>
@@ -486,6 +544,7 @@ void load()
         <KlineChart
           ref="chartRef" :bars="bars" :trades="snapshot.trades"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
+          :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"
           :magnet="magnet" :saved-drawings="initialDrawings"
@@ -500,9 +559,9 @@ void load()
       <aside class="trade-panel">
         <Teleport to="#training-recording-controls">
         <div class="recording-strip" @keydown.space.stop>
-          <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value" @change="recording.toggle" />记录操作</label>
-          <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }}</span>
-          <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出录制</button>
+          <label><input type="checkbox" aria-label="记录操作" :checked="recording.enabled.value" :disabled="loading || !recording.ready.value || recording.finalized.value" @change="recording.toggle" />记录操作</label>
+          <span role="status" :class="{ 'error-text': recording.label.value === '记录失败' }">{{ recording.label.value }} · {{ recording.businessEventCount.value }} 次操作</span>
+          <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出录制</button>
           <span v-if="recording.notice.value || recording.error.value || recording.status.value.error" class="recording-feedback" :class="{ 'error-text': recording.error.value || recording.status.value.error }" role="alert">{{ recording.error.value || recording.status.value.error || recording.notice.value }}</span>
           <button v-if="recording.label.value === '记录失败'" class="ghost-button" @click="recording.retry">重试录制保存</button>
         </div>
@@ -614,7 +673,19 @@ void load()
       </aside>
     </section>
 
-    <div v-if="settledView" class="settle-mask">
+    <div v-if="endAction" class="settle-mask" role="dialog" aria-modal="true" aria-label="结束训练" @keydown.stop>
+      <div class="settle-panel">
+        <h2>{{ endAction === 'abandon' ? '放弃本轮训练' : '提前结算本轮训练' }}</h2>
+        <p>{{ endAction === 'abandon' ? '放弃后成绩不进入排行榜，已有交易和画线仍保留。' : '结算后结束本轮交易，仍可查看图表和回放。' }}</p>
+        <label class="keep-recording"><input v-model="keepRecording" type="checkbox" :disabled="finishingSession || recording.finalized.value" />保留到本机训练历史</label>
+        <p class="form-hint">不勾选仅丢弃本轮录像，不删除交易成绩和画线。</p>
+        <p v-if="endError" class="error-text" role="alert">{{ endError }}</p>
+        <button class="trade-action buy" :disabled="finishingSession" @click="confirmEnd">{{ endAction === 'abandon' ? '确认放弃' : '确认结算' }}</button>
+        <button class="ghost-button" :disabled="finishingSession" @click="recording.exportFile">导出录像</button>
+        <button class="ghost-button" :disabled="finishingSession" @click="endAction = null">继续训练</button>
+      </div>
+    </div>
+    <div v-else-if="settledView" class="settle-mask" role="dialog" aria-modal="true" aria-label="训练结算" @keydown.stop>
       <div class="settle-panel">
         <h2>{{ settledView.training.earlySettle ? '提前结算' : '到期结算' }}</h2>
         <div class="settle-grid">
@@ -630,8 +701,10 @@ void load()
           <div><span>交易笔数</span><strong>{{ settledView.trades.length }}</strong></div>
           <div><span>训练区间</span><strong>{{ settledView.training.startDate }} ~ {{ settledView.training.settleDate }}</strong></div>
         </div>
-        <button class="trade-action buy" @click="backToLauncher">完成，返回首页</button>
-        <button class="ghost-button" :disabled="loading || !recording.ready.value" @click="recording.exportFile">导出本场录制</button>
+        <label class="keep-recording"><input v-model="keepRecording" type="checkbox" :disabled="finishingSession || recording.finalized.value" />保留到本机训练历史</label>
+        <p v-if="endError" class="error-text" role="alert">{{ endError }}</p>
+        <button class="trade-action buy" :disabled="finishingSession" @click="backToLauncher">完成，返回首页</button>
+        <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出本场录制</button>
         <button class="ghost-button" @click="settledView = null">继续查看图表</button>
       </div>
     </div>
@@ -644,4 +717,5 @@ void load()
 .recording-strip .ghost-button { padding: 2px 7px; font-size: 11px; }
 .recording-feedback { position: absolute; right: 0; top: 28px; z-index: 30; max-width: min(360px, 70vw); padding: 8px; white-space: normal; overflow-wrap: anywhere; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; }
 .shortcut-hint { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+.keep-recording { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 14px; }
 </style>

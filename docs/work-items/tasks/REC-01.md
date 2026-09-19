@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "REC",
-  "summary": "默认紧凑录制、gzip分享、迁移和只读回放已集成；完整工程验收通过，待用户验收。",
-  "next_action": "等待用户阶段版本最终验收；通过后记录明确决定，再解锁M4/M5。",
+  "summary": "紧凑录制已集成，用户返修见ACCEPT-01。",
+  "next_action": "等待本轮返修及用户最终验收。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",
