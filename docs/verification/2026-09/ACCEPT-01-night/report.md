@@ -13,3 +13,5 @@ ACCEPT-E2E由独立GLM适配既有用例，保留首笔成交、T+1、防未来�
 [ACCEPT-E2E worker handoff](accept-e2e-worker.md): de88fac merged after independent read-only review; original data integrity checks preserved, final integrated run still required.
 
 Candidate acd7ed0 (ACCEPT-01-8c6a98cb8f4a) failed at unit gate:678/680 passed. Two source-text assertions still required old zoom early-return/one-line layout. New behavior tests execute the real extracted zoom function: auto-fit before spacing, one viewport report for1 and150bars, no effects foridentity/NaN. Both suites30/30 pass; production code unchanged by this repair. Failure run3eb233bb retained. A new candidate must rerun full gates.
+
+Candidate671dae4 failed675/680 only in docs-tooling real-Git tests at default5seconds. Identical candidate isolated rerun30/30 passed in22.14seconds (individual Git cases around1.8-3seconds), supporting host-contention rather than an assertion defect. Only this file now has20second per-test budget for real subprocess/index/commit integration; no production timeout or assertion changed, no tests skipped. Candidate must be rebuilt and all gates rerun.
