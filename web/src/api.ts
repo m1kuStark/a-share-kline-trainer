@@ -1,5 +1,6 @@
 export type Timeframe = '1D' | '1W' | '1M'
 import type { Drawing } from './drawingState'
+import type { DrawingPriceBasis } from './drawingPriceBasis'
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 
 export interface Stock {
@@ -118,6 +119,8 @@ export interface TrainingBarsPayload extends TrainingSnapshot {
   bars: Bar[]
   /** 是否还有更早历史可动态加载 */
   hasMore: boolean
+  /** 画线前复权基准（已发生权息累计仿射变换），与 bars 同次返回；旧服务端缺省（可选保持兼容） */
+  drawingPriceBasis?: DrawingPriceBasis
 }
 
 export function fetchTrainingBars(id: number, tf: Timeframe, params?: { before?: string; count?: number }): Promise<TrainingBarsPayload> {
