@@ -6,11 +6,11 @@ import type { ChartCapture, RecordingFile } from './types'
 import type { TrainingSnapshot } from '../api'
 
 const MAX_BYTES = 25 * 1024 * 1024
-const MAX_EVENTS = 50_000
+export const MAX_EVENTS = 50_000
 const MAX_CHECKPOINTS = 2_000
 const MAX_DEPTH = 40
-const MAX_DRAWINGS = 500
-const MAX_DRAWING_POINTS = 256
+export const MAX_DRAWINGS = 500
+export const MAX_DRAWING_POINTS = 256
 
 const ACTION_SET: ReadonlySet<string> = new Set(ACTIONS)
 const DRAWING_NAMES: ReadonlySet<string> = new Set(DRAW_TOOLS.map(tool => tool.name))
@@ -18,7 +18,7 @@ const DRAWING_PANES: ReadonlySet<string> = new Set(['candle_pane', 'VOL', 'MACD'
 const PHASES: ReadonlySet<string> = new Set(['started', 'finished'])
 const SOURCES: ReadonlySet<string> = new Set(['ui', 'keyboard', 'chart', 'system'])
 const OUTCOMES: ReadonlySet<string> = new Set(['accepted', 'rejected', 'failed', 'cancelled', 'interrupted', 'unknown'])
-const TIMEFRAMES: ReadonlySet<string> = new Set(['1D', '1W', '1M'])
+export const TIMEFRAMES: ReadonlySet<string> = new Set(['1D', '1W', '1M'])
 const TIERS: ReadonlySet<string> = new Set(['1M', '3M', '6M', '1Y', '2Y'])
 const TRAINING_STATUS: ReadonlySet<string> = new Set(['running', 'settled', 'abandoned'])
 const ADJUST_MODES: ReadonlySet<string> = new Set(['forward', 'raw'])
@@ -28,11 +28,11 @@ const MONTH_PATTERN = /^\d{4}-\d{2}$/
 const OHLC_KEYS = ['open', 'high', 'low', 'close', 'volume', 'amount'] as const
 const ACCOUNT_KEYS = ['cash', 'shares', 'availableShares', 'marketValue', 'equity'] as const
 
-function fail(field: string, reason: string): never {
+export function fail(field: string, reason: string): never {
   throw new Error(`录制文件校验失败：${field ? `${field} ` : ''}${reason}`)
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const proto: unknown = Object.getPrototypeOf(value)
   return proto === Object.prototype || proto === null
@@ -43,7 +43,7 @@ function joinField(field: string, key: string): string {
 }
 
 /** 全树 JSON 安全检查：有限数值、无 undefined/函数/非纯对象，嵌套深度受限 */
-function assertJson(value: unknown, field: string, depth: number): void {
+export function assertJson(value: unknown, field: string, depth: number): void {
   if (depth > MAX_DEPTH) fail(field, `嵌套深度超过 ${MAX_DEPTH} 层`)
   switch (typeof value) {
     case 'string':
@@ -74,60 +74,60 @@ function assertJson(value: unknown, field: string, depth: number): void {
   }
 }
 
-function assertRecord(value: unknown, field: string): Record<string, unknown> {
+export function assertRecord(value: unknown, field: string): Record<string, unknown> {
   if (!isRecord(value)) fail(field, '必须是 JSON 对象')
   return value
 }
 
-function assertArray(value: unknown, field: string): unknown[] {
+export function assertArray(value: unknown, field: string): unknown[] {
   if (!Array.isArray(value)) fail(field, '必须是数组')
   return value
 }
 
-function assertString(value: unknown, field: string): string {
+export function assertString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.length === 0) fail(field, '必须是非空字符串')
   return value
 }
 
-function assertStringOrNull(value: unknown, field: string): string | null {
+export function assertStringOrNull(value: unknown, field: string): string | null {
   if (value === null) return null
   return assertString(value, field)
 }
 
-function assertBoolean(value: unknown, field: string): boolean {
+export function assertBoolean(value: unknown, field: string): boolean {
   if (typeof value !== 'boolean') fail(field, '必须是布尔值')
   return value
 }
 
-function assertFinite(value: unknown, field: string): number {
+export function assertFinite(value: unknown, field: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) fail(field, '必须是有限数值')
   return value
 }
 
-function assertNumberOrNull(value: unknown, field: string): number | null {
+export function assertNumberOrNull(value: unknown, field: string): number | null {
   if (value === null) return null
   return assertFinite(value, field)
 }
 
-function assertInteger(value: unknown, field: string): number {
+export function assertInteger(value: unknown, field: string): number {
   if (typeof value !== 'number' || !Number.isInteger(value)) fail(field, '必须是整数')
   return value
 }
 
-function assertPositive(value: unknown, field: string): number {
+export function assertPositive(value: unknown, field: string): number {
   const number = assertFinite(value, field)
   if (number <= 0) fail(field, `必须是正数（收到 ${number}）`)
   return number
 }
 
-function assertEnum(value: unknown, field: string, allowed: ReadonlySet<string>): string {
+export function assertEnum(value: unknown, field: string, allowed: ReadonlySet<string>): string {
   if (typeof value !== 'string' || !allowed.has(value)) {
     fail(field, `必须是 ${[...allowed].join('/')} 之一（收到 ${JSON.stringify(value)}）`)
   }
   return value
 }
 
-function assertDate(value: unknown, field: string): string {
+export function assertDate(value: unknown, field: string): string {
   const text = assertString(value, field)
   if (!DATE_PATTERN.test(text)) fail(field, `日期须为 YYYY-MM-DD 格式（收到 ${JSON.stringify(text)}）`)
   const [year, month, day] = text.split('-').map(Number) as [number, number, number]
@@ -138,13 +138,13 @@ function assertDate(value: unknown, field: string): string {
   return text
 }
 
-function assertDateOrNull(value: unknown, field: string): string | null {
+export function assertDateOrNull(value: unknown, field: string): string | null {
   if (value === null) return null
   return assertDate(value, field)
 }
 
 /** bar 日期：1D/1W 为 YYYY-MM-DD；1M 允许后端月键 YYYY-MM，统一归一月月初便于截止比较 */
-function assertBarDate(value: unknown, field: string, timeframe: string): string {
+export function assertBarDate(value: unknown, field: string, timeframe: string): string {
   if (typeof value === 'string' && timeframe === '1M' && MONTH_PATTERN.test(value)) {
     const month = Number(value.slice(5, 7))
     if (month >= 1 && month <= 12) return `${value}-01`
@@ -153,7 +153,7 @@ function assertBarDate(value: unknown, field: string, timeframe: string): string
   return assertDate(value, field)
 }
 
-function assertTimestamp(value: unknown, field: string): string {
+export function assertTimestamp(value: unknown, field: string): string {
   const text = assertString(value, field)
   if (Number.isNaN(Date.parse(text))) fail(field, `时间须为可解析的日期时间字符串（收到 ${JSON.stringify(text)}）`)
   return text
@@ -165,7 +165,7 @@ interface CheckedEvent {
   elapsedMs: number
 }
 
-function assertEvent(raw: unknown, field: string, index: number): CheckedEvent {
+export function assertEvent(raw: unknown, field: string, index: number): CheckedEvent {
   const event = assertRecord(raw, field)
   assertInteger(event.seq, `${field}.seq`)
   if (event.seq !== index + 1) {
@@ -198,7 +198,7 @@ interface PairingKey {
   segmentId: unknown
 }
 
-function assertEventPairing(events: unknown[], complete: boolean): void {
+export function assertEventPairing(events: unknown[], complete: boolean): void {
   const started = new Map<string, PairingKey>()
   const finished = new Set<string>()
   events.forEach((raw, index) => {
@@ -223,14 +223,14 @@ function assertEventPairing(events: unknown[], complete: boolean): void {
   }
 }
 
-function assertBar(raw: unknown, field: string, timeframe: string): string {
+export function assertBar(raw: unknown, field: string, timeframe: string): string {
   const bar = assertRecord(raw, field)
   const date = assertBarDate(bar.date, `${field}.date`, timeframe)
   for (const key of OHLC_KEYS) assertFinite(bar[key], `${field}.${key}`)
   return date
 }
 
-function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): void {
+export function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): void {
   const drawing = assertRecord(raw, field)
   const id = assertString(drawing.id, `${field}.id`)
   if (drawingIds.has(id)) fail(`${field}.id`, `画线 id 重复（${id}）`)
@@ -258,6 +258,18 @@ function assertDrawing(raw: unknown, field: string, drawingIds: Set<string>): vo
   // extendData 为任意 JsonValue，已由 assertJson 全树校验
 }
 
+/** 图表视口：field 传入 chart.view 字段的路径（REC-V2-VALIDATION 复用，错误文案不变） */
+export function assertChartView(view: unknown, field: string): void {
+  const record = assertRecord(view, field)
+  assertNumberOrNull(record.fromTimestamp, `${field}.fromTimestamp`)
+  assertNumberOrNull(record.toTimestamp, `${field}.toTimestamp`)
+  assertPositive(record.barSpace, `${field}.barSpace`)
+  const paneHeights = assertRecord(record.paneHeights, `${field}.paneHeights`)
+  for (const [key, height] of Object.entries(paneHeights)) {
+    assertPositive(height, `${field}.paneHeights.${key}`)
+  }
+}
+
 /** 返回归一化（月键归月初）的 bar 日期，供严格递增与截止比较 */
 function assertChartCapture(raw: unknown, field: string): string[] {
   const chart = assertRecord(raw, field)
@@ -278,19 +290,12 @@ function assertChartCapture(raw: unknown, field: string): string[] {
   drawings.forEach((drawing, index) => {
     assertDrawing(drawing, `${field}.drawings[${index}]`, drawingIds)
   })
-  const view = assertRecord(chart.view, `${field}.view`)
-  assertNumberOrNull(view.fromTimestamp, `${field}.view.fromTimestamp`)
-  assertNumberOrNull(view.toTimestamp, `${field}.view.toTimestamp`)
-  assertPositive(view.barSpace, `${field}.view.barSpace`)
-  const paneHeights = assertRecord(view.paneHeights, `${field}.view.paneHeights`)
-  for (const [key, height] of Object.entries(paneHeights)) {
-    assertPositive(height, `${field}.view.paneHeights.${key}`)
-  }
+  assertChartView(chart.view, `${field}.view`)
   assertNumberOrNull(chart.costPrice, `${field}.costPrice`)
   return barDates
 }
 
-function assertTrade(raw: unknown, field: string): void {
+export function assertTrade(raw: unknown, field: string): void {
   const trade = assertRecord(raw, field)
   assertInteger(trade.seq, `${field}.seq`)
   assertDate(trade.date, `${field}.date`)
@@ -304,29 +309,37 @@ function assertTrade(raw: unknown, field: string): void {
   if (trade.blindLabel !== undefined) assertString(trade.blindLabel, `${field}.blindLabel`)
 }
 
+/** 训练元数据：field 传入训练快照内 training 字段的路径（REC-V2-VALIDATION 复用，错误文案不变） */
+export function assertTrainingMeta(raw: unknown, field: string): void {
+  const meta = assertRecord(raw, field)
+  assertInteger(meta.id, `${field}.id`)
+  assertEnum(meta.tier, `${field}.tier`, TIERS)
+  assertStringOrNull(meta.code, `${field}.code`)
+  assertStringOrNull(meta.name, `${field}.name`)
+  assertString(meta.market, `${field}.market`)
+  assertDate(meta.startDate, `${field}.startDate`)
+  assertDate(meta.plannedEnd, `${field}.plannedEnd`)
+  assertDateOrNull(meta.currentDate, `${field}.currentDate`)
+  assertEnum(meta.status, `${field}.status`, TRAINING_STATUS)
+  assertDateOrNull(meta.settleDate, `${field}.settleDate`)
+  assertBoolean(meta.earlySettle, `${field}.earlySettle`)
+  assertBoolean(meta.blind, `${field}.blind`)
+  assertEnum(meta.adjustMode, `${field}.adjustMode`, ADJUST_MODES)
+  assertFinite(meta.initialCash, `${field}.initialCash`)
+  assertTimestamp(meta.createdAt, `${field}.createdAt`)
+}
+
+/** 账户视图：field 传入训练快照内 account 字段的路径 */
+export function assertAccountView(raw: unknown, field: string): void {
+  const account = assertRecord(raw, field)
+  for (const key of ACCOUNT_KEYS) assertFinite(account[key], `${field}.${key}`)
+  assertNumberOrNull(account.costPrice, `${field}.costPrice`)
+}
+
 function assertTrainingSnapshot(raw: unknown, field: string): void {
   const snapshot = assertRecord(raw, field)
-  const meta = assertRecord(snapshot.training, `${field}.training`)
-  assertInteger(meta.id, `${field}.training.id`)
-  assertEnum(meta.tier, `${field}.training.tier`, TIERS)
-  assertStringOrNull(meta.code, `${field}.training.code`)
-  assertStringOrNull(meta.name, `${field}.training.name`)
-  assertString(meta.market, `${field}.training.market`)
-  assertDate(meta.startDate, `${field}.training.startDate`)
-  assertDate(meta.plannedEnd, `${field}.training.plannedEnd`)
-  assertDateOrNull(meta.currentDate, `${field}.training.currentDate`)
-  assertEnum(meta.status, `${field}.training.status`, TRAINING_STATUS)
-  assertDateOrNull(meta.settleDate, `${field}.training.settleDate`)
-  assertBoolean(meta.earlySettle, `${field}.training.earlySettle`)
-  assertBoolean(meta.blind, `${field}.training.blind`)
-  assertEnum(meta.adjustMode, `${field}.training.adjustMode`, ADJUST_MODES)
-  assertFinite(meta.initialCash, `${field}.training.initialCash`)
-  assertTimestamp(meta.createdAt, `${field}.training.createdAt`)
-
-  const account = assertRecord(snapshot.account, `${field}.account`)
-  for (const key of ACCOUNT_KEYS) assertFinite(account[key], `${field}.account.${key}`)
-  assertNumberOrNull(account.costPrice, `${field}.account.costPrice`)
-
+  assertTrainingMeta(snapshot.training, `${field}.training`)
+  assertAccountView(snapshot.account, `${field}.account`)
   assertArray(snapshot.trades, `${field}.trades`).forEach((trade, index) => {
     assertTrade(trade, `${field}.trades[${index}]`)
   })
@@ -378,8 +391,14 @@ function assertCheckpoint(
   return { afterSeq, training, chart, barDates }
 }
 
+/** v1 大文件迁移预算：仅由调用方传入，绝不从导入文件内容读取；缺省保持旧 2000 */
+export interface ValidateRecordingOptions {
+  maxCheckpoints?: number
+}
+
 /** 校验录制文件；失败抛中文可行动错误，通过则原样返回（不重排 checkpoints） */
-export function validateRecording(value: unknown): RecordingFile {
+export function validateRecording(value: unknown, options?: ValidateRecordingOptions): RecordingFile {
+  const maxCheckpoints = options?.maxCheckpoints ?? MAX_CHECKPOINTS
   if (!isRecord(value)) fail('顶层', '必须是 JSON 对象')
   assertJson(value, '', 1)
 
@@ -411,7 +430,9 @@ export function validateRecording(value: unknown): RecordingFile {
   const events = assertArray(value.events, 'events')
   if (events.length > MAX_EVENTS) fail('events', `事件数量 ${events.length} 超过上限 ${MAX_EVENTS}`)
   const checkpoints = assertArray(value.checkpoints, 'checkpoints')
-  if (checkpoints.length > MAX_CHECKPOINTS) fail('checkpoints', `检查点数量 ${checkpoints.length} 超过上限 ${MAX_CHECKPOINTS}`)
+  if (checkpoints.length > maxCheckpoints) {
+    fail('checkpoints', `检查点数量 ${checkpoints.length} 超过上限 ${maxCheckpoints}`)
+  }
   const gaps = assertArray(value.gaps, 'gaps')
 
   const segmentIds = new Set<string>()
