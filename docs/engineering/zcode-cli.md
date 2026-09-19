@@ -2,6 +2,8 @@
 
 2026-09-18实际核验：桌面ZCode 3.12.3，自带CLI 0.16.5，入口为安装目录 `resources/glm/zcode.cjs`，由Node24执行。本机位置为D盘MySoftWares/Zcode；跨机器先发现安装位置，不硬编码为项目必需路径。
 
+2026-09-20补充：[官方资料与本机多模态/事件流能力](zcode-official-capabilities.md)。
+
 ## 可用调用
 
 使用参数数组调用Node＋入口，支持 `--cwd <独立worktree>`、`--prompt <读取prompt文件的文本>`、`--json`、`--no-color`。本版本帮助列出的 `--max-turns`/`--settings`不在实际参数解析器里，会被拒绝；`/model`在headless prompt中是普通模型消息，不能用于确认模型配置。

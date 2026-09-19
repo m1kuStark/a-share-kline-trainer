@@ -1,10 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { runDocs } from '../../scripts/docs.js'
+
+// These are real Git/CLI integration checks, including multiple process starts,
+// commits and index reads per test. Windows host contention can exceed Vitest's
+// 5s unit default; retain bounded execution without treating that as a CLI SLO.
+vi.setConfig({ testTimeout: 20_000 })
 
 let root: string
 async function put(path: string, content: string) {

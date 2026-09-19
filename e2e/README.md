@@ -6,6 +6,8 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [acceptance-feedback](acceptance-feedback.spec.ts) | 录像入口、活动训练往返、快捷键与顶部空间 |
+| [drawing-basis](drawing-basis.spec.ts) | 除权推进/轴缩放/撤销刷新时画线锚点对齐 |
 | [recording](recording.spec.ts) | 默认录制、交易拒单、周期/绘图、暂停刷新、导出与只读回放 |
 | [recording-long](recording-long.spec.ts) | v2 gzip、两年真实推进/交易/画线/周期/刷新、离线回放与体积/耗时 |
 | [recording-migration](recording-migration.spec.ts) | v1存储保留及迁移、损坏导入、旧JSON、复制标签页独立录制 |

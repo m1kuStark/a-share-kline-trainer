@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { CompactReader } from '../web/src/recording/compactCodec'
-import { startTrainingFromForm } from './training-flow'
+import { startTrainingFromForm, expectSettledResultsDialog } from './training-flow'
 import { evidencePath } from './runtime'
 import { readRecordingArtifact } from './recording-file'
 
@@ -79,6 +79,8 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   }
   expect(finalSnapshot.training.status).toBe('settled')
   expect(advanceTimes.length).toBeGreaterThan(450)
+  // 自然到期同样出现结算结果面板，「保留到本机训练历史」默认勾选（返修合同行为3）
+  await expectSettledResultsDialog(page)
   const output = await exported(page, '导出本场录制', 'two-year-final.json.gz')
   const file = output.file
   expect(file.sessionId).toBe(initialRecording.file.sessionId)
@@ -105,7 +107,9 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   page.on('request', request => { if (/\/api\//.test(request.url()) && ['POST','PUT','DELETE'].includes(request.method())) writes.push(request.url()) })
   const importedAt = Date.now()
   await page.getByLabel('导入录制', { exact: true }).setInputFiles(output.path)
-  await page.getByRole('button', { name: '最后一步', exact: true }).click()
+  // REC-03 按日回放：跳到最后一天后画线仍在，且 b/Delete/鼠标都改不动（只读）
+  await page.getByRole('button', { name: '跳到最后一天' }).click()
+  await expect(page.locator('.replay-day')).toHaveText(/第 \d+ \/ \d+ 日/)
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings().length)).toBe(1)
   const importMs = Date.now() - importedAt
   await page.keyboard.press('b')

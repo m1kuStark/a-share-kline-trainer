@@ -93,7 +93,14 @@ def run(args):
                    ZCODE_PERSONAL_PROVIDER_CONFIG_FILE=str(provider),
                    ZCODE_MODEL_RETRY_MAX_RETRIES='2', ZCODE_MODEL_RETRY_BASE_DELAY_MS='10000',
                    ZCODE_MODEL_RETRY_MAX_DELAY_MS='30000')
-        command = [args.node, str(args.cli), '--cwd', str(args.cwd), '--prompt', job['prompt'], '--json', '--no-color']
+        command = [args.node, str(args.cli), '--cwd', str(args.cwd), '--prompt', job['prompt'], '--output-format', 'stream-json', '--no-color']
+        attachments = [pathlib.Path(path).resolve(strict=True) for path in getattr(args, 'attach', [])]
+        for attachment in attachments:
+            if not attachment.is_file():
+                raise ValueError('Attachment must be a local file: ' + str(attachment))
+            command += ['--attach', str(attachment)]
+        job['attachments'] = [str(path) for path in attachments]
+        job['outputFormat'] = 'stream-json'
         if args.resume:
             command += ['--resume', args.resume]
         with args.log.open('w', encoding='utf-8') as output:
@@ -134,6 +141,7 @@ def parser():
     p.add_argument('--node', default=shutil.which('node'))
     p.add_argument('--wake-state', type=pathlib.Path)
     p.add_argument('--resume')
+    p.add_argument('--attach', action='append', type=pathlib.Path, default=[], help='Explicit task image/video attachment; repeat for multiple files')
     p.add_argument('--parallelism', type=int, default=1, choices=[1, 2, 3, 4])
     return p
 

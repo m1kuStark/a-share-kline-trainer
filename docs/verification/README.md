@@ -4,6 +4,12 @@
 
 ## 当前入口
 
+- [夜间返修与工具核验](2026-09/ACCEPT-01-night/report.md)：日回放、官方CLI资料及多模态实测。
+
+- [阶段返修模块复核](2026-09/ACCEPT-01-review/report.md)：录制生命周期、画线返修和提交门禁证据。
+
+- [本轮入口布局返修](2026-09/ACCEPT-01-ui/report.md)：定向验证，整体待模块集成。
+
 - [本次阶段版本](2026-09/REC-01-stage-release/report.md)：完整候选通过、两年录制、本机行情检查及用户验收入口。
 
 - [阶段候选修复](2026-09/REC-01-release-fixes/report.md)：退出超时根因、布局回归与用户阶段验收门禁。
@@ -28,3 +34,5 @@
 其余旧截图/TDX导出保持原路径，避免破坏证据链；旧报告不是当前工作指令。按任务ID/规则ID检索，不默认读取整个证据目录。
 
 用户验收独立保存scope、决定、日期、来源；测试全绿不生成用户accepted。代码提交C被测试后，文档提交E收录其报告可引用C，不能改写成测试过E。提交前工作树验证须用指纹核对最终提交，明确写出这种证据边界。
+
+- [MON-02 dashboard review](2026-09/MON-02-review/report.md): successor chains and current-state counts.

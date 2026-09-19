@@ -118,6 +118,24 @@ def session_activity(db, job):
             'request': {'status': usage[0], 'model': usage[1], 'startedAt': usage[2], 'firstTokenAt': usage[3], 'completedAt': usage[4], 'error': redact(usage[5])[:400]} if usage else None}
 
 
+def resolve_chain(item, by_id):
+    """Walk followupId links bounded by registry size; cycles and missing successors stay unresolved."""
+    seen = {item['id']}
+    current = item
+    for _ in range(len(by_id)):
+        followup_id = current.get('followupId')
+        if not followup_id:
+            return current, None
+        if followup_id in seen:
+            return None, 'cycle'
+        followup = by_id.get(followup_id)
+        if followup is None:
+            return None, 'missing'
+        seen.add(followup_id)
+        current = followup
+    return None, 'cycle'
+
+
 def snapshot(registry, database):
     jobs, warnings = [], []
     db = None
@@ -166,7 +184,20 @@ def snapshot(registry, database):
         if item.get('followupId'):
             followup = by_id.get(item['followupId'])
             item['followup'] = {key: followup.get(key) for key in ['id', 'title', 'phase']} if followup else None
-    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'warnings': warnings}
+        # Raw state/review are never rewritten; resolved is a display-level chain verdict only.
+        tip, issue = resolve_chain(item, by_id)
+        item['chainIssue'] = issue
+        item['superseded'] = tip is not None and tip is not item
+        item['resolved'] = tip is not None and tip.get('phase') == 'reviewed'
+        if tip is not None:
+            item['chainTip'] = {key: tip.get(key) for key in ['id', 'title', 'phase']}
+        model = str(item.get('model') or '')
+        item['jobKind'] = 'glm' if not model or 'glm' in model.lower() else 'local'
+    current = [j for j in jobs if not j['superseded']]
+    summary = {'running': sum(1 for j in current if j['phase'] == 'running'),
+               'awaitingReview': sum(1 for j in current if j['phase'] == 'awaiting_review'),
+               'needsAttention': sum(1 for j in current if j['phase'] in ('failed', 'interrupted', 'needs_changes'))}
+    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'summary': summary, 'warnings': warnings}
 
 
 def open_window(url):
@@ -178,6 +209,28 @@ def open_window(url):
         webbrowser.open(url)
 
 
+def validate_instance_url(value):
+    parsed = urlparse(value)
+    if (parsed.scheme != 'http' or parsed.hostname != '127.0.0.1'
+            or parsed.username is not None or parsed.password is not None
+            or not parsed.port or parsed.port > 65535 or parsed.query or parsed.fragment
+            or not re.fullmatch(r'/[A-Za-z0-9_-]{24,64}/', parsed.path)):
+        raise ValueError('Monitor instance URL must be an exact loopback token URL')
+    return parsed
+
+
+class NoInstanceRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def read_instance_health(url):
+    validate_instance_url(url)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoInstanceRedirect())
+    with opener.open(url + 'health', timeout=2) as response:
+        return json.load(response)
+
+
 def serve(home, database, launch, reuse_address=False):
     home.mkdir(parents=True, exist_ok=True)
     metadata = home / 'server.json'
@@ -185,8 +238,7 @@ def serve(home, database, launch, reuse_address=False):
     try:
         previous = json.loads(metadata.read_text(encoding='utf-8'))
         if process_alive(previous['pid'], previous.get('startedAt')):
-            with urllib.request.urlopen(previous['url'] + 'health', timeout=2) as response:
-                valid = json.load(response).get('instance') == previous['instance']
+            valid = read_instance_health(previous['url']).get('instance') == previous['instance']
             if valid:
                 if launch:
                     open_window(previous['url'])
@@ -196,10 +248,11 @@ def serve(home, database, launch, reuse_address=False):
     token = secrets.token_urlsafe(24)
     port = 0
     if reuse_address and previous and not process_alive(previous['pid'], previous.get('startedAt')):
-        parsed = urlparse(previous['url'])
-        candidate = parsed.path.strip('/')
-        if parsed.scheme == 'http' and parsed.hostname == '127.0.0.1' and parsed.port and re.fullmatch(r'[A-Za-z0-9_-]{24,64}', candidate):
-            port, token = parsed.port, candidate
+        try:
+            parsed = validate_instance_url(previous['url'])
+            port, token = parsed.port, parsed.path.strip('/')
+        except (TypeError, ValueError, KeyError):
+            pass
     instance = secrets.token_hex(16)
 
     class Handler(BaseHTTPRequestHandler):

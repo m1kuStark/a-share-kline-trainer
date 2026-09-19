@@ -14,7 +14,7 @@
 
 ## 派发
 
-从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行的会话。
+从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行会话；`--attach`可重复传明确任务图片/视频。默认stream-json保存逐事件日志和末尾摘要，能力与实测边界见[官方核对](../../docs/engineering/zcode-official-capabilities.md)。
 
 必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。`--parallelism`默认1、允许1～4；当前协调器新调用统一设3（最初两个已占用槽0/1，新增占用槽2）。locks目录分别持有规范化worktree锁、唯一batch锁和slot锁，拒绝同工作树双写/批次覆盖/超槽位调用，不自动抢遗留锁。旧worker.lock存在时拒绝迁移启动。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
 
@@ -22,10 +22,12 @@
 
 派发后结束Codex轮次。当前线程的heartbeat读取完成标志再验收，读到running立即退出；完整交接和其他待复核批次不能因派发新任务被遗忘。异常退出保留日志、改动和批次记录；确认无运行进程后才能处理遗留锁或重试。
 
-## 测试与维护
+## Verification
 
-`py -3.9 -m unittest discover -s scripts/agent-monitor -p 'test_*.py'`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、同树排他/并发槽位（含双进程）、并行禁止共享唤醒文件、真实短子进程完成、生命周期跨请求/跨session/轮转及修复关联。UI验收另查无新JSON时跨过提示阈值、修复跳转、Prompt、深浅主题、溢出、文本注入及pageerror。
+`py -3.9 -m unittest discover -s scripts/agent-monitor -p "test_*.py"`验证隔离、生命周期、遮蔽、地址校验、事件流和附件；UI检查单独执行。
 
-本机2026-09-19 Zcode3.12.3/CLI0.16.5：CLI记录在`.zcode/cli/db/db.sqlite`，桌面另有`.zcode/v2/tasks-index.sqlite`；本工程worktree在桌面索引未登记。未找到CLI session直接进入GUI的入口；不手改桌面数据库。SQLite结构属本机适配，升级后需复查；优先在将来采用官方公开任务观察接口。
+CLI与Zcode桌面会话索引不同，观察限制见[模型CLI经验](../../docs/engineering/zcode-cli.md)。升级后复查，不手改桌面数据库。
 
 与[模型协作规则](../../docs/engineering/model-delegation.md)、[并行协议](../../docs/engineering/parallel-development.md)配合使用。
+
+复用既有窗口前验证server.json中的URL为精确127.0.0.1、合法端口和单层token路径；健康请求禁重定向、禁环境代理，不能让损坏元数据发起外部请求。

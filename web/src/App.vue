@@ -13,8 +13,10 @@ import { readRecordingFile } from './recording/recordingFile'
 import type { RecordingSummary } from './recording/types'
 import type { CompactRecordingFile } from './recording/compactTypes'
 
-type View = 'loading' | 'launcher' | 'training' | 'replay'
+type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay'
 const view = ref<View>('loading')
+const trainingRef = ref<InstanceType<typeof Training> | null>(null)
+const libraryBusy = ref(false)
 const snapshot = ref<TrainingSnapshot | null>(null)
 const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
@@ -23,10 +25,26 @@ const replay = shallowRef<CompactRecordingFile | null>(null)
 const recentRecordings = ref<RecordingSummary[]>([])
 const recordingError = ref('')
 async function loadRecordings(): Promise<void> {
-  try { recentRecordings.value = (await recordingStorage.list()).reverse().slice(0, 8) }
+  try { recentRecordings.value = (await recordingStorage.list()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }
   catch (error) { recordingError.value = error instanceof Error ? error.message : '无法读取本机录制' }
 }
-watch(view, value => { if (value === 'launcher') void loadRecordings() })
+watch(view, value => { if (value === 'launcher' || value === 'library') void loadRecordings() })
+async function showLibrary(): Promise<void> {
+  if (libraryBusy.value) return
+  libraryBusy.value = true
+  try {
+    if (view.value === 'training') {
+      if (!await trainingRef.value?.prepareForLibrary()) return
+    }
+    replay.value = null
+    view.value = 'library'
+  } finally { libraryBusy.value = false }
+}
+async function returnToTraining(): Promise<void> {
+  if (view.value === 'training') return
+  replay.value = null
+  await refresh()
+}
 async function onCreated(options: { enabled: boolean; params: Record<string, string | number> }): Promise<void> {
   recordingOptions.value = options
   await refresh()
@@ -135,9 +153,9 @@ function onTrainingEnded(): void {
     <aside class="rail" aria-label="主导航">
       <div class="brand-mark">K</div>
       <nav>
-        <button class="rail-item active" title="训练">⌁<span>训练</span></button>
+        <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
         <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
-        <button class="rail-item" title="复盘（M4 开放）" disabled>◫<span>复盘</span></button>
+        <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
       <button class="rail-item rail-bottom" title="设置（M5 开放）" disabled>⚙<span>设置</span></button>
     </aside>
@@ -149,6 +167,7 @@ function onTrainingEnded(): void {
           <div v-if="view === 'launcher'" class="workspace-title">创建训练</div>
         </div>
         <div class="top-actions">
+          <div id="training-recording-controls"></div>
           <button class="theme-toggle" :title="theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'" :aria-label="theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'" @click="toggleTheme">
             <Sun v-if="theme === 'dark'" :size="14" /><Moon v-else :size="14" />
           </button>
@@ -179,20 +198,29 @@ function onTrainingEnded(): void {
         </div>
       </header>
 
-      <div v-if="envError" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
+      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
       <template v-if="view === 'launcher'">
-        <section class="recording-library" aria-label="操作录制">
-          <label>打开操作录制 <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
-          <details v-if="recentRecordings.length"><summary>本机最近录制（{{ recentRecordings.length }}）</summary>
-            <button v-for="item in recentRecordings" :key="item.sessionId" class="ghost-button" @click="openRecording(item.sessionId)">{{ new Date(item.createdAt).toLocaleString() }} · {{ item.eventCount }} 条事件</button>
-          </details>
+        <section class="recording-library launcher-library" aria-label="操作录制">
+          <div><strong>训练录像</strong><span>回顾自己的训练，或导入他人分享的录像。</span></div>
+          <button class="ghost-button" @click="showLibrary">查看训练录像</button>
+          <label class="recording-import">导入录像<input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
           <p v-if="recordingError" class="error-text" role="alert">{{ recordingError }}</p>
         </section>
         <Launcher @created="onCreated" />
       </template>
-      <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'launcher'; replay = null" />
-      <Training v-else-if="view === 'training' && snapshot" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
+      <section v-else-if="view === 'library'" class="recording-library recording-library-page" aria-label="训练录像库">
+        <header><div><h1>训练录像</h1><p>本机历史保存在当前浏览器。导出录像可以备份，也可以分享给其他用户。</p></div><button class="ghost-button" @click="returnToTraining">返回训练</button></header>
+        <label class="recording-import">导入分享的录像<input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
+        <p v-if="recordingError" class="error-text" role="alert">{{ recordingError }}</p>
+        <h2>本机训练历史</h2>
+        <p v-if="!recentRecordings.length">还没有保存的训练录像</p>
+        <div class="recording-history-list">
+          <button v-for="item in recentRecordings" :key="item.sessionId" class="recording-history-item" @click="openRecording(item.sessionId)"><strong>{{ new Date(item.createdAt).toLocaleString() }}</strong><span>查看回放 →</span></button>
+        </div>
+      </section>
+      <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
+      <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>
   </div>
@@ -200,8 +228,15 @@ function onTrainingEnded(): void {
 
 <style scoped>
 .recording-library { margin: 10px 28px 0; padding: 10px 14px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
-.recording-library label { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.recording-library input { max-width: 100%; }
-.recording-library details { margin-top: 8px; }
-.recording-library details button { display: block; margin-top: 6px; }
+.launcher-library { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.launcher-library > div { flex: 1; display: grid; gap: 5px; min-width: 180px; }
+.recording-import { display: inline-flex; position: relative; align-items: center; border: 1px solid #94bec5; padding: 8px 12px; border-radius: 4px; cursor: pointer; color: #2b8b99; }
+.recording-import input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.recording-import:focus-within { outline: 2px solid #2b8b99; outline-offset: 2px; }
+.recording-library-page { overflow-y: auto; max-height: calc(100dvh - 58px); padding: 20px; }
+.recording-library-page header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.recording-library-page h1 { margin: 0; font-size: 22px; }
+.recording-library-page h2 { margin-top: 24px; font-size: 16px; }
+.recording-history-list { display: grid; gap: 8px; }
+.recording-history-item { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--surface-border, #dfe5eb); padding: 14px; background: transparent; color: inherit; text-align: left; }
 </style>

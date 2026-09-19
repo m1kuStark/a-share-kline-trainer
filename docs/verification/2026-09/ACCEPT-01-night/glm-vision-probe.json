@@ -1,0 +1,24 @@
+{
+  "model": "GLM-5.3-Flash",
+  "effort": "max",
+  "contextConfigured": 1000000,
+  "contextEffective": "not measured",
+  "exitCode": 0,
+  "sessionId": "sess_5d535083-af23-4ffa-9e20-e06eaa853a5a",
+  "response": "```json\n{\n  \"visible_stock_code\": \"600519 (贵州茅台)\",\n  \"recording_control_location\": \"页面顶部右上角标题栏：'记录操作'复选框（勾选状态显示'正在记录'）及'导出录制'按钮，旁边还有'截止 2026-09-16'与TDX标识\",\n  \"visible_shortcut_keys\": [\"空格 下一日\", \"1 周期\", \"Home 刷新\", \"↑ 缩放\", \"Del 删除\"],\n  \"account_equity\": \"¥1,000,000 (+0.00%)\",\n  \"image_seen\": true\n}\n```\n\n补充说明（可见内容描述）：图片显示一个“A股K线训练器”界面，当前日期 2026-09-01，日线图，训练就绪（155/840 根），右侧面板包含训练账户（可用资金 ¥1,000,000、持仓市值 ¥0、持仓 0）、下单区（按当日收盘价成交，含10%~100%及自定义仓位按钮）、常用绘图工具（线段、射线、直线、水平直线、垂直直线、价化线、百分比线等）。图表含 MA(25,60,144)、VOL(5,10,20)、MACD(12,26,9) 三个子图，最新收盘价 1299.56。",
+  "sourceImageSHA256": "bb030d509c8a557bdd0c3e35bb6190280577036d641518db4e4d16f8d8e0ab6a",
+  "assessment": "Image input and streaming work. Stock/account/control location correct; small shortcut text misread. Not a full visual QA pass.",
+  "streamingEvents": 712,
+  "providerUsage": {
+    "source": "provider",
+    "modelRequestCount": 1,
+    "inputTokens": 49613,
+    "outputTokens": 714,
+    "totalTokens": 50327,
+    "cacheReadTokens": 2944,
+    "cacheWriteTokens": 0,
+    "reasoningTokens": 0,
+    "webFetchRequests": 0,
+    "webSearchRequests": 0
+  }
+}

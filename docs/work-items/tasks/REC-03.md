@@ -5,10 +5,10 @@
   "id": "REC-03",
   "title": "按交易日回放与独立观察控制",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
-  "summary": "按交易日回放与独立观察控制",
-  "next_action": "按返修合同和专属Prompt实现，定向测试后提交集成人审查。",
+  "summary": "Day replay integrated; full gate pending.",
+  "next_action": "Verify legacy and two-year recordings.",
   "allowed_paths": [
     "web/src/views/SessionReplay.vue",
     "web/src/recording/dailyReplay.ts",
@@ -23,10 +23,12 @@
     ],
     "reason": "依据用户阶段反馈实施，集成人统一更新规格与证据。"
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-09/ACCEPT-01-night/report.md"
+  ],
+  "integration_ref": "d5cf35a",
   "acceptance_ref": null
 }
 ```
 
-[返修合同](../../engineering/stage-feedback-20260919.md)。工程完成不等于用户验收。
+[Worker record](../../verification/2026-09/ACCEPT-01-night/rec-03-worker.md).

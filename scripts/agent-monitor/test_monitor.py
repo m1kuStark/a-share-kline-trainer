@@ -85,6 +85,96 @@ class MonitorTests(unittest.TestCase):
         (self.registry / 'fix.json').unlink()
         self.assertIsNone(monitor.snapshot(self.registry, self.database)['jobs'][0]['followup'])
 
+    def write_registry_job(self, name, drop=(), **overrides):
+        job = {**self.job, 'id': name, 'title': name, **overrides}
+        for field in drop:
+            job.pop(field, None)
+        (self.registry / (name + '.json')).write_text(json.dumps(job), encoding='utf-8')
+        return job
+
+    def jobs_by_id(self):
+        return {job['id']: job for job in monitor.snapshot(self.registry, self.database)['jobs']}
+
+    @patch('monitor.process_alive', return_value=True)
+    def test_three_hop_chain_keeps_raw_history_and_points_to_running_tip(self, _):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'round1 finding'}, followupId='cand2')
+        self.write_job()
+        self.write_registry_job('cand2', state='failed', exitCode=1,
+                                review={'state': 'changes_requested', 'summary': 'round2 finding'}, followupId='cand3')
+        self.write_registry_job('cand3', drop=('review', 'followupId'), state='running', pid=7)
+        jobs = self.jobs_by_id()
+        self.assertEqual(jobs['job1']['phase'], 'needs_changes')
+        self.assertEqual(jobs['job1']['review']['state'], 'changes_requested')
+        self.assertTrue(jobs['job1']['superseded'])
+        self.assertFalse(jobs['job1']['resolved'])
+        self.assertEqual(jobs['job1']['chainTip']['id'], 'cand3')
+        self.assertEqual(jobs['job1']['chainTip']['phase'], 'running')
+        self.assertEqual(jobs['cand2']['chainTip']['id'], 'cand3')
+        self.assertFalse(jobs['cand3']['superseded'])
+        self.assertEqual(jobs['cand3']['chainTip']['id'], 'cand3')
+
+    @patch('monitor.process_alive', return_value=True)
+    def test_failed_tip_stays_attention_and_never_resolved(self, _):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='fix')
+        self.write_job()
+        self.write_registry_job('fix', drop=('review', 'followupId'), state='failed', exitCode=2)
+        jobs = self.jobs_by_id()
+        self.assertEqual(jobs['job1']['chainTip']['phase'], 'failed')
+        self.assertFalse(jobs['job1']['resolved'])
+        self.assertEqual(jobs['fix']['phase'], 'failed')
+        self.assertFalse(jobs['fix']['superseded'])
+
+    def test_reviewed_tip_marks_chain_resolved_without_rewriting_history(self):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='fix')
+        self.write_job()
+        self.write_registry_job('fix', drop=('followupId',), state='completed', review={'state': 'passed', 'summary': 'integration passed'})
+        jobs = self.jobs_by_id()
+        self.assertEqual(jobs['job1']['phase'], 'needs_changes')
+        self.assertEqual(jobs['job1']['review']['state'], 'changes_requested')
+        self.assertTrue(jobs['job1']['superseded'])
+        self.assertTrue(jobs['job1']['resolved'])
+        self.assertEqual(jobs['fix']['phase'], 'reviewed')
+        self.assertFalse(jobs['fix']['superseded'])
+
+    def test_missing_successor_is_not_claimed_resolved(self):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='ghost')
+        self.write_job()
+        item = monitor.snapshot(self.registry, self.database)['jobs'][0]
+        self.assertEqual(item['phase'], 'needs_changes')
+        self.assertFalse(item['superseded'])
+        self.assertFalse(item['resolved'])
+        self.assertEqual(item['chainIssue'], 'missing')
+
+    @patch('monitor.process_alive', return_value=True)
+    def test_cycle_is_reported_and_never_resolved(self, _):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='ping')
+        self.write_job()
+        self.write_registry_job('ping', drop=('review',), state='completed', followupId='job1')
+        jobs = self.jobs_by_id()
+        for item in jobs.values():
+            self.assertEqual(item['chainIssue'], 'cycle')
+            self.assertFalse(item['superseded'])
+            self.assertFalse(item['resolved'])
+        self.assertEqual(jobs['job1']['phase'], 'needs_changes')
+
+    @patch('monitor.process_alive', return_value=True)
+    def test_summary_counts_only_current_jobs_not_superseded_history(self, _):
+        self.job.update(state='failed', exitCode=1, review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='fix')
+        self.write_job()
+        self.write_registry_job('fix', drop=('review', 'followupId'), state='failed', exitCode=2)
+        self.write_registry_job('other', drop=('review', 'followupId'), state='running', pid=5, startedAt=900)
+        self.assertEqual(monitor.snapshot(self.registry, self.database)['summary'],
+                         {'running': 1, 'awaitingReview': 0, 'needsAttention': 1})
+
+    def test_job_kind_separates_local_gates_from_glm_development(self):
+        for model, expected in [('Local automated gates', 'local'), ('本机自动测试', 'local'), ('GLM-5.3-Flash', 'glm')]:
+            self.job['model'] = model
+            self.write_job()
+            self.assertEqual(monitor.snapshot(self.registry, self.database)['jobs'][0]['jobKind'], expected)
+        self.job.pop('model')
+        self.write_job()
+        self.assertEqual(monitor.snapshot(self.registry, self.database)['jobs'][0]['jobKind'], 'glm')
+
     def test_redaction(self):
         result = monitor.redact('Authorization: Bearer SECRET123\napi_key=supersecret\nordinary text')
         self.assertNotIn('SECRET123', result)
@@ -176,7 +266,17 @@ class MonitorTests(unittest.TestCase):
     def test_runner_persists_real_child_completion_and_wake_marker(self, _):
         cli = self.root / 'resources/glm/mock.cjs'
         cli.parent.mkdir(parents=True)
-        cli.write_text('console.log(JSON.stringify({sessionId:"fixture",response:"finished"}))')
+        attachment = self.root / 'trainer-shot.png'
+        attachment.write_bytes(b'fixture-image')
+        cli.write_text('''
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+const format = args[args.indexOf('--output-format') + 1];
+const file = args[args.indexOf('--attach') + 1];
+if (format !== 'stream-json' || !file || fs.readFileSync(file, 'utf8') !== 'fixture-image') process.exit(7);
+console.log(JSON.stringify({type:'session_started',sessionId:'fixture'}));
+console.log(JSON.stringify({sessionId:'fixture',response:'finished'}));
+''')
         builtin = self.root / 'resources/config/provider/zcode-builtin.json'
         builtin.parent.mkdir(parents=True)
         builtin.write_text('{}')
@@ -185,6 +285,7 @@ class MonitorTests(unittest.TestCase):
         prompt = self.root / 'prompt.md'
         prompt.write_text('bounded test')
         args = SimpleNamespace(home=self.root, batch='fixture', title='测试', cwd=self.root, log=self.root / 'fixture.log', prompt=prompt, provider=provider, cli=cli, node=shutil.which('node'), resume=None, wake_state=self.root / 'wake.json')
+        args.attach = [attachment]
         self.assertEqual(run_glm.run(args), 0)
         state = json.loads((self.registry / 'fixture.json').read_text(encoding='utf-8'))
         self.assertEqual(state['state'], 'completed')

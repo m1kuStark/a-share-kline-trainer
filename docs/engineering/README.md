@@ -14,3 +14,5 @@
 此处为现行工作规则；未落地的源码重构放[提案](../proposals/README.md)。
 
 - [阶段验收返修合同](stage-feedback-20260919.md)：价格基准、保存、操作筛选与按日回放。
+
+- [Zcode官方能力核对](zcode-official-capabilities.md)：附件、事件流、上下文与Hook边界。

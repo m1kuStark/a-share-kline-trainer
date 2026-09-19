@@ -9,7 +9,7 @@ const DRAWING_NAMES = new Set([
   'simpleTag', 'straightLine', 'verticalRayLine', 'verticalSegment', 'verticalStraightLine',
   'rectangle', 'circle', 'arc', 'arrowLine', 'bullArrow', 'bearArrow', 'percentageLine', 'curseLine', 'textAnnotation', 'polyline',
 ])
-const DRAWING_FIELDS = new Set(['id', 'name', 'paneId', 'points', 'styles', 'extendData', 'groupId', 'lock', 'visible'])
+const DRAWING_FIELDS = new Set(['id', 'name', 'paneId', 'points', 'styles', 'extendData', 'groupId', 'lock', 'visible', 'priceBasis'])
 const PANE_IDS = new Set(['candle_pane', 'VOL', 'MACD'])
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
@@ -25,6 +25,8 @@ export interface Drawing {
   groupId?: string
   lock?: boolean
   visible?: boolean
+  /** 画线数值所属的前复权基准（显示价 = 原始价 * scale + offset）；旧画线缺省，存 JSON 不动表结构 */
+  priceBasis?: { scale: number; offset: number }
 }
 
 export function readDrawings(database: DatabaseSync, trainingId: number): Drawing[] {
@@ -71,6 +73,14 @@ function validateDrawings(payload: unknown): Drawing[] {
     if (isRecord(drawing.extendData) && drawing.extendData.text !== undefined && typeof drawing.extendData.text !== 'string') invalid('annotation text must be a plain string')
     if (drawing.styles !== undefined) validateJson(drawing.styles)
     if (drawing.extendData !== undefined) validateJson(drawing.extendData)
+    if (drawing.priceBasis !== undefined) {
+      const basis = drawing.priceBasis as { [key: string]: DrawingJson } | undefined
+      if (!isRecord(basis) || Object.keys(basis).length !== 2 ||
+          typeof basis.scale !== 'number' || !Number.isFinite(basis.scale) || basis.scale <= 0 ||
+          typeof basis.offset !== 'number' || !Number.isFinite(basis.offset)) {
+        invalid('priceBasis must be an object with exactly positive finite scale and finite offset')
+      }
+    }
   }
   return payload as Drawing[]
 }

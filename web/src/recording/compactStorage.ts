@@ -20,11 +20,16 @@ import type {
   RecordingSummary,
 } from './types'
 
-/** v2 存储端口：save 幂等增量提交，load 重组紧凑文件（不展开行情），list 合并新旧摘要 */
+/**
+ * v2 存储端口：save 幂等增量提交，load 重组紧凑文件（不展开行情），list 合并新旧摘要。
+ * remove 可选以兼容旧自定义 storage 实现；生产（IndexedDB）与内存实现必须支持——
+ * 删除目标会话全部持久数据（compact header+记录行与旧 v1 行），幂等，失败拒绝。
+ */
 export interface CompactRecordingStorage {
   save(file: CompactRecordingFile): Promise<void>
   load(id: string): Promise<CompactRecordingFile | null>
   list(): Promise<RecordingSummary[]>
+  remove?(id: string): Promise<void>
 }
 
 export const RECORDING_DB_VERSION = 2
@@ -664,6 +669,43 @@ function saveInTransaction(
   })
 }
 
+/**
+ * 单事务删除目标会话全部数据：compact 记录行（按 session 区间）、compact header 与旧 v1 行。
+ * 目标不存在时各 delete 静默完成（幂等）；任一请求失败整体回滚并拒绝，不残留半删状态。
+ */
+function removeInTransaction(db: IDBDatabase, id: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([COMPACT_SESSIONS_STORE, COMPACT_RECORDS_STORE, RECORDING_STORE_NAME], 'readwrite')
+    let settled = false
+    const settleReject = (error: Error) => {
+      if (!settled) {
+        settled = true
+        try {
+          tx.abort()
+        } catch {
+          // 事务可能已定案，忽略二次中止
+        }
+        reject(error)
+      }
+    }
+    tx.oncomplete = () => {
+      if (!settled) {
+        settled = true
+        resolve()
+      }
+    }
+    tx.onerror = () => settleReject(new Error(`删除录制会话失败：${describeDbError(tx.error)}`))
+    tx.onabort = () => settleReject(new Error(`删除录制会话被中止：${describeDbError(tx.error)}`))
+    try {
+      tx.objectStore(COMPACT_RECORDS_STORE).delete(sessionRange(id))
+      tx.objectStore(COMPACT_SESSIONS_STORE).delete(id)
+      tx.objectStore(RECORDING_STORE_NAME).delete(id)
+    } catch (error) {
+      settleReject(error instanceof Error ? error : new Error(String(error)))
+    }
+  })
+}
+
 function toLegacySummary(file: RecordingFile): RecordingSummary {
   return {
     sessionId: file.sessionId,
@@ -718,6 +760,20 @@ export class IndexedDbCompactStorage implements CompactRecordingStorage {
     const run = this.saveQueue.then(() => this.runSave(file))
     this.saveQueue = run.catch(() => {})
     return run
+  }
+
+  /** 与 save 共用串行队列：在途批次先落盘完成再整体删除，排队保存不会把已删会话复活 */
+  async remove(id: string): Promise<void> {
+    const run = this.saveQueue.then(() => this.runRemove(id))
+    this.saveQueue = run.catch(() => {})
+    return run
+  }
+
+  private async runRemove(id: string): Promise<void> {
+    const db = await this.open()
+    await removeInTransaction(db, id)
+    // 事务 complete 成功后才丢弃目标的本地游标/revision 缓存；其他会话缓存不受影响
+    this.sessions.delete(id)
   }
 
   private async runSave(file: CompactRecordingFile): Promise<void> {
@@ -843,6 +899,19 @@ export class MemoryCompactStorage implements CompactRecordingStorage {
     const run = this.saveQueue.then(() => this.runSave(file))
     this.saveQueue = run.catch(() => {})
     return run
+  }
+
+  /** 与 save 共用串行队列；failWith 注入的持久化故障同样作用于删除，目标状态保持原样 */
+  async remove(id: string): Promise<void> {
+    const run = this.saveQueue.then(() => this.runRemove(id))
+    this.saveQueue = run.catch(() => {})
+    return run
+  }
+
+  private runRemove(id: string): void {
+    if (this.saveFailure) throw this.saveFailure
+    this.persisted.delete(id)
+    this.sessions.delete(id)
   }
 
   private runSave(file: CompactRecordingFile): void {

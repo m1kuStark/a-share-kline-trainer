@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import { CompactReader } from '../web/src/recording/compactCodec'
 import { readRecordingArtifact } from './recording-file'
-import { startTrainingFromForm } from './training-flow'
+import { startTrainingFromForm, settleThroughConfirmation } from './training-flow'
 import { evidencePath } from './runtime'
 
 test('录制上下文准备期间不会漏掉第一笔交易', async ({ page }) => {
@@ -26,20 +28,28 @@ test('录制上下文准备期间不会漏掉第一笔交易', async ({ page }) 
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: '导出录制', exact: true }).click()
   const download = await pending
-  const output = evidencePath('first-trade-recorded.json')
+  const output = evidencePath('first-trade-recorded.json.gz')
   await download.saveAs(output)
+  // 导出仅 gzip：文件头必须是 gzip magic（与扩展名/MIME 无关）
+  expect([...(await readFile(output)).subarray(0, 2)]).toEqual([0x1f, 0x8b])
   const file = await readRecordingArtifact(output)
   expect(file.gaps).toEqual([])
-  expect(file.events.filter((event: any) => event.action === 'training.create').map((event: any) => event.phase)).toEqual(['started', 'finished'])
-  expect(file.events.filter((event: any) => event.action === 'training.trade').map((event: any) => event.phase)).toEqual(['started', 'finished'])
-  await page.getByLabel('更多录制导出方式', { exact: true }).click()
-  const plainPending = page.waitForEvent('download')
-  await page.getByRole('button', { name: '导出可读 JSON', exact: true }).click()
-  const plainDownload = await plainPending, plainPath = evidencePath('readable-recording.json')
-  await plainDownload.saveAs(plainPath)
-  const readable = await readRecordingArtifact(plainPath)
-  expect(readable.schemaVersion).toBe(2)
-  expect(readable.sessionId).toBe(file.sessionId)
+  if (file.schemaVersion !== 2) throw Error('Expected compact recording')
+  // 新录制不落创建样板事件（REC-02 口径）；首笔交易仍然恰好 started+finished 且被接受
+  expect(file.events.filter((event: any) => event.action === 'training.create')).toEqual([])
+  const trade = file.events.filter((event: any) => event.action === 'training.trade')
+  expect(trade.map((event: any) => event.phase)).toEqual(['started', 'finished'])
+  expect(trade[1].outcome).toBe('accepted')
+  // 初始检查点带训练元数据（紧凑文件存引用，解码后可还原快照）；检查点与事件流的交易一致
+  expect(file.checkpoints[0].afterSeq).toBe(0)
+  expect(file.checkpoints[0].training?.metaRef).toBeTruthy()
+  const reader = new CompactReader(file)
+  expect(reader.checkpointAt(0).training?.training).toBeTruthy()
+  const last = reader.checkpointAt(file.checkpoints.length - 1)
+  expect(last.training?.trades.map((item: any) => item.side)).toEqual(['buy'])
+  // 导出仅 gzip：不再有「更多导出方式」入口与可读 JSON 按钮
+  await expect(page.getByLabel('更多录制导出方式')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '导出可读 JSON' })).toHaveCount(0)
 })
 
 test('默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放', async ({ page }) => {
@@ -90,25 +100,34 @@ test('默认录制交易拒单、周期和画线，暂停恢复后可导出并�
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: '导出录制', exact: true }).click()
   const download = await pending
-  const output = evidencePath('recorded-session.json')
+  const output = evidencePath('recorded-session.json.gz')
   await download.saveAs(output)
+  expect([...(await readFile(output)).subarray(0, 2)]).toEqual([0x1f, 0x8b])
   const recording = await readRecordingArtifact(output)
   expect(recording.format).toBe('trainer-session')
   expect(recording.app.gitCommit).not.toBe('unknown')
   expect(recording.events.some((e: any) => e.action === 'training.trade' && e.outcome === 'accepted')).toBe(true)
   expect(recording.events.some((e: any) => e.action === 'training.trade' && e.outcome === 'rejected')).toBe(true)
   expect(recording.events.some((e: any) => e.action === 'chart.drawing.create')).toBe(true)
-  expect(recording.checkpoints.some((c: any) => c.chart?.timeframe === '1M')).toBe(true)
+  // 新采集固定 1D 权威行情（REC-02）：周期切换只作用于界面，检查点不随视图周期变化
+  const charted = recording.checkpoints.filter((c: any) => c.chart)
+  expect(charted.length).toBeGreaterThan(0)
+  expect(charted.every((c: any) => c.chart.timeframe === '1D')).toBe(true)
+  // 无噪音事件：创建样板/加载/周期/视口/工具/保存/主题都不再进入录制事件流
+  for (const noise of ['training.create', 'chart.load', 'chart.timeframe', 'chart.viewport', 'chart.tool', 'drawings.save', 'ui.theme']) {
+    expect(recording.events.some((e: any) => e.action === noise)).toBe(false)
+  }
   expect(recording.gaps.length).toBeGreaterThan(0)
-  await page.getByRole('button', { name: '提前结算', exact: true }).click()
-  await page.getByRole('button', { name: '完成，返回首页', exact: true }).click()
+  await settleThroughConfirmation(page)
   // Replay must consume the file even if all backend endpoints are unavailable.
   await page.route('**/api/**', route => route.abort())
   await page.getByLabel('导入录制', { exact: true }).setInputFiles(output)
   await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
   const writes: string[] = []
   page.on('request', request => { if (/\/api\//.test(request.url()) && ['POST', 'PUT', 'DELETE'].includes(request.method())) writes.push(request.url()) })
-  await page.getByRole('button', { name: '最后一步', exact: true }).click()
+  // REC-03 按日回放：跳到最后一天；日期轴如实显示第 n / N 日
+  await page.getByRole('button', { name: '跳到最后一天' }).click()
+  await expect(page.locator('.replay-day')).toHaveText(/第 \d+ \/ \d+ 日/)
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings().length ?? 0)).toBeGreaterThan(0)
   const drawingsBefore = await page.evaluate(() => (window as any).__trainerChart.drawings())
   await expect(page.getByRole('button', { name: '买入', exact: true })).toHaveCount(0)
@@ -181,7 +200,6 @@ test('首页关闭仅影响本场，刷新保留暂停且恢复后可导出', as
   const file = await readRecordingArtifact(output)
   expect(file.gaps[0].afterSeq).toBe(0)
   expect(file.gaps[0].resumedAtSeq).toBeGreaterThan(0)
-  await page.getByRole('button', { name: '提前结算', exact: true }).click()
-  await page.getByRole('button', { name: '完成，返回首页', exact: true }).click()
+  await settleThroughConfirmation(page)
   await expect(page.getByLabel('记录操作', { exact: true })).toBeChecked()
 })

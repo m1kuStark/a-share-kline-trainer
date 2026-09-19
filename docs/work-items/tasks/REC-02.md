@@ -5,10 +5,10 @@
   "id": "REC-02",
   "title": "录制有效操作及结束保留选择",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
-  "summary": "录制有效操作及结束保留选择",
-  "next_action": "按返修合同和专属Prompt实现，定向测试后提交集成人审查。",
+  "summary": "录制保存/丢弃与业务筛选已合入ACCEPT-01。",
+  "next_action": "等待集成分支完整候选验收。",
   "allowed_paths": [
     "web/src/recording/useRecording.ts",
     "web/src/recording/compactStorage.ts",
@@ -25,9 +25,9 @@
     "reason": "依据用户阶段反馈实施，集成人统一更新规格与证据。"
   },
   "verification_refs": [],
-  "integration_ref": null,
+  "integration_ref": "4e8eae0",
   "acceptance_ref": null
 }
 ```
 
-[返修合同](../../engineering/stage-feedback-20260919.md)。工程完成不等于用户验收。
+模块交付细节与原始告警陈述见[worker记录](../../verification/2026-09/ACCEPT-01-review/rec-02-worker.md)，集成人的复核与实际集成结论见[复核报告](../../verification/2026-09/ACCEPT-01-review/report.md)。告警数量以明确扫描证据为准。
