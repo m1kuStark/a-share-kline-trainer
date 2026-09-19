@@ -8,6 +8,8 @@ import type { Bar, Timeframe, TradeView } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import type { ChartCapture, ChartCaptureView } from '../recording/types'
+import type { Action, JsonValue } from '../recording/types'
+import { drawingOperationParams, hasUnreportedMove, markDrawingReported, syncReportedDrawings, type ReportedDrawings } from '../recording/drawingOperations'
 import { DRAW_TOOLS } from '../drawTools'
 import { MAX_VISIBLE_BARS } from '../chartNavigation'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
@@ -40,7 +42,7 @@ const props = withDefaults(defineProps<{
   replayView?: ChartCaptureView
 }>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
-const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string] }>()
+const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
 const host = ref<HTMLElement | null>(null)
 type RuntimeOverlay = Overlay & { isDrawing(): boolean; forceComplete(): void }
 type ConvertFilter = Parameters<Chart['convertToPixel']>[1]
@@ -116,6 +118,32 @@ function recordDrawings(): void {
   const snapshot = drawings()
   if (drawingHistory.record(snapshot)) { notifyHistory(); emit('drawingsChange', snapshot) }
 }
+// REC-CHART-C 语义操作上报（docs/engineering/recording-contract.md）：每次真实且成功的用户操作恰好
+// 一条 operation；只读、恢复图形（restoringDrawings）与卸载后绝不外发。params 只带有限 JSON 的
+// 语义图形（id/name/paneId/points），不透出库实例。
+function emitOperation(action: Action, params?: JsonValue): void {
+  if (props.readOnly || restoringDrawings || disposed) return
+  emit('operation', params === undefined ? { action } : { action, params })
+}
+function findDrawing(id: string): Drawing | null { return drawings().find(drawing => drawing.id === id) ?? null }
+// move 去重：window pointerup 兜底（completePointerAction）会抢在 onPressedMoveEnd 之前把同一快照
+// 写进历史，history.record 的布尔已被竞争消费，不能作为动作依据；改为按"overlayID＋最近一次已上报
+// 快照"比较（纯助手见 recording/drawingOperations.ts），只有终态快照真的变化才发 move。
+// 基线表由 restoreDrawings 整体重播种、删除路径逐 id 清除，保证与当前图形集合精确同步。
+const lastReportedDrawing: ReportedDrawings = new Map()
+function emitMoveIfChanged(id: string): void {
+  const drawing = findDrawing(id)
+  if (!drawing) return
+  if (!hasUnreportedMove(lastReportedDrawing, drawing)) return
+  markDrawingReported(lastReportedDrawing, drawing)
+  emitOperation('chart.drawing.move', drawingOperationParams(drawing))
+}
+function emitDrawingAction(action: Action, id: string): void {
+  const drawing = findDrawing(id)
+  if (!drawing) return
+  markDrawingReported(lastReportedDrawing, drawing)
+  emitOperation(action, drawingOperationParams(drawing))
+}
 function restoreDrawings(items: Drawing[], resetHistory = false): void {
   if (!chart) return
   restoringDrawings = true
@@ -136,14 +164,19 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   selectedOverlayId.value = null
   restoringDrawings = false
   if (resetHistory) { restoredDrawings = true; drawingHistory.reset(items); notifyHistory() }
+  // 基线表精确同步到当前序列化图形：加载/撤销/重做/清空后旧快照与陈旧 id 一律作废——
+  // 否则已加载/已撤销图形的首次按压被误报 move，移回旧端点的真实 move 被旧指纹吞掉
+  syncReportedDrawings(lastReportedDrawing, drawings())
   updateAnchorDots()
 }
-function undoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.undo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
-function redoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.redo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state) } }
+function undoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.undo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state); emitOperation('chart.drawing.undo') } }
+function redoDrawing(): void { if (props.readOnly) return; const state = drawingHistory.redo(); if (state) { restoreDrawings(state); notifyHistory(); emit('drawingsChange', state); emitOperation('chart.drawing.redo') } }
 function clearDrawings(): void {
   if (props.readOnly || !chart || !drawings().length || !window.confirm('清空当前训练的全部画线？')) return
+  const cleared = drawings().length
   restoreDrawings([])
   recordDrawings()
+  emitOperation('chart.drawing.clear', { count: cleared })
 }
 
 function clampCount(value: number): number { return Math.min(MAX_COUNT, Math.max(MIN_COUNT, value)) }
@@ -187,6 +220,8 @@ function feedData(): void {
   dataVersion++
   // 新数据版本＝视窗布局重建：同 view 也必须重放（appliedReplayView 去重只作用于同一数据版本内）
   appliedReplayView = null
+  // 数据替换即作废挂起的视窗上报：旧数据上的用户手势不得在新 timeframe 数据上落账
+  cancelViewportOperation()
   loadingForward = false
   chart.setPeriod({ type: props.timeframe === '1W' ? 'week' : props.timeframe === '1M' ? 'month' : 'day', span: 1 })
   loadedData = props.bars.map(toK)
@@ -247,6 +282,26 @@ function scheduleChartCapture(): void {
     }
   }, VIEWPORT_CAPTURE_THROTTLE_MS)
 }
+// chart.viewport 只认真实用户导航：wheel 平移、框选/轴缩放/窗格分隔拖动结束、中键平移结束、
+// zoomBy/resetView 的用户调用。初始化 feed、默认 reset、补历史、replayView 恢复与布局 resize
+// 不经这些入口，绝不冒充用户；恢复视窗前撤销挂起的上报，避免把恢复结果当作用户操作。
+let viewportOpTimer: ReturnType<typeof setTimeout> | null = null
+function cancelViewportOperation(): void {
+  if (viewportOpTimer !== null) { clearTimeout(viewportOpTimer); viewportOpTimer = null }
+}
+function scheduleViewportOperation(): void {
+  if (props.readOnly || disposed) return
+  cancelViewportOperation()
+  viewportOpTimer = setTimeout(() => {
+    viewportOpTimer = null
+    if (disposed || props.readOnly || restoringView || !chart) return
+    const barSpace = chart.getBarSpace().bar
+    if (!Number.isFinite(barSpace) || barSpace <= 0) return
+    const range = chart.getVisibleRange()
+    const view = captureView({ fromIndex: range.from, toIndex: range.to, data: chart.getDataList(), barSpace, paneHeights: semanticPaneHeights() })
+    emitOperation('chart.viewport', { fromTimestamp: view.fromTimestamp, toTimestamp: view.toTimestamp, barSpace: view.barSpace, paneHeights: view.paneHeights })
+  }, VIEWPORT_CAPTURE_THROTTLE_MS)
+}
 // replayView 恢复：feed 完成布局后按时间戳重定位右侧锚点（不套旧 dataIndex）、恢复 barSpace
 // 与语义窗格高度；相同 view 不重复恢复，恢复期间静默捕获（库的视窗 action 为同步派发）。
 let appliedReplayView: string | null = null
@@ -258,6 +313,7 @@ function applyReplayView(view: ChartCaptureView | undefined): void {
   appliedReplayView = key
   restoringView = true
   cancelChartCapture()
+  cancelViewportOperation()
   try {
     for (const [name, height] of Object.entries(view.paneHeights)) {
       if (!Number.isFinite(height) || height <= 0) continue
@@ -323,9 +379,11 @@ function restoreYAxisAutoFit(): void {
   for (const axis of axes) axis.setAutoCalcTickFlag?.(true)
 }
 function visibleCount(): number { if (!chart) return 0; const range = chart.getVisibleRange(); return clampCount(Math.round(Math.max(1, range.to - range.from))) }
-function zoomBy(factor: number): void { if (!chart) return; const range = chart.getVisibleRange(); const count = Math.max(1, range.to - range.from); const next = clampCount(Math.round(count * factor)); if (next === count) return; restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(clampBarSpace((width - RIGHT_MARGIN) / next)); chart.scrollToDataIndex(range.to - 1); emit('visibleCount', next) }
+function zoomBy(factor: number): void { if (!chart) return; const range = chart.getVisibleRange(); const count = Math.max(1, range.to - range.from); const next = clampCount(Math.round(count * factor)); if (next === count) return; restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(clampBarSpace((width - RIGHT_MARGIN) / next)); chart.scrollToDataIndex(range.to - 1); emit('visibleCount', next); scheduleViewportOperation() }
 function moveCrosshair(delta: number): void { if (!chart) return; const range = chart.getVisibleRange(); if (crossIndex < range.from || crossIndex >= range.to) crossIndex = range.to - 1; crossIndex = Math.min(range.to - 1, Math.max(range.from, crossIndex + delta)); const bar = chart.getDataList()[crossIndex]; if (!bar) return; const pixel = chart.convertToPixel({ dataIndex: crossIndex, value: bar.close }, { paneId: 'candle_pane' }); const pane = chart.getSize('candle_pane'); chart.executeAction('onCrosshairChange', { x: pixel?.x ?? 0, y: pane ? pane.height / 2 : 100, paneId: 'candle_pane' }) }
-function resetView(): void { if (!chart) return; crossIndex = -1; chart.executeAction('onCrosshairChange', {}); restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(Math.max(2, (width - RIGHT_MARGIN) / props.defaultCount)); chart.scrollToRealTime(0); emit('visibleCount', props.defaultCount) }
+// 复位视窗：只有 userInitiated 复位（回到最新按钮、Home 键）算用户导航并上报 chart.viewport。
+// 挂载初始化与父层的程序化复位（timeframe/数据加载）必须传 resetView(false)，绝不冒充用户操作
+function resetView(userInitiated = true): void { if (!chart) return; crossIndex = -1; chart.executeAction('onCrosshairChange', {}); restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(Math.max(2, (width - RIGHT_MARGIN) / props.defaultCount)); chart.scrollToRealTime(0); emit('visibleCount', props.defaultCount); if (userInitiated) scheduleViewportOperation() }
 function selectionRect(): HTMLElement | null { return host.value?.parentElement?.querySelector('.select-rect') ?? null }
 // 计算框选绘图区边界：右缘＝主图价格轴 bounding.left（getSize 的 right/bottom 恒 0，只能用 left+width），
 // 底缘＝时间轴 pane（x_axis_pane）的 top，顶缘＝主图 pane 的 top。
@@ -479,15 +537,16 @@ function onPointerMove(event: PointerEvent): void {
   if (rect) { rect.style.left = `${Math.min(selectStartX, current)}px`; rect.style.width = `${Math.abs(current - selectStartX)}px` }
 }
 function onPointerUp(event: PointerEvent): void {
-  if (event.pointerId === paneResizePointerId) { paneResizePointerId = null; return }
+  if (event.pointerId === paneResizePointerId) { paneResizePointerId = null; scheduleViewportOperation(); return }
   // 中键释放：库的 mouseUp 处理只认左键（button=1 直接 return），补发合成左键 mouseup
   // 让库完成滚动状态清理——否则残留的 _startScrollCoordinate 会让松键后的自由移动鼠标持续平移
   if (event.button === 1 && chart) {
     const container = host.value?.firstElementChild as HTMLElement | null
     container?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY }))
+    scheduleViewportOperation()
   }
   // 纵轴缩放拖拽结束（松手才算完成一次交互）
-  if (axisScaleDrag) { axisScaleDrag = false; return }
+  if (axisScaleDrag) { axisScaleDrag = false; scheduleViewportOperation(); return }
   // 多选模式框选结束：矩形相交的画线加入多选集合；极小框选＝点空白，清空多选
   if (multiDragStart) {
     const cur = {
@@ -520,7 +579,7 @@ function onPointerUp(event: PointerEvent): void {
     const to = chart.convertFromPixel([{ x: end }], { paneId: 'candle_pane' })[0]?.dataIndex
     if (from === undefined || to === undefined) return
     const count = clampCount(Math.abs(to - from) + 1)
-    chart.setBarSpace(clampBarSpace(drawable / count)); chart.scrollToDataIndex(Math.max(from, to)); emit('visibleCount', count)
+    chart.setBarSpace(clampBarSpace(drawable / count)); chart.scrollToDataIndex(Math.max(from, to)); emit('visibleCount', count); scheduleViewportOperation()
   } else {
     // 左滑：按滑动距离占主图宽度的比例缩小，容纳更多 K 线；右端锚定不动。
     const dragWidth = selectStartX - end
@@ -529,7 +588,7 @@ function onPointerUp(event: PointerEvent): void {
     const range = chart.getVisibleRange()
     const current = Math.max(1, range.to - range.from)
     const count = clampCount(Math.round(current * drawable / dragWidth))
-    chart.setBarSpace(clampBarSpace(drawable / count)); chart.scrollToDataIndex(range.to - 1); emit('visibleCount', count)
+    chart.setBarSpace(clampBarSpace(drawable / count)); chart.scrollToDataIndex(range.to - 1); emit('visibleCount', count); scheduleViewportOperation()
   }
 }
 function onPaneDblClick(event: MouseEvent): void {
@@ -577,18 +636,24 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   // 价格轴上滚轮＝klinecharts 原生纵轴比例缩放（不平移）；其余区域滚轮＝K 线平移
   if (isOverPriceAxis(event.clientX, event.clientY)) return
   chart?.scrollByDistance(event.deltaY !== 0 ? event.deltaY : event.deltaX, 0)
+  scheduleViewportOperation()
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
-onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
 // D2：所有用户画线挂 onSelected/onDeselected（Delete 删除依据）与 onRightClick（接管库默认"右键即删除"）。
+// 取消未完成的取点：只有确实存在半成品 overlay 时才发 chart.drawing.cancel；
+// restoreDrawings 的清理调用发生在 restoringDrawings 期间，由 emitOperation 总闸静默。
 function cancelDrawing(): void {
   if (!chart) return
-  const drawing = (chart.getOverlays() as Array<{ id: string; isDrawing?: () => boolean }>).find(o => o.isDrawing?.())
-  if (drawing) chart.removeOverlay({ id: drawing.id })
+  const drawing = (chart.getOverlays() as Array<{ id: string; name: string; points?: Array<{ timestamp?: number; value?: number }>; isDrawing?: () => boolean }>).find(o => o.isDrawing?.())
+  if (!drawing) return
+  chart.removeOverlay({ id: drawing.id })
+  const points = (drawing.points ?? []).filter(point => Number.isFinite(point.timestamp) && Number.isFinite(point.value)) as Array<{ timestamp: number; value: number }>
+  emitOperation('chart.drawing.cancel', { id: drawing.id, name: drawing.name, points })
 }
 function drawingEvents(): Partial<OverlayCreate> {
   return {
@@ -597,11 +662,12 @@ function drawingEvents(): Partial<OverlayCreate> {
       queueMicrotask(() => {
         if (disposed || !chart) return
         deselectLibrarySelected()
+        // 文本标注只开面板不记 create：确认/取消在 confirmTextPanel/cancelTextPanel 落账
         if (event.overlay.name === 'textAnnotation') openTextPanel(event.overlay.id, true)
-        else recordDrawings()
+        else { recordDrawings(); emitDrawingAction('chart.drawing.create', event.overlay.id) }
       })
     },
-    onPressedMoveEnd: () => { updateAnchorDots(); recordDrawings() },
+    onPressedMoveEnd: event => { updateAnchorDots(); recordDrawings(); emitMoveIfChanged(event.overlay.id) },
     onSelected: event => { selectedOverlayId.value = event.overlay.id },
     onDeselected: event => { if (selectedOverlayId.value === event.overlay.id) selectedOverlayId.value = null },
     onRightClick: event => {
@@ -624,12 +690,16 @@ function finishPolyline(event: OverlayEvent<unknown>): void {
   chart?.overrideOverlay({ id: overlay.id, points: fixed })
   emit('toolChange', null)
   recordDrawings()
+  emitDrawingAction('chart.drawing.create', overlay.id)
   queueMicrotask(() => { deselectLibrarySelected(); selectedOverlayId.value = null })
 }
+// 工具真正激活（drawTool 变为具体工具）＝chart.tool；取点完成自动退回 null 是组件内收尾，
+// 不冒充一次选择。切换工具时旧半成品由 cancelDrawing 落 cancel。
 watch(() => props.drawTool, tool => {
   if (!chart || props.readOnly) return
   cancelDrawing()
   if (tool) {
+    emitOperation('chart.tool', { name: tool })
     resetLibraryClick()
     chart.setScrollEnabled(false)
     chart.createOverlay({
@@ -668,12 +738,17 @@ function openCtxMenu(overlayId: string, x: number, y: number): void {
 function removeViaMenu(): void {
   if (props.readOnly || !chart || !ctxMenu.value) return
   const ids = ctxMenu.value.batch ? [...multiSelectedIds.value] : [ctxMenu.value.overlayId]
+  // params 只带真实存在的语义图形：右键菜单弹出后图形可能已被其他入口删除
+  const removed = ids.map(id => findDrawing(id)).filter((drawing): drawing is Drawing => !!drawing)
+  if (!removed.length) { closePanels(); return }
   ids.forEach(id => chart!.removeOverlay({ id }))
+  removed.forEach(drawing => lastReportedDrawing.delete(drawing.id))
   multiSelectedIds.value = multiSelectedIds.value.filter(id => !ids.includes(id))
   if (selectedOverlayId.value && ids.includes(selectedOverlayId.value)) selectedOverlayId.value = null
   updateAnchorDots()
   closePanels()
   recordDrawings()
+  emitOperation('chart.drawing.delete', { ids: removed.map(drawing => drawing.id), drawings: removed.map(drawingOperationParams) })
 }
 // 选项卡式编辑面板：单个选中＝单表单（无标签行）；多选＝每个选中对象一个标签
 // （标签＝类型+中文序号，如“线段一”），确定时批量应用全部表单（用户 D3 追加需求）
@@ -712,6 +787,7 @@ function applyEdit(): void {
   if (props.readOnly || !chart) return
   if (editForms.value.some(form => form.values.some(value => typeof value !== 'number' || !Number.isFinite(value)))) return
   if (editForms.value.some(form => form.text && (!form.text.text.trim() || !Number.isFinite(form.text.size)))) return
+  let applied = 0
   for (const form of editForms.value) {
     const overlay = (chart.getOverlays({ id: form.id }) as unknown as Array<OverlayLike & { styles?: { line?: { color?: string; size?: number; style?: string; dashedValue?: number[] } } }>)[0]
     if (!overlay) continue
@@ -719,12 +795,18 @@ function applyEdit(): void {
     const points = applyDrawingPrices(overlay.points, form.values, overlay.name)
     chart.overrideOverlay({ id: form.id, styles: { line }, points })
     if (form.text) chart.overrideOverlay({ id: form.id, extendData: { ...form.text, color: form.color, size: Math.min(36, Math.max(10, form.text.size)) } })
+    applied++
   }
+  if (!applied) { closePanels(); return }
   // 批量应用完成：清除多选（锚点层随集合清空而消失）
   multiSelectedIds.value = []
   updateAnchorDots()
   closePanels()
   recordDrawings()
+  // 一次确定＝一条 edit，params 汇总本次实际应用的全部语义图形
+  const edited = editForms.value.map(form => findDrawing(form.id)).filter((drawing): drawing is Drawing => !!drawing)
+  edited.forEach(drawing => markDrawingReported(lastReportedDrawing, drawing))
+  emitOperation('chart.drawing.edit', { drawings: edited.map(drawingOperationParams) })
 }
 // Delete 删除选中画线：多选集合非空＝只删集合（画线完成/点击时库会把 overlay 置为选中态，
 // selectedOverlayId 可能指向不在多选集合里的画线，多选场景下追加它会误删第三条——用户 journey 抓出）；
@@ -733,12 +815,16 @@ function deleteSelected(): boolean {
   if (props.readOnly || !chart) return false
   const ids = multiSelectedIds.value.length ? [...multiSelectedIds.value] : (selectedOverlayId.value ? [selectedOverlayId.value] : [])
   if (!ids.length) { closePanels(); return false }
+  const removed = ids.map(id => findDrawing(id)).filter((drawing): drawing is Drawing => !!drawing)
   ids.forEach(id => chart!.removeOverlay({ id }))
+  removed.forEach(drawing => lastReportedDrawing.delete(drawing.id))
   multiSelectedIds.value = []
   selectedOverlayId.value = null
   updateAnchorDots()
   closePanels()
+  if (!removed.length) return false
   recordDrawings()
+  emitOperation('chart.drawing.delete', { ids: removed.map(drawing => drawing.id), drawings: removed.map(drawingOperationParams) })
   return true
 }
 
@@ -756,7 +842,13 @@ function openTextPanel(id: string, isNew = false): void {
   emit('panelChange', true)
 }
 function cancelTextPanel(): void {
-  if (textPanel.value?.isNew) chart?.removeOverlay({ id: textPanel.value.id })
+  const form = textPanel.value
+  if (form?.isNew) {
+    // 新建标注被放弃＝移除半成品 overlay 并落 cancel；已存在标注的取消不改任何数据，不上报
+    const drawing = findDrawing(form.id)
+    chart?.removeOverlay({ id: form.id })
+    if (drawing) emitOperation('chart.drawing.cancel', drawingOperationParams(drawing))
+  }
   textPanel.value = null
   emit('panelChange', false)
 }
@@ -767,6 +859,7 @@ function confirmTextPanel(): void {
   textPanel.value = null
   emit('panelChange', false)
   recordDrawings()
+  emitDrawingAction(form.isNew ? 'chart.drawing.create' : 'chart.drawing.edit', form.id)
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
