@@ -4,6 +4,8 @@ import pathlib
 import sqlite3
 import tempfile
 import shutil
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -102,6 +104,59 @@ class MonitorTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             run_glm.run(SimpleNamespace(home=self.root, batch='new-task', title='test', cwd=self.root, log=self.root / 'log'))
         self.assertEqual(lock.read_text(), 'existing owner')
+
+    def test_parallel_workers_have_independent_slots_and_exclusive_worktrees(self):
+        first = run_glm.acquire_locks(self.root, self.root / 'a', 'a', 2)
+        try:
+            with self.assertRaises(FileExistsError):
+                run_glm.acquire_locks(self.root, self.root / 'a', 'same-tree', 2)
+            second = run_glm.acquire_locks(self.root, self.root / 'b', 'b', 2)
+            try:
+                with self.assertRaises(FileExistsError):
+                    run_glm.acquire_locks(self.root, self.root / 'c', 'c', 2)
+                expanded = run_glm.acquire_locks(self.root, self.root / 'c', 'c', 3)
+                run_glm.release_locks(expanded)
+                with self.assertRaises(FileExistsError):
+                    run_glm.acquire_locks(self.root, self.root / 'd', 'a', 2)
+                self.assertTrue(all(path.exists() for path in first + second))
+            finally:
+                run_glm.release_locks(second)
+            third = run_glm.acquire_locks(self.root, self.root / 'c', 'c', 2)
+            run_glm.release_locks(third)
+        finally:
+            run_glm.release_locks(first)
+        self.assertEqual(list((self.root / 'locks').glob('*.lock')), [])
+
+    def test_legacy_global_lock_blocks_new_parallel_launches(self):
+        (self.root / 'worker.lock').write_text('prior live owner')
+        with self.assertRaises(FileExistsError):
+            run_glm.acquire_locks(self.root, self.root / 'new', 'batch', 2)
+
+    def test_parallel_mode_rejects_shared_wake_file(self):
+        with self.assertRaisesRegex(ValueError, 'per-job'):
+            run_glm.run(SimpleNamespace(home=self.root, parallelism=2, wake_state=self.root / 'shared.json'))
+
+    def test_two_actual_processes_share_slots_but_not_worktrees(self):
+        code = ('import pathlib,sys; from run_glm import acquire_locks,release_locks; '
+                'locks=acquire_locks(pathlib.Path(sys.argv[1]),pathlib.Path(sys.argv[2]),sys.argv[3],2); '
+                'print("ready",flush=True); sys.stdin.readline(); release_locks(locks)')
+        processes = []
+        try:
+            for name in ['process-a', 'process-b']:
+                process = subprocess.Popen([sys.executable, '-c', code, str(self.root), str(self.root / name), name],
+                    cwd=pathlib.Path(__file__).parent, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                processes.append(process)
+                self.assertEqual(process.stdout.readline().strip(), 'ready')
+            self.assertTrue(all(process.poll() is None for process in processes))
+            with self.assertRaises(FileExistsError):
+                run_glm.acquire_locks(self.root, self.root / 'third', 'third', 2)
+            with self.assertRaises(FileExistsError):
+                run_glm.acquire_locks(self.root, self.root / 'process-a', 'other', 2)
+        finally:
+            for process in processes:
+                output, error = process.communicate('\n', timeout=10)
+                self.assertEqual(process.returncode, 0, error)
 
     @unittest.skipUnless(os.name == 'nt' and shutil.which('node'), 'Windows Node runner')
     @patch('run_glm.subprocess.check_output', return_value='task/fixture\n')

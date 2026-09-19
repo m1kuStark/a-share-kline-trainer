@@ -1,5 +1,6 @@
-"""Single-provider GLM runner with durable, human-visible status and wake handoff."""
+"""Bounded parallel GLM runner with exclusive worktrees and durable per-job status."""
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -10,20 +11,60 @@ import time
 from monitor import DEFAULT_HOME, atomic_write, read_result, redact
 
 
+def release_locks(paths):
+    for path in reversed(paths):
+        path.unlink(missing_ok=True)
+
+
+def acquire_locks(home, cwd, batch, parallelism):
+    if not 1 <= parallelism <= 4:
+        raise ValueError('parallelism must be 1..4')
+    if (home / 'worker.lock').exists():
+        raise FileExistsError('Legacy worker.lock exists; verify its owner before migration.')
+    folder = home / 'locks'
+    folder.mkdir(parents=True, exist_ok=True)
+    locks = []
+    owner = {'pid': os.getpid(), 'batch': batch, 'worktree': str(cwd.resolve()), 'startedAt': int(time.time() * 1000)}
+
+    def claim(name):
+        path = folder / name
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        locks.append(path)
+        with os.fdopen(fd, 'w', encoding='utf-8') as output:
+            json.dump(owner, output)
+
+    try:
+        key = hashlib.sha256(os.path.normcase(str(cwd.resolve())).encode()).hexdigest()
+        claim('tree-' + key + '.lock')
+        claim('batch-' + hashlib.sha256(batch.encode()).hexdigest() + '.lock')
+        for slot in range(parallelism):
+            try:
+                claim('slot-' + str(slot) + '.lock')
+                return locks
+            except FileExistsError:
+                continue
+        raise FileExistsError('All GLM slots are occupied; enqueue after completion, do not steal locks.')
+    except Exception:
+        release_locks(locks)
+        raise
+
+
 def run(args):
     task_home = args.home
     task_home.mkdir(parents=True, exist_ok=True)
+    parallelism = getattr(args, 'parallelism', 1)
+    if parallelism > 1 and getattr(args, 'wake_state', None):
+        raise ValueError('Parallel jobs use per-job registry status; omit the shared --wake-state.')
     path = task_home / 'jobs' / (args.batch + '.json')
     if path.exists():
         raise ValueError('Batch ID already exists; use a new ID to preserve prior evidence.')
     job = {'id': args.batch, 'title': args.title, 'worktree': str(args.cwd.resolve()),
            'state': 'starting', 'model': 'GLM-5.3-Flash', 'effort': 'max', 'contextConfigured': 1000000,
-           'startedAt': int(time.time() * 1000), 'logPath': str(args.log.resolve())}
-    lock = task_home / 'worker.lock'
-    # Never steal a possibly-live provider call, including after a host crash.
-    fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    with os.fdopen(fd, 'w', encoding='utf-8') as stream:
-        json.dump({'pid': os.getpid(), 'batch': args.batch, 'startedAt': int(time.time() * 1000)}, stream)
+           'startedAt': int(time.time() * 1000), 'logPath': str(args.log.resolve()), 'parallelism': parallelism}
+    locks = acquire_locks(task_home, args.cwd, args.batch, parallelism)
+    if path.exists():
+        release_locks(locks)
+        raise ValueError('Batch ID already exists; preserve prior result.')
     child = None
 
     def update():
@@ -77,7 +118,7 @@ def run(args):
         return 1
     finally:
         if child is None or child.poll() is not None:
-            lock.unlink(missing_ok=True)
+            release_locks(locks)
 
 
 def parser():
@@ -93,6 +134,7 @@ def parser():
     p.add_argument('--node', default=shutil.which('node'))
     p.add_argument('--wake-state', type=pathlib.Path)
     p.add_argument('--resume')
+    p.add_argument('--parallelism', type=int, default=1, choices=[1, 2, 3, 4])
     return p
 
 

@@ -11,7 +11,7 @@
 | docs:check / docs:impact | 链接/任务结构与基础SHA差异检查 |
 | docs:status / -- --check | 生成或验证派生状态，禁止手改生成区 |
 | tsx scripts/assess-recording-size.ts 冻结day文件 [结果json] | 只读样本测算录制表示大小；无个人库或TDX写入，不是浏览器性能验收 |
-| tsx scripts/assess-recording-compression.ts 冻结day 同批gbbq 结果json | 比较重复快照、去重与增量/gzip；逐步验证还原相等的独立格式实验 |
+| tsx scripts/assess-recording-compression.ts 冻结day 同批gbbq 结果json [codec模块路径] | 比较表示/gzip，逐步还原相等；可选载入开发者指定codec固定版本与实验结果对照 |
 | verify:m1 / verify:m2 | 既有全量实源核验；可设TRAINER_VERIFY_DIR指定输出目录，默认保留原路径兼容 |
 
 运行结果在`.runs/run-*/artifacts`，manifest记录版本/路径，snapshot.json记录实际样本内容。工具退出后保留诊断；正式证据复制到verification再清理该run。不要盲删运行中的目录，不按端口杀未知进程。完整候选命令保留单测、构建、M2和全量浏览器闸门，M1另按数据变更范围运行。

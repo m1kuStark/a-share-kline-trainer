@@ -4,6 +4,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { gzipSync, gunzipSync } from 'node:zlib'
 import { strict as assert } from 'node:assert'
 import { performance } from 'node:perf_hooks'
+import { pathToFileURL } from 'node:url'
+import { resolve } from 'node:path'
 import { readDayFile, type DayBar } from '../server/src/tdx/dayfile.ts'
 import { readGbbqFile, applyForwardAdjustment, type AdjustmentEvent } from '../server/src/tdx/gbbq.ts'
 import { aggregateBars, type Timeframe } from '../server/src/tdx/kline.ts'
@@ -12,6 +14,7 @@ import { validateRecording } from '../web/src/recording/validation.ts'
 
 const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value))
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+let implementation: { compactRecording: (file: RecordingFile) => any; CompactReader: new (file: any) => { checkpointAt(index:number): RecordingCheckpoint } } | null = null
 type SeriesVersion = { id: string; timeframe: Timeframe; cutoff: string; bars?: DayBar[]; base?: string; remove?: string[]; upsert?: DayBar[] }
 
 /** Preserve every original checkpoint; replace only embedded bars with immutable observed-version refs. */
@@ -138,12 +141,26 @@ function measure(file: RecordingFile, label: string) {
     const verified = verifyExact(file,decoded)
     output.variants.push({name:incremental?'versioned-deltas-json':'whole-series-dedup-json',bytes:jsonBytes,gzipBytes:zip.length,versionCount:packed.versions.length,verification:verified,offlineTotalMs:Math.round(performance.now()-start),offlineDecodeAndVerifyMs:Math.round(performance.now()-decodeStart)})
   }
+  if (implementation) {
+    const started = performance.now()
+    const compact = implementation.compactRecording(file)
+    const reader = new implementation.CompactReader(compact)
+    for (let i=0;i<file.checkpoints.length;i++) assert.deepEqual(reader.checkpointAt(i),file.checkpoints[i])
+    // Non-sequential seeks must remain lossless after cache eviction.
+    for (let i=file.checkpoints.length-1;i>=0;i-=7) assert.deepEqual(reader.checkpointAt(i),file.checkpoints[i])
+    assert.deepEqual(compact.events,file.events)
+    assert.deepEqual(compact.gaps,file.gaps)
+    output.productionCodec={bytes:bytes(compact),gzipBytes:gzipSync(JSON.stringify(compact),{level:6}).length,
+      verifiedCheckpoints:file.checkpoints.length,seriesVersions:compact.resources.series.length,
+      accountVersions:compact.resources.accounts.length,totalMs:Math.round(performance.now()-started)}
+  }
   return output
 }
 
 async function main() {
-  const [dayPath, rightsPath, outputPath] = process.argv.slice(2)
+  const [dayPath, rightsPath, outputPath, codecModule] = process.argv.slice(2)
   if (!dayPath || !rightsPath || !outputPath) throw Error('Usage: assess-recording-compression.ts frozen.day frozen-gbbq result.json')
+  if (codecModule) implementation = await import(pathToFileURL(resolve(codecModule)).href)
   const all = await readDayFile(dayPath)
   const rights = (await readGbbqFile(rightsPath)).filter(e=>e.code==='600519'&&e.market==='sh')
   const start = all.findIndex(bar=>bar.date>='2024-09-16'),end=all.findLastIndex(bar=>bar.date<='2026-09-16')

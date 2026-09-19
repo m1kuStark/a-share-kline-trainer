@@ -14,13 +14,15 @@
 
 从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行的会话。
 
-必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。相同批次不能覆盖，worker.lock拒绝重叠模型调用，不自动抢占遗留锁。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
+必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。`--parallelism`默认1、允许1～4；当前协调器新调用统一设3（最初两个已占用槽0/1，新增占用槽2）。locks目录分别持有规范化worktree锁、唯一batch锁和slot锁，拒绝同工作树双写/批次覆盖/超槽位调用，不自动抢遗留锁。旧worker.lock存在时拒绝迁移启动。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
+
+并行调用禁止`--wake-state`，以各job.json作为权威状态；集成人写group索引列出本批jobFiles。heartbeat逐项处理新完成/失败批次，不能因某个running隐藏其他已完成结果。各任务独立log/provider配置，不共用输出文件。限流以真实请求为据，有限重试后调整下一批并发数。
 
 派发后结束Codex轮次。当前线程的heartbeat读取完成标志再验收，读到running立即退出；完整交接和其他待复核批次不能因派发新任务被遗忘。异常退出保留日志、改动和批次记录；确认无运行进程后才能处理遗留锁或重试。
 
 ## 测试与维护
 
-`py -3.9 -m unittest discover -s scripts/agent-monitor -p test_monitor.py`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、互斥及真实短子进程完成/唤醒标志。UI验收检查任务切换、Prompt、深浅主题、无溢出、文本注入、HTTP拒绝未知路径及pageerror。
+`py -3.9 -m unittest discover -s scripts/agent-monitor -p test_monitor.py`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、同树排他/并发槽位（含双进程）、并行禁止共享唤醒文件及真实短子进程完成。UI验收检查任务切换、Prompt、深浅主题、无溢出、文本注入、HTTP拒绝未知路径及pageerror。
 
 本机2026-09-19 Zcode3.12.3/CLI0.16.5：CLI记录在`.zcode/cli/db/db.sqlite`，桌面另有`.zcode/v2/tasks-index.sqlite`；本工程worktree在桌面索引未登记。未找到CLI session直接进入GUI的入口；不手改桌面数据库。SQLite结构属本机适配，升级后需复查；优先在将来采用官方公开任务观察接口。
 

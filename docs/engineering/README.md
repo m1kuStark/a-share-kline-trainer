@@ -9,5 +9,6 @@
 - [GLM任务看板](glm-observability.md)：用户可见的后台任务、实时活动与独立验收状态。
 - [录制实施](recording-delivery.md)与[共享合同](recording-contract.md)：本批分工、接口和验收边界。
 - [录制v2合同](recording-v2-contract.md)：已获用户实施授权的紧凑版本、校验与增量持久化接口。
+- [v2并行调度](recording-v2-dispatch.md)：独占文件、依赖顺序、并发槽位与统一验收。
 
 此处为现行工作规则；未落地的源码重构放[提案](../proposals/README.md)。

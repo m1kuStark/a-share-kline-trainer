@@ -11,6 +11,7 @@
 | 离线回放页 | [回放](rec-player.md) |
 | 已确认问题的修复 | [存储重试](rec-harden-storage.md)、[真实暂停缺口](rec-player-gap-fix.md) |
 | v2第一单元 | [紧凑编解码](rec-v2-codec.md)，只开发纯codec与类型，验收后进入下一单元 |
+| v2并行批次 | [codec修正](rec-v2-codec-review-fix.md)、[校验器](rec-v2-validator-parallel.md)、[增量存储](rec-v2-storage-parallel.md)，独立工作树和修改范围 |
 | 只读规则/权息上下文 | [上下文](rec-context.md)、[审查修正](rec-context-fix.md) |
 
 子分支在REC-01功能集成分支顺序合并，完整功能再经候选门禁进入main。账户实际限流后模型请求改为串行，Git隔离与本地审查/测试仍保留并行能力。
