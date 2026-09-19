@@ -58,7 +58,8 @@ export class Recorder {
     if (!this.file) {
       return {
         state: 'error',
-        error: '录制器尚未初始化，请先调用 start() 或 restore()。',
+        // restore 失败后 lastError 已含真实原因，须优先于笼统的未初始化提示展示
+        error: this.lastError ?? '录制器尚未初始化，请先调用 start() 或 restore()。',
         eventCount: 0,
         sessionId: '',
       }
