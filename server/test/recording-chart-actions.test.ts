@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
+import { exerciseChartZoom } from './helpers/chart-zoom'
 
 const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta.url)
 
@@ -158,9 +159,13 @@ describe('REC-CHART-C pointerup fallback and viewport operations', () => {
     expect((up.match(/scheduleViewportOperation\(\)/g) ?? []).length).toBe(5)
     expect(up).toMatch(/if \(event\.pointerId === paneResizePointerId\) \{ paneResizePointerId = null; scheduleViewportOperation\(\); return \}/)
     expect(up).toMatch(/if \(axisScaleDrag\) \{ axisScaleDrag = false; scheduleViewportOperation\(\); return \}/)
-    const zoom = blockOf(source, 'function zoomBy(', 'function moveCrosshair(')
-    expect(zoom).toMatch(/if \(next === count\) return/)
-    expect(zoom).toMatch(/scheduleViewportOperation\(\) \}/)
+    for (const count of [1, 150]) {
+      const zoom = await exerciseChartZoom(1 / 1.3, count)
+      expect(zoom.actions.filter(action => action === 'viewport')).toHaveLength(1)
+      expect(zoom.barSpace).toBeGreaterThan(6)
+    }
+    expect((await exerciseChartZoom(1)).actions).toEqual([])
+    expect((await exerciseChartZoom(NaN)).actions).toEqual([])
   })
 
   it('never counts mount initialization, feed, history backfill, layout resize or replay restore as user navigation', async () => {

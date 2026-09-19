@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
+import { exerciseChartZoom } from './helpers/chart-zoom'
 
 const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta.url)
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
@@ -225,7 +226,9 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/setAutoCalcTickFlag\?\.\(true\)/)
     // 框选右滑/左滑、键盘缩放、Home 复位四条路径都要先恢复自动适配
     expect(source).toMatch(/restoreYAxisAutoFit\(\)[\s\S]{0,300}setBarSpace/s)
-    expect(source).toMatch(/zoomBy\(factor: number\): void \{[\s\S]{0,220}restoreYAxisAutoFit\(\)/s)
+    const zoom = await exerciseChartZoom(1 / 1.3)
+    expect(zoom.actions).toEqual(['auto-fit', 'spacing', 'anchor:0', 'visible-count', 'viewport'])
+    expect(zoom.barSpace).toBeGreaterThan(6)
     expect(source).toMatch(/resetView\(userInitiated = true\): void \{[\s\S]{0,160}restoreYAxisAutoFit\(\)/s)
   }
   )

@@ -11,3 +11,5 @@ GLM工具依据[官方资料](../../../engineering/zcode-official-capabilities.m
 ACCEPT-E2E由独立GLM适配既有用例，保留首笔成交、T+1、防未来、只读及两年数据一致断言。完成后需完整候选及主代理视觉检查。7529、原验收库和浏览器录像尚未更新。
 
 [ACCEPT-E2E worker handoff](accept-e2e-worker.md): de88fac merged after independent read-only review; original data integrity checks preserved, final integrated run still required.
+
+Candidate acd7ed0 (ACCEPT-01-8c6a98cb8f4a) failed at unit gate:678/680 passed. Two source-text assertions still required old zoom early-return/one-line layout. New behavior tests execute the real extracted zoom function: auto-fit before spacing, one viewport report for1 and150bars, no effects foridentity/NaN. Both suites30/30 pass; production code unchanged by this repair. Failure run3eb233bb retained. A new candidate must rerun full gates.
