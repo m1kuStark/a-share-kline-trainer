@@ -1,0 +1,12 @@
+{
+  "mergedTaskBranchesRemoved": 13,
+  "mergedTaskWorktreesDeregistered": 13,
+  "successfulCandidateCleaned": "REC-01-064ac248b149",
+  "retainedFailedCandidate": "REC-01-0e6eb8fafaf4",
+  "runtimeEvidenceArchive": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\rec-stage-evidence",
+  "emptyDirectoryRetained": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\REC-01",
+  "emptyDirectoryReason": "Windows retained an open directory handle after Git removed its files and registration; no recursive force cleanup used.",
+  "userPreviewPreserved": ".runs/run-851fab4c-a87a-4baf-8339-fa96f84d1255",
+  "heartbeat": "rec-01-glm PAUSED",
+  "remotePush": false
+}
