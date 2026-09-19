@@ -106,6 +106,27 @@ function makeCheckpoint(
   }
 }
 
+/** 沿基础链计算某行情版本真实增量层数（不信任builder计数） */
+function seriesChainDepth(resources: CompactResources, id: string): number {
+  let depth = 0
+  const seen = new Set<string>()
+  let current = resources.series.find(v => v.id === id)
+  while (current) {
+    if (seen.has(current.id)) throw new Error(`循环引用：${current.id}`)
+    seen.add(current.id)
+    if (current.base === null) break
+    depth += 1
+    const next = resources.series.find(v => v.id === current?.base)
+    if (!next) throw new Error(`基础版本不存在：${current.base}`)
+    current = next
+  }
+  return depth
+}
+
+function maxSeriesChainDepth(resources: CompactResources): number {
+  return Math.max(...resources.series.map(v => seriesChainDepth(resources, v.id)))
+}
+
 function assembleFile(checkpoints: CompactCheckpoint[], resources: CompactResources): CompactRecordingFile {
   return {
     format: 'trainer-session',
@@ -267,15 +288,15 @@ describe('CompactBuilder drawings', () => {
     const c1 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(bars), [drawingA, drawingC]) }))
     const c2 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(bars), [drawingA, JSON.parse(JSON.stringify(drawingB)), drawingC]) }))
     const resources = builder.getResources()
-    expect(resources.drawings).toHaveLength(3)
-    const [d0, d1, d2] = resources.drawings
+    expect(resources.drawings).toHaveLength(2)
+    const [d0, d1] = resources.drawings
     expect(d0.base).toBeNull()
     expect(d0.items).toHaveLength(3)
     if (!('remove' in d1)) throw new Error('d1 应为增量版本')
     expect(d1.remove).toEqual(['dw-b'])
     expect(d1.upsert).toHaveLength(0)
-    if (!('upsert' in d2)) throw new Error('d2 应为增量版本')
-    expect(d2.upsert).toEqual([drawingB])
+    // c2重新加回B后与d0完全同内容：复用历史版本而非追加新版本
+    expect(c2.chart?.drawingsRef).toBe(d0.id)
     const reader = new CompactReader(assembleFile([c0, c1, c2], resources))
     expect(reader.checkpointAt(0).chart?.drawings).toEqual([drawingA, drawingB, drawingC])
     expect(reader.checkpointAt(1).chart?.drawings).toEqual([drawingA, drawingC])
@@ -528,5 +549,184 @@ describe('CompactReader 边界', () => {
     v0.base = cyclic.resources.series[0].id
     const cyclicReader = new CompactReader(cyclic)
     expect(() => cyclicReader.checkpointAt(0)).toThrow(/循环/)
+  })
+})
+
+describe('CompactBuilder 恢复后内容去重', () => {
+  it('恢复Builder重建指纹索引，相同capture不重复入库（问题1）', () => {
+    const builder1 = new CompactBuilder()
+    const training = makeTraining()
+    const trade = { seq: 1, date: '2026-03-05', side: 'buy' as const, price: 10, shares: 500, amount: 5000, fee: 5, chartPrice: 10 }
+    const withTrade: TrainingSnapshot = { ...cloneTraining(training), trades: [trade] }
+    const context = { rules: { t1: true } }
+    const bars = makeBars(10)
+    const c0 = builder1.capture(makeCheckpoint({ training: withTrade, chart: makeChart(bars), context }))
+    const restored = builder1.getResources()
+    expect(restored.trainingMeta).toHaveLength(1)
+    expect(restored.trades).toHaveLength(1)
+
+    const builder2 = new CompactBuilder(restored, 1)
+    const c1 = builder2.capture(
+      makeCheckpoint({
+        training: cloneTraining(withTrade),
+        chart: makeChart(cloneBars(bars)),
+        context: JSON.parse(JSON.stringify(context)),
+      }),
+    )
+    const resources = builder2.getResources()
+    expect(resources.trainingMeta).toHaveLength(1)
+    expect(resources.accounts).toHaveLength(1)
+    expect(resources.trades).toHaveLength(1)
+    expect(resources.contexts).toHaveLength(1)
+    expect(resources.series).toHaveLength(restored.series.length)
+    expect(c1.training?.metaRef).toBe(c0.training?.metaRef)
+    expect(c1.training?.accountRef).toBe(c0.training?.accountRef)
+    expect(c1.training?.tradeRefs[0]).toBe(c0.training?.tradeRefs[0])
+    expect(c1.chart?.seriesRef).toBe(c0.chart?.seriesRef)
+    expect(c1.contextRef).toBe(c0.contextRef)
+
+    // 恢复后同seq不同chartPrice仍保留为新成交版本，不按seq覆盖
+    const trade1 = { ...trade, chartPrice: 10.5 }
+    builder2.capture(makeCheckpoint({ training: { ...cloneTraining(training), trades: [trade1] } }))
+    expect(builder2.getResources().trades).toHaveLength(2)
+
+    const reader = new CompactReader(assembleFile([c0, c1], builder2.getResources()))
+    expect(reader.checkpointAt(1).training?.trades[0].chartPrice).toBe(10)
+  })
+})
+
+describe('CompactBuilder 恢复后链深', () => {
+  it('恢复后父链深度计入追加，连续刷新不突破31层（问题2）', () => {
+    const builder1 = new CompactBuilder()
+    builder1.capture(makeCheckpoint({ chart: makeChart(makeBars(1)) }))
+    for (let i = 1; i <= 30; i += 1) {
+      builder1.capture(makeCheckpoint({ chart: makeChart(makeBars(1 + i)) }))
+    }
+    expect(maxSeriesChainDepth(builder1.getResources())).toBe(30)
+
+    const builder2 = new CompactBuilder(builder1.getResources(), 31)
+    builder2.capture(makeCheckpoint({ chart: makeChart(makeBars(32)) }))
+    builder2.capture(makeCheckpoint({ chart: makeChart(makeBars(33)) }))
+    const resources = builder2.getResources()
+    expect(maxSeriesChainDepth(resources)).toBeLessThanOrEqual(31)
+    const last = resources.series[resources.series.length - 1]
+    expect(last.base).toBeNull()
+    expect(last.firstCheckpoint).toBe(32)
+  })
+
+  it('未知截止链达到31层后，相同bars切已知截止存新基础而非第32层空增量（问题3）', () => {
+    const builder = new CompactBuilder()
+    const compact = [builder.capture(makeCheckpoint({ chart: makeChart(makeBars(1)) }))]
+    for (let i = 1; i <= 31; i += 1) {
+      compact.push(builder.capture(makeCheckpoint({ chart: makeChart(makeBars(1 + i)) })))
+    }
+    expect(maxSeriesChainDepth(builder.getResources())).toBe(31)
+    const bars = makeBars(32)
+    compact.push(
+      builder.capture(
+        makeCheckpoint({ training: makeTraining({ currentDate: '2026-03-05' }), chart: makeChart(bars) }),
+      ),
+    )
+    const resources = builder.getResources()
+    expect(maxSeriesChainDepth(resources)).toBeLessThanOrEqual(31)
+    const version = resources.series.find(v => v.id === compact[32].chart?.seriesRef)
+    expect(version).toBeDefined()
+    expect(version?.asOf).toBe('2026-03-05')
+    expect(version?.base).toBeNull()
+    const reader = new CompactReader(assembleFile(compact, resources))
+    expect(reader.checkpointAt(32).chart?.bars).toEqual(bars)
+    expect(reader.checkpointAt(31).chart?.bars).toEqual(makeBars(32))
+  })
+})
+
+describe('CompactBuilder 历史内容复用', () => {
+  it('series A→B→A复用历史版本（问题5）', () => {
+    const builder = new CompactBuilder()
+    const x = makeBars(5)
+    const y = makeBars(6)
+    const c0 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(x)) }))
+    const c1 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(y)) }))
+    const c2 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(x)) }))
+    const resources = builder.getResources()
+    expect(resources.series).toHaveLength(2)
+    expect(c2.chart?.seriesRef).toBe(c0.chart?.seriesRef)
+    const reader = new CompactReader(assembleFile([c0, c1, c2], resources))
+    expect(reader.checkpointAt(0).chart?.bars).toEqual(x)
+    expect(reader.checkpointAt(2).chart?.bars).toEqual(x)
+  })
+
+  it('drawings A→B→A复用历史版本（问题5）', () => {
+    const builder = new CompactBuilder()
+    const a: Drawing = { id: 'dw-a', name: 'segment', paneId: 'p', points: [{ timestamp: 1, value: 1 }] }
+    const b: Drawing = { id: 'dw-b', name: 'segment', paneId: 'p', points: [{ timestamp: 2, value: 2 }] }
+    const bars = makeBars(5)
+    const c0 = builder.capture(makeCheckpoint({ chart: makeChart(bars, [a]) }))
+    const c1 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(bars), [a, b]) }))
+    const c2 = builder.capture(makeCheckpoint({ chart: makeChart(cloneBars(bars), [JSON.parse(JSON.stringify(a)) as Drawing]) }))
+    const resources = builder.getResources()
+    expect(resources.drawings).toHaveLength(2)
+    expect(c2.chart?.drawingsRef).toBe(c0.chart?.drawingsRef)
+    const reader = new CompactReader(assembleFile([c0, c1, c2], resources))
+    expect(reader.checkpointAt(2).chart?.drawings).toEqual([a])
+  })
+
+  it('跨恢复的A→B→A仍复用：恢复后索引正确（问题5）', () => {
+    const builder1 = new CompactBuilder()
+    const x = makeBars(5)
+    const c0 = builder1.capture(makeCheckpoint({ chart: makeChart(cloneBars(x)) }))
+    const builder2 = new CompactBuilder(builder1.getResources(), 1)
+    const y = makeBars(6)
+    builder2.capture(makeCheckpoint({ chart: makeChart(cloneBars(y)) }))
+    const c2 = builder2.capture(makeCheckpoint({ chart: makeChart(cloneBars(x)) }))
+    const resources = builder2.getResources()
+    expect(resources.series).toHaveLength(2)
+    expect(c2.chart?.seriesRef).toBe(c0.chart?.seriesRef)
+  })
+
+  it('历史复用受asOf许可约束：已知截止不得复用更晚asOf的历史版本', () => {
+    const builder = new CompactBuilder()
+    const x = makeBars(5)
+    const y = makeBars(6)
+    const c0 = builder.capture(
+      makeCheckpoint({ training: makeTraining({ currentDate: '2026-03-06' }), chart: makeChart(cloneBars(x)) }),
+    )
+    builder.capture(makeCheckpoint({ training: makeTraining({ currentDate: '2026-03-07' }), chart: makeChart(cloneBars(y)) }))
+    const c2 = builder.capture(
+      makeCheckpoint({ training: makeTraining({ currentDate: '2026-03-05' }), chart: makeChart(cloneBars(x)) }),
+    )
+    const resources = builder.getResources()
+    const version = resources.series.find(v => v.id === c2.chart?.seriesRef)
+    expect(version).toBeDefined()
+    // x在03-06已记录，更早截止03-05不能引用它，也不能引用03-07的y版本 → 存新基础
+    expect(version?.base).toBeNull()
+    expect(version?.asOf).toBe('2026-03-05')
+    expect(version).not.toBe(resources.series[0])
+    expect(c2.chart?.seriesRef).not.toBe(c0.chart?.seriesRef)
+    const reader = new CompactReader(assembleFile([c0, c2], resources))
+    expect(reader.checkpointAt(1).chart?.bars).toEqual(x)
+  })
+
+  it('纯删除按序列化字节小于全量走增量（byte例：remove键6字节 < 全量约400字节）', () => {
+    const builder = new CompactBuilder()
+    const a: Drawing = { id: 'dw-a', name: 'segment', paneId: 'p', points: [{ timestamp: 1, value: 1 }] }
+    const b: Drawing = {
+      id: 'dw-b',
+      name: 'horizontalLine',
+      paneId: 'candle_pane',
+      points: [{ timestamp: 2, value: 9 }],
+      styles: { color: '#ff0000' },
+      extendData: { text: 'x'.repeat(200) },
+    }
+    const c0 = builder.capture(makeCheckpoint({ chart: makeChart(makeBars(5), [a, b]) }))
+    const c1 = builder.capture(makeCheckpoint({ chart: makeChart(makeBars(5), [b]) }))
+    const resources = builder.getResources()
+    expect(resources.drawings).toHaveLength(2)
+    const v1 = resources.drawings[1]
+    if (!('remove' in v1)) throw new Error('纯删除应存增量而非全量基础')
+    expect(v1.remove).toEqual(['dw-a'])
+    expect(v1.upsert).toHaveLength(0)
+    const reader = new CompactReader(assembleFile([c0, c1], resources))
+    expect(reader.checkpointAt(0).chart?.drawings).toEqual([a, b])
+    expect(reader.checkpointAt(1).chart?.drawings).toEqual([b])
   })
 })
