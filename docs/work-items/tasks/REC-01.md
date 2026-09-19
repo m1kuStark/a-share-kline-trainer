@@ -8,10 +8,12 @@
   "state": "active",
   "milestone": "REC",
   "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "CORE固定接口后，CHART/PLAYER并行，最后INTEGRATE接线。",
+  "next_action": "完成通知驱动GLM单调用队列：CHART→PLAYER→容量/存储修复；接线后真实旅程及候选门禁。",
   "allowed_paths": [
     "web/src/**",
+    "web/README.md",
     "server/src/**",
+    "server/README.md",
     "server/test/**",
     "e2e/**",
     "docs/specs/recording.md",
