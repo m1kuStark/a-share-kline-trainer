@@ -72,6 +72,19 @@ class MonitorTests(unittest.TestCase):
         self.write_job()
         self.assertEqual(monitor.snapshot(self.registry, self.database)['jobs'][0]['phase'], 'reviewed')
 
+    @patch('monitor.process_alive', return_value=True)
+    def test_followup_link_preserves_historical_review(self, _):
+        self.job.update(review={'state': 'changes_requested', 'summary': 'old finding'}, followupId='fix')
+        self.write_job()
+        fix = {**self.job, 'id': 'fix', 'state': 'running', 'pid': 123, 'review': None, 'followupId': None}
+        fix.pop('review')
+        (self.registry / 'fix.json').write_text(json.dumps(fix), encoding='utf-8')
+        original = next(j for j in monitor.snapshot(self.registry, self.database)['jobs'] if j['id'] == 'job1')
+        self.assertEqual(original['phase'], 'needs_changes')
+        self.assertEqual(original['followup']['phase'], 'running')
+        (self.registry / 'fix.json').unlink()
+        self.assertIsNone(monitor.snapshot(self.registry, self.database)['jobs'][0]['followup'])
+
     def test_redaction(self):
         result = monitor.redact('Authorization: Bearer SECRET123\napi_key=supersecret\nordinary text')
         self.assertNotIn('SECRET123', result)

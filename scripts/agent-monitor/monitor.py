@@ -10,10 +10,13 @@ import sqlite3
 import subprocess
 import time
 import urllib.request
+from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from telemetry import ModelLogReader
 
 DEFAULT_HOME = pathlib.Path(os.environ.get('CODEX_HOME', pathlib.Path.home() / '.codex')) / 'headroom-cache' / 'glm-monitor'
 DEFAULT_DB = pathlib.Path.home() / '.zcode' / 'cli' / 'db' / 'db.sqlite'
+MODEL_LOG = ModelLogReader(pathlib.Path.home() / '.zcode' / 'cli' / 'log')
 
 
 def atomic_write(path, value):
@@ -111,6 +114,7 @@ def session_activity(db, job):
     usage = db.execute('select status,model_id,started_at,first_token_at,completed_at,error_message from model_usage where session_id=? order by started_at desc limit 1', (session_id,)).fetchone()
     last = max([row[2]] + [r[0] for r in rows] + ([usage[2], usage[3] or 0, usage[4] or 0] if usage else []))
     return {'sessionId': session_id, 'activity': activity, 'lastActivity': last,
+            'lastToolAt': max((item['at'] for item in activity), default=None),
             'request': {'status': usage[0], 'model': usage[1], 'startedAt': usage[2], 'firstTokenAt': usage[3], 'completedAt': usage[4], 'error': redact(usage[5])[:400]} if usage else None}
 
 
@@ -126,7 +130,7 @@ def snapshot(registry, database):
         for path in pathlib.Path(registry).glob('*.json'):
             try:
                 job = json.loads(path.read_text(encoding='utf-8-sig'))
-                safe_keys = ['id', 'title', 'worktree', 'branch', 'state', 'startedAt', 'finishedAt', 'model', 'effort', 'contextConfigured', 'prompt', 'response', 'error', 'review', 'logPath', 'exitCode']
+                safe_keys = ['id', 'title', 'worktree', 'branch', 'state', 'startedAt', 'finishedAt', 'model', 'effort', 'contextConfigured', 'prompt', 'response', 'error', 'review', 'logPath', 'exitCode', 'followupId']
                 item = {key: job[key] for key in safe_keys if key in job}
                 for field in ['prompt', 'response', 'error']:
                     if field in item:
@@ -141,7 +145,12 @@ def snapshot(registry, database):
                 if db is not None and state != 'queued':
                     try:
                         item.update(session_activity(db, job))
-                    except (sqlite3.Error, ValueError, TypeError) as error:
+                        if item.get('sessionId') and not item.get('warning') and database == DEFAULT_DB:
+                            signal = MODEL_LOG.read(item['sessionId'], job.get('startedAt', 0))
+                            if signal:
+                                signal.pop('query', None)
+                                item['modelSignal'] = signal
+                    except (OSError, sqlite3.Error, ValueError, TypeError) as error:
                         item['warning'] = '会话活动暂不可读：' + type(error).__name__
                 elif db is None:
                     item['warning'] = 'Zcode会话数据库暂不可读'
@@ -152,6 +161,11 @@ def snapshot(registry, database):
         if db is not None:
             db.close()
     jobs.sort(key=lambda j: j.get('startedAt', 0), reverse=True)
+    by_id = {item['id']: item for item in jobs}
+    for item in jobs:
+        if item.get('followupId'):
+            followup = by_id.get(item['followupId'])
+            item['followup'] = {key: followup.get(key) for key in ['id', 'title', 'phase']} if followup else None
     return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'warnings': warnings}
 
 
@@ -164,9 +178,10 @@ def open_window(url):
         webbrowser.open(url)
 
 
-def serve(home, database, launch):
+def serve(home, database, launch, reuse_address=False):
     home.mkdir(parents=True, exist_ok=True)
     metadata = home / 'server.json'
+    previous = None
     try:
         previous = json.loads(metadata.read_text(encoding='utf-8'))
         if process_alive(previous['pid'], previous.get('startedAt')):
@@ -179,8 +194,13 @@ def serve(home, database, launch):
     except (OSError, ValueError, KeyError):
         pass
     token = secrets.token_urlsafe(24)
+    port = 0
+    if reuse_address and previous and not process_alive(previous['pid'], previous.get('startedAt')):
+        parsed = urlparse(previous['url'])
+        candidate = parsed.path.strip('/')
+        if parsed.scheme == 'http' and parsed.hostname == '127.0.0.1' and parsed.port and re.fullmatch(r'[A-Za-z0-9_-]{24,64}', candidate):
+            port, token = parsed.port, candidate
     instance = secrets.token_hex(16)
-    html = pathlib.Path(__file__).with_name('index.html').read_bytes()
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -193,7 +213,7 @@ def serve(home, database, launch):
                 return
             route = self.path[len(prefix):]
             if route == '':
-                body, content_type = html, 'text/html; charset=utf-8'
+                body, content_type = pathlib.Path(__file__).with_name('index.html').read_bytes(), 'text/html; charset=utf-8'
             elif route == 'state':
                 body, content_type = json.dumps(snapshot(home / 'jobs', database), ensure_ascii=False).encode(), 'application/json; charset=utf-8'
             elif route == 'health':
@@ -213,7 +233,7 @@ def serve(home, database, launch):
         def log_message(self, *_):
             pass
 
-    server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     url = 'http://127.0.0.1:' + str(server.server_port) + '/' + token + '/'
     atomic_write(metadata, {'pid': os.getpid(), 'url': url, 'instance': instance, 'startedAt': int(time.time() * 1000)})
     if launch:
@@ -226,5 +246,6 @@ if __name__ == '__main__':
     parser.add_argument('--home', type=pathlib.Path, default=DEFAULT_HOME)
     parser.add_argument('--db', type=pathlib.Path, default=DEFAULT_DB)
     parser.add_argument('--open', action='store_true')
+    parser.add_argument('--reuse-address', action='store_true')
     args = parser.parse_args()
-    serve(args.home, args.db, args.open)
+    serve(args.home, args.db, args.open, args.reuse_address)

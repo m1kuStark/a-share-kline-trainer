@@ -10,6 +10,8 @@
 
 “运行中”由登记进程与创建时间判定；无新活动只作提示，不能证明卡死。“开发完成”是模型退出与完整答复；“模块已复核”须由集成人写入review，不自动等同整项功能验收。读库失败、断开、进程异常退出分别显示，不假装正在正常推进。
 
+模型请求、长时间无工具及旧修正任务关联详见[运行观察](health.md)。
+
 ## 派发
 
 从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行的会话。
@@ -22,7 +24,7 @@
 
 ## 测试与维护
 
-`py -3.9 -m unittest discover -s scripts/agent-monitor -p test_monitor.py`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、同树排他/并发槽位（含双进程）、并行禁止共享唤醒文件及真实短子进程完成。UI验收检查任务切换、Prompt、深浅主题、无溢出、文本注入、HTTP拒绝未知路径及pageerror。
+`py -3.9 -m unittest discover -s scripts/agent-monitor -p 'test_*.py'`覆盖任务隔离、会话匹配、进程退出、复核分离、遮蔽、读库故障、批次保护、同树排他/并发槽位（含双进程）、并行禁止共享唤醒文件、真实短子进程完成、生命周期跨请求/跨session/轮转及修复关联。UI验收另查无新JSON时跨过提示阈值、修复跳转、Prompt、深浅主题、溢出、文本注入及pageerror。
 
 本机2026-09-19 Zcode3.12.3/CLI0.16.5：CLI记录在`.zcode/cli/db/db.sqlite`，桌面另有`.zcode/v2/tasks-index.sqlite`；本工程worktree在桌面索引未登记。未找到CLI session直接进入GUI的入口；不手改桌面数据库。SQLite结构属本机适配，升级后需复查；优先在将来采用官方公开任务观察接口。
 

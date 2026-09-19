@@ -8,6 +8,7 @@
 - [REC-01结构与压缩实测](2026-09/REC-01-compression/report.md)：文件构成、增量/gzip对比和逐检查点还原。
 - [REC-01迁移前基线](2026-09/REC-01-v1-baseline/report.md)：已合回放/存储修复、初始化假缺口的失败回归与4条真实录制旅程；不是v2最终验收。
 - [v2编解码首轮审查](2026-09/REC-01-v2-codec-review/report.md)：真实样本往返通过、恢复缺陷待修及三任务并行隔离。
+- [GLM长无活动诊断](2026-09/REC-01-monitor-health/report.md)：请求/工具分开观察、输出预算续接及旧修正任务关联。
 
 - [DEV-01并行基线](2026-09/DEV-01-parallel/report.md)：精确合并候选、完整验收和两个worktree并发证据。
 
