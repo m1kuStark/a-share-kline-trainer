@@ -9,3 +9,5 @@ REC-03返修d5cf35a已合入。根20项定向测试通过；run-9366e21b入口�
 GLM工具依据[官方资料](../../../engineering/zcode-official-capabilities.md)增加附件与stream-json。真实Node回归先失败后通过，看板22项Python测试通过。截图实测正确识别600519、账户100万元、顶部录制区；小字快捷键误读，不能代替完整视觉验收。712条model.streaming和最终result证明事件流，实际1M会话窗口未验证。[探针](glm-vision-probe.json)。完整日志不入Git。
 
 ACCEPT-E2E由独立GLM适配既有用例，保留首笔成交、T+1、防未来、只读及两年数据一致断言。完成后需完整候选及主代理视觉检查。7529、原验收库和浏览器录像尚未更新。
+
+[ACCEPT-E2E worker handoff](accept-e2e-worker.md): de88fac merged after independent read-only review; original data integrity checks preserved, final integrated run still required.

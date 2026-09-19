@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "阶段验收反馈集成",
-  "next_action": "绘线/录制定向通过；待REC-03返修后完整候选。",
+  "next_action": "完整候选验收后交用户。",
   "allowed_paths": [
     "web/**",
     "server/**",

@@ -23,8 +23,8 @@
 
 | 任务 | 状态 / 负责人 | 摘要 / 下一步 | 验证记录 | 集成引用 | 用户验收记录 |
 |---|---|---|---|---|---|
-| [ACCEPT-01](<work-items/tasks/ACCEPT-01.md>) | active / integrator | 阶段验收反馈集成 / 绘线/录制定向通过；待REC-03返修后完整候选。 | [证据1](<verification/2026-09/ACCEPT-01-review/report.md>) | 未记录 | 未记录 |
-| [ACCEPT-E2E](<work-items/tasks/ACCEPT-E2E.md>) | active / GLM-5.3-Flash | 跟随用户新交互适配原回归，保留业务断言。 / 定向验证后交集成人联合检查。 | 未记录 | 未记录 | 未记录 |
+| [ACCEPT-01](<work-items/tasks/ACCEPT-01.md>) | active / integrator | 阶段验收反馈集成 / 完整候选验收后交用户。 | [证据1](<verification/2026-09/ACCEPT-01-review/report.md>) | 未记录 | 未记录 |
+| [ACCEPT-E2E](<work-items/tasks/ACCEPT-E2E.md>) | review / GLM-5.3-Flash | 既有回归适配已合入。 / 执行精确候选验收。 | 未记录 | de88fac | 未记录 |
 | [DATA-01](<work-items/tasks/DATA-01.md>) | planned / unassigned | 目录、权息和快照各自提交；catalog失败结果未统一拦截。 / 复现目录已改后权息失败、超时迟到提交；所有已发布表保持同一版本。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-02](<work-items/tasks/DATA-02.md>) | planned / unassigned | 全市场末日及单一源尾不能证明个股区间无漏数。 / 加入他股更新但目标漏数、结束日后有记录但中间漏数样例；未知保持running。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-03](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 / 建立迁移时基线与旧版读取；无法恢复时明确阻断，不改旧流水。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
