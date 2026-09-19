@@ -3,6 +3,8 @@
 // docs/engineering/recording-v2-storage-contract.md）。对外语义沿旧 recorder.ts：
 // start/begin/finish/capture/pause/resume/flush/export/restore/getStatus/getFile；
 // 内部即时 CompactBuilder.capture，只保留轻量检查点与追加资源，不保留全历史完整图表。
+// 所有入口先完整验证并准备输入（循环/非JSON/结构检查），再改动状态/op/gap/序号/builder：
+// 输入失败时原状态原样保留、合法重试直接成功（builder 无回滚手段，靠前置校验保证原子）。
 // 持久化快照仅复制数组边界与可变 header（gaps/app/environment）；事件/检查点/资源条目
 // 创建后不再修改（finish 的 checkpoint 先于事件成形，已持久事件不回填字段）。
 // restore 只处理 v2（v1 迁移属接线层）；无自动停录、无容量停止逻辑。
@@ -10,6 +12,26 @@ import { CompactBuilder } from './compactCodec'
 import type { CompactCheckpoint, CompactRecordingFile } from './compactTypes'
 import type { CompactRecordingStorage } from './compactStorage'
 import { validateCompactRecording } from './compactValidation'
+import {
+  assertAccountView,
+  assertArray,
+  assertBar,
+  assertBoolean,
+  assertChartView,
+  assertDrawing,
+  assertEnum,
+  assertJson,
+  assertNumberOrNull,
+  assertRecord,
+  assertString,
+  assertStringOrNull,
+  assertTrade,
+  assertTrainingMeta,
+  fail,
+  isRecord,
+  MAX_DRAWINGS,
+  TIMEFRAMES,
+} from './validation'
 import type {
   Action,
   CheckpointInput,
@@ -124,13 +146,19 @@ export class CompactRecorder {
     if (this.session) {
       throw new Error('录制会话已开始，不能重复 start()；如需载入既有会话请使用 restore()。')
     }
+    // 输入校验与 header 克隆全部先行：任何失败都发生在改动 builder/session 之前，
+    // 状态保持未初始化，调用者修正输入后可直接重试 start。
+    const safeInitial = toSafeInput(initial)
+    const initialCanonical = canonicalJson(safeInitial)
+    const app = structuredClone(this.options.app)
+    const environment = structuredClone(this.options.environment)
     const now = new Date()
     this.builder = new CompactBuilder()
     this.session = {
       sessionId: createId(),
       createdAt: now.toISOString(),
-      app: structuredClone(this.options.app),
-      environment: structuredClone(this.options.environment),
+      app,
+      environment,
       trainingKey,
       events: [],
       checkpoints: [],
@@ -145,7 +173,7 @@ export class CompactRecorder {
     this.lastCapture = null
     this.operationalState = enabled ? 'recording' : 'paused'
     if (!enabled) this.requireSession().gaps.push({ afterSeq: 0, resumedAtSeq: null })
-    this.appendCheckpoint(initial)
+    this.appendSafeCheckpoint(safeInitial, initialCanonical, 0)
     this.refreshComplete()
     this.notify()
     this.scheduleSave()
@@ -176,7 +204,8 @@ export class CompactRecorder {
     }
     const extras: EventExtras = { outcome }
     if (result !== undefined) extras.result = structuredClone(result) as JsonValue
-    // 检查点先于事件完成（builder 消费后即不可变），事件带 checkpointId 一次性成形再追加
+    // 检查点先于事件完成（builder 消费后即不可变），事件带 checkpointId 一次性成形再追加；
+    // toSafeInput 在消耗 builder 序号前完成全部校验，失败时 openOps/事件原样保留，finish 可重试
     if (checkpoint !== undefined) {
       extras.checkpointId = this.appendCheckpoint(checkpoint, this.requireSession().events.length + 1).id
     }
@@ -204,6 +233,10 @@ export class CompactRecorder {
     if (this.operationalState === 'paused') {
       throw new Error('录制已暂停，不能重复 pause()。')
     }
+    // 检查点先验证并准备：失败不得留下已闭合 openOps/已写 pause 事件的半暂停状态，
+    // 否则录制仍标记 recording 但操作已被打断，无法重试。
+    const safe = toSafeInput(checkpoint)
+    const canonical = canonicalJson(safe)
     for (const [opId, open] of [...this.openOps]) {
       this.openOps.delete(opId)
       this.appendEvent(opId, 'finished', open.action, open.source, { outcome: 'interrupted' })
@@ -213,7 +246,7 @@ export class CompactRecorder {
     const lastPauseEvent = this.appendEvent(pauseOpId, 'finished', 'recording.pause', 'system', { outcome: 'accepted' })
     const session = this.requireSession()
     session.gaps.push({ afterSeq: lastPauseEvent.seq, resumedAtSeq: null })
-    this.appendCheckpoint(checkpoint)
+    this.appendSafeCheckpoint(safe, canonical, session.events.length)
     this.operationalState = 'paused'
     this.refreshComplete()
     this.notify()
@@ -227,13 +260,17 @@ export class CompactRecorder {
     if (!openGap) {
       throw new Error('录制没有未闭合的暂停缺口，不能 resume()。')
     }
+    // 检查点先验证并准备：失败不得留下已闭合 gap/已写 resume 事件的半恢复状态，
+    // 否则缺口已闭合而状态仍是 paused，之后无法再 resume。
+    const safe = toSafeInput(checkpoint)
+    const canonical = canonicalJson(safe)
     this.segmentId = createId()
     const resumeOpId = createId()
     const started = this.appendEvent(resumeOpId, 'started', 'recording.resume', 'system')
     this.appendEvent(resumeOpId, 'finished', 'recording.resume', 'system', { outcome: 'accepted' })
     // 就地闭合缺口：已持久快照持有 gaps 的克隆镜像，不受此修改影响
     openGap.resumedAtSeq = started.seq
-    this.appendCheckpoint(checkpoint)
+    this.appendSafeCheckpoint(safe, canonical, session.events.length)
     this.operationalState = 'recording'
     this.refreshComplete()
     this.notify()
@@ -349,7 +386,7 @@ export class CompactRecorder {
     return event
   }
 
-  /** 完整输入追加检查点（finish 路径需显式传 afterSeq=本条 finished 事件的 seq） */
+  /** 完整输入校验后追加检查点（finish 路径需显式传 afterSeq=本条 finished 事件的 seq） */
   private appendCheckpoint(input: CheckpointInput, afterSeq?: number): CompactCheckpoint {
     const safe = toSafeInput(input)
     const canonical = canonicalJson(safe)
@@ -483,8 +520,90 @@ export class CompactRecorder {
   }
 }
 
-/** 完整 CheckpointInput 深拷贝为纯 DTO：caller 的响应式代理/可变对象在此转换并隔离 */
+/** 与 validation.ts 的 assertJson 深度上限对齐（该常量未导出，此处保持 40 一致） */
+const MAX_INPUT_DEPTH = 40
+
+/**
+ * 循环引用预检：assertJson 遇自引用会无限递归栈溢出，不能依赖它发现循环。
+ * 进入子树时记入 WeakSet、离开时撤销——多处共享同一非循环子对象（DAG）不误报，
+ * 仅真正的环在此显式失败并指明字段路径。
+ */
+function assertAcyclic(value: unknown, field: string, seen: WeakSet<object>, depth: number): void {
+  if (value === null || typeof value !== 'object') return
+  if (depth > MAX_INPUT_DEPTH) fail(field, `嵌套深度超过 ${MAX_INPUT_DEPTH} 层`)
+  if (seen.has(value)) {
+    fail(field, '存在循环引用，无法无损序列化为 JSON；请检查输入对象的自引用结构')
+  }
+  seen.add(value)
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => assertAcyclic(item, `${field}[${index}]`, seen, depth + 1))
+  } else if (isRecord(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      assertAcyclic(item, field ? `${field}.${key}` : key, seen, depth + 1)
+    }
+  } else {
+    fail(field, `仅支持纯 JSON 对象/数组（收到 ${(value as object).constructor?.name ?? '未知对象'}）`)
+  }
+  seen.delete(value)
+}
+
+/**
+ * 单检查点输入结构检查：按 v1 语义复用 validation 纯 helper 校验 ui/training/chart。
+ * 两个目的：builder.capture 会先消耗检查点序号并可能追加资源（无回滚手段），必须保证它
+ * 对通过检查的输入不可能中途抛错；同时把导出校验必然失败的输入（bar 乱序、画线超限等）
+ * 拒绝在追加之前。只检查当前这一份输入，不回看文件/历史。合理 null optional 值
+ * （training/chart/context 整体为 null、tool/costPrice/trade 可选字段等）保持原语义放行。
+ * context 为自由 JsonValue | null，全树 assertJson 已覆盖，无需额外结构约束。
+ */
+function assertCheckpointInputShape(input: CheckpointInput): void {
+  const record = assertRecord(input, 'checkpoint')
+  const ui = assertRecord(record.ui, 'checkpoint.ui')
+  assertString(ui.theme, 'checkpoint.ui.theme')
+  assertStringOrNull(ui.tool, 'checkpoint.ui.tool')
+  assertString(ui.magnet, 'checkpoint.ui.magnet')
+  assertBoolean(ui.multiSelect, 'checkpoint.ui.multiSelect')
+  if (record.training !== null) {
+    const training = assertRecord(record.training, 'checkpoint.training')
+    assertTrainingMeta(training.training, 'checkpoint.training.training')
+    assertAccountView(training.account, 'checkpoint.training.account')
+    assertArray(training.trades, 'checkpoint.training.trades').forEach((trade, index) => {
+      assertTrade(trade, `checkpoint.training.trades[${index}]`)
+    })
+  }
+  if (record.chart !== null) {
+    const chart = assertRecord(record.chart, 'checkpoint.chart')
+    const timeframe = assertEnum(chart.timeframe, 'checkpoint.chart.timeframe', TIMEFRAMES)
+    const barDates = assertArray(chart.bars, 'checkpoint.chart.bars').map((bar, index) =>
+      assertBar(bar, `checkpoint.chart.bars[${index}]`, timeframe),
+    )
+    barDates.forEach((date, index) => {
+      if (index > 0 && date <= (barDates[index - 1] as string)) {
+        fail(`checkpoint.chart.bars[${index}].date`, `必须严格按日期递增（前值 ${barDates[index - 1]}，收到 ${date}）`)
+      }
+    })
+    const drawings = assertArray(chart.drawings, 'checkpoint.chart.drawings')
+    if (drawings.length > MAX_DRAWINGS) {
+      fail('checkpoint.chart.drawings', `画线数量 ${drawings.length} 超过上限 ${MAX_DRAWINGS}`)
+    }
+    const drawingIds = new Set<string>()
+    drawings.forEach((drawing, index) => assertDrawing(drawing, `checkpoint.chart.drawings[${index}]`, drawingIds))
+    assertChartView(chart.view, 'checkpoint.chart.view')
+    assertNumberOrNull(chart.costPrice, 'checkpoint.chart.costPrice')
+  }
+}
+
+/**
+ * 完整 CheckpointInput 校验并深拷贝为纯 DTO，顺序不可交换：
+ * 1) 循环引用预检（assertJson 遇环会栈溢出）；2) assertJson 全树有限/深度/类型检查——
+ * JSON.stringify 会把 NaN/Infinity 静默写成 null、丢弃 undefined，必须先显式失败再克隆；
+ * 3) 结构检查保证 builder.capture 不可能中途抛错。通过后才 JSON 克隆，
+ * caller 的响应式代理/可变对象在此转换并隔离。params/result/app/env 走 structuredClone
+ * 不经此 JSON 无损路径，语义不变。
+ */
 function toSafeInput(input: CheckpointInput): CheckpointInput {
+  assertAcyclic(input, 'checkpoint', new WeakSet(), 1)
+  assertJson(input, 'checkpoint', 1)
+  assertCheckpointInputShape(input)
   return {
     training: cloneJson(input.training),
     chart: cloneJson(input.chart),
