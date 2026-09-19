@@ -65,6 +65,10 @@ interface DrawingPlan {
   id: string
   field: string
   baseIndex: number | null
+  /** base 版本为 items 的 id 集合，delta 版本为 upsert 的 id 集合（数组内已去重） */
+  ownIds: Set<string>
+  /** delta 版本的 remove 键集合；base 版本为空集 */
+  removes: Set<string>
   raw: Record<string, unknown>
 }
 
@@ -75,6 +79,7 @@ interface SeriesState {
 }
 
 interface SeriesSummary {
+  timeframe: string
   asOf: string | null
   firstCheckpoint: number
 }
@@ -296,6 +301,13 @@ function planSeries(resources: Record<string, unknown>, checkpointCount: number)
     if (base.timeframe !== plan.timeframe) {
       fail(`${plan.field}.base`, `基础版本周期必须一致（base ${base.timeframe}，当前 ${plan.timeframe}）`)
     }
+    // 派生还原包含基础内容：基础不得比派生更晚可用；无 asOf 条件，恢复/盲态不豁免
+    if (base.firstCheckpoint > plan.firstCheckpoint) {
+      fail(
+        `${plan.field}.firstCheckpoint`,
+        `基础版本firstCheckpoint（${base.firstCheckpoint}）不得晚于派生（${plan.firstCheckpoint}），派生还原包含基础内容`,
+      )
+    }
     depths[index] = depths[baseIndex] + 1
     if (depths[index] > MAX_DELTA_CHAIN) {
       fail(`${plan.field}.base`, `增量链深 ${depths[index]} 超过上限 ${MAX_DELTA_CHAIN} 层，必须改存新全量基础`)
@@ -370,6 +382,10 @@ function applySeriesDelta(
     posByKey.clear()
     for (const [key, at] of keptPos) posByKey.set(key, at)
   }
+  // base.bars/upsert 单数组预算不含 remove 抵消：还原后的完整数组同样受限
+  if (dates.length > MAX_SERIES_BARS) {
+    fail(plan.field, `还原后bar数量 ${dates.length} 超过上限 ${MAX_SERIES_BARS}`)
+  }
   restoreBars.count += dates.length + upsert.length + removes.length
   dates.forEach((date, index) => {
     if (index > 0 && date <= (dates[index - 1] as string)) {
@@ -427,63 +443,97 @@ function resolveSeries(
       })
     }
     if (pendingUses.has(index)) states.set(index, state)
-    summaries.set(plan.id, { asOf: plan.asOf, firstCheckpoint: plan.firstCheckpoint })
+    summaries.set(plan.id, { timeframe: plan.timeframe, asOf: plan.asOf, firstCheckpoint: plan.firstCheckpoint })
   })
   return { summaries, restoreBars: restoreBars.count }
 }
 
 /**
  * 画线版本：id 唯一、base 先出现、链深≤31、items/upsert 图形走旧语义（工具白名单/engine mark排除）、
- * remove 键唯一；还原顺序无语义（Reader 按 id 规范序重放），不做排序约束。
+ * remove 键唯一；还原 id 集合每版本 ≤500（覆盖已有 id 不新增、remove 先扣除）。
+ * 还原顺序无语义（Reader 按 id 规范序重放），不做排序约束。
  */
 function planDrawings(resources: Record<string, unknown>): Map<string, number> {
   const drawings = assertArray(resources.drawings, 'resources.drawings') as unknown[]
   const indexById = new Map<string, number>()
   const plans: DrawingPlan[] = []
-  // 第一遍：id 唯一与版本自身内容
+  // 第一遍：id 唯一与版本自身内容；base 存在性延后到 id 集合完整后判定
   drawings.forEach((raw, index) => {
     const field = `resources.drawings[${index}]`
     const version = assertRecord(raw, field)
     const id = assertString(version.id, `${field}.id`)
     if (indexById.has(id)) fail(`${field}.id`, `画线版本id重复（${id}）`)
     indexById.set(id, index)
+    let ownIds: Set<string>
+    let removes: Set<string>
     if (version.base === null) {
       const items = assertArray(version.items, `${field}.items`)
       if (items.length > MAX_DRAWING_ITEMS) {
         fail(`${field}.items`, `画线数量 ${items.length} 超过上限 ${MAX_DRAWING_ITEMS}`)
       }
-      const ids = new Set<string>()
-      items.forEach((item, itemIndex) => assertDrawing(item, `${field}.items[${itemIndex}]`, ids))
+      ownIds = new Set<string>()
+      items.forEach((item, itemIndex) => assertDrawing(item, `${field}.items[${itemIndex}]`, ownIds))
+      removes = new Set<string>()
     } else {
       const upsert = assertArray(version.upsert, `${field}.upsert`)
       if (upsert.length > MAX_DRAWING_ITEMS) {
         fail(`${field}.upsert`, `upsert画线数量 ${upsert.length} 超过上限 ${MAX_DRAWING_ITEMS}`)
       }
-      const ids = new Set<string>()
-      upsert.forEach((item, itemIndex) => assertDrawing(item, `${field}.upsert[${itemIndex}]`, ids))
-      const removes = assertArray(version.remove, `${field}.remove`)
-      const drop = new Set<string>()
-      removes.forEach((key, keyIndex) => {
+      ownIds = new Set<string>()
+      upsert.forEach((item, itemIndex) => assertDrawing(item, `${field}.upsert[${itemIndex}]`, ownIds))
+      removes = new Set<string>()
+      const removeKeys = assertArray(version.remove, `${field}.remove`)
+      removeKeys.forEach((key, keyIndex) => {
         const text = assertString(key, `${field}.remove[${keyIndex}]`)
-        if (drop.has(text)) fail(`${field}.remove[${keyIndex}]`, `重复的移除键（${text}）`)
-        drop.add(text)
+        if (removes.has(text)) fail(`${field}.remove[${keyIndex}]`, `重复的移除键（${text}）`)
+        removes.add(text)
       })
     }
-    plans.push({ id, field, baseIndex: null, raw: version })
+    plans.push({ id, field, baseIndex: null, ownIds, removes, raw: version })
   })
-  // 第二遍：base 存在且下标更早，链深递推
+  // 第二遍：base 存在且下标更早，链深递推；按还原 id 集合检查每版本 ≤500，
+  // 状态仅在仍被后续版本引用时保留（引用计数释放，与 resolveSeries 同策略）
   const depths = new Array<number>(plans.length).fill(0)
+  const restoredSets = new Map<number, Set<string>>()
+  const pendingUses = new Map<number, number>()
+  // baseIndex 在主循环中才解析，预扫按 base id 换算下标；缺失/前向引用交由主循环报错
+  plans.forEach(plan => {
+    if (typeof plan.raw.base !== 'string') return
+    const baseIndex = indexById.get(plan.raw.base)
+    if (baseIndex === undefined) return
+    pendingUses.set(baseIndex, (pendingUses.get(baseIndex) ?? 0) + 1)
+  })
   plans.forEach((plan, index) => {
-    if (plan.raw.base === null) return
-    const baseId = assertString(plan.raw.base, `${plan.field}.base`)
-    const baseIndex = indexById.get(baseId)
-    if (baseIndex === undefined) fail(`${plan.field}.base`, `引用的基础版本不存在（${baseId}）`)
-    if (baseIndex >= index) fail(`${plan.field}.base`, `基础版本必须先出现（${baseId} 在下标 ${baseIndex}，当前版本在下标 ${index}）`)
-    plan.baseIndex = baseIndex
-    depths[index] = depths[baseIndex] + 1
-    if (depths[index] > MAX_DELTA_CHAIN) {
-      fail(`${plan.field}.base`, `增量链深 ${depths[index]} 超过上限 ${MAX_DELTA_CHAIN} 层，必须改存新全量基础`)
+    let restored: Set<string>
+    if (plan.raw.base === null) {
+      restored = plan.ownIds
+    } else {
+      const baseId = assertString(plan.raw.base, `${plan.field}.base`)
+      const baseIndex = indexById.get(baseId)
+      if (baseIndex === undefined) fail(`${plan.field}.base`, `引用的基础版本不存在（${baseId}）`)
+      if (baseIndex >= index) fail(`${plan.field}.base`, `基础版本必须先出现（${baseId} 在下标 ${baseIndex}，当前版本在下标 ${index}）`)
+      plan.baseIndex = baseIndex
+      depths[index] = depths[baseIndex] + 1
+      if (depths[index] > MAX_DELTA_CHAIN) {
+        fail(`${plan.field}.base`, `增量链深 ${depths[index]} 超过上限 ${MAX_DELTA_CHAIN} 层，必须改存新全量基础`)
+      }
+      const parent = restoredSets.get(baseIndex)
+      if (!parent) fail(plan.field, '内部错误：基础画线集合缺失')
+      restored = new Set(parent)
+      plan.removes.forEach(key => restored.delete(key))
+      plan.ownIds.forEach(owned => restored.add(owned))
+      if (restored.size > MAX_DRAWING_ITEMS) {
+        fail(plan.field, `还原后画线数量 ${restored.size} 超过上限 ${MAX_DRAWING_ITEMS}`)
+      }
+      const used = (pendingUses.get(baseIndex) ?? 1) - 1
+      if (used <= 0) {
+        pendingUses.delete(baseIndex)
+        restoredSets.delete(baseIndex)
+      } else {
+        pendingUses.set(baseIndex, used)
+      }
     }
+    if (pendingUses.has(index)) restoredSets.set(index, restored)
   })
   return indexById
 }
@@ -562,11 +612,17 @@ export function validateCompactRecording(value: unknown): CompactRecordingFile {
       })
     }
     if (checkpoint.chart !== null) {
-      const chart = checkpoint.chart as { seriesRef: string; drawingsRef: string }
+      const chart = checkpoint.chart as { timeframe: unknown; seriesRef: string; drawingsRef: string }
       const summary = summaries.get(chart.seriesRef)
       if (!summary) {
         fail(`checkpoints[${index}].chart.seriesRef`, `引用的行情版本 ${chart.seriesRef} 不存在`)
       } else {
+        if (chart.timeframe !== summary.timeframe) {
+          fail(
+            `checkpoints[${index}].chart.timeframe`,
+            `周期须与引用的行情版本一致（chart ${String(chart.timeframe)}，版本 ${summary.timeframe}）`,
+          )
+        }
         if (index < summary.firstCheckpoint) {
           fail(
             `checkpoints[${index}].chart.seriesRef`,
