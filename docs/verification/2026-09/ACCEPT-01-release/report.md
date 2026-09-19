@@ -42,3 +42,5 @@
 原7529实例保留同一数据库路径及浏览器origin，未清理浏览器存储。SQLite备份完整性通过，旧web/server及manifest保留以供回滚。更新前后3场训练、7笔交易、1份画线记录、1条权息、379条权益曲线逐表SHA256完全一致；新生产构建与已验收预览逐文件哈希一致。
 
 证据：[验证结果](verification.json)、[单测原日志](unit.log)、[Journey原日志](journey.log)、[浏览器结构报告](browser-results.json)、[M2](M2-e2e-report.md)、[两年指标](recording-two-year-metrics.json)、[部署记录](deployment.json)、[数据与构建复核](deployment-verification.json)、[完整产物归档](archive.json)。清理后原candidate绝对路径可能不再存在，文件已收录或归档，未改写原证据中的路径。
+
+Cleanup: six merged task branches/worktree registrations and the successful candidate are removed after checked ZIP archiving. One empty ACCEPT-01 directory remains locked byWindows; failed candidates and userpreview/rollback remain. [Cleanup record](cleanup.json), [task archives](task-archives.json).

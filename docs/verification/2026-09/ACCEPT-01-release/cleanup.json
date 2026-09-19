@@ -1,0 +1,23 @@
+{
+  "taskBranchesRemoved": [
+    "task/ACCEPT-01",
+    "task/ACCEPT-E2E",
+    "task/DRAW-02",
+    "task/MON-02",
+    "task/REC-02",
+    "task/REC-03"
+  ],
+  "taskWorktreesDeregistered": 6,
+  "successfulCandidateCleaned": "ACCEPT-01-f99732db7b28",
+  "failedCandidatesRetained": [
+    "ACCEPT-01-8c6a98cb8f4a",
+    "ACCEPT-01-0377fdb07d78",
+    "ACCEPT-01-e8ad9e909bbb",
+    "ACCEPT-01-414d93e460e8",
+    "REC-01-0e6eb8fafaf4"
+  ],
+  "emptyDirectoryLocked": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\ACCEPT-01",
+  "note": "Git removed all contents and worktree registration; Windows retained open directory handle. No force delete attempted. Archived worker generated-status diff before restoring only that generated file.",
+  "userPreviewRetained": ".runs/run-851fab4c-a87a-4baf-8339-fa96f84d1255",
+  "remotePush": false
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "task": "ACCEPT-01",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\ACCEPT-01-runtime.zip",
+    "files": 515,
+    "bytes": 32712618,
+    "sha256": "f0eb729833122a88bbad7980e62a2a326d153c5f94f165bf006ad56c5bdd1faa"
+  },
+  {
+    "task": "ACCEPT-E2E",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\ACCEPT-E2E-runtime.zip",
+    "files": 100,
+    "bytes": 138590514,
+    "sha256": "6de3f60f6b904d2ad50eaa75a2f41d18a0783c28ec3016069a8595d1bcac91f9"
+  },
+  {
+    "task": "DRAW-02",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\DRAW-02-runtime.zip",
+    "files": 7,
+    "bytes": 10214,
+    "sha256": "0b064971f71d8f876f002cc656edcabc700ced9fac026af2f2e7bd545e3b767d"
+  },
+  {
+    "task": "MON-02",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\MON-02-runtime.zip",
+    "files": 3,
+    "bytes": 3829,
+    "sha256": "a52e64f4eee01b1619112c52a7bf796ddcd606b3718de4dbf170a471c540b0a8"
+  },
+  {
+    "task": "REC-02",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\REC-02-runtime.zip",
+    "files": 4,
+    "bytes": 4777,
+    "sha256": "16c71f0d9d793047e133ec01508ffd56d6256c54a5069a4e7d7e2717b47d35c6"
+  },
+  {
+    "task": "REC-03",
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\accept-final-evidence\\REC-03-runtime.zip",
+    "files": 168,
+    "bytes": 8581353,
+    "sha256": "111702827fefc7f5a2b34c9818a2ffa882f9c8966dd9052ea64374eac528c522"
+  }
+]
