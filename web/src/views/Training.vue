@@ -63,6 +63,7 @@ const textPanelOpen = ref(false)
 const drawingSaveStatus = ref('载入画线')
 const drawingLoadError = ref(false)
 const drawingSaveError = ref('')
+const legacyDrawingNotice = ref('')
 let pendingDrawings: Drawing[] | null = null
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 let drawingRevision = 0
@@ -107,6 +108,8 @@ async function loadDrawings(): Promise<void> {
     const remote = (await fetchDrawings(drawingTrainingId)).drawings
     const recovered = outbox.read()
     initialDrawings.value = recovered ?? remote
+    legacyDrawingNotice.value = initialDrawings.value.some(item => item.paneId === 'candle_pane' && !item.priceBasis)
+      ? '旧画线缺少创建时的复权基准，已保留原价；历史偏移未自动修正。' : ''
     drawingSaveStatus.value = '已保存'
     if (recovered) onDrawingsChange(recovered)
     await captureRecording()
@@ -514,6 +517,7 @@ void load()
             <span>当前 <strong>{{ training.currentDate }}</strong></span>
             <span>计划结束 {{ training.plannedEnd }}</span>
             <span>时长 {{ tierLabel }}</span>
+            <span v-if="legacyDrawingNotice" class="legacy-drawing-notice">{{ legacyDrawingNotice }}</span>
           </div>
         </details>
       </div>
@@ -718,4 +722,5 @@ void load()
 .recording-feedback { position: absolute; right: 0; top: 28px; z-index: 30; max-width: min(360px, 70vw); padding: 8px; white-space: normal; overflow-wrap: anywhere; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; }
 .shortcut-hint { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 .keep-recording { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 14px; }
+.legacy-drawing-notice { white-space: normal; line-height: 1.5; }
 </style>

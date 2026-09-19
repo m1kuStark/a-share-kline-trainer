@@ -198,7 +198,7 @@ function onTrainingEnded(): void {
         </div>
       </header>
 
-      <div v-if="envError" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
+      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
       <template v-if="view === 'launcher'">
         <section class="recording-library launcher-library" aria-label="操作录制">

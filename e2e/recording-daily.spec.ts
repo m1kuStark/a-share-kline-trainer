@@ -9,9 +9,7 @@ import type { ChartCapture, RecordingCheckpoint, RecordingEvent, RecordingFile }
 import { evidencePath } from './runtime'
 
 // REC-03 按交易日回放：合成带 1D 规范检查点的紧凑录制，走真实导入校验与真实键盘/控件。
-// 5 个交易日：键盘缩放断言需要 ≥4 根可见K线（zoomBy 按 1.3 档取整，可见数 ≤2 时缩进被
-// 取整吞掉——KlineChart 归根所有，回放早期日天然只有已见少量日线，此处把缩放/重挂断言
-// 放在日线充足的第 4/5 日，走真实量级）。
+// 5 个交易日，覆盖首日单根K线和后续多根K线的实际缩放。
 const DATES = ['2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08', '2026-01-09']
 
 function makeBar(date: string, close: number): Bar {
@@ -127,6 +125,13 @@ test('按交易日回放：键盘步进、观察周期独立、画线终态与�
     buffer: gzipSync(JSON.stringify(compact)),
   })
   await expect(page.getByRole('button', { name: '关闭回放' })).toBeVisible()
+  const firstWidth = await page.evaluate(() => (window as any).__trainerChart.viewportMetrics().bar)
+  await page.keyboard.press('ArrowUp')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.viewportMetrics().bar)).toBeGreaterThan(firstWidth)
+  const firstZoomed = await page.evaluate(() => (window as any).__trainerChart.viewportMetrics().bar)
+  await page.keyboard.press('ArrowDown')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.viewportMetrics().bar)).toBeLessThan(firstZoomed)
+  await page.keyboard.press('Home')
   await expect(page.locator('.replay-day')).toHaveText(`第 1 / 5 日 · ${DATES[0]}`)
   // 业务列表只有买卖与图形变更：主题切换不入列
   await expect(page.locator('.replay-event-list li')).toHaveCount(2)

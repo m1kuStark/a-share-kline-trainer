@@ -5,6 +5,7 @@
 import type { Bar, Timeframe, TrainingSnapshot } from '../api'
 import type { Drawing } from '../drawingState'
 import { CompactReader } from './compactCodec'
+import { businessEvents } from './businessEvents'
 import type { CompactCheckpoint, CompactRecordingFile } from './compactTypes'
 import type { Action, RecordingEvent, RecordingEventOutcome } from './types'
 
@@ -43,16 +44,7 @@ function acceptedOutcome(outcome: RecordingEventOutcome | undefined): boolean {
 }
 
 /** 业务动作白名单：完成的买卖与实际图形/文字变更；工具/主题/加载/保存/暂停等一律不算业务操作 */
-const BUSINESS_ACTIONS = new Set<Action>([
-  'training.trade',
-  'chart.drawing.create',
-  'chart.drawing.edit',
-  'chart.drawing.move',
-  'chart.drawing.delete',
-  'chart.drawing.undo',
-  'chart.drawing.redo',
-  'chart.drawing.clear',
-])
+
 
 /**
  * 交易日轴的某一天。边界=已接受的推进事件；缺口内被吞掉的推进日按「已观察过日期的日段内
@@ -125,7 +117,8 @@ export function buildDailyIndex(file: CompactRecordingFile): DailyIndex {
   const metas = new Map(file.resources.trainingMeta.map(entry => [entry.id, entry.value]))
   const boundaries = [0]
   for (const event of file.events) {
-    if (event.action === 'training.advance' && event.phase === 'finished' && acceptedOutcome(event.outcome)) {
+    const endedWithoutNextBar = (event.result as { settled?: unknown } | null)?.settled === true
+    if (event.action === 'training.advance' && event.phase === 'finished' && acceptedOutcome(event.outcome) && !endedWithoutNextBar) {
       insertSorted(boundaries, event.seq)
     }
   }
@@ -415,8 +408,7 @@ export class DailyReplaySession {
     this.index = buildDailyIndex(file)
     // 完成/拒绝事件只带 result，params 在配对的 started 事件上：先按 opId 配对再生成业务条目
     const startedByOpId = new Map(file.events.filter(event => event.phase === 'started').map(event => [event.opId, event]))
-    this.businessItems = file.events
-      .filter(event => event.phase === 'finished' && BUSINESS_ACTIONS.has(event.action) && event.outcome !== 'cancelled')
+    this.businessItems = businessEvents(file.events)
       .map(event => ({
         seq: event.seq,
         action: event.action,

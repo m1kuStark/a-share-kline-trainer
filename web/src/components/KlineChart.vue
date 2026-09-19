@@ -393,7 +393,21 @@ function restoreYAxisAutoFit(): void {
   for (const axis of axes) axis.setAutoCalcTickFlag?.(true)
 }
 function visibleCount(): number { if (!chart) return 0; const range = chart.getVisibleRange(); return clampCount(Math.round(Math.max(1, range.to - range.from))) }
-function zoomBy(factor: number): void { if (!chart) return; const range = chart.getVisibleRange(); const count = Math.max(1, range.to - range.from); const next = clampCount(Math.round(count * factor)); if (next === count) return; restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(clampBarSpace((width - RIGHT_MARGIN) / next)); chart.scrollToDataIndex(range.to - 1); emit('visibleCount', next); scheduleViewportOperation() }
+function zoomBy(factor: number): void {
+  if (!chart || !Number.isFinite(factor) || factor <= 0 || factor === 1) return
+  const range = chart.getVisibleRange()
+  const count = Math.max(1, range.to - range.from)
+  const next = clampCount(Math.round(count * factor))
+  const width = chart.getSize('candle_pane')?.width ?? 800
+  // Few recorded bars can round to the same count; zoom their spacing instead
+  // of swallowing the key. clampBarSpace still owns the 1..840 viewport limits.
+  const space = next === count ? chart.getBarSpace().bar / factor : (width - RIGHT_MARGIN) / next
+  restoreYAxisAutoFit()
+  chart.setBarSpace(clampBarSpace(space))
+  chart.scrollToDataIndex(range.to - 1)
+  emit('visibleCount', visibleCount())
+  scheduleViewportOperation()
+}
 function moveCrosshair(delta: number): void { if (!chart) return; const range = chart.getVisibleRange(); if (crossIndex < range.from || crossIndex >= range.to) crossIndex = range.to - 1; crossIndex = Math.min(range.to - 1, Math.max(range.from, crossIndex + delta)); const bar = chart.getDataList()[crossIndex]; if (!bar) return; const pixel = chart.convertToPixel({ dataIndex: crossIndex, value: bar.close }, { paneId: 'candle_pane' }); const pane = chart.getSize('candle_pane'); chart.executeAction('onCrosshairChange', { x: pixel?.x ?? 0, y: pane ? pane.height / 2 : 100, paneId: 'candle_pane' }) }
 // 复位视窗：只有 userInitiated 复位（回到最新按钮、Home 键）算用户导航并上报 chart.viewport。
 // 挂载初始化与父层的程序化复位（timeframe/数据加载）必须传 resetView(false)，绝不冒充用户操作

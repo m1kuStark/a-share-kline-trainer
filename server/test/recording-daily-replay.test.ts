@@ -436,6 +436,19 @@ describe('盲训缺日线日不得借用前一日日线（返修回归）', () =
 })
 
 describe('业务操作列表过滤', () => {
+  it('推进触发自然结算但没有新K线时不增加一个重复交易日', () => {
+    const snapshot = makeTraining(DATES[0]!, 100000)
+    const ended = { ...snapshot, training: { ...snapshot.training, status: 'settled' as const, settleDate: DATES[0]! } }
+    const session = toSession(makeFile({
+      events: makePair(1, 'settled-without-next-bar', 'training.advance', { result: { settled: true } }),
+      checkpoints: [
+        makeCheckpoint(0, { training: snapshot, chart: makeChart('1D', makeDailyBars(0)) }),
+        makeCheckpoint(2, { training: ended, chart: makeChart('1D', makeDailyBars(0)) }),
+      ],
+    }))
+    expect(session.dayCount).toBe(1)
+    expect(session.state(0).training?.training.status).toBe('settled')
+  })
   const file = makeFile({
     events: [
       ...makePair(1, 'op-create', 'training.create'),
@@ -454,6 +467,8 @@ describe('业务操作列表过滤', () => {
       makeEvent(16, { opId: 'op-pause', action: 'recording.pause', phase: 'finished', outcome: 'accepted' }),
       makeEvent(17, { opId: 'op-tool', action: 'chart.tool' }),
       makeEvent(18, { opId: 'op-tool', action: 'chart.tool', phase: 'finished', outcome: 'accepted' }),
+      makeEvent(19, { opId: 'op-unfinished', action: 'training.trade' }),
+      makeEvent(20, { opId: 'op-unfinished', action: 'training.trade', phase: 'finished', outcome: 'interrupted' }),
     ],
     checkpoints: [
       makeCheckpoint(0, { training: makeTraining(DATES[0]!, 100000), chart: makeChart('1D', makeDailyBars(0)) }),

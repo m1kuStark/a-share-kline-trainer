@@ -176,7 +176,17 @@ class MonitorTests(unittest.TestCase):
     def test_runner_persists_real_child_completion_and_wake_marker(self, _):
         cli = self.root / 'resources/glm/mock.cjs'
         cli.parent.mkdir(parents=True)
-        cli.write_text('console.log(JSON.stringify({sessionId:"fixture",response:"finished"}))')
+        attachment = self.root / 'trainer-shot.png'
+        attachment.write_bytes(b'fixture-image')
+        cli.write_text('''
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+const format = args[args.indexOf('--output-format') + 1];
+const file = args[args.indexOf('--attach') + 1];
+if (format !== 'stream-json' || !file || fs.readFileSync(file, 'utf8') !== 'fixture-image') process.exit(7);
+console.log(JSON.stringify({type:'session_started',sessionId:'fixture'}));
+console.log(JSON.stringify({sessionId:'fixture',response:'finished'}));
+''')
         builtin = self.root / 'resources/config/provider/zcode-builtin.json'
         builtin.parent.mkdir(parents=True)
         builtin.write_text('{}')
@@ -185,6 +195,7 @@ class MonitorTests(unittest.TestCase):
         prompt = self.root / 'prompt.md'
         prompt.write_text('bounded test')
         args = SimpleNamespace(home=self.root, batch='fixture', title='测试', cwd=self.root, log=self.root / 'fixture.log', prompt=prompt, provider=provider, cli=cli, node=shutil.which('node'), resume=None, wake_state=self.root / 'wake.json')
+        args.attach = [attachment]
         self.assertEqual(run_glm.run(args), 0)
         state = json.loads((self.registry / 'fixture.json').read_text(encoding='utf-8'))
         self.assertEqual(state['state'], 'completed')
