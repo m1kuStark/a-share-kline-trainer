@@ -118,6 +118,24 @@ def session_activity(db, job):
             'request': {'status': usage[0], 'model': usage[1], 'startedAt': usage[2], 'firstTokenAt': usage[3], 'completedAt': usage[4], 'error': redact(usage[5])[:400]} if usage else None}
 
 
+def resolve_chain(item, by_id):
+    """Walk followupId links bounded by registry size; cycles and missing successors stay unresolved."""
+    seen = {item['id']}
+    current = item
+    for _ in range(len(by_id)):
+        followup_id = current.get('followupId')
+        if not followup_id:
+            return current, None
+        if followup_id in seen:
+            return None, 'cycle'
+        followup = by_id.get(followup_id)
+        if followup is None:
+            return None, 'missing'
+        seen.add(followup_id)
+        current = followup
+    return None, 'cycle'
+
+
 def snapshot(registry, database):
     jobs, warnings = [], []
     db = None
@@ -166,7 +184,20 @@ def snapshot(registry, database):
         if item.get('followupId'):
             followup = by_id.get(item['followupId'])
             item['followup'] = {key: followup.get(key) for key in ['id', 'title', 'phase']} if followup else None
-    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'warnings': warnings}
+        # Raw state/review are never rewritten; resolved is a display-level chain verdict only.
+        tip, issue = resolve_chain(item, by_id)
+        item['chainIssue'] = issue
+        item['superseded'] = tip is not None and tip is not item
+        item['resolved'] = tip is not None and tip.get('phase') == 'reviewed'
+        if tip is not None:
+            item['chainTip'] = {key: tip.get(key) for key in ['id', 'title', 'phase']}
+        model = str(item.get('model') or '')
+        item['jobKind'] = 'glm' if not model or 'glm' in model.lower() else 'local'
+    current = [j for j in jobs if not j['superseded']]
+    summary = {'running': sum(1 for j in current if j['phase'] == 'running'),
+               'awaitingReview': sum(1 for j in current if j['phase'] == 'awaiting_review'),
+               'needsAttention': sum(1 for j in current if j['phase'] in ('failed', 'interrupted', 'needs_changes'))}
+    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'summary': summary, 'warnings': warnings}
 
 
 def open_window(url):
