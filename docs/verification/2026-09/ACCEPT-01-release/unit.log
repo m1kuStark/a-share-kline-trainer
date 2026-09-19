@@ -1,0 +1,158 @@
+
+ RUN  v3.2.7 D:/Superlinear_Academy/Stock_WorkSpace/trainer-integration/ACCEPT-01-f99732db7b28
+
+ ✓ server/test/recording-compact-codec.test.ts (25 tests) 85ms
+ ✓ server/test/drawing-geometry.test.ts (60 tests) 27ms
+ ✓ server/test/recording-validation.test.ts (58 tests) 233ms
+ ✓ server/test/recording-compact-validation.test.ts (32 tests) 487ms
+   ✓ compact validation acceptance > accepts 10000 viewport checkpoints sharing one series without charging restore per reference  326ms
+ ✓ server/test/train-engine.test.ts (18 tests) 580ms
+ ✓ server/test/recording-daily-replay.test.ts (21 tests) 11ms
+ ✓ server/test/recording-compact-recorder.test.ts (23 tests) 1447ms
+   ✓ 500 次推进 > 文件不内嵌全量chart重复，资源按增量表达，逐cp经Reader还原正确并通过v2校验  1335ms
+ ✓ server/test/recording-compact-storage.test.ts (30 tests) 1380ms
+ ✓ server/test/recording-core.test.ts (16 tests) 57ms
+ ✓ server/test/frontend-contract.test.ts (15 tests) 45ms
+ ✓ server/test/recording-compact-removal.test.ts (11 tests) 457ms
+ ✓ server/test/data-refresh.test.ts (10 tests) 3147ms
+   ✓ data refresh service > a) scans a synthetic TDX fixture: baseline updated, then unchanged on rescan  547ms
+   ✓ data refresh service > b/h) joins concurrent refresh POSTs into one task and reports running meanwhile  310ms
+   ✓ data refresh service > c) reports unavailable source with needsUpdate=false and POST refresh returns 409 in Chinese  324ms
+   ✓ data refresh service > d) fails the task and preserves snapshot+caches when a market day directory disappears  381ms
+   ✓ data refresh service > e) rejects a torn (non-32-byte-multiple) .day file: failed, nothing published, recovers after fix  420ms
+   ✓ data refresh service > f) detects appended bars: added>0, sourceMaxDate moves to E, needsUpdate turns false  389ms
+   ✓ data refresh service > g) flags suspicious historical revision when size changes but maxDate stays  382ms
+   ✓ data refresh service > j) keeps /api/env response shape 100% backward compatible  332ms
+ ✓ server/test/recording-replay.test.ts (24 tests) 10ms
+ ✓ server/test/recording-chart-actions.test.ts (15 tests) 57ms
+ ✓ server/test/recording-file.test.ts (20 tests) 17307ms
+   ✓ 解压取消时限（高压缩率死锁回归） > 1MiB正常gzip按1/16/16384/65536/1MiB输入块往返无损  17213ms
+ ✓ server/test/drawing-state.test.ts (17 tests) 27ms
+ ✓ server/test/drawings.test.ts (7 tests) 2732ms
+   ✓ training drawing persistence > saves and restores both curse-line timestamp and value anchors in their original order  568ms
+   ✓ training drawing persistence > rejects malformed or unsafe drawing payloads without overwriting the saved drawings  339ms
+   ✓ training drawing persistence > stores optional priceBasis metadata verbatim for basis-aware persistence  311ms
+   ✓ training drawing persistence > rejects invalid priceBasis metadata without overwriting the saved drawings  302ms
+   ✓ training drawing persistence > replaces drawings independently by training and restores them after the database reopens  631ms
+ ✓ server/test/recording-compact-replay.test.ts (14 tests) 14ms
+stdout | server/test/runtime-isolation.test.ts > runtime CLI > builds an isolated journey through the CLI and returns its manifest
+Run manifest: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-SjRD95\.runs\run-2551a2a5-91db-401a-a739-01ecb10c9039\manifest.json
+
+stdout | server/test/runtime-isolation.test.ts > runtime CLI > builds an isolated journey through the CLI and returns its manifest
+Evidence retained: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-SjRD95\.runs\run-2551a2a5-91db-401a-a739-01ecb10c9039\artifacts
+
+ ✓ server/test/docs-tooling.test.ts (30 tests) 24096ms
+   ✓ documentation CLI > requires declared documentation updates for tracked working-tree source changes  2617ms
+   ✓ documentation CLI > includes untracked runtime files and rejects paths outside the assigned scope  1977ms
+   ✓ documentation CLI > rejects empty no-impact reasons but accepts a concrete internal-change explanation  2586ms
+   ✓ documentation CLI > uses the requested base through HEAD, index and working tree, not only staged files  2373ms
+   ✓ documentation CLI > allows documentation-only changes without manufacturing source changes  1937ms
+   ✓ documentation CLI > executes the CLI and rejects unknown arguments without writing status  997ms
+   ✓ documentation CLI > uses normalized scope globs for untracked files and rejects invalid base commits  2326ms
+   ✓ documentation CLI > treats test fixtures and shipped assets as runtime inputs, even with text or image extensions  2171ms
+   ✓ documentation CLI > enforces allowed_paths for Markdown, AGENTS and task cards as well as runtime files  1897ms
+   ✓ documentation CLI > includes staged changes even when the working tree restores the baseline content  2420ms
+   ✓ documentation CLI > requires docs impact reasoning for executable scripts inside scripts/docs  2106ms
+stdout | server/test/runtime-isolation.test.ts > runtime CLI > retains evidence and releases the server when the browser command fails
+Run manifest: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-Va3jB0\.runs\run-2329bf67-afe8-493d-9c16-5e2e8777340f\manifest.json
+
+ ✓ server/test/recording-context.test.ts (11 tests) 3927ms
+   ✓ recording-context API > 拒绝非正整数训练 id 并返回中文错误  487ms
+   ✓ recording-context API > 拒绝非规范十进制整数字符串 id（1e0、0x1、1.0 等宽松解析形式）  332ms
+   ✓ recording-context API > 对不存在的训练返回 404 中文错误  483ms
+   ✓ recording-context API > 返回注册时读取的版本信息与钉定图表库版本  366ms
+   ✓ recording-context API > rules 读取 settings 当前实际值而非默认冻结值  354ms
+   ✓ recording-context API > 未配置 settings 时按引擎回退值观察（费用关、T+1 开）  348ms
+   ✓ recording-context API > 按 current_date 截断权息事件并按 date/seq 稳定排序，不泄漏未来数据  357ms
+   ✓ recording-context API > 响应不包含本机路径、数据库路径或配置环境信息  340ms
+   ✓ recording-context API > 只读观察：请求前后数据库行完全不变  347ms
+   ✓ recording-context 根定位（cwd 可信源） > 调用者 cwd 为 worktree 根时 version/git 准确，诱饵隔离布局不干扰  329ms
+ ✓ server/test/recording-chart.test.ts (14 tests) 9ms
+ ✓ server/test/frontend-data-status-contract.test.ts (14 tests) 15ms
+ ✓ server/test/full-acceptance.test.ts (3 tests) 1268ms
+   ✓ full acceptance matrix > M1 exposes the data contract: catalog, raw/forward bars, periods, benchmark, and validation errors  540ms
+   ✓ full acceptance matrix > M2 completes a user training loop with blind masking, trade rules, no-future bars, and both endings  392ms
+   ✓ full acceptance matrix > M4 and M5 are explicitly not open yet instead of silently pretending to be complete  335ms
+ ✓ server/test/recording-storage.test.ts (9 tests) 278ms
+ ✓ server/test/verification.test.ts (18 tests) 7ms
+stdout | server/test/runtime-isolation.test.ts > runtime CLI > retains evidence and releases the server when the browser command fails
+Isolated server: http://127.0.0.1:14026
+
+ ✓ server/test/api.test.ts (6 tests) 2303ms
+   ✓ market-data API > returns forward-adjusted bars by default and raw bars on request  532ms
+   ✓ market-data API > reads a benchmark index using its explicit market symbol  345ms
+   ✓ market-data API > rejects malformed and reversed date ranges with 400 instead of an internal error  335ms
+   ✓ market-data API > reports cached catalog and adjustment capabilities in the environment endpoint  348ms
+   ✓ market-data API > refreshes the in-memory catalog after a source day file changes  384ms
+   ✓ market-data API > never serves future bars and closes raw kline while a training is running  358ms
+stdout | server/test/runtime-isolation.test.ts > runtime CLI > retains evidence and releases the server when the browser command fails
+Evidence retained: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-Va3jB0\.runs\run-2329bf67-afe8-493d-9c16-5e2e8777340f\artifacts
+
+ ✓ server/test/runtime-isolation.test.ts (15 tests) 23936ms
+   ✓ runtime namespaces > rejects a run directory junction that aliases a different run namespace  354ms
+   ✓ runtime processes > retries a transient health connection failure within the owned startup deadline  412ms
+   ✓ runtime processes > cancels an owned child command and preserves its failure log  6418ms
+   ✓ runtime processes > builds and serves two concurrent runs without replacing production assets or sharing ports/databases  4582ms
+   ✓ runtime processes > fails promptly on early server exit and retains its diagnostic log  312ms
+   ✓ runtime processes > terminates a server that never becomes ready  3877ms
+   ✓ runtime CLI > builds an isolated journey through the CLI and returns its manifest  2766ms
+   ✓ runtime CLI > retains evidence and releases the server when the browser command fails  4093ms
+ ✓ server/test/rights-cost-basis.test.ts (12 tests) 22ms
+ ✓ server/test/recording-chart-capture.test.ts (8 tests) 12ms
+ ✓ server/test/drawing-price-basis.test.ts (7 tests) 884ms
+   ✓ bars payload drawing price basis > returns the drawing basis with bars and keeps the blind advance date masked  538ms
+   ✓ bars payload drawing price basis > returns the same drawing basis for earlier-history chunk requests  331ms
+ ✓ server/test/chart-cost-basis.test.ts (5 tests) 17ms
+ ✓ server/test/trade-marker-layout.test.ts (14 tests) 14ms
+ ✓ server/test/catalog-protection.test.ts (3 tests) 101ms
+ ✓ server/test/train-account.test.ts (7 tests) 4ms
+ ✓ server/test/recording-business-events.test.ts (7 tests) 4ms
+ ✓ server/test/recording-chart-readonly.test.ts (5 tests) 8ms
+ ✓ server/test/recording-drawing-operations.test.ts (6 tests) 3ms
+ ✓ server/test/gbbq.test.ts (5 tests) 12ms
+ ✓ server/test/drawing-outbox.test.ts (4 tests) 4ms
+ ✓ server/test/tool-favorites.test.ts (7 tests) 4ms
+ ✓ server/test/dayfile.test.ts (7 tests) 29ms
+ ✓ server/test/drawings-migration.test.ts (1 test) 515ms
+   ✓ legacy drawing schema migration > preserves legacy payloads across repeated migration and enables drawing API writes  514ms
+ ✓ server/test/catalog.test.ts (2 tests) 72ms
+ ✓ server/test/adjustment-cache.test.ts (1 test) 27ms
+ ✓ server/test/journey-snapshot.test.ts (3 tests) 180ms
+ ✓ server/test/klinecharts-pin.test.ts (2 tests) 5ms
+ ✓ server/test/kline.test.ts (3 tests) 4ms
+ ✓ server/test/drawing-hit.test.ts (3 tests) 3ms
+ ✓ server/test/chart-navigation.test.ts (3 tests) 2ms
+ ✓ server/test/e2e-runtime.test.ts (1 test) 203ms
+ ✓ server/test/discover.test.ts (2 tests) 27ms
+ ✓ server/test/symbol.test.ts (3 tests) 2ms
+ ✓ server/test/names.test.ts (1 test) 11ms
+ ✓ server/test/stocks.test.ts (2 tests) 2ms
+ ✓ server/test/runtime-shutdown.test.ts (1 test) 3903ms
+   ✓ owned server shutdown > releases a never-ready server even when the external tree killer stalls  3903ms
+ ✓ server/test/worktree-tools.test.ts (20 tests) 193520ms
+   ✓ candidate preparation > combines the latest target with one task and records the exact merged commit without moving main  8753ms
+   ✓ candidate preparation > retains a conflicting candidate for inspection and never changes main or the worker  8968ms
+   ✓ candidate preparation > enforces the baseline scope even if a task tries to broaden its own card  6484ms
+   ✓ candidate preparation > shares an exclusive lock across worktrees and does not steal a lock after an interrupted owner  4009ms
+   ✓ task worktrees > routes CLI create and list operations and rejects unknown or incomplete mutation arguments  3024ms
+   ✓ task worktrees > creates independent worktrees at the captured baseline and lists both without changing main  4721ms
+   ✓ task worktrees > refuses an uncommitted baseline and leaves its edits and refs untouched  1931ms
+   ✓ task worktrees > requires the task card and its integrated dependencies on the committed baseline  3061ms
+   ✓ candidate verification and promotion > runs the candidate gate and promotes exactly the reviewed commit, then cleans up only that candidate  16620ms
+   ✓ candidate verification and promotion > requires a verified candidate and a complete passing proof for its exact commit, tree, task and baseline  15016ms
+   ✓ candidate verification and promotion > requires a matching manual UI review and existing relative evidence files  13889ms
+   ✓ candidate verification and promotion > rejects stale source refs before verification and after proof without advancing the target  17852ms
+   ✓ candidate verification and promotion > rejects an advanced target and never reuses proof against a new main  12856ms
+   ✓ candidate verification and promotion > refuses dirty candidates and targets while preserving their files  14058ms
+   ✓ candidate verification and promotion > refuses cleanup before promotion and preserves unmerged candidate files  6476ms
+   ✓ candidate verification and promotion > never writes verification artifacts through a redirected run directory  7822ms
+   ✓ candidate verification and promotion > requires a local dependency directory rather than accepting an arbitrary node_modules file  8115ms
+   ✓ candidate verification and promotion > retains failed gate evidence and refuses promotion even if an older proof existed  10235ms
+   ✓ candidate verification and promotion > promotes through compare-and-swap when the target is not checked out  14901ms
+   ✓ candidate verification and promotion > preserves a promoted candidate if it becomes dirty or its registered branch changes  14727ms
+
+ Test Files  56 passed (56)
+      Tests  681 passed (681)
+   Start at  05:34:58
+   Duration  196.40s (transform 1.03s, setup 0ms, collect 5.11s, tests 283.54s, environment 6ms, prepare 6.18s)
+

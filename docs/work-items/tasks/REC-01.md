@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "REC",
   "summary": "紧凑录制已集成，用户返修见ACCEPT-01。",
-  "next_action": "等待本轮返修及用户最终验收。",
+  "next_action": "Await explicit user stage acceptance; M4/M5 blocked.",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",
@@ -36,9 +36,9 @@
     "reason": "实现时同步覆盖边界、格式版本和验收要求。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/REC-01-stage-release/report.md"
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
   ],
-  "integration_ref": "35a1671804bfe7ec17cd66a8a8295ee8991933e0",
+  "integration_ref": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
   "acceptance_ref": null
 }
 ```

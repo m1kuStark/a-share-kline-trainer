@@ -4,19 +4,21 @@
 
 ## 当前入口
 
+- [当前返修交付](2026-09/ACCEPT-01-release/report.md)：完整工程验收通过，已更新7529，待用户验收。
+
 - [夜间返修与工具核验](2026-09/ACCEPT-01-night/report.md)：日回放、官方CLI资料及多模态实测。
 
 - [阶段返修模块复核](2026-09/ACCEPT-01-review/report.md)：录制生命周期、画线返修和提交门禁证据。
 
-- [本轮入口布局返修](2026-09/ACCEPT-01-ui/report.md)：定向验证，整体待模块集成。
+- [入口布局返修过程](2026-09/ACCEPT-01-ui/report.md)：历史定向证据。
 
-- [本次阶段版本](2026-09/REC-01-stage-release/report.md)：完整候选通过、两年录制、本机行情检查及用户验收入口。
+- [首次阶段交付](2026-09/REC-01-stage-release/report.md)：用户反馈前的版本证据。
 
 - [阶段候选修复](2026-09/REC-01-release-fixes/report.md)：退出超时根因、布局回归与用户阶段验收门禁。
 
 - [REC-01容量立项评估](2026-09/REC-01-capacity/report.md)：撤回自动停录；区分两年测算与真实录制器导出失败。
 - [REC-01结构与压缩实测](2026-09/REC-01-compression/report.md)：文件构成、增量/gzip对比和逐检查点还原。
-- [REC-01迁移前基线](2026-09/REC-01-v1-baseline/report.md)：已合回放/存储修复、初始化假缺口的失败回归与4条真实录制旅程；不是v2最终验收。
+- [REC-01迁移前基线](2026-09/REC-01-v1-baseline/report.md)：旧v1定向验证。
 - [v2编解码首轮审查](2026-09/REC-01-v2-codec-review/report.md)：真实样本往返通过、恢复缺陷待修及三任务并行隔离。
 - [GLM长无活动诊断](2026-09/REC-01-monitor-health/report.md)：请求/工具分开观察、输出预算续接及旧修正任务关联。
 - [v2并行批次验收](2026-09/REC-01-v2-batch-review/report.md)：codec已合，validator/storage精确返修与两年Journey的RED基线。
@@ -35,4 +37,4 @@
 
 用户验收独立保存scope、决定、日期、来源；测试全绿不生成用户accepted。代码提交C被测试后，文档提交E收录其报告可引用C，不能改写成测试过E。提交前工作树验证须用指纹核对最终提交，明确写出这种证据边界。
 
-- [MON-02 dashboard review](2026-09/MON-02-review/report.md): successor chains and current-state counts.
+- [MON-02看板复核](2026-09/MON-02-review/report.md)：历史轮次与当前任务区分。

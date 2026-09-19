@@ -4,8 +4,8 @@
 {
   "id": "REC",
   "title": "操作录制与回放",
-  "state": "active",
-  "summary": "用户反馈画线漂移及录制/回放交互需返修。",
+  "state": "review",
+  "summary": "Stage feedback integrated; all engineering gates passed.",
   "task_ids": [
     "REC-01",
     "ACCEPT-01",
@@ -14,9 +14,9 @@
     "REC-03"
   ],
   "verification_refs": [
-    "docs/verification/2026-09/REC-01-stage-release/report.md"
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
   ],
   "acceptance_ref": null,
-  "next_action": "完成ACCEPT-01后重新交用户验收。"
+  "next_action": "Wait for explicit user acceptance before M4/M5."
 }
 ```

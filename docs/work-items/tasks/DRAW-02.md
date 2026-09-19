@@ -5,10 +5,10 @@
   "id": "DRAW-02",
   "title": "修复前复权推进时画线价格漂移",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REC",
   "summary": "价格基准修复已合入ACCEPT-01。",
-  "next_action": "等待集成分支完整候选验收。",
+  "next_action": "Integrated and engineering-reviewed; overall user acceptance pending.",
   "allowed_paths": [
     "server/src/api.ts",
     "server/src/drawings.ts",
@@ -33,12 +33,9 @@
     "reason": "任务卡记录实现与验证；DRAWING-PERSISTENCE 补充 priceBasis 元数据语义（规格正文由集成人统一更新）。"
   },
   "verification_refs": [
-    "server/test/drawing-price-basis.test.ts",
-    "server/test/drawings.test.ts",
-    "server/test/drawing-state.test.ts",
-    "web/src/components/docs/drawing-persistence.md"
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
   ],
-  "integration_ref": "3a3421f",
+  "integration_ref": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
   "acceptance_ref": null
 }
 ```

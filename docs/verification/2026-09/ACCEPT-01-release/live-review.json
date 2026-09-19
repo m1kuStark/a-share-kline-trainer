@@ -1,0 +1,32 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
+  "outcome": "passed",
+  "reviewer": "Codex",
+  "artifacts": [
+    ".runs/run-dcd50217-e6ee-4937-89da-145f728ea4ff/artifacts/live-dark.png",
+    ".runs/run-dcd50217-e6ee-4937-89da-145f728ea4ff/artifacts/confirm-light.png",
+    ".runs/run-dcd50217-e6ee-4937-89da-145f728ea4ff/artifacts/replay-light.png"
+  ],
+  "flows": [
+    "603980 actual ex-div2025-06-16 to17 changes drawing4.83 to4.760000001192092",
+    "refresh and weekly view",
+    "buy",
+    "settle confirm defaultretain",
+    "export retained gzip",
+    "history library open",
+    "Space nextday",
+    "bracket weekly",
+    "ArrowUp zoom"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "horizontalOverflow": false,
+  "chartTop": 93,
+  "viewports": [
+    "1071x728 dark",
+    "1280x800 light"
+  ],
+  "previewURL": "http://127.0.0.1:6723",
+  "scope": "Isolated production preview DB and live TDX; personal7529 unchanged; candidate full gate has passed separately."
+}

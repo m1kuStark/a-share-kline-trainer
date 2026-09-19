@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "ACCEPT-01",
+  "baseCommit": "e8bdddf5e0092539daae83da3178fed5d90014e7",
+  "testedCommit": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
+  "tree": "7886d9afeb69fb68521c82070de9137ecf3b5df6",
+  "passed": true,
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "runManifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\.runs\\run-472782fc-154b-4e57-8b88-b9956beb0396\\manifest.json",
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "createdAt": "2026-09-19T21:52:45.637Z"
+}

@@ -5,10 +5,10 @@
   "id": "ACCEPT-E2E",
   "title": "阶段返修浏览器回归适配",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REC",
   "summary": "既有回归适配已合入。",
-  "next_action": "执行精确候选验收。",
+  "next_action": "Integrated and engineering-reviewed; overall user acceptance pending.",
   "allowed_paths": [
     "e2e/training-flow.ts",
     "e2e/recording.spec.ts",
@@ -26,8 +26,10 @@
     ],
     "reason": "用户行为改变，对应既有自动用例需真实按钮确认并按日回放。"
   },
-  "verification_refs": [],
-  "integration_ref": "de88fac",
+  "verification_refs": [
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
+  ],
+  "integration_ref": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
   "acceptance_ref": null
 }
 ```

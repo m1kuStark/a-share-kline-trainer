@@ -5,10 +5,10 @@
   "id": "ACCEPT-01",
   "title": "阶段验收反馈集成",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
   "summary": "阶段验收反馈集成",
-  "next_action": "完整候选验收后交用户。",
+  "next_action": "Await explicit user stage acceptance; M4/M5 blocked.",
   "allowed_paths": [
     "web/**",
     "server/**",
@@ -27,9 +27,9 @@
     "reason": "依据用户阶段反馈实施，集成人统一更新规格与证据。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/ACCEPT-01-review/report.md"
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
   "acceptance_ref": null
 }
 ```

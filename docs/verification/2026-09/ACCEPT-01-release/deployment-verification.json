@@ -1,0 +1,38 @@
+{
+  "testedCommit": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
+  "url": "http://127.0.0.1:7529",
+  "health": {
+    "status": "ok",
+    "runId": "run-851fab4c-a87a-4baf-8339-fa96f84d1255",
+    "pid": 51680
+  },
+  "businessDataUnchanged": true,
+  "database": {
+    "integrity": "ok",
+    "tables": {
+      "trainings": {
+        "rows": 3,
+        "sha256": "5ff77ea92d994f8a2a666702d25a82517b7db21e6e36d9c4cab6196e24acc6df"
+      },
+      "trades": {
+        "rows": 7,
+        "sha256": "63044abc1e99e11f766a15a1e688ce7f3b8ae7f5932f92813de07b763c093c9c"
+      },
+      "drawings": {
+        "rows": 1,
+        "sha256": "aa883aa32f4ef3952d64c6d401688930c202e2f6cbe9d0fd02dd480b4b384710"
+      },
+      "position_events": {
+        "rows": 1,
+        "sha256": "d5a07a9b5ad79f436e15d0ae61d15afde43a1a0a718d3cc6f4c5ff9db6e8ad32"
+      },
+      "equity_curve": {
+        "rows": 379,
+        "sha256": "5b903bd6cdbb6027f0850fc421be639507046871bb50444ec94b0ebe047b8388"
+      }
+    }
+  },
+  "productionAssetTreesMatch": true,
+  "recordingAppCommit": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
+  "backup": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-851fab4c-a87a-4baf-8339-fa96f84d1255\\before-c0ad111-20260919222715"
+}

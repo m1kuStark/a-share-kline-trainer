@@ -1,0 +1,3022 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--retries=0",
+      "--forbid-only"
+    ],
+    "configFile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\playwright.config.ts",
+    "rootDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-integration/ACCEPT-01-f99732db7b28/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-integration/ACCEPT-01-f99732db7b28/.runs/run-472782fc-154b-4e57-8b88-b9956beb0396/artifacts/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-integration/ACCEPT-01-f99732db7b28/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\.runs\\run-472782fc-154b-4e57-8b88-b9956beb0396\\artifacts\\browser-results.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\.runs\\run-472782fc-154b-4e57-8b88-b9956beb0396\\artifacts\\html"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "acceptance-feedback.spec.ts",
+      "file": "acceptance-feedback.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10546,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:38:34.936Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d424449f9dff0a9f319e-8e3f88e1b9a3f8e46ec7",
+          "file": "acceptance-feedback.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "周月观察时仍记录同期日线，界面和开关操作不增加业务计数",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6953,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:38:45.852Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d424449f9dff0a9f319e-71b9f84efd848168ef2c",
+          "file": "acceptance-feedback.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "放弃可丢弃录像但保留训练与画线，结算默认保存且可从历史回放",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 19645,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:38:52.812Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d424449f9dff0a9f319e-6c488159ebbae790f86f",
+          "file": "acceptance-feedback.spec.ts",
+          "line": 82,
+          "column": 1
+        },
+        {
+          "title": "结算确认时丢弃立即生效，刷新已结束训练不重新创建录像",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9202,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:12.463Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d424449f9dff0a9f319e-428e224f71d87eec72c4",
+          "file": "acceptance-feedback.spec.ts",
+          "line": 128,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "compact-chart.spec.ts",
+      "file": "compact-chart.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "紧凑行情栏释放主图高度，详情覆盖显示不挤动图表",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7479,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:21.681Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6c65cb7d91ba0c6f029a-71256ff8026f3484b86f",
+          "file": "compact-chart.spec.ts",
+          "line": 5,
+          "column": 1
+        },
+        {
+          "title": "刷新读取新增本地行情但不越过推进日，日期可见且可回到最新",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6370,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:29.169Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6c65cb7d91ba0c6f029a-e88a145264b2526f0a07",
+          "file": "compact-chart.spec.ts",
+          "line": 41,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "cost-basis.spec.ts",
+      "file": "cost-basis.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "协创数据送转后成本线与账户一致，清仓再买及日周月不残留旧成本",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10185,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:35.559Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c258536ccddc5f130d1d-636e7e711a40dd87291e",
+          "file": "cost-basis.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "data-update.spec.ts",
+      "file": "data-update.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "a) needsUpdate 时顶栏出现摇晃的\"更新日线\"醒目按钮＋截止日小字，窄屏不横向溢出",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 431,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:45.760Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "aa1efe385f5b2e617f75-a27162cf71a2e06cd50d",
+          "file": "data-update.spec.ts",
+          "line": 42,
+          "column": 1
+        },
+        {
+          "title": "b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → updated 后按钮隐藏并显示\"数据已最新\"",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2620,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:46.197Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "aa1efe385f5b2e617f75-1bb077a8ae323628ba91",
+          "file": "data-update.spec.ts",
+          "line": 63,
+          "column": 1
+        },
+        {
+          "title": "c) 已最新初始态：更新按钮不渲染，只显示绿点＋\"数据已最新 · 截止\"一行小字",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 433,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:48.823Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "aa1efe385f5b2e617f75-d8ed285cb6c37012b5bb",
+          "file": "data-update.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "d) needsUpdate 时点开始训练弹确认框：仍要开始训练照常创建；先更新数据只触发 refresh 不创建",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1109,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:49.262Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "aa1efe385f5b2e617f75-71e2f9244cce1d841036",
+          "file": "data-update.spec.ts",
+          "line": 121,
+          "column": 1
+        },
+        {
+          "title": "e) 无可用来源：中性警示按钮，点击后 409 中文原因行内展示（不用 alert）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 426,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:50.376Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "aa1efe385f5b2e617f75-376ec328e4dec10a70b0",
+          "file": "data-update.spec.ts",
+          "line": 163,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "drawing-basis.spec.ts",
+      "file": "drawing-basis.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "跨除权日后价位线跟随同一历史K线，缩放和刷新不漂移",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11912,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:39:50.815Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "05008432058a82a5923d-a0e39080d4b761c0f94d",
+          "file": "drawing-basis.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "空画线跨除权日后新画价位线，普通刷新不会再次复权",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10258,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:02.733Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "05008432058a82a5923d-a6ff87202cf87e9e73c9",
+          "file": "drawing-basis.spec.ts",
+          "line": 51,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "journey.spec.ts",
+      "file": "journey.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Act1 创建训练并进入训练视图",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8834,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:13.011Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-c38c5b3c8c93d8cb4c3d",
+          "file": "journey.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "Act5 买入推进卖出结算",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9205,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:21.853Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-59afb674f4bac7ed0109",
+          "file": "journey.spec.ts",
+          "line": 38,
+          "column": 1
+        },
+        {
+          "title": "Act2a 线段绘制编辑删除",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11151,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:31.064Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-65e16d068d05bc92a78c",
+          "file": "journey.spec.ts",
+          "line": 134,
+          "column": 1
+        },
+        {
+          "title": "Act2d 空白点击解除持久选中（选中状态机）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10694,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:42.220Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-8ff0f1748c456b742665",
+          "file": "journey.spec.ts",
+          "line": 156,
+          "column": 1
+        },
+        {
+          "title": "Act2b 射线延伸段可选中",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10295,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:40:52.921Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-729b5d5016f16d8f2543",
+          "file": "journey.spec.ts",
+          "line": 170,
+          "column": 1
+        },
+        {
+          "title": "Act2c 直线两端延伸段可选中",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10577,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:03.221Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-3918a28cf65d73d4e753",
+          "file": "journey.spec.ts",
+          "line": 180,
+          "column": 1
+        },
+        {
+          "title": "Act2e 水平线系三工具（D5~D7）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13260,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:13.804Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-b6bb4c8c73499cf3da58",
+          "file": "journey.spec.ts",
+          "line": 191,
+          "column": 1
+        },
+        {
+          "title": "Act3a 轴拖拽进主图缩放持续（不中断）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:27.069Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-03cf36ce31d434c8479e",
+          "file": "journey.spec.ts",
+          "line": 221,
+          "column": 1
+        },
+        {
+          "title": "Act3b 手动轴后框选无纵向叠加",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9500,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:36.210Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-8433db2890451c36b3fe",
+          "file": "journey.spec.ts",
+          "line": 239,
+          "column": 1
+        },
+        {
+          "title": "Act3c 按线拖拽只动线段不动图",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10866,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:45.716Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-a5609dd957d78414373d",
+          "file": "journey.spec.ts",
+          "line": 260,
+          "column": 1
+        },
+        {
+          "title": "Act3d 中键平移整图且松键不残留",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9605,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:41:56.587Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-446dde1f95f4681b3c85",
+          "file": "journey.spec.ts",
+          "line": 284,
+          "column": 1
+        },
+        {
+          "title": "Act4a 多选模式框选批量选中且不缩放",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13316,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:42:06.198Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-1e85ea8d79d6f6d25031",
+          "file": "journey.spec.ts",
+          "line": 317,
+          "column": 1
+        },
+        {
+          "title": "Act4b Ctrl+点选累加与批量删除",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13511,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:42:19.519Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-4c235c9d4b97c8f3661a",
+          "file": "journey.spec.ts",
+          "line": 344,
+          "column": 1
+        },
+        {
+          "title": "Act4c 选项卡式批量编辑",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13931,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:42:33.036Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-90175f0d3bfcda1a0a99",
+          "file": "journey.spec.ts",
+          "line": 363,
+          "column": 1
+        },
+        {
+          "title": "Act4d 副图画线与多选框选（主副图同权）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10690,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:42:46.974Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-af2ec458aaa6240637d2",
+          "file": "journey.spec.ts",
+          "line": 392,
+          "column": 1
+        },
+        {
+          "title": "Act6 主题切换持久化",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9063,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:42:57.670Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\ACCEPT-01-f99732db7b28\\e2e\\journey.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bf222bad70f76648f722-47e32f7facb21eb26c79",
+          "file": "journey.spec.ts",
+          "line": 425,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "m3-feedback.spec.ts",
+      "file": "m3-feedback.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "常用工具拖入移出排序刷新恢复，自定义模式隔离绘图交易",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14980,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:43:06.748Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "29cf560d42d82326e9ed-6ba6399b8e0d3fe72158",
+          "file": "m3-feedback.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "自动保存待保存进行中失败重试成功不改变工具区或账户区位置",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15879,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:43:21.735Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "29cf560d42d82326e9ed-7ac7f8498de7d969da92",
+          "file": "m3-feedback.spec.ts",
+          "line": 76,
+          "column": 1
+        },
+        {
+          "title": "折叠其他工具扩展账户可视区，双主题多尺寸标签无背景填充",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15538,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:43:37.617Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "29cf560d42d82326e9ed-c1fe84b7e63d3964b8c6",
+          "file": "m3-feedback.spec.ts",
+          "line": 111,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "m3-round3.spec.ts",
+      "file": "m3-round3.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "中括号双向循环周期并隔离输入、自定义和未完成画线",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6285,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:43:53.176Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31542e41475279241751-25c1a278cb89599aef0e",
+          "file": "m3-round3.spec.ts",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "840根真实可视范围、历史供给与纯黑主副图",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6918,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:43:59.468Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31542e41475279241751-d1bdcd7e6a2f656328ec",
+          "file": "m3-round3.spec.ts",
+          "line": 55,
+          "column": 1
+        },
+        {
+          "title": "诅咒线仅保留第二点起始的50%右向射线，编辑与刷新恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10670,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:44:06.392Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31542e41475279241751-332d57335b4eb05a5a10",
+          "file": "m3-round3.spec.ts",
+          "line": 81,
+          "column": 1
+        },
+        {
+          "title": "频繁成交聚合标记不覆盖主副图与时间轴，颜色明细正确",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9838,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:44:17.068Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "31542e41475279241751-d58c50361e87e8374b1c",
+          "file": "m3-round3.spec.ts",
+          "line": 117,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "m3-tools.spec.ts",
+      "file": "m3-tools.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "M3 D6-D7 水平工具改价保持水平且可撤销保存",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17490,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:44:26.939Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-89406d21d8ff526071b7",
+          "file": "m3-tools.spec.ts",
+          "line": 133,
+          "column": 1
+        },
+        {
+          "title": "M3 工具清单与默认吸附",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11908,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:44:44.427Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-8a2d276eb663b97f505a",
+          "file": "m3-tools.spec.ts",
+          "line": 153,
+          "column": 1
+        },
+        {
+          "title": "M3 D2-D13 线系与通道工具逐项绘制",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 28930,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "线段",
+                      "duration": 1482
+                    },
+                    {
+                      "title": "射线",
+                      "duration": 1417
+                    },
+                    {
+                      "title": "直线",
+                      "duration": 1433
+                    },
+                    {
+                      "title": "水平直线",
+                      "duration": 850
+                    },
+                    {
+                      "title": "水平线段",
+                      "duration": 1437
+                    },
+                    {
+                      "title": "水平射线",
+                      "duration": 1430
+                    },
+                    {
+                      "title": "垂直直线",
+                      "duration": 848
+                    },
+                    {
+                      "title": "垂直线段",
+                      "duration": 1432
+                    },
+                    {
+                      "title": "垂直射线",
+                      "duration": 1435
+                    },
+                    {
+                      "title": "平行直线",
+                      "duration": 2019
+                    },
+                    {
+                      "title": "价格通道线",
+                      "duration": 2014
+                    },
+                    {
+                      "title": "斐波那契线",
+                      "duration": 1430
+                    }
+                  ],
+                  "startTime": "2026-09-19T21:44:56.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-0baf9ff898f5696093f5",
+          "file": "m3-tools.spec.ts",
+          "line": 165,
+          "column": 1
+        },
+        {
+          "title": "M3 D14-D22 折线与自定义图形逐项绘制",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24180,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "画笔",
+                      "duration": 2056
+                    },
+                    {
+                      "title": "价位线",
+                      "duration": 834
+                    },
+                    {
+                      "title": "矩形",
+                      "duration": 1414
+                    },
+                    {
+                      "title": "圆圈",
+                      "duration": 1434
+                    },
+                    {
+                      "title": "圆弧",
+                      "duration": 2019
+                    },
+                    {
+                      "title": "箭头线",
+                      "duration": 1430
+                    },
+                    {
+                      "title": "看涨箭头",
+                      "duration": 852
+                    },
+                    {
+                      "title": "看跌箭头",
+                      "duration": 848
+                    },
+                    {
+                      "title": "百分比线",
+                      "duration": 1434
+                    }
+                  ],
+                  "startTime": "2026-09-19T21:45:25.277Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-849445cca7ba6ac21838",
+          "file": "m3-tools.spec.ts",
+          "line": 207,
+          "column": 1
+        },
+        {
+          "title": "M3 D6-D10 有限线段边界与反向射线命中",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15692,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:45:49.470Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-ad9d9ba2ba65861c4928",
+          "file": "m3-tools.spec.ts",
+          "line": 241,
+          "column": 1
+        },
+        {
+          "title": "M3 D26-D29 编辑移动撤销重做删除清空保留交易标记",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13946,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:46:05.168Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-9985ebe0a282f21ccc2f",
+          "file": "m3-tools.spec.ts",
+          "line": 270,
+          "column": 1
+        },
+        {
+          "title": "M3 D14 取消取点与画线模式热键隔离",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12076,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:46:19.120Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-663e0b57ddd48c3af14f",
+          "file": "m3-tools.spec.ts",
+          "line": 341,
+          "column": 1
+        },
+        {
+          "title": "M3 D23 文本多行样式编辑取消与输入热键隔离",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12846,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:46:31.202Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-0c15ed8cc5184895f3af",
+          "file": "m3-tools.spec.ts",
+          "line": 364,
+          "column": 1
+        },
+        {
+          "title": "M3 D16-D25 形状拖角缩放与悬停指针",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13321,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:46:44.055Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-2872f3381a4ed1a40362",
+          "file": "m3-tools.spec.ts",
+          "line": 434,
+          "column": 1
+        },
+        {
+          "title": "M3 D28 混合形状框选批量删除与撤销",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14749,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:46:57.383Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-c865c0a93161c218b56d",
+          "file": "m3-tools.spec.ts",
+          "line": 461,
+          "column": 1
+        },
+        {
+          "title": "M3 D24 三态吸附与强吸附开高低收",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13309,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:47:12.138Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-0cfc2b55b6928abbb9e5",
+          "file": "m3-tools.spec.ts",
+          "line": 484,
+          "column": 1
+        },
+        {
+          "title": "M3 D30-D31 主副图保存刷新与跨周期恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21879,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:47:25.454Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-5d78a4709678246069f0",
+          "file": "m3-tools.spec.ts",
+          "line": 505,
+          "column": 1
+        },
+        {
+          "title": "M3 D23 取消新文本不污染保存与撤销历史",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21676,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:47:47.336Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-76ada4e8e58619e46f46",
+          "file": "m3-tools.spec.ts",
+          "line": 557,
+          "column": 1
+        },
+        {
+          "title": "M3 D31 保存失败后立即刷新从本地恢复最新画线",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23345,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:48:09.018Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-0019dca1232c2c186f95",
+          "file": "m3-tools.spec.ts",
+          "line": 592,
+          "column": 1
+        },
+        {
+          "title": "M3 D31 已结算训练继续查看刷新保留画线并返回首页",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17153,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:48:32.369Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-a4482918c8b62fcb5695",
+          "file": "m3-tools.spec.ts",
+          "line": 637,
+          "column": 1
+        },
+        {
+          "title": "M3 D31 快速切换周期时过期周线响应不覆盖月线",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13537,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:48:49.529Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-4f55d6ad174c504be5ea",
+          "file": "m3-tools.spec.ts",
+          "line": 660,
+          "column": 1
+        },
+        {
+          "title": "M3 D28 副图框选不命中主图直线的不可见延伸",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13524,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:49:03.073Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-532793f12e197da34be3",
+          "file": "m3-tools.spec.ts",
+          "line": 710,
+          "column": 1
+        },
+        {
+          "title": "M3 D31 最新日线锚点跨周月映射到当前聚合柱",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12561,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:49:16.603Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-f775b35eed4dfe890267",
+          "file": "m3-tools.spec.ts",
+          "line": 734,
+          "column": 1
+        },
+        {
+          "title": "M3 D32 两种桌面尺寸的布局与圆形比例",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14087,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:49:29.171Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-dfe478b3ecbd055597cb",
+          "file": "m3-tools.spec.ts",
+          "line": 762,
+          "column": 1
+        },
+        {
+          "title": "M3 D28 文本线段混选编辑文本颜色内容并刷新恢复",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17981,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:49:43.255Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "87b72da506e9210727ee-fb690045d2fedff2a1c4",
+          "file": "m3-tools.spec.ts",
+          "line": 782,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "pane-resize.spec.ts",
+      "file": "pane-resize.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "candle/VOL separator owns diagonal left/right drags in default mode",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7019,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:01.252Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-0ea253a20a8ef9e0abb9",
+          "file": "pane-resize.spec.ts",
+          "line": 119,
+          "column": 5
+        },
+        {
+          "title": "VOL/MACD separator owns diagonal left/right drags in default mode",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7095,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:08.277Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-4d25b1e7149141d4a68e",
+          "file": "pane-resize.spec.ts",
+          "line": 119,
+          "column": 5
+        },
+        {
+          "title": "candle/VOL separator owns diagonal left/right drags in multi mode",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7081,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:15.378Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-b479925abacad8200854",
+          "file": "pane-resize.spec.ts",
+          "line": 119,
+          "column": 5
+        },
+        {
+          "title": "VOL/MACD separator owns diagonal left/right drags in multi mode",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7121,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:22.465Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-b392b3b814e6c93dca90",
+          "file": "pane-resize.spec.ts",
+          "line": 119,
+          "column": 5
+        },
+        {
+          "title": "Ctrl separator drag preserves selection through the right axis side",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6766,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:29.592Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-a139a4dd3d6af6191900",
+          "file": "pane-resize.spec.ts",
+          "line": 137,
+          "column": 1
+        },
+        {
+          "title": "separator drag preserves an active drawing tool and maximized panes remain usable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6693,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:36.364Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "697031183bd1be3ebd1c-e43a4598f4de87766518",
+          "file": "pane-resize.spec.ts",
+          "line": 148,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "recording-daily.spec.ts",
+      "file": "recording-daily.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "按交易日回放：键盘步进、观察周期独立、画线终态与只读安全",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4553,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:43.088Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0d08e9ce2a3f04495a39-7e2c8c8aab3ab1df6fd0",
+          "file": "recording-daily.spec.ts",
+          "line": 107,
+          "column": 1
+        },
+        {
+          "title": "旧文件缺当日日线：首日即时回退唯一周期、明示缺日线、次日恢复偏好",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3096,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:47.647Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0d08e9ce2a3f04495a39-153e37e8bf3111961b32",
+          "file": "recording-daily.spec.ts",
+          "line": 216,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "recording-long.spec.ts",
+      "file": "recording-long.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "两年前复权训练含交易画线周期切换，可压缩导出并离线回放",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 720000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 51449,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:50:50.757Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "57e55d2efb8eaaa4fa4c-ff1bf86b7d6cc52f654c",
+          "file": "recording-long.spec.ts",
+          "line": 23,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "recording-migration.spec.ts",
+      "file": "recording-migration.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导入不改变页面",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3446,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:51:42.228Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "39eae7d76b7cb380c46c-fba6ed0ba3fa07ff15bd",
+          "file": "recording-migration.spec.ts",
+          "line": 17,
+          "column": 1
+        },
+        {
+          "title": "复制标签页的续录指针不会产生同会话双写",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12468,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:51:45.680Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "39eae7d76b7cb380c46c-c0832513955786a531f0",
+          "file": "recording-migration.spec.ts",
+          "line": 62,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "recording.spec.ts",
+      "file": "recording.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "录制上下文准备期间不会漏掉第一笔交易",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9405,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:51:58.167Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bbc9013d4370f4d06e12-65aed7a7cdb56749932f",
+          "file": "recording.spec.ts",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "title": "默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12532,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:52:07.577Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bbc9013d4370f4d06e12-b8eb43903ac1231e67df",
+          "file": "recording.spec.ts",
+          "line": 55,
+          "column": 1
+        },
+        {
+          "title": "浏览器存储恢复后可重试录制，错误不伪装成正在记录",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9396,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:52:20.115Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bbc9013d4370f4d06e12-efea434f7908ffa7b9d7",
+          "file": "recording.spec.ts",
+          "line": 147,
+          "column": 1
+        },
+        {
+          "title": "首页关闭仅影响本场，刷新保留暂停且恢复后可导出",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12534,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-19T21:52:29.516Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "bbc9013d4370f4d06e12-fa655c2fbee0004454a3",
+          "file": "recording.spec.ts",
+          "line": 178,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-19T21:38:33.968Z",
+    "duration": 850866.324,
+    "expected": 72,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

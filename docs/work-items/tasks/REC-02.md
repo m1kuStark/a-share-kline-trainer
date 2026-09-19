@@ -5,10 +5,10 @@
   "id": "REC-02",
   "title": "录制有效操作及结束保留选择",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REC",
   "summary": "录制保存/丢弃与业务筛选已合入ACCEPT-01。",
-  "next_action": "等待集成分支完整候选验收。",
+  "next_action": "Integrated and engineering-reviewed; overall user acceptance pending.",
   "allowed_paths": [
     "web/src/recording/useRecording.ts",
     "web/src/recording/compactStorage.ts",
@@ -24,8 +24,10 @@
     ],
     "reason": "依据用户阶段反馈实施，集成人统一更新规格与证据。"
   },
-  "verification_refs": [],
-  "integration_ref": "4e8eae0",
+  "verification_refs": [
+    "docs/verification/2026-09/ACCEPT-01-release/report.md"
+  ],
+  "integration_ref": "c0ad1112f9f6d98df9acd3c6d5c6446ac54480b4",
   "acceptance_ref": null
 }
 ```
