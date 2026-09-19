@@ -1,5 +1,5 @@
 import { evidencePath } from './runtime'
-import { startTrainingFromForm } from './training-flow'
+import { startTrainingFromForm, settleThroughConfirmation } from './training-flow'
 import { test, expect, type Page } from '@playwright/test'
 import { join } from 'node:path'
 import { writeFileSync } from 'node:fs'
@@ -101,8 +101,8 @@ test('自动保存待保存进行中失败重试成功不改变工具区或账�
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   expect(await dims(page)).toEqual(expected)
   writeFileSync(evidencePath('M3-feedback-layout.json'), JSON.stringify({ states: ['待保存', '保存中', '保存失败', '重试后已保存'], identicalDimensionsAndScroll: true, measurements: expected }, null, 2))
-  await page.getByRole('button', { name: '提前结算', exact: true }).click()
-  await page.getByRole('button', { name: '继续查看图表', exact: true }).click()
+  // 已结算训练继续查看图表：结束训练确认弹窗真实点击后仍可画线保存
+  await settleThroughConfirmation(page, 'chart')
   await draw(page, 'segment', .7)
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   expect((await (await page.request.get(`/api/trainings/${active.training.id}/drawings`)).json()).drawings).toHaveLength(2)

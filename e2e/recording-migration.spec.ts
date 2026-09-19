@@ -12,6 +12,8 @@ const legacy = {
     training: null, chart: null, ui: { theme: 'dark', tool: null, magnet: 'weak_magnet', multiSelect: false }, context: null }],
 }
 
+// REC-03 待合入：旧文件无日线时按日回放必须如实降级（仅周/月或明确缺失），不得从未来补齐；
+// 本夹具 checkpoint 无图表数据，日导航不产生虚构日线。
 test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导入不改变页面', async ({ page }) => {
   test.setTimeout(60_000)
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
@@ -30,8 +32,10 @@ test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导�
     }
   }), legacy)
   await page.goto('/')
-  await page.getByText('本机最近录制（1）', { exact: true }).click()
-  await page.getByRole('button', { name: /0 条事件/ }).click()
+  // 训练录像库合并展示旧 v1 记录；打开时按需迁移为 v2，原始行保留
+  await page.getByRole('button', { name: '查看训练录像' }).click()
+  await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
+  await page.locator('.recording-history-item').click()
   await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
   const saved = await page.evaluate(() => new Promise<any>((resolve, reject) => {
     const request = indexedDB.open('trainer-recordings', 2)
@@ -46,10 +50,12 @@ test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导�
   expect(saved.old).toEqual(legacy)
   expect(saved.current.schemaVersion).toBe(2)
   await page.getByRole('button', { name: '关闭回放', exact: true }).click()
-  await page.getByLabel('导入录制').setInputFiles({ name: 'bad.json.gz', mimeType: 'application/gzip', buffer: Buffer.from([0x1f, 0x8b, 1]) })
+  // 损坏 gzip 导入明确报错并停留在录像库页面
+  await page.getByLabel('导入录制', { exact: true }).setInputFiles({ name: 'bad.json.gz', mimeType: 'application/gzip', buffer: Buffer.from([0x1f, 0x8b, 1]) })
   await expect(page.getByRole('alert')).toContainText(/gzip|解压/)
-  await expect(page.getByRole('heading', { name: '创建训练', exact: true })).toBeVisible()
-  await page.getByLabel('导入录制').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) })
+  await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
+  // 旧 JSON（v1）导入仍兼容：直接打开回放
+  await page.getByLabel('导入录制', { exact: true }).setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(legacy)) })
   await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
 })
 
