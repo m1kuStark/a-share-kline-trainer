@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REC",
   "summary": "GLM分块开发默认录制、分享导入与只读回放；主代理调度及验收。",
-  "next_action": "继续复核回放缺口修复；容量评估已提出语义事件+行情版本增量+轻量检查点+gzip，待定稿后再迁移格式，不恢复自动停录。",
+  "next_action": "用户已授权紧凑方案。回放缺口已合入，v1四条Journey通过；按v2合同实施codec→校验/文件→增量存储→接线，完整候选验收后交用户。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",

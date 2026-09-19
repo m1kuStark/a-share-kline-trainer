@@ -1,6 +1,6 @@
 # 紧凑录制方案：操作、数据版本与恢复锚点
 
-状态：2026-09-19评估建议，尚未接入生产；不改变当前schemaVersion=1合同。用户要求先说明体积原因和解决方案，不恢复已撤回的自动停录开发。实验与复原证据见[压缩评估](../../verification/2026-09/REC-01-compression/report.md)。
+状态：2026-09-19用户已确认并授权实施；v2尚未接入生产。执行接口见[v2合同](../../engineering/recording-v2-contract.md)，本页保留评估和选择理由；不恢复自动停录。实验与复原证据见[压缩评估](../../verification/2026-09/REC-01-compression/report.md)。
 
 ## 问题与选择
 
