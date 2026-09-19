@@ -96,8 +96,8 @@ describe('REC-CHART-B chart capture contract', () => {
 
   it('schedules the replay restore after the default reset settles and re-applies it on every data version', async () => {
     const source = await readChart()
-    // 挂载顺序契约：先 feed 再默认 resetView，回放恢复只允许经 rAF 排到两者之后（不得被默认视窗覆盖）
-    expect(source).toMatch(/feedData\(\); resetView\(\)/)
+    // 挂载顺序契约：先 feed 再程序化 resetView(false)（初始化复位，不算用户导航），回放恢复只允许经 rAF 排到两者之后（不得被默认视窗覆盖）
+    expect(source).toMatch(/feedData\(\); resetView\(false\)/)
     const schedule = blockOf(source, 'let replayRestoreFrame', 'watch(() => props.replayView')
     expect(schedule).toMatch(/if \(!props\.replayView\) return/)
     expect(schedule).toMatch(/requestAnimationFrame/)

@@ -226,7 +226,7 @@ describe('M2 chart interaction contract', () => {
     // 框选右滑/左滑、键盘缩放、Home 复位四条路径都要先恢复自动适配
     expect(source).toMatch(/restoreYAxisAutoFit\(\)[\s\S]{0,300}setBarSpace/s)
     expect(source).toMatch(/zoomBy\(factor: number\): void \{[\s\S]{0,220}restoreYAxisAutoFit\(\)/s)
-    expect(source).toMatch(/resetView\(\): void \{[\s\S]{0,160}restoreYAxisAutoFit\(\)/s)
+    expect(source).toMatch(/resetView\(userInitiated = true\): void \{[\s\S]{0,160}restoreYAxisAutoFit\(\)/s)
   }
   )
 
