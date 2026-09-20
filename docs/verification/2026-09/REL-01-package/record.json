@@ -1,0 +1,40 @@
+{
+  "testedSourceCommit": "bf61a128c82a29261bd46a903642b03511a1b676",
+  "scope": "Independent root review and package unit regressions; actual release ZIP not yet built",
+  "checks": [
+    {
+      "command": "npm test -- server/test/release-package.test.ts",
+      "cwd": "REL-PACK",
+      "exitCode": 0,
+      "passed": 23
+    },
+    {
+      "command": "npm test -- server/test/release-package.test.ts server/test/public-source.test.ts",
+      "cwd": "REL-01 after merge",
+      "exitCode": 1,
+      "reason": "Vitest ESM hashbang transform failed with CRLF; source exporter3passed"
+    },
+    {
+      "command": "node import of build.mjs",
+      "exitCode": 0,
+      "note": "Native Node handled the same CRLF file; only LF conversion restored Vitest23passes."
+    },
+    {
+      "command": "npm test -- server/test/release-package.test.ts",
+      "cwd": "REL-01 after LF normalization",
+      "exitCode": 0,
+      "passed": 23
+    },
+    {
+      "command": "npm test -- server/test/release-package.test.ts server/test/public-source.test.ts",
+      "cwd": "REL-01 after EOL policy fix",
+      "exitCode": 0,
+      "passed": 26
+    }
+  ],
+  "sourceHashes": {
+    "scripts/release/build.mjs": "24e0b6bcdd0e11b6265a1bab26c28c5c5939145e959a49ecd1459e21c0886fdd",
+    "server/test/release-package.test.ts": "d53e6f7b59b4d64c3bb553e9f657561ae06c3ba388dd01e98fe45af8ee1c581a"
+  },
+  "fix": "scripts/release/*.mjs text eol=lf in .gitattributes; no builder logic changed for this integration issue"
+}

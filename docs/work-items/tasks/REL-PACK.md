@@ -1,14 +1,14 @@
-# REL-PACK Reproducible Windows portable package
+# REL-PACK Windows release packaging
 
 ```json
 {
   "id": "REL-PACK",
   "title": "Reproducible Windows portable package",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "REL",
   "summary": "Reproducible Windows portable package",
-  "next_action": "Implement release contract, verify and deliver for integration.",
+  "next_action": "Builder source reviewed and integrated; await launcher files, then build and verify actual ZIP under REL-01.",
   "allowed_paths": [
     "scripts/release/build.mjs",
     "server/test/release-package.test.ts",
@@ -22,10 +22,12 @@
     ],
     "reason": "User authorized packaging accepted baseline and publicGitHub release."
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-09/REL-01-package/record.json"
+  ],
+  "integration_ref": "bf61a128c82a29261bd46a903642b03511a1b676",
   "acceptance_ref": null
 }
 ```
 
-[Release contract](../../engineering/release-m3-contract.md).
+[Build protocol](../../engineering/release-build.md). Detailed worker report and root checks are retained in the linked verification directory. Real package, launcher and browser acceptance remain pending.

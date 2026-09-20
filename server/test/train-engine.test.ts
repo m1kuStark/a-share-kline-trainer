@@ -11,8 +11,8 @@ import {
 } from '../src/train/engine.js'
 import type { AccountState } from '../src/train/account.js'
 
-// 与 api.test.ts 相同的真实 gbbq 加密记录（走完整解密路径）
-const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde719ade6cc778aec8e3f465b84b44e49867f3f00000000', 'hex')
+// Synthetic encrypted record: fictional dividend8 per10 shares, bonus1; full decoder path.
+const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
 
 function dayRecord(date: number, open: number, close: number): Buffer {
   const buffer = Buffer.alloc(32)

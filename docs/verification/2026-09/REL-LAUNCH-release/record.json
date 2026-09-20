@@ -1,0 +1,7 @@
+{
+  "module": "REL-LAUNCH",
+  "testedCommit": "e834ca254f0e12ae13b11b89fae7480ee323553e",
+  "rootFocusedTests": 35,
+  "exitCode": 0,
+  "realPackageAcceptance": "pending"
+}

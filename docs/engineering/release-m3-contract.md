@@ -19,3 +19,9 @@ REL-PACK仅写scripts/release/build.mjs、server/test/release-package.test.ts、
 REL-DOC仅写README.md、docs/user/README.md、docs/user/install.md、docs/user/recording.md、docs/user/troubleshooting.md、CONTRIBUTING.md、SECURITY.md。面向普通下载者：明确无需订阅或模型、不含市场数据、Windows版本下载+解压+Start.cmd、Create Shortcut.cmd、配置示例字段、通达信下载日线及复权文件、不自动下载、localhost、浏览器录像与数据库区别及备份、升级保留dataDir/端口/浏览器，不承诺未实现排行/设置。源码npm ci/build/start，Node24/npm10+；正确信息以代码为准。版本v0.3.0 GitHub上述URL，准确明示链接将由root建release。MIT由root提供，文档不替代确认许可证来源。不要拷私人路径或交易截图，README≤建议长度，可分层路由。
 
 REL-01集成人负责所有共享合约、版本、LICENSE/thirdparty、public源码导出、GitHub发布、desktop安装、严格候选+包实测以及状态记录。worker不push、不改共享package/lock，不碰7529个人实例。三路GLM5.3Flash max，用户已确认配置正确，使用更新后的runner；运行者写库隔离，完成后串行合并，不以模型自报替代验证。
+
+## 集成审查补充
+
+2026-09-21：REL-LAUNCH增加`Stop.cmd`和`--stop`，必须验证记录的本机服务身份、与启动互斥，保留数据库/日志；存活但身份不可验证的服务不得清除状态后再创建第二写者。复用核对数据库和构建版本，版本变更先停旧服务。REL-PACK须保留`docs/user`层级、复制CONTRIBUTING/SECURITY及third-party完整声明、增加Stop.cmd，发布禁止并发覆盖，产物标记的SHA必须与实际源码一致。公开ZIP从已提交的公开快照构建，使录制中的构建SHA可在公开仓库定位。
+
+REL-SMOKE独占scripts/release/verify.mjs、server/test/release-integrity.test.ts与自己的任务卡。它只核对实际解压内容的清单、散列、元数据及本地文档链接，不能代替主代理启动/停止/浏览器检查，也不能证明数字签名或来源真实性。

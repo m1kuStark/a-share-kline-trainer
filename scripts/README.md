@@ -10,6 +10,9 @@
 | verify:candidate -- --base SHA --task ID | 增加范围影响检查，干净精确提交通过才生成候选证明 |
 | docs:check / docs:impact | 链接/任务结构与基础SHA差异检查 |
 | docs:status / -- --check | 生成或验证派生状态，禁止手改生成区 |
+| release:source -- --out 新目录 | [公开源码导出](../docs/engineering/public-source.md)，仅允许干净提交与仓库外新目录；不上传 |
+| release:windows -- --node-archive ZIP --node-checksums TXT --out 新目录 | [Windows打包](../docs/engineering/release-build.md)，独立构建与不可覆盖产物 |
+| node scripts/release/verify.mjs --package 解压目录 --report 包外JSON | 只读核对实际文件、散列和文档链接；不替代启动和浏览器验收 |
 | tsx scripts/assess-recording-size.ts 冻结day文件 [结果json] | 只读样本测算录制表示大小；无个人库或TDX写入，不是浏览器性能验收 |
 | tsx scripts/assess-recording-compression.ts 冻结day 同批gbbq 结果json [codec模块路径] | 比较表示/gzip，逐步还原相等；可选载入开发者指定codec固定版本与实验结果对照 |
 | verify:m1 / verify:m2 | 既有全量实源核验；可设TRAINER_VERIFY_DIR指定输出目录，默认保留原路径兼容 |

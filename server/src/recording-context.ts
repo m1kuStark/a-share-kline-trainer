@@ -30,6 +30,15 @@ export function readAppInfo(rootDirectory: string = resolveProjectRoot()): AppIn
   } catch { /* version stays unknown */ }
   let gitCommit = 'unknown'
   let dirty = false
+  // Portable packages have no .git directory. The packaging step writes this
+  // immutable build identity, keeping exported recordings traceable offline.
+  try {
+    const release = JSON.parse(readFileSync(join(rootDirectory, 'release.json'), 'utf8')) as Record<string, unknown>
+    if (release.appId === 'a-share-kline-trainer' && release.version === version
+      && typeof release.gitCommit === 'string' && /^[a-f\d]{40}$/.test(release.gitCommit)) {
+      return { version, gitCommit: release.gitCommit, dirty: false }
+    }
+  } catch { /* source checkouts and old packages use Git detection below */ }
   try {
     const gitOptions: ExecFileSyncOptionsWithStringEncoding = { cwd: rootDirectory, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }
     gitCommit = execFileSync('git', ['rev-parse', 'HEAD'], gitOptions).trim()

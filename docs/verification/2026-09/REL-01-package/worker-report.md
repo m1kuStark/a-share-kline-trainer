@@ -1,0 +1,9 @@
+# Package worker report
+
+Worker self-report; actual ZIP acceptance remains pending.
+
+[Release contract](../../../engineering/release-m3-contract.md). Implementation notes: [release-build.md](../../../engineering/release-build.md).
+
+Delivery scope (2026-09-21): `scripts/release/build.mjs` builds the package from a clean commit via isolated `createRun`/`buildRun` production (`scripts/runtime/run.ts` imported through tsx), verifies the official Node 24 win-x64 archive SHA256 by exact filename before extraction, installs production node_modules in isolation, assembles the allowlisted staging tree, scans web/dist for journey hooks, emits release-manifest.json + ZIP + SHA256SUMS, and refuses dirty worktrees, invalid shas, missing release inputs and existing outputs without deleting anything under --out. Full clean-room package run is deferred to the integrator once REL-LAUNCH/REL-DOC files and the pinned Node archive exist; focused unit tests (11) pass, `--help` verified.
+
+Review round (2026-09-21, root independent review), all fixes on the allowed paths: (1) `docs/user` now stages with its exact hierarchy（原拍平成 `docs/`，断 README 链接与 install.md 的 `../../CONTRIBUTING.md`）；root `CONTRIBUTING.md`/`SECURITY.md` 与完整 `third-party/**` 列为必需输入并在包根落地，新增 `findBrokenPackageLinks` 构建门禁（包内相对链接必须解析到包内文件）。(2) `scripts/release/Stop.cmd` 进入必需输入/白名单/staging/文档。(3) 发布改为独占无覆盖：`reserveOutputs` 以 `'wx'` 锁预留（不等待、不抢占他人锁），zip/SHA256SUMS 经唯一 `.partial` + 独占硬链接落盘——并行构建单赢家，既有发布物不覆盖不删除，失败留存可归属 `.partial`，绝不递归清理 `--out`。(4) `assertUnchangedSource` 在 staging 后、压缩/发布前复验同一干净 HEAD。(5) 打包 ps1 改 `-LiteralPath` + `$ErrorActionPreference='Stop'`；文档不再宣称逐条 ZIP 条目 ZipSlip 校验，信任边界是解压前整包 SHA256。回归测试用合成树覆盖 staging/链接/许可证面，含真实并行发布竞争与 PowerShell 通配路径往返：23 项通过（`npm test -- server/test/release-package.test.ts`），原 11 项保留。真实构建仍被他人所有的集成输入阻塞（启动器文件含 Stop.cmd、docs/user、CONTRIBUTING/SECURITY/third-party、Node archive），未尝试真实发布。
