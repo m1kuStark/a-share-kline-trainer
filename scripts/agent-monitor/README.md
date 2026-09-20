@@ -14,9 +14,11 @@
 
 ## 派发
 
-从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行会话；`--attach`可重复传明确任务图片/视频。默认stream-json保存逐事件日志和末尾摘要，能力与实测边界见[官方核对](../../docs/engineering/zcode-official-capabilities.md)。
+从明确独立worktree出发，用已安装的run_glm.py执行；传`--batch`唯一批次、`--title`、`--cwd`、`--prompt`、`--log`、`--provider`（单次配置的来源）、`--cli`（Zcode resources/glm/zcode.cjs）、`--wake-state`（当前线程交接标志）。可选`--resume`，不得恢复仍运行会话；`--attach`可重复，仅接受图片（gif/jpeg/jpg/png/webp）与视频（mp4/m4v/mov/webm/mkv/avi）后缀，其他后缀派发前即报错。默认stream-json保存逐事件日志和末尾摘要，能力与实测边界见[官方核对](../../docs/engineering/zcode-official-capabilities.md)。
 
-必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。`--parallelism`默认1、允许1～4；当前协调器新调用统一设3（最初两个已占用槽0/1，新增占用槽2）。locks目录分别持有规范化worktree锁、唯一batch锁和slot锁，拒绝同工作树双写/批次覆盖/超槽位调用，不自动抢遗留锁。旧worker.lock存在时拒绝迁移启动。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
+运行预算参数（2026-09-20新增）：`--permission-mode`默认yolo并显式传给CLI `--mode`，不依赖CLI默认值防未来变化导致无头权限死锁；`--timeout-minutes`总时长上限默认0不限；`--idle-minutes`空闲上限默认5分钟、设0关闭；`--max-output-tokens`输出预算默认32768、不得超过官方上限128000。空闲判定信号=任务日志增长、登记会话的库内活动、或应用日志中已started无完成的在途模型请求（在途不判死，兼容max档单次长思考，实测单请求744秒、历史记录989秒）；会话未识别前空闲判定不武装。超时只停止该任务PID子树，保留日志与已写文件；job登记`timeoutKind`与错误指引，要求主代理确认工作树改动后以**新批次ID**携更大预算重派，不得复用原批次。每份登记记录派发时的`cliVersion`，升级排障以此为准。
+
+必须以Windows独立后台Popen、隐藏窗口及独立日志启动。runner阻塞等待子进程，不调用Codex轮询。`--parallelism`默认1、允许1～4；并发上限受订阅账号级额度与动态限流约束（无官方固定并发数，见[官方核对](../../docs/engineering/zcode-official-capabilities.md)），实践2～3路稳定，重现429/1302则下调。locks目录分别持有规范化worktree锁、唯一batch锁和slot锁，拒绝同工作树双写/批次覆盖/超槽位调用，不自动抢遗留锁。旧worker.lock存在时拒绝迁移启动。模型固定GLM-5.3-Flash及max思考档；输出预算32768。凭据仍由Zcode原登录存储读取，配置副本和日志不入Git。
 
 并行调用禁止`--wake-state`，以各job.json作为权威状态；集成人写group索引列出本批jobFiles。heartbeat逐项处理新完成/失败批次，不能因某个running隐藏其他已完成结果。各任务独立log/provider配置，不共用输出文件。限流以真实请求为据，有限重试后调整下一批并发数。
 

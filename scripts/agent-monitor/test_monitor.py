@@ -281,7 +281,7 @@ console.log(JSON.stringify({sessionId:'fixture',response:'finished'}));
         builtin.parent.mkdir(parents=True)
         builtin.write_text('{}')
         provider = self.root / 'provider.json'
-        provider.write_text(json.dumps({'config': {'defaultModelSelection': {'modelId': 'GLM-5.3-Flash', 'options': {'reasoningLevel': 'max'}}, 'modelConfigRules': {'manualProviderModelRules': []}}}))
+        provider.write_text(json.dumps({'config': {'defaultModelSelection': {'modelId': 'GLM-5.3-Flash', 'options': {'reasoningLevel': 'max'}}, 'modelConfigRules': {'manualProviderModelRules': [{'modelId': 'GLM-5.3-Flash', 'config': {'optionSpecs': {'maxOutputTokens': {'max': 32768}}}}]}}}))
         prompt = self.root / 'prompt.md'
         prompt.write_text('bounded test')
         args = SimpleNamespace(home=self.root, batch='fixture', title='测试', cwd=self.root, log=self.root / 'fixture.log', prompt=prompt, provider=provider, cli=cli, node=shutil.which('node'), resume=None, wake_state=self.root / 'wake.json')
@@ -289,6 +289,7 @@ console.log(JSON.stringify({sessionId:'fixture',response:'finished'}));
         self.assertEqual(run_glm.run(args), 0)
         state = json.loads((self.registry / 'fixture.json').read_text(encoding='utf-8'))
         self.assertEqual(state['state'], 'completed')
+        self.assertEqual(state['mode'], 'yolo')
         self.assertEqual(state['response'], 'finished')
         self.assertEqual(json.loads(args.wake_state.read_text(encoding='utf-8'))['batch'], 'fixture')
         self.assertFalse((self.root / 'worker.lock').exists())

@@ -2,6 +2,8 @@
 
 2026-09-18实际核验：桌面ZCode 3.12.3，自带CLI 0.16.5，入口为安装目录 `resources/glm/zcode.cjs`，由Node24执行。本机位置为D盘MySoftWares/Zcode；跨机器先发现安装位置，不硬编码为项目必需路径。
 
+2026-09-20核验：CLI随桌面自动升级至0.16.9（bundle于9-19更新）。runner依赖的全部契约复核仍成立：`--output-format`帮助未列但解析器支持（合法值text/json/stream-json）、`--attach`/`--resume`/`--cwd`/`--no-color`不变、三个provider环境变量与三个retry环境变量均在。0.16.9帮助新增`--mode`（权限模式build/edit/plan/yolo，**对--prompt默认即yolo**）、`--disallowed-tools`（本轮移除整个工具，Bash命令模式不匹配、"Bash(git *)"会移除整个Bash，挡不住git push）、`--target`（headless设会话目标）、`--surface`、`--locale`。runner现显式传`--mode yolo`并在登记记录`cliVersion`，不依赖默认值。
+
 2026-09-20补充：[官方资料与本机多模态/事件流能力](zcode-official-capabilities.md)。
 
 ## 可用调用
@@ -25,5 +27,9 @@
 - 返回通过后仍由主代理运行测试和审查。本轮后端审查曾发现模块以文件位置算仓库根不适用于隔离构建；改用架构约定的worktree cwd，并补回归。
 - 本机订阅曾在多调用并发时返回429/1302；用户后续明确要求提升并行度。本轮2任务启动核验分别已有9/8次completed请求且无错误，随后加入第3个独立存储任务。失败保留请求ID与时间，重试有限退避；若重现限流则下调并发，不反复轰击服务。启动成功不等于整批运行稳定，后续按完成/异常证据调整。
 - 最大thinking effort与输出token上限独立。小任务采用有限输出预算，保持max档；长时间无进展先检查是否限流、网络还是生成中，再缩小Prompt，不凭无stdout猜测。
+- 输出预算32768是runner对provider配置规则的强制下限改写；0.16.9官方输出上限128K，runner拒绝超过128000的预算。provider配置缺`optionSpecs.maxOutputTokens`路径时派发即报错，不再静默放行（防8192截断复发）。
+- Prompt经argv传给CLI，Windows命令行约32K字符为硬上限；runner在30000字符即拒绝并要求拆任务。
+- 2026-09-20超时机制：`--idle-minutes`默认5分钟，判活信号=任务日志增长、登记会话库内活动、应用日志中已started无完成的在途请求（探针实证：0.16.9在途请求在model_usage表**无行**，行仅完成时写入，故在途判定只能走应用jsonl；实测单请求744秒、历史记录989秒（见[REC-01-monitor-health](../verification/2026-09/REC-01-monitor-health/report.md)），在途不判死）。会话未识别前不武装空闲判定。`--timeout-minutes`默认0不限，兜底在途请求永久悬挂等场景。超时杀PID子树、保留日志与改动，错误信息自带重派指引：主代理先核对工作树，再以新批次ID携更大预算重派；先诊断再重派，不盲目加大。
+- 2026-09-20并发口径（官方核对详见[zcode-official-capabilities](zcode-official-capabilities.md)）：官方未公布固定并发数；限流按套餐等级动态调整且Coding Plan不可申请调整；额度按账号计（每5小时积分+每周积分），并发实例共享同一池。实践2～3路GLM并行稳定，4为工具硬上限；重现429/1302按有限退避重试并下调并发，错开工作日14:00–18:00高峰（高峰积分抵扣翻倍）。
 
 Prompt是可审查工件，保存到任务文档；原始模型日志保存在全局Headroom缓存，正式报告只引用必要结果与模型标识。

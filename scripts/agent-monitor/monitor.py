@@ -118,6 +118,36 @@ def session_activity(db, job):
             'request': {'status': usage[0], 'model': usage[1], 'startedAt': usage[2], 'firstTokenAt': usage[3], 'completedAt': usage[4], 'error': redact(usage[5])[:400]} if usage else None}
 
 
+def session_activity_stamp(database, worktree, session_id, started_at):
+    """Newest persisted activity (ms) for the registered session, or None when unknown or unreadable."""
+    try:
+        db = sqlite3.connect(pathlib.Path(database).resolve().as_uri() + '?mode=ro', uri=True, timeout=1)
+        db.execute('pragma query_only=on')
+    except sqlite3.Error:
+        return None
+    try:
+        if session_id:
+            row = db.execute('select directory from session where id=?', (session_id,)).fetchone()
+            if row is None or normalize_path(row[0]) != normalize_path(worktree):
+                return None
+        else:
+            rows = db.execute('select id,directory from session where time_created>=? order by time_created desc limit 100', (started_at - 2000,)).fetchall()
+            match = next((item for item in rows if normalize_path(item[1]) == normalize_path(worktree)), None)
+            if match is None:
+                return None
+            session_id = match[0]
+        stamps = db.execute('select max(time_updated) from part where session_id=?', (session_id,)).fetchone()[0]
+        usage = db.execute('select max(latest) from (select max(started_at) latest from model_usage where session_id=?'
+                           ' union all select max(completed_at) from model_usage where session_id=?)', (session_id, session_id)).fetchone()[0]
+        values = [value for value in (stamps, usage) if value]
+        return max(values) if values else None
+    except (sqlite3.Error, TypeError):
+        return None
+    finally:
+        if db is not None:
+            db.close()
+
+
 def resolve_chain(item, by_id):
     """Walk followupId links bounded by registry size; cycles and missing successors stay unresolved."""
     seen = {item['id']}
