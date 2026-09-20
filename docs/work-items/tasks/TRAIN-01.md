@@ -8,7 +8,7 @@
   "state": "planned",
   "milestone": "M5",
   "summary": "费用/T+1每笔读全局设置，raw显示路径不入账权息。",
-  "next_action": "等待用户明确验收本次阶段版本后再推进；默认设置变化不改旧训练；raw/forward账户权益一致，兼容旧数据。",
+  "next_action": "M3 acceptance recorded; packaging REL-01 is current priority. Resume this planned work afterward.",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/db.ts",
