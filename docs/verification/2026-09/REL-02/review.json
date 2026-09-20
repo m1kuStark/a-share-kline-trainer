@@ -1,0 +1,17 @@
+{
+  "scope": "v0.3.1 independent module review, not final release acceptance",
+  "checks": [
+    {
+      "command": "npm test -- server/test/release-launcher.test.ts",
+      "passed": 36,
+      "exitCode": 0
+    },
+    {
+      "command": "npm test -- server/test/recording-file.test.ts",
+      "passed": 25,
+      "exitCode": 0
+    }
+  ],
+  "extraRegression": "Root found source buffer reuse corrupted deferred chunk references. Reproduced failure, then replaced references with one owned64KiB buffer; byte-exact test and all25gziptests passed. Existing1MiB1byte and all cancellation deadlines retained.",
+  "linuxCI": "pending"
+}

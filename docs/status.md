@@ -35,8 +35,8 @@
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | [证据1](<verification/2026-09/REL-01-source/record.json>)；[证据2](<verification/2026-09/REL-01-release/report.md>) | 29fec35f3a17539a6aa1a04b7b09f4a30f00b10f | 未记录 |
 | [REL-02](<work-items/tasks/REL-02.md>) | active / integrator | Integrate reviewed lifecycle/gzip corrections and deliver the validated patch. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
-| [REL-CI-GZIP](<work-items/tasks/REL-CI-GZIP.md>) | active / GLM-5.3-Flash | Investigate and fix one-byte gzip stream regression on Linux CI. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
-| [REL-CI-LAUNCH](<work-items/tasks/REL-CI-LAUNCH.md>) | active / GLM-5.3-Flash | Fix platform-neutral config fixtures and serialize concurrent launcher start/stop. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
+| [REL-CI-GZIP](<work-items/tasks/REL-CI-GZIP.md>) | active / GLM-5.3-Flash | Fixed one-byte gzip stream regression on Linux CI via bounded input coalescing; remote CI confirmation pending. | [证据1](<verification/2026-09/REL-02/review.json>) | 295c79d85e32cd0835dba9b5f7d393cf70626d5f | 未记录 |
+| [REL-CI-LAUNCH](<work-items/tasks/REL-CI-LAUNCH.md>) | active / GLM-5.3-Flash | Serialize launcher reuse/cleanup decisions under the lifecycle lock; platform-neutral config fixtures; identity-gated test cleanup. | [证据1](<verification/2026-09/REL-02/review.json>) | 0f028311cc1d3d63cbe6b1ba2ae27887d75b8af5 | 未记录 |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 <!-- generated:status:end -->
