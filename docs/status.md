@@ -34,6 +34,7 @@
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | [证据1](<verification/2026-09/REL-01-source/record.json>)；[证据2](<verification/2026-09/REL-01-release/report.md>) | 29fec35f3a17539a6aa1a04b7b09f4a30f00b10f | 未记录 |
+| [REL-02](<work-items/tasks/REL-02.md>) | active / integrator | Integrate reviewed lifecycle/gzip corrections and deliver the validated patch. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
 | [REL-CI-GZIP](<work-items/tasks/REL-CI-GZIP.md>) | active / GLM-5.3-Flash | Investigate and fix one-byte gzip stream regression on Linux CI. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
 | [REL-CI-LAUNCH](<work-items/tasks/REL-CI-LAUNCH.md>) | active / GLM-5.3-Flash | Fix platform-neutral config fixtures and serialize concurrent launcher start/stop. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 | 未记录 |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
