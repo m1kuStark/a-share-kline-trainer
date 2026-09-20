@@ -12,7 +12,7 @@ import type { AppConfig } from '../src/config.js'
 
 // ===== 夹具：合成 TDX 目录（与 api.test.ts 同款字节布局） =====
 
-const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde719ade6cc778aec8e3f465b84b44e49867f3f00000000', 'hex')
+const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
 
 function dayRecord(date: number, open: number, high: number, low: number, close: number, amount: number, volume: number): Buffer {
   const buffer = Buffer.alloc(32)

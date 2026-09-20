@@ -1,0 +1,29 @@
+{
+  "scope": "Replace copied real29byte adjustment fixture with generated fictional record; no production parser changes",
+  "checks": [
+    {
+      "command": "npm test -- server/test/gbbq.test.ts server/test/adjustment-cache.test.ts server/test/api.test.ts server/test/train-engine.test.ts server/test/data-refresh.test.ts server/test/full-acceptance.test.ts",
+      "exitCode": 0,
+      "filesPassed": 6,
+      "testsPassed": 43
+    }
+  ],
+  "hashes": {
+    "gbbq.test.ts": "2a581c5f7e1060c72bc0d3144cf649f9b87e1c89199a5825a01c57a9fb0f5677",
+    "adjustment-cache.test.ts": "d6415e8a4c6c91d6e42d9f85f9fe3b2d82f808a28d5dc7761946873f6eb85c01",
+    "api.test.ts": "7334ed1603279d4d2a0a983a714fabb0d9d3595dc474916f30f761b5034b1a16",
+    "train-engine.test.ts": "3dee74cb068996c5498ae3d880992230dcb6b6bc7c1589fc175930bad98f13ec",
+    "data-refresh.test.ts": "8b19c9f06de922c21903a78bc7b94dbb9a29cc4c60497aa27822bd108c5e2e7e",
+    "full-acceptance.test.ts": "e8270bb078a6e58b97158f8aa63b8003ece6156fddcd887c3e7e27327963bd73"
+  },
+  "syntheticFields": {
+    "market": "sh",
+    "code": "600519",
+    "date": "2002-07-25",
+    "dividend": 8,
+    "bonusShares": 1,
+    "rightsPrice": 0,
+    "rightsShares": 0
+  },
+  "independentEncoder": "Standard forward Blowfish rounds applied to compatibility state; inverse roundtrip checked before literal fixture replacement."
+}

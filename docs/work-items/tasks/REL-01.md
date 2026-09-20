@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REL",
   "summary": "M3 packaging and open-source release",
-  "next_action": "Resolve gbbq redistribution provenance; review three GLM release branches, then validate clean source and Windows package before publication.",
+  "next_action": "User directed MIT publication with table provenance disclosed; review GLM release branches, then validate clean source and Windows package before publication.",
   "allowed_paths": [
     "**"
   ],
@@ -30,4 +30,4 @@
 
 [Release contract](../../engineering/release-m3-contract.md).
 
-Three isolated GLM5.3Flash/max workers cover launcher, package builder and public user docs. Integrator owns source export, license audit, release identity and delivery. The original private history and 7529 user data remain retained. Publication is pending the decoding-table license resolution and actual clean-room checks.
+Three isolated GLM5.3Flash/max workers cover launcher, package builder and public user docs. Integrator owns source export, license audit, release identity and delivery. The original private history and 7529 user data remain retained. User explicitly directed MIT publication after the table audit; its upstream license status remains disclosed. Actual clean-room checks and branch integration are still pending.

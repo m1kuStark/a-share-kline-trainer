@@ -3,8 +3,8 @@ import { applyForwardAdjustment, buildForwardAdjustmentSegments, parseGbbqBuffer
 import type { DayBar } from '../src/tdx/dayfile.js'
 
 describe('TDX gbbq parser', () => {
-  it('decrypts and parses a real local category-1 record fixture', () => {
-    const encrypted = Buffer.from('9a7f1ae8eafde719ade6cc778aec8e3f465b84b44e49867f3f00000000', 'hex')
+  it('decrypts and parses a synthetic category-1 record with a fictional dividend', () => {
+    const encrypted = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
     const payload = Buffer.alloc(4 + encrypted.length)
     payload.writeUInt32LE(1, 0)
     encrypted.copy(payload, 4)
@@ -14,12 +14,12 @@ describe('TDX gbbq parser', () => {
       code: '600519',
       date: '2002-07-25',
       category: 1,
-      dividend: 6,
+      dividend: 8,
       rightsPrice: 0,
       bonusShares: 1,
       rightsShares: 0,
       m: 1.1,
-      c: 0.6,
+      c: 0.8,
     }])
   })
 

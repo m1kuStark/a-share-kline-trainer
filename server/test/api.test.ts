@@ -8,7 +8,7 @@ import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 
-const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde719ade6cc778aec8e3f465b84b44e49867f3f00000000', 'hex')
+const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
 
 function dayRecord(date: number, open: number, high: number, low: number, close: number, amount: number, volume: number): Buffer {
   const buffer = Buffer.alloc(32)
@@ -59,7 +59,7 @@ describe('market-data API', () => {
       expect(adjusted.statusCode).toBe(200)
       const adjustedBody = adjusted.json()
       expect(adjustedBody.adjustmentMode).toBe('forward')
-      expect(adjustedBody.bars[0].open).toBeCloseTo((20 - 0.6) / 1.1, 12)
+      expect(adjustedBody.bars[0].open).toBeCloseTo((20 - 0.8) / 1.1, 12)
       expect(adjustedBody.bars[1].open).toBe(19)
 
       const raw = await app.inject({ method: 'GET', url: '/api/kline/600519?adjust=raw' })

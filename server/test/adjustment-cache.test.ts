@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { migrateDatabase } from '../src/db.js'
 import { loadAdjustmentEvents, refreshAdjustmentCache } from '../src/tdx/adjustment-cache.js'
 
-const encryptedRecord = Buffer.from('9a7f1ae8eafde719ade6cc778aec8e3f465b84b44e49867f3f00000000', 'hex')
+const encryptedRecord = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
 
 function gbbqFile(): Buffer {
   const payload = Buffer.alloc(4 + encryptedRecord.length)
@@ -29,7 +29,7 @@ describe('SQLite adjustment-factor cache', () => {
       const first = await refreshAdjustmentCache(database, root)
       expect(first).toEqual({ refreshed: true, events: 1 })
       expect(loadAdjustmentEvents(database, 'sh', '600519')).toEqual([
-        expect.objectContaining({ date: '2002-07-25', m: 1.1, c: 0.6 }),
+        expect.objectContaining({ date: '2002-07-25', m: 1.1, c: 0.8 }),
       ])
 
       const second = await refreshAdjustmentCache(database, root)
