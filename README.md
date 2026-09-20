@@ -1,49 +1,53 @@
-# A股K线训练器
+# A股K线训练器（kline-trainer）
 
-基于通达信本地日线和权息的离线逐日训练工具。Node24＋TypeScript＋Fastify＋SQLite；Vue3＋Vite＋klinecharts10.0.3。
+离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的结果。界面为中文，K线红涨绿跌。
 
-当前阶段版本已完成工程验收，等待用户最终验收；[验收说明](docs/verification/2026-09/ACCEPT-01-release/acceptance.md)。M4/M5将在用户明确通过后再开发。
+它能做什么（以当前版本实际能力为准）：
 
-## 从哪里开始
+- **逐日训练**：自选股票与区间（1M/3M/6M/1Y/2Y）和初始资金，按空格逐日推进，按当日收盘价成交，T+1、整手100股，可提前结算或到期结算。
+- **图表**：日/周/月周期，MA、VOL、MACD，23种画线工具并随训练保存；默认前复权显示。
+- **录制与回放**：训练操作默认录制、可暂停；导出压缩文件分享，对方用本工具导入即可逐步回放，不依赖你本机的数据路径。
+- **数据本地化**：只读取你本机通达信目录里的日线和权息文件，不联网下载行情，安装包也不含任何市场数据。
 
-- [当前开发状态](docs/status.md)：阶段、任务及验收证据。
-- [Agent入口](AGENTS.md)：按任务渐进读取。
-- [产品规格](docs/specs/README.md)、[架构](docs/architecture/README.md)、[完整文档入口](docs/README.md)。
-- [后端](server/README.md)、[前端](web/README.md)、[浏览器测试](e2e/README.md)、[脚本](scripts/README.md)。
+它不是什么：这是个人训练工具，不是券商交易软件，没有自动交易，也不提供投资建议。完整排行与成绩单、复盘分析、设置页等属于后续版本，当前入口为禁用状态。
 
-已具备训练、账户、23种画线及本地更新入口；完整排行/复盘/设置、真实在线来源待开发，保护缺口以任务卡为准。“更新日线”只读取通达信已下载文件，不负责联网下载。
+## 快速开始（Windows）
 
-操作录制默认开启，训练中可暂停/恢复；导出紧凑gzip文件，首页/侧栏训练录像库可导入或查看历史。回放按交易日，可独立切周期和缩放；分享包含当时已见行情与实际结果，不依赖发送者TDX路径。旧JSON仍可导入。结束时默认保留，可选择只丢弃本轮录像。规则见[录制说明](docs/specs/recording.md)。
+1. 到 [Releases](https://github.com/m1kuStark/kline-trainer/releases) 下载 `kline-trainer-v0.3.0-windows-x64.zip`（该文件由维护者随 v0.3.0 发布，页面暂未出现时请稍候）。安装包自带运行环境，**无需安装 Node、npm 或 Python，无需订阅、模型或账号**。
+2. 右键完整解压到一个固定文件夹（之后不要移动它）。
+3. 在解压目录里参照 `trainer.config.example.json` 新建 `trainer.config.json`，把 `tdxRoot` 指向你的通达信目录（JSON 里反斜杠写成 `\\`），并确认通达信已下载日线数据。
+4. 双击 `Start.cmd`，浏览器自动打开 `http://127.0.0.1:8787`。
+5. 双击 `Create Shortcut.cmd` 创建桌面图标，以后从图标启动。
 
-## 安装与运行
+程序只监听本机 `127.0.0.1`，不对外网开放。详细步骤与配置字段见[安装与配置](docs/user/install.md)。
 
-Windows、Node24+，通达信目录默认发现 `D:\MySoftWares\TDX`。
+## 文档
+
+| 想了解 | 入口 |
+|---|---|
+| 日常使用、快捷键、数据备份与升级 | [用户指南](docs/user/README.md) |
+| 下载安装、通达信目录配置、源码运行 | [安装与配置](docs/user/install.md) |
+| 录制、回放与分享 | [录制说明](docs/user/recording.md) |
+| 启动失败、找不到数据、端口占用等 | [常见问题](docs/user/troubleshooting.md) |
+
+## 从源码运行
+
+需要 Node 24 与 npm 10+：
 
 ```powershell
 npm ci
-npm run dev
-```
-
-开发页面5173、API8787。启动开发实例时显式使用独立数据库：
-
-```powershell
-$env:TRAINER_DB = Join-Path $PWD '.data\development.sqlite'
-$env:TDX_ROOT = 'D:\MySoftWares\TDX'
-$env:OPEN_BROWSER = '0'
-npm run dev
-```
-
-日常生产使用 `npm run build` 后 `npm start`，8787同时托管前端/API。不设TRAINER_DB时默认用户目录 `.a-share-kline-trainer/trainer.sqlite`；这不是测试库。
-
-## 验证
-
-```powershell
-npm run docs:check
-npm run docs:status -- --check
-npm test
 npm run build
+npm start
 ```
 
-完整交付门禁见[测试协议](docs/engineering/testing.md)，统一命令为 `npm run verify:baseline`；实源M1和任务文档影响核对另行执行。Agent用 `npm run agent:dev` 启动隔离预览；Journey自动隔离端口、数据库、构建与证据。Git并行开发见[操作协议](docs/engineering/parallel-development.md)。
+环境变量示例（PowerShell）：`$env:TDX_ROOT='D:\new_tdx'`、`$env:PORT='8787'`、`$env:TRAINER_DB='D:\data\trainer.sqlite'`。开发与测试说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-文档治理现行机制见[更新协议](docs/engineering/documentation.md)。旧长计划与过程已归档，后续开发从新提交基线接续，停止向旧入口追加进度。
+## 参与与反馈
+
+- 贡献代码或文档：[CONTRIBUTING.md](CONTRIBUTING.md)
+- 安全问题请勿在公开 Issue 中描述，走 [SECURITY.md](SECURITY.md) 的渠道
+- 使用问题先查[常见问题](docs/user/troubleshooting.md)；反馈时不要附个人交易数据
+
+## 许可证
+
+本项目代码以 [MIT](LICENSE) 许可证发布，第三方组件的许可声明随仓库与发布包提供。通达信软件及其数据文件不属于本项目，由使用者自行提供、只读使用。
