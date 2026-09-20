@@ -17,3 +17,4 @@
 
 - [Zcode官方能力核对](zcode-official-capabilities.md)：附件、事件流、上下文与Hook边界。
 - [M3发布合同](release-m3-contract.md)与[公开源码边界](public-source.md)：便携包、独立公开历史及许可证检查。
+- [Windows打包](release-build.md)：运行时校验、隔离构建及发布文件结构。

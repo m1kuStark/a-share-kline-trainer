@@ -35,9 +35,9 @@
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | [证据1](<verification/2026-09/REL-01-source/record.json>) | 未记录 | 未记录 |
 | [REL-DOC](<work-items/tasks/REL-DOC.md>) | review / GLM-5.3-Flash | Public installation and user documentation | [证据1](<verification/2026-09/REL-01-docs/worker-report.md>) | 367ff416a352e58a8da4f8fff6c4848e07af0391 | 未记录 |
-| [REL-LAUNCH](<work-items/tasks/REL-LAUNCH.md>) | active / GLM-5.3-Flash | Portable Windows launcher | 未记录 | 未记录 | 未记录 |
+| [REL-LAUNCH](<work-items/tasks/REL-LAUNCH.md>) | review / GLM-5.3-Flash | Portable Windows launcher | [证据1](<verification/2026-09/REL-LAUNCH-release/record.json>) | e834ca254f0e12ae13b11b89fae7480ee323553e | 未记录 |
 | [REL-PACK](<work-items/tasks/REL-PACK.md>) | review / GLM-5.3-Flash | Reproducible Windows portable package | [证据1](<verification/2026-09/REL-01-package/record.json>) | bf61a128c82a29261bd46a903642b03511a1b676 | 未记录 |
-| [REL-SMOKE](<work-items/tasks/REL-SMOKE.md>) | active / GLM-5.3-Flash | Inspect actual extracted package hashes, required files and local user-document links. | 未记录 | 未记录 | 未记录 |
+| [REL-SMOKE](<work-items/tasks/REL-SMOKE.md>) | review / GLM-5.3-Flash | Inspect actual extracted package hashes, required files and local user-document links. | [证据1](<verification/2026-09/REL-SMOKE-release/record.json>) | 4224b291f5fc3bd83d7c3670b0aeeaf85381b656 | 未记录 |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 <!-- generated:status:end -->

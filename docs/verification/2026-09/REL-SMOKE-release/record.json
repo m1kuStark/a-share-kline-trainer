@@ -1,0 +1,12 @@
+{
+  "module": "REL-SMOKE",
+  "testedCommit": "4224b291f5fc3bd83d7c3670b0aeeaf85381b656",
+  "rootFocusedTests": 20,
+  "exitCode": 0,
+  "realPackageAcceptance": "pending",
+  "regressionHistory": [
+    "Worker18pass; independent audit reproduced null metadata bypass and ..report path writeback.",
+    "Root RED19tests:2failed on real boundaries.",
+    "Unconditional object validation and realpath report boundary corrected; GREEN20passed incl directory-junction regression."
+  ]
+}
