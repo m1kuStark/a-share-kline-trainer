@@ -29,3 +29,7 @@
 - [夜间回归适配](accept-e2e-night.md)。
 
 - [MON-02 dashboard repair](mon-02-successors.md).
+
+- [REL-LAUNCH](rel-launch.md): portable launcher.
+- [REL-PACK](rel-pack.md): repeatable binary package.
+- [REL-DOC](rel-doc.md): public user documentation.
