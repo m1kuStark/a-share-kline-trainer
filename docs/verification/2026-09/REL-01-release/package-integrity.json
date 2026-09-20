@@ -1,0 +1,16 @@
+{
+  "tool": "scripts/release/verify.mjs",
+  "checkedAt": "2026-09-20T19:26:11.241Z",
+  "package": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-releases\\v0.3.0-final\\verification\\最终安装验收 [v0.3.0]\\kline-trainer-v0.3.0-windows-x64",
+  "ok": true,
+  "release": {
+    "appId": "a-share-kline-trainer",
+    "version": "0.3.0",
+    "gitCommit": "4024a107fbd1eb97293b314d296d6e4e1095db80",
+    "nodeVersion": "24.15.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "fileCount": 7080,
+  "errors": []
+}

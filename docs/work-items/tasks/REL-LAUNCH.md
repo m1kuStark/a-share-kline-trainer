@@ -5,10 +5,10 @@
   "id": "REL-LAUNCH",
   "title": "Portable Windows launcher",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REL",
   "summary": "Portable Windows launcher",
-  "next_action": "Root reviewed and integrated module; actual package lifecycle and full candidate gate pending under REL-01.",
+  "next_action": "Delivered in Windowsv0.3.0; subsequent Linux CI corrections are tracked separately under REL-CI tasks.",
   "allowed_paths": [
     "scripts/release/launcher.cjs",
     "scripts/release/Start.cmd",

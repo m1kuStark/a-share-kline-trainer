@@ -5,10 +5,10 @@
   "id": "REL-PACK",
   "title": "Reproducible Windows portable package",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REL",
   "summary": "Reproducible Windows portable package",
-  "next_action": "Builder source reviewed and integrated; await launcher files, then build and verify actual ZIP under REL-01.",
+  "next_action": "Delivered in Windowsv0.3.0; subsequent Linux CI corrections are tracked separately under REL-CI tasks.",
   "allowed_paths": [
     "scripts/release/build.mjs",
     "server/test/release-package.test.ts",

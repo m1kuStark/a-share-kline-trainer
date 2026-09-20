@@ -1,0 +1,23 @@
+{
+  "repo": "m1kuStark/kline-trainer",
+  "commits": [
+    {
+      "expected": "641c4a835ee5ba7238a0cf5da43e68e45fcdb33e",
+      "actual": "641c4a835ee5ba7238a0cf5da43e68e45fcdb33e",
+      "tree": "129c333864f3edc68f86cbb58dbb8040b0824ec1"
+    },
+    {
+      "expected": "27f818a145e224296aa3b9f019b1f490e8ee98a7",
+      "actual": "27f818a145e224296aa3b9f019b1f490e8ee98a7",
+      "tree": "70dedbc377eb55598a716aecf822649649c7223f"
+    },
+    {
+      "expected": "4024a107fbd1eb97293b314d296d6e4e1095db80",
+      "actual": "4024a107fbd1eb97293b314d296d6e4e1095db80",
+      "tree": "3cbdff2cc98fa5b32eb2fbaf1b1314b976b8be73"
+    }
+  ],
+  "transport": "GitHub Git Database API; exact SHA verification",
+  "publishedMain": "4024a107fbd1eb97293b314d296d6e4e1095db80",
+  "tag": "v0.3.0"
+}

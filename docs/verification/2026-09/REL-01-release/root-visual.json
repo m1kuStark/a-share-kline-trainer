@@ -1,0 +1,13 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "29fec35f3a17539a6aa1a04b7b09f4a30f00b10f",
+  "outcome": "passed",
+  "reviewer": "Codex root",
+  "artifacts": [
+    ".runs/run-f2d7849f-0e83-42fc-8857-e9b0edab57f1/artifacts/home-dark.png",
+    ".runs/run-f2d7849f-0e83-42fc-8857-e9b0edab57f1/artifacts/training-dark.png",
+    ".runs/run-f2d7849f-0e83-42fc-8857-e9b0edab57f1/artifacts/training-light.png",
+    ".runs/run-f2d7849f-0e83-42fc-8857-e9b0edab57f1/artifacts/weekly-light.png"
+  ],
+  "scope": "Final candidate isolated productionpreview14467. Root inspected actual home and training in dark/light1440x1000, no horizontal overflow/blank/error overlay, console0error; real UI created2024-09-02training, bought300shares, advanced2024-09-03 and switchedweekly. Prior candidate additionally tested settle/save/history/replay and1071x728; product frontend/server same (only final packagingmetadata and userguidechanged). Final package separate integrity and Start/Stop/realTDX/SQLite restore smoke passed."
+}

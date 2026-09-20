@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "REL-01",
+  "baseCommit": "c0538d11fe3221091c8c4aadbb969902a1b5f7a0",
+  "testedCommit": "29fec35f3a17539a6aa1a04b7b09f4a30f00b10f",
+  "tree": "0f6d82823f8cb4f3331b490b88b7646db49be9cf",
+  "passed": true,
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "runManifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\REL-01-d7c3689dc0ce\\.runs\\run-3a6cfba9-32f1-4480-bd8e-8268fccd8660\\manifest.json",
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "createdAt": "2026-09-20T19:43:17.566Z"
+}

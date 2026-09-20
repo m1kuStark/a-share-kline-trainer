@@ -1,0 +1,19 @@
+{
+  "release": "https://github.com/m1kuStark/kline-trainer/releases/tag/v0.3.0",
+  "unauthenticated": true,
+  "assets": [
+    {
+      "name": "kline-trainer-v0.3.0-windows-x64.zip",
+      "bytes": 54178552,
+      "sha256": "33d4bbaaa1a1d7c5678c9015333e8bc1eeddf5a19321764364cedbb6dffad6f0",
+      "downloadHost": "release-assets.githubusercontent.com"
+    },
+    {
+      "name": "SHA256SUMS",
+      "bytes": 103,
+      "sha256": "1f5fd3b75de3252faeddbe193f458b58f814655a28b1e5c70620d5e9b7608e66",
+      "downloadHost": "release-assets.githubusercontent.com"
+    }
+  ],
+  "publicCommit": "4024a107fbd1eb97293b314d296d6e4e1095db80"
+}

@@ -1,0 +1,3 @@
+WARN docs/status.md: 长度 5118 字符超过建议 5000；按主题审查，不自动截断。
+WARN scripts/agent-monitor/README.md: 长度 2536 字符超过建议 2000；按主题审查，不自动截断。
+INFO check: 0 errors, 2 warnings；不更改任务/验收状态。

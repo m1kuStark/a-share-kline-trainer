@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "url": "http://127.0.0.1:7529",
+  "health": {
+    "status": "ok",
+    "runId": "run-81c387ac-23bd-4bce-ae51-14abe8a4eed3",
+    "pid": 46436
+  },
+  "app": {
+    "version": "0.3.0",
+    "gitCommit": "4024a107fbd1eb97293b314d296d6e4e1095db80",
+    "dirty": false,
+    "chartLibrary": "10.0.3"
+  },
+  "databaseIntegrity": "ok",
+  "countsUnchanged": true,
+  "backup": "D:\\MySoftWares\\KlineTrainer\\user-state\\before-v0.3.0-20260921-042031\\trainer.sqlite",
+  "browserOriginUnchanged": true
+}

@@ -10,10 +10,15 @@
     "REL-01",
     "REL-LAUNCH",
     "REL-PACK",
-    "REL-DOC"
+    "REL-DOC",
+    "REL-SMOKE",
+    "REL-CI-LAUNCH",
+    "REL-CI-GZIP"
   ],
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/REL-01-release/report.md"
+  ],
   "acceptance_ref": null,
-  "next_action": "Three isolated workers, integrator review and release gates."
+  "next_action": "Complete remote Linux CI corrections; keep delivered Windows release and user data intact."
 }
 ```

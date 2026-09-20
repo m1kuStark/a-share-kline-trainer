@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "REL",
   "summary": "M3 packaging and open-source release",
-  "next_action": "User directed MIT publication with table provenance disclosed; review GLM release branches, then validate clean source and Windows package before publication.",
+  "next_action": "Windows0.3.0 deployed and published; resolve GitHubLinux CI launcher/gzip failures before closing release automation.",
   "allowed_paths": [
     "**"
   ],
@@ -22,8 +22,11 @@
     ],
     "reason": "User authorized packaging accepted baseline and publicGitHub release."
   },
-  "verification_refs": ["docs/verification/2026-09/REL-01-source/record.json"],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-09/REL-01-source/record.json",
+    "docs/verification/2026-09/REL-01-release/report.md"
+  ],
+  "integration_ref": "29fec35f3a17539a6aa1a04b7b09f4a30f00b10f",
   "acceptance_ref": null
 }
 ```

@@ -5,10 +5,10 @@
   "id": "REL-SMOKE",
   "title": "Portable package integrity inspection",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REL",
   "summary": "Inspect actual extracted package hashes, required files and local user-document links.",
-  "next_action": "Root reviewed and integrated module; actual package lifecycle and full candidate gate pending under REL-01.",
+  "next_action": "Delivered in Windowsv0.3.0; subsequent Linux CI corrections are tracked separately under REL-CI tasks.",
   "allowed_paths": [
     "scripts/release/verify.mjs",
     "server/test/release-integrity.test.ts",

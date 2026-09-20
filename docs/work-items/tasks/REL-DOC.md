@@ -5,10 +5,10 @@
   "id": "REL-DOC",
   "title": "Public installation and user documentation",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "REL",
   "summary": "Public installation and user documentation",
-  "next_action": "Source review corrections integrated; finalize service-stop and backup instructions after launcher lifecycle tests, then check packaged links.",
+  "next_action": "Delivered in Windowsv0.3.0; subsequent Linux CI corrections are tracked separately under REL-CI tasks.",
   "allowed_paths": [
     "README.md",
     "docs/user/**",

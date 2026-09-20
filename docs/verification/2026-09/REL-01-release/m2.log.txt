@@ -1,0 +1,1 @@
+{"status":"passed","checks":24,"failures":0,"report":"D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-integration\\REL-01-d7c3689dc0ce\\.runs\\run-3a6cfba9-32f1-4480-bd8e-8268fccd8660\\artifacts\\M2-e2e-report.md","settleDate":"2026-09-04","finalEquity":1008951,"returnPct":0.9}
