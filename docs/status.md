@@ -18,7 +18,7 @@
 | [R1 · 本地数据更新与保护](<work-items/milestones/R1.md>) | active | 入口和首批保护已实现；完整发布、覆盖与历史版本仍有缺口。 / 先完成DATA-01/02，再补版本保护。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 |
 | [R2 · 替代来源](<work-items/milestones/R2.md>) | planned | 扫描注册点已有，真实来源未接，训练读取未解耦。 / 先补DATA-03/04。 | 未记录 | 未记录 |
 | [REC · 操作录制与回放](<work-items/milestones/REC.md>) | closed | Stage feedback integrated; all engineering gates passed. / Accepted by user 2026-09-21; current work is REL-01 packaging and public release. | [证据1](<verification/2026-09/ACCEPT-01-release/report.md>) | [验收记录](<verification/2026-09/M3-user-acceptance/record.json>) |
-| [REL · M3 open-source distribution](<work-items/milestones/REL.md>) | active | Package accepted trainer and publish usable open-source release. / Complete remote Linux CI corrections; keep delivered Windows release and user data intact. | [证据1](<verification/2026-09/REL-01-release/report.md>) | 未记录 |
+| [REL · M3 open-source distribution](<work-items/milestones/REL.md>) | closed | Package accepted trainer and publish usable open-source release. / Windows v0.3.1 and public source delivered; M4/M5 remain planned. | [证据1](<verification/2026-09/REL-01-release/report.md>)；[证据2](<verification/2026-09/REL-02/report.md>) | 未记录 |
 
 ### 未关闭任务
 
@@ -33,10 +33,6 @@
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | [证据1](<verification/2026-09/REL-01-source/record.json>)；[证据2](<verification/2026-09/REL-01-release/report.md>) | 29fec35f3a17539a6aa1a04b7b09f4a30f00b10f | 未记录 |
-| [REL-02](<work-items/tasks/REL-02.md>) | active / integrator | Integrate reviewed lifecycle/gzip corrections and deliver the validated patch. | [证据1](<verification/2026-09/REL-01-release/report.md>)；[证据2](<verification/2026-09/REL-02/review.json>) | 未记录 | 未记录 |
-| [REL-CI-GZIP](<work-items/tasks/REL-CI-GZIP.md>) | active / GLM-5.3-Flash | Fixed one-byte gzip stream regression on Linux CI via bounded input coalescing; remote CI confirmation pending. | [证据1](<verification/2026-09/REL-02/review.json>) | 295c79d85e32cd0835dba9b5f7d393cf70626d5f | 未记录 |
-| [REL-CI-LAUNCH](<work-items/tasks/REL-CI-LAUNCH.md>) | active / GLM-5.3-Flash | Serialize launcher reuse/cleanup decisions under the lifecycle lock; platform-neutral config fixtures; identity-gated test cleanup. | [证据1](<verification/2026-09/REL-02/review.json>) | 0f028311cc1d3d63cbe6b1ba2ae27887d75b8af5 | 未记录 |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 <!-- generated:status:end -->

@@ -1,0 +1,30 @@
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1781 modules transformed.
+rendering chunks...
+computing gzip size...
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/favicon-R5ncF9Bv.svg    0.20 kB │ gzip:   0.18 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/index.html                     0.50 kB │ gzip:   0.35 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/index-BSuHK6KR.css     44.10 kB │ gzip:   8.34 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/index-VWG43Iew.js     503.00 kB │ gzip: 154.78 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.25s
+vite v7.3.6 building client environment for journey...
+transforming...
+✓ 1781 modules transformed.
+rendering chunks...
+computing gzip size...
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/favicon-R5ncF9Bv.svg    0.20 kB │ gzip:   0.18 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/index.html                     0.50 kB │ gzip:   0.34 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/index-BSuHK6KR.css     44.10 kB │ gzip:   8.34 kB
+../.runs/run-c13212ba-5dd7-43e3-8057-7e475a7db512/web/assets/index-BD_89Taz.js     504.38 kB │ gzip: 155.21 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.18s

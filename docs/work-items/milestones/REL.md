@@ -4,7 +4,7 @@
 {
   "id": "REL",
   "title": "M3 open-source distribution",
-  "state": "active",
+  "state": "closed",
   "summary": "Package accepted trainer and publish usable open-source release.",
   "task_ids": [
     "REL-01",
@@ -13,12 +13,14 @@
     "REL-DOC",
     "REL-SMOKE",
     "REL-CI-LAUNCH",
-    "REL-CI-GZIP"
+    "REL-CI-GZIP",
+    "REL-02"
   ],
   "verification_refs": [
-    "docs/verification/2026-09/REL-01-release/report.md"
+    "docs/verification/2026-09/REL-01-release/report.md",
+    "docs/verification/2026-09/REL-02/report.md"
   ],
   "acceptance_ref": null,
-  "next_action": "Complete remote Linux CI corrections; keep delivered Windows release and user data intact."
+  "next_action": "Windows v0.3.1 and public source delivered; M4/M5 remain planned."
 }
 ```

@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "publicCommit": "a3b6ff429f77f8d3480c35a2a11c683135f79d44",
+  "package": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-releases\\v0.3.1-final\\verification\\补丁验收 [v0.3.1]\\kline-trainer-v0.3.1-windows-x64",
+  "port": 10139,
+  "checks": [
+    "Start.cmd in Chinese/space/bracket path, no global Node/npm/Python on PATH; repeat launch reuses PID",
+    "Real read-only TDX: create, buy, expected T+1 rejection, next day, sell; recording provenance matches public commit",
+    "Concurrent actual Start.cmd/Stop.cmd serialize and preserve SQLite; subsequent Start is usable",
+    "Stop.cmd then restart preserves actual SQLite training/account/trade state; settlement succeeds",
+    "Repeated stop is harmless and retains data/logs",
+    "Foreign port refusal, no automatic port switch and no foreign process termination"
+  ],
+  "apiTrainingId": 1
+}

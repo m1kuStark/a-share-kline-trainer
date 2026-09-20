@@ -1,0 +1,18 @@
+{
+  "id": 35540262158,
+  "head": "a3b6ff429f77f8d3480c35a2a11c683135f79d44",
+  "outcome": "passed",
+  "url": "https://github.com/m1kuStark/kline-trainer/actions/runs/35540262158",
+  "jobs": [
+    {
+      "name": "test (windows-latest)",
+      "conclusion": "success",
+      "html_url": "https://github.com/m1kuStark/kline-trainer/actions/runs/35540262158/job/106156516810"
+    },
+    {
+      "name": "test (ubuntu-latest)",
+      "conclusion": "success",
+      "html_url": "https://github.com/m1kuStark/kline-trainer/actions/runs/35540262158/job/106156516926"
+    }
+  ]
+}

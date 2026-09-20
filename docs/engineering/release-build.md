@@ -1,6 +1,6 @@
 # 发布打包脚本 release/build.mjs
 
-[发布合同](release-m3-contract.md)中 REL-PACK 范围的实现说明。脚本只负责从当前干净提交构建可校验的 Windows x64 便携包；GitHub 发布、public 源码导出与真实 clean-room 验收由 REL-01 集成人执行。
+从干净提交构建Windows x64便携包。范围见[发布合同](release-m3-contract.md)；公开源码、GitHub发布及实际安装验收由集成人负责。
 
 ## 命令
 
@@ -8,7 +8,7 @@
 node --import tsx scripts/release/build.mjs --node-archive PATH --node-checksums PATH --out DIR
 ```
 
-集成人可将其包装为 `npm run release:windows`（package.json 由 root 所有）。`--help` 输出用法与行为摘要。
+也可用 `npm run release:windows`，`--help` 查看参数。
 
 前置条件（由集成人准备）：
 

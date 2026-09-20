@@ -1,0 +1,11 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "dbe6727c035f1f2f02e82bd3c4d62a5c5ad88ab0",
+  "outcome": "passed",
+  "reviewer": "Codex root",
+  "artifacts": [
+    ".runs/run-d3424f7b-cd5e-471a-915b-1aff9b46e36d/artifacts/import-replay-light.png",
+    ".runs/run-d3424f7b-cd5e-471a-915b-1aff9b46e36d/artifacts/training-dark.png"
+  ],
+  "scope": "Root actual1440x1000productionpreview6761: create realTDXtraining, buy300, nextday, settle with default local recording retention, export gzip through browserdownload, import same gzip through actual filechooser, replay, Space daily step and bracket period navigation, darktraining/lightreplay screenshots inspected. No consoleerror or horizontaloverflow. New coalescing observed through product file import. Testdata isolated from7529."
+}

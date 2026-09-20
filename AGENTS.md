@@ -25,7 +25,7 @@ Vue3＋Fastify＋Node24/SQLite独立工程。先确定任务，再沿模块逐�
 
 改文件前读取其路径适用的局部AGENTS，不依赖客户端自动加载。局部规则不得放松父级硬边界。
 
-M3/REC user acceptance is recorded (2026-09-21). Current priority REL-01 packages the accepted baseline; M4/M5 business development remains planned until after this release.
+当前交付基线为v0.3.1，M3/REC已获用户验收。打包与CI修正见[发布验收](docs/verification/2026-09/REL-02/report.md)。M4/M5尚未开始，后续按任务卡推进。
 
 
 ## 交付责任
