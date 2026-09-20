@@ -27,7 +27,9 @@
     "docs:impact": "tsx scripts/docs.ts impact",
     "docs:status": "tsx scripts/docs.ts status",
     "verify:baseline": "tsx scripts/verify-candidate.ts",
-    "verify:candidate": "tsx scripts/verify-candidate.ts"
+    "verify:candidate": "tsx scripts/verify-candidate.ts",
+    "release:windows": "tsx scripts/release/build.mjs",
+    "release:source": "node scripts/release/export-source.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

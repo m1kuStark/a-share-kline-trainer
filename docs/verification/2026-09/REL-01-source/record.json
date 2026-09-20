@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-09-20T16:53:34.599229+00:00",
+  "scope": "REL-01 integrator metadata and source export only; full package acceptance pending",
+  "baseCommit": "fd8072e",
+  "worktreeFiles": {
+    "server/src/recording-context.ts": "58964eee8b93b85b74f542587a51985987286130913ff9f9311cfa1cf6d6b94f",
+    "server/test/release-metadata.test.ts": "15f913cfd8faab5b10b45efa23c60922e3e98b70fc143195c815f2f94a53b406",
+    "server/test/public-source.test.ts": "3669bbf06eb3f87250c09eca5f47877547522fcaef2bdca10e3086538e9f040f",
+    "scripts/release/export-source.mjs": "93f1842f291bbbc63f48422567a9329f9b1bac1c29b179889a466cbc29046376"
+  },
+  "checks": [
+    {
+      "command": "npm test -- server/test/public-source.test.ts",
+      "exitCode": 1,
+      "purpose": "RED regression",
+      "result": "Nested destination named ..private incorrectly accepted; assertion failed before fix."
+    },
+    {
+      "command": "npm test -- server/test/public-source.test.ts server/test/release-metadata.test.ts server/test/recording-context.test.ts",
+      "exitCode": 0,
+      "testsPassed": 16
+    },
+    {
+      "command": "npm run build:server",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run docs:check",
+      "exitCode": 0,
+      "warnings": [
+        "Pre-existing agent-monitor README exceeds suggested size"
+      ]
+    },
+    {
+      "command": "npm run docs:impact -- --base c0538d11fe3221091c8c4aadbb969902a1b5f7a0 --task REL-01",
+      "exitCode": 0
+    }
+  ],
+  "publicRelease": "blocked pending decoding table provenance; no public upload performed",
+  "icon": "assets/trainer.png visually inspected; white K/red candle on dark background"
+}

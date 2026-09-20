@@ -33,7 +33,7 @@
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | 未记录 | 未记录 | 未记录 |
+| [REL-01](<work-items/tasks/REL-01.md>) | active / integrator | M3 packaging and open-source release | [证据1](<verification/2026-09/REL-01-source/record.json>) | 未记录 | 未记录 |
 | [REL-DOC](<work-items/tasks/REL-DOC.md>) | active / GLM-5.3-Flash | Public installation and user documentation | 未记录 | 未记录 | 未记录 |
 | [REL-LAUNCH](<work-items/tasks/REL-LAUNCH.md>) | active / GLM-5.3-Flash | Portable Windows launcher | 未记录 | 未记录 | 未记录 |
 | [REL-PACK](<work-items/tasks/REL-PACK.md>) | active / GLM-5.3-Flash | Reproducible Windows portable package | 未记录 | 未记录 | 未记录 |

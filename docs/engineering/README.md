@@ -16,3 +16,4 @@
 - [阶段验收返修合同](stage-feedback-20260919.md)：价格基准、保存、操作筛选与按日回放。
 
 - [Zcode官方能力核对](zcode-official-capabilities.md)：附件、事件流、上下文与Hook边界。
+- [M3发布合同](release-m3-contract.md)与[公开源码边界](public-source.md)：便携包、独立公开历史及许可证检查。
