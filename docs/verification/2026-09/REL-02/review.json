@@ -13,5 +13,11 @@
     }
   ],
   "extraRegression": "Root found source buffer reuse corrupted deferred chunk references. Reproduced failure, then replaced references with one owned64KiB buffer; byte-exact test and all25gziptests passed. Existing1MiB1byte and all cancellation deadlines retained.",
-  "linuxCI": "pending"
+  "linuxCI": "pending",
+  "remoteFollowup": {
+    "run": 35539707213,
+    "linux": "Original buffer slice shared backing storage; two boundary tests failed. Fixed write-owned copy with pending.slice; local25pass.",
+    "windows": "Fork pool IPC channel closed before test assertions; no proof of original worker exit cause. Threads probe exposed process.chdir incompatibility; fixture now uses real isolated child preserving all assertions.",
+    "candidate": "First candidate stopped at impact because REL-02 task card had not changed relative baseline; corrected card, no tests weakened."
+  }
 }

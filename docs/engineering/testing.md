@@ -13,7 +13,7 @@
 
 生产代码交付保持单测＋构建＋全量Journey；改变数据解析/复权时另跑M1，改变账户/训练时另跑M2。新基线收录跨模块既有改动时执行M2和浏览器全量，M1外部证据过期必须单独记录，不能以其他绿灯替代。
 
-Vitest默认最多4个worker，控制本机多个Agent运行时的进程压力；此前无界并发发生过IPC中断，同集合4worker重跑通过。测试集合不缩减，单独GLM定向测试可用maxWorkers=2；Journey每run仍1worker。
+Vitest使用threads池、最多4个worker。Windows CI曾在fork池发生ERR_IPC_CHANNEL_CLOSED，日志未提供worker原始退出原因，不能称作业务断言失败。保留完整用例和断言，以线程池避开该IPC路径；需要独立cwd的用例启动真实子进程验证，不在测试worker里chdir。单独GLM定向测试可用maxWorkers=2；Journey每run仍1worker。
 
 ## UI-VISUAL-ACCEPTANCE
 
