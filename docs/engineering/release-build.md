@@ -63,3 +63,7 @@ node --import tsx scripts/release/build.mjs --node-archive PATH --node-checksums
 ## 单元测试
 
 `server/test/release-package.test.ts`（23 项）覆盖纯函数失败条件与副作用：包名/主版本白名单、参数校验、SHASUMS 精确文件名与篡改拒绝（校验先于解压）、脏树与非法 sha 拒绝、既有输出不破坏、压缩包条目两固定路径校验、staging 白名单/排除/私路径抛错、journey 标记检测；以及本轮回归——合成树上 required inputs 全量清单（含 Stop.cmd/third-party）、docs/user 层级保持与许可证面完整、包内相对链接解析/断链/逃出包根、独占锁预留与外部锁不抢占、并行发布单赢家且哨兵内容保留、结束前 HEAD+干净复验、PowerShell `-LiteralPath` 通配路径往返与失败即终止。完整打包（真实压缩包 + npm ci + Compress-Archive + 启动器联测）由集成人在合并后做 clean-room 验收，不属于本单测范围。
+
+## v0.3.1 验收补充
+
+并发Start/Stop的状态读取、清理和复用都在同一生命周期锁内；不得将正常停止过程误判为无法识别的活进程。Linux配置夹具使用本机绝对路径。补丁保留v0.3.0标签与产物，新ZIP从公开补丁提交构建，并重跑双平台CI及完整候选门禁。
