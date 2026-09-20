@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdir, readFile, writeFile, copyFile, lstat } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, lstat } from 'node:fs/promises'
 import { resolve, join, dirname, relative, isAbsolute, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
@@ -29,6 +29,13 @@ export function publicPackage(document) {
   return { ...document, scripts: Object.fromEntries(Object.entries(document.scripts).filter(([name]) => !excluded.has(name))) }
 }
 
+export function assertSourceUnchanged(root, expectedCommit) {
+  const options = { cwd: root, encoding: 'utf8', windowsHide: true }
+  const head = execFileSync('git', ['rev-parse', 'HEAD'], options).trim()
+  const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], options).trim()
+  if (head !== expectedCommit || dirty) throw new Error('Source changed during export; discard this incomplete snapshot and retry from a clean reviewed commit')
+}
+
 export async function exportSource(root, out) {
   root = resolve(root); out = resolve(out)
   const destination = relative(root, out)
@@ -39,19 +46,22 @@ export async function exportSource(root, out) {
   if (git('status', '--porcelain', '--untracked-files=all')) throw new Error('Commit the reviewed source before exporting')
   const sourceCommit = git('rev-parse', 'HEAD')
   await mkdir(out) // exclusive: never overwrite a prior release or delete user files
-  const paths = git('ls-files', '-z').split('\0').filter(Boolean).filter(publicSourcePath).sort()
+  const paths = git('ls-tree', '-r', '--name-only', '-z', sourceCommit).split('\0').filter(Boolean).filter(publicSourcePath).sort()
   for (const path of paths) {
     const origin = join(root, path)
     if (!(await lstat(origin)).isFile()) throw new Error(`Refusing non-file source: ${path}`)
     await mkdir(dirname(join(out, path)), { recursive: true })
-    await copyFile(origin, join(out, path))
+    // Read immutable Git blobs, so a mid-export edit cannot silently mix builds.
+    const bytes = execFileSync('git', ['show', `${sourceCommit}:${path}`], { cwd: root, windowsHide: true, maxBuffer: 32 * 1024 * 1024 })
+    await writeFile(join(out, path), bytes)
   }
-  const pkg = publicPackage(JSON.parse(await readFile(join(root, 'package.json'), 'utf8')))
+  const pkg = publicPackage(JSON.parse(await readFile(join(out, 'package.json'), 'utf8')))
   await writeFile(join(out, 'package.json'), JSON.stringify(pkg, null, 2) + '\n')
   await writeFile(join(out, 'AGENTS.md'), '# Contributor guide\n\nRead README.md and CONTRIBUTING.md. Node24, Vue3, Fastify and SQLite. TDX is read-only; never use personal training databases in tests. Recording replay must not expose future prices or write trades. Use dedicated temporary databases and the isolated Journey runner. Product rules: T+1, whole lots of100shares, close-price execution, visible-date forward adjustment. Preserve user data and dependency licenses.\n')
   const files = [...paths, 'AGENTS.md']
   const manifest = { format: 'trainer-public-source', version: pkg.version, sourceCommit, files: [] }
   for (const path of files) manifest.files.push({ path, sha256: createHash('sha256').update(await readFile(join(out, path))).digest('hex') })
+  assertSourceUnchanged(root, sourceCommit)
   await writeFile(join(out, 'SOURCE-MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
   return { out, sourceCommit, files: files.length }
 }

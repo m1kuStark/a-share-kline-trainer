@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, access } from 'node:fs/promise
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 // @ts-expect-error executable ESM release utility has no declaration file
-import { publicSourcePath, publicPackage, exportSource } from '../../scripts/release/export-source.mjs'
+import { publicSourcePath, publicPackage, exportSource, assertSourceUnchanged } from '../../scripts/release/export-source.mjs'
 
 describe('public release source boundary', () => {
   it('excludes personal state, real market data and private development evidence', () => {
@@ -49,10 +49,15 @@ describe('public release source boundary', () => {
       const manifest = JSON.parse(await readFile(join(out, 'SOURCE-MANIFEST.json'), 'utf8'))
       expect(manifest.sourceCommit).toMatch(/^[a-f\d]{40}$/)
       expect(manifest.files).toHaveLength(3)
+      expect(() => assertSourceUnchanged(root, manifest.sourceCommit)).not.toThrow()
       await expect(exportSource(root, out)).rejects.toThrow()
       await writeFile(join(root, 'README.md'), 'unreviewed change')
+      expect(() => assertSourceUnchanged(root, manifest.sourceCommit)).toThrow('Source changed')
       await expect(exportSource(root, join(sandbox, 'dirty'))).rejects.toThrow('Commit the reviewed source')
       await expect(access(join(sandbox, 'dirty'))).rejects.toThrow()
+      git('add', 'README.md')
+      git('commit', '-qm', 'Changed source commit')
+      expect(() => assertSourceUnchanged(root, manifest.sourceCommit)).toThrow('Source changed')
     } finally { await rm(sandbox, { recursive: true, force: true }) }
   }, 20_000)
 })
