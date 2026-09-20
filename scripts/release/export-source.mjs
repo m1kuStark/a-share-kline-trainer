@@ -4,7 +4,7 @@ import { resolve, join, dirname, relative, isAbsolute, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
 
-const rootFiles = new Set(['README.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', 'package.json', 'package-lock.json', 'tsconfig.json', 'playwright.config.ts', '.gitignore'])
+const rootFiles = new Set(['README.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md', 'CONTRIBUTING.md', 'SECURITY.md', 'package.json', 'package-lock.json', 'tsconfig.json', 'playwright.config.ts', '.gitignore', '.gitattributes'])
 const internalTests = new Set(['server/test/docs-tooling.test.ts', 'server/test/worktree-tools.test.ts'])
 
 /** Public source is a reviewed source-only snapshot, never development history. */
@@ -53,7 +53,8 @@ export async function exportSource(root, out) {
     await mkdir(dirname(join(out, path)), { recursive: true })
     // Read immutable Git blobs, so a mid-export edit cannot silently mix builds.
     const bytes = execFileSync('git', ['show', `${sourceCommit}:${path}`], { cwd: root, windowsHide: true, maxBuffer: 32 * 1024 * 1024 })
-    await writeFile(join(out, path), bytes)
+    // Batch entry points must survive both Git clones and GitHub source archives.
+    await writeFile(join(out, path), path.endsWith('.cmd') ? bytes.toString('utf8').replace(/\r?\n/g, '\r\n') : bytes)
   }
   const pkg = publicPackage(JSON.parse(await readFile(join(out, 'package.json'), 'utf8')))
   await writeFile(join(out, 'package.json'), JSON.stringify(pkg, null, 2) + '\n')

@@ -1,0 +1,2 @@
+# Keep Windows launch scripts byte-stable, including CRLF, in GitHub source archives.
+*.cmd -text
