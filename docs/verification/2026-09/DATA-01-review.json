@@ -1,0 +1,26 @@
+{
+  "task": "DATA-01",
+  "base": "75bce955784afb3cb301be762a307ee233bf8008",
+  "scope": "Root independent review after GLM handoff",
+  "checks": [
+    {
+      "command": "npm test -- server/test/catalog-protection.test.ts server/test/data-refresh.test.ts server/test/adjustment-cache.test.ts",
+      "passed": 17,
+      "exitCode": 0
+    },
+    {
+      "command": "npm test",
+      "passed": 773,
+      "testFiles": 61,
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build:server",
+      "exitCode": 0
+    }
+  ],
+  "rootFix": "Catalog scan now rejects non-32-byte .day files before reading the last date; original catalog-protection regression was reproduced and then passed.",
+  "publicDataUntouched": true,
+  "user7529Untouched": true,
+  "remotePublish": false
+}
