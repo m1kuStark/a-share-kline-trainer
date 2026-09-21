@@ -1,0 +1,13 @@
+{
+  "task": "DATA-02",
+  "base": "75bce955784afb3cb301be762a307ee233bf8008",
+  "scope": "Root independent review after GLM handoff",
+  "checks": [
+    {"command": "npm test -- server/test/train-engine.test.ts server/test/train-account.test.ts server/test/api.test.ts server/test/full-acceptance.test.ts server/test/rights-cost-basis.test.ts server/test/chart-cost-basis.test.ts", "passed": 53, "exitCode": 0},
+    {"command": "npm run build:server", "exitCode": 0}
+  ],
+  "coverage": ["other-stock-update-does-not-prove-target", "post-end-record-with-gap", "suspended-resume", "weekend-bridge"],
+  "publicDataUntouched": true,
+  "user7529Untouched": true,
+  "remotePublish": false
+}
