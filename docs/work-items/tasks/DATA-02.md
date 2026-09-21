@@ -5,10 +5,10 @@
   "id": "DATA-02",
   "title": "个股覆盖与到期结算",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "R1",
   "summary": "用目标个股的实际日期覆盖判断训练能否推进或到期，区分停牌、非交易日、缺失和来源未就绪。",
-  "next_action": "加入他股更新但目标漏数、结束日后有记录但中间漏数、非交易日和来源未就绪样例，再实现个股覆盖证明。",
+  "next_action": "待主代理真实UI/UX检查与集成人合并；如验收退回，按本卡继续修。",
   "allowed_paths": [
     "server/src/train/**",
     "server/test/train-engine.test.ts",
@@ -21,10 +21,18 @@
     "update": ["docs/specs/market-data/requirements.md", "server/src/train/docs/lifecycle.md", "docs/work-items/tasks/DATA-02.md"],
     "reason": "训练推进与到期结算的覆盖判断改变时必须同步规格和生命周期说明。"
   },
-  "verification_refs": [],
+  "verification_refs": ["server/test/train-engine.test.ts"],
   "integration_ref": null,
   "acceptance_ref": null
 }
 ```
+
+实现与证据（分支 `task/DATA-02`，基线 75bce95）：
+
+- `advanceTraining` 自然到期收窄为两种可证明覆盖：推进日已达 plannedEnd（区间为空）或剩余日期逐日全为周六/周日；移除"全市场尾/他股尾推断停牌"。等待 409 按情形给出原因：个股尾日早于计划结束（其间可能为节假日、停牌或数据缺口），或结束日后有记录但区间内无日线（无法区分长期停牌与数据缺口），均附"更新后继续或提前结算"。
+- 失败回归先于实现观察 RED：他股更新但目标停在尾日（旧实现自动结算，期望等待）、结束日后有记录但区间有缺口（旧实现按尾日覆盖结算，期望等待）。
+- 定向测试 `npm test -- server/test/train-engine.test.ts`：20/20 通过（含停牌复牌静默跳过、周末桥到期、已结算不动、防未来等既有用例）；`npm test -- server/test/train-account.test.ts server/test/api.test.ts server/test/full-acceptance.test.ts server/test/rights-cost-basis.test.ts server/test/chart-cost-basis.test.ts` 33/33 通过；`npm run build:server` 通过。仅合成临时日线与 SQLite 夹具，未触真实 TDX 目录与个人库。
+
+剩余不确定性：本地无节假日历，法定节假日与停牌、数据缺口在尾段不可区分，一律保守等待（由周末桥与提前结算兜底）；本任务未证明全市场目录覆盖，目录级覆盖证明仍归 DATA-04。
 
 当前任务不实现 M4 排行和成绩单，也不写用户 7529 数据库或通达信目录。
