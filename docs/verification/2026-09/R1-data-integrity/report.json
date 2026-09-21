@@ -1,0 +1,17 @@
+{
+  "scope": "R1 DATA-01 and DATA-02 integrated baseline",
+  "testedCommit": "4c14aca34daae1d779a1a59d37dd0cfc319bd82f",
+  "passed": true,
+  "checks": {
+    "unit": {"files": 61, "tests": 775, "exitCode": 0},
+    "types": {"exitCode": 0},
+    "build": {"exitCode": 0},
+    "m2": {"checks": 24, "failures": 0, "exitCode": 0},
+    "journey": {"tests": 72, "exitCode": 0},
+    "docs": {"exitCode": 0}
+  },
+  "dataScope": "Synthetic unit fixtures plus frozen local TDX journey snapshot; user 7529 database and live TDX were not used or modified.",
+  "integratedCommits": {"DATA-02": "9e53982", "DATA-01": "f4a7584"},
+  "remainingWork": ["DATA-03 historical source version protection", "DATA-04 unified source read contract"],
+  "userAcceptance": "not recorded; engineering gate only"
+}

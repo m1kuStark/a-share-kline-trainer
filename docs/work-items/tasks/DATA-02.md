@@ -5,10 +5,10 @@
   "id": "DATA-02",
   "title": "个股覆盖与到期结算",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "R1",
   "summary": "用目标个股的实际日期覆盖判断训练能否推进或到期，区分停牌、非交易日、缺失和来源未就绪。",
-  "next_action": "主代理已独立复跑覆盖相关53项测试并完成服务端构建；待与DATA-01一起运行候选门禁。",
+  "next_action": "已合入并通过R1完整基线门禁；后续来源版本与统一读取契约分别由DATA-03/DATA-04负责。",
   "allowed_paths": [
     "server/src/train/**",
     "server/test/train-engine.test.ts",
@@ -22,7 +22,7 @@
     "reason": "训练推进与到期结算的覆盖判断改变时必须同步规格和生命周期说明。"
   },
   "verification_refs": ["server/test/train-engine.test.ts", "docs/verification/2026-09/DATA-02-review.json"],
-  "integration_ref": null,
+  "integration_ref": "9e53982",
   "acceptance_ref": null
 }
 ```

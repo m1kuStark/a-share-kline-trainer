@@ -5,10 +5,10 @@
   "id": "DATA-01",
   "title": "数据整批发布与超时屏障",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "R1",
   "summary": "让目录、权息、文件状态和刷新结果按同一版本提交；失败和超时不能迟到写入。",
-  "next_action": "主代理已独立复跑定向17/17、全量61文件773/773与服务端构建；待串行合入并运行候选门禁。",
+  "next_action": "已合入并通过R1完整基线门禁；后续数据版本冻结与统一来源接入分别由DATA-03/DATA-04负责。",
   "allowed_paths": [
     "server/src/data/**",
     "server/src/tdx/**",
@@ -31,7 +31,7 @@
     "server/test/adjustment-cache.test.ts",
     "server/src/data/docs/publication.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "f4a7584",
   "acceptance_ref": null
 }
 ```
