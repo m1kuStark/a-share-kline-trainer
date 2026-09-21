@@ -26,8 +26,8 @@
 
 | 任务 | 状态 / 负责人 | 摘要 | 验证记录 | 集成引用 | 用户验收记录 |
 |---|---|---|---|---|---|
-| [DATA-01](<work-items/tasks/DATA-01.md>) | planned / unassigned | 目录、权息和快照各自提交；catalog失败结果未统一拦截。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [DATA-02](<work-items/tasks/DATA-02.md>) | planned / unassigned | 全市场末日及单一源尾不能证明个股区间无漏数。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
+| [DATA-01](<work-items/tasks/DATA-01.md>) | active / GLM-5.3-Flash | 让目录、权息、文件状态和刷新结果按同一版本提交；失败和超时不能迟到写入。 | 未记录 | 未记录 | 未记录 |
+| [DATA-02](<work-items/tasks/DATA-02.md>) | active / GLM-5.3-Flash | 用目标个股的实际日期覆盖判断训练能否推进或到期，区分停牌、非交易日、缺失和来源未就绪。 | 未记录 | 未记录 | 未记录 |
 | [DATA-03](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-04](<work-items/tasks/DATA-04.md>) | planned / unassigned | DailySource仅扫描；训练直读TDX，env/stocks独立刷新仍在。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
