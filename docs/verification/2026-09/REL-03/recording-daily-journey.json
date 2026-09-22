@@ -1,0 +1,11 @@
+{
+  "task": "UI-02",
+  "testedCommit": "a5c0aa3",
+  "reviewer": "Codex root",
+  "outcome": "passed",
+  "command": "npm run journey -- e2e/recording-daily.spec.ts --retries=0",
+  "runId": "run-428e1307-3788-4f8f-87ab-c6c217545ffb",
+  "artifact": ".runs/run-428e1307-3788-4f8f-87ab-c6c217545ffb/artifacts/journey.log",
+  "tests": "2 passed",
+  "scope": "首页录像入口迁移到左侧训练录像导航后，按交易日回放与旧文件缺当日日线降级流程均通过。"
+}

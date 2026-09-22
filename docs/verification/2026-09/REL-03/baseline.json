@@ -1,0 +1,22 @@
+{
+  "baseline": "4e640a5431b4cca8f7a96a7c174be271306134f9",
+  "initialFullUnit": {
+    "exitCode": 1,
+    "files": 61,
+    "passed": 774,
+    "failed": 1,
+    "failure": "runtime-isolation cancellation timed out at 15000ms, teardown EBUSY",
+    "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\rel032-baseline-unit.txt",
+    "sha256": "39f6ee234e2fb3e79db3570e8fd27255e7e2eecd016b87db2ca273d8167571eb"
+  },
+  "focusedRerun": {
+    "exitCode": 0,
+    "testsPassed": 15,
+    "command": "node node_modules/vitest/vitest.mjs run --config server/vitest.config.ts server/test/runtime-isolation.test.ts --reporter=verbose --maxWorkers=1",
+    "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\rel032-runtime-isolation-rerun.txt",
+    "sha256": "d70d3bdcdb1e02f3934508413a30e239a2043f870a6a52b908121700f8e2d4b3"
+  },
+  "rootCause": "Unbounded cancellation path confirmed in code, actual host stall not proven. RUN-CANCEL-01 queued.",
+  "fullBaselinePassed": false,
+  "userDataTouched": false
+}

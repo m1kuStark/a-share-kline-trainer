@@ -67,4 +67,4 @@ latest固定为dates最后一根；bars取从首根起N根，包含首根、不�
 
 ## 共同交付
 
-每路仅实现自己的一个模块、一个测试和自己任务卡；根代理维护共享API/DB/App/包版本/锁文件。先运行失败回归，再实现，定向单测与build:server通过；报告命令/退出码与限制。Mimosa如拦截停在原现场交给集成人，不绕过。工件和Prompt见任务卡，不复制全部仓库文档进上下文。最高思考档、1M配置、最多3并发；集成人独立审查后串行合入REL-03。
+每路仅实现自己的一个模块、一个测试和自己任务卡；根代理维护共享API/DB/App/包版本/锁文件。先运行失败回归，再实现，定向单测与build:server通过；报告命令/退出码与限制。Mimosa如拦截停在原现场交给集成人，不绕过。Prompt：[FRESH-01](prompts/REL-03/FRESH-01.md)、[TDX-CHECK-01](prompts/REL-03/TDX-CHECK-01.md)、[RANGE-01](prompts/REL-03/RANGE-01.md)；后续[本机控制接线设计](release-032-control-design.md)。最高思考档、1M配置、最多3并发；集成人独立审查后串行合入REL-03，不复制全仓文档进上下文。
