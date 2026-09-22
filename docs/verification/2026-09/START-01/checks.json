@@ -1,0 +1,57 @@
+{
+  "baseline": "d75da88aad28d316a481a009554bc877977ca186",
+  "scope": "Read-only diagnosis and next-batch planning; no runtime implementation",
+  "checks": [
+    {
+      "command": "npm run docs:check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run docs:status -- --check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run docs:impact -- --base d75da88aad28d316a481a009554bc877977ca186 --task START-01",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "probe": {
+    "command": "node --import tsx --input-type=module (lastWeekdayBeforeToday imported from server/src/data/refresh.ts)",
+    "input": "2026-09-22T16:00:00+08:00",
+    "actual": "2026-09-21",
+    "exitCode": 0,
+    "interpretation": "Confirms current before-today algorithm; not a passing bug-fix regression"
+  },
+  "liveObservation": {
+    "url": "http://127.0.0.1:8787/",
+    "observedAt": "2026-09-22T22:49:13+08:00",
+    "state": "idle",
+    "needsUpdate": false,
+    "sourceMaxDate": "2026-09-21",
+    "lastCheckedAt": "2026-09-21T15:27:38.843Z",
+    "deployedCommitVerified": false,
+    "methods": [
+      "Browser accessibility observation",
+      "GET /api/data/status"
+    ]
+  },
+  "productionTests": "Not rerun; documentation-only changes",
+  "releaseOrUserDataChanged": false,
+  "implementationTasksDispatched": false,
+  "initialDocsCheck": {
+    "exitCode": 0,
+    "warnings": [
+      "New verification index length exceeded 2000; removed redundant added entry because task and proposal already link the report.",
+      "Existing scripts/agent-monitor/README.md length warning."
+    ]
+  },
+  "runtimePathsChanged": 0,
+  "changedPaths": 17,
+  "remainingWarnings": [
+    "Existing scripts/agent-monitor/README.md length warning"
+  ]
+}

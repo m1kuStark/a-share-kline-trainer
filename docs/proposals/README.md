@@ -1,6 +1,7 @@
-# 待定提案
+# 提案与实施计划
 
-- [首次接入与通达信发现](tdx-onboarding.md)：自动发现、目录选择与三步引导草案，尚未实现。
+- [首次接入与首页反馈批次计划](first-use-batch.md)：盘后新鲜度、周期联动和录像入口去重，已登记待开发。
+- [首次接入与通达信发现](tdx-onboarding.md)：设计已接受，自动发现、目录选择与三步引导尚未实现。
 - [操作录像机与自动验收](session-recorder/README.md)：历史设计；录制与只读回放已交付，自动业务重放等后续目标须区分。现行规则见[录制规格](../specs/recording.md)。
 
 - [工程架构及并行开发建议](engineering-parallel.md)：工作副本和候选集成已实施（DEV-01）；共享合约、图表适配层及来源版本等仍有未落地部分。现行协作步骤见[并行开发协议](../engineering/parallel-development.md)。
