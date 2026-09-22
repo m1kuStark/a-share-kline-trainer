@@ -117,7 +117,13 @@ test('按交易日回放：键盘步进、观察周期独立、画线终态与�
     page.goto('/'),
   ])
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
-  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  if (active) {
+    await page.request.post(`/api/trainings/${active.id}/abandon`)
+    await Promise.all([
+      page.waitForResponse(response => response.url().includes('/api/trainings/active') && response.ok()),
+      page.goto('/'),
+    ])
+  }
   // 回放完全离线：导入后掐断所有 API，再执行全部交互
   await page.route('**/api/**', route => route.abort())
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
@@ -226,7 +232,13 @@ test('旧文件缺当日日线：首日即时回退唯一周期、明示缺日�
     page.goto('/'),
   ])
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
-  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  if (active) {
+    await page.request.post(`/api/trainings/${active.id}/abandon`)
+    await Promise.all([
+      page.waitForResponse(response => response.url().includes('/api/trainings/active') && response.ok()),
+      page.goto('/'),
+    ])
+  }
   await page.route('**/api/**', route => route.abort())
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
