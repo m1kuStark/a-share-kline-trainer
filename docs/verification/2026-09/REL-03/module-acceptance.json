@@ -1,0 +1,41 @@
+{
+  "batch": "REL-03-v0.3.2",
+  "reviewedAt": "2026-09-23",
+  "reviewer": "Codex root",
+  "scope": "工程验收；不代表用户最终验收",
+  "baseline": "4e640a5431b4cca8f7a96a7c174be271306134f9",
+  "testedCommit": "1eb9a0e83995d076ba185a7507044652a46d6145",
+  "tasks": {
+    "FRESH-01": {
+      "commit": "10096be3b27787312cd52008d9d5178be59b6411",
+      "outcome": "passed",
+      "focusedTests": "26/26",
+      "checks": ["上海时区与15:00边界", "显式日历缺失/非法/覆盖不足保守返回unknown", "非字符串sourceMaxDate归一为null"]
+    },
+    "TDX-CHECK-01": {
+      "commit": "19bbdcb661856f9a299cda55eb2df7eb08e08d37",
+      "outcome": "passed",
+      "focusedTests": "26/26",
+      "checks": ["候选路径与逐段junction拒绝", "EACCES/EPERM readable边界", "市场目录前缀一致性、日线与配套文件只读诊断"]
+    },
+    "RANGE-01": {
+      "commit": "8db9fb5526b9c36d030abf39f706ebc24b003d90",
+      "outcome": "passed",
+      "focusedTests": "30/30",
+      "checks": ["自然月月末裁剪", "latest与bars模式", "数据不足、非法输入和尾段覆盖保守返回"]
+    },
+    "RUN-CANCEL-01": {
+      "commit": "1db66dcb9c67c0562bc394a7059a047e95a02644",
+      "outcome": "passed",
+      "focusedTests": "16/16",
+      "checks": ["Windows taskkill停滞有界返回", "cleanup incomplete与abort cause保留", "正常隔离运行与无关进程哨兵不受影响"],
+      "boundary": "无法证明整棵进程树回收时保留失败证据，不把根进程退出冒充完整清理"
+    }
+  },
+  "fullGate": {
+    "unit": "npm test: 858/858",
+    "build": "npm run build: typecheck:web, build:server, build:web passed",
+    "focusedCombined": "six related Vitest files: 99/99"
+  },
+  "userAcceptance": null
+}

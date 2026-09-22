@@ -5,10 +5,10 @@
   "id": "RANGE-01",
   "title": "训练范围纯规划模块",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "为TRAIN-02提供自然月、到末日和日K根数的范围计划。",
-  "next_action": "等REL-03集成人独立审查后合入；接线engine/数据库/录制由后续小任务完成。",
+  "next_action": "工程验收已通过；TRAIN-02 的引擎、数据库和录制接线另行实施，用户验收尚未记录。",
   "allowed_paths": [
     "server/src/train/range.ts",
     "server/test/train-range.test.ts",
@@ -22,7 +22,8 @@
     "reason": "模块首批按固定合同独立实现；运行行为接线、规格和公共文档由REL-03集成人负责。"
   },
   "verification_refs": [
-    "server/test/train-range.test.ts"
+    "server/test/train-range.test.ts",
+    "docs/verification/2026-09/REL-03/module-acceptance.json"
   ],
   "integration_ref": "8db9fb5",
   "acceptance_ref": null
@@ -54,3 +55,9 @@
 ### 交接：Mimosa 拦截提交（记录一次，未绕过）
 
 2026-09-23 commit 被 Mimosa L3 pre-commit 钩子强制拦截：全库 16 高危、2 中危（最高 high）。被点名的均为既有共享文件，不在本任务 allowed_paths：`scripts/verify-candidate.ts`（runNode/buildRun/startServer command-injection 入口）、`scripts/runtime.ts:28`（buildRun 经 1 跳到达 command-injection）、`server/test/recording-context.test.ts:236`、`server/test/runtime-isolation.test.ts:128`。Mimosa 原始报告即钩子输出全文，由集成人在原现场重放 `git commit` 可见；未做二次全库扫描、未换工具或参数绕过。本任务三个文件保持未提交：`server/src/train/range.ts`、`server/test/train-range.test.ts`（新文件，untracked）、`docs/work-items/tasks/RANGE-01.md`（修改，diff 存 `.runs/range01-uncommitted.diff`，.runs 已 gitignore）。HEAD 仍为基线 4e640a5。
+
+## 工程验收（2026-09-23）
+
+- 上述 Mimosa 拦截是 GLM 工作树的历史交接；集成提交 `8db9fb5526b9c36d030abf39f706ebc24b003d90` 已由根代理审查并纳入当前主分支。
+- 聚焦测试 30/30，全量单测 858/858，`npm run build` 通过；自然月、latest、bars 和不足数据边界均实际执行。
+- 用户验收仍未记录；TRAIN-02 的产品接线不属于本模块。

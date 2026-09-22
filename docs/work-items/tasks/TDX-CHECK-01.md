@@ -5,10 +5,10 @@
   "id": "TDX-CHECK-01",
   "title": "候选通达信目录诊断",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "为SETUP-01提供只读候选验证，区分未安装、空日线和缺配套数据。",
-  "next_action": "REL-03集成人独立审查后串行合入；接线另分小任务。",
+  "next_action": "工程验收已通过；SETUP-01 的发现、选择和保存接线另行实施，用户验收尚未记录。",
   "allowed_paths": [
     "server/src/tdx/inspect.ts",
     "server/test/tdx-inspect.test.ts",
@@ -22,7 +22,8 @@
     "reason": "模块首批按固定合同独立实现；运行行为接线、规格和公共文档由REL-03集成人负责。"
   },
   "verification_refs": [
-    "server/test/tdx-inspect.test.ts"
+    "server/test/tdx-inspect.test.ts",
+    "docs/verification/2026-09/REL-03/module-acceptance.json"
   ],
   "integration_ref": "19bbdcb",
   "acceptance_ref": null
@@ -79,3 +80,9 @@ REL-03审查提出三个缺口，均先补失败回归再最小修复；只改 a
   - `server/test/tdx-inspect.test.ts`（新增，26条用例）
   - `docs/work-items/tasks/TDX-CHECK-01.md`（本卡，state=review）
   - diff 获取：`git diff -- docs/work-items/tasks/TDX-CHECK-01.md`；两个新文件为完整新增内容。
+
+## 工程验收（2026-09-23）
+
+- 上述 Mimosa 拦截是 GLM 工作树的历史交接；集成提交 `19bbdcb661856f9a299cda55eb2df7eb08e08d37` 已由根代理审查并纳入当前主分支。
+- 聚焦测试 26/26，全量单测 858/858，`npm run build` 通过；junction、权限和市场前缀回归均实际执行。
+- 用户验收仍未记录；SETUP-01 的产品接线不属于本模块。
