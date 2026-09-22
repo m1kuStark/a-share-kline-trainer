@@ -34,7 +34,7 @@
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [RANGE-01](<work-items/tasks/RANGE-01.md>) | review / GLM-5.3-Flash | 为TRAIN-02提供自然月、到末日和日K根数的范围计划。 | [证据1](<../server/test/train-range.test.ts>) | 8db9fb5 | 未记录 |
-| [REL-03](<work-items/tasks/REL-03.md>) | active / integrator | 用户授权实施DATA-05、SETUP-01、TRAIN-02、UI-02与受控退出，验收后公开发布v0.3.2。 | 未记录 | 未记录 | 未记录 |
+| [REL-03](<work-items/tasks/REL-03.md>) | review / integrator | 用户授权实施DATA-05、SETUP-01、TRAIN-02、UI-02与受控退出，验收后公开发布v0.3.2。 | [证据1](<verification/2026-09/REL-03/runtime-cancel-review.json>)；[证据2](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据3](<verification/2026-09/REL-03/recording-daily-journey.json>) | 3e4f012 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 发布包服务当前独立于浏览器运行；为新手提供保存完成后可用的“退出训练器”入口，同时保留安全的Stop.cmd兜底。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | 未记录 | 未记录 |
 | [RUN-CANCEL-01](<work-items/tasks/RUN-CANCEL-01.md>) | review / GLM-5.3-Flash | REL-03基线取消用例超时后EBUSY已修复；通用taskkill等待与取消Promise现在有界，无法证明整树回收时保留失败证据。 | [证据1](<verification/2026-09/REL-03/baseline.json>)；[证据2](<verification/2026-09/REL-03/runtime-cancel-review.json>)；[证据3](<../server/test/runtime-cancel.test.ts>)；[证据4](<../server/test/runtime-isolation.test.ts>) | 1db66dc | 未记录 |
 | [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | 用户已接受接入方案；自动发现、确认、原生选目录及保存生效待实施。 | 未记录 | 未记录 | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
