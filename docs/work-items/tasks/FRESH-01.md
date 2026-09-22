@@ -21,7 +21,9 @@
     ],
     "reason": "模块首批按固定合同独立实现；运行行为接线、规格和公共文档由REL-03集成人负责。"
   },
-  "verification_refs": ["server/test/data-freshness.test.ts"],
+  "verification_refs": [
+    "server/test/data-freshness.test.ts"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

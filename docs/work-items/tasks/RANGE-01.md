@@ -22,9 +22,7 @@
     "reason": "模块首批按固定合同独立实现；运行行为接线、规格和公共文档由REL-03集成人负责。"
   },
   "verification_refs": [
-    "RED：node node_modules/vitest/vitest.mjs run --config server/vitest.config.ts server/test/train-range.test.ts --maxWorkers=2，exit 1（range.ts 不存在，导入失败）",
-    "GREEN：同命令 exit 0，30 passed / 0 failed（日志 .runs/train-range-green.log）",
-    "npm run build:server exit 0（首跑在 else 分支 TS2339 never 收窄处失败，改运行时守卫后通过；日志 .runs/train-range-build.log）"
+    "server/test/train-range.test.ts"
   ],
   "integration_ref": null,
   "acceptance_ref": null
