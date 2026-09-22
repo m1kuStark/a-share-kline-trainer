@@ -5,10 +5,10 @@
   "id": "SETUP-01",
   "title": "首次接入与通达信发现",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "M5",
   "summary": "用户已接受接入方案；自动发现、确认、原生选目录及保存生效待实施。",
-  "next_action": "按first-use-batch冻结合同后拆分GLM任务；与DATA-05诊断文案对齐，当前未派发实现。",
+  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
   "allowed_paths": [
     "docs/proposals/tdx-onboarding.md",
     "docs/work-items/tasks/SETUP-01.md"

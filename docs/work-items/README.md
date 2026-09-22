@@ -1,5 +1,7 @@
 # 任务与阶段
 
+v0.3.2执行入口：[REL-03](tasks/REL-03.md)，首批[FRESH-01](tasks/FRESH-01.md)、[TDX-CHECK-01](tasks/TDX-CHECK-01.md)、[RANGE-01](tasks/RANGE-01.md)。
+
 当前活动清单由[status](../status.md)生成。单任务路径稳定，状态变化不搬文件；先按ID查卡片，再读相关规格和证据。
 
 - [DOC-01](tasks/DOC-01.md)：本轮文档治理及基线冻结。

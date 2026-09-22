@@ -5,14 +5,34 @@
   "id": "REL-LAUNCH-UX-01",
   "title": "浏览器关闭后的受控退出",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "M5",
   "summary": "发布包服务当前独立于浏览器运行；为新手提供保存完成后可用的“退出训练器”入口，同时保留安全的Stop.cmd兜底。",
-  "next_action": "与SETUP-01共用本机控制桥，冻结正常退出协议，评估最后标签关闭后的延迟回收；不直接用pagehide杀服务。",
-  "allowed_paths": ["scripts/release/**", "server/src/index.ts", "server/src/api.ts", "server/test/release-launcher.test.ts", "server/test/api.test.ts", "web/src/**", "e2e/**", "docs/user/**", "docs/work-items/tasks/REL-LAUNCH-UX-01.md"],
+  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
+  "allowed_paths": [
+    "scripts/release/**",
+    "server/src/index.ts",
+    "server/src/api.ts",
+    "server/test/release-launcher.test.ts",
+    "server/test/api.test.ts",
+    "web/src/**",
+    "e2e/**",
+    "docs/user/**",
+    "docs/work-items/tasks/REL-LAUNCH-UX-01.md"
+  ],
   "depends_on": [],
-  "docs_impact": {"update": ["docs/user/README.md", "docs/user/install.md", "docs/user/troubleshooting.md", "docs/engineering/release-m3-contract.md"], "reason": "新增退出入口和服务生命周期说明，必须同步发布包操作文档与安全边界。"},
-  "verification_refs": ["docs/verification/2026-09/LAUNCH-UX-01/report.md"],
+  "docs_impact": {
+    "update": [
+      "docs/user/README.md",
+      "docs/user/install.md",
+      "docs/user/troubleshooting.md",
+      "docs/engineering/release-m3-contract.md"
+    ],
+    "reason": "新增退出入口和服务生命周期说明，必须同步发布包操作文档与安全边界。"
+  },
+  "verification_refs": [
+    "docs/verification/2026-09/LAUNCH-UX-01/report.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

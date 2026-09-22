@@ -5,14 +5,31 @@
   "id": "DATA-05",
   "title": "数据新鲜度与盘后状态",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "R1",
   "summary": "已复现收盘后昨日数据仍称最新；原算法无盘后分界，也无可靠节假日口径。",
-  "next_action": "优先冻结新鲜度合同，GLM先补可注入时钟/日历的失败回归，再实现计算；共享接线由集成人负责。",
-  "allowed_paths": ["server/src/data/**", "server/test/data-refresh.test.ts", "server/test/data-freshness.test.ts", "web/src/dataStatus.ts", "web/src/App.vue", "web/src/api.ts", "e2e/data-update.spec.ts", "docs/work-items/tasks/DATA-05.md", "docs/specs/market-data/requirements.md"],
+  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
+  "allowed_paths": [
+    "server/src/data/**",
+    "server/test/data-refresh.test.ts",
+    "server/test/data-freshness.test.ts",
+    "web/src/dataStatus.ts",
+    "web/src/App.vue",
+    "web/src/api.ts",
+    "e2e/data-update.spec.ts",
+    "docs/work-items/tasks/DATA-05.md",
+    "docs/specs/market-data/requirements.md"
+  ],
   "depends_on": [],
-  "docs_impact": {"update": ["docs/specs/market-data/requirements.md"], "reason": "实施需同步最近已收盘交易日、新鲜度未知及本地扫描的区别。"},
-  "verification_refs": ["docs/verification/2026-09/START-01/report.md"],
+  "docs_impact": {
+    "update": [
+      "docs/specs/market-data/requirements.md"
+    ],
+    "reason": "实施需同步最近已收盘交易日、新鲜度未知及本地扫描的区别。"
+  },
+  "verification_refs": [
+    "docs/verification/2026-09/START-01/report.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

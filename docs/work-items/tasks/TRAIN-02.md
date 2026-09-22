@@ -5,14 +5,37 @@
   "id": "TRAIN-02",
   "title": "创建训练范围与周期联动",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "M5",
   "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
-  "next_action": "按批次计划冻结日期/根数/旧请求及录制兼容合同，先派纯范围规划器，再串行接入服务与创建页。",
-  "allowed_paths": ["server/src/train/**", "server/src/api.ts", "server/src/db.ts", "server/test/**", "web/src/views/Launcher.vue", "web/src/api.ts", "web/src/recording/**", "e2e/**", "docs/specs/training/rules.md", "docs/specs/recording.md", "docs/work-items/tasks/TRAIN-02.md"],
-  "depends_on": ["DATA-02"],
-  "docs_impact": {"update": ["docs/specs/training/rules.md", "docs/specs/recording.md", "server/src/train/docs/lifecycle.md"], "reason": "新范围模式涉及生命周期、API、数据库及录像合同，不能只改前端选项。"},
-  "verification_refs": ["docs/verification/2026-09/START-01/report.md"],
+  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
+  "allowed_paths": [
+    "server/src/train/**",
+    "server/src/api.ts",
+    "server/src/db.ts",
+    "server/test/**",
+    "web/src/views/Launcher.vue",
+    "web/src/api.ts",
+    "web/src/recording/**",
+    "e2e/**",
+    "docs/specs/training/rules.md",
+    "docs/specs/recording.md",
+    "docs/work-items/tasks/TRAIN-02.md"
+  ],
+  "depends_on": [
+    "DATA-02"
+  ],
+  "docs_impact": {
+    "update": [
+      "docs/specs/training/rules.md",
+      "docs/specs/recording.md",
+      "server/src/train/docs/lifecycle.md"
+    ],
+    "reason": "新范围模式涉及生命周期、API、数据库及录像合同，不能只改前端选项。"
+  },
+  "verification_refs": [
+    "docs/verification/2026-09/START-01/report.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }
