@@ -1,6 +1,6 @@
 {
   "task": "UI-02",
-  "testedCommit": "1db66dc",
+  "testedCommit": "f0305bf",
   "reviewer": "Codex root",
   "outcome": "passed",
   "command": "npm run journey -- e2e/recording-daily.spec.ts --retries=0",
