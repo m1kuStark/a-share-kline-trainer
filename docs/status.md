@@ -42,5 +42,5 @@
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [TRAIN-02](<work-items/tasks/TRAIN-02.md>) | active / integrator | 按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。 | [证据1](<verification/2026-09/START-01/report.md>) | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [UI-02](<work-items/tasks/UI-02.md>) | review / integrator | 按用户要求移除首页顶部录像横栏，保留左侧录像导航及录像页导入、历史和回放。 | [证据1](<../e2e/acceptance-feedback.spec.ts>)；[证据2](<../e2e/recording-migration.spec.ts>) | c8f8836 | 未记录 |
+| [UI-02](<work-items/tasks/UI-02.md>) | review / integrator | 按用户要求移除首页顶部录像横栏，保留左侧录像导航及录像页导入、历史和回放。 | [证据1](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据2](<../e2e/acceptance-feedback.spec.ts>)；[证据3](<../e2e/recording-migration.spec.ts>) | c8f8836 | 未记录 |
 <!-- generated:status:end -->

@@ -1,0 +1,11 @@
+{
+  "task": "UI-02",
+  "testedCommit": "364fae7",
+  "reviewer": "Codex root",
+  "outcome": "passed",
+  "command": "npm run journey -- e2e/acceptance-feedback.spec.ts --retries=0",
+  "runId": "run-482ed487-4f99-4b4a-8977-736d396a1631",
+  "artifact": ".runs/run-482ed487-4f99-4b4a-8977-736d396a1631/artifacts/journey.log",
+  "tests": "4 passed",
+  "scope": "隔离数据库与端口；录像入口往返、周/月观察、放弃/结算保存选择、刷新后不重建录像。"
+}
