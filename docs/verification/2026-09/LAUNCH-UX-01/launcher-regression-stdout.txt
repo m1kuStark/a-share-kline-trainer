@@ -1,0 +1,44 @@
+
+ RUN  v3.2.7 D:/Superlinear_Academy/Stock_WorkSpace/a-share-kline-trainer
+
+ ✓ server/test/release-launcher.test.ts > release launcher config resolution > falls back to documented defaults without a config file 1ms
+ ✓ server/test/release-launcher.test.ts > release launcher config resolution > resolves relative paths against the package root and requires a sane port 2ms
+ ✓ server/test/release-launcher.test.ts > release launcher config resolution > lets explicitly set environment variables override the config file 0ms
+ ✓ server/test/release-launcher.test.ts > release launcher config resolution > parses launcher CLI arguments 0ms
+ ✓ server/test/release-launcher.test.ts > release launcher package checks > refuses an incomplete package and never builds implicitly 22ms
+ ✓ server/test/release-launcher.test.ts > release launcher package checks > refuses a release.json claiming another appId 15ms
+ ✓ server/test/release-launcher.test.ts > release launcher package checks > recognizes the TDX root layout used for discovery 13ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > starts once and reuses the owned healthy server on repeat launch 677ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > refuses a foreign port occupant without killing it or switching ports 90ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > does not adopt a trainer-shaped server that has no launcher state 628ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > refuses a second writer when the running server listens on another port 647ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > keeps the server log when startup fails and records nothing in state 406ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > rejects a readiness record that does not identify the launched server 412ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > stops a server that never becomes ready and keeps its log 1159ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > recovers a stale launch lock after verifying its PID is dead 617ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > waits for a live launcher lock and refuses to bypass it 368ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > refuses an unrecognized launch lock without deleting it 98ms
+ ✓ server/test/release-launcher.test.ts > release launcher lifecycle > clears stale state and readiness files, then starts fresh 430ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > stops the recorded server on the RECORDED port even after the config port changed, keeps database and logs, and is idempotent 541ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > survives a stop/start loop without removing the persisted database 820ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > refuses to signal a live server whose health identity does not match the recorded state, and preserves the state file 1158ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > refuses an unreadable own state file and preserves it 99ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > refuses a state file claiming another app and preserves it 100ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > cleans a dead recorded state without signaling any process 96ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > is a clear no-op without a data directory and creates nothing 94ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > yields to a live lifecycle lock instead of racing it, leaving the server untouched 1085ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > serializes a concurrent stop and launch so exactly one lifecycle owns the server 1129ms
+ ✓ server/test/release-launcher.test.ts > release launcher stop lifecycle > deterministic regression: a launch started while a stop holds the lock waits it out instead of rejecting the dying server 2711ms
+ ✓ server/test/release-launcher.test.ts > release launcher launch guards > refuses to replace a live recorded server it cannot verify and never spawns a second writer, even on another configured port 1714ms
+ ✓ server/test/release-launcher.test.ts > release launcher launch guards > refuses reuse when the requested databasePath differs and tells the user to stop first 624ms
+ ✓ server/test/release-launcher.test.ts > release launcher launch guards > refuses reuse of a server from a different release version or git commit, then reuses after the package matches again 672ms
+ ✓ server/test/release-launcher.test.ts > release launcher launch guards > refuses reuse when the resolved tdxRoot differs from the recorded one 647ms
+ ✓ server/test/release-launcher.test.ts > release launcher launch guards > reuses a legacy state that predates the optional compatibility fields 425ms
+ ✓ server/test/release-launcher.test.ts > release launcher probe hardening > does not follow redirects when probing health, so a foreign listener cannot move the identity check 5ms
+ ✓ server/test/release-launcher.test.ts > release launcher probe hardening > only accepts health identity over HTTP 200: the same body on a 500 never confirms 706ms
+ ✓ server/test/release-launcher.test.ts > release launcher probe hardening > openURL survives a failing opener instead of crashing the launcher 1ms
+
+ Test Files  1 passed (1)
+      Tests  36 passed (36)
+   Start at  00:12:09
+   Duration  18.45s (transform 49ms, setup 0ms, collect 57ms, tests 18.21s, environment 0ms, prepare 67ms)

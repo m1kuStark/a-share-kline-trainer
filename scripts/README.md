@@ -21,4 +21,6 @@
 
 源码入口：[运行层](runtime.ts)、[Git层](worktree.ts)、[候选验证](verify-candidate.ts)、[文档工具](docs.ts)。配置不覆盖用户全局设置、真实TDX或个人训练数据库。
 
+用户提供的一键诊断工具原包与展开源码见[诊断工具](../tools/diagnostics/README.md)；实际生成的用户报告需脱敏并留在本地。
+
 Z code小任务委派遵循[模型协作规则](../docs/engineering/model-delegation.md)；通过[GLM任务看板与后台派发](agent-monitor/README.md)查看Prompt、最近活动、完成答复和独立复核状态。

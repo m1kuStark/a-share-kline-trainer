@@ -1,0 +1,113 @@
+{
+  "baseline": "9241856096a14f3d59bb9143dd78f55151abdce5",
+  "scope": "diagnostic archive integrity and read-only launcher lifecycle audit",
+  "checks": [
+    {
+      "command": "Python zipfile.testzip; compare archive and extracted file bytes; SHA256",
+      "exitCode": 0,
+      "result": "archive entries match the two user-supplied files"
+    },
+    {
+      "command": "Windows PowerShell 5.1 and PowerShell 7.6 Parser.ParseInput on embedded collector",
+      "exitCode": 0,
+      "result": "syntaxErrors=0; collector not executed",
+      "shellVersions": [
+        "5.1.26100.9444",
+        "7.6.5"
+      ]
+    },
+    {
+      "command": "Node publicSourcePath/build classify check",
+      "exitCode": 0,
+      "result": "tools/diagnostics files excluded from source export and Windows package"
+    },
+    {
+      "command": "GET /api/health or process stop",
+      "exitCode": null,
+      "result": "not executed; current running service and user data preserved"
+    },
+    {
+      "command": "git check-ignore tools/diagnostics/kline-diagnostic-v1/Kline-Diagnostic-example.txt .data/diagnostics/example.txt",
+      "exitCode": 0,
+      "result": "both report locations ignored"
+    },
+    {
+      "command": "npm run docs:check",
+      "exitCode": 0,
+      "warnings": [
+        "docs/verification/README.md length 2002",
+        "scripts/agent-monitor/README.md length 2536"
+      ]
+    },
+    {
+      "command": "npm run docs:status -- --check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run docs:impact -- --base 9241856096a14f3d59bb9143dd78f55151abdce5 --task DIAG-01",
+      "exitCode": 0,
+      "changedPaths": 19,
+      "classifiedRuntimeOrConfigPaths": 5,
+      "note": "Includes archived script/zip/manifest and Git config; trainer runtime files not modified"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "archive": {
+    "path": "tools/diagnostics/kline-diagnostic-v1/Kline-Diagnostic.zip",
+    "bytes": 5986,
+    "sha256": "caac04925da6058545e99faa1064d07f2eb26d906e6b9b3dd30e57413d8ca122",
+    "entries": [
+      {
+        "path": "Kline-Diagnose.cmd",
+        "bytes": 13350,
+        "sha256": "f281f2ae912c0bdc9977ff53d0a642554dd2bc513df93c2f9f3dbad14d32c067"
+      },
+      {
+        "path": "使用说明.txt",
+        "bytes": 1014,
+        "sha256": "88d4428b18b69d9c91f2f02b63adcaec44735e32121293c3ef0fb15245f09526"
+      }
+    ],
+    "modified": false
+  },
+  "incident": "The supplied archive contains a collector, not a friend's generated report; the concrete training bug remains unlocated.",
+  "runtimeChanged": false,
+  "userDataChanged": false,
+  "testAttempts": [
+    {
+      "command": "npm test -- server/test/release-launcher.test.ts",
+      "exitCode": 1,
+      "observation": "Only RUN banner was returned; no assertion error or final test summary; root cause not established"
+    },
+    {
+      "command": "npm test -- server/test/release-launcher.test.ts --reporter=verbose",
+      "exitCode": 1,
+      "observation": "27 passing test lines then exit without assertion error or suite summary; not counted as suite pass"
+    },
+    {
+      "command": "node node_modules/vitest/vitest.mjs run --config server/vitest.config.ts server/test/release-launcher.test.ts --reporter=verbose (stdout/stderr captured outside Vitest wrapper)",
+      "exitCode": 0,
+      "result": "1 file passed; 36 tests passed; duration 18.45s",
+      "logs": {
+        "stdout": {
+          "file": "launcher-regression-stdout.txt",
+          "sha256": "76e15d569e1146d40b623540c23f52bafddfb88a9c39d14f49dac35ef12f19fd",
+          "bytes": 5857,
+          "normalization": "UTF-8 LF with trailing empty lines removed; full raw stdout retained in external headroom cache",
+          "rawSha256": "0d0d4688ab037e02f758a2453ac82c0488102ab6b2405eaac4d057f04e682f35"
+        },
+        "stderr": {
+          "file": "launcher-regression-stderr.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    }
+  ],
+  "collectedReportPresent": false,
+  "verifiedDate": "2026-09-23",
+  "stagedCheckCorrection": "Initial staged whitespace check flagged preserved original CRLF as whitespace and trailing empty lines in test stdout; declared CR-at-EOL for exact archived originals, normalized displayed test log. No security or test checks disabled."
+}
