@@ -24,7 +24,7 @@
   "verification_refs": [
     "server/test/train-range.test.ts"
   ],
-  "integration_ref": null,
+  "integration_ref": "8db9fb5",
   "acceptance_ref": null
 }
 ```

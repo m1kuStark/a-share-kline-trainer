@@ -24,7 +24,7 @@
   "verification_refs": [
     "server/test/tdx-inspect.test.ts"
   ],
-  "integration_ref": null,
+  "integration_ref": "19bbdcb",
   "acceptance_ref": null
 }
 ```

@@ -24,7 +24,7 @@
   "verification_refs": [
     "server/test/data-freshness.test.ts"
   ],
-  "integration_ref": null,
+  "integration_ref": "10096be",
   "acceptance_ref": null
 }
 ```
