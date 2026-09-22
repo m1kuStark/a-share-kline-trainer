@@ -3,6 +3,8 @@
 当前活动清单由[status](../status.md)生成。单任务路径稳定，状态变化不搬文件；先按ID查卡片，再读相关规格和证据。
 
 - [DOC-01](tasks/DOC-01.md)：本轮文档治理及基线冻结。
+- [DOC-02](tasks/DOC-02.md)：GLM文档清理复核与Mimosa基线诊断。
+- [SETUP-01](tasks/SETUP-01.md)：首次接入与通达信自动发现提案，尚未开发。
 - [REC-01](tasks/REC-01.md)／[REC阶段](milestones/REC.md)：默认紧凑录制、可暂停、压缩分享和离线回放，验收状态以卡片为准。
 - 数据保护：[DATA-01](tasks/DATA-01.md)、[DATA-02](tasks/DATA-02.md)、[DATA-03](tasks/DATA-03.md)、[DATA-04](tasks/DATA-04.md)。
 - 后续：[TRAIN-01](tasks/TRAIN-01.md)、[DEV-01](tasks/DEV-01.md)、[UI-01](tasks/UI-01.md)、[M4-01](tasks/M4-01.md)、[M5-01](tasks/M5-01.md)、[R2-01](tasks/R2-01.md)。

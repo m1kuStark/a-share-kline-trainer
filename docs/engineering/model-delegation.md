@@ -11,7 +11,7 @@
 - 按完成事件收取结果。等待期间推进独立工作，不反复读取日志、Git状态、SQLite会话或时间来确认进度。仅在异常退出或预设超时后诊断一次；日志留在工程外，返回短结论及路径。
 - 模型并发额度与Git并行开发分别管理。用户2026-09-19明确要求提高并行度；本轮先2个任务验证均有成功请求，再增至3个独立GLM任务。每个独立worktree/修改范围/日志/配置副本，类型合同由集成人冻结。此前曾限流，不据旧现象永久限制为串行；本次若再出现真实429/1302则有限重试并下调并发，不降思考档。
 - 用户2026-09-19再次确认：GLM尽量保持最高思考档，接受较长耗时，不因token用量自行降档。空闲等待应由完成通知唤醒，不能用反复推理/轮询代替等待。
-- 长调用需脱离Codex活动轮次：独立后台进程运行GLM，原子写入各批次状态、日志路径与交接文件；独立工作做完后结束轮次。原线程45分钟heartbeat检查本批所有任务，已完成者可先验收，全部仍运行且无独立工作时立即结束；不是进程退出即时回调。并行任务不用同一个wake-state覆盖结果，由group索引指向各job登记。全部交付后暂停自动化。
+- 长调用需脱离Codex活动轮次：独立后台进程运行GLM，原子写入各批次状态、日志路径与交接文件；独立工作做完后结束轮次。按用户2026-09-22要求，原线程以30分钟heartbeat续接；已完成者可先验收，全部仍运行且无独立工作时立即结束，不作进程退出即时回调的承诺。并行任务不用同一个wake-state覆盖结果，由group索引指向各job登记。全部交付后暂停自动化。
 - 用户可见性是派发条件：新调用通过[带任务登记的后台入口](../../scripts/agent-monitor/README.md)，让桌面“GLM任务看板”显示Prompt、最新工具和完成/复核状态。不要再派发只留下隐藏日志的任务；操作说明与验证见[观察入口](glm-observability.md)。
 
 ## 配置目标与核验
@@ -25,3 +25,5 @@
 2026-09-20用户授权睡觉期间自主推进本轮返修和工具修复，不再对常规开发/验收反复询问；积极使用GLM5.3Flash，最高思考档。工程验收与用户阶段验收仍分开，M4/M5等待用户明确通过。已授权主代理审查既有Mimosa告警后正常提交，真实缺口先修复，不关闭安全检查；worker遇同一基线拦截只交接一次，不反复全库扫描。
 
 When a worker commit is blocked, stop after the first rejection and hand off staged changes. Never try --no-verify, low-level Git plumbing, environment switches or alternative tools to bypass the same gate. Only the integrator may disposition findings within the explicit user authorization.
+
+从实际Git仓库或任务worktree根启动Zcode会话，并保持任务期间的项目根一致。工作区根不等于嵌套仓库根；SessionStart基线和Stop/Git门禁落到不同`.mimosa`目录时可能报baseline_missing，须核对报告和两处状态，不能伪造通过或把新扫描冒充旧任务基线。见[本次诊断](../verification/2026-09/DOC-02/report.md)。

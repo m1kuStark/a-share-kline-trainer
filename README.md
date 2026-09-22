@@ -13,10 +13,10 @@
 
 ## 快速开始（Windows）
 
-1. 到 [Releases](https://github.com/m1kuStark/kline-trainer/releases) 下载 `kline-trainer-v0.3.1-windows-x64.zip`（该文件由维护者随 v0.3.1 发布，页面暂未出现时请稍候）。安装包自带运行环境，**无需安装 Node、npm 或 Python，无需订阅、模型或账号**。
+1. 到 [Releases](https://github.com/m1kuStark/kline-trainer/releases) 下载 `kline-trainer-v0.3.1-windows-x64.zip`。安装包自带运行环境，**无需安装 Node、npm 或 Python，无需订阅、模型或账号**。
 2. 右键完整解压到一个固定文件夹（之后不要移动它）。
-3. 在解压目录里参照 `trainer.config.example.json` 新建 `trainer.config.json`，把 `tdxRoot` 指向你的通达信目录（JSON 里反斜杠写成 `\\`），并确认通达信已下载日线数据。
-4. 双击 `Start.cmd`，浏览器自动打开 `http://127.0.0.1:8787`。
+3. 双击 `Start.cmd`，浏览器自动打开 `http://127.0.0.1:8787`。程序会检查少数预设通达信目录；能搜索到股票并加载行情时，可以直接开始训练。
+4. 若提示未连接通达信或缺数据，按[安装说明](docs/user/install.md)配置目录并在通达信下载日线。当前版本仍需手动配置未被发现的安装路径；引导式接入尚未实现。
 5. 双击 `Create Shortcut.cmd` 创建桌面图标，以后从图标启动。
 
 程序只监听本机 `127.0.0.1`，不对外网开放。详细步骤与配置字段见[安装与配置](docs/user/install.md)。

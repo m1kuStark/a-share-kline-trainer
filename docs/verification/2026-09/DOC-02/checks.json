@@ -1,0 +1,31 @@
+{
+  "baseline": "0d5ea3568ee177086ff26810a1ad92acd7f1e8ce",
+  "originalUserDiffSha256": "e2fbbe83d49366f10a3872b8fe41249e5f34761ee9cba01f18101a9ea22a20dd",
+  "scope": "documentation review and onboarding proposal only",
+  "checks": [
+    {
+      "command": "npm run docs:check",
+      "exitCode": 0,
+      "note": "One existing agent-monitor README length warning"
+    },
+    {
+      "command": "npm run docs:impact -- --base 0d5ea3568ee177086ff26810a1ad92acd7f1e8ce --task DOC-02",
+      "exitCode": 0,
+      "runtimePathsChanged": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "mimosa": {
+    "runStatus": "inconclusive",
+    "findingCount": 0,
+    "scannedFiles": 0,
+    "cause": "Baseline captured at parent workspace; Stop lookup used nested repository with no corresponding hook-state.",
+    "notFixedGlobally": true,
+    "noScanPassClaim": true
+  },
+  "productionTests": "Not rerun; no runtime change",
+  "releaseOrUserDataChanged": false
+}
