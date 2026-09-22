@@ -32,7 +32,6 @@
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [REL-03](<work-items/tasks/REL-03.md>) | review / integrator | 用户授权实施DATA-05、SETUP-01、TRAIN-02、UI-02与受控退出，验收后公开发布v0.3.2。 | [证据1](<verification/2026-09/REL-03/runtime-cancel-review.json>)；[证据2](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据3](<verification/2026-09/REL-03/recording-daily-journey.json>) | 3e4f012 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 发布包服务当前独立于浏览器运行；为新手提供保存完成后可用的“退出训练器”入口，同时保留安全的Stop.cmd兜底。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | 未记录 | 未记录 |
 | [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | 用户已接受接入方案；自动发现、确认、原生选目录及保存生效待实施。 | 未记录 | 未记录 | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
