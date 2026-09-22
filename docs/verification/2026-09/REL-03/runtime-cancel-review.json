@@ -1,0 +1,21 @@
+{
+  "task": "RUN-CANCEL-01",
+  "testedCommit": "1db66dc",
+  "reviewer": "Codex root",
+  "outcome": "passed",
+  "unit": {
+    "command": "npm test",
+    "tests": "858 passed"
+  },
+  "focused": [
+    {
+      "command": "node node_modules/vitest/vitest.mjs run --config server/vitest.config.ts server/test/runtime-cancel.test.ts server/test/runtime-isolation.test.ts --maxWorkers=2",
+      "tests": "16 passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed"
+    }
+  ],
+  "scope": "Windows通用命令取消；taskkill停滞有界返回、保留cleanup incomplete日志和abort cause，正常隔离取消保持通过。"
+}

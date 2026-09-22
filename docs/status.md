@@ -36,11 +36,11 @@
 | [RANGE-01](<work-items/tasks/RANGE-01.md>) | review / GLM-5.3-Flash | 为TRAIN-02提供自然月、到末日和日K根数的范围计划。 | [证据1](<../server/test/train-range.test.ts>) | 8db9fb5 | 未记录 |
 | [REL-03](<work-items/tasks/REL-03.md>) | active / integrator | 用户授权实施DATA-05、SETUP-01、TRAIN-02、UI-02与受控退出，验收后公开发布v0.3.2。 | 未记录 | 未记录 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 发布包服务当前独立于浏览器运行；为新手提供保存完成后可用的“退出训练器”入口，同时保留安全的Stop.cmd兜底。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | 未记录 | 未记录 |
-| [RUN-CANCEL-01](<work-items/tasks/RUN-CANCEL-01.md>) | planned / GLM-5.3-Flash | REL-03基线取消用例超时后EBUSY；通用taskkill等待与取消Promise存在无界路径。 | [证据1](<verification/2026-09/REL-03/baseline.json>) | 未记录 | 未记录 |
+| [RUN-CANCEL-01](<work-items/tasks/RUN-CANCEL-01.md>) | review / GLM-5.3-Flash | REL-03基线取消用例超时后EBUSY已修复；通用taskkill等待与取消Promise现在有界，无法证明整树回收时保留失败证据。 | [证据1](<verification/2026-09/REL-03/baseline.json>)；[证据2](<verification/2026-09/REL-03/runtime-cancel-review.json>)；[证据3](<../server/test/runtime-cancel.test.ts>)；[证据4](<../server/test/runtime-isolation.test.ts>) | 1db66dc | 未记录 |
 | [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | 用户已接受接入方案；自动发现、确认、原生选目录及保存生效待实施。 | 未记录 | 未记录 | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
 | [TDX-CHECK-01](<work-items/tasks/TDX-CHECK-01.md>) | review / GLM-5.3-Flash | 为SETUP-01提供只读候选验证，区分未安装、空日线和缺配套数据。 | [证据1](<../server/test/tdx-inspect.test.ts>) | 19bbdcb | 未记录 |
 | [TRAIN-01](<work-items/tasks/TRAIN-01.md>) | planned / unassigned | 费用/T+1每笔读全局设置，raw显示路径不入账权息。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [TRAIN-02](<work-items/tasks/TRAIN-02.md>) | active / integrator | 按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。 | [证据1](<verification/2026-09/START-01/report.md>) | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [UI-02](<work-items/tasks/UI-02.md>) | review / integrator | 按用户要求移除首页顶部录像横栏，保留左侧录像导航及录像页导入、历史和回放。 | [证据1](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据2](<../e2e/acceptance-feedback.spec.ts>)；[证据3](<../e2e/recording-migration.spec.ts>) | c8f8836 | 未记录 |
+| [UI-02](<work-items/tasks/UI-02.md>) | review / integrator | 按用户要求移除首页顶部录像横栏，保留左侧录像导航及录像页导入、历史和回放。 | [证据1](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据2](<verification/2026-09/REL-03/recording-daily-journey.json>)；[证据3](<../e2e/acceptance-feedback.spec.ts>)；[证据4](<../e2e/recording-migration.spec.ts>)；[证据5](<../e2e/recording-daily.spec.ts>) | c8f8836 | 未记录 |
 <!-- generated:status:end -->

@@ -5,15 +5,20 @@
   "id": "RUN-CANCEL-01",
   "title": "通用命令取消的有界回收",
   "owner": "GLM-5.3-Flash",
-  "state": "planned",
+  "state": "review",
   "milestone": "DEV",
-  "summary": "REL-03基线取消用例超时后EBUSY；通用taskkill等待与取消Promise存在无界路径。",
-  "next_action": "首批GLM释放槽位后优先派发：先复现通用取消失效，再分停止契约/树归属小步修复；不提高测试时限。",
+  "summary": "REL-03基线取消用例超时后EBUSY已修复；通用taskkill等待与取消Promise现在有界，无法证明整树回收时保留失败证据。",
+  "next_action": "已合入REL-03并完成运行时与全量单测审查；候选门禁继续验证，不改变交易逻辑。",
   "allowed_paths": ["scripts/runtime/run.ts", "scripts/runtime/process-stop.ts", "server/test/runtime-cancel.test.ts", "server/test/runtime-isolation.test.ts", "server/test/runtime-shutdown.test.ts", "scripts/runtime/README.md", "docs/work-items/tasks/RUN-CANCEL-01.md"],
   "depends_on": [],
   "docs_impact": {"update": ["docs/work-items/tasks/RUN-CANCEL-01.md"], "reason": "脚本取消语义修复需记录测试和未回收边界；根代理同步测试协议与整批门禁。"},
-  "verification_refs": ["docs/verification/2026-09/REL-03/baseline.json"],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-09/REL-03/baseline.json",
+    "docs/verification/2026-09/REL-03/runtime-cancel-review.json",
+    "server/test/runtime-cancel.test.ts",
+    "server/test/runtime-isolation.test.ts"
+  ],
+  "integration_ref": "1db66dc",
   "acceptance_ref": null
 }
 ```
