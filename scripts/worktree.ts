@@ -26,7 +26,7 @@ export async function runTask(root: string, args: string[]): Promise<{ exitCode:
       case 'list': result = await listWorktrees(root); break
       case 'prepare': result = await prepareCandidate(root, { id: required('id'), branch: required('branch'), target: values.target }); break
       case 'verify': result = await verifyCandidate(root, required('candidate')); break
-      case 'promote': result = await promoteCandidate(root, required('candidate'), resolve(root, required('visual'))); break
+      case 'promote': result = await promoteCandidate(root, required('candidate'), values.visual ? resolve(root, values.visual) : undefined); break
       case 'cleanup': result = await cleanupCandidate(root, required('candidate')); break
     }
     return { exitCode: 0, messages: [JSON.stringify(result, null, 2)] }

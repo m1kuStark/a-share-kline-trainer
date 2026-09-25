@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "task_id": "ORCH-01",
+  "contract_revision": 1,
+  "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
+  "goal": "建立只读四路影子路由与证据合同",
+  "acceptance_criteria": [
+    "路由规则与真实Git观察测试通过",
+    "输出明确不授予派发或合入权限"
+  ],
+  "context_refs": [
+    "docs/proposals/adaptive-model-routing.md",
+    "docs/engineering/worker-contract.md"
+  ],
+  "invariants": [
+    "不写任务仓库",
+    "worker声明不能充当验证证明"
+  ],
+  "known_risks": [
+    "风险路径映射不覆盖全部语义",
+    "工作树包含此前任务未提交改动"
+  ],
+  "forbidden_changes": [
+    "不改变run_glm、候选门禁或模型配置"
+  ],
+  "allowed_paths": [
+    "scripts/agent-routing/**",
+    "scripts/README.md",
+    "scripts/agent-monitor/README.md",
+    "AGENTS.md",
+    "docs/engineering/**",
+    "docs/proposals/**",
+    "docs/work-items/**",
+    "docs/status.md",
+    "docs/verification/2026-09/ORCH-01/**"
+  ],
+  "forbidden_paths": [
+    ".github/**"
+  ],
+  "approved_changes": [
+    "verification_policy"
+  ],
+  "semantic_scopes": [
+    "engineering.routing"
+  ],
+  "task_shape": "designed",
+  "oracle": "reliable",
+  "verification_profile": "routing-unit",
+  "budgets": {
+    "scout_rounds": 2,
+    "same_failure_repairs": 2,
+    "total_attempts": 4,
+    "environment_retries": 2
+  }
+}

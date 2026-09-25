@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { cleanupCandidate, createTask, listWorktrees, prepareCandidate, promoteCandidate, verifyCandidate } from '../../scripts/worktree/workflow.js'
 import { withIntegrationLock } from '../../scripts/worktree/lock.js'
+import { classifyReview, REVIEW_POLICY_VERSION } from '../../scripts/worktree/review-profile.js'
+import { planVerification } from '../../scripts/verify-candidate.js'
 import { runTask } from '../../scripts/worktree.js'
 
 vi.setConfig({ testTimeout: 90_000, hookTimeout: 30_000 })
@@ -44,6 +46,27 @@ async function candidateFixture() {
   const candidate = await prepareCandidate(root, { id: 'TASK-01', branch: task.branch })
   return { task, candidate }
 }
+// The fixture producer relays the real shared classification into its proof, so
+// pipeline tests exercise the same policy object the consumer recomputes with.
+async function relayReview(candidate: { path: string; baseCommit: string; commit: string }) {
+  const review = classifyReview(candidate.path, candidate.baseCommit, candidate.commit, { worktreePath: candidate.path })
+  await mkdir(join(candidate.path, '.runs'), { recursive: true })
+  await writeFile(join(candidate.path, '.runs/review-relay.json'), JSON.stringify({
+    schemaVersion: 2, policyVersion: review.policyVersion, profile: review.profile, reason: review.reason,
+    visual: review.visual, changeSet: review.changeSet,
+    checks: planVerification(review.profile, { impact: true }).map(step => ({ name: step.name, exitCode: 0 })),
+  }))
+  return review
+}
+async function docsCandidateFixture() {
+  await put(root, 'docs/work-items/tasks/DOCS-01.md', card('DOCS-01', { allowed_paths: ['docs/**', 'README.md'] }))
+  commit(root, 'add docs task card')
+  const task = await createTask(root, { id: 'DOCS-01', path: join(sandbox, 'DOCS-01') })
+  await put(task.path, 'docs/guide.md', '# guide\n')
+  commit(task.path, 'docs-only change')
+  const candidate = await prepareCandidate(root, { id: 'DOCS-01', branch: task.branch })
+  return { task, candidate }
+}
 async function visual(candidate: { path: string; commit: string }, changes: Record<string, unknown> = {}) {
   await put(candidate.path, '.runs/review/screenshot.png', 'fixture image evidence')
   const path = join(candidate.path, '.runs/review/visual.json')
@@ -71,10 +94,20 @@ const cp = require('node:child_process');
 const git = (...args) => cp.execFileSync('git', args, { encoding: 'utf8', windowsHide: true }).trim();
 const flag = name => process.argv[process.argv.indexOf(name) + 1];
 const testedCommit = git('rev-parse', 'HEAD');
+const cleanBefore = git('status', '--porcelain', '--untracked-files=all') === '';
 if (fs.existsSync('.runs/fail-gate')) process.exit(7);
 fs.mkdirSync('.runs/test-run', { recursive: true });
 fs.writeFileSync('.runs/test-run/manifest.json', JSON.stringify({ root: process.cwd(), commit: testedCommit }));
-fs.writeFileSync('.runs/candidate-proof.json', JSON.stringify({ schemaVersion: 1, taskId: flag('--task'), baseCommit: flag('--base'), testedCommit, tree: git('rev-parse', 'HEAD^{tree}'), passed: true, checks: ['docs','impact','unit','types','build','m2','journey'].map(name => ({ name, exitCode: 0 })), runManifest: path.resolve('.runs/test-run/manifest.json'), createdAt: new Date().toISOString() }));
+const cleanAfter = git('status', '--porcelain', '--untracked-files=all') === '';
+const binding = { taskId: flag('--task'), baseCommit: flag('--base'), testedCommit, tree: git('rev-parse', 'HEAD^{tree}'), passed: true, runManifest: path.resolve('.runs/test-run/manifest.json'), createdAt: new Date().toISOString() };
+let proof;
+try {
+  const relay = JSON.parse(fs.readFileSync('.runs/review-relay.json', 'utf8'));
+  proof = { schemaVersion: relay.schemaVersion, policyVersion: relay.policyVersion, profile: relay.profile, reason: relay.reason, visual: relay.visual, changeSet: relay.changeSet, checks: relay.checks, cleanBefore, cleanAfter, ...binding };
+} catch {
+  proof = { schemaVersion: 1, ...binding, checks: ['docs','impact','unit','types','build','m2','journey'].map(name => ({ name, exitCode: 0 })) };
+}
+fs.writeFileSync('.runs/candidate-proof.json', JSON.stringify(proof));
 `)
   commit(root, 'baseline')
 })
@@ -218,6 +251,64 @@ describe('candidate verification and promotion', () => {
     }
   })
 
+  it('rejects proof run manifests that are missing, outside or junction-redirected while retaining valid proofs', async () => {
+    const { candidate } = await candidateFixture()
+    await verifyCandidate(root, candidate.id)
+    const path = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(path, 'utf8'))
+    await writeFile(join(sandbox, 'outside.json'), '{}')
+    await mkdir(join(sandbox, 'outside-store'), { recursive: true })
+    await writeFile(join(sandbox, 'outside-store/manifest.json'), '{}')
+    await symlink(join(sandbox, 'outside-store'), join(candidate.path, '.runs/redirect'), process.platform === 'win32' ? 'junction' : 'dir')
+    for (const bad of [
+      { runManifest: '.runs/missing.json' },
+      { runManifest: '../outside.json' },
+      { runManifest: '.runs/redirect/manifest.json' },
+    ]) {
+      await writeFile(path, JSON.stringify({ ...proof, ...bad }))
+      await expect(promoteCandidate(root, candidate.id, await visual(candidate)), JSON.stringify(bad)).rejects.toThrow(/manifest/i)
+      expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+    }
+    await writeFile(path, JSON.stringify(proof))
+    await promoteCandidate(root, candidate.id, await visual(candidate))
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
+  })
+
+  it('applies the same run-manifest ownership to v2 proofs before a visual-exempt promotion', async () => {
+    const { candidate } = await docsCandidateFixture()
+    await relayReview(candidate)
+    await verifyCandidate(root, candidate.id)
+    const path = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(path, 'utf8'))
+    await writeFile(join(sandbox, 'outside.json'), '{}')
+    for (const bad of [{ runManifest: '.runs/missing.json' }, { runManifest: '../outside.json' }]) {
+      await writeFile(path, JSON.stringify({ ...proof, ...bad }))
+      await expect(promoteCandidate(root, candidate.id), JSON.stringify(bad)).rejects.toThrow(/manifest/i)
+      expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+    }
+    await writeFile(path, JSON.stringify(proof))
+    await promoteCandidate(root, candidate.id)
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
+  })
+
+  it('requires v2 proofs to promise a clean worktree before and after the checks', async () => {
+    const { candidate } = await docsCandidateFixture()
+    await relayReview(candidate)
+    await verifyCandidate(root, candidate.id)
+    const path = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(path, 'utf8'))
+    expect(proof.cleanBefore).toBe(true)
+    expect(proof.cleanAfter).toBe(true)
+    for (const bad of [{ cleanBefore: false }, { cleanAfter: false }, { cleanBefore: undefined }, { cleanAfter: undefined }]) {
+      await writeFile(path, JSON.stringify({ ...proof, ...bad }))
+      await expect(promoteCandidate(root, candidate.id), JSON.stringify(bad)).rejects.toThrow(/clean/i)
+      expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+    }
+    await writeFile(path, JSON.stringify(proof))
+    await promoteCandidate(root, candidate.id)
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
+  })
+
   it('requires a matching manual UI review and existing relative evidence files', async () => {
     const { candidate } = await candidateFixture()
     await verifyCandidate(root, candidate.id)
@@ -328,5 +419,107 @@ describe('candidate verification and promotion', () => {
     await expect(cleanupCandidate(root, candidate.id)).rejects.toThrow(/registered/i)
     await expect(access(candidate.path)).resolves.toBeUndefined()
     expect(git('branch', '--list', 'unrelated')).toContain('unrelated')
+  })
+})
+
+describe('classified docs-only candidates', () => {
+  it('verifies a docs-only candidate with the exact docs check set and promotes without a visual review', async () => {
+    const { candidate } = await docsCandidateFixture()
+    await relayReview(candidate)
+    const checked = await verifyCandidate(root, candidate.id)
+    expect(checked.status).toBe('verified')
+    const proof = JSON.parse(await readFile(join(candidate.path, '.runs/candidate-proof.json'), 'utf8'))
+    expect(proof.schemaVersion).toBe(2)
+    expect(proof.profile).toBe('docs-only')
+    expect(proof.visual).toBe('not_applicable')
+    expect(proof.policyVersion).toBe(REVIEW_POLICY_VERSION)
+    expect(proof.changeSet.fingerprint).toMatch(/^[0-9a-f]{64}$/)
+    expect(proof.checks.map((check: { name: string }) => check.name)).toEqual(['docs', 'impact', 'status'])
+    await promoteCandidate(root, candidate.id)
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
+    expect(git('status', '--porcelain')).toBe('')
+    await cleanupCandidate(root, candidate.id)
+    expect(git('branch', '--list', candidate.branch)).toBe('')
+  })
+
+  it('keeps the manual UI requirement for legacy v1 proofs even when the change set is docs-only', async () => {
+    const { candidate } = await docsCandidateFixture()
+    await verifyCandidate(root, candidate.id)
+    const proof = JSON.parse(await readFile(join(candidate.path, '.runs/candidate-proof.json'), 'utf8'))
+    expect(proof.schemaVersion).toBe(1)
+    await expect(promoteCandidate(root, candidate.id)).rejects.toThrow(/manual|visual/i)
+    expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+    await promoteCandidate(root, candidate.id, await visual(candidate))
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
+  })
+
+  it('rejects forged docs-only proofs over full change sets and mismatched change-set fingerprints', async () => {
+    const { candidate } = await candidateFixture()
+    await relayReview(candidate)
+    await verifyCandidate(root, candidate.id)
+    const proofPath = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(proofPath, 'utf8'))
+    expect(proof.profile).toBe('full')
+    expect(proof.visual).toBe('required')
+    await writeFile(proofPath, JSON.stringify({
+      ...proof, profile: 'docs-only', visual: 'not_applicable',
+      checks: [{ name: 'docs', exitCode: 0 }, { name: 'impact', exitCode: 0 }, { name: 'status', exitCode: 0 }],
+    }))
+    await expect(promoteCandidate(root, candidate.id)).rejects.toThrow(/profile|classification|recomputed/i)
+    expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+
+    const docs = await docsCandidateFixture()
+    await relayReview(docs.candidate)
+    await verifyCandidate(root, docs.candidate.id)
+    const docsProofPath = join(docs.candidate.path, '.runs/candidate-proof.json')
+    const docsProof = JSON.parse(await readFile(docsProofPath, 'utf8'))
+    await writeFile(docsProofPath, JSON.stringify({ ...docsProof, changeSet: { ...docsProof.changeSet, fingerprint: '0'.repeat(64) } }))
+    await expect(promoteCandidate(root, docs.candidate.id)).rejects.toThrow(/fingerprint|change/i)
+    expect(git('rev-parse', 'main')).toBe(docs.candidate.baseCommit)
+  })
+
+  it('rejects unknown policy versions, wrong visual flags and incomplete, extra or duplicated v2 check sets', async () => {
+    const { candidate } = await docsCandidateFixture()
+    await relayReview(candidate)
+    await verifyCandidate(root, candidate.id)
+    const path = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(path, 'utf8'))
+    for (const bad of [
+      { policyVersion: 'forged-policy' },
+      { policyVersion: undefined },
+      { schemaVersion: 3 },
+      { schemaVersion: '2' },
+      { visual: 'required' },
+      { visual: 'unknown' },
+      { checks: proof.checks.slice(0, 2) },
+      { checks: [...proof.checks, { name: 'unit', exitCode: 0 }] },
+      { checks: [...proof.checks, { name: 'docs', exitCode: 0 }] },
+      { checks: proof.checks.map((item: { name: string; exitCode: number }) => ({ ...item, exitCode: item.name === 'impact' ? 1 : 0 })) },
+      { checks: [] },
+      { changeSet: { fingerprint: '0'.repeat(64) } },
+      { changeSet: undefined },
+    ]) {
+      await writeFile(path, JSON.stringify({ ...proof, ...bad }))
+      await expect(promoteCandidate(root, candidate.id), JSON.stringify(bad)).rejects.toThrow(/proof|policy|check|visual|fingerprint|supported|change/i)
+      expect(git('rev-parse', 'main')).toBe(candidate.baseCommit)
+    }
+  })
+
+  it('keeps the full eight-check gate, required visual and exact proof bindings for ordinary change sets', async () => {
+    const { candidate } = await candidateFixture()
+    await relayReview(candidate)
+    await verifyCandidate(root, candidate.id)
+    const proofPath = join(candidate.path, '.runs/candidate-proof.json')
+    const proof = JSON.parse(await readFile(proofPath, 'utf8'))
+    expect(proof.schemaVersion).toBe(2)
+    expect(proof.profile).toBe('full')
+    expect(proof.visual).toBe('required')
+    expect(proof.checks.map((check: { name: string }) => check.name)).toEqual(['docs', 'impact', 'unit', 'types', 'build', 'snapshot', 'm2', 'journey'])
+    await expect(promoteCandidate(root, candidate.id)).rejects.toThrow(/manual|visual/i)
+    await writeFile(proofPath, JSON.stringify({ ...proof, checks: proof.checks.filter((check: { name: string }) => check.name !== 'snapshot') }))
+    await expect(promoteCandidate(root, candidate.id, await visual(candidate))).rejects.toThrow(/check/i)
+    await writeFile(proofPath, JSON.stringify(proof))
+    await promoteCandidate(root, candidate.id, await visual(candidate))
+    expect(git('rev-parse', 'main')).toBe(candidate.commit)
   })
 })

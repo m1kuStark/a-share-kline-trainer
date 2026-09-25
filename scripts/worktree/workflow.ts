@@ -100,12 +100,16 @@ export async function verifyCandidate(root: string, id: string): Promise<Candida
   })
 }
 
-export async function promoteCandidate(root: string, id: string, visualPath: string): Promise<Candidate> {
+export async function promoteCandidate(root: string, id: string, visualPath?: string): Promise<Candidate> {
   return withIntegrationLock(root, async () => {
     const candidate = await readCandidate(root, id)
     if (candidate.status !== 'verified') throw new Error(`Candidate must be verified before promotion (currently ${candidate.status})`)
-    await assertProof(candidate)
-    await assertVisual(candidate, visualPath)
+    const proof = await assertProof(candidate)
+    // Only a v2 proof the consumer independently recomputed as docs-only may
+    // promote without a manual UI review; legacy and full change sets cannot.
+    const visualExempt = proof.schemaVersion === 2 && proof.profile === 'docs-only' && proof.visual === 'not_applicable'
+    if (visualPath) await assertVisual(candidate, visualPath)
+    else if (!visualExempt) throw new Error('Manual UI review is required for this candidate; promote with --visual naming the review file')
     // Recheck refs and cleanliness after asynchronous evidence reads, under the common lock.
     assertCurrent(root, candidate)
     const target = registeredWorktrees(root).find(worktree => worktree.branch === candidate.targetRef)
