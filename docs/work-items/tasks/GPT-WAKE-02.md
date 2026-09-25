@@ -5,10 +5,10 @@
   "id": "GPT-WAKE-02",
   "title": "控制器 gpt_direct 自动派发（pinned Codex 会话）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "DEV",
-  "summary": "gpt.runner_entry/gpt.cli 已入 runner_file_hashes（cli 必填，堵 APPDATA/PATH 动态解析逃逸）、gpt.home 外置校验、--cli 移回顶层并加真实 parser 合同测试、registry sessionId 与 pinned 会话强校验；agent-routing 268 项绿。",
-  "next_action": "User acceptance; 与 GPT-WAKE-01 一并由集成人复核修复批次。",
+  "summary": "Integrator engineering review passed at 1fd5c19: scoped wake-bridge repair complete; user acceptance remains unrecorded.",
+  "next_action": "Resume original DATA-05/TRAIN-02 product conversations, then SETUP-01; keep event-only callbacks and existing review/merge boundaries.",
   "allowed_paths": [
     "scripts/agent-routing/controller_loop.py",
     "scripts/agent-routing/controller_runner.py",
@@ -37,9 +37,10 @@
   },
   "verification_refs": [
     "docs/verification/2026-09/GPT-WAKE-02/report.md",
-    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
+    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md",
+    "docs/verification/2026-09/GPT-WAKE-02/repair-acceptance-20260926.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "1fd5c19bc1b7e182994ab11edc0bdde9c7b67959",
   "acceptance_ref": null
 }
 ```
