@@ -228,6 +228,28 @@ def read_prompt(args):
 WRITER_BUSY_MARKER = "already has an active writer"
 
 
+def _notify(title, body):
+    """Fire-and-forget Windows balloon toast so the operator can keep the
+    desktop visible; failures are silently ignored (never blocks a wake)."""
+    if os.name != "nt":
+        return
+    try:
+        script = ("Add-Type -AssemblyName System.Windows.Forms;"
+                  "Add-Type -AssemblyName System.Drawing;"
+                  "$n = New-Object System.Windows.Forms.NotifyIcon;"
+                  "$n.Icon = [System.Drawing.SystemIcons]::Information;"
+                  "$n.Visible = $true;"
+                  "$n.ShowBalloonTip(8000, '%s', '%s', "
+                  "[System.Windows.Forms.ToolTipIcon]::Info);"
+                  "Start-Sleep -Seconds 9; $n.Dispose()"
+                  % (title.replace("'", "''"), body.replace("'", "''")))
+        subprocess.Popen(["powershell", "-NoProfile", "-Command", script],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         creationflags=subprocess.CREATE_NO_WINDOW)
+    except (OSError, ValueError):
+        pass
+
+
 def _attempt(argv, prompt, events_path, err_path, cwd, timeout_minutes,
              poll_seconds):
     """单次派发：返回 (exit_code, state, duration)。state ∈ running/timeout。"""
@@ -304,6 +326,7 @@ def cmd_wake(args):
         writer_busy = False
         started_iso = _now_iso()
         wait_deadline = time.monotonic() + args.wait_writer_minutes * 60
+        notified_wait = False
         while True:
             exit_code, state, duration = _attempt(
                 argv, prompt, events_path, err_path, args.cwd,
@@ -319,6 +342,10 @@ def cmd_wake(args):
                 break
             writer_busy = True
             if args.wait_writer_minutes > 0 and time.monotonic() < wait_deadline:
+                if args.notify and not notified_wait:
+                    notified_wait = True
+                    _notify("Codex 唤醒等待中",
+                            "目标会话被占用（Desktop 正打开）；切离该会话后自动继续")
                 time.sleep(max(args.poll_seconds * 5, 15.0))
                 continue
             break
@@ -344,6 +371,14 @@ def cmd_wake(args):
         jobs_path = home / "jobs"
         jobs_path.mkdir(parents=True, exist_ok=True)
         _atomic_write_json(jobs_path / ("%s.json" % args.batch), record)
+        if args.notify:
+            if state == "completed":
+                preview = (answer or "").strip().replace("\n", " ")[:80]
+                _notify("GPT 已应答（%ds）" % round(duration), preview or "无文本答复")
+            elif state == "timeout":
+                _notify("Codex 唤醒超时", "已达 --timeout-minutes 上限，进程树已终止")
+            else:
+                _notify("Codex 唤醒失败", "writer busy" if writer_busy else "退出码 %s" % exit_code)
         result = {"ok": state == "completed", "state": state,
                   "writerBusy": writer_busy, "sessionId": session_id,
                   "answer": answer,
@@ -470,6 +505,9 @@ def build_parser():
                         default=[], dest="add_dirs",
                         help="extra writable directory for the codex sandbox "
                              "(e.g. the control job dir holding the report)")
+    p_wake.add_argument("--notify", action="store_true",
+                        help="Windows balloon toast on waiting/completed/failed "
+                             "so the operator can keep the desktop visible")
     p_wake.add_argument("--stable-seconds", type=float, default=30.0)
     p_wake.add_argument("--skip-stable", action="store_true")
     p_wake.add_argument("--poll-seconds", type=float, default=2.0)

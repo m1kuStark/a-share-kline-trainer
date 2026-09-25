@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -180,6 +181,43 @@ class RunCodexTest(unittest.TestCase):
         self.assertEqual(answer, "答案")
         self.assertEqual(usage["input_tokens"], 9)
         self.assertEqual(thread, "x")
+
+
+    def wake_inprocess(self, *extra):
+        prompt = self.tmp / "prompt-inline.txt"
+        prompt.write_text("你好", encoding="utf-8")
+        return run_codex.main([
+            "--home", str(self.home), "--codex-home", str(self.codex_home),
+            "--cli", self.cli, "wake", "--prompt-file", str(prompt),
+            "--stable-seconds", "0", "--poll-seconds", "0.1", *extra])
+
+    def test_notify_fires_on_completion(self):
+        with patch.object(run_codex, "_notify") as notify:
+            code = self.wake_inprocess("--session-id", "t8", "--batch", "B8",
+                                       "--notify")
+        self.assertEqual(run_codex.EXIT_OK, code)
+        self.assertTrue(notify.called)
+        title, body = notify.call_args[0]
+        self.assertIn("GPT 已应答", title)
+        self.assertIn("FAKE-ANSWER", body)
+
+    def test_notify_silent_without_flag(self):
+        with patch.object(run_codex, "_notify") as notify:
+            self.wake_inprocess("--session-id", "t9", "--batch", "B9")
+        self.assertFalse(notify.called)
+
+    def test_notify_escapes_quotes_and_never_raises(self):
+        captured = {}
+
+        def fake_popen(argv, **kwargs):
+            captured["cmd"] = argv
+            return None
+
+        with patch.object(run_codex.subprocess, "Popen", side_effect=fake_popen):
+            run_codex._notify("标题'引号", "正文'引号")
+        script = captured["cmd"][3]
+        self.assertIn("标题''引号", script)
+        self.assertIn("正文''引号", script)
 
 
 if __name__ == "__main__":

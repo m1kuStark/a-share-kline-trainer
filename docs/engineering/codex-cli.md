@@ -38,6 +38,17 @@
 | 并发约束 | 账号额度 2~3 路 | **每线程单写入者**；跨线程可并行 |
 | 凭据 | ZCode 登录存储 | config.toml bearer token（不进日志/Git） |
 
+## Desktop 常驻工作协议（用户 2026-09-25 拍板）
+
+用户要求：ZCode 推进任务期间 Codex Desktop **正常在桌面运行**，全程可见、可随时人工干预。与写入者锁的调和方式：
+
+- Desktop 常驻运行（看任何其他会话/窗口均可）；**唯一约束是唤醒进行中，目标会话不能是 Desktop 当前打开的那个**（写入者锁）。
+- GLM 侧唤醒一律带 `--wait-writer-minutes <N> --notify`：锁被持有时不报错退出，而是排队等待并弹 Windows 通知"切离该会话后自动继续"；用户切离目标会话（点到别的会话即可）后自动续接；完成/失败再弹通知，用户切回即见完整对话记录。
+- 人工干预入口天然存在：用户在会话里的手动输入进入同一上下文（下次唤醒 GPT 可见）；控制器侧任何异常都 waiting_control 交还人工，不自动重试。
+- 看板兜底：每次 wake 的 prompt/答复/用量登记在桥 home 的 `jobs/<batch>.json`（机器可读），可作为第二观察窗。
+
+**真正的"实时看着 GPT 在 Desktop 里打字"需要驱动 Desktop 本身**，两条候选路径（均需专项验证后再立项）：①官方实验接口——`codex app-server daemon/proxy`（连接运行中 app-server 的控制套接字）＋`remote-control pair`（配对码），且可用 `generate-json-schema` 导出协议，正对"往打开的会话注入任务"这一需求；②Desktop UI 自动化（tdx_quick_draw 先例）。在验证之前，上表的排队＋通知协议是既定工作方式。
+
 ## 桥工具用法（交互协议）
 
 ```powershell
