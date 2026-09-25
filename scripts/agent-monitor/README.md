@@ -2,7 +2,7 @@
 
 四路协作与显式控制器见[路由入口](../agent-routing/README.md)。run_glm支持已登记任务的后台执行；completed只表示执行退出，不代表独立验证或合入通过。
 
-面向人查看的本机窗口，与Codex是否处于活动轮次无关。[monitor.py](monitor.py)提供只读HTTP页面，[index.html](index.html)显示登记任务、Prompt、最近工具描述、最终答复和独立的复核状态。[run_glm.py](run_glm.py)派发小任务并自动登记、更新完成标志。
+面向人查看的本机窗口，与Codex是否处于活动轮次无关。[monitor.py](monitor.py)提供只读HTTP页面，[index.html](index.html)显示登记任务、Prompt、最近工具描述、最终答复和独立的复核状态。[run_glm.py](run_glm.py)派发小任务并自动登记、更新完成标志。非图像理解的重活可`--model GLM-5.3`显式换型（provider配置须匹配同一模型，默认仍Flash）。
 
 ## 查看
 

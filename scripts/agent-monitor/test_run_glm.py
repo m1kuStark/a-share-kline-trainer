@@ -156,6 +156,69 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(0.0, options.timeout_minutes)
         self.assertEqual(5.0, options.idle_minutes)
         self.assertEqual(32768, options.max_output_tokens)
+        self.assertEqual('GLM-5.3-Flash', options.model)
+
+    def test_model_whitelist_rejects_unknown(self):
+        with self.assertRaises(SystemExit):
+            run_glm.parser().parse_args([
+                '--batch', 'B', '--title', 'T', '--cwd', '.', '--prompt', 'p.txt',
+                '--log', 'l.log', '--provider', 'prov.json', '--cli', 'x/zcode.cjs',
+                '--model', 'GLM-4.7'])
+
+
+class ModelVariantTests(unittest.TestCase):
+    """--model 白名单：GLM-5.3 非图像重活显式派发；provider 与 model 不匹配即拒绝。"""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    COMPLETED_CLI = (
+        "const fs=require('fs');const args=process.argv.slice(2);"
+        "if(args.includes('--version'))process.exit(0);"
+        "fs.writeSync(1,JSON.stringify({type:'session_started',sessionId:'sess_v1'})+'\\n');"
+        "fs.writeSync(1,JSON.stringify({sessionId:'sess_v1',response:'done'})+'\\n');")
+
+    def run_with(self, model, provider_model):
+        cli = self.root / 'resources/glm/mock.cjs'
+        cli.parent.mkdir(parents=True, exist_ok=True)
+        cli.write_text(self.COMPLETED_CLI, encoding='utf-8')
+        builtin = self.root / 'resources/config/provider/zcode-builtin.json'
+        builtin.parent.mkdir(parents=True, exist_ok=True)
+        builtin.write_text('{}', encoding='utf-8')
+        provider = self.root / 'provider.json'
+        provider.write_text(json.dumps({'config': {
+            'defaultModelSelection': {'modelId': provider_model, 'options': {'reasoningLevel': 'max'}},
+            'modelConfigRules': {'manualProviderModelRules': [
+                {'modelId': provider_model, 'config': {'optionSpecs': {'maxOutputTokens': {'max': 32768}}}}]}}}),
+            encoding='utf-8')
+        prompt = self.root / 'prompt.md'
+        prompt.write_text('model variant test', encoding='utf-8')
+        args = SimpleNamespace(home=self.root, batch='variant', title='变体', cwd=self.root,
+                               log=self.root / 'variant.log', prompt=prompt, provider=provider,
+                               cli=cli, node=shutil.which('node'), db=self.root / 'absent.sqlite',
+                               wake_state=None, resume=None, attach=[], parallelism=1,
+                               permission_mode='yolo', timeout_minutes=0.0, idle_minutes=5.0,
+                               max_output_tokens=32768, model=model)
+        with patch('run_glm.subprocess.check_output', return_value='main\n'):
+            code = run_glm.run(args)
+        record = json.loads((self.root / 'jobs' / 'variant.json').read_text(encoding='utf-8'))
+        return code, record
+
+    def test_glm53_variant_accepted_when_provider_matches(self):
+        code, record = self.run_with('GLM-5.3', 'GLM-5.3')
+        self.assertEqual(0, code)
+        self.assertEqual('completed', record['state'])
+        self.assertEqual('GLM-5.3', record['model'])
+
+    def test_model_provider_mismatch_fails_job(self):
+        code, record = self.run_with('GLM-5.3', 'GLM-5.3-Flash')
+        self.assertEqual(1, code)
+        self.assertEqual('failed', record['state'])
+        self.assertIn('Expected GLM-5.3', record.get('error', ''))
 
 
 class RunnerMetadataTests(unittest.TestCase):

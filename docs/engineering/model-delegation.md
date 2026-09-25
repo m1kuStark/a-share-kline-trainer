@@ -35,7 +35,7 @@ ORCH-04的候选门禁和离线效果对照已通过[本地验收](../verificati
 
 - 保留独立worktree、基础SHA、allowed_paths、独立TRAINER_DB和端口；通达信只读。worker不push主干、不改个人库、不降低门禁。
 - 从实际Git根启动Z code，Mimosa基线与任务根一致。同一拦截只交接一次，不使用--no-verify或其他绕过方式；集成人按已有授权审查。
-- 保留GLM-5.3-Flash最高支持思考档和1M配置目标；配置不等于已实测容量，也不要求填满上下文。接口、输出额度及版本按[CLI经验](zcode-cli.md)核验，不编造参数。
+- 保留GLM-5.3-Flash最高支持思考档和1M配置目标；配置不等于已实测容量，也不要求填满上下文。非图像理解的重活可显式`--model GLM-5.3`（同思考档与输出预算，白名单见run_glm.py，provider配置须匹配同一模型）；图像任务仍用Flash或人工。接口、输出额度及版本按[CLI经验](zcode-cli.md)核验，不编造参数。
 - 并发按独立行为/文件所有权与账号额度管理，沿用已验证2～3路经验及runner最多4槽位。真实429/1302有限退避并下调并发，不自行降低思考档。
 - 用[登记后台入口](../../scripts/agent-monitor/README.md)，看板显示Prompt、活动和结果；凭据由Z code登录存储使用，日志/provider副本在工程外。
 - 长调用后台执行，按完成事件更新job；沿用已授权25分钟heartbeat续接，无独立工作不反复轮询。多任务用group索引，不共用wake-state；全部处理后停止续接自动化。

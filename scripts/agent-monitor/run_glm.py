@@ -14,6 +14,8 @@ from monitor import DEFAULT_DB, DEFAULT_HOME, atomic_write, read_result, redact,
 from telemetry import ModelLogReader
 
 MODEL_ID = 'GLM-5.3-Flash'
+# 非图像理解的重活可显式 --model GLM-5.3（用户 2026-09-25 授权白名单）；默认仍 Flash
+ALLOWED_MODEL_IDS = ('GLM-5.3-Flash', 'GLM-5.3')
 # CLI 0.16.9 实测仅接受图片/视频附件后缀
 ATTACH_SUFFIXES = {'.gif', '.jpeg', '.jpg', '.png', '.webp',
                    '.mp4', '.m4v', '.mov', '.webm', '.mkv', '.avi'}
@@ -179,7 +181,7 @@ def run(args):
     budget = getattr(args, 'max_output_tokens', 32768)
     database = getattr(args, 'db', None) or DEFAULT_DB
     job = {'id': args.batch, 'title': args.title, 'worktree': str(args.cwd.resolve()),
-           'state': 'starting', 'model': MODEL_ID, 'effort': 'max', 'contextConfigured': 1000000,
+           'state': 'starting', 'model': getattr(args, 'model', MODEL_ID), 'effort': 'max', 'contextConfigured': 1000000,
            'startedAt': int(time.time() * 1000), 'logPath': str(args.log.resolve()), 'parallelism': parallelism,
            'mode': permission_mode, 'timeoutMinutes': getattr(args, 'timeout_minutes', 0.0),
            'idleMinutes': getattr(args, 'idle_minutes', 5.0),
@@ -204,9 +206,10 @@ def run(args):
         job['branch'] = subprocess.check_output(['git', 'branch', '--show-current'], cwd=args.cwd, text=True, creationflags=subprocess.CREATE_NO_WINDOW).strip()
         base = json.loads(args.provider.read_text(encoding='utf-8-sig'))
         selection = base['config']['defaultModelSelection']
-        if selection['modelId'] != MODEL_ID or selection.get('options', {}).get('reasoningLevel') != 'max':
-            raise ValueError('Expected GLM-5.3-Flash with reasoningLevel=max.')
-        apply_output_budget(base, MODEL_ID, budget)
+        expected_model = getattr(args, 'model', MODEL_ID)
+        if selection['modelId'] != expected_model or selection.get('options', {}).get('reasoningLevel') != 'max':
+            raise ValueError('Expected %s with reasoningLevel=max.' % expected_model)
+        apply_output_budget(base, expected_model, budget)
         attachments = validate_attachments(getattr(args, 'attach', []))
         job['attachments'] = [str(item) for item in attachments]
         job['attachmentCount'] = len(attachments)
@@ -290,6 +293,8 @@ def parser():
     p.add_argument('--prompt', type=pathlib.Path, required=True)
     p.add_argument('--log', type=pathlib.Path, required=True)
     p.add_argument('--provider', type=pathlib.Path, required=True)
+    p.add_argument('--model', default=MODEL_ID, choices=ALLOWED_MODEL_IDS,
+                   help='GLM model for this batch; GLM-5.3 for heavy non-vision tasks, default Flash')
     p.add_argument('--cli', type=pathlib.Path, required=True)
     p.add_argument('--node', default=shutil.which('node'))
     p.add_argument('--db', type=pathlib.Path, default=DEFAULT_DB)
