@@ -7,7 +7,7 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "DEV",
-  "summary": "gpt.runner_entry/gpt.cli 已入 runner_file_hashes、gpt.home 外置校验、--cli 移回顶层并加真实 parser 合同测试、registry sessionId 与 pinned 会话强校验；agent-routing 266 项绿。",
+  "summary": "gpt.runner_entry/gpt.cli 已入 runner_file_hashes（cli 必填，堵 APPDATA/PATH 动态解析逃逸）、gpt.home 外置校验、--cli 移回顶层并加真实 parser 合同测试、registry sessionId 与 pinned 会话强校验；agent-routing 268 项绿。",
   "next_action": "User acceptance; 与 GPT-WAKE-01 一并由集成人复核修复批次。",
   "allowed_paths": [
     "scripts/agent-routing/controller_loop.py",

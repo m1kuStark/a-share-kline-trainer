@@ -7,7 +7,7 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "DEV",
-  "summary": "批处理认领（EXIT_BATCH_EXISTS=8，重复 batch 不再二次调用）、会话身份绑定（requested/returned 双记，缺失或不匹配即 failed）、超时清理不确定时保留锁、句柄 ResourceWarning 回归门、-X utf8 夹具均已落地；agent-monitor 94 项绿。",
+  "summary": "批处理认领（EXIT_BATCH_EXISTS=8，重复 batch 不再二次调用）、会话身份绑定（requested/returned 双记，缺失或不匹配即 failed）、超时树验证（枚举整棵进程树逐 PID 验证＋补杀，无法确认保守保留锁）、句柄 ResourceWarning 回归门、-X utf8 夹具均已落地；agent-monitor 99 项绿。",
   "next_action": "User acceptance; 与 GPT-WAKE-02 一并由集成人复核修复批次。",
   "allowed_paths": [
     "scripts/agent-monitor/run_codex.py",

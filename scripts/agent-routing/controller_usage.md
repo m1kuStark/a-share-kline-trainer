@@ -12,7 +12,7 @@ py -3.9 -B <控制目录>/controller.py --store <控制store> run --task-id TASK
 py -3.9 -B <控制目录>/controller.py --store <控制store> status --task-id TASK-1
 ~~~
 
-runner配置schema_version=1或2：python_executable、runner_entry、cli、provider、home为绝对路径，node/db可选。permission_mode选择已批准的模式；timeout_minutes为正数，idle_minutes非负，max_output_tokens为正整数。runner_entry指向已有run_glm.py；GLM型号及max配置由它检查。provider内容不进入prompt或可分享报告。控制器额外固定runner、解释器、CLI、provider及已存在monitor/telemetry支持文件的字节散列。v2可选`gpt`段（GPT-WAKE-02）：runner_entry指向run_codex.py、home为桥目录、session_id为pinned中枢会话，sandbox限workspace-write或danger-full-access（实测workspace-write下.git只读，worker无法提交；执行类用danger-full-access与GLM yolo对位）。
+runner配置schema_version=1或2：python_executable、runner_entry、cli、provider、home为绝对路径，node/db可选。permission_mode选择已批准的模式；timeout_minutes为正数，idle_minutes非负，max_output_tokens为正整数。runner_entry指向已有run_glm.py；GLM型号及max配置由它检查。provider内容不进入prompt或可分享报告。控制器额外固定runner、解释器、CLI、provider及已存在monitor/telemetry支持文件的字节散列。v2可选`gpt`段（GPT-WAKE-02）：runner_entry指向run_codex.py、home为桥目录、session_id为pinned中枢会话，sandbox限workspace-write或danger-full-access（2026-09-26实测本机环境workspace-write下.git只读，worker无法提交；执行类在本机用danger-full-access与GLM yolo对位，其他环境以实测为准）。`cli`为必填显式路径：注册时纳入runner_file_hashes哈希固定，杜绝运行时从APPDATA/PATH动态解析逃逸pin。run_codex超时杀树后枚举整棵进程树逐PID验证消亡才记cleanup_confirmed，无法枚举或清理异常时保守保留会话锁。
 
 仅已批准的glm_direct或gpt_plan_glm_execute/execute_contract自动执行；gpt_direct/take_over在policy `gpt_dispatch=true`与runner config gpt段**双旗标齐备**时经run_codex自动派发到同一Codex会话（Desktop打开会话持写入者锁时报忙降级waiting_control）。plan_contract、缺oracle、scope扩大、新合同外风险、保护测试变化及旗标缺省的gpt_direct仍留waiting_control交接。Scout的OS只读沙盒未实现。
 
