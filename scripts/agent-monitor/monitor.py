@@ -13,6 +13,7 @@ import urllib.request
 from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from telemetry import ModelLogReader
+from quota import QuotaSources
 
 DEFAULT_HOME = pathlib.Path(os.environ.get('CODEX_HOME', pathlib.Path.home() / '.codex')) / 'headroom-cache' / 'glm-monitor'
 DEFAULT_DB = pathlib.Path.home() / '.zcode' / 'cli' / 'db' / 'db.sqlite'
@@ -178,8 +179,12 @@ def snapshot(registry, database):
         for path in pathlib.Path(registry).glob('*.json'):
             try:
                 job = json.loads(path.read_text(encoding='utf-8-sig'))
-                safe_keys = ['id', 'title', 'worktree', 'branch', 'state', 'startedAt', 'finishedAt', 'model', 'effort', 'contextConfigured', 'prompt', 'response', 'error', 'review', 'logPath', 'exitCode', 'followupId']
+                safe_keys = ['id', 'title', 'worktree', 'branch', 'state', 'startedAt', 'finishedAt', 'model', 'effort', 'contextConfigured', 'prompt', 'response', 'error', 'review', 'logPath', 'exitCode', 'followupId', 'cliVersion', 'resumedFrom']
                 item = {key: job[key] for key in safe_keys if key in job}
+                item['sessionMode'] = job.get('sessionMode') if job.get('sessionMode') in ('new', 'resume') else 'unknown'
+                attachments = job.get('attachments')
+                item['attachments'] = [redact(pathlib.PureWindowsPath(p).name) for p in attachments if isinstance(p, str)] if isinstance(attachments, list) else []
+                item['attachmentCount'] = len(item['attachments']) if isinstance(attachments, list) else None
                 for field in ['prompt', 'response', 'error']:
                     if field in item:
                         item[field] = redact(item[field])[:70000]
@@ -284,6 +289,14 @@ def serve(home, database, launch, reuse_address=False):
         except (TypeError, ValueError, KeyError):
             pass
     instance = secrets.token_hex(16)
+    from zcode_usage import UsageCache
+    try:
+        sources = json.loads((home / 'sources.json').read_text(encoding='utf-8-sig'))
+    except (OSError, ValueError):
+        sources = {}
+    usage_cache = UsageCache(sources.get('cliPath'))
+    provider_file = sources.get('delegateProviderFile')
+    quota_cache = QuotaSources(provider_file, pathlib.Path.home() / '.zcode/v2/logs')
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -299,6 +312,12 @@ def serve(home, database, launch, reuse_address=False):
                 body, content_type = pathlib.Path(__file__).with_name('index.html').read_bytes(), 'text/html; charset=utf-8'
             elif route == 'state':
                 body, content_type = json.dumps(snapshot(home / 'jobs', database), ensure_ascii=False).encode(), 'application/json; charset=utf-8'
+            elif route == 'usage':
+                jobs = snapshot(home / 'jobs', database)['jobs']
+                session_ids = [j['sessionId'] for j in jobs if j.get('sessionId') and not j.get('warning') and j['jobKind'] == 'glm']
+                body, content_type = json.dumps(usage_cache.get(session_ids), ensure_ascii=False).encode(), 'application/json; charset=utf-8'
+            elif route == 'quota':
+                body, content_type = json.dumps(quota_cache.get(), ensure_ascii=False).encode(), 'application/json; charset=utf-8'
             elif route == 'health':
                 body, content_type = json.dumps({'instance': instance}).encode(), 'application/json'
             else:

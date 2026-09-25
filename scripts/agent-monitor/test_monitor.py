@@ -48,6 +48,18 @@ class MonitorTests(unittest.TestCase):
             self.assertNotIn(secret, text)
         self.assertEqual(value['jobs'][0]['phase'], 'awaiting_review')
 
+    def test_session_and_media_metadata_are_explicit_and_minimized(self):
+        self.assertEqual(monitor.snapshot(self.registry, self.database)['jobs'][0].get('sessionMode'), 'unknown')
+        self.job.update(sessionMode='resume', resumedFrom='ours', cliVersion='0.16.9',
+                        attachments=['D:/private-folder/chart.png'], attachmentCount=1)
+        self.write_job()
+        row = monitor.snapshot(self.registry, self.database)['jobs'][0]
+        self.assertEqual(row['sessionMode'], 'resume')
+        self.assertEqual(row['resumedFrom'], 'ours')
+        self.assertEqual(row['attachments'], ['chart.png'])
+        self.assertEqual(row['attachmentCount'], 1)
+        self.assertNotIn('private-folder', str(row))
+
     def test_unknown_or_mismatched_session_cannot_expose_other_project(self):
         self.job['sessionId'] = 'other'
         self.write_job()

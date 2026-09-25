@@ -1,10 +1,15 @@
 import json
+import os
 import pathlib
+import shutil
 import sqlite3
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import monitor
 import run_glm
@@ -108,8 +113,9 @@ class SuperviseTests(unittest.TestCase):
         self.temp.cleanup()
 
     def spawn(self, code, log):
-        child = subprocess.Popen([sys.executable, '-c', code],
-                                 stdout=log.open('w'), stderr=subprocess.DEVNULL)
+        with log.open('w') as output:
+            child = subprocess.Popen([sys.executable, '-c', code],
+                                     stdout=output, stderr=subprocess.DEVNULL)
         self.children.append(child)
         return child
 
@@ -150,6 +156,114 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(0.0, options.timeout_minutes)
         self.assertEqual(5.0, options.idle_minutes)
         self.assertEqual(32768, options.max_output_tokens)
+
+
+class RunnerMetadataTests(unittest.TestCase):
+    """会话元数据生命周期：new/resume、失败保留关联、超时从流日志补登。"""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def build(self, batch, cli_code, resume=None, with_attachment=False):
+        cli = self.root / 'resources/glm/mock.cjs'
+        cli.parent.mkdir(parents=True, exist_ok=True)
+        cli.write_text(cli_code, encoding='utf-8')
+        builtin = self.root / 'resources/config/provider/zcode-builtin.json'
+        builtin.parent.mkdir(parents=True, exist_ok=True)
+        builtin.write_text('{}', encoding='utf-8')
+        provider = self.root / 'provider.json'
+        provider.write_text(json.dumps({'config': {
+            'defaultModelSelection': {'modelId': 'GLM-5.3-Flash', 'options': {'reasoningLevel': 'max'}},
+            'modelConfigRules': {'manualProviderModelRules': [
+                {'modelId': 'GLM-5.3-Flash', 'config': {'optionSpecs': {'maxOutputTokens': {'max': 32768}}}}]}}}),
+            encoding='utf-8')
+        prompt = self.root / 'prompt.md'
+        prompt.write_text('metadata lifecycle test', encoding='utf-8')
+        attach = []
+        if with_attachment:
+            image = self.root / 'shot.png'
+            image.write_bytes(b'fixture-image')
+            attach.append(image)
+        args = SimpleNamespace(home=self.root, batch=batch, title='元数据', cwd=self.root,
+                               log=self.root / (batch + '.log'), prompt=prompt, provider=provider,
+                               cli=cli, node=shutil.which('node'), db=self.root / 'absent.sqlite',
+                               wake_state=None, resume=resume, attach=attach, parallelism=1,
+                               permission_mode='yolo', timeout_minutes=0.0, idle_minutes=5.0,
+                               max_output_tokens=32768)
+        return args, cli
+
+    COMPLETED_CLI = (
+        "const fs=require('fs');const args=process.argv.slice(2);"
+        "if(args.includes('--version'))process.exit(0);"
+        "if(args.indexOf('--attach')<0)process.exit(7);"
+        "fs.writeSync(1,JSON.stringify({type:'session_started',sessionId:'sess_new_123'})+'\\n');"
+        "fs.writeSync(1,JSON.stringify({sessionId:'sess_new_123',response:'done'})+'\\n');")
+
+    @patch('run_glm.subprocess.check_output', return_value='task/fixture\n')
+    def test_completed_new_job_records_full_session_metadata(self, _):
+        args, cli = self.build('meta-new', self.COMPLETED_CLI, with_attachment=True)
+        self.assertEqual(0, run_glm.run(args))
+        state = json.loads((self.root / 'jobs' / 'meta-new.json').read_text(encoding='utf-8'))
+        self.assertEqual('completed', state['state'])
+        self.assertEqual('new', state['sessionMode'])
+        self.assertIsNone(state['resumedFrom'])
+        self.assertEqual('sess_new_123', state['sessionId'])
+        self.assertEqual(str(cli.resolve()), state['cliPath'])
+        self.assertEqual(1, state['attachmentCount'])
+        self.assertEqual([str(args.attach[0].resolve())], state['attachments'])
+
+    @patch('run_glm.subprocess.check_output', return_value='task/fixture\n')
+    def test_resume_metadata_keeps_association_when_run_fails(self, _):
+        args, _ = self.build('meta-resume-fail', 'process.exit(9);', resume='sess_prev_42')
+        self.assertEqual(1, run_glm.run(args))
+        state = json.loads((self.root / 'jobs' / 'meta-resume-fail.json').read_text(encoding='utf-8'))
+        self.assertEqual('failed', state['state'])
+        self.assertEqual('resume', state['sessionMode'])
+        self.assertEqual('sess_prev_42', state['resumedFrom'])
+        self.assertEqual('sess_prev_42', state['sessionId'])
+
+    @patch('run_glm.subprocess.check_output', return_value='task/fixture\n')
+    def test_failed_resultless_job_recovers_session_id_from_log(self, _):
+        code = ("const fs=require('fs');const args=process.argv.slice(2);"
+                "if(args.includes('--version'))process.exit(0);"
+                "fs.writeSync(1,JSON.stringify({type:'session_started',sessionId:'sess_lost_9'})+'\\n');"
+                "process.exit(5);")
+        args, _ = self.build('meta-no-result', code)
+        self.assertEqual(1, run_glm.run(args))
+        state = json.loads((self.root / 'jobs' / 'meta-no-result.json').read_text(encoding='utf-8'))
+        self.assertEqual('failed', state['state'])
+        self.assertEqual('new', state['sessionMode'])
+        self.assertIsNone(state['resumedFrom'])
+        self.assertEqual('sess_lost_9', state['sessionId'])
+
+    @patch('run_glm.subprocess.check_output', return_value='task/fixture\n')
+    def test_timeout_keeps_session_association_from_stream_log(self, _):
+        code = ("const fs=require('fs');const args=process.argv.slice(2);"
+                "if(args.includes('--version'))process.exit(0);"
+                "fs.writeSync(1,JSON.stringify({type:'session_started',sessionId:'sess_timeout_7'})+'\\n');"
+                "setInterval(function(){},1000);")
+        args, _ = self.build('meta-timeout', code)
+
+        def fake_supervise(child, log, **kwargs):
+            time.sleep(1.0)
+            return 'idle-timeout'
+
+        with patch('run_glm.supervise', side_effect=fake_supervise):
+            self.assertEqual(1, run_glm.run(args))
+        state = json.loads((self.root / 'jobs' / 'meta-timeout.json').read_text(encoding='utf-8'))
+        self.assertEqual('failed', state['state'])
+        self.assertEqual('idle-timeout', state['timeoutKind'])
+        self.assertEqual('new', state['sessionMode'])
+        self.assertEqual('sess_timeout_7', state['sessionId'])
+        pid = int(pathlib.Path(str(args.log) + '.pid').read_text(encoding='utf-8'))
+        deadline = time.time() + 8
+        while monitor.process_alive(pid) and time.time() < deadline:
+            time.sleep(0.2)
+        self.assertFalse(monitor.process_alive(pid))
 
 
 if __name__ == '__main__':

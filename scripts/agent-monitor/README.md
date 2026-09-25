@@ -1,5 +1,7 @@
 # GLM 任务看板与后台派发
 
+四路协作与显式控制器见[路由入口](../agent-routing/README.md)。run_glm支持已登记任务的后台执行；completed只表示执行退出，不代表独立验证或合入通过。
+
 面向人查看的本机窗口，与Codex是否处于活动轮次无关。[monitor.py](monitor.py)提供只读HTTP页面，[index.html](index.html)显示登记任务、Prompt、最近工具描述、最终答复和独立的复核状态。[run_glm.py](run_glm.py)派发小任务并自动登记、更新完成标志。
 
 ## 查看
@@ -11,6 +13,14 @@
 “运行中”由登记进程与创建时间判定；无新活动只作提示，不能证明卡死。“开发完成”是模型退出与完整答复；“模块已复核”须由集成人写入review，不自动等同整项功能验收。读库失败、断开、进程异常退出分别显示，不假装正在正常推进。
 
 模型请求、长时间无工具及旧修正任务关联详见[运行观察](health.md)。
+
+## 用量与额度
+
+看板增加[原生统计与额度来源](usage.md)：通过CLI `session/usage`取得会话累计，直接查询当前委派配置对应的BigModel官方Coding Plan额度，并独立显示Zcode Desktop已收到的活动套餐余额快照。会话统计采用Zcode去重口径，不代表账单Token；续接不重复汇总。余额不本地估算、不从token换算，也不自动切换套餐。
+
+`usage`和`quota`端点使用后台缓存，读取不阻塞原任务状态；每60秒最多刷新一轮，失败明确标记过期。每个来源显示采样时间，桌面快照的更新时间不随网页刷新而变化。新登记显示new/resume、续接来源、附件数量/文件名和CLI版本；旧登记未记录的字段不猜测。
+
+运行目录`sources.json`配置CLI和委派provider文件路径，格式见[用量维护说明](usage.md)。凭据不进入页面、仓库或错误信息。界面回归：`node scripts/agent-monitor/test_monitor_ui.cjs`（使用仓库或Git公共目录中的Playwright，证据写至仓库外）。
 
 ## 派发
 

@@ -116,6 +116,14 @@ def discover_session_id(log_path):
     return match.group(1) if match else None
 
 
+def note_session_from_log(job, log_path):
+    """超时/失败返回前用既有 helper 从流日志补登当前会话；resume 关联不覆盖。"""
+    if not job.get('sessionId'):
+        found = discover_session_id(log_path)
+        if found:
+            job['sessionId'] = found
+
+
 def supervise(child, log_path, *, database, worktree, started_at, total_ms=0, idle_ms=0,
               reader=None, session_id=None, poll_seconds=POLL_SECONDS):
     """Bounded wait. Activity = own log growth, session DB stamps, or a model request still in flight.
@@ -174,7 +182,12 @@ def run(args):
            'state': 'starting', 'model': MODEL_ID, 'effort': 'max', 'contextConfigured': 1000000,
            'startedAt': int(time.time() * 1000), 'logPath': str(args.log.resolve()), 'parallelism': parallelism,
            'mode': permission_mode, 'timeoutMinutes': getattr(args, 'timeout_minutes', 0.0),
-           'idleMinutes': getattr(args, 'idle_minutes', 5.0)}
+           'idleMinutes': getattr(args, 'idle_minutes', 5.0),
+           'sessionMode': 'resume' if getattr(args, 'resume', None) else 'new',
+           'resumedFrom': getattr(args, 'resume', None) or None,
+           'sessionId': getattr(args, 'resume', None) or None,
+           'cliPath': str(pathlib.Path(args.cli).resolve()) if getattr(args, 'cli', None) else None,
+           'attachmentCount': 0}
     locks = acquire_locks(task_home, args.cwd, args.batch, parallelism)
     if path.exists():
         release_locks(locks)
@@ -196,6 +209,7 @@ def run(args):
         apply_output_budget(base, MODEL_ID, budget)
         attachments = validate_attachments(getattr(args, 'attach', []))
         job['attachments'] = [str(item) for item in attachments]
+        job['attachmentCount'] = len(attachments)
         args.log.parent.mkdir(parents=True, exist_ok=True)
         provider = pathlib.Path(str(args.log) + '.provider.json')
         atomic_write(provider, base)
@@ -235,6 +249,7 @@ def run(args):
                 kill_tree(child.pid)
                 child.wait()
         if isinstance(verdict, str):
+            note_session_from_log(job, args.log)
             job.update(state='failed', finishedAt=int(time.time() * 1000), timeoutKind=verdict)
             if verdict == 'idle-timeout':
                 job['error'] = ('空闲超时：%g 分钟无新活动（日志/会话/模型请求均无）被终止。若属单次长思考或任务确需更久，'
@@ -252,10 +267,12 @@ def run(args):
         if result:
             job.update(sessionId=result['sessionId'], response=redact(result['response']), usage=result.get('usage', {}))
         else:
+            note_session_from_log(job, args.log)
             job['error'] = 'CLI未返回完整答复。请检查指定日志和工作树，禁止直接重复执行任务。'
         update()
         return 0 if job['state'] == 'completed' else 1
     except Exception as error:
+        note_session_from_log(job, args.log)
         job.update(state='failed', error=redact(str(error)), finishedAt=int(time.time() * 1000))
         update()
         return 1
