@@ -5,10 +5,10 @@
   "id": "GPT-WAKE-01",
   "title": "会话中枢桥：程序化唤醒 Codex 续接同一会话",
   "owner": "integrator",
-  "state": "review",
+  "state": "active",
   "milestone": "DEV",
-  "summary": "run_codex.py 交付：pin/list/wake 三命令，read-only 默认沙箱、写入者锁检测与等待、超时杀树、jobs 注册表与 controller 归属契约兼容；真实链路验证续接成立且缓存命中约 70%，Desktop 打开会话的写入者锁为硬约束。",
-  "next_action": "User acceptance; GPT-WAKE-02 接控制器 gpt_direct 自动派发。",
+  "summary": "Transport continuation verified; repeat-event dispatch and pinned-session identity defects block closed-loop acceptance.",
+  "next_action": "GLM resume original session; reproduce integrator review before bounded repair and one completion callback.",
   "allowed_paths": [
     "scripts/agent-monitor/run_codex.py",
     "scripts/agent-monitor/test_run_codex.py",
@@ -20,13 +20,22 @@
     "docs/status.md",
     "docs/verification/2026-09/GPT-WAKE-01/**"
   ],
-  "depends_on": ["GLM-MONITOR-02"],
+  "depends_on": [
+    "GLM-MONITOR-02"
+  ],
   "base_commit": "c0dc93f",
   "docs_impact": {
     "reason": "用户新授权补齐强模型自动唤醒链路（2026-09-25 会话内拍板）；不重开已关闭的 ORCH 阶段，挂 DEV 里程碑循 GLM-MONITOR-02 先例，控制器接线归 GPT-WAKE-02。",
-    "update": ["docs/engineering/codex-cli.md", "docs/engineering/README.md", "docs/engineering/model-delegation.md"]
+    "update": [
+      "docs/engineering/codex-cli.md",
+      "docs/engineering/README.md",
+      "docs/engineering/model-delegation.md"
+    ]
   },
-  "verification_refs": ["docs/verification/2026-09/GPT-WAKE-01/report.md"],
+  "verification_refs": [
+    "docs/verification/2026-09/GPT-WAKE-01/report.md",
+    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

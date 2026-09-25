@@ -5,10 +5,10 @@
   "id": "GPT-WAKE-02",
   "title": "控制器 gpt_direct 自动派发（pinned Codex 会话）",
   "owner": "integrator",
-  "state": "review",
+  "state": "active",
   "milestone": "DEV",
-  "summary": "gpt_direct/take_over 在 policy gpt_dispatch=true＋runner config v2 gpt 段双旗标下自动派发到 pinned Codex 会话；真实端到端演练完成（GPT 同会话提交 fbed6e1 → resume --verify-only → 独立验证收据 → verified）；workspace-write 下 .git 只读为实测边界，执行类需 danger-full-access（与 GLM yolo 对位）。",
-  "next_action": "User acceptance; 之后按 product-development.md 分工回到产品切片。",
+  "summary": "108 controller tests passed; GPT executable pinning and explicit CLI argv defects require repair before automatic dispatch acceptance.",
+  "next_action": "Fix approved GPT path pinning and parser contract; preserve verified drill and verify-only recovery.",
   "allowed_paths": [
     "scripts/agent-routing/controller_loop.py",
     "scripts/agent-routing/controller_runner.py",
@@ -23,13 +23,22 @@
     "docs/status.md",
     "docs/verification/2026-09/GPT-WAKE-02/**"
   ],
-  "depends_on": ["GPT-WAKE-01"],
+  "depends_on": [
+    "GPT-WAKE-01"
+  ],
   "base_commit": "2612fa3",
   "docs_impact": {
     "reason": "承接用户 2026-09-25 授权的强模型自动唤醒链路（不重开 ORCH 阶段）；把 controller-loop.md 的'无GPT adapter则不编造调用'边界改写为真实入口＋双旗标 opt-in 约束。",
-    "update": ["docs/engineering/controller-loop.md", "docs/engineering/model-delegation.md", "docs/engineering/codex-cli.md"]
+    "update": [
+      "docs/engineering/controller-loop.md",
+      "docs/engineering/model-delegation.md",
+      "docs/engineering/codex-cli.md"
+    ]
   },
-  "verification_refs": ["docs/verification/2026-09/GPT-WAKE-02/report.md"],
+  "verification_refs": [
+    "docs/verification/2026-09/GPT-WAKE-02/report.md",
+    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }

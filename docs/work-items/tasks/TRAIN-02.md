@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "RANGE-01纯规划器已在main；desktop替代实现747d259单测33项及编译通过，但缺口陈述和返回语义需对齐；预览/创建/页面/录制仍未接线。",
-  "next_action": "复用RANGE-01，先冻结元信息预览/创建复核及旧录制兼容，再由GLM交付后端与表单行为切片；仅选择性吸收新候选有效回归。",
+  "summary": "Adopt 73d3e87 backend candidate; 156 tests passed; parallel creation and adjustment fingerprint defects require repair; UI/recording pending.",
+  "next_action": "Resume original TRAIN-02 conversation; repair backend first, then freeze recording compatibility and serialize shared frontend integration.",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",
@@ -36,7 +36,8 @@
   },
   "verification_refs": [
     "docs/verification/2026-09/START-01/report.md",
-    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md"
+    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md",
+    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
   ],
   "integration_ref": null,
   "acceptance_ref": null,

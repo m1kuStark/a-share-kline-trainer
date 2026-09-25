@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "R1",
-  "summary": "FRESH-01纯模块已在main；desktop替代实现22fcdac单测30项及编译通过但日历校验回退，不直接替换；新鲜度API/首页接线仍未完成。",
-  "next_action": "复用已集成FRESH-01，先核实交易日历来源与unknown降级，再完整接refresh/API/首页和跨收盘刷新；不重写同名纯模块。",
+  "summary": "Adopt d4aa4e8 as candidate; 75 tests passed; ticker race and remaining freshness consumers require repair before integration.",
+  "next_action": "Resume original DATA-05 conversation; independently reproduce ticker/Launcher/source availability findings, then fix and run product gates.",
   "allowed_paths": [
     "server/src/data/**",
     "server/test/data-refresh.test.ts",
@@ -31,7 +31,8 @@
   },
   "verification_refs": [
     "docs/verification/2026-09/START-01/report.md",
-    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md"
+    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md",
+    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
   ],
   "integration_ref": null,
   "acceptance_ref": null,
