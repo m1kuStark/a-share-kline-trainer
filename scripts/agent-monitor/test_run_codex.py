@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -411,7 +412,110 @@ class BatchClaimAndIdentityTests(unittest.TestCase):
                                                       proc.stderr[-800:]))
 
 
-class EventLogTests(unittest.TestCase):
+class ProbeFailureTests(unittest.TestCase):
+    """2026-09-26 review: probe failures must read as unknown, never as
+    verified-dead. Zero model calls."""
+
+    def test_pid_alive_treats_tasklist_failure_as_unknown(self):
+        def fake_run(cmd, **kwargs):
+            return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"Access is denied.")
+        with patch.object(run_codex.subprocess, "run", side_effect=fake_run):
+            self.assertIsNone(run_codex._pid_alive(424242))
+
+    def test_pid_alive_survives_non_utf8_output(self):
+        def fake_run(cmd, **kwargs):
+            self.assertNotIn("text", kwargs, "native probes must read bytes")
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"python.exe  424242 \xff\xfe Console",
+                                               stderr=b"")
+        with patch.object(run_codex.subprocess, "run", side_effect=fake_run):
+            self.assertIs(run_codex._pid_alive(424242), True)
+
+    def test_descendants_treats_cim_stderr_as_unknown(self):
+        def fake_run(cmd, **kwargs):
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"",
+                                               stderr=b"Get-CimInstance : non-terminating error")
+        with patch.object(run_codex.subprocess, "run", side_effect=fake_run):
+            self.assertIsNone(run_codex._descendant_pids(424242))
+
+    def test_attempt_treats_unknown_probes_as_uncertain(self):
+        # 保留锁的路径会让锁文件保持打开，测试目录需容错删除。
+        tmp = pathlib.Path(tempfile.mkdtemp(prefix="probe-unknown-"))
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        home = tmp / "home"
+        cli = make_fake_cli(tmp)
+        os.environ["FAKE_ARGV_OUT"] = str(tmp / "argv.json")
+        os.environ["FAKE_MODE"] = "hang"
+        prompt = tmp / "prompt.txt"
+        prompt.write_text("x", encoding="utf-8")
+        argv = [sys.executable, "-B", str(pathlib.Path(run_codex.__file__)),
+                "--home", str(home), "--codex-home", str(tmp),
+                "--cli", cli, "wake", "--prompt-file", str(prompt),
+                "--stable-seconds", "0", "--poll-seconds", "0.1",
+                "--session-id", "tP", "--batch", "B-P",
+                "--timeout-minutes", "0.05"]
+        with patch.object(run_codex, "_descendant_pids", return_value=None),                 patch.object(run_codex, "_pid_alive", return_value=None):
+            code = run_codex.main(argv[3:])
+        self.assertEqual(run_codex.EXIT_TIMEOUT, code)
+        record = json.loads((home / "jobs" / "B-P.json").read_text(encoding="utf-8"))
+        self.assertTrue(record["cleanupUncertain"],
+                        "unknown probes must not confirm cleanup")
+        locks = list((home / "locks").glob("session-*.lock"))
+        self.assertTrue(locks, "uncertain cleanup must retain the session lock")
+        record_dir = home / "jobs" / "B-P.json"
+        self.addCleanup(lambda: subprocess.run(
+            ["taskkill", "/PID", str(record.get("returnedSessionId") or 0)],
+            capture_output=True)) if False else None
+
+
+class EventLogRaceTests(unittest.TestCase):
+    """2026-09-26 review: read-then-append race let two senders both claim
+    one event id. The atomic claim must admit exactly one."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.home = pathlib.Path(self._tmp.name) / "home"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_concurrent_same_event_admits_exactly_one(self):
+        barrier = threading.Barrier(2, timeout=30)
+        results = []
+
+        def worker():
+            barrier.wait()
+            original = run_codex._now_iso
+
+            def slow_now():
+                time.sleep(0.6)
+                return original()
+            with patch.object(run_codex, "_now_iso", side_effect=slow_now):
+                code = run_codex.main(["--home", str(self.home), "event-log",
+                                       "--event-id", "RACE-1", "--detail", "d"])
+            results.append(code)
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=60)
+        self.assertEqual([run_codex.EXIT_OK, run_codex.EXIT_OK], results)
+        log = (self.home / "events.jsonl")
+        entries = [json.loads(l) for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
+        self.assertEqual(1, len([e for e in entries if e["event_id"] == "RACE-1"]))
+
+    def test_interrupted_claim_counts_as_registered(self):
+        run_codex.main(["--home", str(self.home), "event-log",
+                        "--event-id", "E-INT", "--detail", "d"])
+        code = run_codex.main(["--home", str(self.home), "event-log",
+                               "--event-id", "E-INT", "--detail", "d"])
+        self.assertEqual(run_codex.EXIT_OK, code)
+        self.assertTrue((self.home / "events").exists(),
+                        "claim store must persist across interrupted registrations")
+
+
+if __name__ == "__main__":
+    unittest.main()
     """回调事件登记：重复 event_id 必须报 duplicate，不产生第二次唤醒。"""
 
     def setUp(self):

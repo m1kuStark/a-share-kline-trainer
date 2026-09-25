@@ -177,6 +177,7 @@ class SessionLock:
 
 
 def _pid_alive(pid):
+    """True=确认存活，False=确认消亡，None=无法确认（调用方按存活保守处理）。"""
     if os.name != "nt":
         try:
             os.kill(pid, 0)
@@ -185,11 +186,18 @@ def _pid_alive(pid):
             return False
     try:
         probe = subprocess.run(["tasklist", "/FI", "PID eq %d" % pid, "/NH"],
-                               capture_output=True, text=True, timeout=10,
+                               capture_output=True, timeout=10,
                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except (OSError, subprocess.SubprocessError):
-        return True  # 不可验证按存活保守处理
-    return bool(probe.stdout) and str(pid) in probe.stdout
+        return None  # 命令失败/超时：未知
+    if probe.returncode != 0:
+        return None  # tasklist 非零退出：未知（如 Access denied）
+    stdout = (probe.stdout or b"").decode("utf-8", errors="replace")
+    if str(pid) in stdout:
+        return True
+    if stdout.strip():
+        return False  # 过滤器无匹配（本地化 INFO 行），确认消亡
+    return None  # rc0 但输出为空：无法判断
 
 
 def _descendant_pids(root_pid):
@@ -210,14 +218,17 @@ def _descendant_pids(root_pid):
           "ForEach-Object{$q.Enqueue([int]$_.ProcessId);[int]$_.ProcessId}}") % root_pid
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
-                           capture_output=True, text=True, timeout=25,
+                           capture_output=True, timeout=25,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except (OSError, subprocess.SubprocessError):
         return None
     if r.returncode != 0:
         return None
+    if (r.stderr or b"").strip():
+        return None  # CIM 非终止错误会落在 stderr：枚举不可靠
     try:
-        return [int(x) for x in (r.stdout or "").split()]
+        return [int(x) for x in (r.stdout or b"").decode("utf-8",
+                                                         errors="replace").split()]
     except ValueError:
         return None
 
@@ -336,7 +347,7 @@ def _attempt(argv, prompt, events_path, err_path, cwd, timeout_minutes,
                 descendants = _descendant_pids(proc.pid)
                 rc_ok = kill_tree(proc.pid)
                 survivors = [p for p in ([proc.pid] + (descendants or []))
-                             if _pid_alive(p)]
+                             if _pid_alive(p) is not False]
                 if survivors:
                     # repair pass: finish whatever the tree kill missed
                     for pid in survivors:
@@ -344,7 +355,7 @@ def _attempt(argv, prompt, events_path, err_path, cwd, timeout_minutes,
                 wait_until = time.monotonic() + KILL_WAIT_SECONDS
                 while True:
                     alive = [p for p in ([proc.pid] + (descendants or []))
-                             if _pid_alive(p)]
+                             if _pid_alive(p) is not False]
                     if not alive and proc.poll() is not None:
                         cleanup_confirmed = True
                         break
@@ -579,25 +590,29 @@ def cmd_list(args):
 
 
 def cmd_event_log(args):
-    """持久事件登记：向回调日志登记 event_id，返回是否重复。
-    回调发送方先调用本命令，duplicate=true 时不得再次唤醒。"""
-    path = pathlib.Path(args.home) / "events.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.is_file():
-        with open(path, "r", encoding="utf-8") as handle:
-            for line in handle:
-                if line.strip():
-                    try:
-                        if json.loads(line).get("event_id") == args.event_id:
-                            print(json.dumps({"duplicate": True,
-                                              "eventId": args.event_id}))
-                            return EXIT_OK
-                    except ValueError:
-                        continue
-    entry = {"event_id": args.event_id, "loggedAt": _now_iso(),
-             "detail": args.detail or ""}
-    with open(str(path), "a", encoding="utf-8") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    """持久事件登记：以 O_EXCL 认领文件原子授予发送许可。
+    同一 event_id 只有一个调用方拿到 duplicate=false；认领即登记，
+    登记后发送结果不明也不得盲发第二次。"""
+    home = pathlib.Path(args.home)
+    digest = hashlib.sha256(args.event_id.encode("utf-8")).hexdigest()[:32]
+    claim_dir = home / "events"
+    claim_dir.mkdir(parents=True, exist_ok=True)
+    claim = claim_dir / (digest + ".claim")
+    try:
+        with open(str(claim), "x", encoding="utf-8") as handle:
+            handle.write(json.dumps({"event_id": args.event_id,
+                                     "claimedAt": _now_iso(),
+                                     "detail": args.detail or ""},
+                                    ensure_ascii=False))
+    except FileExistsError:
+        print(json.dumps({"duplicate": True, "eventId": args.event_id}))
+        return EXIT_OK
+    log = home / "events.jsonl"
+    with open(str(log), "a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"event_id": args.event_id,
+                                 "loggedAt": _now_iso(),
+                                 "detail": args.detail or ""},
+                                ensure_ascii=False) + "\n")
     print(json.dumps({"duplicate": False, "eventId": args.event_id}))
     return EXIT_OK
 
