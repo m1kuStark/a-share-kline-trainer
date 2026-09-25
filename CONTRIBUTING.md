@@ -24,7 +24,7 @@ npm start   # 127.0.0.1:8787 同时托管页面与接口
 
 ```powershell
 $env:TRAINER_DB = Join-Path $PWD '.data\development.sqlite'
-$env:TDX_ROOT = 'D:\new_tdx'   # 你本机合法获得的通达信目录
+$env:TDX_ROOT = 'D:\path\to\tdx'   # 你本机合法获得的通达信目录
 $env:OPEN_BROWSER = '0'
 npm run dev
 ```

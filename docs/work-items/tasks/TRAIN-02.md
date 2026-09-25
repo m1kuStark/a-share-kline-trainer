@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
-  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
+  "summary": "RANGE-01纯规划器已在main；desktop替代实现747d259单测33项及编译通过，但缺口陈述和返回语义需对齐；预览/创建/页面/录制仍未接线。",
+  "next_action": "复用RANGE-01，先冻结元信息预览/创建复核及旧录制兼容，再由GLM交付后端与表单行为切片；仅选择性吸收新候选有效回归。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",
@@ -23,7 +23,8 @@
     "docs/work-items/tasks/TRAIN-02.md"
   ],
   "depends_on": [
-    "DATA-02"
+    "DATA-02",
+    "RANGE-01"
   ],
   "docs_impact": {
     "update": [
@@ -34,17 +35,19 @@
     "reason": "新范围模式涉及生命周期、API、数据库及录像合同，不能只改前端选项。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/START-01/report.md"
+    "docs/verification/2026-09/START-01/report.md",
+    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md"
   ],
   "integration_ref": null,
-  "acceptance_ref": null
+  "acceptance_ref": null,
+  "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5"
 }
 ```
 
-基线d75da88；产品口径与例子只维护在[批次计划](../../proposals/first-use-batch.md#训练范围规则)。本卡是父任务写范围；实际GLM子任务只能拿到其中互不重叠的路径，禁止用server/test/**作为无限制派发权限。
+历史纯模块参考基线d75da88已过时；当前产品基线记录为af0efaf，下一次派发须核对已整理的完整提交SHA及RANGE-01已存在。产品口径与例子只维护在[批次计划](../../proposals/first-use-batch.md#训练范围规则)。本卡是父任务写范围；实际GLM子任务只能拿到其中互不重叠的路径，禁止用server/test/**作为无限制派发权限。
 
 实施分三份可独立审查结果：日期元信息纯规划器与边界测试；后端预览/创建/旧训练兼容；表单与录制兼容。共享API/DB类型由集成人负责，worker不得把新模式伪装成已有tier绕过录制枚举校验。
 
 验收必须覆盖：默认3M；切换预设重算；手填起点保留；月末和闰年；休市日对齐不移动请求终点；上市较晚与本地历史缺失；起点超过末日、周期尾未下载；N=1和N超过可用量；到最新终点冻结；预览过期；老训练/旧录像恢复；不泄露未来行情。较长自定义范围先测量成本，不自行新增无证据的停录阈值。
 
-派发Prompt：读取任务及批次规则，只用日期元信息、注入时钟与合成夹具，先RED后GREEN；返回修改路径/提交/命令退出码/限制。新旧录制兼容有独立失败回归后才能集成。真实浏览器创建→推进→结算→录像回放及M2由主代理验收。
+接续派发：纯规划器已由RANGE-01完成，不重写同名模块。后续按日期元信息预览/创建复核、表单与录制兼容交付完整行为切片；不能把空日期推断成休市，requestedEnd/错误码变化先明确兼容。GLM实现并跑定向检查；主代理围绕接口风险、真实创建→推进→结算→录像回放与M2验收。见[产品分工](../../engineering/product-development.md)。

@@ -2,6 +2,7 @@
 
 | 命令 | 用途/副作用 |
 |---|---|
+| py scripts/agent-routing/route.py --repo ROOT --contract JSON --out 外部新JSON | [影子路由](agent-routing/README.md)，只读Git与证据，不调用模型或合入 |
 | task -- create/list/prepare/verify/promote/cleanup | [工作副本与候选集成](../docs/engineering/parallel-development.md)，不push、不reset |
 | agent:dev | 独立构建预览、数据库和动态端口；Ctrl+C结束服务 |
 | journey -- 参数 | 冻结真实样本、独立构建/服务、浏览器与独立证据 |

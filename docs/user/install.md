@@ -18,13 +18,13 @@
 
 ### 3. 配置通达信目录
 
-先双击 `Start.cmd` 尝试启动，可以不建配置文件。v0.3.2 只检查 `D:\MySoftWares\TDX`、`C:\new_tdx`、`C:\通达信` 三个位置，并不搜索整个电脑。能搜索股票、正常加载行情时可跳过手动配置；找到目录仍可能缺少日线或权息数据。
+先双击 `Start.cmd` 尝试启动，可以不建配置文件。程序只检查有限的系统候选位置，不把开发者电脑的绝对路径写入发布包，也不递归搜索整个电脑。未找到时请使用首次接入向导选择通达信目录，或在配置中显式填写 `tdxRoot`；找到目录仍可能缺少日线或权息数据。
 
 若显示“TDX 未连接”，在解压目录中复制 `trainer.config.example.json`，将副本准确命名为 `trainer.config.json`，把 `tdxRoot` 改为通达信安装目录。资源管理器中先打开“显示 → 文件扩展名”，确认没有变成 `.json.txt` 或 `.jison`；配置向导尚未实现。**JSON 中 Windows 路径的反斜杠要写成两个**：
 
 ```json
 {
-  "tdxRoot": "D:\\new_tdx"
+  "tdxRoot": "D:\\path\\to\\tdx"
 }
 ```
 
@@ -86,7 +86,7 @@ npm start
 `npm start` 默认在 `127.0.0.1:8787` 同时托管页面和接口。可用环境变量调整（PowerShell 示例）：
 
 ```powershell
-$env:TDX_ROOT = 'D:\new_tdx'            # 通达信目录
+$env:TDX_ROOT = 'D:\path\to\tdx'        # 通达信目录
 $env:PORT = '8787'                       # 端口
 $env:HOST = '127.0.0.1'                  # 监听地址，保持本机
 $env:TRAINER_DB = 'D:\data\trainer.sqlite'  # 训练数据库，不设则用默认数据目录

@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "R1",
-  "summary": "已复现收盘后昨日数据仍称最新；原算法无盘后分界，也无可靠节假日口径。",
-  "next_action": "已获v0.3.2实施与发布授权；由REL-03分批派发/接线，首批合同见release-032-contracts。",
+  "summary": "FRESH-01纯模块已在main；desktop替代实现22fcdac单测30项及编译通过但日历校验回退，不直接替换；新鲜度API/首页接线仍未完成。",
+  "next_action": "复用已集成FRESH-01，先核实交易日历来源与unknown降级，再完整接refresh/API/首页和跨收盘刷新；不重写同名纯模块。",
   "allowed_paths": [
     "server/src/data/**",
     "server/test/data-refresh.test.ts",
@@ -20,7 +20,9 @@
     "docs/work-items/tasks/DATA-05.md",
     "docs/specs/market-data/requirements.md"
   ],
-  "depends_on": [],
+  "depends_on": [
+    "FRESH-01"
+  ],
   "docs_impact": {
     "update": [
       "docs/specs/market-data/requirements.md"
@@ -28,14 +30,16 @@
     "reason": "实施需同步最近已收盘交易日、新鲜度未知及本地扫描的区别。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/START-01/report.md"
+    "docs/verification/2026-09/START-01/report.md",
+    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md"
   ],
   "integration_ref": null,
-  "acceptance_ref": null
+  "acceptance_ref": null,
+  "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5"
 }
 ```
 
-基线d75da88；范围是状态判定与说明，不下载行情或改结算。allowed_paths是整任务范围，不代表可同时分配给多个worker。
+历史纯模块参考基线d75da88已过时；当前产品基线记录为af0efaf。下一次实际派发前须核对已整理的完整提交SHA及FRESH-01已存在。范围是状态判定与说明，不下载行情或改结算。allowed_paths是整任务范围，不代表可同时分配给多个worker。
 
 - 最近已收盘交易日使用Asia/Shanghai及15:00收盘分界；盘中不要求当天完整日线，盘后不能固定退回昨日。可信交易日历应注明来源、版本、覆盖范围，并离线可用；缺失/超范围时保守显示“数据截至……，最新交易日待确认”，周一至周五不能冒充正式交易日历。
 - 分离扫描结果updated/unchanged/failed与市场新鲜度current/stale/unknown；扫描无变化不等于已到最新。来源最大日不证明每只股票覆盖；文案注明范围和最近检查时间。
@@ -43,4 +47,4 @@
 - 前台跨收盘/跨日期需重新判定，隐藏页停止计时，回前台刷新；不用高频扫描整盘，不干扰训练和画线。
 - 验收：上海2026-09-22 14:59与15:00之后、周末、可靠日历内节假日、日历未知/过期、非上海主机时区、首次未扫描、源无变化但仍落后、扫描失败和个股尾日不同于目录最大日。未知不能呈现绿色“已最新”。
 
-派发Prompt：只实现经合同冻结的日期/新鲜度模块及指定测试；返回RED/GREEN命令、实际退出码、提交和未覆盖边界。集成人接入refresh/API/App并审查旧调用兼容，详见[批次计划](../../proposals/first-use-batch.md)。
+接续派发：日期/新鲜度纯模块已由FRESH-01完成，不再从旧基线新建同名文件。下一切片交付refresh/API/首页的完整可见行为，给GLM明确的接口不变量、独占文件及真实验收场景；共享API/App指定单一owner。提交事实和机器检查后再做页面验收，详见[产品分工](../../engineering/product-development.md)。

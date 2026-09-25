@@ -2,7 +2,7 @@
   "testedCommit": "35a1671804bfe7ec17cd66a8a8295ee8991933e0",
   "reviewer": "Codex",
   "source": "live local TDX read only",
-  "sourceRoot": "D:\\MySoftWares\\TDX",
+  "sourceRoot": "<local TDX root>",
   "sourceMaxDate": "2026-09-18",
   "stock": "600519",
   "trainingDates": [

@@ -29,6 +29,7 @@
 | 下载安装、通达信目录配置、源码运行 | [安装与配置](docs/user/install.md) |
 | 录制、回放与分享 | [录制说明](docs/user/recording.md) |
 | 启动失败、找不到数据、端口占用等 | [常见问题](docs/user/troubleshooting.md) |
+| 下一版本设计 | [v0.4 训练时钟、条件单与成交理由](docs/proposals/v0.4-training-clock-orders-notes.md) |
 
 ## v0.3.2 更新
 
@@ -47,7 +48,7 @@ npm run build
 npm start
 ```
 
-环境变量示例（PowerShell）：`$env:TDX_ROOT='D:\new_tdx'`、`$env:PORT='8787'`、`$env:TRAINER_DB='D:\data\trainer.sqlite'`。开发与测试说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+环境变量示例（PowerShell）：`$env:TDX_ROOT='D:\path\to\tdx'`、`$env:PORT='8787'`、`$env:TRAINER_DB='D:\data\trainer.sqlite'`。开发与测试说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 参与与反馈
 

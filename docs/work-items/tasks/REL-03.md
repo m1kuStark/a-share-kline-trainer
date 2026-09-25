@@ -41,7 +41,7 @@
     "docs/verification/2026-09/REL-03/module-acceptance.json",
     "docs/verification/2026-09/REL-03/public-release-verification.json"
   ],
-  "integration_ref": "3e4f012",
+  "integration_ref": "1eb9a0e",
   "acceptance_ref": null
 }
 ```
@@ -52,4 +52,5 @@
 
 - 精确主分支工程提交 `1eb9a0e83995d076ba185a7507044652a46d6145` 已完成 858/858 单测、类型检查、构建和相关回归；四项模块验收见 `module-acceptance.json`。
 - 公开 clean-room 源码提交和 `v0.3.2` 标签均指向 `5b6c38a0094bc08b565547c481f4c1ba1e123062`；Windows ZIP 与校验文件经匿名下载复核，证据见 `public-release-verification.json`。
+- 公开仓库为 `https://github.com/m1kuStark/kline-trainer`；本地开发仓库的 `origin` 仍指向旧地址 `m1kuStark/a-share-kline-trainer`，未在本轮修改远端或执行push，不能把两个提交线当成同一发布源。
 - 公开发布不包含个人训练库、真实行情、浏览器录像或凭据；用户最终验收仍未记录。

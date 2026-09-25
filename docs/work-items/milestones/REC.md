@@ -17,6 +17,6 @@
     "docs/verification/2026-09/ACCEPT-01-release/report.md"
   ],
   "acceptance_ref": "docs/verification/2026-09/M3-user-acceptance/record.json",
-  "next_action": "已获用户验收（2026-09-21），能力随v0.3.1发布交付；无未结工作。"
+  "next_action": "已获用户验收（2026-09-21），能力随v0.3.1首次发布并随v0.3.2继续交付；无未结工作。"
 }
 ```

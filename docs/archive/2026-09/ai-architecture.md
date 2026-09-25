@@ -21,7 +21,7 @@
 ## 数据流
 
 ```
-通达信本地目录（TDX_ROOT，自动发现 D:\MySoftWares\TDX）
+通达信本地目录（TDX_ROOT，自动发现结果不写入源码）
   ├─ vipdoc/{sh,sz,bj}/lday/*.day   32 字节小端日线（dayfile.ts 解析）
   └─ T0002/hq_cache/gbbq            29 字节/条 Feistel 加密权息（gbbq.ts 解密）
         ↓ server/src/tdx/*

@@ -14,6 +14,6 @@
   },
   "databaseIntegrity": "ok",
   "countsUnchanged": true,
-  "backup": "D:\\MySoftWares\\KlineTrainer\\user-state\\before-v0.3.0-20260921-042031\\trainer.sqlite",
+  "backup": "<local data backup path redacted>",
   "browserOriginUnchanged": true
 }

@@ -32,5 +32,5 @@ Worker statements; root real package acceptance is separate.
 ## 自验记录（定向）
 
 - `npm test -- server/test/release-launcher.test.ts`：18/18 通过（Node v24.15.0）。断言范围：配置默认/显式/相对路径/端口校验/环境变量优先级/CLI 参数；包结构校验（缺 release.json、错误 appId、缺 runtime 不隐式构建）、TDX 布局识别；夹具包（真实 node.exe、空格+中文路径、动态端口）上验证首次启动、重复启动复用不双开、外来端口占用不杀不换、无 state 的训练器形状服务不接管、换端口拒绝第二写者、启动崩溃保留日志、ready 身份不匹配、就绪超时终止子进程、遗留锁/活锁/外来锁三分支、陈旧 state/ready 清理后新启。
-- 真实构建手工冒烟（临时 staging：build:server+build:web+junction node_modules，验证后已清理）：`Start.cmd --no-open` 从其他 cwd 启动成功，自动发现本机 D:\MySoftWares\TDX，健康端点/状态文件/版本提交正确；再次运行复用同一 PID；`Create Shortcut.cmd` 生成属性正确的桌面 .lnk（验证后删除）；不完整包时 Start.cmd 明确报错并以退出码 1 结束。
+- 真实构建手工冒烟（临时 staging：build:server+build:web+junction node_modules，验证后已清理）：`Start.cmd --no-open` 从其他 cwd 启动成功，自动发现本机 TDX（本机路径已脱敏），健康端点/状态文件/版本提交正确；再次运行复用同一 PID；`Create Shortcut.cmd` 生成属性正确的桌面 .lnk（验证后删除）；不完整包时 Start.cmd 明确报错并以退出码 1 结束。
 - 集成人注意：本组文件随 REL-PACK 拷到包根后需在真实包上复跑上述冒烟；测试不替代真实包验收。
