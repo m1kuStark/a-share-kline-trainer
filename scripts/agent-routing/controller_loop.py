@@ -172,6 +172,18 @@ class Controller:
                 path = pathlib.Path(runner_config["runner_entry"]).parent / name
                 if path.is_file():
                     runner_files[str(path.resolve())] = verification.sha_file(path)
+            gpt_section = runner_config.get("gpt")
+            if gpt_section:
+                # GPT-WAKE-02 P1: every file the GPT path actually executes is
+                # pinned the same way as the GLM side, and the bridge home
+                # must live outside the candidate repo.
+                for field in ("runner_entry", "cli"):
+                    value = gpt_section.get(field)
+                    if value:
+                        path = verification.external(value, repo)
+                        verification.plain_file(path)
+                        runner_files[str(path)] = verification.sha_file(path)
+                verification.external(gpt_section["home"], repo)
             verification.external(runner_config["home"], repo)
             if contract["task_id"] != task_id:
                 raise ControllerError(

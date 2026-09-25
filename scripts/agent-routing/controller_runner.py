@@ -344,20 +344,23 @@ def run_job(config, *, task_id, job_id, attempt_no, title, repo, job_dir,
 def build_gpt_argv(config, gpt, batch, title, cwd, prompt_path, log_path,
                    add_dir=None):
     """argv for the pinned run_codex wake; flags mirror run_codex's argparse
-    (validated against it in test_controller_runner). Sandbox is fixed to
-    workspace-write: a GPT Direct worker must edit and commit."""
+    (validated against it in test_controller_runner). --cli is a top-level
+    option and must sit before the wake subcommand. Sandbox is limited to
+    workspace-write / danger-full-access: a GPT Direct worker must edit and
+    commit."""
     if BATCH_RE.fullmatch(batch) is None:
         raise RunnerError("batch id must match [A-Za-z0-9][A-Za-z0-9_-]{0,100}: %r"
                           % (batch,))
     argv = [config["python_executable"], gpt["runner_entry"],
-            "--home", gpt["home"], "wake",
-            "--session-id", gpt["session_id"],
-            "--prompt-file", str(prompt_path), "--log", str(log_path),
-            "--sandbox", gpt["sandbox"],
-            "--batch", batch, "--title", title, "--cwd", str(cwd),
-            "--timeout-minutes", repr(float(gpt["timeout_minutes"]))]
+            "--home", gpt["home"]]
     if gpt.get("cli"):
         argv += ["--cli", gpt["cli"]]
+    argv += ["wake",
+             "--session-id", gpt["session_id"],
+             "--prompt-file", str(prompt_path), "--log", str(log_path),
+             "--sandbox", gpt["sandbox"],
+             "--batch", batch, "--title", title, "--cwd", str(cwd),
+             "--timeout-minutes", repr(float(gpt["timeout_minutes"]))]
     if add_dir is not None:
         argv += ["--add-dir", str(add_dir)]
     return argv
@@ -405,8 +408,14 @@ def run_gpt_job(config, *, gpt, task_id, job_id, attempt_no, title, repo,
     dispatch_ok = exit_code == 0 and failure_kind is None and cleanup_confirmed
     record_ok = record is not None and record.get("state") == SUCCESS_STATE and \
         type(record.get("exitCode")) is int and record["exitCode"] == 0
+    if record is not None and record.get("sessionId") != gpt["session_id"]:
+        # The registry must prove the pinned session answered, not a
+        # different thread the runner happened to reach.
+        record_ok = False
+        if dispatch_ok:
+            failure_kind = "registry_mismatch"
     if dispatch_ok and not record_ok:
-        failure_kind = "registry_mismatch"
+        failure_kind = failure_kind or "registry_mismatch"
     status = "passed" if dispatch_ok and record_ok else "failed"
     return {"job_id": job_id, "attempt_no": attempt_no, "batch": batch,
             "exit_code": exit_code, "failure_kind": failure_kind,

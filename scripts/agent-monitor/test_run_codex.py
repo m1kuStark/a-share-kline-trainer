@@ -24,6 +24,28 @@ data = sys.stdin.read()
 with open(out + ".stdin", "w", encoding="utf-8") as h:
     h.write(data)
 mode = os.environ.get("FAKE_MODE", "complete")
+calls = os.environ.get("FAKE_CALLS_LOG")
+if calls:
+    with open(calls, "a", encoding="utf-8") as h:
+        h.write(mode + "\n")
+argv_list = sys.argv[1:]
+session_id = argv_list[argv_list.index("resume") + 1] if "resume" in argv_list else "fake-thread-1234"
+if mode == "identity_mismatch":
+    for event in (
+        {"type": "thread.started", "thread_id": "different-thread-999"},
+        {"type": "turn.started"},
+        {"type": "item.completed", "item": {"type": "agent_message", "text": "FAKE-ANSWER"}},
+        {"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 4}},
+    ):
+        print(json.dumps(event))
+    with open(sys.argv[sys.argv.index("-o") + 1], "w", encoding="utf-8") as h:
+        h.write("FAKE-ANSWER")
+    sys.exit(0)
+if mode == "no_identity":
+    print(json.dumps({"type": "turn.started"}))
+    print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text": "FAKE-ANSWER"}}))
+    print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 1}}))
+    sys.exit(0)
 if mode == "hang":
     time.sleep(float(os.environ.get("FAKE_HANG_SECONDS", "30")))
     sys.exit(0)
@@ -34,7 +56,7 @@ if mode == "exit_fail":
     sys.stderr.write("boom\n")
     sys.exit(3)
 events = [
-    {"type": "thread.started", "thread_id": "fake-thread-1234"},
+    {"type": "thread.started", "thread_id": session_id},
     {"type": "turn.started"},
     {"type": "item.completed", "item": {"type": "agent_message", "text": "FAKE-ANSWER"}},
     {"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 4}},
@@ -53,13 +75,14 @@ def make_fake_cli(tmp):
     impl.write_text(FAKE_IMPL, encoding="utf-8")
     py = shutil.which("py") or shutil.which("python")
     cmd = tmp / "fake_codex.cmd"
-    cmd.write_text('@echo off\n"%s" -3.9 "%s" %%*\n' % (py, impl),
+    cmd.write_text('@echo off\n"%s" -3.9 -X utf8 "%s" %%*\n' % (py, impl),
                    encoding="utf-8")
     return str(cmd)
 
 
 class RunCodexTest(unittest.TestCase):
     def setUp(self):
+        os.environ.pop("FAKE_CALLS_LOG", None)
         self._tmp = tempfile.TemporaryDirectory()
         self.tmp = pathlib.Path(self._tmp.name)
         self.home = self.tmp / "home"
@@ -96,7 +119,8 @@ class RunCodexTest(unittest.TestCase):
             encoding="utf-8"))
         self.assertEqual(record["id"], "B1")
         self.assertEqual(record["state"], "completed")
-        self.assertEqual(record["sessionId"], "fake-thread-1234")
+        self.assertEqual(record["sessionId"], "t1",
+                         "registry keeps the requested pinned session id")
         self.assertTrue(record["logPath"].endswith("events.jsonl"))
         self.assertTrue(pathlib.Path(record["logPath"]).is_file())
 
@@ -218,6 +242,100 @@ class RunCodexTest(unittest.TestCase):
         script = captured["cmd"][3]
         self.assertIn("标题''引号", script)
         self.assertIn("正文''引号", script)
+
+
+class BatchClaimAndIdentityTests(unittest.TestCase):
+    """Reproduce 2026-09-26 integrator review counterexamples (P1-1 duplicate
+    dispatch, P1-2 session identity, P2-5 handles). Zero model calls."""
+
+    def setUp(self):
+        self._old_env = {k: os.environ.get(k) for k in
+                         ("FAKE_ARGV_OUT", "FAKE_CALLS_LOG", "FAKE_MODE")}
+        self.addCleanup(lambda: [os.environ.pop(k, None) if v is None
+                                 else os.environ.__setitem__(k, v)
+                                 for k, v in self._old_env.items()])
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = pathlib.Path(self._tmp.name)
+        self.home = self.tmp / "home"
+        self.codex_home = self.tmp / "codex-home"
+        self.home.mkdir()
+        self.codex_home.mkdir()
+        self.cli = make_fake_cli(self.tmp)
+        os.environ["FAKE_ARGV_OUT"] = str(self.tmp / "argv.json")
+        os.environ["FAKE_CALLS_LOG"] = str(self.tmp / "calls.log")
+        for f in (self.tmp / "argv.json", self.tmp / "calls.log"):
+            if f.exists():
+                f.unlink()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def wake_inprocess(self, *extra, mode="complete", expect=None):
+        os.environ["FAKE_MODE"] = mode
+        prompt = self.tmp / "prompt.txt"
+        prompt.write_text("你好", encoding="utf-8")
+        code = run_codex.main([
+            "--home", str(self.home), "--codex-home", str(self.codex_home),
+            "--cli", self.cli, "wake", "--prompt-file", str(prompt),
+            "--stable-seconds", "0", "--poll-seconds", "0.1", *extra])
+        if expect is not None:
+            self.assertEqual(expect, code)
+        return code
+
+    def calls(self):
+        log = self.tmp / "calls.log"
+        return log.read_text(encoding="utf-8").splitlines() if log.is_file() else []
+
+    def test_duplicate_batch_claimed_once_second_refused(self):
+        first = self.wake_inprocess("--session-id", "tA", "--batch", "SAME-EVENT")
+        self.assertEqual(run_codex.EXIT_OK, first)
+        self.assertEqual(1, len(self.calls()))
+        second = self.wake_inprocess("--session-id", "tA", "--batch", "SAME-EVENT")
+        self.assertEqual(run_codex.EXIT_BATCH_EXISTS, second)
+        self.assertEqual(1, len(self.calls()),
+                         "second same-batch wake must not invoke codex again")
+        record = json.loads((self.home / "jobs" / "SAME-EVENT.json")
+                            .read_text(encoding="utf-8"))
+        self.assertEqual("completed", record["state"],
+                         "original evidence must survive")
+
+    def test_session_identity_mismatch_fails_without_override(self):
+        code = self.wake_inprocess("--session-id", "pinned-thread",
+                                   "--batch", "B-ID1", mode="identity_mismatch",
+                                   expect=run_codex.EXIT_EXEC_FAILED)
+        self.assertEqual(run_codex.EXIT_EXEC_FAILED, code)
+        record = json.loads((self.home / "jobs" / "B-ID1.json")
+                            .read_text(encoding="utf-8"))
+        self.assertEqual("failed", record["state"])
+        self.assertEqual("pinned-thread", record["sessionId"],
+                         "requested id must be kept")
+        self.assertEqual("different-thread-999", record.get("returnedSessionId"))
+        self.assertIn("identity", (record.get("error") or ""))
+
+    def test_missing_thread_identity_fails(self):
+        code = self.wake_inprocess("--session-id", "pinned-thread",
+                                   "--batch", "B-ID2", mode="no_identity",
+                                   expect=run_codex.EXIT_EXEC_FAILED)
+        record = json.loads((self.home / "jobs" / "B-ID2.json")
+                            .read_text(encoding="utf-8"))
+        self.assertEqual("failed", record["state"])
+        self.assertEqual("pinned-thread", record["sessionId"])
+        self.assertIn("identity", (record.get("error") or ""))
+
+    def test_resourcewarning_free_wake(self):
+        prompt = self.tmp / "prompt.txt"
+        prompt.write_text("你好", encoding="utf-8")
+        proc = subprocess.run(
+            [sys.executable, "-W", "error::ResourceWarning", "-B",
+             str(pathlib.Path(run_codex.__file__)),
+             "--home", str(self.home), "--codex-home", str(self.codex_home),
+             "--cli", self.cli, "wake", "--prompt-file", str(prompt),
+             "--stable-seconds", "0", "--poll-seconds", "0.1",
+             "--session-id", "tW", "--batch", "B-W"],
+            capture_output=True, text=True, timeout=90)
+        self.assertEqual(run_codex.EXIT_OK, proc.returncode,
+                         msg="stdout=%s stderr=%s" % (proc.stdout,
+                                                      proc.stderr[-800:]))
 
 
 if __name__ == "__main__":

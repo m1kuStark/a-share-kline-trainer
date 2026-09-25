@@ -5,10 +5,10 @@
   "id": "GPT-WAKE-02",
   "title": "控制器 gpt_direct 自动派发（pinned Codex 会话）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "DEV",
-  "summary": "108 controller tests passed; GPT executable pinning and explicit CLI argv defects require repair before automatic dispatch acceptance.",
-  "next_action": "Fix approved GPT path pinning and parser contract; preserve verified drill and verify-only recovery.",
+  "summary": "gpt.runner_entry/gpt.cli 已入 runner_file_hashes、gpt.home 外置校验、--cli 移回顶层并加真实 parser 合同测试、registry sessionId 与 pinned 会话强校验；agent-routing 266 项绿。",
+  "next_action": "User acceptance; 与 GPT-WAKE-01 一并由集成人复核修复批次。",
   "allowed_paths": [
     "scripts/agent-routing/controller_loop.py",
     "scripts/agent-routing/controller_runner.py",

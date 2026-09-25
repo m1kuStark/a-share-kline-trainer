@@ -37,6 +37,7 @@ EXIT_TIMEOUT = 4
 EXIT_NO_PIN = 5
 EXIT_EXEC_FAILED = 6
 EXIT_USAGE = 7
+EXIT_BATCH_EXISTS = 8
 
 SANDBOX_CHOICES = ("read-only", "workspace-write", "danger-full-access")
 
@@ -252,33 +253,52 @@ def _notify(title, body):
 
 def _attempt(argv, prompt, events_path, err_path, cwd, timeout_minutes,
              poll_seconds):
-    """单次派发：返回 (exit_code, state, duration)。state ∈ running/timeout。"""
+    """单次派发：返回 (exit_code, state, duration, cleanup_confirmed)。
+    state ∈ running/timeout；句柄在等待结束后显式关闭（无 ResourceWarning）。"""
     started = time.monotonic()
-    proc = subprocess.Popen(
-        argv, stdin=subprocess.PIPE, stdout=open(events_path, "wb"),
-        stderr=open(err_path, "ab"), cwd=cwd or None, shell=False)
+    out_handle = open(events_path, "wb")
+    err_handle = open(err_path, "wb")
+    try:
+        proc = subprocess.Popen(
+            argv, stdin=subprocess.PIPE, stdout=out_handle,
+            stderr=err_handle, cwd=cwd or None, shell=False)
+    except Exception:
+        out_handle.close()
+        err_handle.close()
+        raise
     try:
         proc.stdin.write(prompt.encode("utf-8"))
         proc.stdin.close()
     except OSError:
         pass
     state, exit_code = "running", None
+    cleanup_confirmed = False
     deadline = time.monotonic() + timeout_minutes * 60
-    while True:
-        exit_code = proc.poll()
-        if exit_code is not None:
-            break
-        if time.monotonic() > deadline:
-            kill_tree(proc.pid)
-            try:
-                proc.wait(timeout=30)
-            except subprocess.TimeoutExpired:
-                pass
+    try:
+        while True:
             exit_code = proc.poll()
-            state = "timeout"
-            break
-        time.sleep(poll_seconds)
-    return exit_code, state, round(time.monotonic() - started, 2)
+            if exit_code is not None:
+                cleanup_confirmed = True
+                break
+            if time.monotonic() > deadline:
+                kill_tree(proc.pid)
+                try:
+                    proc.wait(timeout=30)
+                except subprocess.TimeoutExpired:
+                    pass
+                exit_code = proc.poll()
+                cleanup_confirmed = exit_code is not None
+                state = "timeout"
+                break
+            time.sleep(poll_seconds)
+    finally:
+        try:
+            proc.stdin.close()
+        except (OSError, ValueError):
+            pass
+        out_handle.close()
+        err_handle.close()
+    return exit_code, state, round(time.monotonic() - started, 2), cleanup_confirmed
 
 
 def cmd_wake(args):
@@ -297,7 +317,22 @@ def cmd_wake(args):
         print(json.dumps({"ok": False, "error": "wake already in progress for session",
                           "lock": str(lock.path)}), file=sys.stderr)
         return EXIT_LOCK_BUSY
+    cleanup_uncertain = False
     try:
+        jobs_dir = home / "jobs"
+        jobs_dir.mkdir(parents=True, exist_ok=True)
+        claim_path = jobs_dir / ("%s.json" % args.batch)
+        try:
+            with open(str(claim_path), "x", encoding="utf-8") as handle:
+                json.dump({"id": args.batch, "state": "claimed",
+                           "sessionId": session_id, "claimedAt": _now_iso()},
+                          handle, ensure_ascii=False)
+        except FileExistsError:
+            print(json.dumps({"ok": False, "state": "already_claimed",
+                              "error": "batch already claimed; reuse a new "
+                                       "batch id to preserve prior evidence",
+                              "jobsRecord": str(claim_path)}), file=sys.stderr)
+            return EXIT_BATCH_EXISTS
         newest = find_newest_turn_file(args.codex_home, session_id)
         if newest is not None and not args.skip_stable:
             if not is_stable(newest, args.stable_seconds):
@@ -323,12 +358,13 @@ def cmd_wake(args):
 
         duration = 0.0
         exit_code, state = None, "failed"
+        cleanup_confirmed = True
         writer_busy = False
         started_iso = _now_iso()
         wait_deadline = time.monotonic() + args.wait_writer_minutes * 60
         notified_wait = False
         while True:
-            exit_code, state, duration = _attempt(
+            exit_code, state, duration, cleanup_confirmed = _attempt(
                 argv, prompt, events_path, err_path, args.cwd,
                 args.timeout_minutes, args.poll_seconds)
             if state == "timeout" or exit_code == 0:
@@ -351,26 +387,41 @@ def cmd_wake(args):
             break
 
         completed, answer, usage, reported_id = parse_events(events_path)
-        session_id = reported_id or session_id
+        if state == "timeout" and not cleanup_confirmed:
+            cleanup_uncertain = True
         if state != "timeout":
             state = "completed" if completed and exit_code == 0 else "failed"
+        identity_error = None
+        if state == "completed":
+            if not reported_id:
+                state = "failed"
+                identity_error = ("thread identity missing from the event "
+                                  "stream; cannot prove the pinned session "
+                                  "answered")
+            elif reported_id != session_id:
+                state = "failed"
+                identity_error = ("session identity mismatch: requested %s, "
+                                  "thread.started returned %s"
+                                  % (session_id, reported_id))
         record = {
             "id": args.batch, "title": args.title, "worktree": args.cwd,
             "state": state, "runner": "run_codex", "sandbox": args.sandbox,
             "mode": "headless", "sessionMode": "resume",
             "resumedFrom": session_id, "sessionId": session_id,
+            "returnedSessionId": reported_id,
             "startedAt": started_iso, "finishedAt": _now_iso(),
             "exitCode": exit_code, "durationSeconds": duration,
             "logPath": str(events_path), "stderrPath": str(err_path),
-            "error": None if state == "completed" else
-            "turn did not complete before timeout" if state == "timeout" else
+            "error": identity_error if identity_error else
+            None if state == "completed" else
+            "turn did not complete before timeout" +
+            ("" if cleanup_confirmed else "; process cleanup unconfirmed, "
+             "session lock retained") if state == "timeout" else
             "thread writer busy (desktop holds the session open)" if writer_busy
             else "codex exited without turn.completed",
             "usage": usage,
         }
-        jobs_path = home / "jobs"
-        jobs_path.mkdir(parents=True, exist_ok=True)
-        _atomic_write_json(jobs_path / ("%s.json" % args.batch), record)
+        _atomic_write_json(jobs_dir / ("%s.json" % args.batch), record)
         if args.notify:
             if state == "completed":
                 preview = (answer or "").strip().replace("\n", " ")[:80]
@@ -381,10 +432,12 @@ def cmd_wake(args):
                 _notify("Codex 唤醒失败", "writer busy" if writer_busy else "退出码 %s" % exit_code)
         result = {"ok": state == "completed", "state": state,
                   "writerBusy": writer_busy, "sessionId": session_id,
+                  "returnedSessionId": reported_id,
+                  "cleanupUncertain": cleanup_uncertain,
                   "answer": answer,
                   "usage": usage, "durationSeconds": duration,
                   "exitCode": exit_code, "jobsRecord":
-                  str(home / "jobs" / ("%s.json" % args.batch)),
+                  str(jobs_dir / ("%s.json" % args.batch)),
                   "outDir": str(out_dir)}
         print(json.dumps(result, ensure_ascii=False))
         if state == "completed":
@@ -393,7 +446,9 @@ def cmd_wake(args):
             return EXIT_THREAD_BUSY
         return EXIT_TIMEOUT if state == "timeout" else EXIT_EXEC_FAILED
     finally:
-        lock.release()
+        # P2-5: 超时杀树后仍无法确认进程消亡时保留会话锁，不盲放行下一次唤醒。
+        if not cleanup_uncertain:
+            lock.release()
 
 
 def cmd_pin(args):

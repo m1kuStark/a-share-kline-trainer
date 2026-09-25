@@ -15,9 +15,9 @@
 - prompt 走 stdin（`-`），避开 Windows ~32K argv 上限；`--json` 输出 JSONL 事件流：`thread.started(thread_id)` → `turn.started` → `item.completed(item.type=agent_message)` → `turn.completed(usage)`。**完成谓词 = `turn.completed`**；usage 含 `input_tokens`/`cached_input_tokens`。
 - **stdout 事件流是块缓冲**：重定向到管道时完成事件已落 rollout 却可能长时间不吐 EOF（MSYS `tail` 实测挂起、`timeout 150` 也杀不掉进程树）；必须重定向到文件并由调用方监督进程句柄。
 - 无任何内建超时 flag；调用方必须自管（run_codex.py 用 deadline + `taskkill /PID /T /F`）。
-- resume 续接实测成立：CLI 自建会话追问上一轮暗号准确答出；**同轮次缓存命中显著**（续接轮 69096/95841 ≈ 72%，工具链路轮 146512/208328 ≈ 70%）——"单一会话中枢"的成本论点成立。
+- resume 续接实测成立：CLI 自建会话追问上一轮暗号准确答出；**同轮次缓存命中可观**（续接轮 69096/95841 ≈ 72%，工具链路轮 146512/208328 ≈ 70%，Desktop 大线程轮 ≈95%）。缓存命中是 provider 计数事实；**无计费基线，不构成费用节省证明**，不做节省结论。
 - `--output-schema <schema.json>`、`-c key=value` 配置覆盖、`--ephemeral`（不落盘、不可 resume）可用；`--last` 按 cwd 过滤且不区分来源，程序化唤醒应捕获自己的 thread id，不依赖 `--last`。
-- 每次调用的沙箱：`-s read-only|workspace-write|danger-full-access`。config.toml 全局默认 danger-full-access，**桥工具默认显式 read-only，执行类派发才显式 workspace-write**。
+- 每次调用的沙箱：`-s read-only|workspace-write|danger-full-access`。config.toml 全局默认 danger-full-access，**桥工具默认显式 read-only，执行类派发按需显式提权**。2026-09-26 澄清：`.git` 只读限制是单次环境实测（workspace-write 下），不是普适规则；是否对执行类使用 danger-full-access 由各环境实测决定，与 GLM yolo 对位仅为本机现行选择。
 
 ## 写入者锁（并发与 Desktop 共存的硬约束）
 

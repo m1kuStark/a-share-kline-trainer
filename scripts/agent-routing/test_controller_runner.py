@@ -617,6 +617,45 @@ class GptConfigTests(unittest.TestCase):
                          flags["timeout-minutes"])
 
 
+class GptArgvParserContractTests(unittest.TestCase):
+    """P2-4: --cli must sit in the top-level option block, before the wake
+    subcommand, and the whole argv must parse with the real run_codex parser."""
+
+    def test_gpt_cli_position_and_full_argv_parse(self):
+        if not REAL_CODEX.is_file():
+            self.skipTest("repository run_codex.py not present")
+        sys.path.insert(0, str(REAL_CODEX.parent))
+        import run_codex
+        root = pathlib.Path(tempfile.mkdtemp(prefix="gpt-argv-"))
+        try:
+            config = validate_runner_config({
+                "schema_version": 2, "python_executable": sys.executable,
+                "runner_entry": str(root / "runner.py"), "cli": str(root / "cli"),
+                "provider": str(root / "provider.json"), "home": str(root / "home"),
+                "permission_mode": "yolo", "timeout_minutes": 5,
+                "idle_minutes": 1, "max_output_tokens": 4096,
+                "gpt": {"runner_entry": str(root / "run_codex.py"),
+                        "home": str(root / "bridge-home"),
+                        "session_id": "pinned-thread",
+                        "cli": str(root / "codex.exe"),
+                        "timeout_minutes": 9},
+            })
+            argv = build_gpt_argv(config, config["gpt"], "job-gpt", "title",
+                                  root, "p.md", "l.log", add_dir=root / "job")
+            self.assertLess(argv.index("--cli"), argv.index("wake"),
+                            "--cli belongs to the top-level option block")
+            # The dispatch subprocess runs [python, run_codex.py, ...]; the parser
+            # sees argv[2:].
+            parsed = run_codex.build_parser().parse_args(argv[2:])
+            self.assertEqual("wake", parsed.command)
+            self.assertEqual(config["gpt"]["cli"], parsed.cli)
+            self.assertEqual("pinned-thread", parsed.session_id)
+            self.assertEqual("job-gpt", parsed.batch)
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(root, ignore_errors=True)
+
+
 class GptJobTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="runner-gptjob-")
@@ -687,6 +726,11 @@ class GptJobTests(unittest.TestCase):
         self.assertEqual([str(result["job_dir"].resolve())], flags["add-dir"])
         self.assertTrue(result["report_path"].is_file())
         self.assertTrue(result["log_path"].is_file())
+
+    def test_gpt_job_rejects_session_mismatch_record(self):
+        result = self.dispatch({"codex_session": "different-thread-999"})
+        self.assertEqual("failed", result["status"])
+        self.assertEqual("registry_mismatch", result["failure_kind"])
 
     def test_gpt_job_registry_mismatch_fails(self):
         result = self.dispatch({"jobs_state": "failed"})

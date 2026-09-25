@@ -5,10 +5,10 @@
   "id": "GPT-WAKE-01",
   "title": "会话中枢桥：程序化唤醒 Codex 续接同一会话",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "DEV",
-  "summary": "Transport continuation verified; repeat-event dispatch and pinned-session identity defects block closed-loop acceptance.",
-  "next_action": "GLM resume original session; reproduce integrator review before bounded repair and one completion callback.",
+  "summary": "批处理认领（EXIT_BATCH_EXISTS=8，重复 batch 不再二次调用）、会话身份绑定（requested/returned 双记，缺失或不匹配即 failed）、超时清理不确定时保留锁、句柄 ResourceWarning 回归门、-X utf8 夹具均已落地；agent-monitor 94 项绿。",
+  "next_action": "User acceptance; 与 GPT-WAKE-02 一并由集成人复核修复批次。",
   "allowed_paths": [
     "scripts/agent-monitor/run_codex.py",
     "scripts/agent-monitor/test_run_codex.py",

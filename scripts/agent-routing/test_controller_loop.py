@@ -447,6 +447,31 @@ class GateAndFaultTests(LoopFixture):
         self.assertEqual(1, self.counts()["verification_passed"])
         self.assertEqual(self.head(), status["verified"]["tested_commit"])
 
+    def test_gpt_executor_files_are_pinned(self):
+        entry = self.root / "gpt_entry_impl.py"
+        entry.write_text("# original executor\n", encoding="utf-8")
+        pins = {"shape": "continuous_judgment", "gpt_dispatch": True,
+                "gpt_section": {"runner_entry": str(entry),
+                                "home": str(self.root / "gpt-home"),
+                                "session_id": "01a0d79e-fixture-session"}}
+        self.register(task_id="LOOP-GPT4", **pins)
+        entry.write_text("# tampered executor\n", encoding="utf-8")
+        self.directives(1, task_id="LOOP-GPT4")
+        status = self.run_task("LOOP-GPT4")
+        self.assertEqual("waiting_control", status["stage"])
+        self.assertEqual({}, self.counts("LOOP-GPT4"))
+        handoff = json.loads((self.store_dir / "tasks" / "LOOP-GPT4" /
+                              "handoff.json").read_text(encoding="utf-8"))
+        self.assertEqual("pin_mismatch", handoff["reason"])
+
+    def test_gpt_home_inside_candidate_rejected_at_register(self):
+        with self.assertRaises(ControllerError):
+            self.register(task_id="LOOP-GPT5",
+                          shape="continuous_judgment", gpt_dispatch=True,
+                          gpt_section={"runner_entry": str(self.gpt_entry),
+                                       "home": str(self.repo / "gpt-home"),
+                                       "session_id": "01a0d79e-fixture-session"})
+
     def test_gpt_direct_requires_policy_opt_in(self):
         self.reset_repo()
         pins = self.gpt_pins("LOOP-GPT2")
