@@ -72,6 +72,16 @@ export function migrateDatabase(database: DatabaseSync): void {
   addColumnIfMissing(database, 'trainings', 'note', 'TEXT')
   // NULL distinguishes legacy events from an explicitly booked zero acquisition cost.
   addColumnIfMissing(database, 'position_events', 'cost_delta', 'REAL')
+  // TRAIN-02 范围元数据冻结列：旧记录保持 range_version=0 / range_mode='tier'，不重建表、不清理旧训练。
+  addColumnIfMissing(database, 'trainings', 'range_version', 'INTEGER NOT NULL DEFAULT 0')
+  addColumnIfMissing(database, 'trainings', 'range_mode', "TEXT NOT NULL DEFAULT 'tier'")
+  addColumnIfMissing(database, 'trainings', 'requested_start', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'requested_end', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'range_start', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'range_end', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'range_bar_count', 'INTEGER')
+  addColumnIfMissing(database, 'trainings', 'range_source_fingerprint', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'range_notes', 'TEXT')
   // Early drawing tables have no save timestamp; keep it unknown until the next write.
   addColumnIfMissing(database, 'drawings', 'updated_at', "TEXT NOT NULL DEFAULT ''")
 }

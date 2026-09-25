@@ -14,7 +14,7 @@ import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
-  equityCurveOf, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
+  equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 
@@ -51,7 +51,8 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
   // 否则前端只能看到默认的 "Bad Request"，丢失具体原因。
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof HttpError) {
-      return reply.code(error.statusCode).send({ error: error.message })
+      // 携带业务错误码的失败（如 RANGE 预览/RANGE_PREVIEW_STALE）把 code 一并下发，前端据此分流
+      return reply.code(error.statusCode).send(error.code ? { error: error.message, code: error.code } : { error: error.message })
     }
     const statusCode = (error as { statusCode?: number }).statusCode
     if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
@@ -138,11 +139,32 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     }
   })
 
+  // TRAIN-02 范围预览：只返回日期元信息与指纹，不含任何OHLC/收益；创建时据此复核。
+  app.post('/api/training-ranges/preview', async (request, reply) => {
+    if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
+    const body = request.body as { code?: string; market?: string; range?: unknown; adjustMode?: string }
+    return previewTrainingRange(database, config, body)
+  })
+
   app.post('/api/trainings', async (request, reply) => {
     if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
     const body = request.body as {
       tier?: string; code?: string; start_date?: string
       initial_cash?: number; blind?: boolean; adjust_mode?: string
+      range?: unknown; previewId?: string
+    }
+    // 新范围模式：range/previewId 与 tier 互斥，复核失败返回 409 RANGE_PREVIEW_STALE
+    if (body.range !== undefined || body.previewId !== undefined) {
+      const training = await createTraining(database, config, {
+        tier: body.tier,
+        range: body.range,
+        previewId: body.previewId,
+        code: body.code,
+        initial_cash: body.initial_cash,
+        blind: body.blind,
+        adjust_mode: body.adjust_mode,
+      })
+      return reply.code(201).send({ training })
     }
     if (!body.tier || !TIERS.includes(body.tier as never)) {
       return reply.code(400).send({ error: `tier 必须是 ${TIERS.join(' / ')} 之一` })

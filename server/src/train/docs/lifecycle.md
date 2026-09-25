@@ -4,7 +4,9 @@
 
 ## 命令与状态
 
-新建时校验训练周期、初始资金、代码、日期与复权方式，只允许一个 running 训练。先刷新权息及股票目录，再读该股日线；起始日落到所选日期之前最近的交易日，plannedEnd 按 1/3/6/12/24 个月计算并钳制月末。默认资金 100 万、forward 复权；创建当前收盘价与初始权益记录。
+新建时校验训练周期、初始资金、代码、日期与复权方式，只允许一个 running 训练。先刷新权息及股票目录，再读该股日线；起始日落到所选日期之前最近的交易日，plannedEnd 按 1/3/6/12/24 个月计算并钳制月末。默认资金 100 万、forward 复权；创建当前收盘价与初始权益记录。这条 tier 路径的行为对旧客户端完全保留，训练记录保持 `range_version=0`/`range_mode='tier'`。
+
+TRAIN-02 起新增范围模式：`POST /api/training-ranges/preview` 先返回日期元信息预览，创建时用新 body（`range` + `previewId`，与 `tier` 互斥）重新读取同一快照复核后落库。详见下节「训练范围预览与创建复核」。
 
 V1 页面不启用盲测；引擎仍接受 blind 并保留遮蔽逻辑供存量兼容。不能据此把真盲测列为当前 V1 已开放功能。
 
@@ -16,6 +18,16 @@ V1 页面不启用盲测；引擎仍接受 blind 并保留遮蔽逻辑供存量�
 | `abandonTraining` | running | 标 abandoned 并保留历史记录 |
 
 训练结束后推进和交易返回 409。查询已结束训练不重开记录，更新行情也不延长原 plannedEnd。当前多条业务 SQL 并未统一包在命令事务中；文档不把一次命令描述为已具备完整原子提交。
+
+## 训练范围预览与创建复核（TRAIN-02 第一片）
+
+`previewTrainingRange` 以 Asia/Shanghai 当前完整数据日期作为 today（当日 15:00 前视为未完整，回退前一日），对目标股票日线与权息基准做单次字节读取：剔除未完整日线、计算 `sourceFingerprint`（SHA-256，覆盖完整日线与权息事件）、并用 [RANGE-01 纯规划器](../range.ts)生成请求/实际起止、根数与 notes。预览只返回元信息，不含任何OHLC、收益或账户结果；预览有效期 10 分钟（`RANGE_PREVIEW_TTL_MS`），`previewId` 存进程内存。
+
+失败复用 RANGE-01 错误码及中文原因：`INVALID_INPUT` 返回 400，`NO_DATA` 返回 404，`BEFORE_HISTORY`/`AFTER_DATA`/`INSUFFICIENT_DATA`/`UNCONFIRMED_COVERAGE` 返回 409；错误体附带 `code` 字段（沿全局错误处理器下发）。本片没有节假日日历来源，`knownClosedDates` 未注入，尾段未证实工作日一律 `UNCONFIRMED_COVERAGE`。
+
+范围创建复用 `POST /api/trainings`：新 body 传 `range` 与 `previewId`（可与旧字段 `code`/`initial_cash`/`blind`/`adjust_mode` 组合），不能同时传 `tier`。创建时重新执行与预览相同的单次快照读取，`previewId`、`sourceFingerprint`、请求与 adjustMode 任一不匹配，或预览过期/不存在/复核规划失败，均返回 409 `RANGE_PREVIEW_STALE` 并提示重新预览。复核通过后把元数据冻结到训练记录：`range_version=1`、`range_mode`、`requested_start/requested_end`、`range_start/range_end`、`range_bar_count`、`range_source_fingerprint`、`range_notes`（JSON）；`tier` 列写 `RANGE` 哨兵，`start_date/planned_end` 取已复核的 `range_start/range_end`，不再套用 `TIER_MONTHS`。查询响应的训练对象附带可选 `range` 对象；旧 tier 训练不返回该字段。推进、T+1、权息、防未来与结算规则不变。
+
+数据库迁移沿 [db.ts](../../db.ts) `addColumnIfMissing` 兼容增列，不重建表、不清理旧训练；旧行默认 `range_version=0`/`range_mode='tier'`，其余范围列为 NULL。
 
 ## 数据尾与结算缺口
 
@@ -35,4 +47,4 @@ V1 页面不启用盲测；引擎仍接受 blind 并保留遮蔽逻辑供存量�
 
 ## 验证入口
 
-[train-engine.test.ts](../../../test/train-engine.test.ts) 覆盖日期、状态、推进、分批加载与防未来；[full-acceptance.test.ts](../../../test/full-acceptance.test.ts) 覆盖接口旁路限制。账户对账继续读 [accounting](./accounting.md)，整体交付按 [验证协议](../../../../docs/engineering/testing.md)。
+[train-engine.test.ts](../../../test/train-engine.test.ts) 覆盖日期、状态、推进、分批加载与防未来；[train-range-preview.test.ts](../../../test/train-range-preview.test.ts) 覆盖预览元信息/无OHLC、指纹与创建复核、旧tier兼容及旧库迁移；[full-acceptance.test.ts](../../../test/full-acceptance.test.ts) 覆盖接口旁路限制。账户对账继续读 [accounting](./accounting.md)，整体交付按 [验证协议](../../../../docs/engineering/testing.md)。

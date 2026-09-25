@@ -1,18 +1,24 @@
+import { createHash, randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from '../config.js'
-import { isDayDate, readDayFileRange, type DayBar } from '../tdx/dayfile.js'
+import { isDayDate, parseDayBuffer, readDayFileRange, type DayBar } from '../tdx/dayfile.js'
 import { refreshStockCatalog } from '../tdx/catalog.js'
 import { loadAdjustmentEvents, refreshAdjustmentCache } from '../tdx/adjustment-cache.js'
 import { applyForwardAdjustment, buildForwardAdjustmentSegments } from '../tdx/gbbq.js'
 import { aggregateBars, type KlineBar, type Timeframe } from '../tdx/kline.js'
 import { parseTdxSymbol } from '../tdx/symbol.js'
+import type { TdxMarket } from '../tdx/stocks.js'
+import { planTrainingRange, type TrainingRangeRequest, type TrainingRangeResult } from './range.js'
 import {
   applyTrade, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
+/** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
+export const RANGE_TIER_SENTINEL = 'RANGE'
 export type TrainingStatus = 'running' | 'settled' | 'abandoned'
 
 export const TIERS: Tier[] = ['1M', '3M', '6M', '1Y', '2Y']
@@ -23,14 +29,14 @@ export const MA_WARMUP_BARS = 200
 export const TRAINING_LOAD_BARS = VISIBLE_BARS + MA_WARMUP_BARS
 
 export class HttpError extends Error {
-  constructor(public statusCode: number, message: string) {
+  constructor(public statusCode: number, message: string, public code?: string) {
     super(message)
   }
 }
 
 interface TrainingRow {
   id: number
-  tier: Tier
+  tier: string
   code: string
   name: string
   market: string
@@ -45,11 +51,34 @@ interface TrainingRow {
   current_close: number | null
   settle_date: string | null
   early_settle: number | null
+  range_version: number | null
+  range_mode: string | null
+  requested_start: string | null
+  requested_end: string | null
+  range_start: string | null
+  range_end: string | null
+  range_bar_count: number | null
+  range_source_fingerprint: string | null
+  range_notes: string | null
+}
+
+/** 训练查询响应的可选 range 对象：version/mode/requested/actual/指纹与notes（TRAIN-02 冻结合同）。 */
+export interface TrainingRangeMeta {
+  version: number
+  mode: 'preset' | 'latest' | 'bars'
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  sourceFingerprint: string
+  notes: string[]
 }
 
 export interface TrainingMeta {
   id: number
-  tier: Tier
+  /** 旧五档周期；范围模式训练为 RANGE 哨兵，旧客户端不得把它解析成任何 tier。 */
+  tier: Tier | typeof RANGE_TIER_SENTINEL
   code: string | null
   name: string | null
   market: string
@@ -64,6 +93,8 @@ export interface TrainingMeta {
   adjustMode: 'forward' | 'raw'
   initialCash: number
   createdAt: string
+  /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
+  range?: TrainingRangeMeta
 }
 
 export interface AccountView {
@@ -97,11 +128,34 @@ export interface TrainingSnapshot {
   trades: TradeView[]
 }
 
+function parseRangeNotes(raw: string | null): string[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((note): note is string => typeof note === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 function toMeta(row: TrainingRow): TrainingMeta {
   const masked = row.blind === 1 && row.status === 'running'
+  const range = row.range_version === 1 && row.range_start && row.range_end
+    ? {
+        version: 1,
+        mode: row.range_mode as TrainingRangeMeta['mode'],
+        requestedStart: row.requested_start ?? row.range_start,
+        requestedEnd: row.requested_end,
+        startDate: row.range_start,
+        endDate: row.range_end,
+        barCount: row.range_bar_count ?? 0,
+        sourceFingerprint: row.range_source_fingerprint ?? '',
+        notes: parseRangeNotes(row.range_notes),
+      } satisfies TrainingRangeMeta
+    : undefined
   return {
     id: row.id,
-    tier: row.tier,
+    tier: row.tier as Tier | typeof RANGE_TIER_SENTINEL,
     code: masked ? null : row.code,
     name: masked ? null : row.name,
     market: row.market,
@@ -115,6 +169,7 @@ function toMeta(row: TrainingRow): TrainingMeta {
     adjustMode: row.adjust_mode,
     initialCash: row.initial_cash,
     createdAt: row.created_at,
+    ...(range ? { range } : {}),
   }
 }
 
@@ -157,18 +212,30 @@ export async function ensureAdjustmentCache(database: DatabaseSync, config: AppC
 }
 
 export interface CreateTrainingInput {
-  tier: string
-  code: string
-  start_date: string
+  tier?: string
+  code?: string
+  start_date?: string
   initial_cash?: number
   blind?: boolean
   adjust_mode?: string
+  /** 新范围模式请求（TRAIN-02）；与 tier 互斥，必须携带已复核的 previewId */
+  range?: unknown
+  previewId?: string
+  /** 测试注入时钟；缺省取当前时间 */
+  now?: Date
 }
 
 export async function createTraining(database: DatabaseSync, config: AppConfig, input: CreateTrainingInput): Promise<TrainingMeta> {
+  if (input.range !== undefined || input.previewId !== undefined) {
+    return createRangeTraining(database, config, input)
+  }
   if (!TIERS.includes(input.tier as Tier)) {
     throw new HttpError(400, `训练周期必须是 ${TIERS.join(' / ')} 之一`)
   }
+  if (!input.code || !input.start_date) {
+    throw new HttpError(400, 'code 与 start_date 必填')
+  }
+  const startDate = input.start_date
   const tier = input.tier as Tier
   const adjustMode = input.adjust_mode ?? 'forward'
   if (!['forward', 'raw'].includes(adjustMode)) {
@@ -192,8 +259,8 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
 
   const bars = await readDayFileRange(dayFilePath(config, parsed.market, parsed.code))
-  const startBar = [...bars].reverse().find(bar => bar.date <= input.start_date)
-  if (!startBar) throw new HttpError(400, `起始日 ${input.start_date} 早于该股票的上市日`)
+  const startBar = [...bars].reverse().find(bar => bar.date <= startDate)
+  if (!startBar) throw new HttpError(400, `起始日 ${startDate} 早于该股票的上市日`)
 
   const createdAt = new Date().toISOString()
   // 末根 K 线在前复权序列中恒等于原始收盘价，因此 current_close 直接存原始收盘，
@@ -212,6 +279,277 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   database.prepare(
     'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
   ).run(id, startBar.date, initialCash)
+  return toMeta(loadTrainingRow(database, id))
+}
+
+// ===== TRAIN-02：训练范围预览与创建复核 =====
+// 预览只返回日期元信息（请求/实际起止、根数、模式、notes），不返回任何OHLC、收益或账户结果。
+// 元信息与 sourceFingerprint 必须派生自同一次文件字节快照：readFile 一次后解析、剔除未完整日线、
+// 再计算指纹与计划；禁止分别读文件后声称一致。today 取 Asia/Shanghai 当前完整数据日期
+// （当日 15:00 前视为未完整，回退到前一日），knownClosedDates 本片无日历来源，尾段缺口保守失败。
+
+export const RANGE_PREVIEW_TTL_MS = 10 * 60_000
+const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000
+const MARKET_CLOSE_MINUTES = 15 * 60
+
+export interface RangePreview {
+  version: 1
+  previewId: string
+  code: string
+  market: string
+  request: TrainingRangeRequest
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  notes: string[]
+  sourceFingerprint: string
+  expiresAt: string
+}
+
+export interface PreviewTrainingRangeInput {
+  code?: string
+  market?: string
+  range?: unknown
+  adjustMode?: string
+  /** 测试注入时钟；缺省取当前时间 */
+  now?: Date
+}
+
+interface PlannedRange {
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  notes: string[]
+}
+
+interface RangeSnapshot {
+  market: TdxMarket
+  code: string
+  bars: DayBar[]
+  fingerprint: string
+}
+
+interface StoredRangePreview {
+  code: string
+  market: TdxMarket
+  request: TrainingRangeRequest
+  adjustMode: 'forward' | 'raw'
+  fingerprint: string
+  planned: PlannedRange
+  expiresAtMs: number
+}
+
+const rangePreviews = new Map<string, StoredRangePreview>()
+
+function shanghaiCompleteDataDate(now: Date): string {
+  const shifted = new Date(now.getTime() + SHANGHAI_OFFSET_MS)
+  if (shifted.getUTCHours() * 60 + shifted.getUTCMinutes() < MARKET_CLOSE_MINUTES) {
+    shifted.setTime(shifted.getTime() - 86_400_000)
+  }
+  return shifted.toISOString().slice(0, 10)
+}
+
+// 只取已知字段做规范化：多余字段不参与匹配与回显，取值合法性由规划器校验。
+function normalizeRangeRequest(raw: unknown): TrainingRangeRequest | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const candidate = raw as Record<string, unknown>
+  switch (candidate.mode) {
+    case 'preset': {
+      const request: TrainingRangeRequest = {
+        mode: 'preset',
+        startDate: candidate.startDate as string,
+        months: candidate.months as 1 | 3 | 6 | 12 | 24,
+      }
+      if (candidate.endDate !== undefined) return { ...request, endDate: candidate.endDate as string }
+      return request
+    }
+    case 'latest':
+      return { mode: 'latest', startDate: candidate.startDate as string }
+    case 'bars':
+      return { mode: 'bars', startDate: candidate.startDate as string, count: candidate.count as number }
+    default:
+      return null
+  }
+}
+
+function plannedRangeOf(plan: Extract<TrainingRangeResult, { ok: true }>): PlannedRange {
+  return {
+    requestedStart: plan.requestedStart,
+    requestedEnd: plan.requestedEnd,
+    startDate: plan.startDate,
+    endDate: plan.endDate,
+    barCount: plan.barCount,
+    notes: [...plan.notes],
+  }
+}
+
+function plannedRangeKey(plan: PlannedRange): string {
+  return JSON.stringify([plan.requestedStart, plan.requestedEnd, plan.startDate, plan.endDate, plan.barCount, plan.notes])
+}
+
+function rangeFailure(result: Extract<TrainingRangeResult, { ok: false }>): HttpError {
+  const statusCode = result.code === 'INVALID_INPUT' ? 400 : result.code === 'NO_DATA' ? 404 : 409
+  return new HttpError(statusCode, result.message, result.code)
+}
+
+function stalePreview(message: string): HttpError {
+  return new HttpError(409, `${message}；请重新预览`, 'RANGE_PREVIEW_STALE')
+}
+
+// 权息基准与完整日线一起进入指纹：未来权息变化会改变历史前复权价格，预览必须随之失效。
+function rangeFingerprint(
+  market: string,
+  code: string,
+  bars: DayBar[],
+  events: Array<{ date: string; dividend: number; rightsPrice: number; bonusShares: number; rightsShares: number }>,
+): string {
+  const hash = createHash('sha256')
+  hash.update(`v1|${market}${code}|${bars.length}|`)
+  for (const bar of bars) {
+    hash.update(`${bar.date}|${bar.open}|${bar.high}|${bar.low}|${bar.close}|${bar.amount}|${bar.volume};`)
+  }
+  hash.update('|adj|')
+  for (const event of events) {
+    hash.update(`${event.date}|${event.dividend}|${event.rightsPrice}|${event.bonusShares}|${event.rightsShares};`)
+  }
+  return hash.digest('hex')
+}
+
+async function readRangeSnapshot(database: DatabaseSync, config: AppConfig, market: TdxMarket, code: string, now: Date): Promise<RangeSnapshot> {
+  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
+  await ensureAdjustmentCache(database, config)
+  const path = dayFilePath(config, market, code)
+  let bytes: Buffer
+  try {
+    bytes = await readFile(path)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new HttpError(404, `TDX data not found for ${market}${code}`)
+    throw error
+  }
+  const cutoff = shanghaiCompleteDataDate(now)
+  // 单次字节快照：元信息与指纹都派生自这次读取。
+  const bars = parseDayBuffer(bytes).filter(bar => bar.date <= cutoff)
+  const events = loadAdjustmentEvents(database, market, code)
+  return { market, code, bars, fingerprint: rangeFingerprint(market, code, bars, events) }
+}
+
+function parseRangeSymbol(value: string): { market: TdxMarket; code: string } {
+  try {
+    return parseTdxSymbol(value)
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : 'Invalid symbol')
+  }
+}
+
+export async function previewTrainingRange(database: DatabaseSync, config: AppConfig, input: PreviewTrainingRangeInput): Promise<{ preview: RangePreview }> {
+  const now = input.now ?? new Date()
+  const adjustMode = input.adjustMode ?? 'forward'
+  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
+    throw new HttpError(400, '复权方式必须是 forward 或 raw', 'INVALID_INPUT')
+  }
+  const request = normalizeRangeRequest(input.range)
+  if (!request) throw new HttpError(400, 'range 必须是包含 mode（preset/latest/bars）与 startDate 的对象', 'INVALID_INPUT')
+  if (!input.code) throw new HttpError(400, 'code 必填', 'INVALID_INPUT')
+  if (input.market !== undefined && !['sh', 'sz', 'bj'].includes(input.market)) {
+    throw new HttpError(400, 'market 必须是 sh / sz / bj 之一', 'INVALID_INPUT')
+  }
+  const parsed = parseRangeSymbol(input.market ? `${input.market}${input.code}` : input.code)
+  const today = shanghaiCompleteDataDate(now)
+  const snapshot = await readRangeSnapshot(database, config, parsed.market, parsed.code, now)
+  const plan = planTrainingRange({ request, dates: snapshot.bars.map(bar => bar.date), today })
+  if (!plan.ok) throw rangeFailure(plan)
+
+  const previewId = randomUUID()
+  const expiresAtMs = now.getTime() + RANGE_PREVIEW_TTL_MS
+  const planned = plannedRangeOf(plan)
+  rangePreviews.set(previewId, {
+    code: parsed.code, market: parsed.market, request, adjustMode,
+    fingerprint: snapshot.fingerprint, planned, expiresAtMs,
+  })
+  return {
+    preview: {
+      version: 1,
+      previewId,
+      code: parsed.code,
+      market: parsed.market,
+      request,
+      ...planned,
+      sourceFingerprint: snapshot.fingerprint,
+      expiresAt: new Date(expiresAtMs).toISOString(),
+    },
+  }
+}
+
+async function createRangeTraining(database: DatabaseSync, config: AppConfig, input: CreateTrainingInput): Promise<TrainingMeta> {
+  if (input.tier !== undefined) throw new HttpError(400, 'range 创建不能同时传 tier', 'INVALID_INPUT')
+  const request = normalizeRangeRequest(input.range)
+  if (!request) throw new HttpError(400, 'range 必须是包含 mode（preset/latest/bars）与 startDate 的对象', 'INVALID_INPUT')
+  if (typeof input.previewId !== 'string' || input.previewId === '') {
+    throw new HttpError(400, 'range 创建必须提供预览返回的 previewId')
+  }
+  if (!input.code) throw new HttpError(400, 'code 必填')
+  const adjustMode = input.adjust_mode ?? 'forward'
+  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
+    throw new HttpError(400, '复权方式必须是 forward 或 raw')
+  }
+  const initialCash = input.initial_cash ?? 1_000_000
+  if (!Number.isFinite(initialCash) || initialCash <= 0) {
+    throw new HttpError(400, '初始资金必须是正数')
+  }
+  const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
+  if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
+  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
+
+  const now = input.now ?? new Date()
+  const stored = rangePreviews.get(input.previewId)
+  if (!stored) throw stalePreview('预览不存在或已过期')
+  if (now.getTime() > stored.expiresAtMs) {
+    rangePreviews.delete(input.previewId)
+    throw stalePreview('预览已过期')
+  }
+  if (JSON.stringify(request) !== JSON.stringify(stored.request)) throw stalePreview('创建请求与预览请求不一致')
+  if (adjustMode !== stored.adjustMode) throw stalePreview('复权方式与预览不一致')
+  const parsed = parseRangeSymbol(input.code)
+  if (parsed.code !== stored.code || parsed.market !== stored.market) throw stalePreview('预览与请求的股票不一致')
+
+  // 创建时重新读取同一日线快照并复核预览版本：字节/请求/复权任一变化都要求重新预览。
+  const snapshot = await readRangeSnapshot(database, config, stored.market, stored.code, now)
+  if (snapshot.fingerprint !== stored.fingerprint) throw stalePreview('数据已变化（sourceFingerprint 不匹配）')
+  const plan = planTrainingRange({
+    request,
+    dates: snapshot.bars.map(bar => bar.date),
+    today: shanghaiCompleteDataDate(now),
+  })
+  if (!plan.ok) throw stalePreview(`创建复核未通过：${plan.message}`)
+  if (plannedRangeKey(plannedRangeOf(plan)) !== plannedRangeKey(stored.planned)) throw stalePreview('复核结果与预览不一致')
+
+  const stocks = await refreshStockCatalog(database, config.tdxRoot).then(result => result.stocks)
+  const stock = stocks.find(item => item.market === parsed.market && item.code === parsed.code)
+  if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
+  const startBar = snapshot.bars.find(bar => bar.date === plan.startDate)
+  if (!startBar) throw stalePreview(`复核起点 ${plan.startDate} 缺少对应日线`)
+
+  const result = database.prepare(`
+    INSERT INTO trainings (
+      tier, code, name, market, start_date, planned_end, status, blind,
+      adjust_mode, initial_cash, created_at, current_date, current_close,
+      range_version, range_mode, requested_start, requested_end, range_start, range_end,
+      range_bar_count, range_source_fingerprint, range_notes
+    ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    RANGE_TIER_SENTINEL, parsed.code, stock.name, parsed.market, plan.startDate, plan.endDate,
+    input.blind ? 1 : 0, adjustMode, initialCash, now.toISOString(), plan.startDate, startBar.close,
+    plan.mode, plan.requestedStart, plan.requestedEnd, plan.startDate, plan.endDate,
+    plan.barCount, snapshot.fingerprint, JSON.stringify(plan.notes),
+  )
+  const id = Number(result.lastInsertRowid)
+  database.prepare(
+    'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
+  ).run(id, plan.startDate, initialCash)
   return toMeta(loadTrainingRow(database, id))
 }
 
