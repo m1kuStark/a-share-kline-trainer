@@ -578,6 +578,30 @@ def cmd_list(args):
     return EXIT_OK
 
 
+def cmd_event_log(args):
+    """持久事件登记：向回调日志登记 event_id，返回是否重复。
+    回调发送方先调用本命令，duplicate=true 时不得再次唤醒。"""
+    path = pathlib.Path(args.home) / "events.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    try:
+                        if json.loads(line).get("event_id") == args.event_id:
+                            print(json.dumps({"duplicate": True,
+                                              "eventId": args.event_id}))
+                            return EXIT_OK
+                    except ValueError:
+                        continue
+    entry = {"event_id": args.event_id, "loggedAt": _now_iso(),
+             "detail": args.detail or ""}
+    with open(str(path), "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    print(json.dumps({"duplicate": False, "eventId": args.event_id}))
+    return EXIT_OK
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         description="Wake the pinned Codex session in the same conversation.")
@@ -635,6 +659,12 @@ def build_parser():
     p_wake.add_argument("--skip-stable", action="store_true")
     p_wake.add_argument("--poll-seconds", type=float, default=2.0)
     p_wake.set_defaults(func=cmd_wake)
+
+    p_evt = sub.add_parser("event-log",
+                           help="register a callback event id (dedup log)")
+    p_evt.add_argument("--event-id", required=True)
+    p_evt.add_argument("--detail", default="")
+    p_evt.set_defaults(func=cmd_event_log)
     return parser
 
 

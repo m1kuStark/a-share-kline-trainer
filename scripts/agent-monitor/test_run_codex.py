@@ -411,5 +411,27 @@ class BatchClaimAndIdentityTests(unittest.TestCase):
                                                       proc.stderr[-800:]))
 
 
+class EventLogTests(unittest.TestCase):
+    """回调事件登记：重复 event_id 必须报 duplicate，不产生第二次唤醒。"""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.home = pathlib.Path(self._tmp.name) / "home"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_event_log_dedups(self):
+        first = run_codex.main(["--home", str(self.home), "event-log",
+                                "--event-id", "E1", "--detail", "d"])
+        self.assertEqual(run_codex.EXIT_OK, first)
+        second = run_codex.main(["--home", str(self.home), "event-log",
+                                 "--event-id", "E1", "--detail", "d"])
+        self.assertEqual(run_codex.EXIT_OK, second)
+        log = (self.home / "events.jsonl").read_text(encoding="utf-8")
+        self.assertEqual(1, log.count('"event_id": "E1"'),
+                         "duplicate must not append a second entry")
+
+
 if __name__ == "__main__":
     unittest.main()
