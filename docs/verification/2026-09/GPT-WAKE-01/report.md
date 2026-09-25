@@ -20,7 +20,7 @@
 
 ## 边界（未验证/未实现）
 
-- Desktop 开启时的"等待释放后自动唤醒"仅实现未实测（需用户关闭会话配合，留待首次真实使用验证）。
+- ~~Desktop 等待释放后的自动唤醒~~ **已验证（2026-09-25 晚，用户关闭 Desktop 后）**：`wake --session-id 01a0d79e… --batch DESKTOP-WAKE-01 --wait-writer-minutes 3` 直接成功——锁随 Desktop 关闭释放，GPT 在同一会话回答"桥路正常"，50.22s，退出码 0；该轮 usage `cached_input_tokens=259145319 / input_tokens=272610592`（≈95% 缓存命中，大线程续接的成本优势进一步证实）。
 - `--output-schema` 结构化决策回复未实测（首版 wake 未启用，决策契约在 GPT-WAKE-02 接控制器时一并验证）。
 - 控制器 gpt_direct 自动派发未接线（GPT-WAKE-02）；当前控制器遇强模型升级仍 waiting_control。
 - fork 迁移路径（Desktop 持锁时的替代）仅核对 `codex fork --help` 存在，未实测。
