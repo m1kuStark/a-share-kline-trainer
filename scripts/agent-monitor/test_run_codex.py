@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """run_codex.py 的契约测试。不调用任何模型：--cli 指向夹具生成的假 codex.cmd。"""
+import contextlib
+import hashlib
+import io
 import json
 import os
 import pathlib
@@ -490,33 +493,47 @@ class EventLogRaceTests(unittest.TestCase):
                 time.sleep(0.6)
                 return original()
             with patch.object(run_codex, "_now_iso", side_effect=slow_now):
-                code = run_codex.main(["--home", str(self.home), "event-log",
-                                       "--event-id", "RACE-1", "--detail", "d"])
-            results.append(code)
+                results.append(run_codex.main(
+                    ["--home", str(self.home), "event-log",
+                     "--event-id", "RACE-1", "--detail", "d"]))
 
-        threads = [threading.Thread(target=worker) for _ in range(2)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join(timeout=60)
+        # 两线程共享一次全局 stdout 重定向：嵌套重定向线程不安全。
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            threads = [threading.Thread(target=worker) for _ in range(2)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=60)
         self.assertEqual([run_codex.EXIT_OK, run_codex.EXIT_OK], results)
+        flags = sorted(json.loads(line)["duplicate"]
+                       for line in buffer.getvalue().splitlines() if line.strip())
+        self.assertEqual([False, True], flags,
+                         "exactly one sender may claim the event id")
         log = (self.home / "events.jsonl")
         entries = [json.loads(l) for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
         self.assertEqual(1, len([e for e in entries if e["event_id"] == "RACE-1"]))
 
     def test_interrupted_claim_counts_as_registered(self):
-        run_codex.main(["--home", str(self.home), "event-log",
-                        "--event-id", "E-INT", "--detail", "d"])
-        code = run_codex.main(["--home", str(self.home), "event-log",
-                               "--event-id", "E-INT", "--detail", "d"])
+        # 构造真实中断形态：claim 已创建，但日志一行都没有（写入未完成）。
+        digest = hashlib.sha256("E-INT".encode("utf-8")).hexdigest()[:32]
+        claim_dir = self.home / "events"
+        claim_dir.mkdir(parents=True)
+        (claim_dir / (digest + ".claim")).write_text(
+            json.dumps({"event_id": "E-INT", "detail": "interrupted"}),
+            encoding="utf-8")
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = run_codex.main(["--home", str(self.home), "event-log",
+                                   "--event-id", "E-INT", "--detail", "d"])
         self.assertEqual(run_codex.EXIT_OK, code)
-        self.assertTrue((self.home / "events").exists(),
-                        "claim store must persist across interrupted registrations")
+        self.assertTrue(json.loads(buffer.getvalue())["duplicate"],
+                        "interrupted claim must not grant a second send")
 
 
-if __name__ == "__main__":
-    unittest.main()
-    """回调事件登记：重复 event_id 必须报 duplicate，不产生第二次唤醒。"""
+class EventLogTests(unittest.TestCase):
+    """回调事件登记：重复 event_id 必须报 duplicate，不产生第二次唤醒。
+    升级前旧格式日志中的事件同样必须被认领拦截（P2 旧事件失忆）。"""
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -535,6 +552,44 @@ if __name__ == "__main__":
         log = (self.home / "events.jsonl").read_text(encoding="utf-8")
         self.assertEqual(1, log.count('"event_id": "E1"'),
                          "duplicate must not append a second entry")
+
+    def test_legacy_log_entry_blocks_resend_after_upgrade(self):
+        # 升级前旧格式：events.jsonl 有登记、无任何 .claim 文件。
+        legacy = self.home / "events.jsonl"
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text(json.dumps({"event_id": "sent-before-upgrade",
+                                      "loggedAt": "2026-09-20T00:00:00+00:00",
+                                      "detail": "sent by the pre-upgrade bridge"},
+                                     ensure_ascii=False) + "\n",
+                          encoding="utf-8")
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = run_codex.main(["--home", str(self.home), "event-log",
+                                   "--event-id", "sent-before-upgrade",
+                                   "--detail", "d"])
+        self.assertEqual(run_codex.EXIT_OK, code)
+        self.assertTrue(json.loads(buffer.getvalue())["duplicate"],
+                        "legacy logged event must not be re-sent")
+        # 新事件不受旧日志影响。
+        buffer2 = io.StringIO()
+        with contextlib.redirect_stdout(buffer2):
+            run_codex.main(["--home", str(self.home), "event-log",
+                            "--event-id", "new-after-upgrade", "--detail", "d"])
+        self.assertFalse(json.loads(buffer2.getvalue())["duplicate"])
+
+    def test_corrupted_legacy_log_blocks_resend(self):
+        # 日志损坏（无法确认该事件是否已发送）：保守不重发。
+        legacy = self.home / "events.jsonl"
+        legacy.parent.mkdir(parents=True, exist_ok=True)
+        legacy.write_text("{corrupted\n", encoding="utf-8")
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = run_codex.main(["--home", str(self.home), "event-log",
+                                   "--event-id", "sent-before-upgrade",
+                                   "--detail", "d"])
+        self.assertEqual(run_codex.EXIT_OK, code)
+        self.assertTrue(json.loads(buffer.getvalue())["duplicate"],
+                        "corrupted log must block resend conservatively")
 
 
 if __name__ == "__main__":

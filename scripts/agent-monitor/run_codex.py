@@ -592,8 +592,32 @@ def cmd_list(args):
 def cmd_event_log(args):
     """持久事件登记：以 O_EXCL 认领文件原子授予发送许可。
     同一 event_id 只有一个调用方拿到 duplicate=false；认领即登记，
-    登记后发送结果不明也不得盲发第二次。"""
+    登记后发送结果不明也不得盲发第二次。升级前的旧格式日志同样具有
+    登记效力：授予许可前先核对；日志损坏无法确认发送状态时保守不重发。"""
     home = pathlib.Path(args.home)
+    log = home / "events.jsonl"
+    if log.is_file():
+        corrupted = False
+        try:
+            with open(str(log), "r", encoding="utf-8") as handle:
+                for line in handle:
+                    if not line.strip():
+                        continue
+                    try:
+                        if json.loads(line).get("event_id") == args.event_id:
+                            print(json.dumps({"duplicate": True,
+                                              "eventId": args.event_id}))
+                            return EXIT_OK
+                    except ValueError:
+                        corrupted = True
+                        break
+        except OSError:
+            corrupted = True
+        if corrupted:
+            print(json.dumps({"duplicate": True, "eventId": args.event_id,
+                              "error": "event log corrupted; resend blocked "
+                                       "conservatively"}))
+            return EXIT_OK
     digest = hashlib.sha256(args.event_id.encode("utf-8")).hexdigest()[:32]
     claim_dir = home / "events"
     claim_dir.mkdir(parents=True, exist_ok=True)
