@@ -6,8 +6,11 @@ import { fetchDataStatus, postDataRefresh, type DataRefreshResult, type DataStat
 // 距上次检查 ≥60s 才再检查；页面隐藏时不检查也不轮询；发现 state=running 后以约 1s
 // 间隔轮询 GET /api/data/status 直到非 running（上限 120s）。手动更新走 POST
 // /api/data/refresh（绕过节流，服务端会合并任务），随后进入同样的轮询。
+// DATA-05 新鲜度重判：可见页面每 60s 一次廉价 GET /api/data/status（服务端按官方
+// 离线日历逐次重算 freshness，跨 15:00/跨日/跨休市即时重判）；隐藏停止计时，
+// 回前台恢复并立即按节流检查；卸载清理。定时器只 GET，绝不定时 POST 扫描。
 
-/** 前台激活后再次检查的最小间隔（60s 节流） */
+/** 前台激活后再次检查的最小间隔（60s 节流），同时是可见页面廉价重判 GET 的周期 */
 export const DATA_CHECK_THROTTLE_MS = 60_000
 /** running 状态轮询间隔（约 1s） */
 const DATA_POLL_INTERVAL_MS = 1_000
@@ -36,6 +39,7 @@ let lastCheckStartedAt = 0
 let checkSeq = 0
 let pollTimer: ReturnType<typeof setTimeout> | undefined
 let pollDeadline = 0
+let statusTicker: ReturnType<typeof setInterval> | undefined
 // 区分"单次轮询请求在途"与"隐藏暂停"：两者 pollTimer 都为空，只有暂停态允许 startPolling 重新调度
 let pollInFlight = false
 
@@ -43,11 +47,32 @@ function isHidden(): boolean {
   return typeof document !== 'undefined' && document.visibilityState === 'hidden'
 }
 
+/**
+ * 可见页面 60s 廉价重判定时器：只 GET /api/data/status（服务端逐次重算 freshness），
+ * 隐藏时暂停，回前台由 onDataActive 恢复；不发起任何 POST 扫描。
+ */
+export function startStatusTicker(): void {
+  if (statusTicker !== undefined || isHidden()) return
+  statusTicker = setInterval(() => {
+    if (isHidden()) return
+    void checkDataStatus()
+  }, DATA_CHECK_THROTTLE_MS)
+}
+
+/** 隐藏时停止 60s 重判计时（App visibilitychange→hidden 调用） */
+export function stopStatusTicker(): void {
+  if (statusTicker !== undefined) {
+    clearInterval(statusTicker)
+    statusTicker = undefined
+  }
+}
+
 /** 清理轮询循环与未决请求标记（App 卸载时调用，监听器由 App 成对移除） */
 export function cancelDataWatchers(): void {
   checkSeq++
   clearTimeout(pollTimer)
   pollTimer = undefined
+  stopStatusTicker()
   dataPolling.value = false
   dataChecking.value = false
 }
@@ -71,9 +96,10 @@ export async function checkDataStatus(options?: { force?: boolean }): Promise<vo
   }
 }
 
-/** 前台激活入口（focus / visibilitychange→visible）：60s 节流内不重复检查，running 任务恢复轮询 */
+/** 前台激活入口（focus / visibilitychange→visible）：60s 节流内不重复检查，running 任务恢复轮询，并确保重判定时器在跑 */
 export function onDataActive(): void {
   if (isHidden()) return
+  startStatusTicker()
   if (dataStatus.value?.state === 'running') { startPolling(); return }
   void checkDataStatus()
 }

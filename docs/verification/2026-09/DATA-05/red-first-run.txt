@@ -1,0 +1,45 @@
+
+> a-share-kline-trainer@0.3.2 test
+> vitest run --config server/vitest.config.ts server/test/data-calendar.test.ts server/test/data-status-timing.test.ts --maxWorkers=2
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/test/data-calendar.test.ts[2m [ server/test/data-calendar.test.ts ][22m
+[31m[1mError[22m: Cannot find module '../src/data/calendar.js' imported from 'D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration/server/test/data-calendar.test.ts'[39m
+[36m [2m❯[22m server/test/data-calendar.test.ts:[2m4:1[22m[39m
+    [90m  2| [39m[35mimport[39m { describe[33m,[39m expect[33m,[39m it } [35mfrom[39m [32m'vitest'[39m
+    [90m  3| [39m[35mimport[39m { assessFreshness } [35mfrom[39m [32m'../src/data/freshness.js'[39m
+    [90m  4| [39mimport { SSE_CALENDAR_2026, SSE_CALENDAR_2026_SOURCE } from '../src/da…
+    [90m   | [39m[31m^[39m
+    [90m  5| [39m
+    [90m  6| [39m// 离线2026上交所日历模块：与已验收证据快照（docs/verification/2026-09/DATA-05/calendar-s…
+
+[31m[1mCaused by: Error[22m: Failed to load url ../src/data/calendar.js (resolved id: ../src/data/calendar.js) in D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration/server/test/data-calendar.test.ts. Does the file exist?[39m
+[90m [2m❯[22m loadAndTransform ../../a-share-kline-trainer/node_modules/vite/dist/node/chunks/config.js:[2m22739:33[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/data-status-timing.test.ts[2m [ server/test/data-status-timing.test.ts ][22m
+[31m[1mError[22m: Cannot find module '../src/data/calendar.js' imported from 'D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration/server/test/data-status-timing.test.ts'[39m
+[36m [2m❯[22m server/test/data-status-timing.test.ts:[2m4:1[22m[39m
+    [90m  2| [39m[35mimport[39m { describe[33m,[39m expect[33m,[39m it } [35mfrom[39m [32m'vitest'[39m
+    [90m  3| [39m[35mimport[39m { migrateDatabase } [35mfrom[39m [32m'../src/db.js'[39m
+    [90m  4| [39mimport { SSE_CALENDAR_2026, SSE_CALENDAR_2026_SOURCE, type CalendarBun…
+    [90m   | [39m[31m^[39m
+    [90m  5| [39mimport { createDataRefreshCoordinator, type DataRefreshCoordinator } f…
+    [90m  6| [39mimport { registerOnlineSource, type DailySource, type ScanOutcome } fr…
+
+[31m[1mCaused by: Error[22m: Failed to load url ../src/data/calendar.js (resolved id: ../src/data/calendar.js) in D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration/server/test/data-calendar.test.ts. Does the file exist?[39m
+[90m [2m❯[22m loadAndTransform ../../a-share-kline-trainer/node_modules/vite/dist/node/chunks/config.js:[2m22739:33[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[90m (2)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m   Start at [22m 18:07:04
+[2m   Duration [22m 272ms[2m (transform 74ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 193ms)[22m

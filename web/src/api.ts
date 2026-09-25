@@ -179,6 +179,26 @@ export interface DataRefreshResult {
   message: string
 }
 
+/** 市场数据新鲜度（服务端 FRESH-01 纯模块按官方离线日历逐次重算） */
+export type DataFreshnessState = 'current' | 'stale' | 'unknown'
+
+export interface DataFreshness {
+  state: DataFreshnessState
+  expectedDate: string | null
+  sourceMaxDate: string | null
+  checkedAt: string
+  reason: string
+}
+
+/** 注入协调器的交易日历来源元信息（离线官方资料，不联网） */
+export interface DataCalendarInfo {
+  id: string
+  from: string
+  through: string
+  sourceUrl: string
+  version: string
+}
+
 export interface DataStatus {
   state: DataState
   needsUpdate: boolean
@@ -190,6 +210,10 @@ export interface DataStatus {
   lastCheckedAt: string | null
   lastResult: DataRefreshResult | null
   revisionWarning: string | null
+  /** 市场新鲜度：绿色"已最新"只对应 current；unknown/stale 不得显示绿色 */
+  freshness: DataFreshness
+  /** null＝服务端未注入可信日历（freshness 必为 unknown） */
+  calendar: DataCalendarInfo | null
 }
 
 export function fetchDataStatus(): Promise<DataStatus> {

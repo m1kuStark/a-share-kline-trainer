@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
+import type { CalendarBundle } from '../src/data/calendar.js'
 import { createDataRefreshCoordinator, lastWeekdayBeforeToday, type DataRefreshCoordinator } from '../src/data/refresh.js'
 import { registerOnlineSource, type DailySource, type ScanOutcome } from '../src/data/source.js'
 import { createTdxSource, TDX_SOURCE_NAME } from '../src/data/tdxSource.js'
@@ -118,6 +119,8 @@ type StatusBody = {
   lastCheckedAt: string | null
   lastResult: { finishedAt: string; outcome: string; added: number; removed: number; revised: number; message: string } | null
   revisionWarning: string | null
+  freshness: { state: 'current' | 'stale' | 'unknown'; expectedDate: string | null; sourceMaxDate: string | null; checkedAt: string; reason: string }
+  calendar: { id: string; from: string; through: string; sourceUrl: string; version: string } | null
 }
 
 async function getStatus(app: FastifyInstance): Promise<StatusBody> {
@@ -642,6 +645,120 @@ describe('data refresh service', () => {
     } finally {
       database.close()
       await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+// ===== DATA-05：freshness 与日历注入的状态集成 =====
+
+describe('data status freshness integration', () => {
+  it('n) /api/data/status carries freshness and built-in offline calendar metadata', async () => {
+    const root = await createFixtureRoot()
+    const { app, database } = await createApp(root)
+    try {
+      const status = await getStatus(app)
+      expect(['current', 'stale', 'unknown']).toContain(status.freshness.state)
+      expect(status.freshness.checkedAt).toBeTruthy()
+      expect(() => new Date(status.freshness.checkedAt)).not.toThrow()
+      // 任何状态的原因都声明"末日不证明每股完整"
+      expect(status.freshness.reason).toContain('来源末日不证明所有股票完整')
+      // 内置官方2026离线日历元信息（不联网）
+      expect(status.calendar).not.toBeNull()
+      expect(status.calendar).toMatchObject({
+        id: 'sse-2026-annual',
+        from: '2026-01-01',
+        through: '2026-12-31',
+      })
+      expect(status.calendar?.sourceUrl).toContain('sse.com.cn')
+      expect(status.calendar?.version).toBeTruthy()
+      // legacy 字段一个不少
+      for (const key of ['state', 'needsUpdate', 'reason', 'source', 'tdx', 'online', 'sourceMaxDate', 'lastCheckedAt', 'lastResult', 'revisionWarning']) {
+        expect(status).toHaveProperty(key)
+      }
+    } finally {
+      await app.close()
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('o) failed task still reports freshness from the last successful scan', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3) // 注入时钟的应收日：D2 后第3个工作日，必然领先于夹具末日
+    const synthetic: CalendarBundle = {
+      calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
+      source: {
+        id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
+        sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
+        retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
+        publishedDate: null, corroborationNote: '测试注入，非官方',
+      },
+    }
+    const coordinator = directCoordinator(database, root, {
+      calendar: synthetic,
+      now: () => new Date(`${expected}T07:00:00Z`), // 上海15:00整
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+      expect(first.freshness.expectedDate).toBe(expected)
+
+      // 破坏 sh lday 目录 → 任务失败；freshness 仍按上次成功扫描的 sourceMaxDate 重算
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      const second = await runCoordinatorAndWait(coordinator)
+      expect(second.state).toBe('failed')
+      expect(second.lastResult?.outcome).toBe('failed')
+      expect(second.freshness.state).toBe('stale')
+      expect(second.freshness.sourceMaxDate).toBe(D2)
+      expect(second.freshness.expectedDate).toBe(expected)
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('p) freshness current does not block the manual re-read entry', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let scans = 0
+    const unregister = registerOnlineSource(fakeOnlineSource('测试在线源', async () => {
+      scans += 1
+      return {
+        kind: 'online', name: '测试在线源', totalStocks: 1, added: 0, removed: 0,
+        revised: 0, baseline: scans === 1, sourceMaxDate: '2026-01-08', files: [],
+      }
+    }))
+    const synthetic: CalendarBundle = {
+      calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
+      source: {
+        id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
+        sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
+        retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
+        publishedDate: null, corroborationNote: '测试注入，非官方',
+      },
+    }
+    const coordinator = directCoordinator(database, null, {
+      calendar: synthetic,
+      now: () => new Date('2026-01-08T07:00:00Z'), // 周四15:00，应收=2026-01-08=来源末日 → current
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.freshness.state).toBe('current')
+      expect(first.freshness.expectedDate).toBe('2026-01-08')
+      // current 状态下手动"重新读取本地日线"依然可用（返回新任务并到终态）
+      const started = await coordinator.start()
+      expect(started).not.toBeNull()
+      expect(started?.joined).toBe(false)
+      await waitFor(async () => (await coordinator.getStatus()).state !== 'running')
+      const final = await coordinator.getStatus()
+      expect(final.state).toBe('unchanged')
+      expect(final.freshness.state).toBe('current')
+    } finally {
+      unregister()
+      database.close()
     }
   })
 })

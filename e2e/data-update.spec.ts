@@ -3,9 +3,40 @@ import { expect, test, type Page } from '@playwright/test'
 // 日线数据更新 e2e：全部 /api/data/* 用 page.route mock（不依赖服务端真实实现），
 // /api/env、/api/trainings/active、/api/stocks、POST /api/trainings 一并 mock 保证与
 // 隔离服务端的真实数据解耦。断言纪律：可见性用 toBeVisible，真实点击真实事件。
+// DATA-05：payload 携带 freshness（服务端按官方离线日历重算）与 calendar 元信息；
+// 绿色"已最新"只对应 current；unknown 不绿色；始终提供手动"重新读取本地日线"入口。
 
-// /api/data/status 契约样例（与服务端 R1 契约一致）
-function statusPayload(overrides: Record<string, unknown> = {}): string {
+// /api/data/status 契约样例（与服务端 DATA-05 契约一致）
+function freshness(state: 'current' | 'stale' | 'unknown', overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  const base: Record<string, unknown> = {
+    state,
+    expectedDate: state === 'unknown' ? null : '2026-09-24',
+    sourceMaxDate: state === 'unknown' ? null : '2026-09-24',
+    checkedAt: '2026-09-25T01:00:00.000Z',
+    reason: '来源最大日期 2026-09-24 已达到应收收盘日 2026-09-24。来源末日不证明所有股票完整。',
+  }
+  if (state === 'stale') {
+    base.expectedDate = '2026-09-24'
+    base.sourceMaxDate = '2026-09-15'
+    base.reason = '来源最大日期 2026-09-15 落后应收收盘日 2026-09-24。来源末日不证明所有股票完整。'
+  }
+  if (state === 'unknown') {
+    base.expectedDate = null
+    base.sourceMaxDate = '2026-09-15'
+    base.reason = '缺少可信交易日历，无法推算应收收盘日。来源末日不证明所有股票完整。'
+  }
+  return { ...base, ...overrides }
+}
+
+const CALENDAR = {
+  id: 'sse-2026-annual',
+  from: '2026-01-01',
+  through: '2026-12-31',
+  sourceUrl: 'https://www.sse.com.cn/disclosure/dealinstruc/closed/',
+  version: 'snapshot-2026-09-25',
+}
+
+function statusPayload(overrides: Record<string, unknown> = {}, fresh: Record<string, unknown> = freshness('current'), calendar: unknown = CALENDAR): string {
   return JSON.stringify({
     state: 'unchanged',
     needsUpdate: false,
@@ -13,10 +44,12 @@ function statusPayload(overrides: Record<string, unknown> = {}): string {
     source: { kind: 'tdx', name: '通达信本地数据', available: true },
     tdx: { available: true, root: 'C:/new_tdx' },
     online: { configured: false, provider: null },
-    sourceMaxDate: '2026-09-15',
-    lastCheckedAt: '2026-09-16T09:00:00.000Z',
+    sourceMaxDate: '2026-09-24',
+    lastCheckedAt: '2026-09-25T01:00:00.000Z',
     lastResult: null,
     revisionWarning: null,
+    freshness: fresh,
+    calendar,
     ...overrides,
   })
 }
@@ -39,17 +72,20 @@ async function installBaseMocks(page: Page): Promise<void> {
   }))
 }
 
-test('a) needsUpdate 时顶栏出现摇晃的"更新日线"醒目按钮＋截止日小字，窄屏不横向溢出', async ({ page }) => {
+test('a) freshness stale 时顶栏出现摇晃的"更新日线"醒目按钮＋截止日小字＋通达信盘后指引，窄屏不横向溢出', async ({ page }) => {
   await installBaseMocks(page)
   await page.route('**/api/data/status', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有 2026-09-16 的日线' }),
+    body: statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有 2026-09-24 的日线', sourceMaxDate: '2026-09-15' }, freshness('stale')),
   }))
   await page.goto('/')
   const button = page.locator('.data-update-btn.attention')
   await expect(button).toBeVisible()
   await expect(button).toHaveClass(/shake/)
   await expect(button).toHaveText('更新日线')
+  // stale 指引：先去通达信完成盘后下载，再回来重新读取（不暗示联网下载）
+  await expect(button).toHaveAttribute('title', /请先在通达信完成盘后数据下载/)
+  await expect(button).toHaveAttribute('title', /不联网/)
   await expect(page.locator('.data-status-note')).toBeVisible()
   await expect(page.locator('.data-status-note')).toHaveText('截止 2026-09-15')
   // 布局红线抽查：840/1024/1440/1920 四档宽度都不得横向溢出
@@ -60,7 +96,7 @@ test('a) needsUpdate 时顶栏出现摇晃的"更新日线"醒目按钮＋截止
   }
 })
 
-test('b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → updated 后按钮隐藏并显示"数据已最新"', async ({ page }) => {
+test('b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → updated 后显示"数据已最新"，醒目按钮消失且常驻手动入口仍在', async ({ page }) => {
   await installBaseMocks(page)
   let refreshCalls = 0
   let statusPhase: 'initial' | 'running' | 'done' = 'initial'
@@ -70,12 +106,12 @@ test('b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → upda
   })
   await page.route('**/api/data/status', route => {
     const body = statusPhase === 'initial'
-      ? statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有新日线' })
+      ? statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有新日线', sourceMaxDate: '2026-09-15' }, freshness('stale'))
       : statusPhase === 'running'
-        ? statusPayload({ state: 'running', needsUpdate: true, reason: '更新任务进行中' })
+        ? statusPayload({ state: 'running', needsUpdate: true, reason: '更新任务进行中' }, freshness('stale'))
         : statusPayload({
             state: 'updated', needsUpdate: false,
-            lastResult: { finishedAt: '2026-09-16T09:30:00.000Z', outcome: 'updated', added: 5321, removed: 0, revised: 12, message: '已更新到 2026-09-16，新增 5321 根' },
+            lastResult: { finishedAt: '2026-09-25T01:30:00.000Z', outcome: 'updated', added: 5321, removed: 0, revised: 12, message: '已更新到 2026-09-24，新增 5321 根' },
           })
     void route.fulfill({ status: 200, contentType: 'application/json', body })
   })
@@ -90,15 +126,18 @@ test('b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → upda
   await expect(runningButton).toBeVisible()
   await expect(runningButton).toBeDisabled()
   await expect(runningButton).toContainText('更新中')
-  // 模拟任务完成：下一次轮询返回 updated
+  // 模拟任务完成：下一次轮询返回 updated + freshness current
   statusPhase = 'done'
   const okRow = page.locator('.data-status-ok')
   await expect(okRow).toBeVisible()
-  await expect(okRow).toHaveText(/数据已最新 · 截止 2026-09-15/)
+  await expect(okRow).toHaveText(/数据已最新 · 截止 2026-09-24/)
+  // 醒目按钮全部消失，但常驻手动"重新读取本地日线"入口仍在
   await expect(page.locator('.data-update-btn')).toHaveCount(0)
+  await expect(page.locator('.data-reread-btn')).toBeVisible()
+  await expect(page.locator('.data-reread-btn')).toHaveText('重新读取')
 })
 
-test('c) 已最新初始态：更新按钮不渲染，只显示绿点＋"数据已最新 · 截止"一行小字', async ({ page }) => {
+test('c) 已最新（freshness current）初始态：绿点＋"数据已最新 · 截止"一行小字，无醒目按钮，手动重新读取入口常驻', async ({ page }) => {
   await installBaseMocks(page)
   await page.route('**/api/data/status', route => route.fulfill({
     status: 200, contentType: 'application/json', body: statusPayload(),
@@ -106,8 +145,9 @@ test('c) 已最新初始态：更新按钮不渲染，只显示绿点＋"数据�
   await page.goto('/')
   const okRow = page.locator('.data-status-ok')
   await expect(okRow).toBeVisible()
-  await expect(okRow).toContainText('数据已最新 · 截止 2026-09-15')
+  await expect(okRow).toContainText('数据已最新 · 截止 2026-09-24')
   await expect(page.locator('.data-update-btn')).toHaveCount(0)
+  await expect(page.locator('.data-reread-btn')).toBeVisible()
   // 数据已最新时开始训练零打扰：点击直接创建，不弹确认框
   await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
   await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
@@ -118,11 +158,28 @@ test('c) 已最新初始态：更新按钮不渲染，只显示绿点＋"数据�
   await expect.poll(() => createCalls).toBe(1)
 })
 
-test('d) needsUpdate 时点开始训练弹确认框：仍要开始训练照常创建；先更新数据只触发 refresh 不创建', async ({ page }) => {
+test('d) freshness unknown 不显示绿色最新：中性"数据截至…最新交易日待确认"，手动重新读取入口仍可用', async ({ page }) => {
   await installBaseMocks(page)
   await page.route('**/api/data/status', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有新日线' }),
+    body: statusPayload({ sourceMaxDate: '2026-09-15' }, freshness('unknown'), null),
+  }))
+  await page.goto('/')
+  const unknown = page.locator('.data-status-unknown')
+  await expect(unknown).toBeVisible()
+  await expect(unknown).toHaveText('数据截至 2026-09-15，最新交易日待确认')
+  // 未知不绿色：不渲染绿点行与醒目琥珀按钮
+  await expect(page.locator('.data-status-ok')).toHaveCount(0)
+  await expect(page.locator('.data-update-btn.attention')).toHaveCount(0)
+  await expect(page.locator('.data-reread-btn')).toBeVisible()
+  await expect(page.locator('.data-reread-btn')).toHaveAttribute('title', /不联网/)
+})
+
+test('e) needsUpdate 时点开始训练弹确认框：仍要开始训练照常创建；先更新数据只触发 refresh 不创建', async ({ page }) => {
+  await installBaseMocks(page)
+  await page.route('**/api/data/status', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有新日线', sourceMaxDate: '2026-09-15' }, freshness('stale')),
   }))
   let refreshCalls = 0
   let createCalls = 0
@@ -160,7 +217,7 @@ test('d) needsUpdate 时点开始训练弹确认框：仍要开始训练照常�
   expect(createCalls).toBe(1)
 })
 
-test('e) 无可用来源：中性警示按钮，点击后 409 中文原因行内展示（不用 alert）', async ({ page }) => {
+test('f) 无可用来源：中性警示按钮，点击后 409 中文原因行内展示（不用 alert）', async ({ page }) => {
   await installBaseMocks(page)
   await page.route('**/api/data/status', route => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -169,7 +226,7 @@ test('e) 无可用来源：中性警示按钮，点击后 409 中文原因行内
       source: { kind: 'none', name: '无可用来源', available: false },
       tdx: { available: false, root: null },
       online: { configured: false, provider: null },
-    }),
+    }, freshness('unknown')),
   }))
   let refreshCalls = 0
   await page.route('**/api/data/refresh', route => {

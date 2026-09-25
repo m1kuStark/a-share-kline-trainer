@@ -1,0 +1,7 @@
+
+> a-share-kline-trainer@0.3.2 journey
+> tsx scripts/runtime.ts journey e2e/data-update.spec.ts --retries=0
+
+Run manifest: D:\Superlinear_Academy\Stock_WorkSpace\trainer-worktrees\DATA-05-integration\.runs\run-abfd41c5-e8c1-4933-a9b6-93c4d7b4c434\manifest.json
+Isolated server: http://127.0.0.1:6830
+Evidence retained: D:\Superlinear_Academy\Stock_WorkSpace\trainer-worktrees\DATA-05-integration\.runs\run-abfd41c5-e8c1-4933-a9b6-93c4d7b4c434\artifacts
