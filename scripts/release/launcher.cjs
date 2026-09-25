@@ -34,9 +34,21 @@ function samePath(a, b) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
 }
 
-// 单机常见通达信安装位置，按顺序探测；首个命中的生效。
-// Common single-user TDX installations probed in order.
-const TDX_CANDIDATES = ['D:\\MySoftWares\\TDX', 'C:\\new_tdx', 'C:\\通达信']
+// Probe a small set of generic Windows locations. User-specific paths must
+// come from TDX_ROOT, trainer.config.json, or the guided setup flow.
+function defaultTdxCandidates(environment = process.env) {
+  const roots = [
+    environment.ProgramFiles,
+    environment['ProgramFiles(x86)'],
+    environment.ProgramData,
+    environment.LOCALAPPDATA,
+    environment.APPDATA,
+    environment.SystemDrive,
+    homedir(),
+  ].filter(value => typeof value === 'string' && value.trim())
+  const names = ['TongDaXin', 'TDX']
+  return [...new Set(roots.flatMap(root => names.map(name => join(root, name))))]
+}
 
 function usage() {
   return [
@@ -547,7 +559,7 @@ async function launch(options = {}) {
 
     const tdxRoot = config.tdxRoot
       ? (await isTdxRootPath(config.tdxRoot) ? config.tdxRoot : null)
-      : await discoverTdxRoot(options.tdxCandidates ?? TDX_CANDIDATES)
+      : await discoverTdxRoot(options.tdxCandidates ?? defaultTdxCandidates(env))
     if (config.tdxRoot && !tdxRoot) {
       throw new Error(`配置的 tdxRoot 不是有效的通达信目录（需要 vipdoc\\<市场>\\lday 下有 .day 文件且存在 T0002\\hq_cache）：${config.tdxRoot} / `
         + `configured tdxRoot does not look like a TDX installation: ${config.tdxRoot}`)
@@ -870,7 +882,8 @@ module.exports = {
   READY_FILE,
   SERVER_LOG,
   STATE_FILE,
-  TDX_CANDIDATES,
+  TDX_CANDIDATES: defaultTdxCandidates(),
+  defaultTdxCandidates,
   acquireLaunchLock,
   assertStateIdentity,
   clearState,

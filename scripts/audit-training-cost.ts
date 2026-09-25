@@ -34,7 +34,9 @@ if (database.prepare('SELECT 1 FROM adj_factors WHERE rights_shares > 0 LIMIT 1'
   throw new Error('Paid-rights stock requires a separate subscription-cost audit')
 }
 const events = database.prepare('SELECT * FROM position_events ORDER BY date,seq').all() as Array<Record<string, any>>
-const daily = await readDayFile(join('D:/MySoftWares/TDX/vipdoc', row.market, 'lday', `${row.market}${row.code}.day`))
+const tdxRoot = process.env.TDX_ROOT?.trim()
+if (!tdxRoot) throw new Error('TDX_ROOT must point to the local read-only TongDaXin root')
+const daily = await readDayFile(join(tdxRoot, 'vipdoc', row.market, 'lday', `${row.market}${row.code}.day`))
 const cutoffs = [...new Set([...trades.map(t => t.trade_date), ...events.map(e => e.date)])].sort()
 const checks: Record<string, unknown>[] = []
 for (const date of cutoffs) {

@@ -168,7 +168,8 @@ try {
 
     Note "`r`n[5] 通达信目录（只检查目录/文件名，不读行情正文）"
     $tdxValue = if ($env:TDX_ROOT -and $env:TDX_ROOT.Trim()) { $env:TDX_ROOT.Trim() } else { [string](Field $config 'tdxRoot') }
-    $roots = if ($tdxValue.Trim()) { @(ResolveLocal $tdxValue.Trim() $packageRoot) } else { @('D:\MySoftWares\TDX','C:\new_tdx','C:\通达信') }
+    $roots = if ($tdxValue.Trim()) { @(ResolveLocal $tdxValue.Trim() $packageRoot) } else { @() }
+    if (!$roots.Count) { Note '未配置 tdxRoot/TDX_ROOT；诊断不猜测或输出任何本机候选路径，请使用首次接入向导选择目录。' }
     foreach ($root in $roots) {
         Note ('检查目录：' + $root)
         Note ('目录存在：' + (Test-Path -LiteralPath $root -PathType Container))

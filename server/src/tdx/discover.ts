@@ -1,4 +1,5 @@
 import { access, readdir } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 export interface TdxDiscovery {
@@ -33,10 +34,16 @@ export async function discoverTdxRoot(candidates: string[]): Promise<TdxDiscover
   return null
 }
 
-export function defaultTdxCandidates(): string[] {
-  return [
-    'D:\\MySoftWares\\TDX',
-    'C:\\new_tdx',
-    'C:\\通达信',
-  ]
+export function defaultTdxCandidates(environment: NodeJS.ProcessEnv = process.env): string[] {
+  const roots = [
+    environment.ProgramFiles,
+    environment['ProgramFiles(x86)'],
+    environment.ProgramData,
+    environment.LOCALAPPDATA,
+    environment.APPDATA,
+    environment.SystemDrive,
+    homedir(),
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+  const names = ['TongDaXin', 'TDX']
+  return [...new Set(roots.flatMap(root => names.map(name => join(root, name))))]
 }
