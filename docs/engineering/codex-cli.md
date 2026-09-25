@@ -49,6 +49,18 @@
 
 **真正的"实时看着 GPT 在 Desktop 里打字"需要驱动 Desktop 本身**，两条候选路径（均需专项验证后再立项）：①官方实验接口——`codex app-server daemon/proxy`（连接运行中 app-server 的控制套接字）＋`remote-control pair`（配对码），且可用 `generate-json-schema` 导出协议，正对"往打开的会话注入任务"这一需求；②Desktop UI 自动化（tdx_quick_draw 先例）。在验证之前，上表的排队＋通知协议是既定工作方式。
 
+## Computer Use 切换协议（用户 2026-09-25 提议，待运行时可用后实测）
+
+用户需求：不需要看打字，要**及时观察会话进展**并保留人工干预。提议流程（GLM 唤醒的标准作业）：
+
+1. 唤醒前用 computer use 把 Desktop 切离目标会话（点开别的会话即可，锁随切换释放）；
+2. 执行 `run_codex wake`（带 `--notify`）；
+3. 完成后再用 computer use 把 Desktop 切回目标会话——用户即见完整对话记录，随时可手动插手（其输入进入同一上下文）。
+
+理念对齐（model-delegation.md）：**Codex Desktop/GPT 用于重要选择与判断（拆分、接口不变量、集成判断、升级裁决），不替 GLM 做常规开发**；交互唤醒默认只发决策请求，控制器 gpt_direct 派发仅限真正的判断升级路由。
+
+实测现状（2026-09-25）：本会话 Computer Use 运行时不可用（`node_repl` 报 unavailable，zcode-cua 生产者未运行）；`codex app <workspace>` 可发出打开请求（"Opening workspace…"）但从沙箱会话未能使窗口出现在交互桌面；UIA 枚举确认当时无 Codex 顶层窗口（Desktop 处于托盘态）。待运行时启用或窗口由用户打开后，先探查会话列表的可访问性树再接线。
+
 ## App-Server 协议调研结论（GPT-VIS-01，2026-09-25）
 
 调研已完成（见 [GPT-VIS-01 记录](../verification/2026-09/GPT-VIS-01/report.md)）：**写入者锁在共享线程存储层，对所有写入面一致生效**——app-server 协议 `thread/resume` 对 Desktop 打开的会话报同一个 `already has an active writer`（-32600）。"注入正打开的会话且 Desktop 实时可见"不可行；可见性二选一：现行排队＋通知协议，或 Desktop UI 自动化。App-Server 的真实价值在别处：流式增量通知可被客户端实时消费、`turn/steer`/`turn/interrupt` 转轮中途干预、三类审批回调客户端化（worker 可免 yolo）、持久 daemon——适合作为 run_codex 的下一代传输层，接入与否另行拍板。
