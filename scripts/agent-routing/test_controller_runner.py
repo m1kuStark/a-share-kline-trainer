@@ -7,14 +7,17 @@ import sys
 import tempfile
 import unittest
 
-from controller_runner import (RunnerError, build_argv, build_prompt,
-                               contract_anchor, load_runner_config, new_job_id,
-                               read_worker_report, run_job,
-                               validate_runner_config)
+from controller_runner import (RunnerError, SUPPORTED_RUNNER_CONFIG_SCHEMAS,
+                               build_argv, build_gpt_argv,
+                               build_prompt, contract_anchor,
+                               load_runner_config, new_job_id,
+                               read_worker_report, run_gpt_job, run_job,
+                               validate_runner_config, GPT_SANDBOX)
 from test_routing import contract as make_contract
 from routing import validate_report
 
 REAL_RUNNER = pathlib.Path(__file__).resolve().parents[1] / "agent-monitor" / "run_glm.py"
+REAL_CODEX = pathlib.Path(__file__).resolve().parents[1] / "agent-monitor" / "run_codex.py"
 
 FAKE_RUNNER = """\
 import hashlib, json, os, pathlib, subprocess, sys, time
@@ -158,7 +161,7 @@ class RunnerConfigTests(unittest.TestCase):
                        {"permission_mode": "sudo"},
                        {"timeout_minutes": -1},
                        {"max_output_tokens": 0},
-                       {"schema_version": 2},
+                       {"schema_version": 3},
                        {"cli": None}):
             with self.subTest(mutate=mutate), self.assertRaises(RunnerError):
                 validate_runner_config({**base_config(self.root, self.entry), **mutate})
@@ -477,6 +480,218 @@ class FakeJobTests(unittest.TestCase):
         self.assertNotIn("fake-cli", text)
         self.assertNotIn("provider.json", text)
         self.assertNotIn(str(self.config["home"]), text)
+
+
+FAKE_CODEX_RUNNER = """\
+import hashlib, json, os, pathlib, subprocess, sys
+argv = sys.argv[1:]
+assert "wake" in argv, "expected wake subcommand in %r"
+flags = {}
+index = 0
+while index < len(argv):
+    token = argv[index]
+    if token.startswith("--"):
+        flags.setdefault(token[2:], []).append(argv[index + 1])
+        index += 2
+    else:
+        index += 1
+add_dirs = flags.get("add-dir", [])
+job_dir = pathlib.Path(os.environ["ORCH_JOB_DIR"])
+(job_dir / "runner_argv.json").write_text(json.dumps(flags), encoding="utf-8")
+(job_dir / "env_seen.json").write_text(json.dumps(
+    {k: os.environ.get(k) for k in
+     ("ORCH_TASK_ID", "ORCH_JOB_ID", "ORCH_ATTEMPT_NO")}), encoding="utf-8")
+directives = json.loads((job_dir / "directives.json").read_text(encoding="utf-8"))
+log = pathlib.Path(flags["log"][0])
+log.parent.mkdir(parents=True, exist_ok=True)
+log.write_text("fake codex events\\n", encoding="utf-8")
+cwd = pathlib.Path(flags["cwd"][0])
+observed = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], cwd=cwd).decode().strip()
+commit = directives.get("commit_file")
+if commit:
+    target = cwd / commit["path"]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(commit["content"], encoding="utf-8")
+    subprocess.check_call(["git", "add", commit["path"]], cwd=cwd)
+    subprocess.check_call(["git", "commit", "-qm", "fake gpt commit"], cwd=cwd)
+    observed = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=cwd).decode().strip()
+raw = (cwd / directives["fact_path"]).read_bytes()
+report = {
+    "schema_version": 1, "task_id": directives["task_id"],
+    "contract_revision": directives["contract_revision"],
+    "base_commit": directives["base_commit"], "observed_commit": observed,
+    "status": directives.get("report_status", "completed"),
+    "assessment": directives.get("assessment", "continuous_judgment"),
+    "facts": [{"statement": "fake gpt fact", "path": directives["fact_path"],
+               "line": 1, "sha256": hashlib.sha256(raw).hexdigest()}],
+    "tests": [{"command": "fake check", "exit_code": 0, "artifact": "fake"}],
+    "assumptions": [], "uninspected_areas": [], "unexpected_findings": [],
+    "requested_scope": [], "reported_changes": [],
+    "needs_replan": directives.get("needs_replan", False), "artifacts": [],
+}
+(job_dir / "worker_report.json").write_text(
+    json.dumps(report, ensure_ascii=False), encoding="utf-8")
+home = pathlib.Path(flags["home"][0])
+jobs = home / "jobs"
+jobs.mkdir(parents=True, exist_ok=True)
+(jobs / (flags["batch"][0] + ".json")).write_text(json.dumps({
+    "id": flags["batch"][0], "state": directives.get("jobs_state", "completed"),
+    "exitCode": directives.get("jobs_exit", 0),
+    "sessionId": directives.get("codex_session", flags["session-id"][0]),
+    "sessionMode": "resume", "resumedFrom": flags["session-id"][0],
+    "worktree": flags["cwd"][0], "logPath": str(log),
+}), encoding="utf-8")
+sys.exit(directives.get("exit_code", 0))
+"""
+
+
+class GptConfigTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="runner-gpt-")
+        self.root = pathlib.Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def base_v2(self, **gpt):
+        config = base_config(self.root, self.root / "fake_runner.py")
+        config["schema_version"] = 2
+        if gpt is not None:
+            config["gpt"] = dict({
+                "runner_entry": str(self.root / "run_codex.py"),
+                "home": str(self.root / "bridge-home"),
+                "session_id": "01a0d79e-fixed-session"}, **gpt)
+        return config
+
+    def test_v1_config_still_valid_without_gpt(self):
+        config = validate_runner_config(base_config(self.root, self.root / "e.py"))
+        self.assertIsNone(config["gpt"])
+        self.assertEqual((1, 2), SUPPORTED_RUNNER_CONFIG_SCHEMAS)
+
+    def test_v2_gpt_section_defaults_are_filled(self):
+        config = validate_runner_config(self.base_v2())
+        self.assertEqual(GPT_SANDBOX, config["gpt"]["sandbox"])
+        self.assertEqual(config["timeout_minutes"],
+                         config["gpt"]["timeout_minutes"])
+        self.assertEqual("01a0d79e-fixed-session", config["gpt"]["session_id"])
+
+    def test_v2_gpt_section_rejects_read_only_and_missing_identity(self):
+        with self.assertRaises(RunnerError):
+            validate_runner_config(self.base_v2(sandbox="read-only"))
+        config = validate_runner_config(self.base_v2(sandbox="danger-full-access"))
+        self.assertEqual("danger-full-access", config["gpt"]["sandbox"])
+        broken = self.base_v2()
+        broken["gpt"].pop("session_id")
+        with self.assertRaises(RunnerError):
+            validate_runner_config(broken)
+
+    def test_gpt_argv_flags_exist_in_real_run_codex_parser(self):
+        if not REAL_CODEX.is_file():
+            self.skipTest("repository run_codex.py not present")
+        source = REAL_CODEX.read_text(encoding="utf-8")
+        known = {match[1] for match in
+                 re.findall(r"add_argument\((['\"])(--[a-z-]+)\1", source)}
+        config = validate_runner_config(self.base_v2())
+        argv = build_gpt_argv(config, config["gpt"], "job-gpt", "title",
+                              self.root, "p.md", "l.log", add_dir=self.root / "job")
+        used = {item for item in argv if item.startswith("--")}
+        self.assertFalse(used - known, used - known)
+        self.assertTrue({"--home", "--session-id", "--prompt-file", "--log",
+                         "--sandbox", "--batch", "--title", "--cwd",
+                         "--timeout-minutes", "--add-dir"} <= used)
+        self.assertIn("wake", argv)
+        self.assertLess(argv.index("--home"), argv.index("wake"))
+        flags = {}
+        index = argv.index("wake")
+        while index < len(argv):
+            if argv[index].startswith("--"):
+                flags[argv[index][2:]] = argv[index + 1]
+                index += 2
+            else:
+                index += 1
+        self.assertEqual("01a0d79e-fixed-session", flags["session-id"])
+        self.assertEqual(GPT_SANDBOX, flags["sandbox"])
+        self.assertEqual(repr(float(config["gpt"]["timeout_minutes"])),
+                         flags["timeout-minutes"])
+
+
+class GptJobTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="runner-gptjob-")
+        self.root = pathlib.Path(self.temp.name)
+        self.entry = self.root / "fake_codex.py"
+        self.entry.write_text(FAKE_CODEX_RUNNER, encoding="utf-8")
+        raw = base_config(self.root, self.root / "unused.py")
+        raw["schema_version"] = 2
+        raw["gpt"] = {"runner_entry": str(self.entry),
+                      "home": str(self.root / "bridge-home"),
+                      "session_id": "01a0d79e-fixed-session"}
+        self.config = validate_runner_config(raw)
+        self.repo = self.root / "repo"
+        self.repo.mkdir()
+        for args in (("init", "-q"), ("config", "user.name", "t"),
+                     ("config", "user.email", "t@example.invalid"),
+                     ("config", "core.autocrlf", "false")):
+            self.run_git(*args)
+        (self.repo / "app.py").write_text("value = 1\n", encoding="utf-8")
+        self.run_git("add", ".")
+        self.run_git("commit", "-qm", "base")
+        self.contract = make_contract(task_id="GPT-01", base_commit=self.head(),
+                                      task_shape="continuous_judgment",
+                                      oracle="reliable",
+                                      verification_profile="fixture",
+                                      allowed_paths=["**"])
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_git(self, *args):
+        import subprocess
+        result = subprocess.run(["git", *args], cwd=self.repo,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(0, result.returncode, result.stderr)
+        return result.stdout.decode().strip()
+
+    def head(self):
+        return self.run_git("rev-parse", "HEAD")
+
+    def dispatch(self, directives):
+        job_dir = self.root / "job-gpt"
+        job_dir.mkdir(parents=True, exist_ok=True)
+        write_json(job_dir / "directives.json", {
+            "task_id": self.contract["task_id"],
+            "contract_revision": self.contract["contract_revision"],
+            "base_commit": self.contract["base_commit"],
+            "fact_path": "app.py", **directives})
+        prompt = build_prompt(self.contract, job_dir=job_dir,
+                              report_path=job_dir / "worker_report.json",
+                              attempt_no=1)
+        return run_gpt_job(self.config, gpt=self.config["gpt"],
+                           task_id="GPT-01", job_id="job-gpt-x", attempt_no=1,
+                           title="fake gpt", repo=self.repo, job_dir=job_dir,
+                           prompt_text=prompt)
+
+    def test_gpt_job_passes_and_keeps_pinned_session(self):
+        result = self.dispatch({"commit_file": {"path": "app.py",
+                                                "content": "value = 2\n"}})
+        self.assertEqual("passed", result["status"], result)
+        self.assertTrue(result["cleanup_confirmed"])
+        self.assertEqual("01a0d79e-fixed-session", result["record"]["sessionId"])
+        self.assertEqual("resume", result["record"]["sessionMode"])
+        flags = json.loads((result["job_dir"] / "runner_argv.json").read_text())
+        self.assertEqual("01a0d79e-fixed-session", flags["session-id"][0])
+        self.assertEqual(str(pathlib.Path(self.repo).resolve()),
+                         flags["cwd"][0])
+        self.assertEqual([str(result["job_dir"].resolve())], flags["add-dir"])
+        self.assertTrue(result["report_path"].is_file())
+        self.assertTrue(result["log_path"].is_file())
+
+    def test_gpt_job_registry_mismatch_fails(self):
+        result = self.dispatch({"jobs_state": "failed"})
+        self.assertEqual("failed", result["status"])
+        self.assertEqual("registry_mismatch", result["failure_kind"])
 
 
 if __name__ == "__main__":

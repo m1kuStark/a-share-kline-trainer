@@ -33,9 +33,12 @@ from owned_process import run_owned
 from route import read_input
 from routing import validate_contract, validate_report
 
-RUNNER_CONFIG_SCHEMA = 1
+RUNNER_CONFIG_SCHEMA = 2
+SUPPORTED_RUNNER_CONFIG_SCHEMAS = (1, 2)
 REQUIRED_FLAGS = ("--batch", "--title", "--cwd", "--prompt", "--log",
                   "--provider", "--cli")
+GPT_SANDBOX = "workspace-write"
+GPT_SANDBOXES = ("workspace-write", "danger-full-access")
 BATCH_RE = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9_-]{0,100}\Z")
 REPORT_FILENAME = "worker_report.json"
 SUCCESS_STATE = "completed"
@@ -57,11 +60,49 @@ def _absolute(value, field):
     return str(path)
 
 
+def _positive_number(value, field):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or \
+            not math.isfinite(value) or value <= 0:
+        raise RunnerError("runner config %s must be a finite positive number" % field)
+    return value
+
+
+def _validate_gpt_section(gpt, config):
+    """Optional v2 section for gpt_direct take-over dispatch through the
+    pinned run_codex session-hub bridge. Absent by default: the controller
+    keeps routing gpt_direct to waiting_control."""
+    if gpt is None:
+        return None
+    if not isinstance(gpt, dict):
+        raise RunnerError("runner config gpt must be an object when present")
+    section = dict(gpt)
+    for field in ("runner_entry", "home", "session_id"):
+        if not isinstance(section.get(field), str) or not section[field].strip():
+            raise RunnerError("runner config gpt.%s must be a nonempty string" % field)
+    section["runner_entry"] = _absolute(section["runner_entry"], "gpt.runner_entry")
+    section["home"] = _absolute(section["home"], "gpt.home")
+    section["session_id"] = section["session_id"].strip()
+    sandbox = section.get("sandbox", GPT_SANDBOX)
+    if sandbox not in GPT_SANDBOXES:
+        raise RunnerError("runner config gpt.sandbox must be one of %r: "
+                          "workspace-write measured read-only for .git "
+                          "(worker cannot commit); danger-full-access is the "
+                          "GLM-yolo parity for execution dispatches"
+                          % (GPT_SANDBOXES,))
+    section["sandbox"] = sandbox
+    section["timeout_minutes"] = _positive_number(
+        section.get("timeout_minutes", config["timeout_minutes"]),
+        "gpt.timeout_minutes")
+    if section.get("cli") is not None:
+        section["cli"] = _absolute(section["cli"], "gpt.cli")
+    return section
+
+
 def validate_runner_config(value):
     if not isinstance(value, dict):
         raise RunnerError("runner config must be an object")
     if type(value.get("schema_version")) is not int or \
-            value["schema_version"] != RUNNER_CONFIG_SCHEMA:
+            value["schema_version"] not in SUPPORTED_RUNNER_CONFIG_SCHEMAS:
         raise RunnerError("unsupported runner config schema_version")
     config = dict(value)
     for field in ("python_executable", "runner_entry", "cli", "provider", "home"):
@@ -72,11 +113,8 @@ def validate_runner_config(value):
     mode = config.get("permission_mode")
     if mode not in ("build", "edit", "plan", "yolo"):
         raise RunnerError("runner config permission_mode invalid: %r" % (mode,))
-    total = config.get("timeout_minutes")
-    if isinstance(total, bool) or not isinstance(total, (int, float)) or \
-            not math.isfinite(total) or total <= 0:
-        raise RunnerError("runner config timeout_minutes must be a finite "
-                          "positive number; the controller bounds the total wait")
+    config["timeout_minutes"] = _positive_number(
+        config.get("timeout_minutes"), "timeout_minutes")
     idle = config.get("idle_minutes")
     if isinstance(idle, bool) or not isinstance(idle, (int, float)) or \
             not math.isfinite(idle) or idle < 0:
@@ -85,6 +123,7 @@ def validate_runner_config(value):
     tokens = config.get("max_output_tokens")
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise RunnerError("runner config max_output_tokens must be a positive integer")
+    config["gpt"] = _validate_gpt_section(config.get("gpt"), config)
     return config
 
 
@@ -281,6 +320,81 @@ def run_job(config, *, task_id, job_id, attempt_no, title, repo, job_dir,
     failure_kind = owned["failure_kind"]
     cleanup_confirmed = owned["cleanup_confirmed"]
     jobs_path = pathlib.Path(config["home"]) / "jobs" / (batch + ".json")
+    record = None
+    if jobs_path.is_file():
+        try:
+            record = _attributed_record(read_input(jobs_path), batch, repo,
+                                        str(log_path))
+        except (ValueError, OSError):
+            record = None
+    dispatch_ok = exit_code == 0 and failure_kind is None and cleanup_confirmed
+    record_ok = record is not None and record.get("state") == SUCCESS_STATE and \
+        type(record.get("exitCode")) is int and record["exitCode"] == 0
+    if dispatch_ok and not record_ok:
+        failure_kind = "registry_mismatch"
+    status = "passed" if dispatch_ok and record_ok else "failed"
+    return {"job_id": job_id, "attempt_no": attempt_no, "batch": batch,
+            "exit_code": exit_code, "failure_kind": failure_kind,
+            "cleanup_confirmed": cleanup_confirmed, "status": status,
+            "record": record, "jobs_path": jobs_path,
+            "prompt_path": prompt_path, "log_path": log_path,
+            "report_path": report_path, "job_dir": job_dir}
+
+
+def build_gpt_argv(config, gpt, batch, title, cwd, prompt_path, log_path,
+                   add_dir=None):
+    """argv for the pinned run_codex wake; flags mirror run_codex's argparse
+    (validated against it in test_controller_runner). Sandbox is fixed to
+    workspace-write: a GPT Direct worker must edit and commit."""
+    if BATCH_RE.fullmatch(batch) is None:
+        raise RunnerError("batch id must match [A-Za-z0-9][A-Za-z0-9_-]{0,100}: %r"
+                          % (batch,))
+    argv = [config["python_executable"], gpt["runner_entry"],
+            "--home", gpt["home"], "wake",
+            "--session-id", gpt["session_id"],
+            "--prompt-file", str(prompt_path), "--log", str(log_path),
+            "--sandbox", gpt["sandbox"],
+            "--batch", batch, "--title", title, "--cwd", str(cwd),
+            "--timeout-minutes", repr(float(gpt["timeout_minutes"]))]
+    if gpt.get("cli"):
+        argv += ["--cli", gpt["cli"]]
+    if add_dir is not None:
+        argv += ["--add-dir", str(add_dir)]
+    return argv
+
+
+def run_gpt_job(config, *, gpt, task_id, job_id, attempt_no, title, repo,
+                job_dir, prompt_text, timeout_seconds=None):
+    """Dispatch one gpt_direct take-over attempt through the same pinned
+    contract and registry attribution as run_job; the worker stays the
+    pinned Codex session, so the conversation carries across attempts."""
+    wait_seconds = dispatch_wait_seconds(
+        {**config, "timeout_minutes": gpt["timeout_minutes"]}, timeout_seconds)
+    job_dir = pathlib.Path(job_dir)
+    repo = pathlib.Path(repo).resolve()
+    job_dir = job_dir.resolve()
+    if repo == job_dir or repo in job_dir.parents:
+        raise RunnerError("job dir must live outside the candidate repo")
+    job_dir.mkdir(parents=True, exist_ok=True)
+    prompt_path = job_dir / "prompt.md"
+    log_path = job_dir / "runner.log"
+    report_path = job_dir / REPORT_FILENAME
+    if prompt_path.exists() or log_path.exists() or report_path.exists():
+        raise RunnerError("job dir already used: %s" % job_dir)
+    prompt_path.write_text(prompt_text, encoding="utf-8")
+    batch = job_id
+    argv = build_gpt_argv(config, gpt, batch, title, repo, prompt_path,
+                          log_path, add_dir=job_dir)
+    env = dict(os.environ)
+    env.update({"ORCH_TASK_ID": task_id, "ORCH_JOB_ID": job_id,
+                "ORCH_ATTEMPT_NO": str(attempt_no), "ORCH_JOB_DIR": str(job_dir)})
+    dispatch_out = job_dir / "dispatch.out"
+    with dispatch_out.open("wb") as output:
+        owned = run_owned(argv, str(job_dir), env, output, wait_seconds)
+    exit_code = owned["exit_code"]
+    failure_kind = owned["failure_kind"]
+    cleanup_confirmed = owned["cleanup_confirmed"]
+    jobs_path = pathlib.Path(gpt["home"]) / "jobs" / (batch + ".json")
     record = None
     if jobs_path.is_file():
         try:

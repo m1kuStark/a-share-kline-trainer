@@ -41,6 +41,10 @@ def main(argv=None):
     resume.add_argument("--allow", action="store_true")
     resume.add_argument("--expected-commit", required=True)
     resume.add_argument("--reason", required=True)
+    resume.add_argument("--verify-only", action="store_true", dest="verify_only",
+                        help="do not redispatch: re-run independent verification "
+                             "against the last attempt's report at the expected "
+                             "commit (work already committed, verification pending)")
 
     args = parser.parse_args(argv)
     controller = Controller(args.store)
@@ -58,7 +62,9 @@ def main(argv=None):
             result = controller.status(args.task_id)
         elif args.command == "resume":
             result = controller.resume(args.task_id, allow=args.allow,
-                                       expected_commit=args.expected_commit, reason=args.reason)
+                                       expected_commit=args.expected_commit,
+                                       reason=args.reason,
+                                       verify_only=args.verify_only)
     except (ControllerError, TaskStoreError) as error:
         print(json.dumps({"error": str(error), "task_id":
                           getattr(args, "task_id", None)}, ensure_ascii=False),

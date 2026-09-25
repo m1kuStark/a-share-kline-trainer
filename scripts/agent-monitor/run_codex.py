@@ -209,10 +209,13 @@ def parse_events(events_path):
     return completed, answer, usage, thread_id
 
 
-def build_argv(cli, sandbox, session_id, out_dir):
-    return [cli, "exec", "-s", sandbox, "--skip-git-repo-check",
-            "resume", session_id, "-", "--json",
-            "-o", str(pathlib.Path(out_dir) / "last.txt")]
+def build_argv(cli, sandbox, session_id, out_dir, add_dirs=()):
+    argv = [cli, "exec", "-s", sandbox, "--skip-git-repo-check"]
+    for extra in add_dirs:
+        argv += ["--add-dir", str(extra)]
+    argv += ["resume", session_id, "-", "--json",
+             "-o", str(pathlib.Path(out_dir) / "last.txt")]
+    return argv
 
 
 def read_prompt(args):
@@ -285,10 +288,16 @@ def cmd_wake(args):
             datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
             args.batch))
         out_dir.mkdir(parents=True, exist_ok=True)
-        events_path = out_dir / "events.jsonl"
-        err_path = out_dir / "stderr.log"
+        if args.log:
+            events_path = pathlib.Path(args.log).resolve()
+            events_path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            events_path = out_dir / "events.jsonl"
+        err_path = pathlib.Path(str(events_path) + ".err")
         prompt = read_prompt(args)
-        argv = build_argv(args.cli, args.sandbox, session_id, out_dir)
+        argv = build_argv(args.cli, args.sandbox, session_id, out_dir,
+                          add_dirs=[pathlib.Path(p).resolve()
+                                    for p in (args.add_dirs or [])])
 
         duration = 0.0
         exit_code, state = None, "failed"
@@ -454,6 +463,13 @@ def build_parser():
                         help="when the thread writer lock is held (desktop has "
                              "the conversation open), retry until released; 0 "
                              "reports busy immediately")
+    p_wake.add_argument("--log", type=pathlib.Path, default=None,
+                        help="controller-pinned event log path (mirrors run_glm "
+                             "--log so jobs records attribute by id/worktree/log)")
+    p_wake.add_argument("--add-dir", action="append", type=pathlib.Path,
+                        default=[], dest="add_dirs",
+                        help="extra writable directory for the codex sandbox "
+                             "(e.g. the control job dir holding the report)")
     p_wake.add_argument("--stable-seconds", type=float, default=30.0)
     p_wake.add_argument("--skip-stable", action="store_true")
     p_wake.add_argument("--poll-seconds", type=float, default=2.0)

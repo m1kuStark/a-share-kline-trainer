@@ -46,6 +46,6 @@ py -3.9 -B scripts/agent-monitor/run_codex.py list --cwd D:\Superlinear_Academy\
 py -3.9 -B scripts/agent-monitor/run_codex.py wake --prompt-file <决策请求.txt> --timeout-minutes 15
 ```
 
-- wake 输出机器可读 JSON（`answer`/`usage`/`state`），登记 `jobs/<batch>.json`（与 controller_runner 归属校验兼容）；冲突/超时分别退出 3/4。
+- wake 输出机器可读 JSON（`answer`/`usage`/`state`），登记 `jobs/<batch>.json`（与 controller_runner 归属校验兼容）；冲突/超时分别退出 3/4。`--log <path>`（控制器固定事件日志路径）与 `--add-dir <dir>`（沙箱附加可写目录，供 GPT worker 写控制区报告）为控制器派发设计。
 - prompt 只含任务事实（结论请求、反例、精确代码位置），凭据与无关个人文件不进 prompt；唤醒成功以"首次续接事实"为准（答案与 rollout 追加可核验），进程退出 0 不算数。
-- 控制器侧 gpt_direct 自动派发未接线（GPT-WAKE-02 待做）；在那之前控制器遇强模型升级仍 waiting_control。
+- 控制器侧 gpt_direct 自动派发已接线（GPT-WAKE-02）：policy `gpt_dispatch=true`＋runner config v2 `gpt` 段双旗标齐备时，controller 经 run_gpt_job 派发到 pinned 中枢会话；旗标缺省或写入者锁忙仍 waiting_control。

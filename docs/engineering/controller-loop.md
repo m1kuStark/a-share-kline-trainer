@@ -16,7 +16,7 @@ task锁与semantic_scopes所有权由控制层持有；同任务或相同行为�
 
 2026-09-25补充：对已有完整outcome且确认进程已清理的阻塞，可由控制者显式resume（allow、核实后的HEAD、处置原因）。重新校验固定输入、任务/attempt身份、干净提交及范围后，追加replan记录并继续同一task；不重置执行次数，不释放未知租约。该入口用于外部条件已改变的接续，不承担GPT自动调用。用户已授权关闭Z code Mimosa，独立verifier及预算规则保持。
 
-route=glm_direct或gpt_plan_glm_execute且next_action=execute_contract才允许自动执行。gpt_direct、plan_contract、缺oracle、scope扩大、新合同外风险、保护测试变化均转waiting_control，保存handoff.json；无GPT adapter则不编造调用。受控来源和信任边界与ORCH-02一致，不声称抵抗同OS用户恶意进程。
+2026-09-25（GPT-WAKE-02）：gpt_direct/take_over 在**双旗标 opt-in**下自动派发——pinned policy `gpt_dispatch=true` 且 pinned runner config v2 携带 `gpt` 段（run_codex.py 入口、桥 home、pinned 中枢会话 id、sandbox 固定 workspace-write）。派发复用同一 attempt 机制（execution_started 事件、build_prompt REPORT 协议、jobs 注册表归属、outcome、独立验证）；GPT worker 的 `assessment=continuous_judgment` 合法，不触发 GLM 的自升级，needs_replan/scope 扩张仍升级控制层；会话经 run_codex 续接同一 Codex 对话（写入者锁被 Desktop 持有时报忙降级 waiting_control）。route=glm_direct或gpt_plan_glm_execute且next_action=execute_contract才自动执行GLM。plan_contract、缺oracle、scope扩大、新合同外风险、保护测试变化、旗标缺省的gpt_direct均转waiting_control，保存handoff.json；受控来源和信任边界与ORCH-02一致，不声称抵抗同OS用户恶意进程。
 
 ## 验证与修复
 

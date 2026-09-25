@@ -6,7 +6,7 @@
 
 route.py仍生成四路影子建议；controller CLI可对显式登记的GLM Direct和已设计合同执行任务，真实试点已完成（含人工接管），旧候选证明继续兼容原门禁。[独立verifier](verifier-usage.md)已接入固定配置、提交/字节绑定、日志校验和认证收据；run_glm的completed仍只表示执行完成。路由可消费有效收据决定修复或风险审查。ORCH-03提供显式执行闭环，ORCH-04增加受控分类门禁；具体行为见[测试门禁](testing.md)。
 
-ORCH-03控制器、恢复入口及真实试点已完成本地验收，见[最终记录](../verification/2026-09/ORCH-03/final-report.md)。试点经历人工GPT Direct收尾，不能据此声称零干预；GPT自动adapter和Scout的OS只读隔离仍未实现，需要这些能力时保守交接。2026-09-25新增[会话中枢桥](codex-cli.md)：run_codex.py可程序化唤醒pinned的Codex会话续接同一对话（续接与缓存命中已实测，Desktop打开会话的写入者锁为硬约束），交互式强模型决策不再依赖人工搬运；控制器gpt_direct自动派发仍未接线（GPT-WAKE-02），控制器遇升级仍waiting_control。
+ORCH-03控制器、恢复入口及真实试点已完成本地验收，见[最终记录](../verification/2026-09/ORCH-03/final-report.md)。试点经历人工GPT Direct收尾，不能据此声称零干预。2026-09-25新增[会话中枢桥](codex-cli.md)：run_codex.py可程序化唤醒pinned的Codex会话续接同一对话（续接与缓存命中已实测，Desktop打开会话的写入者锁为硬约束），交互式强模型决策不再依赖人工搬运；GPT-WAKE-02后控制器在policy `gpt_dispatch=true`＋runner config gpt段双旗标齐备时自动派发gpt_direct/take_over到该会话，其余升级（plan_contract、缺oracle、scope扩大、保护测试变化）仍waiting_control；Scout的OS只读隔离仍未实现，需要该能力时保守交接。
 
 ## 路由与职责
 

@@ -10,7 +10,8 @@ from unittest.mock import patch
 
 from controller_loop import Controller, ControllerError
 from controller_state import TaskStore, ConflictError
-from test_controller_runner import FAKE_RUNNER, write_json
+from test_controller_runner import (FAKE_CODEX_RUNNER, FAKE_RUNNER,
+                                    write_json)
 from test_routing import contract as make_contract, report as make_report
 
 CONTROLLER_CLI = pathlib.Path(__file__).resolve().parent / "controller.py"
@@ -50,6 +51,8 @@ class LoopFixture(unittest.TestCase):
         self.store_dir = self.root / "control-store"
         self.entry = self.root / "fake_runner.py"
         self.entry.write_text(FAKE_RUNNER, encoding="utf-8")
+        self.gpt_entry = self.root / "fake_codex.py"
+        self.gpt_entry.write_text(FAKE_CODEX_RUNNER, encoding="utf-8")
         (self.root / "cli").write_text("fake CLI", encoding="utf-8")
         (self.root / "provider.json").write_text("{}", encoding="utf-8")
         self.cpath = self.root / "contract.json"
@@ -93,7 +96,8 @@ class LoopFixture(unittest.TestCase):
         self.git("reset", "-q", "--hard", self.base)
         self.git("clean", "-fdq")
 
-    def write_pins(self, task_id=None, budgets=None, shape="mechanical"):
+    def write_pins(self, task_id=None, budgets=None, shape="mechanical",
+                   gpt_dispatch=False, gpt_section=None):
         task_id = task_id or self.TASK
         self.contract = make_contract(
             task_id=task_id, base_commit=self.base, task_shape=shape,
@@ -103,6 +107,8 @@ class LoopFixture(unittest.TestCase):
                 "scout_rounds": 1, "same_failure_repairs": 2,
                 "total_attempts": 4, "environment_retries": 1})
         self.csha = write_json(self.cpath, self.contract)
+        if gpt_dispatch:
+            self.policy["gpt_dispatch"] = True
         self.psha = write_json(self.ppath, self.policy)
         runner_config = {
             "schema_version": 1, "python_executable": sys.executable,
@@ -112,6 +118,9 @@ class LoopFixture(unittest.TestCase):
             "permission_mode": "yolo", "timeout_minutes": 5,
             "idle_minutes": 1, "max_output_tokens": 4096,
         }
+        if gpt_section is not None:
+            runner_config["schema_version"] = 2
+            runner_config["gpt"] = gpt_section
         self.rsha = write_json(self.rpath, runner_config)
         return self.contract
 
@@ -393,6 +402,72 @@ class GateAndFaultTests(LoopFixture):
                 status = self.run_task(task_id)
                 self.assertEqual("waiting_control", status["stage"])
                 self.assertEqual({}, self.counts(task_id))
+
+    # -- GPT Direct auto-dispatch (GPT-WAKE-02) --------------------------
+
+    def gpt_pins(self, task_id):
+        return {"shape": "continuous_judgment", "gpt_dispatch": True,
+                "gpt_section": {"runner_entry": str(self.gpt_entry),
+                                "home": str(self.root / "gpt-home"),
+                                "session_id": "01a0d79e-fixture-session"}}
+
+    def test_gpt_direct_auto_dispatch_reaches_verified(self):
+        self.reset_repo()
+        self.register(task_id="LOOP-GPT", **self.gpt_pins("LOOP-GPT"))
+        self.directives(1, task_id="LOOP-GPT")
+        status = self.run_task("LOOP-GPT")
+        self.assertEqual("verified", status["stage"])
+        self.assertEqual({"execution_started": 1, "verification_passed": 1},
+                         self.counts("LOOP-GPT"))
+        self.assertEqual("gpt_direct", self.events("LOOP-GPT")[0]["route"])
+        prompt = (self.store_dir / "tasks" / "LOOP-GPT" / "attempts" / "1" /
+                  "prompt.md").read_text(encoding="utf-8")
+        self.assertIn("LOOP-GPT", prompt)
+        self.assertIn("REPORT:", prompt)
+        record = json.loads(((self.root / "gpt-home") / "jobs" /
+                             (json.loads((self.store_dir / "tasks" / "LOOP-GPT" /
+                                          "attempts" / "1" / "outcome.json")
+                                         .read_text(encoding="utf-8"))["job_id"]
+                              + ".json")).read_text(encoding="utf-8"))
+        self.assertEqual("01a0d79e-fixture-session", record["sessionId"])
+        self.assertEqual("resume", record["sessionMode"])
+
+    def test_verify_only_resume_verifies_committed_work_without_redispatch(self):
+        self.register()
+        self.directives(1, unexpected_findings=["benign environment note"])
+        status = self.run_task()
+        self.assertEqual("waiting_control", status["stage"])
+        self.assertEqual(1, self.counts()["execution_started"])
+        status = self.controller.resume(
+            self.TASK, allow=True, expected_commit=self.head(),
+            reason="attempt escalated after committing; operator requests verification only",
+            verify_only=True)
+        self.assertEqual("verified", status["stage"])
+        self.assertEqual(1, self.counts()["execution_started"])
+        self.assertEqual(1, self.counts()["verification_passed"])
+        self.assertEqual(self.head(), status["verified"]["tested_commit"])
+
+    def test_gpt_direct_requires_policy_opt_in(self):
+        self.reset_repo()
+        pins = self.gpt_pins("LOOP-GPT2")
+        pins.pop("gpt_dispatch")
+        self.register(task_id="LOOP-GPT2", **pins)
+        self.directives(1, task_id="LOOP-GPT2")
+        status = self.run_task("LOOP-GPT2")
+        self.assertEqual("waiting_control", status["stage"])
+        self.assertEqual({}, self.counts("LOOP-GPT2"))
+        self.assertTrue((self.store_dir / "tasks" / "LOOP-GPT2" /
+                         "handoff.json").is_file())
+
+    def test_gpt_direct_requires_pinned_runner_section(self):
+        self.reset_repo()
+        pins = self.gpt_pins("LOOP-GPT3")
+        pins.pop("gpt_section")
+        self.register(task_id="LOOP-GPT3", **pins)
+        self.directives(1, task_id="LOOP-GPT3")
+        status = self.run_task("LOOP-GPT3")
+        self.assertEqual("waiting_control", status["stage"])
+        self.assertEqual({}, self.counts("LOOP-GPT3"))
 
     def test_pin_change_before_run_hands_off_without_dispatch(self):
         self.register()

@@ -21,7 +21,8 @@ import route
 import routing
 import verification
 from controller_runner import (RunnerError, build_prompt, load_runner_config,
-                               new_job_id, read_worker_report, run_job)
+                               new_job_id, read_worker_report, run_gpt_job,
+                               run_job)
 from controller_state import ConflictError, TaskStore
 from receipts import ReceiptError
 from routing import matches
@@ -306,8 +307,9 @@ class Controller:
                 return "waiting_control"
             report = self._bound_report(progress, contract, observed["head"])
             decision = routing.decide(contract, observed, report, events)
-            if decision["route"] not in DISPATCH_ROUTES or \
-                    decision["next_action"] != DISPATCH_ACTION:
+            gpt_takeover = self._gpt_takeover(decision, policy, runner_config)
+            if (decision["route"] not in DISPATCH_ROUTES or
+                    decision["next_action"] != DISPATCH_ACTION) and not gpt_takeover:
                 if decision["next_action"] == "waiting_environment":
                     self._write_handoff(task_id, "environment_budget_exhausted",
                                         "; ".join(decision["reason_codes"]))
@@ -345,10 +347,17 @@ class Controller:
                 prompt += ("\nControl-plane resolution from the authorized operator:\n" +
                            progress["control_resolution_reason"] +
                            "\nThe original task scope and attempt budgets still apply.\n")
-            result = run_job(runner_config, task_id=task_id, job_id=job_id,
-                             attempt_no=attempt_no,
-                             title="%s attempt %d" % (task_id, attempt_no),
-                             repo=repo, job_dir=job_dir, prompt_text=prompt)
+            if gpt_takeover:
+                result = run_gpt_job(runner_config, gpt=runner_config["gpt"],
+                                     task_id=task_id, job_id=job_id,
+                                     attempt_no=attempt_no,
+                                     title="%s attempt %d" % (task_id, attempt_no),
+                                     repo=repo, job_dir=job_dir, prompt_text=prompt)
+            else:
+                result = run_job(runner_config, task_id=task_id, job_id=job_id,
+                                 attempt_no=attempt_no,
+                                 title="%s attempt %d" % (task_id, attempt_no),
+                                 repo=repo, job_dir=job_dir, prompt_text=prompt)
             outcome_path = job_dir / "outcome.json"
             if outcome_path.exists():
                 raise ControllerError("attempt outcome already exists; refusing to replace evidence")
@@ -375,7 +384,8 @@ class Controller:
                                     "Worker descendants may remain; retain lease and do not redispatch.")
                 return "waiting_control"
             outcome = self._worker_outcome(repo, base, observed["head"],
-                                           result, contract)
+                                           result, contract,
+                                           gpt_worker=gpt_takeover)
             if outcome[0] == "fault":
                 self._write_handoff(task_id, outcome[1], outcome[2], {
                     "job_dir": str(result["job_dir"]),
@@ -399,6 +409,16 @@ class Controller:
             progress.update({"current_job": None, "stage": "running"})
             self._write_progress(task_id, progress)
 
+    @staticmethod
+    def _gpt_takeover(decision, policy, runner_config):
+        """gpt_direct take-over auto-dispatches only when the pinned policy
+        opted in (gpt_dispatch=true) and the pinned runner config carries a
+        gpt section; everything else keeps the waiting_control handoff."""
+        return (decision["route"] == "gpt_direct"
+                and decision["next_action"] == "take_over"
+                and policy.get("gpt_dispatch") is True
+                and runner_config.get("gpt") is not None)
+
     def _bound_report(self, progress, contract, head):
         path = progress.get("report_path")
         if not path:
@@ -409,7 +429,8 @@ class Controller:
             return None
         return report if report["observed_commit"] == head else None
 
-    def _worker_outcome(self, repo, base, before_sha, result, contract):
+    def _worker_outcome(self, repo, base, before_sha, result, contract,
+                        gpt_worker=False):
         def fault(kind, detail):
             return ("fault", kind, detail)
 
@@ -452,7 +473,9 @@ class Controller:
         if report["observed_commit"] != head:
             return fault("stale_report", "report does not match new HEAD")
         if (report["status"] != "completed" or
-                report["assessment"] != "local_execution" or
+                report["assessment"] not in (
+                    ("local_execution", "continuous_judgment")
+                    if gpt_worker else ("local_execution",)) or
                 not report["facts"] or report["uninspected_areas"] or report["assumptions"]):
             return ("escalation", "incomplete_worker_evidence",
                     "worker requires further judgment or lacks complete evidence")
@@ -465,11 +488,15 @@ class Controller:
         # Completion risks must be evaluated even on the last allowed
         # attempt. Attempt budgets govern dispatch, not acceptance of a
         # successfully completed final attempt.
-        decision = routing.decide(contract, observed, report, history=[])
-        if (decision["route"] not in DISPATCH_ROUTES or
-                decision["next_action"] != DISPATCH_ACTION):
-            return ("escalation", "worker_escalation",
-                    ",".join(decision["reason_codes"]))
+        if not gpt_worker:
+            # A GLM worker reporting continuous_judgment escalates; a GPT
+            # Direct worker IS the gpt_direct take-over this decision would
+            # request, so re-running the route gate here would loop on itself.
+            decision = routing.decide(contract, observed, report, history=[])
+            if (decision["route"] not in DISPATCH_ROUTES or
+                    decision["next_action"] != DISPATCH_ACTION):
+                return ("escalation", "worker_escalation",
+                        ",".join(decision["reason_codes"]))
         return ("ok", report, None)
 
     def _verify_and_classify(self, task_id, reg, repo, progress, result, report):
@@ -580,11 +607,15 @@ class Controller:
 
     # -- manual recovery -------------------------------------------------
 
-    def resume(self, task_id, *, allow=False, expected_commit=None, reason=None):
+    def resume(self, task_id, *, allow=False, expected_commit=None, reason=None,
+               verify_only=False):
         """Explicit control-plane resolution of a finished, blocked attempt.
 
         Never clears history or releases another process's lease. An
         unfinished/crashed process requires separate manual investigation.
+        verify_only skips redispatch: the last attempt already committed the
+        work at expected_commit and its report is re-verified as-is. All
+        identity, cleanup, pin and scope validations are identical.
         """
         if allow is not True or not isinstance(reason, str) or not reason.strip() or len(reason) > 1000:
             raise ControllerError("resume requires explicit approval and a bounded resolution reason")
@@ -608,7 +639,8 @@ class Controller:
             attempt = last.get("attempt_no")
             if type(attempt) is not int or attempt < 1:
                 raise ControllerError("attempt identity is incomplete")
-            outcome = route.read_input(self._task_dir(task_id) / "attempts" / str(attempt) / "outcome.json")
+            attempt_dir = self._task_dir(task_id) / "attempts" / str(attempt)
+            outcome = route.read_input(attempt_dir / "outcome.json")
             if (outcome.get("task_id") != task_id or outcome.get("job_id") != last["job_id"] or
                     outcome.get("attempt_no") != attempt or outcome.get("cleanup_confirmed") is not True or
                     outcome.get("after_sha") != expected_commit):
@@ -622,6 +654,30 @@ class Controller:
                           "reason": reason, "expected_commit": expected_commit,
                           "source_digest": state["source_digest"]}
             self.store.append_event(task_id, resolution)
+            if verify_only:
+                report_path = attempt_dir / "worker_report.json"
+                report = read_worker_report(report_path, contract)
+                if report["observed_commit"] != expected_commit:
+                    raise ControllerError(
+                        "verify-only requires the report to be bound to the expected commit")
+                progress.update(stage="verifying", current_job=last["job_id"],
+                                report_path=str(report_path),
+                                uncertain_process=False,
+                                control_resolution_reason=reason,
+                                last_control_resolution=resolution["event_id"])
+                self._write_progress(task_id, progress)
+                result = {"job_id": last["job_id"], "exit_code": outcome.get("exit_code"),
+                          "jobs_path": pathlib.Path(outcome["jobs_path"]),
+                          "log_path": pathlib.Path(outcome["log_path"])}
+                stage = self._verify_and_classify(task_id, reg, repo, progress,
+                                                  result, report)
+                if stage is None:
+                    stage = "waiting_control"
+                progress = self._read_progress(task_id)
+                if stage in STAGES:
+                    progress["stage"] = stage
+                    self._write_progress(task_id, progress)
+                return self._status(task_id, progress.get("stage", "waiting_control"))
             progress.update(stage="registered", current_job=None, report_path=None,
                             failure_context=None, uncertain_process=False,
                             resolved_execution_events=[e["event_id"] for e in starts],
