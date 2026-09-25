@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "Adopt 73d3e87 backend candidate; 156 tests passed; parallel creation and adjustment fingerprint defects require repair; UI/recording pending.",
-  "next_action": "Resume original TRAIN-02 conversation; repair backend first, then freeze recording compatibility and serialize shared frontend integration.",
+  "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
+  "next_action": "第一片（服务端预览/创建复核/兼容迁移）已交付于task/TRAIN-02-integration，合同见prompts/TRAIN-02-integration.md；待集成人接线web/src/api.ts后派发第二片（表单、预览版本守卫、录制schema），rules.md/recording.md规格同步随第二片进行。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",
@@ -20,11 +20,12 @@
     "e2e/**",
     "docs/specs/training/rules.md",
     "docs/specs/recording.md",
-    "docs/work-items/tasks/TRAIN-02.md"
+    "docs/work-items/tasks/TRAIN-02.md",
+    "docs/verification/2026-09/TRAIN-02-server/**",
+    "docs/verification/README.md"
   ],
   "depends_on": [
-    "DATA-02",
-    "RANGE-01"
+    "DATA-02"
   ],
   "docs_impact": {
     "update": [
@@ -35,20 +36,19 @@
     "reason": "新范围模式涉及生命周期、API、数据库及录像合同，不能只改前端选项。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/START-01/report.md",
-    "docs/verification/2026-09/PRODUCT-RESUME-01/report.md",
-    "docs/verification/2026-09/GPT-WAKE-02/integrator-review-20260926.md"
+    "docs/verification/2026-09/START-01/report.md"
   ],
   "integration_ref": null,
-  "acceptance_ref": null,
-  "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5"
+  "acceptance_ref": null
 }
 ```
 
-历史纯模块参考基线d75da88已过时；当前产品基线记录为af0efaf，下一次派发须核对已整理的完整提交SHA及RANGE-01已存在。产品口径与例子只维护在[批次计划](../../proposals/first-use-batch.md#训练范围规则)。本卡是父任务写范围；实际GLM子任务只能拿到其中互不重叠的路径，禁止用server/test/**作为无限制派发权限。
+基线d75da88；产品口径与例子只维护在[批次计划](../../proposals/first-use-batch.md#训练范围规则)。本卡是父任务写范围；实际GLM子任务只能拿到其中互不重叠的路径，禁止用server/test/**作为无限制派发权限。
 
-实施分三份可独立审查结果：日期元信息纯规划器与边界测试；后端预览/创建/旧训练兼容；表单与录制兼容。共享API/DB类型由集成人负责，worker不得把新模式伪装成已有tier绕过录制枚举校验。
+实施分三份可独立审查结果：日期元信息纯规划器与边界测试（RANGE-01已交付）；后端预览/创建/旧训练兼容；表单与录制兼容。共享API/DB类型由集成人负责，worker不得把新模式伪装成已有tier绕过录制枚举校验。
+
+第一片交付（2026-09-25，worktree task/TRAIN-02-integration）：`POST /api/training-ranges/preview`（日期元信息+sourceFingerprint+previewId，无OHLC/收益）；创建复核（409 `RANGE_PREVIEW_STALE`）；trainings 兼容增列 `range_version/range_mode/requested_start/requested_end/range_start/range_end/range_bar_count/range_source_fingerprint/range_notes`（旧行默认 range_version=0/range_mode='tier'，不重建表）；范围模式训练 tier 列写 `RANGE` 哨兵，查询响应附可选 `range` 对象。实现说明见 [lifecycle](../../../server/src/train/docs/lifecycle.md)，证据见 [TRAIN-02-server](../../verification/2026-09/TRAIN-02-server/report.md)。范围模式训练的录像兼容（recording schema）与前端表单属第二片，需第一片响应稳定后单独派发；`web/src/api.ts` 共享接线由集成人串行完成。
 
 验收必须覆盖：默认3M；切换预设重算；手填起点保留；月末和闰年；休市日对齐不移动请求终点；上市较晚与本地历史缺失；起点超过末日、周期尾未下载；N=1和N超过可用量；到最新终点冻结；预览过期；老训练/旧录像恢复；不泄露未来行情。较长自定义范围先测量成本，不自行新增无证据的停录阈值。
 
-接续派发：纯规划器已由RANGE-01完成，不重写同名模块。后续按日期元信息预览/创建复核、表单与录制兼容交付完整行为切片；不能把空日期推断成休市，requestedEnd/错误码变化先明确兼容。GLM实现并跑定向检查；主代理围绕接口风险、真实创建→推进→结算→录像回放与M2验收。见[产品分工](../../engineering/product-development.md)。
+派发Prompt：读取任务及批次规则，只用日期元信息、注入时钟与合成夹具，先RED后GREEN；返回修改路径/提交/命令退出码/限制。新旧录制兼容有独立失败回归后才能集成。真实浏览器创建→推进→结算→录像回放及M2由主代理验收。
