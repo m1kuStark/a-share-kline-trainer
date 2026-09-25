@@ -1,0 +1,107 @@
+{
+  "from": "2026-01-01",
+  "through": "2026-12-31",
+  "timezone": "Asia/Shanghai",
+  "closedDates": [
+    "2026-01-01",
+    "2026-01-02",
+    "2026-02-16",
+    "2026-02-17",
+    "2026-02-18",
+    "2026-02-19",
+    "2026-02-20",
+    "2026-02-23",
+    "2026-04-06",
+    "2026-05-01",
+    "2026-05-04",
+    "2026-05-05",
+    "2026-06-19",
+    "2026-09-25",
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-05",
+    "2026-10-06",
+    "2026-10-07"
+  ],
+  "weekendsClosed": true,
+  "source": {
+    "publisher": "Shanghai Stock Exchange",
+    "url": "https://www.sse.com.cn/disclosure/dealinstruc/closed/",
+    "title": "2026年休市安排",
+    "publishedDate": null,
+    "retrievedAt": "2026-09-25T09:44:48.583049+00:00",
+    "snapshotSha256": "d388a2493ab57d685aa768bda52d01877fb90f38972fcf2595be64975bdc6d28",
+    "annualNoticeReference": "上证公告〔2025〕45号",
+    "annualNoticePublicationDate": "unknown"
+  },
+  "ranges": [
+    {
+      "name": "元旦",
+      "from": "2026-01-01",
+      "through": "2026-01-03",
+      "officialText": "1月1日（星期四）至1月3日（星期六）休市，1月5日（星期一）起照常开市。另外，1月4日（星期日）为周末休市。"
+    },
+    {
+      "name": "春节",
+      "from": "2026-02-15",
+      "through": "2026-02-23",
+      "officialText": "2月15日（星期日）至2月23日（星期一）休市，2月24日（星期二）起照常开市。另外，2月14日（星期六）、2月28日（星期六）为周末休市。"
+    },
+    {
+      "name": "清明节",
+      "from": "2026-04-04",
+      "through": "2026-04-06",
+      "officialText": "4月4日（星期六）至4月6日（星期一）休市，4月7日（星期二）起照常开市。"
+    },
+    {
+      "name": "劳动节",
+      "from": "2026-05-01",
+      "through": "2026-05-05",
+      "officialText": "5月1日（星期五）至5月5日（星期二）休市，5月6日（星期三）起照常开市。另外，5月9日（星期六）为周末休市。"
+    },
+    {
+      "name": "端午节",
+      "from": "2026-06-19",
+      "through": "2026-06-21",
+      "officialText": "6月19日（星期五）至6月21日（星期日）休市，6月22日（星期一）起照常开市。"
+    },
+    {
+      "name": "中秋节",
+      "from": "2026-09-25",
+      "through": "2026-09-27",
+      "officialText": "9月25日（星期五）至9月27日（星期日）休市，9月28日（星期一）起照常开市。"
+    },
+    {
+      "name": "国庆节",
+      "from": "2026-10-01",
+      "through": "2026-10-07",
+      "officialText": "10月1日（星期四）至10月7日（星期三）休市，10月8日（星期四）起照常开市。另外，9月20日（星期日）、10月10日（星期六）为周末休市。"
+    }
+  ],
+  "explicitWeekendClosures": [
+    "2026-01-04",
+    "2026-02-14",
+    "2026-02-28",
+    "2026-05-09",
+    "2026-09-20",
+    "2026-10-10"
+  ],
+  "corroboration": [
+    {
+      "url": "https://www.sse.com.cn/disclosure/announcement/general/c/c_20260915_10832273.shtml",
+      "publishedDate": "2026-09-17",
+      "note": "Actual displayed publication date differs from URL path. Confirms Sep and Oct ranges plus annual notice reference."
+    },
+    {
+      "url": "https://www.sse.com.cn/disclosure/announcement/general/c/c_20260205_10808618.shtml",
+      "publishedDate": "2026-02-05",
+      "note": "Confirms spring closure and annual notice reference."
+    }
+  ],
+  "limits": [
+    "Annual official overview does not display its original publication date. Do not reuse page-generation metadata as publication date.",
+    "SZSE independent corroboration was not completed in the bounded research time.",
+    "15:00 Shanghai threshold is product contract, not derived from holiday notice.",
+    "Official table covers scheduled annual closures; future emergency closure changes require a new source version."
+  ]
+}
