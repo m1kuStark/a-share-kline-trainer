@@ -49,6 +49,10 @@
 
 **真正的"实时看着 GPT 在 Desktop 里打字"需要驱动 Desktop 本身**，两条候选路径（均需专项验证后再立项）：①官方实验接口——`codex app-server daemon/proxy`（连接运行中 app-server 的控制套接字）＋`remote-control pair`（配对码），且可用 `generate-json-schema` 导出协议，正对"往打开的会话注入任务"这一需求；②Desktop UI 自动化（tdx_quick_draw 先例）。在验证之前，上表的排队＋通知协议是既定工作方式。
 
+## App-Server 协议调研结论（GPT-VIS-01，2026-09-25）
+
+调研已完成（见 [GPT-VIS-01 记录](../verification/2026-09/GPT-VIS-01/report.md)）：**写入者锁在共享线程存储层，对所有写入面一致生效**——app-server 协议 `thread/resume` 对 Desktop 打开的会话报同一个 `already has an active writer`（-32600）。"注入正打开的会话且 Desktop 实时可见"不可行；可见性二选一：现行排队＋通知协议，或 Desktop UI 自动化。App-Server 的真实价值在别处：流式增量通知可被客户端实时消费、`turn/steer`/`turn/interrupt` 转轮中途干预、三类审批回调客户端化（worker 可免 yolo）、持久 daemon——适合作为 run_codex 的下一代传输层，接入与否另行拍板。
+
 ## 桥工具用法（交互协议）
 
 ```powershell
