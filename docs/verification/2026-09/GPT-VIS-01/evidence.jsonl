@@ -1,0 +1,1 @@
+{"seq": 6, "time": "2026-09-25T23:5xZ", "case": "GUI injection end-to-end (user-enabled computer use)", "cmd": "cua.getApp({pid}).setValue([73] textfield 随心输入, labeled probe) → verify landed → click([61] button 发送) → poll AX tree", "result": "消息出现于会话、输入框清空、发送键变停止按钮（Desktop 为写者、锁不适用）；GPT 回复探针正常（[92]）已从 a11y 树读回；全程后台操作未抢焦点；零锁冲突"}

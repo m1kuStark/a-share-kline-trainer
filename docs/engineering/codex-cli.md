@@ -49,17 +49,20 @@
 
 **真正的"实时看着 GPT 在 Desktop 里打字"需要驱动 Desktop 本身**，两条候选路径（均需专项验证后再立项）：①官方实验接口——`codex app-server daemon/proxy`（连接运行中 app-server 的控制套接字）＋`remote-control pair`（配对码），且可用 `generate-json-schema` 导出协议，正对"往打开的会话注入任务"这一需求；②Desktop UI 自动化（tdx_quick_draw 先例）。在验证之前，上表的排队＋通知协议是既定工作方式。
 
-## Computer Use 切换协议（用户 2026-09-25 提议，待运行时可用后实测）
+## Computer Use 切换协议（用户 2026-09-25 提议，GUI 注入已实测打通）
 
-用户需求：不需要看打字，要**及时观察会话进展**并保留人工干预。提议流程（GLM 唤醒的标准作业）：
+用户需求：不需要看打字，要**及时观察会话进展**并保留人工干预。**实测结论（本日晚）：GUI 注入全链路打通，且比预想更简——目标会话在 Desktop 打开时无需任何切换**，因为注入走 Desktop 自己的输入框，Desktop 就是写者，写入者锁彻底不适用：
 
-1. 唤醒前用 computer use 把 Desktop 切离目标会话（点开别的会话即可，锁随切换释放）；
-2. 执行 `run_codex wake`（带 `--notify`）；
-3. 完成后再用 computer use 把 Desktop 切回目标会话——用户即见完整对话记录，随时可手动插手（其输入进入同一上下文）。
+1. computer use 绑定 Desktop（进程名 **ChatGPT**，`OpenAI.Codex` 包）→ `getAXState` 返回文本含 `[n]` 元素索引（注意：返回值就是字符串本身，用 `{emit:false}`；元素树由运行时自动展示，不要读 `.text` 属性）；
+2. 定位 `[73] textfield 随心输入`（AXSetValue 可设）与 `[61] button 发送`——索引跨观察稳定，且可按名称重定位；
+3. `setValue(73, prompt)` → 重新观察校验落框（防"已接受未生效"）→ `click(61)` 发送；
+4. 轮次在 Desktop 内运行（发送键变"停止"按钮＝进行中，用户实时可见），答复从 a11y 树读回（搜内容而非"ChatGPT 说："标记——树顺序与视觉顺序不一致，内容可能在标记之前）。
 
-理念对齐（model-delegation.md）：**Codex Desktop/GPT 用于重要选择与判断（拆分、接口不变量、集成判断、升级裁决），不替 GLM 做常规开发**；交互唤醒默认只发决策请求，控制器 gpt_direct 派发仅限真正的判断升级路由。
+全程后台操作不抢焦点；转轮中用户随时可打断/插话（人工干预零成本）。局限：长 prompt 依赖 setValue 对超大文本的行为（待压测）；控制器 gpt_direct 的 worker 派发仍走 CLI 无头路径（结构化报告＋合同绑定），GUI 注入用于交互式决策请求。
 
-实测现状（2026-09-25）：本会话 Computer Use 运行时不可用（`node_repl` 报 unavailable，zcode-cua 生产者未运行）；`codex app <workspace>` 可发出打开请求（"Opening workspace…"）但从沙箱会话未能使窗口出现在交互桌面；UIA 枚举确认当时无 Codex 顶层窗口（Desktop 处于托盘态）。待运行时启用或窗口由用户打开后，先探查会话列表的可访问性树再接线。
+理念对齐（model-delegation.md）：**Codex Desktop/GPT 用于重要选择与判断（拆分、接口不变量、集成判断、升级裁决），不替 GLM 做常规开发**。
+
+实测备注（2026-09-25）：本会话 Computer Use 运行时需 zcode-cua 生产者可用，`setupComputerUseRuntime` 返回 `{getState,getApp,listApps,computer,requestAccess,stop}`，App 方法面为 `{getAXState,getScreenshot,paste,click,drag,pressKey,scroll,selectText,setValue,typeText,performSecondaryAction}`；每次 node_repl 调用需完整重新 bootstrap（Worker 不保状态，UI 状态保留）。`codex app <workspace>` 从沙箱会话发打开请求但窗口未出现在交互桌面（Desktop 托盘态时无顶层窗口）。
 
 ## App-Server 协议调研结论（GPT-VIS-01，2026-09-25）
 
