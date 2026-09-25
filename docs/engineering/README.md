@@ -8,6 +8,7 @@
 - [产品开发分工](product-development.md)：ORCH关闭后的产品主线、任务基线核对与GLM完整接线职责。
 - [Worker Contract](worker-contract.md)：v1合同、压缩证据报告和控制层历史；[实施计划](../proposals/adaptive-model-routing.md)。
 - [Z code CLI经验](zcode-cli.md)：实际参数、完成通知、限流与输出预算。
+- [Codex CLI经验](codex-cli.md)：GPT 会话中枢桥的实测契约（会话续接、写入者锁、缓存命中）与 run_codex.py 用法。
 - [GLM任务看板](glm-observability.md)：用户可见的后台任务、实时活动与独立验收状态。
 - [派发工具用量与能力改进](../proposals/delegate-usage-and-capacity.md)：原生会话统计、官方额度与桌面快照已交付；自动会话策略和多模态接线仍属后续候选。
 - [录制实施](recording-delivery.md)与[共享合同](recording-contract.md)：本批分工、接口和验收边界。
