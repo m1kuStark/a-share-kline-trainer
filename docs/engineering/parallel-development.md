@@ -1,5 +1,7 @@
 # Git并行开发
 
+模型职责按[四路协作](model-delegation.md)分配；[ORCH-04](../work-items/tasks/ORCH-04.md)已提供v2分类候选门禁。旧v1证明保留原验证与visual要求，影子建议或worker自评不能豁免。
+
 使用短期 `task/<ID>` 分支和独立worktree。主干为main；每个任务从已提交基线出发，交付提交SHA和证据，不在共享目录切分支。工具入口为 `npm run task -- <命令>`。
 
 ## 任务与工作副本
@@ -33,11 +35,11 @@ npm run task -- promote --candidate <候选ID> --visual <视觉审查JSON>
 npm run task -- cleanup --candidate <候选ID>
 ```
 
-prepare从当前main建立临时候选并合并任务；冲突保留现场，不推进main。verify安装候选自己的依赖并跑固定完整门禁，结果写入候选 `.runs/candidate-proof.json`。未提交或测试中发生变化不发通过证明。
+prepare从当前main建立临时候选并合并任务；冲突保留现场，不推进main。verify安装候选自己的依赖并执行控制层分类门禁（普通文档docs-only检查docs/impact/status，其余full保留完整流程），结果写入候选 `.runs/candidate-proof.json`。未提交或测试中发生变化不发通过证明。
 
 promote检查候选提交/tree、任务、基础SHA、全套检查、来源分支和目标未变化、工作树干净及主代理视觉记录后，才将main推进到实际测过的提交。main变化必须重建候选。Git公共目录内互斥锁保证工具操作一次一个；不自动抢占未知遗留锁，先查归属再人工处理。
 
-视觉记录格式：`kind: manual-ui`、`testedCommit`、`outcome: passed`、`reviewer`、`artifacts: [候选内截图相对路径]`。它证明主代理检查，不是用户产品验收。完成一次命令或编辑JSON本身不保证文字真实，审查责任仍在主代理。
+视觉记录格式：`kind: manual-ui`、`testedCommit`、`outcome: passed`、`reviewer`、`artifacts: [候选内截图相对路径]`。它证明主代理检查，不是用户产品验收。完成一次命令或编辑JSON本身不保证文字真实，审查责任仍在主代理。只有v2证明经promote重算为docs-only且visual=not_applicable时可省略--visual；旧v1及full仍必填。运行清单必须存在且真实位置属于该候选.runs。
 
 cleanup只清理已推进且干净的注册候选，失败候选保留。证据先复制进正式verification记录或外部安全存档，再清理候选。任务工作副本在成果进入main并确认无未提交/未推送的独立成果后，用 `git worktree remove <路径>`、`git branch -d <分支>`逐个清理。
 

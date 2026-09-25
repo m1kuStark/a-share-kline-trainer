@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "tool": "evaluation_metrics",
+  "can_promote": false,
+  "advisory_only": true,
+  "generated_from": {
+    "experiment_id": "orch04-observed-pilot",
+    "model_roles": {
+      "gpt-6": "strong",
+      "GLM-5.3-Flash": "weak"
+    },
+    "token_basis": "total_input_including_cache",
+    "measurement_scope": "All ORCH-03-PILOT planning, execution, corrective continuations and review; infrastructure development excluded; unmetered control work remains unknown.",
+    "run_count": 1
+  },
+  "per_strategy": {
+    "baseline": {
+      "run_count": 0,
+      "outcome_counts": {
+        "accepted": 0,
+        "rejected": 0,
+        "failed": 0,
+        "unknown": 0
+      },
+      "ground_truth_counts": {
+        "passed": 0,
+        "failed": 0,
+        "unknown": 0
+      },
+      "qualified_delivery_count": 0,
+      "qualified_delivery_rate": null,
+      "false_acceptance_count": 0,
+      "false_rejection_count": 0,
+      "unknown_quality_count": 0,
+      "quality_violation_count": 0,
+      "attempt_count_total": 0,
+      "repair_count_total": 0,
+      "strong_interventions_total": null,
+      "elapsed_seconds_total": null,
+      "tokens": {
+        "strong": null,
+        "weak": null
+      },
+      "tokens_unknown_run_ids": {
+        "strong": [],
+        "weak": []
+      },
+      "measurement_sources": {
+        "strong": [],
+        "weak": []
+      },
+      "aggregate_reasons": [],
+      "cost_per_qualified_delivery": null
+    },
+    "adaptive": {
+      "run_count": 1,
+      "outcome_counts": {
+        "accepted": 1,
+        "rejected": 0,
+        "failed": 0,
+        "unknown": 0
+      },
+      "ground_truth_counts": {
+        "passed": 1,
+        "failed": 0,
+        "unknown": 0
+      },
+      "qualified_delivery_count": 1,
+      "qualified_delivery_rate": 1.0,
+      "false_acceptance_count": 0,
+      "false_rejection_count": 0,
+      "unknown_quality_count": 0,
+      "quality_violation_count": 0,
+      "attempt_count_total": 3,
+      "repair_count_total": 2,
+      "strong_interventions_total": null,
+      "elapsed_seconds_total": null,
+      "tokens": {
+        "strong": null,
+        "weak": 1350162
+      },
+      "tokens_unknown_run_ids": {
+        "strong": [
+          "ORCH-03-PILOT-complete"
+        ],
+        "weak": []
+      },
+      "measurement_sources": {
+        "strong": [
+          "unknown"
+        ],
+        "weak": [
+          "provider"
+        ]
+      },
+      "aggregate_reasons": [],
+      "cost_per_qualified_delivery": null
+    }
+  },
+  "pairs": [],
+  "unmatched_runs": [
+    {
+      "run_id": "ORCH-03-PILOT-complete",
+      "strategy": "adaptive",
+      "case_id": "sample-config-help",
+      "trial_id": "observed-20260925",
+      "reasons": [
+        "no baseline counterpart for this (case_id, trial_id)"
+      ]
+    }
+  ],
+  "quality_violations": [],
+  "false_rejections": [],
+  "run_records": [
+    {
+      "run_id": "ORCH-03-PILOT-complete",
+      "strategy": "adaptive",
+      "case_id": "sample-config-help",
+      "trial_id": "observed-20260925",
+      "outcome": "accepted",
+      "ground_truth": "passed",
+      "qualified": true,
+      "case_revision": "1",
+      "input_fingerprint": "246b9c83d39d40e8bf06968e226b05800b6f57dcbea847b24a499131c078b881",
+      "oracle_sha256": "af1ae66525d911c6d001dfaca384b5f8cb7be591c151a83318e24512345f1aa6",
+      "measurement_scope": "All ORCH-03-PILOT planning, execution, corrective continuations and review; infrastructure development excluded; unmetered control work remains unknown.",
+      "token_basis": "total_input_including_cache",
+      "quality_violation_kinds": [],
+      "false_rejection": false,
+      "quality_unknown": false,
+      "attempt_count": 3,
+      "repair_count": 2,
+      "strong_interventions": null,
+      "elapsed_seconds": null,
+      "measurement_source": {
+        "strong": "unknown",
+        "weak": "provider"
+      },
+      "tokens": {
+        "strong": null,
+        "weak": 1350162
+      }
+    }
+  ],
+  "overall": {
+    "comparison_valid": false,
+    "validity_reasons": [
+      "1 run(s) without a one-to-one counterpart: ORCH-03-PILOT-complete",
+      "no runs recorded for strategy 'baseline'",
+      "strong token totals unknown for strategy 'adaptive'",
+      "qualified delivery rate unavailable",
+      "strong measurement sources differ between strategies or are mixed within one strategy"
+    ],
+    "strong_tokens": {
+      "baseline": null,
+      "adaptive": null,
+      "delta": null,
+      "delta_reasons": [
+        "strong measurement sources are not comparable",
+        "comparison gates failed; see validity_reasons"
+      ],
+      "relative_change": null,
+      "relative_change_reasons": [
+        "strong measurement sources are not comparable",
+        "comparison gates failed; see validity_reasons"
+      ]
+    },
+    "weak_tokens": {
+      "baseline": null,
+      "adaptive": 1350162,
+      "delta": null,
+      "delta_reasons": [
+        "comparison gates failed; see validity_reasons"
+      ]
+    },
+    "elapsed_seconds": {
+      "baseline": null,
+      "adaptive": null,
+      "delta": null,
+      "delta_reasons": [
+        "comparison gates failed; see validity_reasons"
+      ]
+    },
+    "strong_interventions": {
+      "baseline": null,
+      "adaptive": null,
+      "delta": null,
+      "delta_reasons": [
+        "comparison gates failed; see validity_reasons"
+      ]
+    },
+    "qualified_delivery_rate": {
+      "baseline": null,
+      "adaptive": 1.0
+    },
+    "cost_per_qualified_delivery": {
+      "baseline": null,
+      "adaptive": null
+    },
+    "caveats": [
+      "per-pair token deltas are conditional-on-success and exclude failure costs; aggregate totals never do",
+      "no USD estimation and no statistical significance claim"
+    ]
+  },
+  "limitations": [
+    "advisory metrics only; can_promote is always false and this report creates no acceptance receipts",
+    "verification, ground-truth and usage declarations are input claims, not evidence authenticated by this tool",
+    "no USD estimation; token counts are not billing amounts",
+    "no statistical significance claim; one small cohort does not prove general savings"
+  ]
+}

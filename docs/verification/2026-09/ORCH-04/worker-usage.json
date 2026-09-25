@@ -1,0 +1,100 @@
+{
+  "jobs": [
+    {
+      "id": "ORCH-04-SCOUT-20260925",
+      "state": "completed",
+      "exitCode": 0,
+      "startedAt": 1790276232418,
+      "finishedAt": 1790276609449,
+      "timeoutKind": null,
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "usage": {
+        "source": "provider",
+        "modelRequestCount": 12,
+        "inputTokens": 902659,
+        "outputTokens": 10719,
+        "totalTokens": 913378,
+        "cacheReadTokens": 822144,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0,
+        "webFetchRequests": 0,
+        "webSearchRequests": 0
+      }
+    },
+    {
+      "id": "ORCH-04-GATES-20260925",
+      "state": "failed",
+      "exitCode": null,
+      "startedAt": 1790278133039,
+      "finishedAt": 1790280241757,
+      "timeoutKind": "total-timeout",
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "usage": null
+    },
+    {
+      "id": "ORCH-04-GATES-REPAIR1-20260925",
+      "state": "failed",
+      "exitCode": null,
+      "startedAt": 1790280668303,
+      "finishedAt": 1790282175631,
+      "timeoutKind": "total-timeout",
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "usage": null
+    },
+    {
+      "id": "ORCH-04-METRICS-20260925",
+      "state": "completed",
+      "exitCode": 0,
+      "startedAt": 1790278133052,
+      "finishedAt": 1790279455234,
+      "timeoutKind": null,
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "usage": {
+        "source": "provider",
+        "modelRequestCount": 19,
+        "inputTokens": 1820300,
+        "outputTokens": 50609,
+        "totalTokens": 1870909,
+        "cacheReadTokens": 1713664,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0,
+        "webFetchRequests": 0,
+        "webSearchRequests": 0
+      }
+    },
+    {
+      "id": "ORCH-04-METRICS-REPAIR1-20260925",
+      "state": "completed",
+      "exitCode": 0,
+      "startedAt": 1790280153168,
+      "finishedAt": 1790281277758,
+      "timeoutKind": null,
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "usage": {
+        "source": "provider",
+        "modelRequestCount": 33,
+        "inputTokens": 3297406,
+        "outputTokens": 37091,
+        "totalTokens": 3334497,
+        "cacheReadTokens": 3185856,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0,
+        "webFetchRequests": 0,
+        "webSearchRequests": 0
+      }
+    }
+  ],
+  "strong_model_tokens": null,
+  "total_cost": null,
+  "note": "Timeout jobs may lack complete provider counters; null is unknown, not zero. No measured GPT baseline, price estimate or overall savings claim."
+}

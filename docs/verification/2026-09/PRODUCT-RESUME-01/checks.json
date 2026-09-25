@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-25",
+  "scope": "Independent review of two desktop pure-module alternatives, not product UI acceptance.",
+  "bindings": [
+    {
+      "task": "DATA-05",
+      "head": "22fcdace102609ea6ae72b5cdc29cbc58cb8dd9e",
+      "parent": "d75da88aad28d316a481a009554bc877977ca186",
+      "worktree_clean": true,
+      "candidate_sha256": "17127b8e04a7b10f1b338788797a732ddc7c614f9c647ec2567eb675080c6586",
+      "existing_sha256": "9e945a1f335609ae7a7f2edd530010117bb77045c6e913e8b1ccdbd7dd84105b",
+      "existing_matches_main_commit": true,
+      "candidate_unit_tests": 30,
+      "candidate_unit_exit_code": 0,
+      "candidate_server_build_exit_code": 0,
+      "product_integrated": false,
+      "decision": "retain_existing_module_do_not_replace_candidate_wholesale"
+    },
+    {
+      "task": "TRAIN-02",
+      "head": "747d259b95b0c10907c6e147990c67e91b25985f",
+      "parent": "d75da88aad28d316a481a009554bc877977ca186",
+      "worktree_clean": true,
+      "candidate_sha256": "edf27c57d769f1c357fed3a548b790dce4b9e0b328068ed61b2496a81fbeccb1",
+      "existing_sha256": "fd3752dd0bfd321153948eb497d71c3f0da60096ac7bdcce5f53b380ccb17cbb",
+      "existing_matches_main_commit": true,
+      "candidate_unit_tests": 33,
+      "candidate_unit_exit_code": 0,
+      "candidate_server_build_exit_code": 0,
+      "product_integrated": false,
+      "decision": "retain_existing_module_do_not_replace_candidate_wholesale"
+    }
+  ],
+  "existing_modules": {
+    "commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
+    "tests": 56,
+    "exit_code": 0
+  },
+  "freshness_counterexamples": [
+    {
+      "id": "unordered_holidays",
+      "existing": {
+        "state": "unknown",
+        "expectedDate": null,
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "交易日历无效（closedDates 未按升序唯一排列：2026-10-01），保守按未知处理。来源末日不证明所有股票完整。"
+      },
+      "candidate": {
+        "state": "current",
+        "expectedDate": "2026-09-24",
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "来源最大日期 2026-09-24 已达到最近已收盘交易日 2026-09-24；来源末日仅代表全市场最大日期，不证明每只股票的日线数据完整"
+      }
+    },
+    {
+      "id": "duplicate_holidays",
+      "existing": {
+        "state": "unknown",
+        "expectedDate": null,
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "交易日历无效（closedDates 未按升序唯一排列：2026-10-01），保守按未知处理。来源末日不证明所有股票完整。"
+      },
+      "candidate": {
+        "state": "current",
+        "expectedDate": "2026-09-24",
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "来源最大日期 2026-09-24 已达到最近已收盘交易日 2026-09-24；来源末日仅代表全市场最大日期，不证明每只股票的日线数据完整"
+      }
+    },
+    {
+      "id": "whitespace_calendar_id",
+      "existing": {
+        "state": "unknown",
+        "expectedDate": null,
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "交易日历无效（日历 id 缺失或为空），保守按未知处理。来源末日不证明所有股票完整。"
+      },
+      "candidate": {
+        "state": "current",
+        "expectedDate": "2026-09-24",
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "来源最大日期 2026-09-24 已达到最近已收盘交易日 2026-09-24；来源末日仅代表全市场最大日期，不证明每只股票的日线数据完整"
+      }
+    },
+    {
+      "id": "unknown_reason_completeness",
+      "existing": {
+        "state": "unknown",
+        "expectedDate": null,
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "缺少可信交易日历，无法推算应收收盘日。来源末日不证明所有股票完整。"
+      },
+      "candidate": {
+        "state": "unknown",
+        "expectedDate": null,
+        "sourceMaxDate": "2026-09-24",
+        "checkedAt": "2026-09-24T07:00:00.000Z",
+        "reason": "未提供有效交易日历（缺失、格式或区间错误），无法确定最近已收盘交易日，保守返回未知"
+      }
+    }
+  ],
+  "range_counterexamples": [
+    {
+      "name": "weekday start gap is unconfirmed, not known nontrading",
+      "input": {
+        "request": {
+          "mode": "preset",
+          "startDate": "2026-09-21",
+          "months": 1,
+          "endDate": "2026-09-23"
+        },
+        "dates": [
+          "2026-09-18",
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "today": "2026-09-23"
+      },
+      "main": {
+        "ok": true,
+        "mode": "preset",
+        "requestedStart": "2026-09-21",
+        "requestedEnd": "2026-09-23",
+        "startDate": "2026-09-22",
+        "endDate": "2026-09-23",
+        "barCount": 2,
+        "notes": [
+          "仅按现有日线计算；内部缺口不推断为停牌或数据完整",
+          "首根日线 2026-09-22 晚于请求起点 2026-09-21，已对齐首根且不重新推终点"
+        ]
+      },
+      "candidate": {
+        "ok": true,
+        "mode": "preset",
+        "requestedStart": "2026-09-21",
+        "requestedEnd": "2026-09-23",
+        "startDate": "2026-09-22",
+        "endDate": "2026-09-23",
+        "barCount": 2,
+        "notes": [
+          "请求起点 2026-09-21 为非交易日，首根对齐至其后第一个交易日 2026-09-22；对齐后不重新计算月数",
+          "结果仅按输入的现有日线计算：区间内部的日期缺口不推断停牌，也不证明数据完整"
+        ]
+      }
+    },
+    {
+      "name": "latest requestedEnd compatibility",
+      "input": {
+        "request": {
+          "mode": "latest",
+          "startDate": "2026-09-18"
+        },
+        "dates": [
+          "2026-09-18",
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "today": "2026-09-25"
+      },
+      "main": {
+        "ok": true,
+        "mode": "latest",
+        "requestedStart": "2026-09-18",
+        "requestedEnd": null,
+        "startDate": "2026-09-18",
+        "endDate": "2026-09-23",
+        "barCount": 3,
+        "notes": [
+          "仅按现有日线计算；内部缺口不推断为停牌或数据完整",
+          "latest 终点钉定本地末根 2026-09-23"
+        ]
+      },
+      "candidate": {
+        "ok": true,
+        "mode": "latest",
+        "requestedStart": "2026-09-18",
+        "requestedEnd": "2026-09-25",
+        "startDate": "2026-09-18",
+        "endDate": "2026-09-23",
+        "barCount": 3,
+        "notes": [
+          "latest 模式终点冻结为本地已确认的最后一根日 K 2026-09-23",
+          "结果仅按输入的现有日线计算：区间内部的日期缺口不推断停牌，也不证明数据完整",
+          "today 2026-09-25 晚于本地末根 2026-09-23，其后的日期未经数据证实，不并入区间"
+        ]
+      }
+    },
+    {
+      "name": "empty weekend window error code compatibility",
+      "input": {
+        "request": {
+          "mode": "preset",
+          "startDate": "2026-09-19",
+          "months": 1,
+          "endDate": "2026-09-20"
+        },
+        "dates": [
+          "2026-09-18",
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "today": "2026-09-23"
+      },
+      "main": {
+        "ok": false,
+        "code": "INSUFFICIENT_DATA",
+        "message": "请求窗口 [2026-09-19, 2026-09-20] 内没有任何日线"
+      },
+      "candidate": {
+        "ok": false,
+        "code": "NO_DATA",
+        "message": "区间 [2026-09-19, 2026-09-20] 内没有任何日 K；可能为休市、停牌或数据缺口，仅凭日期不断言"
+      }
+    },
+    {
+      "name": "invalid count is validated before history boundary",
+      "input": {
+        "request": {
+          "mode": "bars",
+          "startDate": "2026-09-01",
+          "count": 0
+        },
+        "dates": [
+          "2026-09-18",
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "today": "2026-09-23"
+      },
+      "main": {
+        "ok": false,
+        "code": "INVALID_INPUT",
+        "message": "bars count 必须是正安全整数，收到 0"
+      },
+      "candidate": {
+        "ok": false,
+        "code": "BEFORE_HISTORY",
+        "message": "起始日 2026-09-01 早于本地首根日 K 2026-09-18；这只说明超出本地数据范围，不代表早于上市，请先补全本地数据"
+      }
+    },
+    {
+      "name": "invalid mode is validated before no data",
+      "input": {
+        "request": {
+          "mode": "weekly",
+          "startDate": "2026-09-21"
+        },
+        "dates": [],
+        "today": "2026-09-23"
+      },
+      "main": {
+        "ok": false,
+        "code": "INVALID_INPUT",
+        "message": "request.mode 必须是 preset/latest/bars，收到 \"weekly\""
+      },
+      "candidate": {
+        "ok": false,
+        "code": "NO_DATA",
+        "message": "本地没有任何日 K 数据，无法规划 2026-09-21 起的训练范围"
+      }
+    },
+    {
+      "name": "year 0042 UTC rollover behavior",
+      "input": {
+        "request": {
+          "mode": "preset",
+          "startDate": "0042-03-06",
+          "months": 1,
+          "endDate": "0042-03-10"
+        },
+        "dates": [
+          "0042-03-06"
+        ],
+        "today": "0042-03-10"
+      },
+      "main": {
+        "ok": true,
+        "mode": "preset",
+        "requestedStart": "0042-03-06",
+        "requestedEnd": "0042-03-10",
+        "startDate": "0042-03-06",
+        "endDate": "0042-03-06",
+        "barCount": 1,
+        "notes": [
+          "仅按现有日线计算；内部缺口不推断为停牌或数据完整",
+          "尾段缺口均为周末或已知休市，末根 0042-03-06 为请求终点 0042-03-10 前最后可用日线"
+        ]
+      },
+      "candidate": {
+        "ok": false,
+        "code": "UNCONFIRMED_COVERAGE",
+        "message": "末根 0042-03-06 与请求终点 0042-03-10 之间存在未证实休市的工作日（0042-03-07、0042-03-10），无法确认区间数据完整；请补全 knownClosedDates 或更新本地数据"
+      }
+    },
+    {
+      "name": "positive safe count with sufficient data and no arbitrary cap",
+      "input": {
+        "request": {
+          "mode": "bars",
+          "startDate": "1900-01-01",
+          "count": 200000
+        },
+        "dates": {
+          "length": 200000,
+          "first": "1900-01-01",
+          "last": "2447-07-31"
+        },
+        "today": "2447-07-31"
+      },
+      "main": {
+        "threw": "RangeError",
+        "message": "Maximum call stack size exceeded"
+      },
+      "candidate": {
+        "ok": true,
+        "mode": "bars",
+        "requestedStart": "1900-01-01",
+        "requestedEnd": null,
+        "startDate": "1900-01-01",
+        "endDate": "2447-07-31",
+        "barCount": 200000,
+        "notes": [
+          "结果仅按输入的现有日线计算：区间内部的日期缺口不推断停牌，也不证明数据完整"
+        ]
+      }
+    }
+  ],
+  "candidate_branches_preserved": true,
+  "merged": false,
+  "pushed": false,
+  "new_product_implementation_started": false
+}

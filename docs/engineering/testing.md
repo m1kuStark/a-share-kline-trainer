@@ -1,5 +1,7 @@
 # 测试与交付门禁
 
+四路协作遵循[模型协议](model-delegation.md)。影子路由不是验证器；Python独立收据与TS候选证明用途不同。ORCH-04分类门禁已实现，具体检查和视觉要求见下文；不能把局部测试声称为完整产品验收。
+
 ## 层次
 
 | 检查 | 证明范围 |
@@ -17,7 +19,11 @@ Vitest使用threads池、最多4个worker。Windows CI曾在fork池发生ERR_IPC
 
 ## UI-VISUAL-ACCEPTANCE
 
-每次功能或bug交付，主代理负责真实页面、无错误覆盖层、pageerror、深浅主题、桌面尺寸、空间利用、溢出、控件状态切换及交互截图检查；子代理自验不能免除。M3无需逐工具用户确认，工程整批自验后交用户整体验收。
+新schemaVersion=2证明只有被控制层重算为docs-only时允许visual=not_applicable：非空变更全是普通非执行Markdown，限docs下或根README/CONTRIBUTING，排除AGENTS/CLAUDE及docs/engineering、specs、architecture；代码、配置、UI、混合及未知范围均为full。文件模式、索引隐藏标志与工作区联接也参与保守判定。
+
+docs-only执行docs、impact、status --check，不启动产品构建、数据快照、M2或Journey；full固定执行docs、impact、unit、types、build、snapshot、m2、journey，视觉记录仍需独立提供。旧schemaVersion=1证明保留原七项必需检查和人工视觉要求。分类、检查清单、清洁状态及commit/tree绑定不匹配时拒绝复用；详细规则见[分类实现](../../scripts/worktree/README.md)。
+
+每次产品功能或bug交付，主代理负责真实页面、无错误覆盖层、pageerror、深浅主题、桌面尺寸、空间利用、溢出、控件状态切换及交互截图检查；子代理自验不能免除。M3无需逐工具用户确认，工程整批自验后交用户整体验收。
 
 交互回归用真实事件及状态/几何断言；临时矩形、菜单、面板加DOM可见性。只读hooks可定位与核验，禁止操作内部对象代替交互。详见[e2e规则](../../e2e/AGENTS.md)。
 

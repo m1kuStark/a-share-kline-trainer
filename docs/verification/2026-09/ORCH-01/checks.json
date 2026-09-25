@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "task_id": "ORCH-01",
+  "date": "2026-09-24",
+  "basis": "working_tree",
+  "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
+  "environment": {
+    "os": "Windows",
+    "python": "3.9.13"
+  },
+  "runtime_mode": "shadow",
+  "can_dispatch": false,
+  "can_promote": false,
+  "source_sha256": {
+    "scripts/agent-routing/routing.py": "3552ac6029ed0113ea48fb404750eabe56d9d888b3e1dc704ea9e75df0d706a2",
+    "scripts/agent-routing/route.py": "9afe767422a2cadb6b5bc54f3c07e00f1e3d10d251b09bd3db3609d92ecb61be",
+    "scripts/agent-routing/test_routing.py": "04f9ae526d358e85dc3b3430b5fd95882fa52b3f157c50f3863fac023ed0d821",
+    "scripts/agent-routing/test_cli.py": "2ffc1ba46b10fb1c8090ffc912e30479e349636b95df2505123bfeeb6cb8f18c"
+  },
+  "checks": [
+    {
+      "command": "py -3.9 -B -m unittest discover -s scripts/agent-routing -p test_*.py -q",
+      "exit_code": 0,
+      "tests": 28
+    },
+    {
+      "command": "npm run docs:check",
+      "exit_code": 0,
+      "warnings": 9
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run docs:impact -- --base af0efafc48ce24e247f3c273b1ee4926be8765c5 --task ORCH-01",
+      "exit_code": 1,
+      "reason": "23 paths from earlier uncommitted tasks lie outside ORCH-01; scope was not broadened to bypass this check."
+    }
+  ],
+  "red_green": [
+    {
+      "phase": "initial_rules",
+      "failure": "ModuleNotFoundError: No module named 'routing'",
+      "result": "15 rules passed after implementation"
+    },
+    {
+      "phase": "cli",
+      "failure": "route.py missing: 5 tests failed",
+      "result": "21 tests passed after implementation"
+    },
+    {
+      "phase": "contract_fields",
+      "failure": "Missing context_refs/known_risks/forbidden_changes accepted",
+      "result": "Required fields enforced"
+    },
+    {
+      "phase": "review_regressions",
+      "failure": "8 failing assertions: environment budget, incomplete report, dirty state, bytecode, invalid history",
+      "result": "28 tests passed; case sensitivity also checked"
+    }
+  ],
+  "review_fixes": [
+    "Environment waiting not overridden by scout_localized",
+    "Incomplete report revokes mechanical classification",
+    "Dirty-worktree report cannot lower route",
+    "CLI does not generate bytecode",
+    "Git path scope is case-sensitive",
+    "Invalid empty history is rejected"
+  ],
+  "live_observation": {
+    "route": "gpt_plan_glm_execute",
+    "next_action": "replan_contract",
+    "reason_codes": [
+      "scope_violation",
+      "unapproved_semantic_change"
+    ],
+    "note": "Existing mixed worktree detected; no model or verifier executed."
+  },
+  "limits": [
+    "No automatic dispatch, independent verifier, strong-model adapter, or merge policy activated",
+    "No measured model-cost savings yet",
+    "Input contracts/history are not authenticated controller storage",
+    "Whole-product npm/M2/Journey gates not rerun for this internal shadow tool"
+  ],
+  "cleanup": {
+    "python_cache": "Kept after deletion was rejected by automatic approval policy: blocked by policy"
+  },
+  "user_acceptance": null,
+  "integration_ref": null
+}

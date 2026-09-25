@@ -1,6 +1,8 @@
 # 本机Z code委派经验
 
-2026-09-18实际核验：桌面ZCode 3.12.3，自带CLI 0.16.5，入口为安装目录 `resources/glm/zcode.cjs`，由Node24执行。本机位置为D盘MySoftWares/Zcode；跨机器先发现安装位置，不硬编码为项目必需路径。
+本文保留历次接口实测；模型职责以[四路协作](model-delegation.md)为准。当前run_glm仍是执行器，影子路由建议尚未自动切换执行或验收。
+
+2026-09-18实际核验：桌面ZCode 3.12.3，自带CLI 0.16.5，入口为安装目录 `resources/glm/zcode.cjs`，由Node24执行。本机安装位置已脱敏；跨机器先发现安装位置，不硬编码为项目必需路径。
 
 2026-09-20核验：CLI随桌面自动升级至0.16.9（bundle于9-19更新）。runner依赖的全部契约复核仍成立：`--output-format`帮助未列但解析器支持（合法值text/json/stream-json）、`--attach`/`--resume`/`--cwd`/`--no-color`不变、三个provider环境变量与三个retry环境变量均在。0.16.9帮助新增`--mode`（权限模式build/edit/plan/yolo，**对--prompt默认即yolo**）、`--disallowed-tools`（本轮移除整个工具，Bash命令模式不匹配、"Bash(git *)"会移除整个Bash，挡不住git push）、`--target`（headless设会话目标）、`--surface`、`--locale`。runner现显式传`--mode yolo`并在登记记录`cliVersion`，不依赖默认值。
 

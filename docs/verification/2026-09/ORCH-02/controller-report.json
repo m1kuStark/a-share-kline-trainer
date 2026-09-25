@@ -1,0 +1,50 @@
+{
+  "base_commit": "b72df5180756e359bb5b998be4b5b3c1ef3e7126",
+  "can_promote": false,
+  "checks": [
+    {
+      "args": [
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/agent-routing",
+        "-p",
+        "test_*.py",
+        "-q"
+      ],
+      "cleanup_confirmed": true,
+      "elapsed_seconds": 103.906,
+      "executable": "python",
+      "exit_code": 0,
+      "failure_fingerprint": null,
+      "failure_kind": null,
+      "id": "routing-full",
+      "log_path": "runs/verify-3887db2029e74f23969a7eb648735e98/routing-full.log",
+      "log_sha256": "745a47a0e5430dc3c009a13d8376232541dc27164292084d86e895b3247b2b99",
+      "status": "passed"
+    }
+  ],
+  "contract_revision": 1,
+  "contract_sha256": "267bf428bbbf3d076cd6cf8f9a1009cb6518c35746fa0d91e6bf469931fb5d64",
+  "failure_fingerprint": null,
+  "kind": "independent-verification",
+  "manifest_path": "runs/verify-3887db2029e74f23969a7eb648735e98/source-manifest.json",
+  "manifest_sha256": "c85f528cd7bd6b80986b4b3f015ce507d597337184dde70215b41ceb80ea79f2",
+  "policy_id": "orch-02-local-acceptance",
+  "policy_revision": 1,
+  "policy_sha256": "49f8ea75c70a1ddf99bd09437c64f3de1479ebf141dcd1862230987d7e0f6339",
+  "profile_id": "routing-full",
+  "profile_sha256": "325fb3aa50b3ed478be44b538bdf5172d6bd6fb3f54b08c8cde2df48d18dc0c5",
+  "reason": null,
+  "run_id": "verify-3887db2029e74f23969a7eb648735e98",
+  "schema_version": 1,
+  "source_digest": "fabae0a092a24b36f59324d5136dc6b950a10728d31bf53ea17b044b22b64d81",
+  "status": "passed",
+  "task_id": "ORCH-02",
+  "tested_commit": "0e4bd3e1bdb5c9f565337877222b9b5ec9de22f3",
+  "tested_tree": "042373b25c59b5be3161a888027322acbad12f9b",
+  "verifier_digest": "478cb6c8131f699ac40e66a3d93b9e0c6346638bc40b70ec77fd9ba8764d877a",
+  "verifier_version": "independent-verifier-1"
+}

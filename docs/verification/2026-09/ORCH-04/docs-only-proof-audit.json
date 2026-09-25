@@ -1,0 +1,80 @@
+{
+  "kind": "synthetic-actual-docs-only-cli",
+  "createdAt": "2026-09-24T22:07:41.037Z",
+  "sourceCommit": "3623256bdd93ec94f133f26162ac1d841af769b5",
+  "sourceHashes": {
+    "scripts/verify-candidate.ts": "e0abdda0d2054f3f78369e8c650575ef6486c1900bcc3f2227192152c054cf93",
+    "scripts/worktree/evidence.ts": "59e3b1f7594bc9e7dc58d91546080e6951cb5566fc559e0c5d6bd9a3f7d99787",
+    "scripts/worktree/review-profile.ts": "471703f77b60531d7684c780b04ec8cd2340e4119eed3a2f98f567998a3c1108",
+    "scripts/runtime/run.ts": "f113ca3ece74bf23baa774fd49b223b8520d46d021157cdab52ec64b6b11a310",
+    "scripts/docs.ts": "0fb1fd1246c63cf42528cc28e06936c04bfe184f9706378bc85b583d136d47ce"
+  },
+  "fixture": {
+    "base": "0163fdd0c0cacd00fecbdc1493a2e547a6a2c31b",
+    "head": "ee114c0a6245db28f33c9a6cdc7440f6239ec5a6",
+    "tree": "6b0dede256fc4c393491bc42c65df00a0dd64df0",
+    "taskId": "DOCS-91",
+    "changedPaths": [
+      "docs/guide.md"
+    ],
+    "targetMainUnchanged": true
+  },
+  "producer": {
+    "exitCode": 0,
+    "proofSchemaVersion": 2,
+    "profile": "docs-only",
+    "visual": "not_applicable",
+    "checks": [
+      {
+        "name": "docs",
+        "exitCode": 0
+      },
+      {
+        "name": "impact",
+        "exitCode": 0
+      },
+      {
+        "name": "status",
+        "exitCode": 0
+      }
+    ],
+    "cleanBefore": true,
+    "cleanAfter": true
+  },
+  "consumer": {
+    "function": "assertProof",
+    "exitCode": 0,
+    "assessment": {
+      "schemaVersion": 2,
+      "profile": "docs-only",
+      "visual": "not_applicable"
+    }
+  },
+  "run": {
+    "runId": "run-f42f8b37-aea5-4d52-89fd-e045afb3d5d0",
+    "manifestPresent": true,
+    "artifacts": [
+      "docs.log",
+      "impact.log",
+      "status.log",
+      "verification.json"
+    ],
+    "webDirectoryEmpty": true,
+    "serverDirectoryEmpty": true,
+    "noServerRecorded": true
+  },
+  "artifacts": {
+    "proof": "candidate/.runs/candidate-proof.json",
+    "manifest": "candidate/.runs/run-f42f8b37-aea5-4d52-89fd-e045afb3d5d0/manifest.json",
+    "stdout": "producer.stdout.log",
+    "stderr": "producer.stderr.log",
+    "candidateMetadata": "candidate-metadata.json",
+    "earlierEvidence": "before-final-source/evidence.shareable.json"
+  },
+  "limitations": [
+    "Synthetic standalone Git fixture; no real product task or promotion.",
+    "Production verifier and consumer imported from source commit; docs tooling copied verbatim into ignored scripts.",
+    "Ignored node_modules junction reuses existing dependencies; this bypasses no product checks and is only fixture setup.",
+    "Exactly three document check logs; no product build, snapshot, M2, server, or Journey check was planned or recorded."
+  ]
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "ORCH-02-RECEIPTS-20260924",
+    "model": "GLM-5.3-Flash",
+    "effort": "max",
+    "state": "completed",
+    "exitCode": 0,
+    "providerUsage": {
+      "source": "provider",
+      "modelRequestCount": 29,
+      "inputTokens": 2452555,
+      "outputTokens": 35399,
+      "totalTokens": 2487954,
+      "cacheReadTokens": 2361856,
+      "cacheWriteTokens": 0,
+      "reasoningTokens": 0,
+      "webFetchRequests": 0,
+      "webSearchRequests": 0
+    }
+  },
+  {
+    "id": "ORCH-02-RECEIPTS-R1-20260924",
+    "model": "GLM-5.3-Flash",
+    "effort": "max",
+    "state": "completed",
+    "exitCode": 0,
+    "providerUsage": {
+      "source": "provider",
+      "modelRequestCount": 21,
+      "inputTokens": 2473658,
+      "outputTokens": 23639,
+      "totalTokens": 2497297,
+      "cacheReadTokens": 2355712,
+      "cacheWriteTokens": 0,
+      "reasoningTokens": 0,
+      "webFetchRequests": 0,
+      "webSearchRequests": 0
+    }
+  }
+]

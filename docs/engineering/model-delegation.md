@@ -1,29 +1,44 @@
-# 低成本模型协作
+# 按判断需求进行模型协作
 
-用户已订阅GLM 5.3 Flash并在本机安装Z code。工程任务优先经Z code接口委派适合的小任务；主代理拆分、审查和验收。已验证的本机接口与限制见[CLI经验](zcode-cli.md)。
+用户2026-09-24认可原则：strong models decide，cheap models discover and execute，deterministic systems verify。按判断密度、oracle可靠性与失败代价选路，不按文件数量固定GPT→GLM→GPT。设计及实施状态见[自适应路由](../proposals/adaptive-model-routing.md)、[ORCH阶段](../work-items/milestones/ORCH.md)。
 
-## 委派边界
+## 当前能力与过渡
 
-- 主代理负责架构、任务拆分、共享合约、集成、验证和最终结论。将独立、范围明确、可测试的小任务交给GLM；不要一次交付大型整仓改造。
-- 每份prompt给出任务目标、独立worktree、基础SHA、允许修改路径、必须读取的局部规则、验收命令、禁止事项和交付格式。一次聚焦一个可独立验收的行为单元。
-- 新增产品限制或保护功能前先验证真实使用规模及失败条件；区分实现冗余、自设校验阈值与用户需求。先提交测量和取舍，不因发现一个常量上限就派发停录等行为变更。REC-01实例见[容量评估](../verification/2026-09/REC-01-capacity/report.md)。
-- 返回修改文件、提交SHA、实际命令/退出码、证据与未决问题。GLM自报通过不替代主代理检查；不让worker自行推主干、降门禁或改个人训练库。
-- 按完成事件收取结果。等待期间推进独立工作，不反复读取日志、Git状态、SQLite会话或时间来确认进度。仅在异常退出或预设超时后诊断一次；日志留在工程外，返回短结论及路径。
-- 模型并发额度与Git并行开发分别管理。用户2026-09-19明确要求提高并行度；本轮先2个任务验证均有成功请求，再增至3个独立GLM任务。每个独立worktree/修改范围/日志/配置副本，类型合同由集成人冻结。此前曾限流，不据旧现象永久限制为串行；本次若再出现真实429/1302则有限重试并下调并发，不降思考档。
-- 用户2026-09-19再次确认：GLM尽量保持最高思考档，接受较长耗时，不因token用量自行降档。空闲等待应由完成通知唤醒，不能用反复推理/轮询代替等待。
-- 长调用需脱离Codex活动轮次：独立后台进程运行GLM，原子写入各批次状态、日志路径与交接文件；独立工作做完后结束轮次。按用户2026-09-23要求，原线程以25分钟heartbeat续接；已完成者可先验收，全部仍运行且无独立工作时立即结束，不作进程退出即时回调的承诺。并行任务不用同一个wake-state覆盖结果，由group索引指向各job登记。全部交付后暂停自动化。
-- 用户可见性是派发条件：新调用通过[带任务登记的后台入口](../../scripts/agent-monitor/README.md)，让桌面“GLM任务看板”显示Prompt、最新工具和完成/复核状态。不要再派发只留下隐藏日志的任务；操作说明与验证见[观察入口](glm-observability.md)。
+route.py仍生成四路影子建议；controller CLI可对显式登记的GLM Direct和已设计合同执行任务，真实试点已完成（含人工接管），旧候选证明继续兼容原门禁。[独立verifier](verifier-usage.md)已接入固定配置、提交/字节绑定、日志校验和认证收据；run_glm的completed仍只表示执行完成。路由可消费有效收据决定修复或风险审查。ORCH-03提供显式执行闭环，ORCH-04增加受控分类门禁；具体行为见[测试门禁](testing.md)。
 
-## 配置目标与核验
+ORCH-03控制器、恢复入口及真实试点已完成本地验收，见[最终记录](../verification/2026-09/ORCH-03/final-report.md)。试点经历人工GPT Direct收尾，不能据此声称零干预；GPT自动adapter和Scout的OS只读隔离仍未实现，需要这些能力时保守交接。
 
-用户希望使用1M上下文和可用的最大thinking effort。实际调用前检查本机Z code版本、模型清单、帮助/接口文档及账户能力，确认GLM 5.3 Flash的真实模型ID、上下文上限与思考参数取值。使用该接口支持的最高设置，记录实际生效值；不编造CLI参数，不把不支持的配置写成成功。
+## 路由与职责
 
-上下文窗口不是max_tokens输出长度；输出额度使用接口支持范围。1M容量不意味着每个任务都装满上下文，仍遵循渐进披露和任务范围。先用一个小请求验证连通性、模型及参数，再批量委派；失败时报告原因并按已授权范围采用本地/主代理回退。
+| 路由 | 条件 | 职责 |
+|---|---|---|
+| GLM Direct | 机械且oracle可靠，约束已经确定 | GLM执行，机器验证，按风险抽查 |
+| GLM Scout then decide | 难点与影响未知 | 限预算侦查；规则能决定就继续，不能决定才调用GPT |
+| GPT Plan / GLM Execute | 需要设计取舍，之后可独立执行 | GPT冻结必要决定，GLM完成含API/页面接线的行为切片 |
+| GPT Direct | 持续判断或计划反复失效 | GPT保持循环，机械工作可委派 |
 
-凭据由现有Z code登录/安全存储使用，不把token写进prompt、代码、报告或Git。避免未经确认修改全局配置，优先项目或单次调用参数。用户授权的是工程工作委派，不是向外部服务发送个人训练数据库或无关文件。
+共享文件要明确owner和串行写入，不等于只能由强模型编写。已批准Schema/API变更不重复升级；新约束、越界、语义冲突、缺oracle、两次同因repair失败及反复重规划触发控制层。环境故障单独预算。升级GPT不等于重新询问用户已授权事项。
 
-2026-09-20用户授权睡觉期间自主推进本轮返修和工具修复，不再对常规开发/验收反复询问；积极使用GLM5.3Flash，最高思考档。工程验收与用户阶段验收仍分开，M4/M5等待用户明确通过。已授权主代理审查既有Mimosa告警后正常提交，真实缺口先修复，不关闭安全检查；worker遇同一基线拦截只交接一次，不反复全库扫描。
+## Worker Contract与证据
 
-When a worker commit is blocked, stop after the first rejection and hand off staged changes. Never try --no-verify, low-level Git plumbing, environment switches or alternative tools to bypass the same gate. Only the integrator may disposition findings within the explicit user authorization.
+ORCH-04的候选门禁和离线效果对照已通过[本地验收](../verification/2026-09/ORCH-04/final-report.md)，实现边界见[分类审查计划](classified-review.md)。旧candidate-proof仍保留原门禁；新文档豁免须由控制代码根据实际Git变化决定。对照记录区分系统放行与独立质量真值，未知强模型计量不进入“节省”计算。
 
-从实际Git仓库或任务worktree根启动Zcode会话，并保持任务期间的项目根一致。工作区根不等于嵌套仓库根；SessionStart基线和Stop/Git门禁落到不同`.mimosa`目录时可能报baseline_missing，须核对报告和两处状态，不能伪造通过或把新扫描冒充旧任务基线。见[本次诊断](../verification/2026-09/DOC-02/report.md)。
+采用[版本化合同](worker-contract.md)：goal、验收、相关上下文、invariants、允许范围、禁止变化、验证和已知风险。首次worker自主实施，修复时补已证实的反例和约束，不把猜测写成逐行实现指令。
+
+报告给出事实位置、实际改动、测试声明、未知项和重规划请求；原始日志/diff/工件按引用保存，不转发整段对话或思考。任务卡保存产品事实，运行历史按task_id跨job累计。强模型审查从diff和风险出发，再读精确代码。
+
+机器先验证，再按风险做语义/UI检查；只有控制层认证并与当前候选匹配的报告才是独立验证证据，worker自报不替代它。产品验收、工程验证、合入和发布分别记录。新增产品限制先测真实规模和失败条件，不能仅见常量就扩展需求。
+
+## 执行与配置边界
+
+2026-09-25用户明确授权关闭Z code的Mimosa插件，已通过用户配置开关停用并留存备份。该授权不改变独立verifier、任务范围及预算；外部问题解除后的继续使用显式resume检查点，保留历史。处置证据见[Mimosa关闭与恢复](../verification/2026-09/ORCH-03/mimosa-resolution.md)。
+
+- 保留独立worktree、基础SHA、allowed_paths、独立TRAINER_DB和端口；通达信只读。worker不push主干、不改个人库、不降低门禁。
+- 从实际Git根启动Z code，Mimosa基线与任务根一致。同一拦截只交接一次，不使用--no-verify或其他绕过方式；集成人按已有授权审查。
+- 保留GLM-5.3-Flash最高支持思考档和1M配置目标；配置不等于已实测容量，也不要求填满上下文。接口、输出额度及版本按[CLI经验](zcode-cli.md)核验，不编造参数。
+- 并发按独立行为/文件所有权与账号额度管理，沿用已验证2～3路经验及runner最多4槽位。真实429/1302有限退避并下调并发，不自行降低思考档。
+- 用[登记后台入口](../../scripts/agent-monitor/README.md)，看板显示Prompt、活动和结果；凭据由Z code登录存储使用，日志/provider副本在工程外。
+- 长调用后台执行，按完成事件更新job；沿用已授权25分钟heartbeat续接，无独立工作不反复轮询。多任务用group索引，不共用wake-state；全部处理后停止续接自动化。
+- 未验证强模型自动调用入口时明确waiting_control，不能把写交接文件说成GPT已接管。工程授权不包含发送无关个人文件到模型。
+
+历史参数和故障事实保留在CLI经验和验证记录；其中主代理固定承担全部实现/复跑的旧职责表述以本页为准，实际工具闸门按已实现版本执行。

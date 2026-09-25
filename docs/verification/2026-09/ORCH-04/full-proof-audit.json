@@ -1,0 +1,310 @@
+{
+  "kind": "classified-candidate-verification-audit",
+  "projectionOnly": true,
+  "sourceCommit": "3623256bdd93ec94f133f26162ac1d841af769b5",
+  "baseCommit": "a3b140c6e726daf744f4e303b0cd9927c7266390",
+  "tree": "57fde29adb2a4d6d2f2320cd09871e6341ae79d3",
+  "taskId": "ORCH-04",
+  "schemaVersion": 2,
+  "policyVersion": "candidate-review-policy/1",
+  "profile": "full",
+  "visual": "required",
+  "changeSet": {
+    "entries": [
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "AGENTS.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/engineering/classified-review.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/engineering/model-delegation.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/engineering/parallel-development.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/engineering/testing.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/proposals/adaptive-model-routing.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/status.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/gates-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/metrics-acceptance.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/metrics-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/observed-report.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/observed-run.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-09/ORCH-04/start-baseline.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/ORCH-04.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/agent-routing/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "scripts/agent-routing/evaluation_metrics.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "scripts/agent-routing/evaluation_metrics.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "scripts/agent-routing/test_evaluation_metrics.py"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/verify-candidate.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/worktree.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "scripts/worktree/README.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/worktree/evidence.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "scripts/worktree/review-profile.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/worktree/workflow.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "server/test/review-profile.test.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "server/test/worktree-tools.test.ts"
+      }
+    ],
+    "fingerprint": "f588d4136ac9e72466173b7ff80d60d3973ad9aacc853b42231c966cf7eb15dd"
+  },
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "runId": "run-0dca5120-0290-4940-8e53-9f885def04c7",
+  "createdAt": "2026-09-24T22:00:19.863Z",
+  "ownedProcess": {
+    "cleanup_confirmed": true,
+    "exit_code": 0,
+    "failure_kind": null,
+    "status": "passed"
+  },
+  "proofConsumer": {
+    "function": "assertProof",
+    "passed": true,
+    "assessment": {
+      "schemaVersion": 2,
+      "profile": "full",
+      "visual": "required"
+    }
+  },
+  "unit": {
+    "passed": 882,
+    "testFiles": 66
+  },
+  "m2": {
+    "checks": 24,
+    "failures": 0,
+    "status": "passed"
+  },
+  "browser": {
+    "passed": 72,
+    "failed": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "durationMs": 832646.898
+  },
+  "snapshot": {
+    "schemaVersion": 1,
+    "kind": "tdx-browser-sample",
+    "cutoff": "2026-09-16",
+    "files": [
+      {
+        "path": "vipdoc/sh/lday/sh600519.day",
+        "bytes": 192192,
+        "sha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057"
+      },
+      {
+        "path": "vipdoc/sz/lday/sz300857.day",
+        "bytes": 47744,
+        "sha256": "616d9738dab69be945454c64e99f0a2e2b5d5fa08a7a27b95b96125c5186968f"
+      },
+      {
+        "path": "vipdoc/sh/lday/sh000300.day",
+        "bytes": 168736,
+        "sha256": "59200872d8d02625b58ff9c3e4e81d47eeacbeebd0672762fc0834a44bdbcf2a"
+      },
+      {
+        "path": "T0002/hq_cache/gbbq",
+        "bytes": 5790463,
+        "sha256": "b777dcf34cd2d0db6ce99d47e2c710e6793e26eba527a220886213ee5f47c582"
+      },
+      {
+        "path": "T0002/hq_cache/shs.tnf",
+        "bytes": 10051610,
+        "sha256": "7a991097d28a97dcce3be7c821d702ccb25e8dcb9ae41e511cc7cf77a55085c0"
+      },
+      {
+        "path": "T0002/hq_cache/szs.tnf",
+        "bytes": 8738690,
+        "sha256": "dab6a73a56fba61cc86cd009d412dcf940c75c5f4ea2cf7e93f1967c1fc5964a"
+      }
+    ]
+  },
+  "artifacts": {
+    "unit.log": {
+      "sha256": "03d3c642745f76ae0639625cb0265cb3f9e2e091292747b41c20c8ea75eb62ae",
+      "bytes": 19946
+    },
+    "types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "m2.log": {
+      "sha256": "0c5e8b2b6e8e3b3a98bdc044a4322d08d069e832342f66c05b3624054bdf18bd",
+      "bytes": 274
+    },
+    "journey.log": {
+      "sha256": "af5e5efc0a97f47435741b5440631d8dac230994799358daf341372f265e4818",
+      "bytes": 8487
+    },
+    "browser-results.json": {
+      "sha256": "89d7ce7b75c4865d81ba268562b3711392c134063ad0e9589a82066bb579d19f",
+      "bytes": 94287
+    },
+    "verification.json": {
+      "sha256": "6f5b5f8846c3301c294382d6c4df118fb1580570e09b3d7410b4e8b2805b52d0",
+      "bytes": 5381
+    }
+  },
+  "limitations": [
+    "Audit projection only; original candidate-proof and run artifacts remain in the isolated worktree.",
+    "No real main promotion or push. Full-profile manual UI evidence is still required if promotion is requested.",
+    "Product UI was not changed; automated browser evidence is not described as a new manual product acceptance."
+  ]
+}

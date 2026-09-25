@@ -1,0 +1,49 @@
+{
+  "attempts": [
+    "1",
+    "2",
+    "3"
+  ],
+  "can_promote": false,
+  "checks": [
+    {
+      "cleanup_confirmed": true,
+      "exit_code": 0,
+      "id": "config-help",
+      "log_sha256": "5c58cb70b820b3d76451bcd1cca62662f7ed7b1a0c5766f788c76726b3beabc0",
+      "status": "passed"
+    }
+  ],
+  "contract_sha256": "246b9c83d39d40e8bf06968e226b05800b6f57dcbea847b24a499131c078b881",
+  "controller_state": "verified",
+  "counts": {
+    "execution_started": 3,
+    "failure": 1,
+    "replan": 2,
+    "verification_passed": 1
+  },
+  "glm_jobs": [
+    "job-f7eedb6481ad4e4dba4e75a287812efc",
+    "job-f38247d5f65a4c569c7fc88bf9f5b463"
+  ],
+  "limitation": "This trial required user-approved Mimosa disable and manual GPT Direct finishing. It does not prove an intervention-free real GLM happy path or an automatic GPT adapter.",
+  "manual_gpt_direct_job": "gpt-direct-5de7a559db094315ab60cf92b10380bf",
+  "note": "Full authenticated receipt/key remain in the local control store; this shareable projection is not a transferable receipt.",
+  "policy_sha256": "af1ae66525d911c6d001dfaca384b5f8cb7be591c151a83318e24512345f1aa6",
+  "projection_only": true,
+  "receipt_reauthenticated": true,
+  "repeat_run": {
+    "attempts_unchanged": true,
+    "events_unchanged": true,
+    "exit_code": 0,
+    "jobs_unchanged": true,
+    "receipts_unchanged": true,
+    "stage": "verified"
+  },
+  "runner_config_sha256": "a566c3f116e8f4ea5e2ed8ad105f931ab9118276d809862575e87d07a6a485b9",
+  "source_digest": "21452fab7805af25905e6c800c1d778109a82dd2486c58d94240238a87b694ee",
+  "task_id": "ORCH-03-PILOT",
+  "tested_commit": "f56c9ef95bcfc618b9c1101582271120794d7a7a",
+  "tested_tree": "d00541e38e2a45829622f830148a6e15fc60dc92",
+  "verification_run_id": "verify-d957804fb9174558a622b2f1b5df611f"
+}

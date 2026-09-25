@@ -1,0 +1,56 @@
+{
+  "experiment": {
+    "schema_version": 1,
+    "experiment_id": "orch04-observed-pilot",
+    "model_roles": {
+      "gpt-6": "strong",
+      "GLM-5.3-Flash": "weak"
+    },
+    "token_basis": "total_input_including_cache",
+    "measurement_scope": "All ORCH-03-PILOT planning, execution, corrective continuations and review; infrastructure development excluded; unmetered control work remains unknown."
+  },
+  "runs": [
+    {
+      "schema_version": 1,
+      "run_id": "ORCH-03-PILOT-complete",
+      "case_id": "sample-config-help",
+      "case_revision": "1",
+      "trial_id": "observed-20260925",
+      "strategy": "adaptive",
+      "input_fingerprint": "246b9c83d39d40e8bf06968e226b05800b6f57dcbea847b24a499131c078b881",
+      "oracle_sha256": "af1ae66525d911c6d001dfaca384b5f8cb7be591c151a83318e24512345f1aa6",
+      "candidate_fingerprint": "21452fab7805af25905e6c800c1d778109a82dd2486c58d94240238a87b694ee",
+      "measurement_scope": "All ORCH-03-PILOT planning, execution, corrective continuations and review; infrastructure development excluded; unmetered control work remains unknown.",
+      "token_basis": "total_input_including_cache",
+      "outcome": "accepted",
+      "ground_truth": "passed",
+      "verification": {
+        "independent_verified": true,
+        "run_id": "verify-d957804fb9174558a622b2f1b5df611f",
+        "candidate_fingerprint": "21452fab7805af25905e6c800c1d778109a82dd2486c58d94240238a87b694ee",
+        "oracle_sha256": "af1ae66525d911c6d001dfaca384b5f8cb7be591c151a83318e24512345f1aa6"
+      },
+      "attempt_count": 3,
+      "repair_count": 2,
+      "elapsed_seconds": null,
+      "strong_interventions": null,
+      "usage_complete": {
+        "strong": false,
+        "weak": true
+      },
+      "measurement_source": {
+        "strong": "unknown",
+        "weak": "provider"
+      },
+      "usage": [
+        {
+          "model_id": "GLM-5.3-Flash",
+          "input_tokens": 1331558,
+          "output_tokens": 18604,
+          "cache_read_tokens": 1206080
+        }
+      ],
+      "notes": "Source: ORCH-03/pilot-proof.json and worker-usage.json. Two corrective continuations were observed (explicit resume and manual takeover), not two same-cause repair failures. Strong interventions/tokens and complete wall time were not reliably metered. No matching baseline exists; cannot calculate savings."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "jobs": [
+    {
+      "id": "job-f7eedb6481ad4e4dba4e75a287812efc",
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "state": "completed",
+      "exitCode": 0,
+      "startedAt": 1790272261642,
+      "finishedAt": 1790272583460,
+      "usage": {
+        "source": "provider",
+        "modelRequestCount": 14,
+        "inputTokens": 854454,
+        "outputTokens": 10311,
+        "totalTokens": 864765,
+        "cacheReadTokens": 789696,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0,
+        "webFetchRequests": 0,
+        "webSearchRequests": 0
+      }
+    },
+    {
+      "id": "job-f38247d5f65a4c569c7fc88bf9f5b463",
+      "model": "GLM-5.3-Flash",
+      "effort": "max",
+      "contextConfigured": 1000000,
+      "state": "completed",
+      "exitCode": 0,
+      "startedAt": 1790273733236,
+      "finishedAt": 1790273981433,
+      "usage": {
+        "source": "provider",
+        "modelRequestCount": 8,
+        "inputTokens": 477104,
+        "outputTokens": 8293,
+        "totalTokens": 485397,
+        "cacheReadTokens": 416384,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 0,
+        "webFetchRequests": 0,
+        "webSearchRequests": 0
+      }
+    }
+  ],
+  "strong_model_tokens": null,
+  "note": "Provider counters are recorded as returned, including cache fields. They are not billing amounts. No measured strong-model baseline or cost-saving claim."
+}
