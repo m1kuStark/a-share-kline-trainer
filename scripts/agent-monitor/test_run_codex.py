@@ -23,6 +23,12 @@ with open(out, "w", encoding="utf-8") as h:
 data = sys.stdin.read()
 with open(out + ".stdin", "w", encoding="utf-8") as h:
     h.write(data)
+child_info = os.environ.get("FAKE_CHILD_INFO")
+if child_info:
+    import subprocess as sp
+    c = sp.Popen([sys.executable, "-c", "import time; time.sleep(180)"])
+    with open(child_info, "w", encoding="utf-8") as h:
+        h.write(str(c.pid) + " " + str(os.getpid()))
 mode = os.environ.get("FAKE_MODE", "complete")
 calls = os.environ.get("FAKE_CALLS_LOG")
 if calls:
@@ -250,7 +256,8 @@ class BatchClaimAndIdentityTests(unittest.TestCase):
 
     def setUp(self):
         self._old_env = {k: os.environ.get(k) for k in
-                         ("FAKE_ARGV_OUT", "FAKE_CALLS_LOG", "FAKE_MODE")}
+                         ("FAKE_ARGV_OUT", "FAKE_CALLS_LOG", "FAKE_MODE",
+                          "FAKE_CHILD_INFO")}
         self.addCleanup(lambda: [os.environ.pop(k, None) if v is None
                                  else os.environ.__setitem__(k, v)
                                  for k, v in self._old_env.items()])
@@ -322,7 +329,73 @@ class BatchClaimAndIdentityTests(unittest.TestCase):
         self.assertEqual("pinned-thread", record["sessionId"])
         self.assertIn("identity", (record.get("error") or ""))
 
+    def test_timeout_kills_full_tree_and_confirms(self):
+        child_info = self.tmp / "child.txt"
+        os.environ["FAKE_CHILD_INFO"] = str(child_info)
+        code = self.wake_inprocess("--session-id", "tU", "--batch", "B-U",
+                                   "--timeout-minutes", "0.05", mode="hang")
+        self.assertEqual(run_codex.EXIT_TIMEOUT, code)
+        record = json.loads((self.home / "jobs" / "B-U.json")
+                            .read_text(encoding="utf-8"))
+        locks = list((self.home / "locks").glob("session-*.lock"))
+        child_pid, parent_pid = child_info.read_text().split()
+        gone = False
+        for _ in range(20):
+            probe = subprocess.run(["tasklist", "/FI", "PID eq " + child_pid,
+                                    "/NH"], capture_output=True, text=True)
+            if child_pid not in (probe.stdout or ""):
+                gone = True
+                break
+            time.sleep(0.5)
+        # 合规性质：确认清理⇒子进程必须消亡；不确定⇒锁必须保留。
+        if record["cleanupUncertain"]:
+            self.assertTrue(locks, "uncertain cleanup must retain the lock")
+        else:
+            self.assertTrue(gone, "confirmed cleanup means the tree is gone")
+        # 无论哪种结论，测试结束前不遗留长眠进程。
+        subprocess.run(["taskkill", "/PID", child_pid, "/T", "/F"],
+                       capture_output=True)
+        subprocess.run(["taskkill", "/PID", parent_pid, "/T", "/F"],
+                       capture_output=True)
+
+    def test_partial_tree_kill_is_detected_and_repaired(self):
+        # 2026-09-26 review P2-5: a kill that takes only the parent leaves
+        # descendants alive; cleanup must not be confirmed from the parent
+        # exit alone, and the repair must finish the tree or retain the lock.
+        child_info = self.tmp / "child.txt"
+        os.environ["FAKE_CHILD_INFO"] = str(child_info)
+        import subprocess as sp
+
+        def partial_kill(pid):
+            sp.run(["taskkill", "/PID", str(pid), "/F"],
+                   capture_output=True)
+            return True
+
+        with patch.object(run_codex, "kill_tree", side_effect=partial_kill):
+            code = self.wake_inprocess("--session-id", "tU2", "--batch", "B-U2",
+                                       "--timeout-minutes", "0.05", mode="hang")
+        self.assertEqual(run_codex.EXIT_TIMEOUT, code)
+        record = json.loads((self.home / "jobs" / "B-U2.json")
+                            .read_text(encoding="utf-8"))
+        child_pid = child_info.read_text().split()[0]
+        alive = True
+        for _ in range(20):
+            probe = subprocess.run(["tasklist", "/FI", "PID eq " + child_pid,
+                                    "/NH"], capture_output=True, text=True)
+            if child_pid not in (probe.stdout or ""):
+                alive = False
+                break
+            time.sleep(0.5)
+        self.assertFalse(alive, "descendant must be reaped or the lock retained")
+        if alive:
+            sp.run(["taskkill", "/PID", child_pid, "/T", "/F"],
+                   capture_output=True)
+        parent_pid = child_info.read_text().split()[1]
+        sp.run(["taskkill", "/PID", parent_pid, "/T", "/F"],
+               capture_output=True)
+
     def test_resourcewarning_free_wake(self):
+        os.environ["FAKE_MODE"] = "complete"
         prompt = self.tmp / "prompt.txt"
         prompt.write_text("你好", encoding="utf-8")
         proc = subprocess.run(

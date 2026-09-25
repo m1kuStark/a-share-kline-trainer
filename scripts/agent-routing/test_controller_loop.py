@@ -409,6 +409,7 @@ class GateAndFaultTests(LoopFixture):
         return {"shape": "continuous_judgment", "gpt_dispatch": True,
                 "gpt_section": {"runner_entry": str(self.gpt_entry),
                                 "home": str(self.root / "gpt-home"),
+                                "cli": str(self.root / "cli"),
                                 "session_id": "01a0d79e-fixture-session"}}
 
     def test_gpt_direct_auto_dispatch_reaches_verified(self):
@@ -453,6 +454,7 @@ class GateAndFaultTests(LoopFixture):
         pins = {"shape": "continuous_judgment", "gpt_dispatch": True,
                 "gpt_section": {"runner_entry": str(entry),
                                 "home": str(self.root / "gpt-home"),
+                                "cli": str(self.root / "cli"),
                                 "session_id": "01a0d79e-fixture-session"}}
         self.register(task_id="LOOP-GPT4", **pins)
         entry.write_text("# tampered executor\n", encoding="utf-8")
@@ -470,6 +472,17 @@ class GateAndFaultTests(LoopFixture):
                           shape="continuous_judgment", gpt_dispatch=True,
                           gpt_section={"runner_entry": str(self.gpt_entry),
                                        "home": str(self.repo / "gpt-home"),
+                                       "session_id": "01a0d79e-fixture-session"})
+
+    def test_gpt_cli_is_required_and_pinned(self):
+        # P1-3 (2026-09-26 review): an omitted gpt.cli lets run_codex resolve
+        # the CLI from APPDATA/PATH at runtime, so the executed binary escapes
+        # the pin. Registration must refuse and the file must be hashed.
+        with self.assertRaises(ControllerError):
+            self.register(task_id="LOOP-GPT6",
+                          shape="continuous_judgment", gpt_dispatch=True,
+                          gpt_section={"runner_entry": str(self.gpt_entry),
+                                       "home": str(self.root / "gpt-home"),
                                        "session_id": "01a0d79e-fixture-session"})
 
     def test_gpt_direct_requires_policy_opt_in(self):

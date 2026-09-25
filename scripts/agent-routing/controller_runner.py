@@ -76,11 +76,12 @@ def _validate_gpt_section(gpt, config):
     if not isinstance(gpt, dict):
         raise RunnerError("runner config gpt must be an object when present")
     section = dict(gpt)
-    for field in ("runner_entry", "home", "session_id"):
+    for field in ("runner_entry", "home", "cli", "session_id"):
         if not isinstance(section.get(field), str) or not section[field].strip():
             raise RunnerError("runner config gpt.%s must be a nonempty string" % field)
     section["runner_entry"] = _absolute(section["runner_entry"], "gpt.runner_entry")
     section["home"] = _absolute(section["home"], "gpt.home")
+    section["cli"] = _absolute(section["cli"], "gpt.cli")
     section["session_id"] = section["session_id"].strip()
     sandbox = section.get("sandbox", GPT_SANDBOX)
     if sandbox not in GPT_SANDBOXES:

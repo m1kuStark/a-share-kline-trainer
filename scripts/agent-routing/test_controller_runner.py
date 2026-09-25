@@ -562,6 +562,7 @@ class GptConfigTests(unittest.TestCase):
             config["gpt"] = dict({
                 "runner_entry": str(self.root / "run_codex.py"),
                 "home": str(self.root / "bridge-home"),
+                "cli": str(self.root / "codex.exe"),
                 "session_id": "01a0d79e-fixed-session"}, **gpt)
         return config
 
@@ -576,6 +577,12 @@ class GptConfigTests(unittest.TestCase):
         self.assertEqual(config["timeout_minutes"],
                          config["gpt"]["timeout_minutes"])
         self.assertEqual("01a0d79e-fixed-session", config["gpt"]["session_id"])
+
+    def test_v2_gpt_section_requires_explicit_cli(self):
+        broken = self.base_v2()
+        broken["gpt"].pop("cli")
+        with self.assertRaises(RunnerError):
+            validate_runner_config(broken)
 
     def test_v2_gpt_section_rejects_read_only_and_missing_identity(self):
         with self.assertRaises(RunnerError):
@@ -666,6 +673,7 @@ class GptJobTests(unittest.TestCase):
         raw["schema_version"] = 2
         raw["gpt"] = {"runner_entry": str(self.entry),
                       "home": str(self.root / "bridge-home"),
+                      "cli": str(self.root / "codex.exe"),
                       "session_id": "01a0d79e-fixed-session"}
         self.config = validate_runner_config(raw)
         self.repo = self.root / "repo"

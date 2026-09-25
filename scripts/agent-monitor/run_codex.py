@@ -38,6 +38,9 @@ EXIT_NO_PIN = 5
 EXIT_EXEC_FAILED = 6
 EXIT_USAGE = 7
 EXIT_BATCH_EXISTS = 8
+# 超时杀树后验证整棵进程树消亡的有界等待（秒）。
+KILL_WAIT_SECONDS = 10.0
+TREE_POLL_SECONDS = 0.5
 
 SANDBOX_CHOICES = ("read-only", "workspace-write", "danger-full-access")
 
@@ -173,12 +176,61 @@ class SessionLock:
                 pass
 
 
+def _pid_alive(pid):
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+    try:
+        probe = subprocess.run(["tasklist", "/FI", "PID eq %d" % pid, "/NH"],
+                               capture_output=True, text=True, timeout=10,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.SubprocessError):
+        return True  # 不可验证按存活保守处理
+    return bool(probe.stdout) and str(pid) in probe.stdout
+
+
+def _descendant_pids(root_pid):
+    """Return all live descendant PIDs of root, or None when the enumeration
+    itself is unreliable (caller must then treat cleanup as unconfirmed)."""
+    if os.name != "nt":
+        try:
+            r = subprocess.run(["pgrep", "-P", str(root_pid)],
+                               capture_output=True, text=True)
+        except OSError:
+            return None
+        if r.returncode not in (0, 1):
+            return None
+        return [int(x) for x in (r.stdout or "").split()]
+    ps = ("$q=[System.Collections.Queue]::new();$q.Enqueue(%d);"
+          "while($q.Count){$p=$q.Dequeue();"
+          "Get-CimInstance -ClassName Win32_Process -Filter \"ParentProcessId=$p\" | "
+          "ForEach-Object{$q.Enqueue([int]$_.ProcessId);[int]$_.ProcessId}}") % root_pid
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                           capture_output=True, text=True, timeout=25,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    try:
+        return [int(x) for x in (r.stdout or "").split()]
+    except ValueError:
+        return None
+
+
 def kill_tree(pid):
     if os.name != "nt":
         proc = subprocess.run(["kill", "-9", str(pid)], check=False)
         return proc.returncode == 0
-    proc = subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
-                          capture_output=True, check=False)
+    try:
+        proc = subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
+                              capture_output=True, check=False, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return False
     return proc.returncode == 0
 
 
@@ -281,13 +333,28 @@ def _attempt(argv, prompt, events_path, err_path, cwd, timeout_minutes,
                 cleanup_confirmed = True
                 break
             if time.monotonic() > deadline:
-                kill_tree(proc.pid)
-                try:
-                    proc.wait(timeout=30)
-                except subprocess.TimeoutExpired:
-                    pass
+                descendants = _descendant_pids(proc.pid)
+                rc_ok = kill_tree(proc.pid)
+                survivors = [p for p in ([proc.pid] + (descendants or []))
+                             if _pid_alive(p)]
+                if survivors:
+                    # repair pass: finish whatever the tree kill missed
+                    for pid in survivors:
+                        kill_tree(pid)
+                wait_until = time.monotonic() + KILL_WAIT_SECONDS
+                while True:
+                    alive = [p for p in ([proc.pid] + (descendants or []))
+                             if _pid_alive(p)]
+                    if not alive and proc.poll() is not None:
+                        cleanup_confirmed = True
+                        break
+                    if time.monotonic() > wait_until:
+                        break
+                    time.sleep(TREE_POLL_SECONDS)
+                if descendants is None or not rc_ok:
+                    # 无法枚举子树或杀树异常：保守视作未确认，调用方保留锁
+                    cleanup_confirmed = False
                 exit_code = proc.poll()
-                cleanup_confirmed = exit_code is not None
                 state = "timeout"
                 break
             time.sleep(poll_seconds)
@@ -411,6 +478,7 @@ def cmd_wake(args):
             "returnedSessionId": reported_id,
             "startedAt": started_iso, "finishedAt": _now_iso(),
             "exitCode": exit_code, "durationSeconds": duration,
+            "cleanupUncertain": cleanup_uncertain,
             "logPath": str(events_path), "stderrPath": str(err_path),
             "error": identity_error if identity_error else
             None if state == "completed" else
