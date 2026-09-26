@@ -28,7 +28,7 @@
 |---|---|---|---|---|---|
 | [DATA-03](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-04](<work-items/tasks/DATA-04.md>) | planned / unassigned | DailySource仅扫描；训练直读TDX，env/stocks独立刷新仍在。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
-| [DATA-05](<work-items/tasks/DATA-05.md>) | active / GLM-5.3-Flash | FRESH-01 integrated; coordinator freshness + offline SSE 2026 calendar + home tri-state UI implemented in worktree. | [证据1](<verification/2026-09/DATA-05/calendar-source.json>) | 未记录 | 未记录 |
+| [DATA-05](<work-items/tasks/DATA-05.md>) | active / integrator | FRESH-01 integrated; coordinator freshness + offline SSE 2026 calendar + home tri-state UI implemented in worktree. | [证据1](<verification/2026-09/START-01/report.md>) | 未记录 | 未记录 |
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
