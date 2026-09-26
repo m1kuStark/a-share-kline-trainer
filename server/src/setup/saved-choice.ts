@@ -28,6 +28,30 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== ''
 }
 
+/** 形状为 ISO 且真实历法/时钟有效：99-99、02-30、25:00 等形状合法但历法非法
+ * 的值必须拒绝（Date 回验字段逐项比对，小数秒剥离后比对，闰日/小数秒正例保留）。 */
+/** 形状为 ISO 且真实历法/时钟有效：99-99、02-30、25:00 等形状合法但历法非法
+ * 的值必须拒绝（字段过 Number 后与 Date UTC 字段逐项数值比对，小数秒剥离，
+ * 闰日/小数秒正例保留）。 */
+function isRealIsoTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' || !ISO_PATTERN.test(value)) return false
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return false
+  const [datePart, timePart = ''] = value.split('T')
+  const [year, month, day, hours, minutes, rawSeconds] = (datePart + 'T' + timePart)
+    .replace('Z', '')
+    .split(/[-T:]/)
+    .map(Number)
+  const seconds = Math.trunc(rawSeconds)
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() + 1 === month
+    && parsed.getUTCDate() === day
+    && parsed.getUTCHours() === hours
+    && parsed.getUTCMinutes() === minutes
+    && parsed.getUTCSeconds() === seconds
+    && Number.isFinite(seconds)
+}
+
 function savedChoicePath(dataDir: string): string {
   return join(dataDir, SAVED_TDX_CHOICE_FILE)
 }
@@ -87,8 +111,8 @@ export async function readSavedTdxChoice(dataDir: string): Promise<SavedTdxChoic
   const record = value as Record<string, unknown>
   if (record.version !== 1) return null
   if (!isNonEmptyString(record.root)) return null
-  if (typeof record.savedAt !== 'string' || !ISO_PATTERN.test(record.savedAt)) return null
-  if (typeof record.inspectedAt !== 'string' || !ISO_PATTERN.test(record.inspectedAt)) return null
+  if (!isRealIsoTimestamp(record.savedAt)) return null
+  if (!isRealIsoTimestamp(record.inspectedAt)) return null
   return {
     version: 1,
     root: record.root,

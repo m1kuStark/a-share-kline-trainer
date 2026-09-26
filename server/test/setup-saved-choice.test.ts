@@ -10,6 +10,7 @@ import {
   resolveEffectiveTdxRoot,
 } from '../src/setup/saved-choice'
 
+const BS = String.fromCharCode(92)
 const NOW = new Date('2026-09-27T12:00:00.000Z')
 const NOW_ISO = NOW.toISOString()
 
@@ -118,12 +119,34 @@ describe('readSavedTdxChoice', () => {
     }
   })
 
+  it('accepts real leap-day and fractional-second timestamps (no over-strict regression)', async () => {
+    for (const savedAt of ['2024-02-29T12:00:00Z', '2026-09-27T12:00:00.123Z']) {
+      const root = await mkdtemp(join(tmpdir(), 'read-leap-'))
+      try {
+        await writeFile(join(root, 'saved-tdx-choice.json'), JSON.stringify({
+          version: 1, root: 'D:\\ok', savedAt, inspectedAt: savedAt,
+        }), { encoding: 'utf-8' })
+        const read = await readSavedTdxChoice(root)
+        expect(read).not.toBeNull()
+        expect(read.root).toBe('D:\\ok')
+        expect(read.savedAt).toBe(savedAt)
+      } finally {
+        await rm(root, { recursive: true, force: true })
+      }
+    }
+  })
+
   it('returns null for wrong version, empty root or non-iso timestamps', async () => {
     const cases = [
       { version: 2, root: 'D:\\x', savedAt: NOW_ISO, inspectedAt: NOW_ISO },
       { version: 1, root: '', savedAt: NOW_ISO, inspectedAt: NOW_ISO },
       { version: 1, root: 'D:\\x', savedAt: 'not-a-date', inspectedAt: NOW_ISO },
       { version: 1, root: 'D:\\x', savedAt: NOW_ISO, inspectedAt: 42 },
+      // control-handoff-20260927-22：形状合法但真实历法/时钟非法的时间字段
+      { version: 1, root: 'D:\\x', savedAt: '2026-99-99T99:99:99Z', inspectedAt: NOW_ISO },
+      { version: 1, root: 'D:\\x', savedAt: '2026-02-30T12:00:00Z', inspectedAt: NOW_ISO },
+      { version: 1, root: 'D:\\x', savedAt: '2026-01-01T25:00:00Z', inspectedAt: NOW_ISO },
+      { version: 1, root: 'D:\\x', savedAt: NOW_ISO, inspectedAt: '2026-01-01T12:60:00Z' },
     ]
     for (const payload of cases) {
       const root = await mkdtemp(join(tmpdir(), 'read-invalid-'))
