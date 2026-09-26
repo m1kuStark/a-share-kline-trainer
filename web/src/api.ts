@@ -143,13 +143,18 @@ export function searchStocks(q: string): Promise<{ items: Stock[]; total: number
   return request(`/api/stocks?q=${encodeURIComponent(q)}`)
 }
 
-/** 范围预览：只返回日期元信息与指纹，不含任何未来 OHLC（TRAIN-02 冻结合同） */
-export function previewTrainingRange(input: { code: string; market: string; range: TrainingRangeRequest; adjustMode?: string }): Promise<TrainingRangePreview> {
-  return request('/api/training-ranges/preview', {
+/** 范围预览：只返回日期元信息与指纹，不含任何未来 OHLC（TRAIN-02 冻结合同）。
+ * 服务端响应形如 { preview: {...} }，此处解包并对缺字段失败。 */
+export async function previewTrainingRange(input: { code: string; market: string; range: TrainingRangeRequest; adjustMode?: string }): Promise<TrainingRangePreview> {
+  const payload = await request<{ preview?: TrainingRangePreview }>('/api/training-ranges/preview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
+  if (!payload.preview || !payload.preview.previewId) {
+    throw new Error('范围预览响应格式错误（缺少 preview 字段）')
+  }
+  return payload.preview
 }
 
 export function createTraining(input: { tier?: Tier; code: string; start_date?: string; initial_cash?: number; blind?: boolean; adjust_mode?: string; range?: TrainingRangeRequest; previewId?: string }): Promise<{ training: TrainingMeta }> {

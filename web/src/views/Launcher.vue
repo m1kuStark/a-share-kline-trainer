@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { createTraining, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest } from '../api'
+import { defaultRangeStart, rangeRequestOf, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 
 const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | TrainingRangeRequest> }] }>()
@@ -12,56 +13,75 @@ const selected = ref<Stock | null>(null)
 const tier = ref<Tier | 'RANGE'>('3M')
 const startDate = ref(new Date().toISOString().slice(0, 10))
 
-// —— 自定义范围模式（TRAIN-02 第二片）：默认 3M、上海日期回退 3 自然月，预设点击重置默认区间 ——
+// —— 自定义范围模式（TRAIN-02 第二片冻结合同）：三模式；默认 3M 按上海自然月回退并月末裁切；
+// 任何范围输入变化都使旧预览/在途预览失效（版本守卫）；预览必须创建前可见供审阅。 ——
 const rangeMonths = ref(3)
+const RANGE_MONTH_OPTIONS = [1, 3, 6, 12, 24] as const
 const rangeStart = ref(defaultRangeStart())
-const rangeMode = ref<'preset' | 'latest'>('preset')
-const rangePreview = ref<TrainingRangePreview | null>(null)
+const rangeMode = ref<'preset' | 'latest' | 'bars'>('preset')
+const rangeBarCount = ref(1)
+const rangePreview = ref<{ request: TrainingRangeRequest; preview: TrainingRangePreview } | null>(null)
 const previewing = ref(false)
-let previewSequence = 0
-
-function shanghaiToday(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function defaultRangeStart(todayIso = shanghaiToday()): string {
-  const d = new Date(`${todayIso}T12:00:00`)
-  d.setMonth(d.getMonth() - 3)
-  return d.toISOString().slice(0, 10)
-}
+let inputVersion = 0
 
 function resetRangeDefaults(): void {
   rangeStart.value = defaultRangeStart()
   rangeMonths.value = 3
+  rangeBarCount.value = 1
   rangePreview.value = null
 }
 
-function rangeRequest(): TrainingRangeRequest {
+function currentRangeRequest(): TrainingRangeRequest {
   if (rangeMode.value === 'latest') return { mode: 'latest', startDate: rangeStart.value }
+  if (rangeMode.value === 'bars') return { mode: 'bars', startDate: rangeStart.value, count: Math.max(1, Math.floor(rangeBarCount.value || 1)) }
   return { mode: 'preset', startDate: rangeStart.value, months: rangeMonths.value }
 }
 
+/** 任何范围输入（起点/月数/N/模式/股票/复权）变化：旧预览与在途预览全部失效 */
 function onRangeInputChanged(): void {
-  rangePreview.value = null // 任何范围输入变化使旧预览失效；提交时重新预览
+  inputVersion += 1
+  rangePreview.value = null
 }
 
-async function refreshRangePreview(): Promise<void> {
-  if (tier.value !== 'RANGE' || !selected.value) { rangePreview.value = null; return }
-  const seq = ++previewSequence
+function onAdjustModeChanged(): void {
+  if (tier.value === 'RANGE') onRangeInputChanged()
+}
+
+/** 生成预览：显式动作，完成后元信息可见供审阅；期间输入变化即丢弃（版本守卫） */
+async function generateRangePreview(): Promise<boolean> {
+  if (tier.value !== 'RANGE' || !selected.value) return false
+  const versionAtRequest = inputVersion
+  const requestAtRequest = currentRangeRequest()
   previewing.value = true
   try {
     const preview = await previewTrainingRange({
       code: selected.value.code,
       market: selected.value.market,
-      range: rangeRequest(),
+      range: requestAtRequest,
       adjustMode: adjustMode.value,
     })
-    if (seq === previewSequence) rangePreview.value = preview
+    // await 之后重读输入（版本＋请求内容）：期间任何编辑/模式/股票/复权变化都使结果过期
+    if (versionAtRequest !== inputVersion ||
+        JSON.stringify(currentRangeRequest()) !== JSON.stringify(requestAtRequest)) {
+      return false
+    }
+    rangePreview.value = { request: requestAtRequest, preview }
+    return true
   } catch {
-    if (seq === previewSequence) rangePreview.value = null
+    if (versionAtRequest === inputVersion) rangePreview.value = null
+    return false
   } finally {
-    if (seq === previewSequence) previewing.value = false
+    if (versionAtRequest === inputVersion) previewing.value = false
   }
+}
+
+/** 当前输入是否有匹配的有效预览（请求内容逐字段一致） */
+function hasMatchingPreview(request: TrainingRangeRequest): boolean {
+  const held = rangePreview.value
+  if (!held) return false
+  const a = JSON.stringify(held.request)
+  const b = JSON.stringify(request)
+  return a === b
 }
 const initialCash = ref<number>(1_000_000)
 const adjustMode = ref<'forward' | 'raw'>('forward')
@@ -140,29 +160,37 @@ async function performCreate(): Promise<void> {
       errorMessage.value = '请选择范围起始日'
       return
     }
+    if (rangeMode.value === 'bars' && (!Number.isSafeInteger(rangeBarCount.value) || rangeBarCount.value < 1)) {
+      errorMessage.value = '训练根数 N 必须是正整数（至少 1）'
+      return
+    }
+    const request = currentRangeRequest()
+    // 预览必须创建前可见供审阅：无匹配当前输入的预览时先生成并停下让用户确认，不直接创建
+    if (!hasMatchingPreview(request)) {
+      const ok = await generateRangePreview()
+      if (!ok) {
+        errorMessage.value = '生成范围预览失败，请重试'
+        return
+      }
+      errorMessage.value = '已生成范围预览，请核对下方预览信息后再次点击「开始训练」'
+      return
+    }
     submitting.value = true
     try {
-      // 提交必须匹配当前输入的成功预览且未过期：先预览再立即创建（双击被 submitting 挡住）
-      const preview = await previewTrainingRange({
-        code: selected.value.code,
-        market: selected.value.market,
-        range: rangeRequest(),
-        adjustMode: adjustMode.value,
-      })
+      const preview = rangePreview.value!.preview
       const params = {
         code: selected.value.code,
         initial_cash: cash,
         adjust_mode: adjustMode.value,
-        range: rangeRequest(),
+        range: request,
         previewId: preview.previewId,
       }
       await createTraining(params)
-      rangePreview.value = preview
       emit('created', { enabled: recordingEnabled.value, params: { ...params, start_date: preview.startDate } })
     } catch (error) {
-      if (error instanceof Error && /409|RANGE_PREVIEW_STALE|预览/.test(error.message)) {
-        rangePreview.value = null
-        errorMessage.value = '范围预览已失效，请重新提交以生成新预览'
+      if (error instanceof Error && /409|RANGE_PREVIEW_STALE|过期|预览/.test(error.message)) {
+        onRangeInputChanged() // TTL/409：旧预览失效，需要重新生成审阅
+        errorMessage.value = '范围预览已失效，请重新生成预览并确认'
       } else {
         errorMessage.value = error instanceof Error ? error.message : '创建失败'
       }
@@ -236,7 +264,8 @@ function confirmStartAnyway(): void {
         <label>范围模式</label>
         <div class="tier-grid">
           <button :class="{ selected: rangeMode === 'preset' }" @click="rangeMode = 'preset'; onRangeInputChanged()">起始日＋月数</button>
-          <button :class="{ selected: rangeMode === 'latest' }" @click="rangeMode = 'latest'; onRangeInputChanged()">起始日至今</button>
+          <button :class="{ selected: rangeMode === 'latest' }" @click="rangeMode = 'latest'; onRangeInputChanged()">起始日到最新日线</button>
+          <button :class="{ selected: rangeMode === 'bars' }" @click="rangeMode = 'bars'; onRangeInputChanged()">起始日＋根数</button>
         </div>
       </div>
 
@@ -244,15 +273,20 @@ function confirmStartAnyway(): void {
         <div class="form-field">
           <label>{{ tier === 'RANGE' ? '范围起始日' : '起始日' }}</label>
           <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" />
-          <input v-else v-model="rangeStart" type="date" @change="onRangeInputChanged" />
+          <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged" />
           <small v-if="tier !== 'RANGE'" class="form-hint">起始日之前最多 840 根 K 线同屏显示</small>
-          <small v-else class="form-hint">默认为您回退 3 个自然月；改动后提交时将重新预览</small>
+          <small v-else class="form-hint">默认按上海日历回退 3 个自然月（月末自动对齐）</small>
         </div>
         <div v-if="tier === 'RANGE' && rangeMode === 'preset'" class="form-field">
           <label>训练月数</label>
           <div class="tier-grid">
-            <button v-for="m in [1, 2, 3, 6, 12]" :key="m" :class="{ selected: rangeMonths === m }" @click="rangeMonths = m; onRangeInputChanged()">{{ m }}个月</button>
+            <button v-for="m in RANGE_MONTH_OPTIONS" :key="m" :class="{ selected: rangeMonths === m }" @click="rangeMonths = m; onRangeInputChanged()">{{ m }}个月</button>
           </div>
+        </div>
+        <div v-else-if="tier === 'RANGE' && rangeMode === 'bars'" class="form-field">
+          <label>训练根数 N</label>
+          <input v-model.number="rangeBarCount" type="number" min="1" step="1" @input="onRangeInputChanged" />
+          <small class="form-hint">从起始日（含）向后的日线根数，至少 1</small>
         </div>
         <div v-else class="form-field">
           <label>初始资金</label>
@@ -260,18 +294,21 @@ function confirmStartAnyway(): void {
         </div>
       </div>
 
-      <div v-if="tier === 'RANGE' && rangeMode === 'preset'" class="form-field">
+      <div v-if="tier === 'RANGE' && (rangeMode === 'latest' || rangeMode === 'bars')" class="form-field">
         <label>初始资金</label>
         <input v-model.number="initialCash" type="number" min="10000" step="10000" />
       </div>
 
-      <div v-if="tier === 'RANGE' && rangePreview" class="form-field wide">
-        <label>范围预览</label>
-        <small class="form-hint">
-          请求 {{ rangePreview.requestedStart }}{{ rangePreview.requestedEnd ? ` ~ ${rangePreview.requestedEnd}` : ' ~ 至今' }}；
-          实际 {{ rangePreview.startDate }} ~ {{ rangePreview.endDate }}，共 {{ rangePreview.barCount }} 根日线
-          <span v-if="rangePreview.notes.length">；{{ rangePreview.notes.join('；') }}</span>
-        </small>
+      <div v-if="tier === 'RANGE'" class="form-field wide">
+        <div class="form-row" style="align-items:center">
+          <button class="ghost-button" :disabled="previewing || !selected" @click="generateRangePreview">{{ previewing ? '生成预览中…' : '生成范围预览' }}</button>
+          <small class="form-hint">创建前请先核对预览；任何输入改动都会使预览失效</small>
+        </div>
+        <div v-if="rangePreview" class="form-hint">
+          <strong>范围预览</strong>：请求 {{ rangePreview.preview.requestedStart }}{{ rangePreview.preview.requestedEnd ? ` ~ ${rangePreview.preview.requestedEnd}` : '（到最新日线）' }}；
+          实际 {{ rangePreview.preview.startDate }} ~ {{ rangePreview.preview.endDate }}，共 {{ rangePreview.preview.barCount }} 根日线
+          <span v-if="rangePreview.preview.notes.length">；{{ rangePreview.preview.notes.join('；') }}</span>
+        </div>
       </div>
 
       <!-- 双盲遮蔽已从 V1 移除（股票由用户手动选定，隐藏名称无意义）；
@@ -279,8 +316,8 @@ function confirmStartAnyway(): void {
       <div class="form-field">
         <label>复权方式（创建后锁定）</label>
         <div class="tier-grid">
-          <button :class="{ selected: adjustMode === 'forward' }" @click="adjustMode = 'forward'">前复权</button>
-          <button :class="{ selected: adjustMode === 'raw' }" @click="adjustMode = 'raw'">不复权</button>
+          <button :class="{ selected: adjustMode === 'forward' }" @click="adjustMode = 'forward'; onAdjustModeChanged()">前复权</button>
+          <button :class="{ selected: adjustMode === 'raw' }" @click="adjustMode = 'raw'; onAdjustModeChanged()">不复权</button>
         </div>
       </div>
 
