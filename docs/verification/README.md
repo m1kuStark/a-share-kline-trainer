@@ -6,7 +6,7 @@
 
 ## 当前入口
 
-- [TRAIN-02第一片服务端交付](2026-09/TRAIN-02-server/report.md)：范围预览/创建复核/兼容迁移，RED先行与全量874测试。
+- [TRAIN-02第一片服务端交付](2026-09/TRAIN-02-server/report.md)：范围预览/创建复核/兼容迁移，RED先行与全量874测试；[并发与权息指纹修复](2026-09/TRAIN-02-server/wake02-fix.md)：GPT-WAKE-02两项P2。
 
 - [当前返修交付](2026-09/ACCEPT-01-release/report.md)：完整工程验收通过，已更新7529，待用户验收。
 
