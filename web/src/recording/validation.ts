@@ -347,7 +347,8 @@ export function assertTrainingMeta(raw: unknown, field: string, options?: { allo
     assertTrainingRangeMeta(meta.range, `${field}.range`, meta)
   } else {
     assertEnum(meta.tier, `${field}.tier`, TIERS)
-    if (options?.allowRange && 'range' in meta) {
+    // 旧五档 tier 在任何 schemaVersion 都不得携带范围元数据（v1/v2 伪装 3M+range 同样拒绝）
+    if ('range' in meta) {
       fail(`${field}.range`, '旧五档 tier 不得携带范围元数据')
     }
   }

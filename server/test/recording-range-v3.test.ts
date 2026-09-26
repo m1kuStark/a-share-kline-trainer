@@ -226,4 +226,48 @@ describe('range recording schemaVersion=3 contract', () => {
     await legacyRecorder.start('600000|2025-12-01', makeCheckpoint({ afterSeq: 0, training: makeTraining() }) as never)
     expect(legacyRecorder.getFile().schemaVersion).toBe(2)
   })
+
+  it('v1/v2 files disguised as legacy tier but carrying range are rejected at the real file entry', async () => {
+    // control-handoff-20260926-08 P2：伪装 3M+range 的 v1/v2 必须在导入入口被拒（所有版本旧档禁 range）
+    const cases: Array<{ label: string; file: Record<string, unknown> }> = []
+    {
+      const v2 = buildFile(2, makeTraining()) as unknown as Record<string, unknown>
+      v2.resources = JSON.parse(JSON.stringify(v2.resources))
+      const metas = (v2.resources as { trainingMeta: Array<{ value: Record<string, unknown> }> }).trainingMeta
+      metas.forEach(m => { m.value.range = { ...RANGE_META } })
+      cases.push({ label: 'v2', file: v2 })
+    }
+    {
+      // v1：真实结构（完整快照 checkpoints + trainingMeta 资源表），tier=3M 带 range
+      const builder = new CompactBuilder()
+      const trainingWithRange = makeTraining({
+        range: { ...RANGE_META },
+      } as Partial<TrainingSnapshot['training']>)
+      const cp = makeCheckpoint({ afterSeq: 0, training: trainingWithRange })
+      const file = {
+        ...HEADER,
+        schemaVersion: 1,
+        events: makeEvents(),
+        checkpoints: [cp],
+        resources: builder.getResources(),
+        complete: false,
+      } as unknown as Record<string, unknown>
+      // 把带 range 的训练快照写进 v1 资源表（v1 文件在 checkpoints 携带完整快照，
+      // 资源表在 compactRecording 迁移时由 builder 重建——这里直接在迁移产物上注入更可靠，
+      // 但导入入口是 readRecordingFile：v1 校验用完整快照，因此必须让快照与资源表都带 range）
+      const snapshotCheckpoints = [cp]
+      file.checkpoints = snapshotCheckpoints
+      file.resources = {
+        series: [], drawings: [],
+        trainingMeta: [{ id: 'meta-1', value: { ...(trainingWithRange.training as Record<string, unknown>) } }],
+        accounts: [], trades: [], contexts: [],
+      }
+      cases.push({ label: 'v1', file })
+    }
+    for (const { label, file } of cases) {
+      const blob = new Blob([JSON.stringify(file)], { type: 'application/json' })
+      await expect(readRecordingFile(blob)).rejects.toThrow(/range|范围元数据/)
+      void label
+    }
+  })
 })
