@@ -23,11 +23,15 @@ V1 页面不启用盲测；引擎仍接受 blind 并保留遮蔽逻辑供存量�
 
 `previewTrainingRange` 以 Asia/Shanghai 当前完整数据日期作为 today（当日 15:00 前视为未完整，回退前一日），对目标股票日线与权息基准做单次字节读取：剔除未完整日线、计算 `sourceFingerprint`（SHA-256，覆盖完整日线与权息事件）、并用 [RANGE-01 纯规划器](../range.ts)生成请求/实际起止、根数与 notes。预览只返回元信息，不含任何OHLC、收益或账户结果；预览有效期 10 分钟（`RANGE_PREVIEW_TTL_MS`），`previewId` 存进程内存。
 
+指纹中的权息事件直接从捕获的 gbbq 字节解码（[parseGbbqBuffer](../../tdx/gbbq.ts)），不经过 stat 缓存的 `adj_factors`：gbbq 字节已变而 size/mtime 未变时 DB 缓存保持陈旧，用它算指纹会让"数据已变"的预览永远复用旧指纹。`ensureAdjustmentCache` 仍照常执行以维护缓存本身；训练引擎随后的复权行为是否与缓存一致属全局复权规则，不在本修复范围。
+
 失败复用 RANGE-01 错误码及中文原因：`INVALID_INPUT` 返回 400，`NO_DATA` 返回 404，`BEFORE_HISTORY`/`AFTER_DATA`/`INSUFFICIENT_DATA`/`UNCONFIRMED_COVERAGE` 返回 409；错误体附带 `code` 字段（沿全局错误处理器下发）。本片没有节假日日历来源，`knownClosedDates` 未注入，尾段未证实工作日一律 `UNCONFIRMED_COVERAGE`。
 
 范围创建复用 `POST /api/trainings`：新 body 传 `range` 与 `previewId`（可与旧字段 `code`/`initial_cash`/`blind`/`adjust_mode` 组合），不能同时传 `tier`。创建时重新执行与预览相同的单次快照读取，`previewId`、`sourceFingerprint`、请求与 adjustMode 任一不匹配，或预览过期/不存在/复核规划失败，均返回 409 `RANGE_PREVIEW_STALE` 并提示重新预览。复核通过后把元数据冻结到训练记录：`range_version=1`、`range_mode`、`requested_start/requested_end`、`range_start/range_end`、`range_bar_count`、`range_source_fingerprint`、`range_notes`（JSON）；`tier` 列写 `RANGE` 哨兵，`start_date/planned_end` 取已复核的 `range_start/range_end`，不再套用 `TIER_MONTHS`。查询响应的训练对象附带可选 `range` 对象；旧 tier 训练不返回该字段。推进、T+1、权息、防未来与结算规则不变。
 
 数据库迁移沿 [db.ts](../../db.ts) `addColumnIfMissing` 兼容增列，不重建表、不清理旧训练；旧行默认 `range_version=0`/`range_mode='tier'`，其余范围列为 NULL。
+
+创建的并发与原子性（GPT-WAKE-02 修复）：`commitTrainingCreation` 在全部异步读取完成后以 `BEGIN IMMEDIATE` 取写锁，同步段内重查"单活动训练"再落库，训练行与初始权益同事务提交，任一失败整体回滚。旧tier与范围模式路径共用该边界；在此之前的提前校验只做请求形状检查，不做 running 判定。
 
 ## 数据尾与结算缺口
 

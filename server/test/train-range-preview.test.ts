@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite'
 import Fastify from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { registerApi } from '../src/api.js'
@@ -408,6 +408,134 @@ describe('旧tier兼容', () => {
       const advanced = await app.inject({ method: 'POST', url: `/api/trainings/${training.id}/next` })
       expect(advanced.statusCode).toBe(200)
       expect(advanced.json().snapshot.training.currentDate).toBe('2026-07-02')
+    })
+  })
+})
+
+describe('并发创建与事务边界（GPT-WAKE-02 修复）', () => {
+  it('同一previewId并发创建仅一次成功且只有一个running', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(new Date(`${LAST}T07:01:00Z`))
+      const previewed = await app.inject({
+        method: 'POST', url: '/api/training-ranges/preview',
+        payload: previewPayload({ mode: 'preset', startDate: '2026-07-01', months: 1 }),
+      })
+      const preview = previewed.json().preview
+      const payload = {
+        code: '600519', range: { mode: 'preset', startDate: '2026-07-01', months: 1 },
+        previewId: preview.previewId, adjust_mode: 'forward',
+      }
+      const settled = await Promise.allSettled([
+        app.inject({ method: 'POST', url: '/api/trainings', payload }),
+        app.inject({ method: 'POST', url: '/api/trainings', payload }),
+      ])
+      const statuses = settled.map(entry => entry.status === 'fulfilled' ? entry.value.statusCode : `rejected:${String(entry.reason)}`)
+      expect(statuses.filter(status => status === 201)).toHaveLength(1)
+      expect(statuses.filter(status => status === 409)).toHaveLength(1)
+      expect(database.prepare("SELECT COUNT(*) AS n FROM trainings WHERE status = 'running'").get())
+        .toMatchObject({ n: 1 })
+      expect(database.prepare('SELECT COUNT(*) AS n FROM equity_curve').get()).toMatchObject({ n: 1 })
+    })
+  })
+
+  it('旧tier并发创建同样仅一次成功', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(new Date(`${LAST}T07:01:00Z`))
+      const payload = { tier: '1M', code: '600519', start_date: '2026-07-01', initial_cash: 1_000_000 }
+      const settled = await Promise.allSettled([
+        app.inject({ method: 'POST', url: '/api/trainings', payload }),
+        app.inject({ method: 'POST', url: '/api/trainings', payload }),
+      ])
+      const statuses = settled.map(entry => entry.status === 'fulfilled' ? entry.value.statusCode : `rejected:${String(entry.reason)}`)
+      expect(statuses.filter(status => status === 201)).toHaveLength(1)
+      expect(statuses.filter(status => status === 409)).toHaveLength(1)
+      expect(database.prepare("SELECT COUNT(*) AS n FROM trainings WHERE status = 'running'").get())
+        .toMatchObject({ n: 1 })
+    })
+  })
+
+  it('初始权益写入失败回滚整个创建，不留孤儿训练行', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(new Date(`${LAST}T07:01:00Z`))
+      database.exec("CREATE TRIGGER force_equity_failure BEFORE INSERT ON equity_curve WHEN NEW.equity = 777777 BEGIN SELECT RAISE(ABORT, 'forced equity failure'); END")
+      const previewed = await app.inject({
+        method: 'POST', url: '/api/training-ranges/preview',
+        payload: previewPayload({ mode: 'preset', startDate: '2026-07-01', months: 1 }),
+      })
+      const preview = previewed.json().preview
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: {
+          code: '600519', range: { mode: 'preset', startDate: '2026-07-01', months: 1 },
+          previewId: preview.previewId, adjust_mode: 'forward', initial_cash: 777777,
+        },
+      })
+      expect(created.statusCode).toBe(500)
+      expect(database.prepare('SELECT COUNT(*) AS n FROM trainings').get()).toMatchObject({ n: 0 })
+      expect(database.prepare('SELECT COUNT(*) AS n FROM equity_curve').get()).toMatchObject({ n: 0 })
+      // 回滚后训练可正常创建（预览token未被破坏）
+      const retry = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: {
+          code: '600519', range: { mode: 'preset', startDate: '2026-07-01', months: 1 },
+          previewId: preview.previewId, adjust_mode: 'forward',
+        },
+      })
+      expect(retry.statusCode).toBe(201)
+    })
+  })
+})
+
+describe('权息字节快照指纹（GPT-WAKE-02 修复）', () => {
+  // sh600519 合成加密记录（与既有夹具同源）：明文尾 4 字节即 rightsShares float32，
+  // 改 0→1 只动明文尾，记录数/尺寸不变；派生 m 由 1.1→1.2。
+  const gbbqRights0 = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
+  const gbbqRights1 = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f0000803f', 'hex')
+
+  function gbbqFile(records: Buffer[]): Buffer {
+    const out = Buffer.alloc(4 + records.length * 29)
+    out.writeUInt32LE(records.length, 0)
+    records.forEach((record, index) => record.copy(out, 4 + index * 29))
+    return out
+  }
+
+  it('gbbq字节变化且保留size/mtime：重预览指纹变化，旧token创建409', async () => {
+    await withFixture(async ({ app, root }) => {
+      const gbbqPath = join(root, 'T0002', 'hq_cache', 'gbbq')
+      await writeFile(gbbqPath, gbbqFile([gbbqRights0]))
+      vi.setSystemTime(new Date(`${LAST}T07:01:00Z`))
+      const first = await app.inject({
+        method: 'POST', url: '/api/training-ranges/preview',
+        payload: previewPayload({ mode: 'preset', startDate: '2026-07-01', months: 1 }),
+      })
+      expect(first.statusCode).toBe(200)
+      const fingerprint = first.json().preview.sourceFingerprint
+
+      // 同尺寸改写 rightsShares 0→1 并还原 mtime：stat 缓存判定"无变化"
+      const info = await stat(gbbqPath)
+      await writeFile(gbbqPath, gbbqFile([gbbqRights1]))
+      await utimes(gbbqPath, info.atime, info.mtime)
+      const after = await stat(gbbqPath)
+      expect(after.size).toBe(info.size)
+      expect(after.mtime.toISOString()).toBe(info.mtime.toISOString())
+
+      const second = await app.inject({
+        method: 'POST', url: '/api/training-ranges/preview',
+        payload: previewPayload({ mode: 'preset', startDate: '2026-07-01', months: 1 }),
+      })
+      expect(second.statusCode).toBe(200)
+      expect(second.json().preview.sourceFingerprint).not.toBe(fingerprint)
+
+      // 旧token：创建复核重新读字节，指纹不匹配必须拒绝
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: {
+          code: '600519', range: { mode: 'preset', startDate: '2026-07-01', months: 1 },
+          previewId: first.json().preview.previewId, adjust_mode: 'forward',
+        },
+      })
+      expect(created.statusCode).toBe(409)
+      expect(created.json().code).toBe('RANGE_PREVIEW_STALE')
     })
   })
 })

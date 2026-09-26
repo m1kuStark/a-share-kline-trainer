@@ -5,8 +5,8 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from '../config.js'
 import { isDayDate, parseDayBuffer, readDayFileRange, type DayBar } from '../tdx/dayfile.js'
 import { refreshStockCatalog } from '../tdx/catalog.js'
-import { loadAdjustmentEvents, refreshAdjustmentCache } from '../tdx/adjustment-cache.js'
-import { applyForwardAdjustment, buildForwardAdjustmentSegments } from '../tdx/gbbq.js'
+import { loadAdjustmentEvents, refreshAdjustmentCache, gbbqFilePath } from '../tdx/adjustment-cache.js'
+import { applyForwardAdjustment, buildForwardAdjustmentSegments, parseGbbqBuffer, type AdjustmentEvent } from '../tdx/gbbq.js'
 import { aggregateBars, type KlineBar, type Timeframe } from '../tdx/kline.js'
 import { parseTdxSymbol } from '../tdx/symbol.js'
 import type { TdxMarket } from '../tdx/stocks.js'
@@ -238,7 +238,7 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   const startDate = input.start_date
   const tier = input.tier as Tier
   const adjustMode = input.adjust_mode ?? 'forward'
-  if (!['forward', 'raw'].includes(adjustMode)) {
+  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
     throw new HttpError(400, '复权方式必须是 forward 或 raw')
   }
   const initialCash = input.initial_cash ?? 1_000_000
@@ -248,8 +248,6 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   if (!isDayDate(input.start_date)) {
     throw new HttpError(400, '起始日必须是有效的 YYYY-MM-DD 日期')
   }
-  const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
-  if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
 
   if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
   await ensureAdjustmentCache(database, config)
@@ -265,21 +263,80 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   const createdAt = new Date().toISOString()
   // 末根 K 线在前复权序列中恒等于原始收盘价，因此 current_close 直接存原始收盘，
   // 快照/交易无需再读文件，也杜绝把未来权息混进当前价格。
-  const result = database.prepare(`
-    INSERT INTO trainings (
-      tier, code, name, market, start_date, planned_end, status, blind,
-      adjust_mode, initial_cash, created_at, current_date, current_close
-    ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?)
-  `).run(
-    tier, parsed.code, stock.name, parsed.market, startBar.date,
-    addMonths(startBar.date, TIER_MONTHS[tier]), input.blind ? 1 : 0,
-    adjustMode, initialCash, createdAt, startBar.date, startBar.close,
-  )
-  const id = Number(result.lastInsertRowid)
-  database.prepare(
-    'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
-  ).run(id, startBar.date, initialCash)
+  const id = commitTrainingCreation(database, {
+    tier, code: parsed.code, name: stock.name, market: parsed.market,
+    startDate: startBar.date, plannedEnd: addMonths(startBar.date, TIER_MONTHS[tier]),
+    blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt,
+    currentDate: startBar.date, currentClose: startBar.close, range: null,
+  })
   return toMeta(loadTrainingRow(database, id))
+}
+
+interface TrainingCreationRow {
+  tier: string
+  code: string
+  name: string
+  market: string
+  startDate: string
+  plannedEnd: string
+  blind: number
+  adjustMode: 'forward' | 'raw'
+  initialCash: number
+  createdAt: string
+  currentDate: string
+  currentClose: number
+  /** null＝旧tier路径；非null＝TRAIN-02范围模式，冻结复核后的元数据 */
+  range: {
+    mode: string
+    requestedStart: string
+    requestedEnd: string | null
+    barCount: number
+    fingerprint: string
+    notes: string[]
+  } | null
+}
+
+// 并发与原子性边界（GPT-WAKE-02）：所有异步读取都已完成，从这里到 COMMIT 是同步段。
+// BEGIN IMMEDIATE 先取写锁，同步重查"单活动训练"后再落库；训练行与初始权益同事务，
+// 任一失败整体回滚，不留孤儿训练行。旧tier与范围模式路径共用。
+function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow): number {
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
+    if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
+    const result = row.range === null
+      ? database.prepare(`
+          INSERT INTO trainings (
+            tier, code, name, market, start_date, planned_end, status, blind,
+            adjust_mode, initial_cash, created_at, current_date, current_close
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?)
+        `).run(
+          row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
+          row.blind, row.adjustMode, row.initialCash, row.createdAt, row.currentDate, row.currentClose,
+        )
+      : database.prepare(`
+          INSERT INTO trainings (
+            tier, code, name, market, start_date, planned_end, status, blind,
+            adjust_mode, initial_cash, created_at, current_date, current_close,
+            range_version, range_mode, requested_start, requested_end, range_start, range_end,
+            range_bar_count, range_source_fingerprint, range_notes
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
+          row.blind, row.adjustMode, row.initialCash, row.createdAt, row.currentDate, row.currentClose,
+          row.range.mode, row.range.requestedStart, row.range.requestedEnd,
+          row.startDate, row.plannedEnd, row.range.barCount, row.range.fingerprint, JSON.stringify(row.range.notes),
+        )
+    const id = Number(result.lastInsertRowid)
+    database.prepare(
+      'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
+    ).run(id, row.startDate, row.initialCash)
+    database.exec('COMMIT')
+    return id
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
 }
 
 // ===== TRAIN-02：训练范围预览与创建复核 =====
@@ -430,10 +487,21 @@ async function readRangeSnapshot(database: DatabaseSync, config: AppConfig, mark
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new HttpError(404, `TDX data not found for ${market}${code}`)
     throw error
   }
+  let gbbqBytes: Buffer
+  try {
+    gbbqBytes = await readFile(gbbqFilePath(config.tdxRoot))
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new HttpError(404, 'TDX data not found for gbbq')
+    throw error
+  }
   const cutoff = shanghaiCompleteDataDate(now)
-  // 单次字节快照：元信息与指纹都派生自这次读取。
+  // 单次字节快照：元信息与指纹都派生自这次读取。权息事件直接从捕获的 gbbq 字节解码，
+  // 不经过 stat 缓存的 adj_factors——字节已变而 size/mtime 未变时，DB 缓存会保持陈旧，
+  // 用它算指纹会让"数据已变"的预览永远复用旧指纹（GPT-WAKE-02）。
   const bars = parseDayBuffer(bytes).filter(bar => bar.date <= cutoff)
-  const events = loadAdjustmentEvents(database, market, code)
+  const events = parseGbbqBuffer(gbbqBytes)
+    .filter(event => event.market === market && event.code === code)
+    .sort((left, right) => left.date.localeCompare(right.date))
   return { market, code, bars, fingerprint: rangeFingerprint(market, code, bars, events) }
 }
 
@@ -500,9 +568,6 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
   if (!Number.isFinite(initialCash) || initialCash <= 0) {
     throw new HttpError(400, '初始资金必须是正数')
   }
-  const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
-  if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
 
   const now = input.now ?? new Date()
   const stored = rangePreviews.get(input.previewId)
@@ -527,29 +592,27 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
   if (!plan.ok) throw stalePreview(`创建复核未通过：${plan.message}`)
   if (plannedRangeKey(plannedRangeOf(plan)) !== plannedRangeKey(stored.planned)) throw stalePreview('复核结果与预览不一致')
 
+  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
   const stocks = await refreshStockCatalog(database, config.tdxRoot).then(result => result.stocks)
   const stock = stocks.find(item => item.market === parsed.market && item.code === parsed.code)
   if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
   const startBar = snapshot.bars.find(bar => bar.date === plan.startDate)
   if (!startBar) throw stalePreview(`复核起点 ${plan.startDate} 缺少对应日线`)
 
-  const result = database.prepare(`
-    INSERT INTO trainings (
-      tier, code, name, market, start_date, planned_end, status, blind,
-      adjust_mode, initial_cash, created_at, current_date, current_close,
-      range_version, range_mode, requested_start, requested_end, range_start, range_end,
-      range_bar_count, range_source_fingerprint, range_notes
-    ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    RANGE_TIER_SENTINEL, parsed.code, stock.name, parsed.market, plan.startDate, plan.endDate,
-    input.blind ? 1 : 0, adjustMode, initialCash, now.toISOString(), plan.startDate, startBar.close,
-    plan.mode, plan.requestedStart, plan.requestedEnd, plan.startDate, plan.endDate,
-    plan.barCount, snapshot.fingerprint, JSON.stringify(plan.notes),
-  )
-  const id = Number(result.lastInsertRowid)
-  database.prepare(
-    'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
-  ).run(id, plan.startDate, initialCash)
+  const id = commitTrainingCreation(database, {
+    tier: RANGE_TIER_SENTINEL, code: parsed.code, name: stock.name, market: parsed.market,
+    startDate: plan.startDate, plannedEnd: plan.endDate,
+    blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt: now.toISOString(),
+    currentDate: plan.startDate, currentClose: startBar.close,
+    range: {
+      mode: plan.mode,
+      requestedStart: plan.requestedStart,
+      requestedEnd: plan.requestedEnd,
+      barCount: plan.barCount,
+      fingerprint: snapshot.fingerprint,
+      notes: plan.notes,
+    },
+  })
   return toMeta(loadTrainingRow(database, id))
 }
 

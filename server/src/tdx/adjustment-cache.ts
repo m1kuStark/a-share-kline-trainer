@@ -54,12 +54,17 @@ export interface AdjustmentChanges {
   events: number
 }
 
+/** gbbq 权息源文件路径；字节快照消费者（如范围预览指纹）与缓存扫描共用同一公式。 */
+export function gbbqFilePath(tdxRoot: string): string {
+  return join(tdxRoot, 'T0002', 'hq_cache', 'gbbq')
+}
+
 /** 只读扫描：比对 gbbq 指纹与现有缓存，产出待写入变更；绝不写库。 */
 export async function scanAdjustmentChanges(
   database: DatabaseSync,
   tdxRoot: string,
 ): Promise<AdjustmentChanges> {
-  const filePath = join(tdxRoot, 'T0002', 'hq_cache', 'gbbq')
+  const filePath = gbbqFilePath(tdxRoot)
   const info = await stat(filePath)
   const fingerprint = `${info.size}:${info.mtime.toISOString()}`
   const cached = database.prepare("SELECT value FROM cache_meta WHERE key = 'gbbq_fingerprint'").get() as unknown as { value: string } | undefined
