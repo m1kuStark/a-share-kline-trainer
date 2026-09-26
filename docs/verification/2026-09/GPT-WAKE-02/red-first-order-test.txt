@@ -1,0 +1,74 @@
+
+> a-share-kline-trainer@0.3.2 test
+> vitest run --config server/vitest.config.ts server/test/data-status-store-order.test.ts --maxWorkers=2
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration[39m
+
+ [31m❯[39m server/test/data-status-store-order.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 70[2mms[22m[39m
+[31m   [31m×[31m dataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mticker 终态先到、旧 poll 响应后到：轮询循环必须终止并触发一次轻提示（不卡"更新中"）[39m[32m 63[2mms[22m[39m
+[31m     → expected true to be false // Object.is equality[39m
+[31m   [31m×[31m dataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mpoll 终态先到（正常路径）触发一次轻提示；其后到达的 ticker 响应不重复触发[39m[32m 3[2mms[22m[39m
+[31m     → expected true to be false // Object.is equality[39m
+[31m   [31m×[31m dataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mticker 先返回 running 而旧 poll 在途：旧 poll 过期后必须补排程继续循环，最终终态落地[39m[32m 2[2mms[22m[39m
+[31m     → expected "spy" to be called 4 times, but got 3 times[39m
+   [32m✓[39m dataStatus store 乱序行为（GPT-WAKE-02）[2m > [22m普通廉价检查（无轮询在跑）到达终态：不触发轻提示序号[32m 2[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/test/data-status-store-order.test.ts[2m > [22mdataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mticker 终态先到、旧 poll 响应后到：轮询循环必须终止并触发一次轻提示（不卡"更新中"）
+[31m[1mAssertionError[22m: expected true to be false // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2m❯[22m server/test/data-status-store-order.test.ts:[2m91:37[22m[39m
+    [90m 89| [39m    queue[[34m2[39m][33m![39m[33m.[39m[34mresolve[39m([34mstatusBody[39m())
+    [90m 90| [39m    [35mawait[39m [34mflush[39m()
+    [90m 91| [39m    [34mexpect[39m(store[33m.[39mdataPolling[33m.[39mvalue)[33m.[39m[34mtoBe[39m([35mfalse[39m)
+    [90m   | [39m                                    [31m^[39m
+    [90m 92| [39m    [34mexpect[39m(store[33m.[39mdataUpdating[33m.[39mvalue)[33m.[39m[34mtoBe[39m([35mfalse[39m)
+    [90m 93| [39m    [34mexpect[39m(store[33m.[39mdataOutcomeSeq[33m.[39mvalue)[33m.[39m[34mtoBe[39m([34m1[39m)
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/data-status-store-order.test.ts[2m > [22mdataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mpoll 终态先到（正常路径）触发一次轻提示；其后到达的 ticker 响应不重复触发
+[31m[1mAssertionError[22m: expected true to be false // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2m❯[22m server/test/data-status-store-order.test.ts:[2m111:37[22m[39m
+    [90m109| [39m    queue[[34m2[39m][33m![39m[33m.[39m[34mresolve[39m([34mstatusBody[39m())
+    [90m110| [39m    [35mawait[39m [34mflush[39m()
+    [90m111| [39m    [34mexpect[39m(store[33m.[39mdataPolling[33m.[39mvalue)[33m.[39m[34mtoBe[39m([35mfalse[39m)
+    [90m   | [39m                                    [31m^[39m
+    [90m112| [39m    [34mexpect[39m(store[33m.[39mdataUpdating[33m.[39mvalue)[33m.[39m[34mtoBe[39m([35mfalse[39m)
+    [90m113| [39m    [34mexpect[39m(store[33m.[39mdataOutcomeSeq[33m.[39mvalue)[33m.[39m[34mtoBe[39m([34m1[39m)
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/data-status-store-order.test.ts[2m > [22mdataStatus store 乱序行为（GPT-WAKE-02）[2m > [22mticker 先返回 running 而旧 poll 在途：旧 poll 过期后必须补排程继续循环，最终终态落地
+[31m[1mAssertionError[22m: expected "spy" to be called 4 times, but got 3 times[39m
+[36m [2m❯[22m server/test/data-status-store-order.test.ts:[2m127:23[22m[39m
+    [90m125| [39m    [35mawait[39m [34mflush[39m()
+    [90m126| [39m    vi[33m.[39m[34madvanceTimersByTime[39m([34m1_000[39m)
+    [90m127| [39m    [34mexpect[39m(fetchMock)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m4[39m)
+    [90m   | [39m                      [31m^[39m
+    [90m128| [39m    queue[[34m3[39m][33m![39m[33m.[39m[34mresolve[39m([34mstatusBody[39m())
+    [90m129| [39m    [35mawait[39m [34mflush[39m()
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 13:56:12
+[2m   Duration [22m 306ms[2m (transform 39ms, setup 0ms, collect 33ms, tests 70ms, environment 0ms, prepare 84ms)[22m
+

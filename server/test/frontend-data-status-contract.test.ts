@@ -62,8 +62,14 @@ describe('日线数据更新前端契约（R1）', () => {
     const store = await readFile(storePath, 'utf8')
     expect(store).toMatch(/const DATA_POLL_INTERVAL_MS = 1_000/)
     expect(store).toMatch(/const DATA_POLL_TIMEOUT_MS = 120_000/)
-    expect(store).toMatch(/if \(result\.state === 'running'\) startPolling\(\)/)
+    // 统一终态应用（GPT-WAKE-02）：running 交回轮询循环；终态终止轮询并触发轻提示
+    expect(store).toMatch(/function applyStatus\(result: DataStatus\): void \{/)
+    expect(store).toMatch(/if \(result\.state === 'running'\) \{\s*startPolling\(\)\s*return\s*\}/)
+    expect(store).toMatch(/if \(dataPolling\.value\) \{\s*dataPolling\.value = false\s*onDataFinished\(result\)\s*\}/)
     expect(store).toMatch(/if \(Date\.now\(\) >= pollDeadline\) \{ dataPolling\.value = false; return \}/)
+    // 循环保活：乱序丢弃过期响应后不得丢失排程（防永久"更新中"）
+    expect(store).toMatch(/function ensurePollingAlive\(\): void \{/)
+    expect(store).toMatch(/pollTimer !== undefined \|\| pollInFlight \|\| checksInFlight > 0/)
   })
 
   it('DATA-05 可见页 60s 廉价重判：只 GET 重算 freshness，隐藏暂停、回前台恢复、卸载清理', async () => {
@@ -140,10 +146,12 @@ describe('日线数据更新前端契约（R1）', () => {
     expect(app).toMatch(/:key="shakeTick"/)
   })
 
-  it('开始训练守卫在 Launcher 提交路径最前端：needsUpdate 弹确认框，弹窗双按钮语义正确', async () => {
+  it('开始训练守卫在 Launcher 提交路径最前端：freshness 驱动弹确认框，弹窗双按钮语义正确', async () => {
     const launcher = await readFile(launcherPath, 'utf8')
-    // 守卫位于 submit 最前端（仅在重入检查之后）
-    expect(launcher).toMatch(/async function submit\(\): Promise<void> \{\n  if \(submitting\.value\) return\n  \/\/ 守卫加在提交路径最前端[\s\S]{0,160}if \(dataStatus\.value\?\.needsUpdate && !dataUpdating\.value\) \{\n    showDataConfirm\.value = true\n    return\n  \}\n  await performCreate\(\)/)
+    // 守卫位于 submit 最前端（仅在重入检查之后）；DATA-05 收敛后由 freshness 驱动
+    expect(launcher).toMatch(/async function submit\(\): Promise<void> \{\n  if \(submitting\.value\) return\n  \/\/ 守卫加在提交路径最前端[\s\S]{0,160}if \(shouldSuggestDataUpdate\.value\) \{\n    showDataConfirm\.value = true\n    return\n  \}\n  await performCreate\(\)/)
+    // current 零打扰；stale/unknown 建议更新；needsUpdate 仅旧服务端兼容回退
+    expect(launcher).toMatch(/const shouldSuggestDataUpdate = computed\(\(\) => \{[\s\S]{0,200}if \(freshness\) return freshness\.state !== 'current'[\s\S]{0,80}return status\.needsUpdate/)
     expect(launcher).toMatch(/function confirmUpdateFirst\(\): void \{[\s\S]{0,80}void refreshDataNow\(\)/)
     expect(launcher).toMatch(/function confirmStartAnyway\(\): void \{[\s\S]{0,80}void performCreate\(\)/)
     // 弹窗复用 settle-mask/settle-panel 模态风格，标题与按钮文案按口径
@@ -153,8 +161,10 @@ describe('日线数据更新前端契约（R1）', () => {
     expect(launcher).toMatch(/>仍要开始训练</)
     // 正文含本地数据截止日；未建立基线（sourceMaxDate 为空）时不得显示"截止 未知"，改用未扫描口径
     expect(launcher).toMatch(/本地日线数据截止 <strong>\{\{ dataCutoff \}\}<\/strong>/)
-    expect(launcher).toMatch(/v-if="dataStatus\?\.sourceMaxDate"/)
+    expect(launcher).toMatch(/v-if="!dataStatus\?\.sourceMaxDate"/)
     expect(launcher).toMatch(/尚未完成首次数据扫描/)
+    // unknown 分支不得声称"可能落后"，改用待确认口径
+    expect(launcher).toMatch(/最新交易日待确认。建议先重新读取本地日线再开始训练/)
   })
 
   it('训练页操作栏小更新按钮：固定 48px 尺寸类、随 running 禁用、终态轻提示不弹模态', async () => {

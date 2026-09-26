@@ -23,6 +23,7 @@ export function createTdxSource(tdxRoot: string | null): DailySource {
     kind: 'tdx',
     name: TDX_SOURCE_NAME,
     available: () => isTdxAvailable(tdxRoot),
+    probeReadability: () => probeTdxDayDirectories(tdxRoot),
     scan: previous => scanTdx(tdxRoot, previous),
   }
 }
@@ -36,6 +37,29 @@ async function isTdxAvailable(tdxRoot: string | null): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * 廉价结构探测（不读取文件内容，远轻于扫描）：已存在的市场目录必须带可读的 lday 子目录，
+ * 容错口径与 scanTdx 一致——市场目录整体缺失＝该市场无数据（正常），lday 缺失/不可读＝失败。
+ * 供状态查询在来源结构损坏时把 freshness 降级为"可读性未知"，避免沿用上次扫描宣称已最新。
+ */
+export async function probeTdxDayDirectories(tdxRoot: string | null): Promise<boolean> {
+  if (!tdxRoot) return false
+  for (const market of MARKETS) {
+    const marketDir = join(tdxRoot, 'vipdoc', market)
+    try {
+      await access(marketDir)
+    } catch {
+      continue
+    }
+    try {
+      await access(join(marketDir, 'lday'))
+    } catch {
+      return false
+    }
+  }
+  return true
 }
 
 async function scanTdx(tdxRoot: string | null, previous?: ScanBaseline): Promise<ScanOutcome> {

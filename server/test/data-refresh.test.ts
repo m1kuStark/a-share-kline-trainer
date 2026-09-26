@@ -651,6 +651,19 @@ describe('data refresh service', () => {
 
 // ===== DATA-05：freshness 与日历注入的状态集成 =====
 
+/** 合成日历捆绑：无休市日、覆盖面宽，配合注入时钟获得确定性判定 */
+function syntheticBundle(): CalendarBundle {
+  return {
+    calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
+    source: {
+      id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
+      sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
+      retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
+      publishedDate: null, corroborationNote: '测试注入，非官方',
+    },
+  }
+}
+
 describe('data status freshness integration', () => {
   it('n) /api/data/status carries freshness and built-in offline calendar metadata', async () => {
     const root = await createFixtureRoot()
@@ -682,22 +695,13 @@ describe('data status freshness integration', () => {
     }
   })
 
-  it('o) failed task still reports freshness from the last successful scan', async () => {
+  it('o) failed task downgrades freshness to readability-unknown when the day structure is gone', async () => {
     const root = await createFixtureRoot()
     const database = new DatabaseSync(':memory:')
     migrateDatabase(database)
     const expected = shiftWeekdays(D2, 3) // 注入时钟的应收日：D2 后第3个工作日，必然领先于夹具末日
-    const synthetic: CalendarBundle = {
-      calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
-      source: {
-        id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
-        sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
-        retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
-        publishedDate: null, corroborationNote: '测试注入，非官方',
-      },
-    }
     const coordinator = directCoordinator(database, root, {
-      calendar: synthetic,
+      calendar: syntheticBundle(),
       now: () => new Date(`${expected}T07:00:00Z`), // 上海15:00整
     })
     try {
@@ -706,17 +710,83 @@ describe('data status freshness integration', () => {
       expect(first.freshness.state).toBe('stale')
       expect(first.freshness.expectedDate).toBe(expected)
 
-      // 破坏 sh lday 目录 → 任务失败；freshness 仍按上次成功扫描的 sourceMaxDate 重算
+      // 破坏 sh lday 目录 → 任务失败；结构探测同步失败，freshness 不得沿用上次扫描宣称 stale/current
       await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
       const second = await runCoordinatorAndWait(coordinator)
       expect(second.state).toBe('failed')
       expect(second.lastResult?.outcome).toBe('failed')
-      expect(second.freshness.state).toBe('stale')
+      expect(second.freshness.state).toBe('unknown')
+      expect(second.freshness.reason).toContain('可读性未知')
       expect(second.freshness.sourceMaxDate).toBe(D2)
       expect(second.freshness.expectedDate).toBe(expected)
     } finally {
       database.close()
       await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('r) unreadable day structure downgrades freshness without any task failing, and recovers', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // 移除 sh/lday：available()（vipdoc 级）仍为真，但状态查询的结构探测把 freshness 降级
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(true)
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+      expect(degraded.freshness.expectedDate).toBe(expected)
+      expect(degraded.freshness.sourceMaxDate).toBe(D2)
+
+      // 目录恢复后探测通过，自动回到正常判定（无需任何扫描任务）
+      await writeStockDayFile(root, 'sh', 'sh600519.day', [dateInt(D1), dateInt(D2)])
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('s) online source failure preserves computed freshness (no structural probe for online sources)', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let scans = 0
+    const unregister = registerOnlineSource(fakeOnlineSource('失败在线源', async () => {
+      scans += 1
+      if (scans >= 2) throw new Error('在线源扫描失败（测试注入）')
+      return {
+        kind: 'online', name: '失败在线源', totalStocks: 1, added: 0, removed: 0,
+        revised: 0, baseline: true, sourceMaxDate: '2026-01-08', files: [],
+      }
+    }))
+    const coordinator = directCoordinator(database, null, {
+      calendar: syntheticBundle(),
+      now: () => new Date('2026-01-12T07:00:00Z'), // 周一15:00，应收 01-12 > 来源末日 01-08 → stale
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+      const second = await runCoordinatorAndWait(coordinator)
+      expect(second.state).toBe('failed')
+      // 在线源无结构探测：freshness 保持按上次成功扫描的计算值
+      expect(second.freshness.state).toBe('stale')
+      expect(second.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      unregister()
+      database.close()
     }
   })
 
@@ -731,17 +801,8 @@ describe('data status freshness integration', () => {
         revised: 0, baseline: scans === 1, sourceMaxDate: '2026-01-08', files: [],
       }
     }))
-    const synthetic: CalendarBundle = {
-      calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
-      source: {
-        id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
-        sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
-        retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
-        publishedDate: null, corroborationNote: '测试注入，非官方',
-      },
-    }
     const coordinator = directCoordinator(database, null, {
-      calendar: synthetic,
+      calendar: syntheticBundle(),
       now: () => new Date('2026-01-08T07:00:00Z'), // 周四15:00，应收=2026-01-08=来源末日 → current
     })
     try {

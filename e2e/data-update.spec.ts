@@ -243,3 +243,28 @@ test('f) 无可用来源：中性警示按钮，点击后 409 中文原因行内
   await expect(errorLine).toHaveText('未检测到可用的日线数据来源：请先安装通达信并完成盘后下载')
   expect(refreshCalls).toBe(1)
 })
+
+test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启发误报）：首页绿色、开始训练零打扰', async ({ page }) => {
+  await installBaseMocks(page)
+  // 场景：2026-09-26（周六）15:00 上海，cutoff 09-24；旧 needsUpdate 启发式按 09-25（中秋休市）误报，
+  // 官方日历 freshness=current。首页须绿色"已最新"，开始训练不得弹"建议先更新"确认框。
+  await page.route('**/api/data/status', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: statusPayload({
+      needsUpdate: true,
+      reason: '本地日线数据截至 2026-09-24，落后于最近交易日 2026-09-25，建议更新（若当日为节假日休市，属正常现象）',
+    }),
+  }))
+  let createCalls = 0
+  await page.route('**/api/trainings', route => { createCalls++; void route.continue() })
+  await page.goto('/')
+  const okRow = page.locator('.data-status-ok')
+  await expect(okRow).toBeVisible()
+  await expect(okRow).toContainText('数据已最新 · 截止 2026-09-24')
+  // Launcher 守卫由 freshness 驱动：current → 直接创建，不弹确认框
+  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
+  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByRole('button', { name: '开始训练' }).click()
+  await expect(page.locator('.data-confirm-panel')).toHaveCount(0)
+  await expect.poll(() => createCalls).toBe(1)
+})

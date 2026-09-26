@@ -13,7 +13,7 @@ import type { AppConfig } from '../config.js'
 import { applyCatalogChanges, scanCatalogChanges, type CatalogChanges } from '../tdx/catalog.js'
 import { applyAdjustmentChanges, scanAdjustmentChanges, type AdjustmentChanges } from '../tdx/adjustment-cache.js'
 import { OFFICIAL_SSE_2026_BUNDLE, type CalendarBundle } from './calendar.js'
-import { assessFreshness, type FreshnessResult } from './freshness.js'
+import { assessFreshness, COMPLETENESS_NOTE, type FreshnessResult } from './freshness.js'
 import { selectSource } from './selection.js'
 import { createTdxSource } from './tdxSource.js'
 import { appendFailureLog, applyScanResult, loadRefreshLog, loadScanBaseline, publishBatchVersion, type RefreshLogEntry, type RefreshOutcome } from './snapshot.js'
@@ -296,11 +296,22 @@ export function createDataRefreshCoordinator(
 
     // 市场新鲜度：每次状态查询用注入时钟与官方离线日历重算（廉价GET即可跨15:00/跨日/跨休市重判）。
     // sourceMaxDate 是目录最大日，不证明每股完整；首次未扫描时 freshness 亦为 unknown。
-    const freshness = assessFreshness({
+    let freshness = assessFreshness({
       now: nowFn(),
       sourceMaxDate: lastSuccess?.sourceMaxDate ?? null,
       calendar: calendarBundle?.calendar,
     })
+    // 来源失效降级（有界结构探测，非全盘扫描）：选中的 TDX 来源日线结构当前不可读时，
+    // 沿用上次扫描的结果宣称 current/stale 会误导（来源失效≠市场数据过期），明确降级为
+    // "可读性未知"；目录恢复后探测通过即自动回到正常判定。
+    const probe = selection.source?.probeReadability
+    if (selection.source?.kind === 'tdx' && selection.tdxAvailable && probe && !(await probe.call(selection.source))) {
+      freshness = {
+        ...freshness,
+        state: 'unknown',
+        reason: `本地日线目录当前不可读（市场目录缺少可读的日线子目录），数据可读性未知，无法确认新鲜度。${COMPLETENESS_NOTE}。`,
+      }
+    }
 
     return {
       state,

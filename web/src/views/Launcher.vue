@@ -15,9 +15,18 @@ const initialCash = ref<number>(1_000_000)
 const adjustMode = ref<'forward' | 'raw'>('forward')
 const submitting = ref(false)
 const errorMessage = ref('')
-// 开始训练守卫：needsUpdate=true 时先弹确认框（needsUpdate=false 零打扰）
+// 开始训练守卫（DATA-05 收敛）：以 freshness 为准——stale/unknown 先弹"建议先更新"，
+// current（官方离线日历判定已最新）零打扰直接创建。needsUpdate 仅为旧服务端兼容回退，
+// 不再驱动确认框（否则周末/节假日启发误报会与首页绿色"已最新"自相矛盾）。
 const showDataConfirm = ref(false)
 const dataCutoff = computed(() => dataStatus.value?.sourceMaxDate ?? '未知')
+const shouldSuggestDataUpdate = computed(() => {
+  const status = dataStatus.value
+  if (!status || dataUpdating.value) return false
+  const freshness = status.freshness
+  if (freshness) return freshness.state !== 'current'
+  return status.needsUpdate
+})
 
 const tiers: Array<{ value: Tier; label: string }> = [
   { value: '1M', label: '1个月' },
@@ -45,8 +54,8 @@ function choose(stock: Stock): void {
 
 async function submit(): Promise<void> {
   if (submitting.value) return
-  // 守卫加在提交路径最前端：数据待更新时先弹"建议先更新日线数据"确认框，不直接创建
-  if (dataStatus.value?.needsUpdate && !dataUpdating.value) {
+  // 守卫加在提交路径最前端：数据待更新/待确认时先弹"建议先更新日线数据"确认框，不直接创建
+  if (shouldSuggestDataUpdate.value) {
     showDataConfirm.value = true
     return
   }
@@ -159,8 +168,9 @@ function confirmStartAnyway(): void {
       <div class="settle-panel data-confirm-panel">
         <h2>建议先更新日线数据</h2>
         <p class="data-confirm-text">
-          <template v-if="dataStatus?.sourceMaxDate">本地日线数据截止 <strong>{{ dataCutoff }}</strong>，可能落后于最新交易日。建议先更新数据再开始训练，避免用缺失的最近行情练习。</template>
-          <template v-else>尚未完成首次数据扫描，暂无法确认本地日线是否最新。建议先执行一次“更新日线”再开始训练，避免用缺失的最近行情练习。</template>
+          <template v-if="!dataStatus?.sourceMaxDate">尚未完成首次数据扫描，暂无法确认本地日线是否最新。建议先执行一次“更新日线”再开始训练，避免用缺失的最近行情练习。</template>
+          <template v-else-if="dataStatus.freshness?.state === 'unknown'">本地日线数据截止 <strong>{{ dataCutoff }}</strong>，最新交易日待确认。建议先重新读取本地日线再开始训练，避免用缺失的最近行情练习。</template>
+          <template v-else>本地日线数据截止 <strong>{{ dataCutoff }}</strong>，可能落后于最新交易日。建议先更新数据再开始训练，避免用缺失的最近行情练习。</template>
         </p>
         <div class="data-confirm-actions">
           <button class="trade-action buy" @click="confirmUpdateFirst">先更新数据</button>

@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "R1",
   "summary": "FRESH-01 integrated; coordinator freshness + offline SSE 2026 calendar + home tri-state UI implemented in worktree.",
-  "next_action": "Implementation complete on task/DATA-05-integration (see docs/verification/2026-09/DATA-05/report.md); integration gate + independent product review pending.",
+  "next_action": "Implementation complete on task/DATA-05-integration (see docs/verification/2026-09/DATA-05/report.md); GPT-WAKE-02 convergence fixes (poll order, Launcher guard, source readability probe) applied per docs/verification/2026-09/GPT-WAKE-02/report.md; integration gate + independent product review pending.",
   "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
   "allowed_paths": [
     "server/src/data/**",
@@ -19,7 +19,15 @@
     "web/src/api.ts",
     "e2e/data-update.spec.ts",
     "docs/work-items/tasks/DATA-05.md",
-    "docs/specs/market-data/requirements.md"
+    "docs/work-items/prompts/DATA-05-integration.md",
+    "docs/verification/2026-09/DATA-05/**",
+    "web/src/views/Launcher.vue",
+    "server/test/data-status-store-order.test.ts",
+    "server/test/frontend-data-status-contract.test.ts",
+    "docs/verification/2026-09/GPT-WAKE-02/**"
+  ],
+  "depends_on": [
+    "FRESH-01"
   ],
   "depends_on": [],
   "docs_impact": {
@@ -36,12 +44,6 @@
 }
 ```
 
-基线d75da88；范围是状态判定与说明，不下载行情或改结算。allowed_paths是整任务范围，不代表可同时分配给多个worker。
+[Implementation contract](../prompts/DATA-05-integration.md). Existing pure module is authoritative; do not replace it with the alternative desktop branch.
 
-- 最近已收盘交易日使用Asia/Shanghai及15:00收盘分界；盘中不要求当天完整日线，盘后不能固定退回昨日。可信交易日历应注明来源、版本、覆盖范围，并离线可用；缺失/超范围时保守显示“数据截至……，最新交易日待确认”，周一至周五不能冒充正式交易日历。
-- 分离扫描结果updated/unchanged/failed与市场新鲜度current/stale/unknown；扫描无变化不等于已到最新。来源最大日不证明每只股票覆盖；文案注明范围和最近检查时间。
-- 落后时提示先在通达信下载盘后日线，再由训练器重新读取；按钮不得暗示会联网补齐。即使状态正常仍能手动重新检查。
-- 前台跨收盘/跨日期需重新判定，隐藏页停止计时，回前台刷新；不用高频扫描整盘，不干扰训练和画线。
-- 验收：上海2026-09-22 14:59与15:00之后、周末、可靠日历内节假日、日历未知/过期、非上海主机时区、首次未扫描、源无变化但仍落后、扫描失败和个股尾日不同于目录最大日。未知不能呈现绿色“已最新”。
-
-派发Prompt：只实现经合同冻结的日期/新鲜度模块及指定测试；返回RED/GREEN命令、实际退出码、提交和未覆盖边界。集成人接入refresh/API/App并审查旧调用兼容，详见[批次计划](../../proposals/first-use-batch.md)。
+允许路径末三项（web/src/views/Launcher.vue、server/test/data-status-store-order.test.ts、server/test/frontend-data-status-contract.test.ts、docs/verification/2026-09/GPT-WAKE-02/**）由控制层派发 control-handoff-20260926-05（GPT-WAKE-02 收敛修复）授权扩入，详见该验证目录 report.md。

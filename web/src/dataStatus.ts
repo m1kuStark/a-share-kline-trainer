@@ -40,6 +40,9 @@ let checkSeq = 0
 let pollTimer: ReturnType<typeof setTimeout> | undefined
 let pollDeadline = 0
 let statusTicker: ReturnType<typeof setInterval> | undefined
+// 在途状态检查计数（ticker 廉价检查与 poll 单步共用）：用于判断"轮询循环是否还有
+// 未决步骤"。任何一个检查结算时都会调用 ensurePollingAlive，保证循环不因乱序丢失排程。
+let checksInFlight = 0
 // 区分"单次轮询请求在途"与"隐藏暂停"：两者 pollTimer 都为空，只有暂停态允许 startPolling 重新调度
 let pollInFlight = false
 
@@ -77,6 +80,23 @@ export function cancelDataWatchers(): void {
   dataChecking.value = false
 }
 
+/**
+ * 统一应用最新一次检查结果（ticker 廉价检查与 running 轮询共用）。
+ * 终态时必须终止轮询循环并触发轻提示：否则当"新检查先返回终态、旧 poll 响应
+ * 过期被丢弃"时，dataPolling 永远无人清理，UI 永久卡在"更新中"。
+ */
+function applyStatus(result: DataStatus): void {
+  dataStatus.value = result
+  if (result.state === 'running') {
+    startPolling()
+    return
+  }
+  if (dataPolling.value) {
+    dataPolling.value = false
+    onDataFinished(result)
+  }
+}
+
 /** 启动立即检查一次（force 绕过 60s 节流）；App onMounted 调用 */
 export async function checkDataStatus(options?: { force?: boolean }): Promise<void> {
   if (isHidden()) return
@@ -84,15 +104,16 @@ export async function checkDataStatus(options?: { force?: boolean }): Promise<vo
   lastCheckStartedAt = Date.now()
   const seq = ++checkSeq
   dataChecking.value = true
+  checksInFlight += 1
   try {
     const result = await fetchDataStatus()
-    if (seq !== checkSeq) return
-    dataStatus.value = result
-    if (result.state === 'running') startPolling()
+    if (seq === checkSeq) applyStatus(result)
   } catch {
     // 状态检查失败保持静默（不打扰训练），下次前台激活按节流重试
   } finally {
+    checksInFlight -= 1
     if (seq === checkSeq) dataChecking.value = false
+    ensurePollingAlive()
   }
 }
 
@@ -105,11 +126,22 @@ export function onDataActive(): void {
 }
 
 function startPolling(): void {
-  if (pollTimer !== undefined || pollInFlight) return
   if (!dataPolling.value) {
     dataPolling.value = true
     pollDeadline = Date.now() + DATA_POLL_TIMEOUT_MS
   }
+  ensurePollingAlive()
+}
+
+/**
+ * 轮询循环保活：循环标记激活时必须始终存在未决步骤（定时器或在途检查）。
+ * 有在途检查时不重复排程——其结算路径（finally）会再次调用本函数；
+ * 全部结算后仍无未决步骤则补排程，避免乱序丢弃旧响应后循环卡死（永久"更新中"）。
+ */
+function ensurePollingAlive(): void {
+  if (isHidden()) return
+  if (!dataPolling.value) return
+  if (pollTimer !== undefined || pollInFlight || checksInFlight > 0) return
   schedulePoll()
 }
 
@@ -120,6 +152,7 @@ function schedulePoll(): void {
 
 async function pollOnce(): Promise<void> {
   pollInFlight = true
+  checksInFlight += 1
   try {
     // 页面隐藏时暂停轮询；回到前台由 onDataActive 重新接管
     if (isHidden()) return
@@ -129,19 +162,16 @@ async function pollOnce(): Promise<void> {
     dataChecking.value = true
     try {
       const result = await fetchDataStatus()
-      if (seq !== checkSeq) return
-      dataStatus.value = result
-      if (result.state === 'running') { schedulePoll(); return }
-      dataPolling.value = false
-      onDataFinished(result)
+      if (seq === checkSeq) applyStatus(result)
     } catch {
-      // 单次轮询失败不放弃，继续按间隔轮询直到上限
-      if (seq === checkSeq) schedulePoll()
+      // 单次轮询失败不放弃：由 finally 的 ensurePollingAlive 继续排程直到上限
     } finally {
       if (seq === checkSeq) dataChecking.value = false
     }
   } finally {
     pollInFlight = false
+    checksInFlight -= 1
+    ensurePollingAlive()
   }
 }
 

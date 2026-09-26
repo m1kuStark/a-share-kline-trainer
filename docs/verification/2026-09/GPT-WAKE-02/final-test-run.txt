@@ -1,0 +1,22 @@
+
+> a-share-kline-trainer@0.3.2 test
+> vitest run --config server/vitest.config.ts server/test/data-freshness.test.ts server/test/data-refresh.test.ts server/test/catalog-protection.test.ts server/test/data-calendar.test.ts server/test/data-status-timing.test.ts server/test/data-status-store-order.test.ts server/test/frontend-data-status-contract.test.ts --maxWorkers=2
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/DATA-05-integration[39m
+
+ [32m✓[39m server/test/catalog-protection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m server/test/data-status-store-order.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m server/test/frontend-data-status-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m server/test/data-status-timing.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m server/test/data-freshness.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/data-calendar.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/test/data-refresh.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 2858[2mms[22m[39m
+   [33m[2m✓[22m[39m data refresh service[2m > [22ma) scans a synthetic TDX fixture: baseline updated, then unchanged on rescan [33m 383[2mms[22m[39m
+   [33m[2m✓[22m[39m data refresh service[2m > [22ml) late async work after the watchdog cannot publish and cannot clobber a newer task [33m 365[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m81 passed[39m[22m[90m (81)[39m
+[2m   Start at [22m 14:00:55
+[2m   Duration [22m 3.33s[2m (transform 220ms, setup 0ms, collect 444ms, tests 3.02s, environment 1ms, prepare 574ms)[22m
+

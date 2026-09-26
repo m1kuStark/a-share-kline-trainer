@@ -25,7 +25,8 @@ export interface FreshnessResult {
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000
 // 15:00 收盘：上海时刻达到 15:00 即包含当日，否则查前一已收盘交易日。
 const CLOSED_AFTER_MINUTES = 15 * 60
-const COMPLETENESS_NOTE = '来源末日不证明所有股票完整'
+/** 每条 reason 都必须携带的完备性警示：来源最大日不证明每股完整。 */
+export const COMPLETENESS_NOTE = '来源末日不证明所有股票完整'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
