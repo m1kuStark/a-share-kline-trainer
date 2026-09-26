@@ -20,7 +20,7 @@ const libraryBusy = ref(false)
 const snapshot = ref<TrainingSnapshot | null>(null)
 const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
-const recordingOptions = ref<{ enabled: boolean; params?: Record<string, string | number> }>({ enabled: true })
+const recordingOptions = ref<{ enabled: boolean; params?: Record<string, unknown> }>({ enabled: true })
 const replay = shallowRef<CompactRecordingFile | null>(null)
 const recentRecordings = ref<RecordingSummary[]>([])
 const recordingError = ref('')
@@ -45,7 +45,7 @@ async function returnToTraining(): Promise<void> {
   replay.value = null
   await refresh()
 }
-async function onCreated(options: { enabled: boolean; params: Record<string, string | number> }): Promise<void> {
+async function onCreated(options: { enabled: boolean; params: Record<string, unknown> }): Promise<void> {
   recordingOptions.value = options
   await refresh()
 }

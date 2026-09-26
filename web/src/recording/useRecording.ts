@@ -44,7 +44,7 @@ export function useRecording(options: {
   ready: () => boolean
   readChart: () => ChartCapture | null
   /** 仅兼容旧接线；新录制不再记录创建样板事件，该参数不产生事件 */
-  createdParams?: Record<string, string | number>
+  createdParams?: Record<string, unknown>
   /**
    * 训练页可提供的同期 1D 权威行情+当前显示画线（返修合同 DRAW-02/REC-02）。
    * 提供时所有检查点的 chart 只用它；返回 null 表示当期无可靠日线，不得回退当前视图

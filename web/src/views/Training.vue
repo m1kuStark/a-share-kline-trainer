@@ -17,7 +17,7 @@ import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavori
 import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
-const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, string | number> } }>()
+const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
 const emit = defineEmits<{ ended: [] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
@@ -226,7 +226,13 @@ const training = computed(() => snapshot.value.training)
 const account = computed(() => snapshot.value.account)
 const returnPct = computed(() => ((account.value.equity - training.value.initialCash) / training.value.initialCash) * 100)
 const isTyping = (event: KeyboardEvent) => event.isComposing || !!(event.target as HTMLElement)?.closest?.('input, textarea, select, [contenteditable="true"]')
-const tierLabel = computed(() => ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier))
+const tierLabel = computed(() => {
+  if (training.value.tier === 'RANGE') {
+    const range = training.value.range
+    return range ? `自定义范围 ${range.startDate} ~ ${range.endDate}` : '自定义范围'
+  }
+  return ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier)
+})
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
   if (!drawTool.value) return message.value

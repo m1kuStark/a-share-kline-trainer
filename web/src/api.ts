@@ -11,9 +11,49 @@ export interface Stock {
   lastDate: string | null
 }
 
+/** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02 冻结合同） */
+export type TrainingTier = Tier | 'RANGE'
+
+/** 服务端 TrainingRangeMeta 的前端镜像（version/mode/requested/actual/指纹与notes） */
+export interface TrainingRangeMeta {
+  version: 1
+  mode: 'preset' | 'latest' | 'bars'
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  sourceFingerprint: string
+  notes: string[]
+}
+
+export interface TrainingRangeRequest {
+  mode: 'preset' | 'latest' | 'bars'
+  startDate: string
+  months?: number
+  endDate?: string | null
+  count?: number
+}
+
+export interface TrainingRangePreview {
+  version: 1
+  previewId: string
+  code: string
+  market: string
+  request: TrainingRangeRequest
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  notes: string[]
+  sourceFingerprint: string
+  expiresAt: string
+}
+
 export interface TrainingMeta {
   id: number
-  tier: Tier
+  tier: TrainingTier
   code: string | null
   name: string | null
   market: string
@@ -28,6 +68,8 @@ export interface TrainingMeta {
   adjustMode: 'forward' | 'raw'
   initialCash: number
   createdAt: string
+  /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
+  range?: TrainingRangeMeta
 }
 
 export interface AccountView {
@@ -101,7 +143,16 @@ export function searchStocks(q: string): Promise<{ items: Stock[]; total: number
   return request(`/api/stocks?q=${encodeURIComponent(q)}`)
 }
 
-export function createTraining(input: { tier: Tier; code: string; start_date: string; initial_cash?: number; blind?: boolean; adjust_mode?: string }): Promise<{ training: TrainingMeta }> {
+/** 范围预览：只返回日期元信息与指纹，不含任何未来 OHLC（TRAIN-02 冻结合同） */
+export function previewTrainingRange(input: { code: string; market: string; range: TrainingRangeRequest; adjustMode?: string }): Promise<TrainingRangePreview> {
+  return request('/api/training-ranges/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function createTraining(input: { tier?: Tier; code: string; start_date?: string; initial_cash?: number; blind?: boolean; adjust_mode?: string; range?: TrainingRangeRequest; previewId?: string }): Promise<{ training: TrainingMeta }> {
   return request('/api/trainings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
