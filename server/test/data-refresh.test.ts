@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
-import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { registerApi } from '../src/api.js'
@@ -820,6 +820,78 @@ describe('data status freshness integration', () => {
     } finally {
       unregister()
       database.close()
+    }
+  })
+
+  // ===== 2026-09-26 review：两项来源失效边界（P2） =====
+
+  it('t) entire vipdoc disappearing downgrades freshness even though the selected source becomes none', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // 整个 vipdoc 消失：selection.source 退化为 none、tdxAvailable=false，
+      // 但 lastSuccess.sourceMaxDate 仍在——不得据此宣称 current/stale（历史末日≠当前来源已验证）。
+      await rename(join(root, 'vipdoc'), join(root, 'vipdoc.saved'))
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(false)
+      expect(degraded.tdx.available).toBe(false)
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+      expect(degraded.freshness.sourceMaxDate).toBe(D2)
+      expect(degraded.freshness.expectedDate).toBe(expected)
+
+      // 来源恢复后自动回到正常判定
+      await rename(join(root, 'vipdoc.saved'), join(root, 'vipdoc'))
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('u) lday replaced by a plain file downgrades freshness (directory type must be validated)', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // lday 换成同名普通文件：access(F_OK) 探测应失效——与 scanTdx 同口径视为结构不可读
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      await writeFile(join(root, 'vipdoc', 'sh', 'lday'), 'not a directory')
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(true) // vipdoc 仍在
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+
+      // 恢复真实目录结构后自动回到正常判定
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { force: true })
+      await writeStockDayFile(root, 'sh', 'sh600519.day', [dateInt(D1), dateInt(D2)])
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
     }
   })
 })

@@ -49,12 +49,15 @@ export async function probeTdxDayDirectories(tdxRoot: string | null): Promise<bo
   for (const market of MARKETS) {
     const marketDir = join(tdxRoot, 'vipdoc', market)
     try {
-      await access(marketDir)
-    } catch {
-      continue
+      // readdir 同时验证「是目录」与「可读」：access(F_OK) 会被同名普通文件骗过（ENOTDIR），
+      // 权限错误也不得被当作"该市场无数据"。容错口径与 scanTdx 一致。
+      await readdir(marketDir)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
+      return false
     }
     try {
-      await access(join(marketDir, 'lday'))
+      await readdir(join(marketDir, 'lday'))
     } catch {
       return false
     }
