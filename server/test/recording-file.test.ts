@@ -347,8 +347,8 @@ describe('识别与异常输入', () => {
 
   it('未知schema显式拒绝，不能只cast', async () => {
     const base = buildCompactFile().file as unknown as Record<string, unknown>
-    await expect(readRecordingFile(new Blob([JSON.stringify({ ...base, schemaVersion: 3 })]))).rejects.toThrow(
-      /schemaVersion|仅支持 1 或 2/,
+    await expect(readRecordingFile(new Blob([JSON.stringify({ ...base, schemaVersion: 4 })]))).rejects.toThrow(
+      /schemaVersion|仅支持 1、2 或 3/,
     )
     await expect(readRecordingFile(new Blob([JSON.stringify({ ...base, schemaVersion: '2' })]))).rejects.toThrow(
       /schemaVersion|必须是 2/,
@@ -357,8 +357,8 @@ describe('识别与异常输入', () => {
       /format/,
     )
     // gzip包装下的未知schema同样拒绝
-    const gz = await gzipOf(JSON.stringify({ ...base, schemaVersion: 3 }))
-    await expect(readRecordingFile(new Blob([gz]))).rejects.toThrow(/schemaVersion|仅支持 1 或 2/)
+    const gz = await gzipOf(JSON.stringify({ ...base, schemaVersion: 4 }))
+    await expect(readRecordingFile(new Blob([gz]))).rejects.toThrow(/schemaVersion|仅支持 1、2 或 3/)
   })
 
   it('损坏UTF-8字节拒绝而非替换后误接受', async () => {

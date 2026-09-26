@@ -549,8 +549,10 @@ export function validateCompactRecording(value: unknown): CompactRecordingFile {
   if (value.format !== 'trainer-session') {
     fail('format', `必须是 'trainer-session'（收到 ${JSON.stringify(value.format)}）`)
   }
-  if (value.schemaVersion !== 2) {
-    fail('schemaVersion', `必须是 2（收到 ${JSON.stringify(value.schemaVersion)}）`)
+  // 按版本自动路由：3 接受 RANGE＋range 元数据；2 保持旧五档语义（RANGE 拒绝）。
+  const allowRange = value.schemaVersion === 3
+  if (value.schemaVersion !== 2 && value.schemaVersion !== 3) {
+    fail('schemaVersion', `必须是 2 或 3（收到 ${JSON.stringify(value.schemaVersion)}）`)
   }
   assertString(value.sessionId, 'sessionId')
   assertTimestamp(value.createdAt, 'createdAt')
@@ -566,7 +568,7 @@ export function validateCompactRecording(value: unknown): CompactRecordingFile {
   const resourcesRaw = assertRecord(value.resources, 'resources')
   const checkpoints = value.checkpoints as unknown[]
   const metaIds = assertValueTable(resourcesRaw.trainingMeta, 'resources.trainingMeta', (meta, field) => {
-    assertTrainingMeta(meta, field)
+    assertTrainingMeta(meta, field, { allowRange })
   })
   const accountIds = assertValueTable(resourcesRaw.accounts, 'resources.accounts', (account, field) => {
     assertAccountView(account, field)

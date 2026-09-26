@@ -310,7 +310,7 @@ export class CompactRecorder {
       this.fail(`读取录制会话 ${id} 失败：存储中不存在该会话。`)
       throw new Error(`存储中不存在 ID 为 ${id} 的录制会话，无法恢复。`)
     }
-    // 只接受 v2：schemaVersion/引用/时序/资源完整性由 validator 逐项检查
+    // 接受 v2/v3：schemaVersion/引用/时序/资源完整性由 validator 逐项检查
     try {
       validateCompactRecording(loaded)
     } catch (error) {
@@ -496,9 +496,14 @@ export class CompactRecorder {
   private snapshot(): CompactRecordingFile {
     const session = this.requireSession()
     const resources = this.requireBuilder().getResources()
+    // 版本升级与首次 RANGE 持久化一致：任一训练元数据为 RANGE 即整文件 v3，
+    // 不存在 schema2+RANGE 的中间持久状态；旧五档训练继续产出 v2。
+    const carriesRange = resources.trainingMeta.some(
+      entry => (entry as { value?: { tier?: unknown } }).value?.tier === 'RANGE',
+    )
     return {
       format: 'trainer-session',
-      schemaVersion: 2,
+      schemaVersion: carriesRange ? 3 : 2,
       sessionId: session.sessionId,
       createdAt: session.createdAt,
       app: structuredClone(session.app),
@@ -564,7 +569,10 @@ function assertCheckpointInputShape(input: CheckpointInput): void {
   assertBoolean(ui.multiSelect, 'checkpoint.ui.multiSelect')
   if (record.training !== null) {
     const training = assertRecord(record.training, 'checkpoint.training')
-    assertTrainingMeta(training.training, 'checkpoint.training.training')
+    // RANGE 训练（tier=RANGE+range 元数据）从录制入口即合法：schemaVersion=3 的持久化由 snapshot() 推导
+    const metaRecord = assertRecord(training.training, 'checkpoint.training.training')
+    const allowRange = metaRecord.tier === 'RANGE'
+    assertTrainingMeta(training.training, 'checkpoint.training.training', { allowRange })
     assertAccountView(training.account, 'checkpoint.training.account')
     assertArray(training.trades, 'checkpoint.training.trades').forEach((trade, index) => {
       assertTrade(trade, `checkpoint.training.trades[${index}]`)

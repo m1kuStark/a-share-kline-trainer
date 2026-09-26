@@ -64,7 +64,7 @@ interface CompactCounts {
 /** compactSessions 行：会话元信息 + gaps/complete/counts + revision + 最后提交批次身份 */
 interface CompactSessionHeader {
   format: 'trainer-session'
-  schemaVersion: 2
+  schemaVersion: 2 | 3
   sessionId: string
   createdAt: string
   app: RecordingFileAppInfo
@@ -305,7 +305,7 @@ function buildHeader(
 ): CompactSessionHeader {
   return {
     format: 'trainer-session',
-    schemaVersion: 2,
+    schemaVersion: file.schemaVersion,
     sessionId: file.sessionId,
     createdAt: file.createdAt,
     app: file.app,
@@ -504,7 +504,7 @@ function assemble(header: CompactSessionHeader, rows: CompactRecordRow[]): Compa
   }
   return {
     format: 'trainer-session',
-    schemaVersion: 2,
+    schemaVersion: header.schemaVersion,
     sessionId: header.sessionId,
     createdAt: header.createdAt,
     app: header.app,
