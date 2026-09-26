@@ -5,6 +5,7 @@
 - [测试门禁](testing.md)：什么检查证明什么，何时必须浏览器和视觉验收。
 - [并行开发](parallel-development.md)：当前约束、任务所有权和集成方式。
 - [模型协作](model-delegation.md)：四路策略、强模型介入边界和GLM配置核验。
+- [GLM失败模式账本](glm-failure-patterns.md)：回调触发重读、反例沉淀、修复预算和下一次合同教学输入。
 - [产品开发分工](product-development.md)：ORCH关闭后的产品主线、任务基线核对与GLM完整接线职责。
 - [Worker Contract](worker-contract.md)：v1合同、压缩证据报告和控制层历史；[实施计划](../proposals/adaptive-model-routing.md)。
 - [Z code CLI经验](zcode-cli.md)：实际参数、完成通知、限流与输出预算。
