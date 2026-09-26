@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "M5",
-  "summary": "process-clues.ts 从注入的进程查询结果提取通达信安装根目录线索（保留 running-process 来源）：标准 bin 布局/中文空格路径/大小写去重/数量上限，ok、timeout、denied、unavailable、not_applicable 五态可区分；生产查询为固定 powershell 字面脚本＋参数数组＋有界超时。测试 12/12，零真实进程/配置读取。",
-  "next_action": "GPT 定向复核；后续切片（inspect 组合、受保护端点、原生选择、原子保存、受控重启）按边界另片。",
+  "summary": "process-clues.ts 提取运行中通达信安装根目录线索，保留五态结果、固定 PowerShell 白名单、-First 8、UTF-8 字节上限和跨块中文路径安全；52 项定向测试通过。",
+  "next_action": "候选已通过 GPT 定向复核并接入隔离产品候选；先冻结 inspect 组合与受保护 setup API 合同，再做后续接线。",
   "allowed_paths": [
     "server/src/tdx/process-clues.ts",
     "server/test/process-clues.test.ts",
@@ -20,8 +20,12 @@
     "reason": "SETUP-01 首片冻结合同（SETUP-01-clues-contract.md）授权的三文件切片；只读线索提取，不接 HTTP/UI/保存/重启，不新增暴露本机路径的端点。",
     "update": ["docs/work-items/tasks/SETUP-CLUES-01.md"]
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": [
+    "server/test/process-clues.test.ts",
+    "server/test/discover.test.ts",
+    "server/test/tdx-inspect.test.ts"
+  ],
+  "integration_ref": "integration/product-integration-20260926",
   "acceptance_ref": null
 }
 ```

@@ -5,10 +5,10 @@
   "id": "TRAIN-02",
   "title": "创建训练范围与周期联动",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "M5",
   "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
-  "next_action": "第二片已交付于对齐候选 task/TRAIN-02-integration@1209341+（并发创建串行化/权息字节指纹/schemaVersion=3范围录像/范围表单三模式/预览生命周期），证据见verification/2026-09/TRAIN-02-server/与attempt-glm-coord-01/logs/；待GPT定向语义/UI复核，通过后接SETUP-01。",
+  "next_action": "第二片及 errorMessage 生命周期修复已通过 GPT 定向语义/UI 验收；集成候选机器门禁通过，待候选提升到 main 后关闭任务。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",
@@ -39,7 +39,7 @@
   "verification_refs": [
     "docs/verification/2026-09/START-01/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926",
   "acceptance_ref": null
 }
 ```

@@ -5,10 +5,10 @@
   "id": "DATA-05",
   "title": "数据新鲜度与盘后状态",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "R1",
-  "summary": "FRESH-01 integrated; implement coordinator and visible home status using an offline official 2026 calendar.",
-  "next_action": "Follow docs/work-items/prompts/DATA-05-integration.md; implementation then independent product review.",
+  "summary": "DATA-05 freshness coordinator, offline SSE 2026 calendar, home status, poll ordering and unreadable-source downgrade are present in the isolated integration candidate.",
+  "next_action": "Candidate machine gates and GPT semantic review passed; keep isolated until the product integration candidate is promoted to main.",
   "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
   "allowed_paths": [
     "server/src/data/**",
@@ -37,7 +37,7 @@
   "verification_refs": [
     "docs/verification/2026-09/DATA-05/calendar-source.json"
   ],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926",
   "acceptance_ref": null
 }
 ```
