@@ -17,8 +17,25 @@ import {
   equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
+import { validateSetupRequest } from './setup/control-guard.js'
+import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
+import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
+import { defaultTdxCandidates } from './tdx/discover.js'
 
-export async function registerApi(app: FastifyInstance, config: AppConfig, database: DatabaseSync): Promise<void> {
+export interface RegisterApiOptions {
+  /** 受保护 setup 端点的可注入依赖（测试用合成 stub，生产缺省走真实查询） */
+  setup?: {
+    processQuery?: () => Promise<import('./tdx/process-clues.js').ProcessQueryResult>
+    inspect?: (roots: readonly string[]) => Promise<import('./tdx/inspect.js').TdxCandidateCheck[]>
+  }
+}
+
+export async function registerApi(
+  app: FastifyInstance,
+  config: AppConfig,
+  database: DatabaseSync,
+  options: RegisterApiOptions = {},
+): Promise<void> {
   await registerRecordingContextRoutes(app, config, database)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
@@ -60,6 +77,50 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     }
     app.log.error(error)
     return reply.code(500).send({ error: '服务器内部错误' })
+  })
+
+  // 受保护候选诊断只读端点（SETUP-API-01）：guard 先行，失败不调用任何诊断；
+  // expectedHost 由配置监听地址构造，不从请求 Host 反推；诊断异常结构化 503，
+  // 不把失败伪装成空候选。响应可含本机路径，绝不回显控制令牌。
+  app.get('/api/setup/candidates', async (request, reply) => {
+    const expectedHost = `${config.host}:${config.port}`
+    const guard = validateSetupRequest({
+      host: request.host,
+      origin: request.headers.origin,
+      // 这两个头是单值语义；Fastify 类型给 string|string[]，取首值并按 undefined 保留
+      secFetchSite: Array.isArray(request.headers['sec-fetch-site'])
+        ? request.headers['sec-fetch-site'][0]
+        : request.headers['sec-fetch-site'],
+      controlToken: Array.isArray(request.headers['x-control-token'])
+        ? request.headers['x-control-token'][0]
+        : request.headers['x-control-token'],
+      expectedHost,
+      expectedOrigin: `http://${expectedHost}`,
+      expectedToken: config.controlToken ?? '',
+    })
+    if (!guard.ok) {
+      return reply.code(guard.statusCode).send({ error: guard.code })
+    }
+    const processQuery = options.setup?.processQuery ?? defaultProcessQuery
+    const inspect = options.setup?.inspect
+    try {
+      // 注入点替换的是"查询"，clues 提取固定走 collectProcessClues（五态/去重/白名单）
+      const processResult = await collectProcessClues(processQuery)
+      const diagnostics = await collectTdxCandidateDiagnostics(
+        { process: processResult, manualRoots: defaultTdxCandidates() },
+        inspect,
+      )
+      const body: Record<string, unknown> = {
+        processStatus: diagnostics.processStatus,
+        candidates: diagnostics.candidates,
+      }
+      if (diagnostics.processReason !== undefined) {
+        body.processReason = diagnostics.processReason
+      }
+      return body
+    } catch (error) {
+      return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
+    }
   })
 
   app.get('/api/env', async () => {
