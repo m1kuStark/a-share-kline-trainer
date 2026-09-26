@@ -174,4 +174,11 @@ test('bars mode with N=0 shows the shared validation error and never calls the p
   await expect(page.getByText(/训练根数 N 必须是正整数/)).toBeVisible()
   await expect(page.getByText('范围预览', { exact: true })).toHaveCount(0)
   await expect.poll(() => previewCalls).toBe(0)
+
+  // control-handoff-20260926-10：修正 N 后成功预览，旧的错误提示必须消失
+  await page.locator('input[type="number"][min="1"]').fill('1')
+  await page.getByRole('button', { name: '生成范围预览' }).click()
+  await expect(page.getByText('范围预览', { exact: true })).toBeVisible()
+  await expect(page.getByText(/训练根数 N 必须是正整数/)).toHaveCount(0)
+  await expect.poll(() => previewCalls).toBe(1)
 })

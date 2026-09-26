@@ -37,10 +37,12 @@ function currentRangeRequest(): TrainingRangeRequest {
   return { mode: 'preset', startDate: rangeStart.value, months: rangeMonths.value }
 }
 
-/** 任何范围输入（起点/月数/N/模式/股票/复权）变化：旧预览与在途预览全部失效 */
+/** 任何范围输入（起点/月数/N/模式/股票/复权）变化：旧预览与在途预览全部失效，
+ * 旧的错误提示（如"非法 N"）也随之作废——输入已改，错误文案不再成立。 */
 function onRangeInputChanged(): void {
   inputVersion += 1
   rangePreview.value = null
+  errorMessage.value = ''
 }
 
 function onAdjustModeChanged(): void {
@@ -71,6 +73,7 @@ async function generateRangePreview(): Promise<boolean> {
       return false
     }
     rangePreview.value = { request: requestAtRequest, preview }
+    errorMessage.value = '' // 成功生成预览后，此前的非法输入错误不再成立
     return true
   } catch {
     if (versionAtRequest === inputVersion) rangePreview.value = null
