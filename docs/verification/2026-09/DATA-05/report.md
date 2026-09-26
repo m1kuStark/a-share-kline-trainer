@@ -1,6 +1,6 @@
 # DATA-05 实现验证报告（工作树 task/DATA-05-integration）
 
-日期：2026-09-25。实现者：GLM（Z Code 会话）。合同：[DATA-05-integration](../../../work-items/prompts/DATA-05-integration.md)。
+日期：2026-09-25。实现者：GLM（Z Code 会话）。合同：DATA-05-integration 派发提示词存于原 DATA 会话工作区（未随本候选携带）；冻结口径见 docs/engineering/release-032-contracts.md。
 
 ## 范围与基线
 

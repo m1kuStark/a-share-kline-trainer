@@ -19,7 +19,6 @@
     "web/src/api.ts",
     "e2e/data-update.spec.ts",
     "docs/work-items/tasks/DATA-05.md",
-    "docs/work-items/prompts/DATA-05-integration.md",
     "docs/verification/2026-09/DATA-05/**",
     "web/src/views/Launcher.vue",
     "server/test/data-status-store-order.test.ts",
@@ -44,6 +43,6 @@
 }
 ```
 
-[Implementation contract](../prompts/DATA-05-integration.md). Existing pure module is authoritative; do not replace it with the alternative desktop branch.
+Implementation contract: DATA-05-integration dispatch prompt lives in the original DATA session workspace (not carried into this candidate); frozen scope in docs/engineering/release-032-contracts.md. Existing pure module is authoritative; do not replace it with the alternative desktop branch.
 
 允许路径末三项（web/src/views/Launcher.vue、server/test/data-status-store-order.test.ts、server/test/frontend-data-status-contract.test.ts、docs/verification/2026-09/GPT-WAKE-02/**）由控制层派发 control-handoff-20260926-05（GPT-WAKE-02 收敛修复）授权扩入，详见该验证目录 report.md。
