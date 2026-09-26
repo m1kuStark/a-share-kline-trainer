@@ -153,3 +153,25 @@ test('latest mode copy says 到最新日线 and 409 clears the stale preview', a
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect.poll(() => createCalls).toBe(2)
 })
+
+test('bars mode with N=0 shows the shared validation error and never calls the preview API', async ({ page }: { page: Page }) => {
+  await openLauncher(page)
+  await page.route('**/api/stocks**', route => route.fulfill({ json: STOCKS }))
+  let previewCalls = 0
+  await page.route('**/api/training-ranges/preview', route => {
+    previewCalls += 1
+    route.fallback()
+  })
+  await page.route(/^((?!stocks|training-ranges).)*$/, route => route.continue())
+
+  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
+  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').dispatchEvent('input')
+  await page.getByRole('button', { name: /600519/ }).first().click()
+  await page.getByRole('button', { name: '自定义范围' }).click()
+  await page.getByRole('button', { name: '起始日＋根数' }).click()
+  await page.locator('input[type="number"][min="1"]').fill('0')
+  await page.getByRole('button', { name: '生成范围预览' }).click()
+  await expect(page.getByText(/训练根数 N 必须是正整数/)).toBeVisible()
+  await expect(page.getByText('范围预览', { exact: true })).toHaveCount(0)
+  await expect.poll(() => previewCalls).toBe(0)
+})

@@ -40,7 +40,13 @@ export function defaultRangeStart(now: Date = new Date()): string {
 
 export type RangeFormMode = 'preset' | 'latest' | 'bars'
 
-/** 从表单状态构造服务端请求（bars 的 N 至少为 1 的正安全整数）。 */
+/** bars 根数的唯一合法性口径：正安全整数（空/0/负/小数/非有限/超安全整数一律非法）。
+ * 生成预览与提交共用本校验；非法输入必须报错并保留用户原值，绝不静默缩量。 */
+export function isBarCountValid(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1
+}
+
+/** 从表单状态构造服务端请求；barCount 原样透传，合法性由 isBarCountValid 在请求发出前校验。 */
 export function rangeRequestOf(
   startDate: string,
   mode: RangeFormMode,
@@ -48,6 +54,6 @@ export function rangeRequestOf(
   barCount: number,
 ): { mode: RangeFormMode; startDate: string; months?: number; count?: number } {
   if (mode === 'latest') return { mode, startDate }
-  if (mode === 'bars') return { mode, startDate, count: Math.max(1, Math.floor(barCount || 1)) }
+  if (mode === 'bars') return { mode, startDate, count: barCount }
   return { mode, startDate, months }
 }

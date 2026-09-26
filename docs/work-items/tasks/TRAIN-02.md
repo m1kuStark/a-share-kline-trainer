@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "M5",
   "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
-  "next_action": "第一片及GPT-WAKE-02两项修复（并发创建串行化、权息字节指纹）已交付于task/TRAIN-02-integration@11eef7a，证据见verification/2026-09/TRAIN-02-server/；待DATA冻结提交后由集成人接Launcher预览失效守卫并派发第二片（表单、录制schema）。",
+  "next_action": "第二片已交付于对齐候选 task/TRAIN-02-integration@1209341+（并发创建串行化/权息字节指纹/schemaVersion=3范围录像/范围表单三模式/预览生命周期），证据见verification/2026-09/TRAIN-02-server/与attempt-glm-coord-01/logs/；待GPT定向语义/UI复核，通过后接SETUP-01。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",

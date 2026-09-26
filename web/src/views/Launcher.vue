@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { createTraining, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest } from '../api'
-import { defaultRangeStart, rangeRequestOf, shanghaiToday } from '../rangeDate'
+import { defaultRangeStart, isBarCountValid, rangeRequestOf, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 
 const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | TrainingRangeRequest> }] }>()
@@ -33,7 +33,7 @@ function resetRangeDefaults(): void {
 
 function currentRangeRequest(): TrainingRangeRequest {
   if (rangeMode.value === 'latest') return { mode: 'latest', startDate: rangeStart.value }
-  if (rangeMode.value === 'bars') return { mode: 'bars', startDate: rangeStart.value, count: Math.max(1, Math.floor(rangeBarCount.value || 1)) }
+  if (rangeMode.value === 'bars') return { mode: 'bars', startDate: rangeStart.value, count: rangeBarCount.value }
   return { mode: 'preset', startDate: rangeStart.value, months: rangeMonths.value }
 }
 
@@ -50,6 +50,11 @@ function onAdjustModeChanged(): void {
 /** 生成预览：显式动作，完成后元信息可见供审阅；期间输入变化即丢弃（版本守卫） */
 async function generateRangePreview(): Promise<boolean> {
   if (tier.value !== 'RANGE' || !selected.value) return false
+  // 预览与提交共用同一校验：非法 N 在此报错保留原输入，绝不静默缩量后发请求
+  if (rangeMode.value === 'bars' && !isBarCountValid(rangeBarCount.value)) {
+    errorMessage.value = '训练根数 N 必须是正整数（当前输入无效），请修正后重新生成预览'
+    return false
+  }
   const versionAtRequest = inputVersion
   const requestAtRequest = currentRangeRequest()
   previewing.value = true
@@ -160,8 +165,8 @@ async function performCreate(): Promise<void> {
       errorMessage.value = '请选择范围起始日'
       return
     }
-    if (rangeMode.value === 'bars' && (!Number.isSafeInteger(rangeBarCount.value) || rangeBarCount.value < 1)) {
-      errorMessage.value = '训练根数 N 必须是正整数（至少 1）'
+    if (rangeMode.value === 'bars' && !isBarCountValid(rangeBarCount.value)) {
+      errorMessage.value = '训练根数 N 必须是正整数（当前输入无效），请修正后再开始训练'
       return
     }
     const request = currentRangeRequest()
@@ -305,7 +310,7 @@ function confirmStartAnyway(): void {
           <small class="form-hint">创建前请先核对预览；任何输入改动都会使预览失效</small>
         </div>
         <div v-if="rangePreview" class="form-hint">
-          <strong>范围预览</strong>：请求 {{ rangePreview.preview.requestedStart }}{{ rangePreview.preview.requestedEnd ? ` ~ ${rangePreview.preview.requestedEnd}` : '（到最新日线）' }}；
+          <strong>范围预览</strong>：<template v-if="rangePreview.request.mode === 'bars'">从 {{ rangePreview.request.startDate }}（含）共 {{ rangePreview.request.count }} 根</template><template v-else-if="rangePreview.request.mode === 'latest'">从 {{ rangePreview.request.startDate }} 到最新日线</template><template v-else>从 {{ rangePreview.request.startDate }} 共 {{ rangePreview.request.months }} 个月</template>；
           实际 {{ rangePreview.preview.startDate }} ~ {{ rangePreview.preview.endDate }}，共 {{ rangePreview.preview.barCount }} 根日线
           <span v-if="rangePreview.preview.notes.length">；{{ rangePreview.preview.notes.join('；') }}</span>
         </div>
