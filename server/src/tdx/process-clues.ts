@@ -36,6 +36,37 @@ export const PROCESS_QUERY_TIMEOUT_MS = 10_000
 /** 生产查询 stdout/stderr 的累计字节上限；超过即终止并按截断失败处理 */
 export const MAX_QUERY_OUTPUT_BYTES = 1024 * 1024
 
+/** 有界输出累积：按 UTF-8 字节数计账（字符数会低估 CJK 三倍）。
+ * 达到上限后仍有新数据到来即标记截断（而不是静默丢弃）。 */
+export interface BoundedOutput {
+  stdout: string
+  stderr: string
+  byteTotal: number
+  truncated: boolean
+}
+
+export function appendBounded(
+  state: BoundedOutput,
+  target: 'stdout' | 'stderr',
+  text: string,
+  cap: number = MAX_QUERY_OUTPUT_BYTES,
+): void {
+  const bytes = Buffer.byteLength(text, 'utf8')
+  if (state.byteTotal >= cap) {
+    state.truncated = true
+    return
+  }
+  const room = cap - state.byteTotal
+  if (bytes > room) {
+    // 剩余空间容不下整个块：丢弃尾块并标记截断。不收部分块可保证
+    // 输出字节严格不超上限（重编码替换符会膨胀账面），结果已判截断不可用。
+    state.truncated = true
+    return
+  }
+  state[target] += text
+  state.byteTotal += bytes
+}
+
 /** 已知通达信主程序的可执行文件名（大小写不敏感） */
 function isKnownTdxExecutable(basename: string): boolean {
   return TDX_PROCESS_NAMES.some(name => name.toLowerCase() === basename.toLowerCase())
@@ -66,44 +97,52 @@ export function parseProcessQueryStdout(stdout: string): string[] {
   return roots
 }
 
+/** 生产查询脚本（固定字面构造，无用户输入拼接）：白名单进程名 + 上限 8 条路径 */
+export function buildProcessQueryScript(): string {
+  const filter = TDX_PROCESS_NAMES.map(name => `Name='${name}'`).join(' OR ')
+  return `Get-CimInstance Win32_Process -Filter "${filter}" | Select-Object -First 8 -ExpandProperty ExecutablePath -ErrorAction SilentlyContinue`
+}
+
 /** 生产查询（仅 Windows 调用）：固定 powershell 程序＋固定字面脚本参数数组，
  * 限定进程名白名单与超时；stdout/stderr 有界收集（超限截断并标记），不记录进日志。 */
 export function defaultProcessQuery(): Promise<ProcessQueryResult> {
-  const filter = TDX_PROCESS_NAMES.map(name => `Name='${name}'`).join(' OR ')
-  const script = `Get-CimInstance Win32_Process -Filter "${filter}" | Select-Object -ExpandProperty ExecutablePath -ErrorAction SilentlyContinue`
+  const script = buildProcessQueryScript()
   return new Promise(resolve => {
     let settled = false
+    let timedOut = false
+    const output: BoundedOutput = { stdout: '', stderr: '', byteTotal: 0, truncated: false }
+    // 手动 deadline 而非 spawn timeout：settle 时 clearTimeout，不留 10 秒内建句柄
+    const deadline = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+    }, PROCESS_QUERY_TIMEOUT_MS)
     const settle = (result: ProcessQueryResult) => {
       if (settled) return
       settled = true
+      clearTimeout(deadline)
       resolve(result)
     }
     const child = spawn('powershell', ['-NoProfile', '-Command', script], {
-      timeout: PROCESS_QUERY_TIMEOUT_MS,
       windowsHide: true,
     })
-    let stdout = ''
-    let stderr = ''
-    let truncated = false
     const boundedAppend = (target: 'stdout' | 'stderr', chunk: Buffer | string) => {
-      const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8')
-      const room = MAX_QUERY_OUTPUT_BYTES - (stdout.length + stderr.length)
-      if (room <= 0) return
-      if (text.length > room) {
-        truncated = true
-        void child.kill()
-      }
-      if (target === 'stdout') stdout += text.slice(0, Math.max(0, room))
-      else stderr += text.slice(0, Math.max(0, room))
+      appendBounded(output, target, typeof chunk === 'string' ? chunk : chunk.toString('utf8'))
+      if (output.truncated) child.kill('SIGTERM')
     }
     child.stdout.on('data', chunk => boundedAppend('stdout', chunk))
     child.stderr.on('data', chunk => boundedAppend('stderr', chunk))
     // spawn 失败（如 powershell 不在 PATH）：消化 error 事件并单次 settle，绝不让进程崩溃
     child.on('error', error => {
-      settle({ exitCode: null, stdout, stderr: `进程查询启动失败：${error.message}`, timedOut: false })
+      settle({ exitCode: null, stdout: output.stdout, stderr: `进程查询启动失败：${error.message}`, timedOut: false, truncated: output.truncated || undefined })
     })
     child.on('close', (exitCode, signal) => {
-      settle({ exitCode, stdout, stderr, timedOut: signal === 'SIGTERM', truncated })
+      settle({
+        exitCode,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        timedOut,
+        truncated: output.truncated || undefined,
+      })
     })
   })
 }
@@ -119,6 +158,10 @@ export async function collectProcessClues(query: ProcessQuery): Promise<ProcessC
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
     return { status: 'unavailable', clues: [], reason }
+  }
+  // 截断优先于超时：超限 kill 的 SIGTERM 会同时给出两信号，截断语义必须先报告
+  if (result.truncated) {
+    return { status: 'unavailable', clues: [], reason: '进程查询输出超过有界上限被截断，结果不完整' }
   }
   if (result.timedOut) {
     return { status: 'timeout', clues: [] }

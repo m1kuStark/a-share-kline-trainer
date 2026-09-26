@@ -3,6 +3,8 @@
 // 生产查询固定程序与参数数组，不拼 shell；测试全程使用合成路径，不读取真实 TDX。
 import { describe, expect, it } from 'vitest'
 import {
+  appendBounded,
+  buildProcessQueryScript,
   collectProcessClues,
   parseProcessQueryStdout,
   PROCESS_QUERY_TIMEOUT_MS,
@@ -171,5 +173,65 @@ describe('output bounds (有界性合同)', () => {
   it('defines a bounded output cap for the production query', () => {
     expect(MAX_QUERY_OUTPUT_BYTES).toBeGreaterThan(0)
     expect(MAX_QUERY_OUTPUT_BYTES).toBeLessThanOrEqual(1024 * 1024)
+  })
+})
+
+// control-handoff-20260926-15：有界查询合同四缺口回归
+
+describe('truncation takes precedence over timeout', () => {
+  it('reports unavailable (truncated) even when the kill also looks like a timeout', async () => {
+    // 超限 kill 的 SIGTERM 会让 close 同时给出 timedOut 与 truncated——截断语义必须优先
+    const result = await collectProcessClues(async () => ({
+      exitCode: null, stdout: '', stderr: '', timedOut: true, truncated: true,
+    }))
+    expect(result.status).toBe('unavailable')
+    expect(result.reason).toContain('截断')
+    expect(result.clues).toEqual([])
+  })
+})
+
+describe('bounded output counts UTF-8 bytes, not characters', () => {
+  function makeState(): { stdout: string; stderr: string; byteTotal: number; truncated: boolean } {
+    return { stdout: '', stderr: '', byteTotal: 0, truncated: false }
+  }
+
+  it('400k CJK characters exceed the 1MiB byte cap and mark truncation', () => {
+    const state = makeState()
+    const chunk = '中'.repeat(100_000) // 300k UTF-8 bytes per chunk
+    run_codex_noop: {
+      // 直接驱动四块：4×30 万字节 = 120 万字节 > 1MiB
+    }
+    appendBounded(state, 'stdout', chunk)
+    appendBounded(state, 'stdout', chunk)
+    expect(state.truncated).toBe(false)
+    appendBounded(state, 'stdout', chunk)
+    appendBounded(state, 'stdout', chunk)
+    expect(state.truncated).toBe(true)
+    expect(Buffer.byteLength(state.stdout + state.stderr, 'utf8')).toBeLessThanOrEqual(1024 * 1024)
+  })
+
+  it('marks truncation when data arrives after the cap is exactly reached', () => {
+    const state = makeState()
+    appendBounded(state, 'stdout', 'a'.repeat(1024 * 1024))
+    expect(state.truncated).toBe(false)
+    appendBounded(state, 'stdout', 'b')
+    expect(state.truncated).toBe(true)
+  })
+
+  it('splitting a multi-byte character across the boundary does not corrupt accounting', () => {
+    const state = makeState()
+    appendBounded(state, 'stdout', 'x'.repeat(1024 * 1024 - 1))
+    appendBounded(state, 'stdout', '中') // 3 字节，只剩 1 字节空间：截断且计数含边界处理
+    expect(state.truncated).toBe(true)
+    expect(state.byteTotal).toBeLessThanOrEqual(1024 * 1024)
+  })
+})
+
+describe('production query script bounds result count', () => {
+  it('script selects at most 8 executable paths from the whitelist name', () => {
+    const script = buildProcessQueryScript()
+    expect(script).toContain('-First 8')
+    expect(script).toContain('Win32_Process')
+    expect(script).toContain("Name='TdxW.exe'")
   })
 })
