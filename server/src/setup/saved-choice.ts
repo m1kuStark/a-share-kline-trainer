@@ -104,7 +104,7 @@ export function resolveEffectiveTdxRoot(input: {
   explicitConfigTdxRoot?: string | null
   savedChoice?: SavedTdxChoice | null
   autoDiscoveredTdxRoot?: string | null
-}): EffectiveTdxRoot {
+}): EffectiveTdxRoot | null {
   const candidates: Array<{ root: string; source: TdxRootSource }> = [
     { root: input.envTdxRoot ?? '', source: 'env' },
     { root: input.explicitConfigTdxRoot ?? '', source: 'explicit-config' },
