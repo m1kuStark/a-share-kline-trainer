@@ -3,12 +3,15 @@
 // 失败、超时、拒绝与"确实没有进程"分别可区分。生产查询使用固定程序与参数数组，
 // 限定进程名/数量/超时，不拼接 shell、不读取命令行或账号、不记录完整本机路径。
 import { spawn } from 'node:child_process'
+import { basename as win32Basename, dirname as win32Dirname } from 'node:path'
 
 export interface ProcessQueryResult {
   exitCode: number | null
   stdout: string
   stderr: string
   timedOut: boolean
+  /** 输出超过有界上限被截断：不完整结果不得按 ok 处理 */
+  truncated?: boolean
 }
 
 export type ProcessQuery = () => Promise<ProcessQueryResult>
@@ -30,6 +33,8 @@ export const TDX_PROCESS_NAMES: readonly string[] = ['TdxW.exe']
 export const MAX_PROCESS_CLUES = 8
 /** 生产查询的有界超时（毫秒）；超时按 timeout 状态报告，不无限等待 */
 export const PROCESS_QUERY_TIMEOUT_MS = 10_000
+/** 生产查询 stdout/stderr 的累计字节上限；超过即终止并按截断失败处理 */
+export const MAX_QUERY_OUTPUT_BYTES = 1024 * 1024
 
 /** 已知通达信主程序的可执行文件名（大小写不敏感） */
 function isKnownTdxExecutable(basename: string): boolean {
@@ -44,13 +49,13 @@ export function parseProcessQueryStdout(stdout: string): string[] {
   for (const rawLine of stdout.split(/\r?\n/)) {
     const exePath = rawLine.trim()
     if (!exePath) continue
-    const separator = exePath.lastIndexOf('\\') >= 0 ? '\\' : '/'
-    const basename = exePath.slice(exePath.lastIndexOf(separator) + 1)
+    // structured win32 path APIs handle drive roots correctly
+    const basename = win32Basename(exePath)
     if (!isKnownTdxExecutable(basename)) continue
-    const exeDirectory = exePath.slice(0, exePath.length - basename.length - 1)
-    const parentName = exeDirectory.slice(exeDirectory.lastIndexOf(separator) + 1)
-    const root = parentName.toLowerCase() === 'bin' && exeDirectory.includes(separator)
-      ? exeDirectory.slice(0, exeDirectory.length - separator.length - parentName.length)
+    const exeDirectory = win32Dirname(exePath)
+    const parentName = win32Basename(exeDirectory)
+    const root = parentName.toLowerCase() === 'bin'
+      ? win32Dirname(exeDirectory)
       : exeDirectory
     const dedupKey = root.toLowerCase()
     if (seen.has(dedupKey)) continue
@@ -62,21 +67,43 @@ export function parseProcessQueryStdout(stdout: string): string[] {
 }
 
 /** 生产查询（仅 Windows 调用）：固定 powershell 程序＋固定字面脚本参数数组，
- * 限定进程名白名单与超时；stdout/stderr 全量收集供状态区分，不记录进日志。 */
+ * 限定进程名白名单与超时；stdout/stderr 有界收集（超限截断并标记），不记录进日志。 */
 export function defaultProcessQuery(): Promise<ProcessQueryResult> {
   const filter = TDX_PROCESS_NAMES.map(name => `Name='${name}'`).join(' OR ')
   const script = `Get-CimInstance Win32_Process -Filter "${filter}" | Select-Object -ExpandProperty ExecutablePath -ErrorAction SilentlyContinue`
   return new Promise(resolve => {
+    let settled = false
+    const settle = (result: ProcessQueryResult) => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
     const child = spawn('powershell', ['-NoProfile', '-Command', script], {
       timeout: PROCESS_QUERY_TIMEOUT_MS,
       windowsHide: true,
     })
     let stdout = ''
     let stderr = ''
-    child.stdout.on('data', chunk => { stdout += chunk })
-    child.stderr.on('data', chunk => { stderr += chunk })
+    let truncated = false
+    const boundedAppend = (target: 'stdout' | 'stderr', chunk: Buffer | string) => {
+      const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8')
+      const room = MAX_QUERY_OUTPUT_BYTES - (stdout.length + stderr.length)
+      if (room <= 0) return
+      if (text.length > room) {
+        truncated = true
+        void child.kill()
+      }
+      if (target === 'stdout') stdout += text.slice(0, Math.max(0, room))
+      else stderr += text.slice(0, Math.max(0, room))
+    }
+    child.stdout.on('data', chunk => boundedAppend('stdout', chunk))
+    child.stderr.on('data', chunk => boundedAppend('stderr', chunk))
+    // spawn 失败（如 powershell 不在 PATH）：消化 error 事件并单次 settle，绝不让进程崩溃
+    child.on('error', error => {
+      settle({ exitCode: null, stdout, stderr: `进程查询启动失败：${error.message}`, timedOut: false })
+    })
     child.on('close', (exitCode, signal) => {
-      resolve({ exitCode, stdout, stderr, timedOut: signal === 'SIGTERM' })
+      settle({ exitCode, stdout, stderr, timedOut: signal === 'SIGTERM', truncated })
     })
   })
 }
@@ -95,6 +122,9 @@ export async function collectProcessClues(query: ProcessQuery): Promise<ProcessC
   }
   if (result.timedOut) {
     return { status: 'timeout', clues: [] }
+  }
+  if (result.truncated) {
+    return { status: 'unavailable', clues: [], reason: '进程查询输出超过有界上限被截断，结果不完整' }
   }
   if (result.exitCode === null) {
     return { status: 'unavailable', clues: [], reason: `进程查询异常退出（信号终止）` }

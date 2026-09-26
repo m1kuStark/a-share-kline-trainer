@@ -7,6 +7,8 @@ import {
   parseProcessQueryStdout,
   PROCESS_QUERY_TIMEOUT_MS,
   type ProcessQueryResult,
+  MAX_QUERY_OUTPUT_BYTES,
+  defaultProcessQuery,
 } from '../src/tdx/process-clues'
 
 function ok(stdout: string, exitCode = 0): ProcessQueryResult {
@@ -113,5 +115,61 @@ describe('collectProcessClues', () => {
   it('defines a bounded production query timeout', () => {
     expect(PROCESS_QUERY_TIMEOUT_MS).toBeGreaterThan(0)
     expect(PROCESS_QUERY_TIMEOUT_MS).toBeLessThanOrEqual(15000)
+  })
+})
+
+// control-handoff-20260926-14：三项限定返修回归
+
+describe('spawn failure handling (P1)', () => {
+  it('defaultProcessQuery resolves a failure result when powershell is missing', async () => {
+    // 精确反例：PATH 清空后 spawn powershell → ENOENT；模块必须消化 error 事件，不让进程崩溃
+    const original = process.env.PATH
+    process.env.PATH = ''
+    try {
+      const result = await defaultProcessQuery()
+      expect(result.timedOut).toBe(false)
+      expect(result.exitCode).toBeNull()
+      expect(result.stderr.toLowerCase()).toContain('enoent')
+    } finally {
+      process.env.PATH = original
+    }
+    // 关键：进程仍活着（未因未处理 error 事件退出）
+    expect(process.exitCode ?? 0).not.toBe(1)
+  })
+
+  it('collectProcessClues maps spawn failure to unavailable', async () => {
+    const original = process.env.PATH
+    process.env.PATH = ''
+    try {
+      const result = await collectProcessClues(() => defaultProcessQuery())
+      expect(result.status).toBe('unavailable')
+      expect(result.clues).toEqual([])
+    } finally {
+      process.env.PATH = original
+    }
+  })
+})
+
+describe('drive-root path parsing (P2)', () => {
+  it('resolves drive-root executables to the drive root, not a drive-relative path', () => {
+    expect(parseProcessQueryStdout('C:\\bin\\TdxW.exe')).toEqual(['C:\\'])
+    expect(parseProcessQueryStdout('C:\\TdxW.exe')).toEqual(['C:\\'])
+    expect(parseProcessQueryStdout('C:\\new_tdx\\bin\\TdxW.exe')).toEqual(['C:\\new_tdx'])
+  })
+})
+
+describe('output bounds (有界性合同)', () => {
+  it('collectProcessClues treats truncated results as unavailable, not ok', async () => {
+    const truncated = await collectProcessClues(async () => ({
+      exitCode: 0, stdout: 'D:\new_tdx\bin\TdxW.exe', stderr: '', timedOut: false, truncated: true,
+    }))
+    expect(truncated.status).toBe('unavailable')
+    expect(truncated.clues).toEqual([])
+    expect(truncated.reason).toContain('截断')
+  })
+
+  it('defines a bounded output cap for the production query', () => {
+    expect(MAX_QUERY_OUTPUT_BYTES).toBeGreaterThan(0)
+    expect(MAX_QUERY_OUTPUT_BYTES).toBeLessThanOrEqual(1024 * 1024)
   })
 })
