@@ -4,6 +4,7 @@
 // 限定进程名/数量/超时，不拼接 shell、不读取命令行或账号、不记录完整本机路径。
 import { spawn } from 'node:child_process'
 import { basename as win32Basename, dirname as win32Dirname } from 'node:path'
+import { StringDecoder } from 'node:string_decoder'
 
 export interface ProcessQueryResult {
   exitCode: number | null
@@ -43,6 +44,7 @@ export interface BoundedOutput {
   stderr: string
   byteTotal: number
   truncated: boolean
+  decoders?: { stdout: StringDecoder; stderr: StringDecoder }
 }
 
 export function appendBounded(
@@ -65,6 +67,18 @@ export function appendBounded(
   }
   state[target] += text
   state.byteTotal += bytes
+}
+
+/** 将跨 stream chunk 的 UTF-8 字节先用有状态解码器还原，再交给字节上限累积。 */
+export function appendBoundedChunk(state: BoundedOutput, target: 'stdout' | 'stderr', chunk: Buffer): void {
+  state.decoders ??= { stdout: new StringDecoder('utf8'), stderr: new StringDecoder('utf8') }
+  appendBounded(state, target, state.decoders[target].write(chunk))
+}
+
+/** 在子进程关闭时排出每个 stream 解码器保留的尾部字节。 */
+export function flushBoundedChunk(state: BoundedOutput, target: 'stdout' | 'stderr'): void {
+  if (!state.decoders) return
+  appendBounded(state, target, state.decoders[target].end())
 }
 
 /** 已知通达信主程序的可执行文件名（大小写不敏感） */
@@ -126,7 +140,8 @@ export function defaultProcessQuery(): Promise<ProcessQueryResult> {
       windowsHide: true,
     })
     const boundedAppend = (target: 'stdout' | 'stderr', chunk: Buffer | string) => {
-      appendBounded(output, target, typeof chunk === 'string' ? chunk : chunk.toString('utf8'))
+      if (typeof chunk === 'string') appendBounded(output, target, chunk)
+      else appendBoundedChunk(output, target, chunk)
       if (output.truncated) child.kill('SIGTERM')
     }
     child.stdout.on('data', chunk => boundedAppend('stdout', chunk))
@@ -136,6 +151,8 @@ export function defaultProcessQuery(): Promise<ProcessQueryResult> {
       settle({ exitCode: null, stdout: output.stdout, stderr: `进程查询启动失败：${error.message}`, timedOut: false, truncated: output.truncated || undefined })
     })
     child.on('close', (exitCode, signal) => {
+      flushBoundedChunk(output, 'stdout')
+      flushBoundedChunk(output, 'stderr')
       settle({
         exitCode,
         stdout: output.stdout,
@@ -165,9 +182,6 @@ export async function collectProcessClues(query: ProcessQuery): Promise<ProcessC
   }
   if (result.timedOut) {
     return { status: 'timeout', clues: [] }
-  }
-  if (result.truncated) {
-    return { status: 'unavailable', clues: [], reason: '进程查询输出超过有界上限被截断，结果不完整' }
   }
   if (result.exitCode === null) {
     return { status: 'unavailable', clues: [], reason: `进程查询异常退出（信号终止）` }

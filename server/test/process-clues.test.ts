@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   appendBounded,
+  appendBoundedChunk,
+  flushBoundedChunk,
   buildProcessQueryScript,
   collectProcessClues,
   parseProcessQueryStdout,
@@ -224,6 +226,18 @@ describe('bounded output counts UTF-8 bytes, not characters', () => {
     appendBounded(state, 'stdout', '中') // 3 字节，只剩 1 字节空间：截断且计数含边界处理
     expect(state.truncated).toBe(true)
     expect(state.byteTotal).toBeLessThanOrEqual(1024 * 1024)
+  })
+
+  it('preserves a CJK path when UTF-8 bytes split across stream chunks', () => {
+    const state = makeState()
+    const expected = 'C:\\券商定制版\\bin\\TdxW.exe'
+    const bytes = Buffer.from(expected, 'utf8')
+    const split = bytes.indexOf(Buffer.from('商', 'utf8')) + 1
+    appendBoundedChunk(state, 'stdout', bytes.subarray(0, split))
+    appendBoundedChunk(state, 'stdout', bytes.subarray(split))
+    flushBoundedChunk(state, 'stdout')
+    expect(state.stdout).toBe(expected)
+    expect(state.truncated).toBe(false)
   })
 })
 
