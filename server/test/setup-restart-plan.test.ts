@@ -13,6 +13,7 @@ import {
 
 const NOW = 1_000_000
 const TIMEOUTS = {
+  saveMs: 5_000,
   drainMs: 5_000,
   sigtermMs: 5_000,
   spawnMs: 5_000,
@@ -55,10 +56,138 @@ function baseObs(overrides: Partial<RestartObservations> = {}): RestartObservati
   }
 }
 
-/** 单步：从给定状态出发执行一步，返回结果（nextState 需回传下一步） */
+/** 后续阶段夹具先真实认领保存再给成功回执；保存自身的反例直接调用 planRestartStep。 */
 function step(state: RestartAttemptState, overrides: Partial<RestartObservations> = {}) {
+  if (state.stage === 'preflight' && overrides.saveNewSource === undefined) {
+    state = planRestartStep(state, baseObs({ ...overrides, saveNewSource: { kind: 'pending' } })).nextState
+  }
   return planRestartStep(state, baseObs(overrides))
 }
+
+describe('GPT Direct：已冻结身份与等待边界不能被后续观测绕过', () => {
+  it('未认领保存时的成功回执不能直接停止旧服务', () => {
+    const unsolicited = planRestartStep(initialRestartState(), baseObs({ oldExit: { kind: 'alive' } }))
+    expect(unsolicited.phase).toBe('blocked-save-failed')
+    expect(unsolicited.nextState.claimed.sigterm).toBe(false)
+  })
+  it('spawn 成功回执必须属于本次目标 runId', () => {
+    const started = step(initialRestartState())
+    const wrongRun = step(started.nextState, {
+      spawn: { kind: 'success', runId: 'another-attempt', pid: 5151 } as never,
+      health: { kind: 'success', runId: TARGET.runId, pid: 5151 },
+    })
+    expect(wrongRun.phase).toBe('new-start-failed')
+    expect(wrongRun.nextState.boundNewPid).toBeNull()
+  })
+
+  it('首次退出探测超期才返回 alive 不能重置等待期限并发 SIGTERM', () => {
+    const first = step(initialRestartState(), { oldExit: { kind: 'pending' } })
+    const late = step(first.nextState, { oldExit: { kind: 'alive' }, nowMs: NOW + TIMEOUTS.sigtermMs })
+    expect(late.phase).toBe('old-exit-unconfirmed')
+    expect(late.nextState.claimed.sigterm).toBe(false)
+  })
+  it('preflight 之后不能替换目标、运行配置或期限', () => {
+    const first = step(initialRestartState())
+    for (const change of [
+      { target: { ...TARGET, runId: 'another-run' } },
+      { target: { ...TARGET, port: 9999, origin: 'http://127.0.0.1:9999' } },
+      { planned: { ...baseObs().planned, databasePath: 'C:\\other\\db' } },
+      { oldRecorded: { ...OLD, pid: 999 } },
+      { timeouts: { ...TIMEOUTS, spawnMs: 900_000 } },
+    ]) {
+      const drifted = step(first.nextState, {
+        ...change, spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
+        health: { kind: 'success', runId: change.target?.runId ?? TARGET.runId, pid: 5151 },
+      })
+      expect(drifted.phase).toBe('blocked-runtime-mismatch')
+      expect(drifted.retainOldState).toBe(true)
+    }
+  })
+
+  it('已派发保存的 pending 有有限出口，deadline 到达不重复保存', () => {
+    const first = step(initialRestartState(), { saveNewSource: { kind: 'pending' } })
+    const before = step(first.nextState, { saveNewSource: { kind: 'pending' }, nowMs: NOW + TIMEOUTS.saveMs - 1 })
+    expect(before.action).toBe('wait-save')
+    const expired = step(before.nextState, { saveNewSource: { kind: 'pending' }, nowMs: NOW + TIMEOUTS.saveMs })
+    expect(expired.phase).toBe('blocked-save-failed')
+    expect(expired.action).toBe('abort')
+  })
+
+  it('SIGTERM 未派发前的退出探测 pending 也必须在期限内结束', () => {
+    const first = step(initialRestartState(), { oldExit: { kind: 'pending' } })
+    expect(first.action).toBe('await-old-exit')
+    const expired = step(first.nextState, { oldExit: { kind: 'pending' }, nowMs: NOW + TIMEOUTS.sigtermMs })
+    expect(expired.phase).toBe('old-exit-unconfirmed')
+    expect(expired.nextState.claimed.sigterm).toBe(false)
+  })
+
+  it('超期才收到的 spawn 或 health 成功回执不能越过 deadline', () => {
+    const started = step(initialRestartState())
+    const lateSpawn = step(started.nextState, {
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'success', runId: TARGET.runId, pid: 5151 },
+      nowMs: NOW + TIMEOUTS.spawnMs,
+    })
+    expect(lateSpawn.phase).toBe('new-start-failed')
+    const bound = step(started.nextState, { spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, nowMs: NOW + 10 })
+    const lateHealth = step(bound.nextState, {
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'success', runId: TARGET.runId, pid: 5151 },
+      nowMs: NOW + 10 + TIMEOUTS.healthMs,
+    })
+    expect(lateHealth.phase).toBe('new-start-failed')
+  })
+
+  it('健康期限从绑定 spawn 回执开始，不能消耗在等待 spawn 上', () => {
+    const started = step(initialRestartState())
+    const bound = step(started.nextState, { spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, nowMs: NOW + 4999 })
+    const waiting = step(bound.nextState, { nowMs: NOW + 5001 })
+    expect(waiting.action).toBe('await-health')
+    const done = step(waiting.nextState, { health: { kind: 'success', runId: TARGET.runId, pid: 5151 }, nowMs: NOW + 5002 })
+    expect(done.phase).toBe('ready')
+  })
+
+  it('未派发启动不能接纳预先出现的成功回执', () => {
+    const unsolicited = step(initialRestartState(), {
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'success', runId: TARGET.runId, pid: 5151 },
+    })
+    expect(unsolicited.phase).toBe('new-start-failed')
+    expect(unsolicited.nextState.boundNewPid).toBeNull()
+  })
+
+  it('未知保存、drain、spawn、恢复都不能推定成功或继续派发', () => {
+    const unknown = { kind: 'unknown', detail: 'outcome unknown' } as never
+    expect(step(initialRestartState(), { saveNewSource: unknown }).phase).toBe('blocked-save-failed')
+    expect(step(initialRestartState(), { drain: unknown }).action).toBe('keep-old-state')
+    const starting = step(initialRestartState())
+    const failed = step(starting.nextState, { spawn: unknown })
+    expect(failed.phase).toBe('new-start-failed')
+    const restoreUnknown = step(failed.nextState, { restore: unknown })
+    expect(restoreUnknown.action).toBe('keep-old-state')
+    expect(step(restoreUnknown.nextState, { restore: { kind: 'pending' } }).action).toBe('keep-old-state')
+  })
+
+  it('恢复失败成为稳定失败，之后 pending 不再进入等待', () => {
+    const failed = step(initialRestartState(), { spawn: { kind: 'failure', detail: 'failed' } })
+    const restoreFailed = step(failed.nextState, { restore: { kind: 'failure', detail: 'disk unavailable' } })
+    expect(step(restoreFailed.nextState, { restore: { kind: 'pending' } }).action).toBe('keep-old-state')
+    const expired = step(failed.nextState, { nowMs: NOW + TIMEOUTS.restoreMs })
+    expect(step(expired.nextState, { restore: { kind: 'success' }, nowMs: NOW + TIMEOUTS.restoreMs + 1 }).phase).toBe('new-start-failed')
+  })
+
+  it('有限数相加溢出或时间倒退不能延长等待', () => {
+    expect(step(initialRestartState(), { nowMs: Number.MAX_VALUE,
+      timeouts: { ...TIMEOUTS, spawnMs: Number.MAX_VALUE } }).phase).toBe('blocked-runtime-mismatch')
+    const started = step(initialRestartState())
+    expect(step(started.nextState, { nowMs: NOW - 1 }).phase).toBe('blocked-runtime-mismatch')
+  })
+
+  it('终态来源继承保持原计划，不被迟到观测改写', () => {
+    const started = step(initialRestartState())
+    const done = step(started.nextState, { spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'success', runId: TARGET.runId, pid: 5151 } })
+    expect(done.phase).toBe('ready')
+    const late = step(done.nextState, { planned: { ...baseObs().planned, source: 'recalculate', tdxRoot: null } })
+    expect(late.tdxInheritance).toBe('explicit-env')
+  })
+})
 
 describe('preflight：守卫与保存派发分离', () => {
   it('活动训练非 null 即阻断，且终态稳定', () => {
@@ -220,14 +349,14 @@ describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
   it('spawn 回执绑定 PID；健康匹配绑定与目标 → ready；不匹配 → 失败', () => {
     const { state, startedAt } = inStarting()
     const bound = planRestartStep(state, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'pending' },
       nowMs: startedAt + 10,
     }))
     expect(bound.action).toBe('await-health')
     expect(bound.nextState.boundNewPid).toBe(5151)
     const match = planRestartStep(bound.nextState, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'success', runId: 'run-new', pid: 5151 },
       nowMs: startedAt + 20,
     }))
@@ -236,7 +365,7 @@ describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
     expect(match.retainOldState).toBe(false)
 
     const mismatch = planRestartStep(bound.nextState, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'success', runId: 'run-new', pid: 9999 },
       nowMs: startedAt + 20,
     }))
@@ -246,12 +375,12 @@ describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
   it('迟到回执不同 PID 不覆盖绑定；健康按原绑定验证仍可 ready', () => {
     const { state, startedAt } = inStarting()
     const bound = planRestartStep(state, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'pending' },
       nowMs: startedAt + 10,
     }))
     const late = planRestartStep(bound.nextState, baseObs({
-      spawn: { kind: 'success', pid: 300 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 300 },
       health: { kind: 'success', runId: 'run-new', pid: 5151 },
       nowMs: startedAt + 20,
     }))
@@ -262,7 +391,7 @@ describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
   it('非法回执 PID 不放行；健康先于回执到达时只等待回执（健康不能自证）', () => {
     const { state, startedAt } = inStarting()
     const badReceipt = planRestartStep(state, baseObs({
-      spawn: { kind: 'success', pid: 0 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 0 },
       nowMs: startedAt + 10,
     }))
     expect(badReceipt.phase).toBe('new-start-failed')
@@ -277,18 +406,18 @@ describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
   it('健康探测 unknown/超期 → 失败；pending 限时内等待', () => {
     const { state, startedAt } = inStarting()
     const bound = planRestartStep(state, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'pending' },
       nowMs: startedAt + 10,
     }))
     const unknown = planRestartStep(bound.nextState, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'unknown', detail: '超时' },
       nowMs: startedAt + 20,
     }))
     expect(unknown.phase).toBe('new-start-failed')
     const expired = planRestartStep(bound.nextState, baseObs({
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'pending' },
       nowMs: startedAt + 10 + TIMEOUTS.healthMs,
     }))
@@ -315,7 +444,8 @@ describe('恢复：new-start-failed 只进恢复流程，rolled-back 终态稳�
     const expired = planRestartStep(state, baseObs({ restore: { kind: 'pending' }, nowMs: startedAt + TIMEOUTS.restoreMs }))
     expect(expired.phase).toBe('new-start-failed')
     expect(expired.action).toBe('keep-old-state')
-    expect(expired.nextState.stage).toBe('restoring')
+    // 超期后锁定失败，不能由迟到 success 把失败覆盖成已回滚。
+    expect(expired.nextState.stage).toBe('restore-failed')
   })
 
   it('restore 确认成功才 rolled-back；随后迟到健康成功仍 rolled-back（探针 rollback-terminal-late-health）', () => {
@@ -325,7 +455,7 @@ describe('恢复：new-start-failed 只进恢复流程，rolled-back 终态稳�
     expect(confirmed.nextState.stage).toBe('rolled-back')
     const late = planRestartStep(confirmed.nextState, baseObs({
       oldExit: { kind: 'exited' },
-      spawn: { kind: 'success', pid: 5151 },
+      spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 },
       health: { kind: 'success', runId: 'run-new', pid: 5151 },
     }))
     expect(late.phase).toBe('rolled-back')
@@ -362,8 +492,8 @@ describe('完整序列（nextState 串联）与继承', () => {
     expect(state.boundNewPid).toBeNull()
     feed({ oldExit: { kind: 'exited' } }, NOW + 60)
     feed({ spawn: { kind: 'pending' } }, NOW + 70)
-    feed({ spawn: { kind: 'success', pid: 5151 }, health: { kind: 'pending' } }, NOW + 80)
-    const last = feed({ spawn: { kind: 'success', pid: 5151 }, health: { kind: 'success', runId: 'run-new', pid: 5151 } }, NOW + 90)
+    feed({ spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'pending' } }, NOW + 80)
+    const last = feed({ spawn: { kind: 'success', runId: TARGET.runId, pid: 5151 }, health: { kind: 'success', runId: 'run-new', pid: 5151 } }, NOW + 90)
     expect(phases).toEqual([
       'preflight', 'preflight', 'draining', 'send-sigterm', 'sigterm-wait', 'sigterm-wait',
       'new-start', 'new-start', 'new-start', 'ready',
@@ -381,6 +511,7 @@ describe('完整序列（nextState 串联）与继承', () => {
       state = r.nextState
       return r
     }
+    feed({ saveNewSource: { kind: 'pending' } }, NOW)
     feed({ oldExit: { kind: 'alive' } }, NOW)
     feed({ oldExit: { kind: 'alive' } }, NOW + 10)
     const kill = feed({ oldExit: { kind: 'alive' } }, NOW + 10 + TIMEOUTS.sigtermMs)
@@ -388,9 +519,9 @@ describe('完整序列（nextState 串联）与继承', () => {
     expect(kill.action).toBe('send-sigkill-once')
     const afterKill = feed({ oldExit: { kind: 'exited' } }, NOW + 10 + TIMEOUTS.sigtermMs + 10)
     expect(afterKill.phase).toBe('new-start')
-    const bound = feed({ spawn: { kind: 'success', pid: 600 }, health: { kind: 'pending' } }, NOW + 10 + TIMEOUTS.sigtermMs + 20)
+    const bound = feed({ spawn: { kind: 'success', runId: TARGET.runId, pid: 600 }, health: { kind: 'pending' } }, NOW + 10 + TIMEOUTS.sigtermMs + 20)
     expect(bound.action).toBe('await-health')
-    const done = feed({ spawn: { kind: 'success', pid: 600 }, health: { kind: 'success', runId: 'run-new', pid: 600 } }, NOW + 10 + TIMEOUTS.sigtermMs + 30)
+    const done = feed({ spawn: { kind: 'success', runId: TARGET.runId, pid: 600 }, health: { kind: 'success', runId: 'run-new', pid: 600 } }, NOW + 10 + TIMEOUTS.sigtermMs + 30)
     expect(done.phase).toBe('ready')
     expect(state.boundNewPid).toBe(600)
   })
@@ -402,8 +533,9 @@ describe('完整序列（nextState 串联）与继承', () => {
       state = r.nextState
       return r
     }
+    feed({ saveNewSource: { kind: 'pending' } }, NOW)
     feed({}, NOW)
-    feed({ spawn: { kind: 'success', pid: 700 }, health: { kind: 'success', runId: 'run-new', pid: 700 } }, NOW + 10)
+    feed({ spawn: { kind: 'success', runId: TARGET.runId, pid: 700 }, health: { kind: 'success', runId: 'run-new', pid: 700 } }, NOW + 10)
     expect(state.stage).toBe('ready')
     const garbage = planRestartStep(state, baseObs({
       activeTrainingId: 9,
@@ -416,9 +548,10 @@ describe('完整序列（nextState 串联）与继承', () => {
   })
 
   it('tdx 继承：explicit-env 可继承，recalculate 重解析', () => {
-    const env = planRestartStep(initialRestartState(), baseObs())
+    const env = planRestartStep(initialRestartState(), baseObs({ saveNewSource: { kind: 'pending' } }))
     expect(env.tdxInheritance).toBe('explicit-env')
     const recalc = planRestartStep(initialRestartState(), baseObs({
+      saveNewSource: { kind: 'pending' },
       planned: {
         dataDir: 'C:\\data',
         databasePath: 'C:\\data\\trainer.sqlite',

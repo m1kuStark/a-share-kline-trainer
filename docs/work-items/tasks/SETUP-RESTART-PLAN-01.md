@@ -1,14 +1,14 @@
-# SETUP-RESTART-PLAN-01 受控重启安全计划（v3 限定返修，repair attempt 2）
+# SETUP-RESTART-PLAN-01 受控重启安全计划（GPT Direct 收尾待独立复核）
 
 ```json
 {
   "id": "SETUP-RESTART-PLAN-01",
-  "title": "SETUP-01 第五片：受控重启安全计划纯函数（v3 状态机版）",
+  "title": "SETUP-01 第五片：受控重启安全计划纯函数",
   "owner": "integrator",
   "state": "review",
   "milestone": "M5",
-  "summary": "restart-plan.ts：planRestartStep 显式状态机步进纯函数——输入上一轮持久化状态（stage/claimed 五动作认领/boundNewPid/stageStartedAtMs/terminalReason）与本轮观测（nowMs 显式有限、六项 pending/success/failure/unknown 四态、五项正有限 timeout），返回 nextState＋本轮唯一允许动作；执行者执行动作前持久化 nextState，模块不提供 OS exactly-once。终态（blocked-*/drain-timeout/old-exit-unconfirmed/rolled-back/ready）在同一次 attempt 内稳定，迟到观测不回退不重发；save/sigterm/sigkill/start/restore 首次派发与进行中分离，pending 只等待不重复副作用；unknown 先于一切信号建议→old-exit-unconfirmed；SIGKILL 派发后未明确 exited→old-exit-unconfirmed 不循环杀；新 PID spawn 前未分配（目标只含 runId/port/origin），成功回执绑定，健康必须匹配绑定，迟到回执不覆盖；等待全部由显式有限 nowMs/timeout 驱动（恰好 deadline 视为超期），非法时间输入保守阻断绝不 ready。测试 26 例：GPT review-26 四反例命名回归＋双序列（成功/fallback/失败→恢复）nextState 串联＋时间边界＋PID 生命周期。纯函数零时钟/环境/文件/进程/网络读取。",
-  "next_action": "GPT 按 control-handoff-20260927-26 复核；本片不接 launcher（未来另片冻结接线）。同因第二次失败将 needs_replan 回 GPT Direct。",
+  "summary": "v3 两次同因返修后转 GPT Direct。冻结跨轮身份/来源/运行边界/期限；保存、退出、spawn、health、恢复全部有限等待；spawn 回执以 runId/PID 绑定已认领动作；health 单独阶段；失败与完成终态稳定。纯模块未接 launcher，当前待 GLM 独立复核，非产品发布。",
+  "next_action": "GLM 只读独立复核 GPT Direct 提交与反例证据；确认后由控制层冻结 launcher 接线，禁止第三轮原样实现。",
   "allowed_paths": [
     "server/src/setup/restart-plan.ts",
     "server/test/setup-restart-plan.test.ts",
@@ -54,3 +54,20 @@
 
 - 定向 6 文件（restart-plan/saved-choice/process-clues/tdx-inspect/setup-api/control-guard）；build:server；docs:check；docs:impact --base b0b5608 --task SETUP-RESTART-PLAN-01；docs:status --check；git diff --check。
 - 不重跑全仓/Journey 刷数字（合同豁免：纯未接线模块）。
+
+## GPT Direct 收尾（2026-09-27，基线 34756e3）
+
+v3 独立定向110项通过，但尚有同因缺口，按 repair attempt 2 预算转 GPT 接管，不再委派同一实现。先新增10项行为回归，全部RED；再补启动回执runId归属与首次退出探测迟到alive两项RED；辅助审查再补未认领保存成功绕过停止门禁一项RED，共13项。原始日志位于全局缓存 `accept-20260927/restart-direct-28/`（red-tests.log、red-receipt.log、red-save-claim.log；旧v1/v2/v3日志不覆盖）。
+
+- preflight 将旧记录/独立观测、planned、target、timeout复制进state.context；后续不得更换身份/来源/边界/期限，已退出旧服务无需重新live探测。
+- 新增saveMs，保存也有有限出口；等待spawn与等待health分别计时，deadline恰好到达时迟到成功不能越过门禁；拒绝时间倒退和算术溢出。
+- saving/checking-health分阶段，已绑定PID后仅health更新也可推进。spawn成功回执新增runId，未认领启动或回执不属于目标时不绑定；未知保存/drain/spawn/恢复均保守处理。
+- 保存成功必须先认领本次保存动作；原测试后续阶段夹具增加真实保存认领/成功两步，不用默认success跳过保存。
+- restore失败/未知/超期进入稳定restore-failed，外部phase=new-start-failed。旧测试要求超期后仍restoring的断言改为稳定失败，并有迟到success不能回rolled-back的更强断言。
+- 执行者须先持久化nextState再执行动作；claimed表示认领，不证明OS已完成。完整副作用回执/同一次attempt事件归属与服务drain期间防新训练仍是后续接线责任。
+
+当前代码测试变化仅两文件；任务卡与status同步。执行者不以本片纯逻辑门禁替代未来完整集成/UI门禁；状态保持review，后续独立审查记录另行追加。
+
+GPT Direct 定向6文件123/123（模块39项）与build:server已通过；完整输出与命令/文件SHA256/Git blob见缓存 final-unit、final-build 的log/meta.json。其余文档/范围门禁同目录独立工件记录。
+
+经验：状态名本身不保证正确，必须固定跨轮证据；等待成功分支同样受deadline约束；一次性回执不应每轮重放来让测试过关；未知不能走默认成功分支。控制层早期合同未充分定义证据保存与PID产生时机，需先沿真实事件顺序冻结接口。新切片须把这些点变成行为反例，再由独立复核者确认。

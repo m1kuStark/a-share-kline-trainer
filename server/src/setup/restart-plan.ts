@@ -1,4 +1,4 @@
-// 受控重启安全计划 v3（SETUP-RESTART-PLAN-01，control-handoff-20260927-26 冻结）：
+// 受控重启安全计划（SETUP-RESTART-PLAN-01，v3 之后由 GPT Direct 收尾）：
 // 显式状态机步进纯函数——输入上一轮持久化状态与本轮观测，返回下一状态与本轮唯一允许动作。
 // 执行者在执行动作前持久化 nextState；本模块不提供崩溃后的 OS exactly-once。
 // 终态在同一次 attempt 内稳定（迟到观测不回退不重发）；动作首次派发与进行中分离
@@ -35,11 +35,14 @@ export type SaveObservation =
   | { readonly kind: 'pending' }
   | { readonly kind: 'success' }
   | { readonly kind: 'failure'; readonly detail: string }
+  | { readonly kind: 'unknown'; readonly detail: string }
 
 export type DrainObservation =
   | { readonly kind: 'pending' }
   | { readonly kind: 'timeout' }
   | { readonly kind: 'success' }
+  | { readonly kind: 'failure'; readonly detail: string }
+  | { readonly kind: 'unknown'; readonly detail: string }
 
 export type ExitObservation =
   | { readonly kind: 'pending' }
@@ -47,11 +50,12 @@ export type ExitObservation =
   | { readonly kind: 'alive' }
   | { readonly kind: 'exited' }
 
-/** spawn 回执：success 必须携带本次进程的真实正整数 PID */
+/** spawn 回执：success 必须绑定本次目标 runId 和真实正整数 PID */
 export type SpawnObservation =
   | { readonly kind: 'pending' }
-  | { readonly kind: 'success'; readonly pid: number }
+  | { readonly kind: 'success'; readonly runId: string; readonly pid: number }
   | { readonly kind: 'failure'; readonly detail: string }
+  | { readonly kind: 'unknown'; readonly detail: string }
 
 export type HealthObservation =
   | { readonly kind: 'pending' }
@@ -62,9 +66,11 @@ export type RestoreObservation =
   | { readonly kind: 'pending' }
   | { readonly kind: 'success' }
   | { readonly kind: 'failure'; readonly detail: string }
+  | { readonly kind: 'unknown'; readonly detail: string }
 
 /** 各等待阶段的有限正时限；任何非法值一律保守超期/阻断，不延长等待 */
 export interface StageTimeouts {
+  readonly saveMs: number
   readonly drainMs: number
   readonly sigtermMs: number
   readonly spawnMs: number
@@ -97,9 +103,11 @@ export interface RestartObservations {
 
 export type RestartStage =
   | 'preflight'
+  | 'saving'
   | 'draining'
   | 'exiting'
   | 'starting'
+  | 'checking-health'
   | 'restoring'
   // 稳定终态（同一次 attempt 内迟到观测不可回退）
   | 'blocked-active-training'
@@ -110,6 +118,16 @@ export type RestartStage =
   | 'old-exit-unconfirmed'
   | 'rolled-back'
   | 'ready'
+  | 'restore-failed'
+
+/** preflight 校验后复制的本次计划，执行者必须与 nextState 一起保存。 */
+export interface RestartContext {
+  readonly oldRecorded: Readonly<RunIdentity>
+  readonly oldObserved: Readonly<RunIdentity>
+  readonly planned: Readonly<PlannedRuntime>
+  readonly target: RestartObservations['target']
+  readonly timeouts: StageTimeouts
+}
 
 export interface ClaimedActions {
   readonly save: boolean
@@ -120,8 +138,10 @@ export interface ClaimedActions {
 }
 
 export interface RestartAttemptState {
+  readonly context: RestartContext | null
+  readonly lastObservedAtMs: number | null
   readonly stage: RestartStage
-  /** 已派发副作用动作：true 后对应动作永不再建议 */
+  /** 已认领副作用动作：执行前持久化；true 防止重派，不证明 OS 操作已完成。 */
   readonly claimed: ClaimedActions
   /** spawn 成功回执绑定的 PID；未回执=null（不预填假 PID，迟到回执不覆盖） */
   readonly boundNewPid: number | null
@@ -133,6 +153,8 @@ export interface RestartAttemptState {
 
 export function initialRestartState(): RestartAttemptState {
   return {
+    context: null,
+    lastObservedAtMs: null,
     stage: 'preflight',
     claimed: { save: false, sigterm: false, sigkill: false, start: false, restore: false },
     boundNewPid: null,
@@ -249,9 +271,11 @@ type TerminalRestartStage = Extract<
   | 'old-exit-unconfirmed'
   | 'rolled-back'
   | 'ready'
+  | 'restore-failed'
 >
 
 const TERMINAL_STAGES: readonly TerminalRestartStage[] = [
+  'restore-failed',
   'blocked-active-training',
   'blocked-identity',
   'blocked-runtime-mismatch',
@@ -279,7 +303,12 @@ function terminalAction(stage: TerminalRestartStage): RestartAction {
  */
 function deadlinePassed(startedAtMs: number | null, timeoutMs: number, nowMs: number): boolean {
   if (!isFiniteMs(startedAtMs) || !isPositiveFiniteMs(timeoutMs) || !isFiniteMs(nowMs)) return true
-  return nowMs >= startedAtMs + timeoutMs
+  const deadline = startedAtMs + timeoutMs
+  return !Number.isFinite(deadline) || deadline <= startedAtMs || nowMs >= deadline
+}
+
+function sameFields<T extends object>(left: T, right: T): boolean {
+  return (Object.keys(left) as (keyof T)[]).every(key => left[key] === right[key])
 }
 
 // ---------- 主步进函数 ----------
@@ -289,7 +318,7 @@ export function planRestartStep(
   obs: RestartObservations,
 ): RestartStepResult {
   const inherit: SourceInheritance =
-    obs.planned.source === 'explicit-env' ? 'explicit-env' : 'recalculate'
+    (state.context?.planned.source ?? obs.planned.source) === 'explicit-env' ? 'explicit-env' : 'recalculate'
   const out = (
     nextState: RestartAttemptState,
     phase: RestartPhase,
@@ -318,21 +347,34 @@ export function planRestartStep(
   // 0) 终态稳定：迟到观测不能回退、不能重发任何动作
   if (isTerminalStage(state.stage)) {
     const reason = state.terminalReason ?? `已到达终态 ${state.stage}`
-    return out(state, state.stage, terminalAction(state.stage), reason)
+    return out(state, state.stage === 'restore-failed' ? 'new-start-failed' : state.stage,
+      terminalAction(state.stage), reason)
   }
 
   // 时间输入非法：保守阻断（终态检查之后，稳定终态优先）
-  const timeoutsValid =
-    isPositiveFiniteMs(obs.timeouts.drainMs) &&
-    isPositiveFiniteMs(obs.timeouts.sigtermMs) &&
-    isPositiveFiniteMs(obs.timeouts.spawnMs) &&
-    isPositiveFiniteMs(obs.timeouts.healthMs) &&
-    isPositiveFiniteMs(obs.timeouts.restoreMs)
-  if (!isFiniteMs(obs.nowMs) || !timeoutsValid) {
+  const timeoutsValid = ['saveMs', 'drainMs', 'sigtermMs', 'spawnMs', 'healthMs', 'restoreMs']
+    .every(key => {
+      const duration = obs.timeouts[key as keyof StageTimeouts]
+      return isPositiveFiniteMs(duration) && Number.isFinite(obs.nowMs + duration)
+        && obs.nowMs + duration > obs.nowMs
+    })
+  if (!isFiniteMs(obs.nowMs) || !timeoutsValid
+    || (state.lastObservedAtMs !== null && obs.nowMs < state.lastObservedAtMs)) {
     const reason = '时间输入非法（nowMs 必须有限，timeout 必须为正有限数）；保守阻断'
     return out(terminalOf(state, 'blocked-runtime-mismatch', reason),
       'blocked-runtime-mismatch', 'abort', reason)
   }
+
+  if (state.context !== null && (
+    !sameFields(state.context.oldRecorded, obs.oldRecorded)
+    || !sameFields(state.context.planned, obs.planned)
+    || !sameFields(state.context.target, obs.target)
+    || !sameFields(state.context.timeouts, obs.timeouts)
+  )) {
+    const reason = '本次 attempt 已冻结的身份、运行边界、来源或期限发生变化；保留旧状态'
+    return out(terminalOf(state, 'blocked-runtime-mismatch', reason), 'blocked-runtime-mismatch', 'abort', reason)
+  }
+  state = { ...state, lastObservedAtMs: obs.nowMs }
 
   // 1) preflight：活动训练 → 身份双轨 → 运行边界 → 目标（无 PID）→ 保存
   if (state.stage === 'preflight') {
@@ -387,21 +429,17 @@ export function planRestartStep(
       return out(terminalOf(state, 'blocked-identity', reason),
         'blocked-identity', 'abort', reason)
     }
-    if (obs.saveNewSource.kind === 'failure') {
-      const reason = `保存新来源失败（${obs.saveNewSource.detail}）；保留旧配置`
-      return out(terminalOf(state, 'blocked-save-failed', reason),
-        'blocked-save-failed', 'abort', reason)
-    }
-    if (obs.saveNewSource.kind === 'pending') {
-      if (!state.claimed.save) {
-        return out(
-          { ...state, claimed: { ...state.claimed, save: true } },
-          'preflight', 'save-new-source', '新来源尚未保存：本轮允许保存（仅首次建议；执行前请持久化下一状态）')
-      }
-      return out(state, 'preflight', 'wait-save', '保存已派发且尚未确认：等待保存结果，不重复保存')
-    }
-    return drainingEval(enter(state, 'draining'))
+    state = { ...state, context: Object.freeze({
+      oldRecorded: Object.freeze({ ...obs.oldRecorded }),
+      oldObserved: Object.freeze({ ...obs.oldObserved }),
+      planned: Object.freeze({ ...obs.planned }),
+      target: Object.freeze({ ...obs.target }),
+      timeouts: Object.freeze({ ...obs.timeouts }),
+    }) }
+    return savingEval(enter(state, 'saving'))
   }
+
+  if (state.stage === 'saving') return savingEval(state)
 
   // 2) draining：观测超时/时限超期 → drain-timeout；成功 → exiting
   if (state.stage === 'draining') return drainingEval(state)
@@ -411,6 +449,7 @@ export function planRestartStep(
 
   // 4) starting：spawn 回执绑定 PID → 健康匹配绑定 → ready；一切失败进恢复流程
   if (state.stage === 'starting') return startingEval(state)
+  if (state.stage === 'checking-health') return healthEval(state)
 
   // 5) restoring：只有 restore success 观测才 rolled-back；超期/失败保持 new-start-failed
   if (state.stage === 'restoring') return restoringEval(state)
@@ -421,9 +460,29 @@ export function planRestartStep(
 
   // ---- 阶段求值（函数声明提升，可在上方调用） ----
 
+  function savingEval(current: RestartAttemptState): RestartStepResult {
+    if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.saveMs, obs.nowMs)
+      || (obs.saveNewSource.kind !== 'success' && obs.saveNewSource.kind !== 'pending')) {
+      const reason = '保存新来源失败、未知或已超期；保留旧配置，不重复保存'
+      return out(terminalOf(current, 'blocked-save-failed', reason), 'blocked-save-failed', 'abort', reason)
+    }
+    if (obs.saveNewSource.kind === 'success') {
+      if (!current.claimed.save) {
+        const reason = '未认领本次保存却收到成功结果；不停止旧服务'
+        return out(terminalOf(current, 'blocked-save-failed', reason), 'blocked-save-failed', 'abort', reason)
+      }
+      return drainingEval(enter(current, 'draining'))
+    }
+    if (!current.claimed.save) {
+      return out({ ...current, claimed: { ...current.claimed, save: true } },
+        'preflight', 'save-new-source', '首次允许保存；执行前持久化下一状态')
+    }
+    return out(current, 'preflight', 'wait-save', '保存已认领，限时等待结果，不重复保存')
+  }
+
   function drainingEval(current: RestartAttemptState): RestartStepResult {
-    if (obs.drain.kind === 'timeout') {
-      const reason = 'drain 观测超时：放弃本轮重启，保留旧状态'
+    if (obs.drain.kind !== 'success' && obs.drain.kind !== 'pending') {
+      const reason = 'drain 失败、未知或超时：放弃本轮重启，保留旧状态'
       return out(terminalOf(current, 'drain-timeout', reason), 'drain-timeout', 'keep-old-state', reason)
     }
     if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.drainMs, obs.nowMs)) {
@@ -442,6 +501,11 @@ export function planRestartStep(
       const reason = `退出探测无结论（${obs.oldExit.detail}）：不发信号、不启动新服务，保留旧状态`
       return out(terminalOf(current, 'old-exit-unconfirmed', reason),
         'old-exit-unconfirmed', 'keep-old-state', reason)
+    }
+    if (!current.claimed.sigterm
+      && deadlinePassed(current.stageStartedAtMs, obs.timeouts.sigtermMs, obs.nowMs)) {
+      const reason = '首次退出探测期限已到；迟到观测不得重置期限或触发信号'
+      return out(terminalOf(current, 'old-exit-unconfirmed', reason), 'old-exit-unconfirmed', 'keep-old-state', reason)
     }
     // SIGKILL 已派发后旧服务未明确 exited：不循环杀进程，直接终态（不被 pending/deadline 分支遮蔽）
     if (current.claimed.sigkill && obs.oldExit.kind !== 'exited') {
@@ -483,36 +547,31 @@ export function planRestartStep(
   function startingEval(current: RestartAttemptState): RestartStepResult {
     const fail = (why: string): RestartStepResult => failingEval(current, why)
     if (!current.claimed.start) {
-      if (obs.spawn.kind === 'failure') return fail(`spawn 失败（${obs.spawn.detail}）`)
-      if (obs.spawn.kind === 'success') {
-        // 未请求就有成功回执：接受回执并绑定（回执即证据），继续健康评估
-        if (!isPositiveSafeInt(obs.spawn.pid)) return fail('spawn 回执 PID 非法（必须为正安全整数）')
-        return healthEval({ ...current, claimed: { ...current.claimed, start: true }, boundNewPid: obs.spawn.pid })
-      }
+      if (obs.spawn.kind !== 'pending') return fail('未请求启动便收到回执或未知结果，不能绑定进程')
       return out(
         { ...current, claimed: { ...current.claimed, start: true }, stageStartedAtMs: obs.nowMs },
         'new-start', 'start-new-server',
         '旧服务已确认退出：本轮允许启动新服务（仅首次建议；执行前请持久化下一状态）')
     }
-    if (obs.spawn.kind === 'failure') return fail(`spawn 失败（${obs.spawn.detail}）`)
+    if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.spawnMs, obs.nowMs)) {
+      return fail('spawn 限时已到；迟到回执不能越过期限')
+    }
+    if (obs.spawn.kind !== 'success' && obs.spawn.kind !== 'pending') return fail('spawn 失败或结果未知')
     if (obs.spawn.kind === 'pending') {
-      if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.spawnMs, obs.nowMs)) {
-        return fail('spawn 限时已到仍未收到回执')
-      }
       return out(current, 'new-start', 'await-spawn-receipt', '启动已派发且回执未到：等待 spawn 回执，不重复启动')
     }
     if (!isPositiveSafeInt(obs.spawn.pid)) return fail('spawn 回执 PID 非法（必须为正安全整数）')
+    if (obs.spawn.runId !== current.context?.target.runId) return fail('spawn 回执不属于本次目标 runId')
     // 绑定 PID：迟到回执不得覆盖既有绑定
-    const bound = current.boundNewPid === null ? obs.spawn.pid : current.boundNewPid
-    return healthEval({ ...current, boundNewPid: bound })
+    return healthEval(enter({ ...current, boundNewPid: obs.spawn.pid }, 'checking-health'))
   }
 
   function healthEval(current: RestartAttemptState): RestartStepResult {
     const fail = (why: string): RestartStepResult => failingEval(current, why)
+    if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.healthMs, obs.nowMs)) {
+      return fail('健康探测限时已到；迟到成功不能越过期限')
+    }
     if (obs.health.kind === 'pending') {
-      if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.healthMs, obs.nowMs)) {
-        return fail('健康探测限时已到仍未确认')
-      }
       return out(current, 'new-start', 'await-health', '等待健康探测确认：不重复启动、不提前宣称成功')
     }
     if (obs.health.kind === 'unknown') return fail(`健康探测无结论（${obs.health.detail}）`)
@@ -538,17 +597,14 @@ export function planRestartStep(
   }
 
   function restoringEval(current: RestartAttemptState): RestartStepResult {
+    if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.restoreMs, obs.nowMs)
+      || (obs.restore.kind !== 'success' && obs.restore.kind !== 'pending')) {
+      const reason = '恢复旧配置失败、未知或超期；保留失败与旧证据，不重复恢复'
+      return out(terminalOf(current, 'restore-failed', reason), 'new-start-failed', 'keep-old-state', reason)
+    }
     if (obs.restore.kind === 'success') {
       const reason = '已确认恢复旧配置完成：rolled-back（终态，迟到观测不回退）'
       return out(terminalOf(current, 'rolled-back', reason), 'rolled-back', 'keep-old-state', reason)
-    }
-    if (obs.restore.kind === 'failure') {
-      return out(current, 'new-start-failed', 'keep-old-state',
-        `恢复旧配置失败（${obs.restore.detail}）；保留失败与旧证据，不重复恢复`)
-    }
-    if (deadlinePassed(current.stageStartedAtMs, obs.timeouts.restoreMs, obs.nowMs)) {
-      return out(current, 'new-start-failed', 'keep-old-state',
-        '恢复超过有限时限仍未确认：保持恢复失败而非 rolled-back')
     }
     return out(current, 'new-start-failed', 'await-restore', '恢复旧配置已派发且尚未确认：等待恢复结果')
   }
