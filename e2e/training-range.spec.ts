@@ -39,6 +39,10 @@ const CURRENT_DATA_STATUS = JSON.stringify({
 })
 
 async function openLauncher(page: Page): Promise<void> {
+  // e2e 约定"每个测试开头清理活动训练"：本套件此前依赖运行顺序（先于本套件的套件收尾无残留），
+  // trade-marker-details 收尾不清理导致全量 Journey 中本页停留在训练视图（TRAIN-01 门禁首次暴露的既有顺序缺陷）。
+  const active = await (await page.request.get('/api/trainings/active')).json()
+  if (active.training) await page.request.post(`/api/trainings/${active.training.id}/abandon`)
   await page.route('**/api/data/status**', route => route.fulfill({ json: CURRENT_DATA_STATUS }))
   await page.goto('/')
   await expect(page.getByText('创建训练').first()).toBeVisible()

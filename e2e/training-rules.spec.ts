@@ -103,6 +103,8 @@ test('设置默认→创建A冻结→运行中改默认A不变→B采用新值�
   expect(trade.fee).toBeCloseTo(trade.amount * 0.00025, 6)
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-strip')).toContainText('卖出成交')
+  // e2e 约定：套件收尾不残留活动训练（后续套件与重试不再依赖隐式状态）
+  await abandonActive(page)
   expect(errors).toEqual([])
 })
 
@@ -180,5 +182,6 @@ test('legacy raw 训练：只读警示、交易入口停用；浅色主题与 84
   await page.getByRole('button', { name: '切换到浅色主题' }).click()
   await page.getByTitle('训练默认设置').click()
   await expect(page.getByRole('dialog', { name: '训练默认设置' })).toBeVisible()
+  await abandonActive(page)
   expect(errors).toEqual([])
 })
