@@ -36,6 +36,7 @@
 | [M4-01](<work-items/tasks/M4-01.md>) | planned / unassigned | 基础账户和结算已有，完整指标、排行、成绩单与复盘待做。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [M5-01](<work-items/tasks/M5-01.md>) | planned / unassigned | 设置页/API未开发，主题热键和确认可复用。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [NOTE-01](<work-items/tasks/NOTE-01.md>) | planned / integrator | 在图表下方 B/S 标记上提供交易理由入口，并支持悬停详情和固定浮层。 | 未记录 | 未记录 | 未记录 |
+| [NOTE-DETAIL-01](<work-items/tasks/NOTE-DETAIL-01.md>) | review / worker | B/S 标记悬停/聚焦/点击打开只读详情浮层：单笔直显、聚合列笔次选笔、固定、Esc 关闭；仅展示 TradeView 已有事实，理由/阶段/订单字段待 TRAIN-03。 | [证据1](<verification/2026-09/NOTE-DETAIL-01/report.md>) | 未记录 | 未记录 |
 | [ORDER-00](<work-items/tasks/ORDER-00.md>) | planned / integrator | 核查 GitHub 开源条件单实现的许可证、撮合假设和数据模型，只提取适合日线训练器的可验证做法。 | 未记录 | 未记录 | 未记录 |
 | [ORDER-01](<work-items/tasks/ORDER-01.md>) | planned / integrator | 实现单有效订单、限价/止损四种价格行为、跳空成交、取消过期和拒单记录。 | 未记录 | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
