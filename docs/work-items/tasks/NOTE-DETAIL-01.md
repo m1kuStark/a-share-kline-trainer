@@ -5,10 +5,10 @@
   "id": "NOTE-DETAIL-01",
   "title": "成交标记详情与固定浮层（只读）",
   "owner": "worker",
-  "state": "review",
+  "state": "closed",
   "milestone": "V4",
-  "summary": "B/S 标记悬停/聚焦/点击打开只读详情浮层：单笔直显、聚合列笔次选笔、固定、Esc 关闭；仅展示 TradeView 已有事实，理由/阶段/订单字段待 TRAIN-03。",
-  "next_action": "F1-F4 限定返修已交付（control-handoff-20260927-39：标题响应 props、焦点事件转发、固定离屏保留渲染、深色列表可读），待 GPT 限定复核；通过后由集成侧串行整合并运行完整发布门禁。",
+  "summary": "只读成交详情四场景已通过GPT限定验收；F1-F4及防未来回归闭合，未集成或发布，NOTE-01整体仍planned。",
+  "next_action": "保留6effeb3的已接受范围，等待集成侧串行整合及完整候选门禁；不重复派发本片返修。",
   "allowed_paths": [
     "web/src/TradeMarkerRail.vue",
     "web/src/TradeMarkerDetails.vue",
@@ -38,7 +38,7 @@
     "docs/verification/2026-09/NOTE-DETAIL-01/report.md"
   ],
   "integration_ref": null,
-  "acceptance_ref": null
+  "acceptance_ref": "docs/verification/2026-09/NOTE-DETAIL-01/acceptance-42.md"
 }
 ```
 
