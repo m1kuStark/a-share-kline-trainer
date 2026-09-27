@@ -46,6 +46,13 @@
 3. **排空真实性**：租约在 handler Promise 完成/finally 后释放（注册阶段统一包装，非 onResponse 计数、非仅 createTraining 布尔）；refresh 后台任务经 pendingTasks() 注册进 gate 任务来源，prepare 收集租约＋任务来源快照 allSettled 等待；源头 track 与 202 返回之间无竞态（任务 Promise 在 start() 返回前同步入册）。
 4. **保守收敛**：排空预算到期或租约到期均撤销接纳重开 gate（后台任务永不结束→prepare 超时撤销，不关库）；恢复/失败状态稳定，迟到事件不覆写；shutdown 仅迁移 closing，真实调用在回包后且仅一次。
 
+## 恢复轮（control-handoff-20260927-32，babb70b WIP 之后）
+
+- **旧全量 11 失败分类定案：environment_failure（非代码缺陷）**。串行复核：docs-tooling 30/30、worktree-tools 28/28 全过（glmr32-serial-*）；npm ci 退出码 3221225794（0xC0000402 fail-fast）与 20s 超时均为并行负载下的环境症状，verify:candidate 未执行是 npm ci 失败的下游表现，非独立缺陷。
+- **完整 unit 单跑（恢复后）**：81 文件 / 1075 tests 全绿 exit=0（glmr32-full-unit），含此前失败的两文件。
+- **Journey/M2 子门禁缺 oracle → needs_replan**：prepareJourneySnapshot 与 verify:m2 均要求 TDX_ROOT/真实通达信源制作冻结快照（runtime/snapshot.ts:73-77 无源即抛错）；磁盘检索 51 份 tdx-browser-sample manifest 仅存 sha256 清单，快照字节本体已随临时 run 目录清理，重建必须读用户真实 TDX（本片禁止）。请控制层指定现存冻结样本路径或裁决快照制作授权；其余门禁全部完成，不受此阻塞。
+- **证据卫生更正**：暂停前对全量门禁的"仅中断无结果"说法不完整——drain30-full-unit.log 实为 11 failed/1064 passed 且 meta 缺 exit/end（原件保留未改写）；本轮已按恢复指令以新前缀 glmr32-* 补齐串行复核与完整单跑证据。
+
 ## 首次失败记录与根因（RED→GREEN 过程如实）
 
 - RED：实现暂存后在基线 e5a7b8f 仅放新测试 → 2 failed/20 passed exit=1（red30-tests.log：模块缺失导入失败、控制端点 404、pendingTasks 缺失）。
