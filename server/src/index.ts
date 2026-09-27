@@ -28,7 +28,7 @@ await registerApi(app, config, database, { drain: drainController.gate })
 await registerSetupControlApi(app, {
   controller: drainController,
   config,
-  shutdown: () => { void shutdown() },
+  shutdown: () => shutdown(),
 })
 app.addHook('onClose', async () => { drainController.gate.close() })
 
