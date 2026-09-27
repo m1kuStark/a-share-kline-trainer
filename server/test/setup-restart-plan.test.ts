@@ -1,16 +1,25 @@
-// 受控重启安全计划（SETUP-RESTART-PLAN-01 v2，control-handoff-20260927-24 限定返修）。
-// 每个 GPT 探针缺口都有命名回归（new-runtime-drift / invalid-new-identity /
-// not-started-is-not-rolled-back / drain-pending-retains-state /
-// grace-expired-does-not-prove-kill），另覆盖完整成功序列与失败→恢复序列。
-// 旧 v1 测试断言修改理由记录于 docs/work-items/tasks/SETUP-RESTART-PLAN-01.md。
+// 受控重启安全计划 v3 测试（SETUP-RESTART-PLAN-01，control-handoff-20260927-26）。
+// 序列测试把前一步 nextState 传入下一步（不重置历史）；GPT review-26 四反例
+// （回滚迟到 health、unknown 先于信号、fallback+pending、启动重复建议）逐一命名回归；
+// 时间边界含恰好 deadline；PID 由 spawn 回执绑定、迟到回执不覆盖。
+// 旧 v1/v2 断言修改理由见 docs/work-items/tasks/SETUP-RESTART-PLAN-01.md。
 import { describe, expect, it } from 'vitest'
 import {
-  planControlledRestart,
-  type RestartPlanInput,
-  type RestartPlanResult,
+  initialRestartState,
+  planRestartStep,
+  type RestartAttemptState,
+  type RestartObservations,
 } from '../src/setup/restart-plan'
 
-const OLD_IDENTITY = {
+const NOW = 1_000_000
+const TIMEOUTS = {
+  drainMs: 5_000,
+  sigtermMs: 5_000,
+  spawnMs: 5_000,
+  healthMs: 5_000,
+  restoreMs: 5_000,
+}
+const OLD = {
   runId: 'run-old',
   pid: 4242,
   port: 8787,
@@ -18,12 +27,14 @@ const OLD_IDENTITY = {
   origin: 'http://127.0.0.1:8787',
   dataDir: 'C:\\data',
 }
+const TARGET = { runId: 'run-new', port: 8787, origin: 'http://127.0.0.1:8787' }
 
-function baseInput(overrides: Partial<RestartPlanInput> = {}): RestartPlanInput {
+function baseObs(overrides: Partial<RestartObservations> = {}): RestartObservations {
   return {
+    nowMs: NOW,
     activeTrainingId: null,
-    oldRecorded: { ...OLD_IDENTITY },
-    oldObserved: { ...OLD_IDENTITY },
+    oldRecorded: { ...OLD },
+    oldObserved: { ...OLD },
     planned: {
       dataDir: 'C:\\data',
       databasePath: 'C:\\data\\trainer.sqlite',
@@ -32,417 +43,382 @@ function baseInput(overrides: Partial<RestartPlanInput> = {}): RestartPlanInput 
       tdxRoot: 'D:\\new_tdx',
       source: 'explicit-env',
     },
+    target: { ...TARGET },
     saveNewSource: { kind: 'success' },
-    stop: {
-      drain: { kind: 'success' },
-      sigtermSent: true,
-      sigtermDeadlineExceeded: false,
-      oldExit: { kind: 'exited' },
-      sigkillSent: false,
-    },
-    start: {
-      process: { kind: 'success' },
-      health: { kind: 'success', runId: 'run-new', pid: 5151 },
-      target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-    },
-    rollback: { restore: { kind: 'pending' } },
+    drain: { kind: 'success' },
+    oldExit: { kind: 'exited' },
+    spawn: { kind: 'pending' },
+    health: { kind: 'pending' },
+    restore: { kind: 'pending' },
+    timeouts: { ...TIMEOUTS },
     ...overrides,
   }
 }
 
-describe('planControlledRestart: 前置守卫', () => {
-  it('活动训练非 null 即阻断，保留旧状态', () => {
-    const result: RestartPlanResult = planControlledRestart(baseInput({ activeTrainingId: 7 }))
-    expect(result.phase).toBe('blocked-active-training')
-    expect(result.action).toBe('abort')
-    expect(result.retainOldState).toBe(true)
+/** 单步：从给定状态出发执行一步，返回结果（nextState 需回传下一步） */
+function step(state: RestartAttemptState, overrides: Partial<RestartObservations> = {}) {
+  return planRestartStep(state, baseObs(overrides))
+}
+
+describe('preflight：守卫与保存派发分离', () => {
+  it('活动训练非 null 即阻断，且终态稳定', () => {
+    const first = step(initialRestartState(), { activeTrainingId: 7 })
+    expect(first.phase).toBe('blocked-active-training')
+    const again = planRestartStep(first.nextState, baseObs({ activeTrainingId: null, oldObserved: null }))
+    expect(again.phase).toBe('blocked-active-training')
+    expect(again.action).toBe('abort')
   })
 
-  it('记录身份形状非法逐项阻断（runId/pid/port/databasePath/origin/dataDir）', () => {
-    for (const partial of [
-      { runId: '' },
-      { pid: 0 },
-      { pid: -1 },
-      { pid: 1.5 },
-      { port: 0 },
-      { port: 65536 },
-      { port: 1.5 },
-      { databasePath: '' },
-      { origin: 'http://127.0.0.1:9999' },
-      { dataDir: '' },
-    ]) {
-      const result = planControlledRestart(
-        baseInput({ oldRecorded: { ...OLD_IDENTITY, ...partial } }),
-      )
-      expect(result.phase).toBe('blocked-identity')
-      expect(result.retainOldState).toBe(true)
+  it('记录/观测身份与运行边界/目标漂移逐项阻断（终态可重复）', () => {
+    const cases: Array<[Partial<RestartObservations>, string]> = [
+      [{ oldObserved: null }, 'blocked-identity'],
+      [{ oldObserved: { ...OLD, pid: 1111 } }, 'blocked-identity'],
+      [{ oldRecorded: { ...OLD, runId: '' } }, 'blocked-identity'],
+      [{ planned: { ...baseObs().planned, port: 8788, origin: 'http://127.0.0.1:8788' } }, 'blocked-runtime-mismatch'],
+      [{ target: { runId: 'run-new', port: 9999, origin: 'http://127.0.0.1:9999' } }, 'blocked-runtime-mismatch'],
+      [{ target: { runId: 'run-old', port: 8787, origin: 'http://127.0.0.1:8787' } }, 'blocked-identity'],
+      [{ target: { runId: '', port: 8787, origin: 'http://127.0.0.1:8787' } }, 'blocked-identity'],
+      [{ saveNewSource: { kind: 'failure', detail: '磁盘写入失败' } }, 'blocked-save-failed'],
+    ]
+    for (const [overrides, expected] of cases) {
+      const first = step(initialRestartState(), overrides)
+      expect(first.phase).toBe(expected)
+      const again = planRestartStep(first.nextState, baseObs())
+      expect(again.phase).toBe(expected)
+      expect(again.retainOldState).toBe(true)
     }
   })
 
-  it('旧服务无独立观测值即阻断：不能用记录自洽代替归属确认', () => {
-    const result = planControlledRestart(baseInput({ oldObserved: null }))
-    expect(result.phase).toBe('blocked-identity')
-    expect(result.reason).toContain('观测')
-  })
-
-  it('独立观测与记录任一字段不一致即阻断', () => {
-    for (const partial of [
-      { runId: 'run-other' },
-      { pid: 1111 },
-      { port: 8788, origin: 'http://127.0.0.1:8788' },
-      { databasePath: 'C:\\other\\db' },
-    ]) {
-      const result = planControlledRestart(
-        baseInput({ oldObserved: { ...OLD_IDENTITY, ...partial } }),
-      )
-      expect(result.phase).toBe('blocked-identity')
-    }
-  })
-
-  it('planned 边界漂移（dataDir/databasePath/port/origin）阻断', () => {
-    const base = baseInput({})
-    for (const planned of [
-      { ...base.planned, dataDir: 'C:\\other' },
-      { ...base.planned, databasePath: 'C:\\other\\trainer.sqlite' },
-      { ...base.planned, port: 8788, origin: 'http://127.0.0.1:8788' },
-      { ...base.planned, origin: 'http://127.0.0.1:8788' },
-    ]) {
-      const result = planControlledRestart(baseInput({ planned }))
-      expect(result.phase).toBe('blocked-runtime-mismatch')
-      expect(result.retainOldState).toBe(true)
-    }
-  })
-
-  it('新目标端口/origin 漂移=运行边界破坏，绝不 ready（探针 new-runtime-drift）', () => {
-    const result = planControlledRestart(baseInput({
-      start: {
-        process: { kind: 'success' },
-        health: { kind: 'success', runId: 'run-new', pid: 5151 },
-        target: { runId: 'run-new', pid: 5151, port: 9999, origin: 'http://127.0.0.1:9999' },
-      },
-    }))
-    expect(result.phase).toBe('blocked-runtime-mismatch')
-    expect(result.phase).not.toBe('ready')
-  })
-
-  it('新目标身份非法（空 runId/PID=0/端口 0）阻断，绝不 ready（探针 invalid-new-identity）', () => {
-    for (const target of [
-      { runId: '', pid: 0, port: 8787, origin: 'http://127.0.0.1:8787' },
-      { runId: 'run-new', pid: 0, port: 8787, origin: 'http://127.0.0.1:8787' },
-      { runId: 'run-new', pid: 5151, port: 0, origin: 'http://127.0.0.1:0' },
-      { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:9999' },
-    ]) {
-      const result = planControlledRestart(baseInput({
-        start: {
-          process: { kind: 'success' },
-          health: { kind: 'success', runId: target.runId, pid: target.pid },
-          target,
-        },
-      }))
-      expect(result.phase).not.toBe('ready')
-    }
-  })
-
-  it('新目标 runId 必须不同于旧 runId', () => {
-    const result = planControlledRestart(baseInput({
-      start: {
-        process: { kind: 'success' },
-        health: { kind: 'success', runId: 'run-old', pid: 5151 },
-        target: { runId: 'run-old', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-      },
-    }))
-    expect(result.phase).toBe('blocked-identity')
-    expect(result.reason).toContain('不同于旧 runId')
-  })
-
-  it('保存 pending 只是未完成（不进入停止阶段）；failure 保留旧配置阻断', () => {
-    const pending = planControlledRestart(baseInput({ saveNewSource: { kind: 'pending' } }))
-    expect(pending.phase).toBe('validate')
-    expect(pending.action).toBe('save-new-source')
-    expect(pending.retainOldState).toBe(true)
-
-    const failed = planControlledRestart(
-      baseInput({ saveNewSource: { kind: 'failure', detail: '磁盘写入失败' } }),
-    )
-    expect(failed.phase).toBe('blocked-save-failed')
-    expect(failed.action).toBe('abort')
+  it('保存 pending 首次建议 save-new-source，回传后仍 pending 只等待不重复保存', () => {
+    const first = step(initialRestartState(), { saveNewSource: { kind: 'pending' } })
+    expect(first.phase).toBe('preflight')
+    expect(first.action).toBe('save-new-source')
+    expect(first.nextState.claimed.save).toBe(true)
+    const second = planRestartStep(first.nextState, baseObs({ saveNewSource: { kind: 'pending' } }))
+    expect(second.action).toBe('wait-save')
+    expect(second.nextState.claimed.save).toBe(true)
   })
 })
 
-describe('planControlledRestart: 停止阶段（drain/SIGTERM/SIGKILL 有限生命周期）', () => {
-  it('drain pending 保留旧状态，绝不提前放弃（探针 drain-pending-retains-state）', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'pending' },
-        sigtermSent: false,
-        sigtermDeadlineExceeded: false,
-        oldExit: { kind: 'pending' },
-        sigkillSent: false,
-      },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' } },
-    }))
-    expect(result.phase).toBe('drain')
-    expect(result.action).toBe('wait-drain')
-    expect(result.retainOldState).toBe(true)
+describe('draining：有限时限', () => {
+  /** 进入 draining 且尚未确认完成（第一步 drain pending → wait-drain） */
+  function inDraining() {
+    const entered = step(initialRestartState(), { drain: { kind: 'pending' } })
+    expect(entered.phase).toBe('draining')
+    return { state: entered.nextState, startedAt: entered.nextState.stageStartedAtMs ?? NOW }
+  }
+
+  it('drain pending 等待；恰好 deadline 视为超期；差 1ms 未超期', () => {
+    const { state, startedAt } = inDraining()
+    const before = planRestartStep(state, baseObs({ drain: { kind: 'pending' }, nowMs: startedAt + TIMEOUTS.drainMs - 1 }))
+    expect(before.phase).toBe('draining')
+    expect(before.action).toBe('wait-drain')
+    const atDeadline = planRestartStep(state, baseObs({ drain: { kind: 'pending' }, nowMs: startedAt + TIMEOUTS.drainMs }))
+    expect(atDeadline.phase).toBe('drain-timeout')
+    expect(atDeadline.action).toBe('keep-old-state')
+    expect(atDeadline.retainOldState).toBe(true)
   })
 
-  it('drain 超期是终态：放弃本轮重启并保留旧状态', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'timeout' },
-        sigtermSent: false,
-        sigtermDeadlineExceeded: false,
-        oldExit: { kind: 'alive' },
-        sigkillSent: false,
-      },
-    }))
+  it('drain 观测 timeout 直接终态', () => {
+    const { state } = inDraining()
+    const result = planRestartStep(state, baseObs({ drain: { kind: 'timeout' } }))
     expect(result.phase).toBe('drain-timeout')
-    expect(result.action).toBe('keep-old-state')
-    expect(result.retainOldState).toBe(true)
-  })
-
-  it('drain 完成但 SIGTERM 未发：只建议发送，不声称已发', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: false,
-        sigtermDeadlineExceeded: false,
-        oldExit: { kind: 'alive' },
-        sigkillSent: false,
-      },
-    }))
-    expect(result.phase).toBe('send-sigterm')
-    expect(result.action).toBe('send-sigterm')
-    expect(result.reason).not.toContain('已执行')
-  })
-
-  it('SIGTERM 已发且 deadline 未到：等待退出探测', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: true,
-        sigtermDeadlineExceeded: false,
-        oldExit: { kind: 'alive' },
-        sigkillSent: false,
-      },
-    }))
-    expect(result.phase).toBe('sigterm-wait')
-    expect(result.action).toBe('await-old-exit')
-    expect(result.retainOldState).toBe(true)
-  })
-
-  it('SIGTERM 超期但探测 pending：继续等待，不推断 SIGKILL 已执行', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: true,
-        sigtermDeadlineExceeded: true,
-        oldExit: { kind: 'pending' },
-        sigkillSent: false,
-      },
-    }))
-    expect(result.phase).toBe('sigterm-wait')
-    expect(result.retainOldState).toBe(true)
-  })
-
-  it('SIGTERM 超期且探测 unknown：old-exit-unconfirmed 终态，不发信号不启动', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: true,
-        sigtermDeadlineExceeded: true,
-        oldExit: { kind: 'unknown', detail: '进程查询失败' },
-        sigkillSent: false,
-      },
-    }))
-    expect(result.phase).toBe('old-exit-unconfirmed')
-    expect(result.action).toBe('keep-old-state')
-  })
-
-  it('deadline 到期且旧服务确认仍在：仅允许一次 SIGKILL，且不声称已执行（探针 grace-expired-does-not-prove-kill）', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: true,
-        sigtermDeadlineExceeded: true,
-        oldExit: { kind: 'alive' },
-        sigkillSent: false,
-      },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' } },
-    }))
-    expect(result.phase).toBe('sigterm-deadline')
-    expect(result.action).toBe('send-sigkill-once')
-    expect(result.reason).toContain('允许执行一次')
-    expect(result.reason).not.toContain('已执行')
-  })
-
-  it('SIGKILL 已发仍存活：old-exit-unconfirmed，不循环杀进程', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: true,
-        sigtermDeadlineExceeded: true,
-        oldExit: { kind: 'alive' },
-        sigkillSent: true,
-      },
-    }))
-    expect(result.phase).toBe('old-exit-unconfirmed')
-    expect(result.action).toBe('keep-old-state')
-  })
-
-  it('旧服务在 drain 后自行退出（未发 SIGTERM）：直接进入启动计划', () => {
-    const result = planControlledRestart(baseInput({
-      stop: {
-        drain: { kind: 'success' },
-        sigtermSent: false,
-        sigtermDeadlineExceeded: false,
-        oldExit: { kind: 'exited' },
-        sigkillSent: false,
-      },
-      start: {
-        process: { kind: 'pending' },
-        health: { kind: 'pending' },
-        target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-      },
-    }))
-    expect(result.phase).toBe('new-start')
+    expect(result.nextState.stage).toBe('drain-timeout')
   })
 })
 
-describe('planControlledRestart: 启动、健康与回滚', () => {
-  it('启动 pending 只是等待：绝不 rolled-back、绝不 new-start-failed（探针 not-started-is-not-rolled-back）', () => {
-    const result = planControlledRestart(baseInput({
-      start: {
-        process: { kind: 'pending' },
-        health: { kind: 'pending' },
-        target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-      },
-    }))
-    expect(result.phase).toBe('new-start')
-    expect(result.action).toBe('start-new-server')
-    expect(result.phase).not.toBe('rolled-back')
-    expect(result.phase).not.toBe('new-start-failed')
-    expect(result.retainOldState).toBe(true)
+describe('exiting：unknown 保守优先，SIGTERM/SIGKILL 有限一次', () => {
+  it('unknown 先于一切信号建议：未发 SIGTERM 也不建议信号（探针 old-exit-unknown-before-term）', () => {
+    const r = step(initialRestartState(), { oldExit: { kind: 'unknown', detail: 'probe failed' } })
+    expect(r.phase).toBe('old-exit-unconfirmed')
+    expect(r.action).toBe('keep-old-state')
+    expect(r.nextState.claimed.sigterm).toBe(false)
+    expect(r.nextState.claimed.sigkill).toBe(false)
+    expect(r.nextState.stage).toBe('old-exit-unconfirmed')
   })
 
-  it('启动确认失败：new-start-failed + 恢复旧配置建议，但不自称已回滚', () => {
-    const result = planControlledRestart(baseInput({
-      start: {
-        process: { kind: 'failure', detail: '端口绑定失败' },
-        health: { kind: 'pending' },
-        target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-      },
-    }))
-    expect(result.phase).toBe('new-start-failed')
-    expect(result.action).toBe('restore-old-config')
-    expect(result.reason).toContain('尚未确认恢复完成')
+  it('SIGTERM 仅在明确 alive 时建议；pending 只等待不发信号', () => {
+    const pending = step(initialRestartState(), { oldExit: { kind: 'pending' } })
+    expect(pending.phase).toBe('sigterm-wait')
+    expect(pending.action).toBe('await-old-exit')
+    expect(pending.nextState.claimed.sigterm).toBe(false)
+
+    const alive = step(initialRestartState(), { oldExit: { kind: 'alive' } })
+    expect(alive.phase).toBe('send-sigterm')
+    expect(alive.reason).not.toContain('已执行')
+    expect(alive.nextState.claimed.sigterm).toBe(true)
+    expect(alive.nextState.stage).toBe('exiting')
   })
 
-  it('健康探测 pending 是等待；unknown/非法/不匹配 都 new-start-failed，绝不 ready', () => {
-    const target = { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' }
-    const awaiting = planControlledRestart(baseInput({
-      start: { process: { kind: 'success' }, health: { kind: 'pending' }, target },
-    }))
-    expect(awaiting.phase).toBe('new-start')
-    expect(awaiting.action).toBe('await-new-health')
-    for (const health of [
-      { kind: 'unknown', detail: '健康端点超时' },
-      { kind: 'success', runId: '', pid: 0 },
-      { kind: 'success', runId: 'run-other', pid: 5151 },
-      { kind: 'success', runId: 'run-new', pid: 9999 },
+  it('SIGTERM 限时内等待；恰好 deadline 且仍 alive 才一次 SIGKILL（reason 不含「已执行」）', () => {
+    const sent = step(initialRestartState(), { oldExit: { kind: 'alive' } })
+    const sentAt = sent.nextState.stageStartedAtMs ?? NOW
+    const within = planRestartStep(sent.nextState, baseObs({ oldExit: { kind: 'alive' }, nowMs: sentAt + TIMEOUTS.sigtermMs - 1 }))
+    expect(within.phase).toBe('sigterm-wait')
+    const atDeadline = planRestartStep(sent.nextState, baseObs({ oldExit: { kind: 'alive' }, nowMs: sentAt + TIMEOUTS.sigtermMs }))
+    expect(atDeadline.phase).toBe('sigterm-deadline')
+    expect(atDeadline.action).toBe('send-sigkill-once')
+    expect(atDeadline.reason).not.toContain('已执行')
+    expect(atDeadline.nextState.claimed.sigkill).toBe(true)
+  })
+
+  it('SIGTERM 超期而探测 pending：保守 old-exit-unconfirmed（有限出口）', () => {
+    const sent = step(initialRestartState(), { oldExit: { kind: 'alive' } })
+    const sentAt = sent.nextState.stageStartedAtMs ?? NOW
+    const stuck = planRestartStep(sent.nextState, baseObs({ oldExit: { kind: 'pending' }, nowMs: sentAt + TIMEOUTS.sigtermMs }))
+    expect(stuck.phase).toBe('old-exit-unconfirmed')
+  })
+
+  it('SIGKILL 派发后未明确 exited（pending/alive/unknown）一律 old-exit-unconfirmed（探针 fallback-sent-pending-exit）', () => {
+    const sent = step(initialRestartState(), { oldExit: { kind: 'alive' } })
+    const sentAt = sent.nextState.stageStartedAtMs ?? NOW
+    const killed = planRestartStep(sent.nextState, baseObs({ oldExit: { kind: 'alive' }, nowMs: sentAt + TIMEOUTS.sigtermMs }))
+    expect(killed.nextState.claimed.sigkill).toBe(true)
+    for (const oldExit of [
+      { kind: 'pending' },
+      { kind: 'alive' },
+      { kind: 'unknown', detail: 'x' },
     ] as const) {
-      const result = planControlledRestart(baseInput({
-        start: { process: { kind: 'success' }, health: health as never, target },
-      }))
-      expect(result.phase).toBe('new-start-failed')
-      expect(result.retainOldState).toBe(true)
+      const r = planRestartStep(killed.nextState, baseObs({ oldExit: oldExit as never, nowMs: sentAt + TIMEOUTS.sigtermMs + 1 }))
+      expect(r.phase).toBe('old-exit-unconfirmed')
+      expect(r.action).toBe('keep-old-state')
     }
   })
 
-  it('仅 restore 确认成功后才可 rolled-back，否则保留 new-start-failed', () => {
-    const failed = baseInput({
-      start: {
-        process: { kind: 'failure', detail: '端口绑定失败' },
-        health: { kind: 'pending' },
-        target: { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' },
-      },
-    })
-    const before = planControlledRestart(failed)
-    expect(before.phase).toBe('new-start-failed')
-    expect(before.phase).not.toBe('rolled-back')
-
-    const after = planControlledRestart({
-      ...failed,
-      rollback: { restore: { kind: 'success' } },
-    })
-    expect(after.phase).toBe('rolled-back')
-    expect(after.action).toBe('keep-old-state')
-    expect(after.reason).toContain('已确认恢复旧配置完成')
-    expect(after.retainOldState).toBe(true)
+  it('旧服务自然退出（未发任何信号）：直接进入启动，不建议 kill', () => {
+    const r = step(initialRestartState(), { oldExit: { kind: 'exited' } })
+    expect(r.phase).toBe('new-start')
+    expect(r.action).toBe('start-new-server')
+    expect(r.nextState.claimed.sigterm).toBe(false)
+    expect(r.nextState.claimed.sigkill).toBe(false)
   })
 })
 
-describe('planControlledRestart: 连续序列与 tdx 继承', () => {
-  it('完整成功序列：drain→SIGTERM→超期 SIGKILL→退出确认→启动→健康→ready', () => {
-    const target = { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' }
-    const seq: RestartPlanResult[] = []
-    seq.push(planControlledRestart(baseInput({
-      saveNewSource: { kind: 'pending' },
-      stop: { drain: { kind: 'pending' }, sigtermSent: false, sigtermDeadlineExceeded: false, oldExit: { kind: 'alive' }, sigkillSent: false },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target },
-    })))
-    seq.push(planControlledRestart(baseInput({
-      stop: { drain: { kind: 'success' }, sigtermSent: false, sigtermDeadlineExceeded: false, oldExit: { kind: 'alive' }, sigkillSent: false },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target },
-    })))
-    seq.push(planControlledRestart(baseInput({
-      stop: { drain: { kind: 'success' }, sigtermSent: true, sigtermDeadlineExceeded: true, oldExit: { kind: 'alive' }, sigkillSent: false },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target },
-    })))
-    seq.push(planControlledRestart(baseInput({
-      stop: { drain: { kind: 'success' }, sigtermSent: true, sigtermDeadlineExceeded: true, oldExit: { kind: 'exited' }, sigkillSent: true },
-      start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target },
-    })))
-    seq.push(planControlledRestart(baseInput({
-      stop: { drain: { kind: 'success' }, sigtermSent: true, sigtermDeadlineExceeded: true, oldExit: { kind: 'exited' }, sigkillSent: true },
-      start: { process: { kind: 'success' }, health: { kind: 'pending' }, target },
-    })))
-    seq.push(planControlledRestart(baseInput({
-      stop: { drain: { kind: 'success' }, sigtermSent: true, sigtermDeadlineExceeded: true, oldExit: { kind: 'exited' }, sigkillSent: true },
-      start: { process: { kind: 'success' }, health: { kind: 'success', runId: 'run-new', pid: 5151 }, target },
-    })))
-    expect(seq.map(r => r.phase)).toEqual([
-      'validate', 'send-sigterm', 'sigterm-deadline', 'new-start', 'new-start', 'ready',
-    ])
-    for (const r of seq.slice(0, 5)) expect(r.retainOldState).toBe(true)
-    expect(seq[5].phase).toBe('ready')
-    expect(seq[5].action).toBe('new-source-effective')
-    expect(seq[5].retainOldState).toBe(false)
-    expect(seq[5].steps[seq[5].steps.length - 1]).toBe('ready')
+describe('starting：spawn 回执绑定 PID，健康匹配绑定', () => {
+  /** 进入 starting（旧服务已确认退出），spawn 尚未请求 */
+  function inStarting() {
+    const entered = step(initialRestartState(), { oldExit: { kind: 'exited' } })
+    expect(entered.action).toBe('start-new-server')
+    return { state: entered.nextState, startedAt: entered.nextState.stageStartedAtMs ?? NOW }
+  }
+
+  it('启动 pending 首次建议 start-new-server；回传后仍 pending 只等待回执（探针 start-pending-is-also-in-progress）', () => {
+    const { state } = inStarting()
+    const second = planRestartStep(state, baseObs({ spawn: { kind: 'pending' }, nowMs: NOW + 1 }))
+    expect(second.phase).toBe('new-start')
+    expect(second.action).toBe('await-spawn-receipt')
+    expect(second.action).not.toBe('start-new-server')
   })
 
-  it('失败→恢复序列：new-start-failed 后 restore 确认才 rolled-back', () => {
-    const target = { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' }
-    const first = planControlledRestart(baseInput({
-      start: { process: { kind: 'failure', detail: '端口被占用' }, health: { kind: 'pending' }, target },
-      rollback: { restore: { kind: 'pending' } },
+  it('spawn 限时超期仍无回执 → new-start-failed（进入恢复流程）', () => {
+    const { state, startedAt } = inStarting()
+    const expired = planRestartStep(state, baseObs({ spawn: { kind: 'pending' }, nowMs: startedAt + TIMEOUTS.spawnMs }))
+    expect(expired.phase).toBe('new-start-failed')
+    expect(expired.action).toBe('restore-old-config')
+  })
+
+  it('spawn 回执绑定 PID；健康匹配绑定与目标 → ready；不匹配 → 失败', () => {
+    const { state, startedAt } = inStarting()
+    const bound = planRestartStep(state, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'pending' },
+      nowMs: startedAt + 10,
     }))
-    expect(first.phase).toBe('new-start-failed')
-    expect(first.action).toBe('restore-old-config')
-    const second = planControlledRestart({
-      ...baseInput({
-        start: { process: { kind: 'failure', detail: '端口被占用' }, health: { kind: 'pending' }, target },
-      }),
-      rollback: { restore: { kind: 'success' } },
-    })
-    expect(second.phase).toBe('rolled-back')
-    expect(second.retainOldState).toBe(true)
+    expect(bound.action).toBe('await-health')
+    expect(bound.nextState.boundNewPid).toBe(5151)
+    const match = planRestartStep(bound.nextState, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'success', runId: 'run-new', pid: 5151 },
+      nowMs: startedAt + 20,
+    }))
+    expect(match.phase).toBe('ready')
+    expect(match.action).toBe('new-source-effective')
+    expect(match.retainOldState).toBe(false)
+
+    const mismatch = planRestartStep(bound.nextState, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'success', runId: 'run-new', pid: 9999 },
+      nowMs: startedAt + 20,
+    }))
+    expect(mismatch.phase).toBe('new-start-failed')
   })
 
-  it('tdx 来源继承：仅 explicit-env 可继承，recalculate 重解析', () => {
-    const inherit = planControlledRestart(baseInput({}))
-    expect(inherit.tdxInheritance).toBe('explicit-env')
-    const recalc = planControlledRestart(baseInput({
+  it('迟到回执不同 PID 不覆盖绑定；健康按原绑定验证仍可 ready', () => {
+    const { state, startedAt } = inStarting()
+    const bound = planRestartStep(state, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'pending' },
+      nowMs: startedAt + 10,
+    }))
+    const late = planRestartStep(bound.nextState, baseObs({
+      spawn: { kind: 'success', pid: 300 },
+      health: { kind: 'success', runId: 'run-new', pid: 5151 },
+      nowMs: startedAt + 20,
+    }))
+    expect(late.phase).toBe('ready')
+    expect(late.nextState.boundNewPid).toBe(5151)
+  })
+
+  it('非法回执 PID 不放行；健康先于回执到达时只等待回执（健康不能自证）', () => {
+    const { state, startedAt } = inStarting()
+    const badReceipt = planRestartStep(state, baseObs({
+      spawn: { kind: 'success', pid: 0 },
+      nowMs: startedAt + 10,
+    }))
+    expect(badReceipt.phase).toBe('new-start-failed')
+    const unbound = planRestartStep(state, baseObs({
+      spawn: { kind: 'pending' },
+      health: { kind: 'success', runId: 'run-new', pid: 5151 },
+      nowMs: startedAt + 10,
+    }))
+    expect(unbound.action).toBe('await-spawn-receipt')
+  })
+
+  it('健康探测 unknown/超期 → 失败；pending 限时内等待', () => {
+    const { state, startedAt } = inStarting()
+    const bound = planRestartStep(state, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'pending' },
+      nowMs: startedAt + 10,
+    }))
+    const unknown = planRestartStep(bound.nextState, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'unknown', detail: '超时' },
+      nowMs: startedAt + 20,
+    }))
+    expect(unknown.phase).toBe('new-start-failed')
+    const expired = planRestartStep(bound.nextState, baseObs({
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'pending' },
+      nowMs: startedAt + 10 + TIMEOUTS.healthMs,
+    }))
+    expect(expired.phase).toBe('new-start-failed')
+  })
+})
+
+describe('恢复：new-start-failed 只进恢复流程，rolled-back 终态稳定', () => {
+  function inRestoring() {
+    const failed = step(initialRestartState(), {
+      oldExit: { kind: 'exited' },
+      spawn: { kind: 'failure', detail: '端口被占用' },
+    })
+    expect(failed.phase).toBe('new-start-failed')
+    expect(failed.action).toBe('restore-old-config')
+    return { state: failed.nextState, startedAt: failed.nextState.stageStartedAtMs ?? NOW }
+  }
+
+  it('restore pending 限时内等待；超期保持失败而非 rolled-back', () => {
+    const { state, startedAt } = inRestoring()
+    const waiting = planRestartStep(state, baseObs({ restore: { kind: 'pending' }, nowMs: startedAt + 1 }))
+    expect(waiting.phase).toBe('new-start-failed')
+    expect(waiting.action).toBe('await-restore')
+    const expired = planRestartStep(state, baseObs({ restore: { kind: 'pending' }, nowMs: startedAt + TIMEOUTS.restoreMs }))
+    expect(expired.phase).toBe('new-start-failed')
+    expect(expired.action).toBe('keep-old-state')
+    expect(expired.nextState.stage).toBe('restoring')
+  })
+
+  it('restore 确认成功才 rolled-back；随后迟到健康成功仍 rolled-back（探针 rollback-terminal-late-health）', () => {
+    const { state } = inRestoring()
+    const confirmed = planRestartStep(state, baseObs({ restore: { kind: 'success' } }))
+    expect(confirmed.phase).toBe('rolled-back')
+    expect(confirmed.nextState.stage).toBe('rolled-back')
+    const late = planRestartStep(confirmed.nextState, baseObs({
+      oldExit: { kind: 'exited' },
+      spawn: { kind: 'success', pid: 5151 },
+      health: { kind: 'success', runId: 'run-new', pid: 5151 },
+    }))
+    expect(late.phase).toBe('rolled-back')
+    expect(late.action).toBe('keep-old-state')
+    expect(late.retainOldState).toBe(true)
+  })
+
+  it('restore 失败保留失败与旧证据，不重复恢复', () => {
+    const { state } = inRestoring()
+    const failedRestore = planRestartStep(state, baseObs({ restore: { kind: 'failure', detail: '旧配置文件缺失' } }))
+    expect(failedRestore.phase).toBe('new-start-failed')
+    expect(failedRestore.action).toBe('keep-old-state')
+    const again = planRestartStep(failedRestore.nextState, baseObs({ restore: { kind: 'pending' } }))
+    expect(again.action).not.toBe('restore-old-config')
+  })
+})
+
+describe('完整序列（nextState 串联）与继承', () => {
+  it('合法成功序列：save→drain→SIGTERM→退出→spawn 回执绑定→健康→ready（未分配 PID 起步）', () => {
+    let state = initialRestartState()
+    const phases: string[] = []
+    const feed = (overrides: Partial<RestartObservations>, nowMs: number) => {
+      const r = planRestartStep(state, baseObs({ ...overrides, nowMs }))
+      phases.push(r.phase)
+      state = r.nextState
+      return r
+    }
+    feed({ saveNewSource: { kind: 'pending' } }, NOW)
+    feed({ saveNewSource: { kind: 'pending' } }, NOW + 10)
+    feed({ saveNewSource: { kind: 'success' }, drain: { kind: 'pending' }, oldExit: { kind: 'alive' } }, NOW + 20)
+    feed({ drain: { kind: 'success' }, oldExit: { kind: 'alive' } }, NOW + 30)
+    feed({ oldExit: { kind: 'alive' } }, NOW + 40)
+    feed({ oldExit: { kind: 'alive' } }, NOW + 50)
+    expect(state.boundNewPid).toBeNull()
+    feed({ oldExit: { kind: 'exited' } }, NOW + 60)
+    feed({ spawn: { kind: 'pending' } }, NOW + 70)
+    feed({ spawn: { kind: 'success', pid: 5151 }, health: { kind: 'pending' } }, NOW + 80)
+    const last = feed({ spawn: { kind: 'success', pid: 5151 }, health: { kind: 'success', runId: 'run-new', pid: 5151 } }, NOW + 90)
+    expect(phases).toEqual([
+      'preflight', 'preflight', 'draining', 'send-sigterm', 'sigterm-wait', 'sigterm-wait',
+      'new-start', 'new-start', 'new-start', 'ready',
+    ])
+    expect(last.phase).toBe('ready')
+    expect(last.retainOldState).toBe(false)
+    expect(state.boundNewPid).toBe(5151)
+    expect(state.claimed).toEqual({ save: true, sigterm: true, sigkill: false, start: true, restore: false })
+  })
+
+  it('fallback 序列：alive→SIGTERM→超期 SIGKILL→确认退出→spawn 绑定→健康→ready', () => {
+    let state = initialRestartState()
+    const feed = (overrides: Partial<RestartObservations>, nowMs: number) => {
+      const r = planRestartStep(state, baseObs({ ...overrides, nowMs }))
+      state = r.nextState
+      return r
+    }
+    feed({ oldExit: { kind: 'alive' } }, NOW)
+    feed({ oldExit: { kind: 'alive' } }, NOW + 10)
+    const kill = feed({ oldExit: { kind: 'alive' } }, NOW + 10 + TIMEOUTS.sigtermMs)
+    expect(kill.phase).toBe('sigterm-deadline')
+    expect(kill.action).toBe('send-sigkill-once')
+    const afterKill = feed({ oldExit: { kind: 'exited' } }, NOW + 10 + TIMEOUTS.sigtermMs + 10)
+    expect(afterKill.phase).toBe('new-start')
+    const bound = feed({ spawn: { kind: 'success', pid: 600 }, health: { kind: 'pending' } }, NOW + 10 + TIMEOUTS.sigtermMs + 20)
+    expect(bound.action).toBe('await-health')
+    const done = feed({ spawn: { kind: 'success', pid: 600 }, health: { kind: 'success', runId: 'run-new', pid: 600 } }, NOW + 10 + TIMEOUTS.sigtermMs + 30)
+    expect(done.phase).toBe('ready')
+    expect(state.boundNewPid).toBe(600)
+  })
+
+  it('ready 终态稳定：迟到异常观测不回退', () => {
+    let state = initialRestartState()
+    const feed = (overrides: Partial<RestartObservations>, nowMs: number) => {
+      const r = planRestartStep(state, baseObs({ ...overrides, nowMs }))
+      state = r.nextState
+      return r
+    }
+    feed({}, NOW)
+    feed({ spawn: { kind: 'success', pid: 700 }, health: { kind: 'success', runId: 'run-new', pid: 700 } }, NOW + 10)
+    expect(state.stage).toBe('ready')
+    const garbage = planRestartStep(state, baseObs({
+      activeTrainingId: 9,
+      oldObserved: null,
+      spawn: { kind: 'failure', detail: '迟到失败' },
+      health: { kind: 'unknown', detail: '迟到无结论' },
+    }))
+    expect(garbage.phase).toBe('ready')
+    expect(garbage.retainOldState).toBe(false)
+  })
+
+  it('tdx 继承：explicit-env 可继承，recalculate 重解析', () => {
+    const env = planRestartStep(initialRestartState(), baseObs())
+    expect(env.tdxInheritance).toBe('explicit-env')
+    const recalc = planRestartStep(initialRestartState(), baseObs({
       planned: {
         dataDir: 'C:\\data',
         databasePath: 'C:\\data\\trainer.sqlite',
@@ -452,25 +428,38 @@ describe('planControlledRestart: 连续序列与 tdx 继承', () => {
         source: 'recalculate',
       },
     }))
-    expect(recalc.phase).toBe('ready')
     expect(recalc.tdxInheritance).toBe('recalculate')
   })
 
+  it('非法时间输入（NaN/Infinity/负 timeout、非有限 nowMs）保守阻断，绝不 ready', () => {
+    for (const overrides of [
+      { timeouts: { ...TIMEOUTS, drainMs: Number.NaN } },
+      { timeouts: { ...TIMEOUTS, sigtermMs: Number.POSITIVE_INFINITY } },
+      { timeouts: { ...TIMEOUTS, spawnMs: -1 } },
+      { nowMs: Number.NaN },
+      { nowMs: Number.POSITIVE_INFINITY },
+    ]) {
+      const r = planRestartStep(initialRestartState(), baseObs(overrides))
+      expect(r.phase).toBe('blocked-runtime-mismatch')
+      expect(r.retainOldState).toBe(true)
+    }
+  })
+
   it('除 ready 外所有相位 retainOldState=true', () => {
-    const target = { runId: 'run-new', pid: 5151, port: 8787, origin: 'http://127.0.0.1:8787' }
-    const samples: RestartPlanResult[] = [
-      planControlledRestart(baseInput({ activeTrainingId: 1 })),
-      planControlledRestart(baseInput({ oldObserved: null })),
-      planControlledRestart(baseInput({ saveNewSource: { kind: 'failure', detail: 'x' } })),
-      planControlledRestart(baseInput({ saveNewSource: { kind: 'pending' } })),
-      planControlledRestart(baseInput({ stop: { drain: { kind: 'pending' }, sigtermSent: false, sigtermDeadlineExceeded: false, oldExit: { kind: 'pending' }, sigkillSent: false } })),
-      planControlledRestart(baseInput({ stop: { drain: { kind: 'timeout' }, sigtermSent: false, sigtermDeadlineExceeded: false, oldExit: { kind: 'alive' }, sigkillSent: false } })),
-      planControlledRestart(baseInput({ stop: { drain: { kind: 'success' }, sigtermSent: false, sigtermDeadlineExceeded: false, oldExit: { kind: 'alive' }, sigkillSent: false } })),
-      planControlledRestart(baseInput({ stop: { drain: { kind: 'success' }, sigtermSent: true, sigtermDeadlineExceeded: true, oldExit: { kind: 'alive' }, sigkillSent: true } })),
-      planControlledRestart(baseInput({ start: { process: { kind: 'pending' }, health: { kind: 'pending' }, target } })),
-      planControlledRestart(baseInput({ start: { process: { kind: 'failure', detail: 'x' }, health: { kind: 'pending' }, target } })),
+    const samples: Array<[RestartAttemptState, Partial<RestartObservations>]> = [
+      [initialRestartState(), { activeTrainingId: 1 }],
+      [initialRestartState(), { oldObserved: null }],
+      [initialRestartState(), { saveNewSource: { kind: 'pending' } }],
+      [initialRestartState(), { saveNewSource: { kind: 'failure', detail: 'x' } }],
+      [initialRestartState(), { drain: { kind: 'pending' } }],
+      [initialRestartState(), { drain: { kind: 'timeout' } }],
+      [initialRestartState(), { oldExit: { kind: 'alive' } }],
+      [initialRestartState(), { oldExit: { kind: 'unknown', detail: 'x' } }],
+      [initialRestartState(), { spawn: { kind: 'pending' } }],
+      [initialRestartState(), { spawn: { kind: 'failure', detail: 'x' } }],
     ]
-    for (const r of samples) {
+    for (const [state, overrides] of samples) {
+      const r = planRestartStep(state, baseObs(overrides))
       expect(r.phase).not.toBe('ready')
       expect(r.retainOldState).toBe(true)
     }
