@@ -15,6 +15,7 @@
     "server/src/settings/**",
     "server/src/api.ts",
     "server/src/recording-context.ts",
+    "server/src/docs/recording-context.md",
     "server/test/**",
     "web/src/api.ts",
     "web/src/App.vue",
@@ -26,8 +27,10 @@
     "docs/specs/training/rules.md",
     "docs/specs/recording.md",
     "docs/user/training-rules.md",
+    "docs/user/README.md",
     "docs/work-items/tasks/TRAIN-01.md",
     "docs/work-items/tasks/M5-01.md",
+    "docs/status.md",
     "docs/verification/2026-09/TRAIN-01/**",
     "server/src/train/docs/accounting.md"
   ],
