@@ -78,6 +78,16 @@
 - 证据：全局缓存 accept-20260927/restart-review-26/probe.json（绑定文件SHA256，1正例通过、4反例未满足）及review.md；当前不集成。第二次repair必须传递nextState、保留终态、区分未请求/进行中/未知、由spawn回执绑定PID、显式有限deadline。再同因失败转GPT Direct，不重置预算。
 - FM-007相关：回调称98项而日志实为110；green-restart-plan.meta为exit1，配对log却passed且开始时间不同。保留矛盾原件，不能认作同一次运行；未来每轮唯一日志前缀＋源码指纹，禁止覆盖日志再沿用旧meta。
 
+### FM-008 追记：v3达到返修预算，GPT Direct收尾（2026-09-27）
+
+- 事件 `setup-restart-plan-01-v3-repair-complete-20260927-27`，repair2提交 `34756e3e9def53e132c49ec8fbb6a1a5dae9ef2c`。既有110项独立复跑绿，但状态未保存旧身份/目标/运行边界/期限；目标漂移可ready，保存及首次退出探测可无限等待，迟到成功绕过超时，未请求spawn回执被接纳。
+- 控制处置：按既定阈值转GPT Direct，没有第三次委派同一实现。新增10项先RED，后补回执runId、首次退出迟到alive、未认领保存成功三项RED；全部13项随后GREEN。辅助审查发现保存认领遗漏，由GPT修复，保留原失败。
+- 实现学习：stage名不等于状态完整；持久状态必须携带已验证的身份/运行边界/来源/期限副本。期限需覆盖未派发、pending和迟到success分支。spawn回执绑定目标runId/PID，health独立阶段；保存和spawn未认领不能接受成功。恢复失败需稳定失败终态。
+- 定向6文件123/123、build:server exit0。原始RED/中间失败/最终log与源码hash见全局缓存 `accept-20260927/restart-direct-28/`，任务卡保留review。下一步GLM只读独立复核GPT提交，非继续同因返修；尚未集成/接真实launcher或用户数据。
+- 下一片接线必须承认claimed仅是动作认领，不能称OS操作已完成；事件绑定同一次attempt/run，持久化后失败/未知不得盲目重发。服务drain需在原子边界拒绝新训练，独立库/端口/夹具验证，不把纯模块测试称真实重启验收。
+- 控制层教训：前两轮合同只强调状态名和正PID，未充分冻结跨轮证据与PID产生时机，促使夹具预填未来PID。之后冻结接口须先画出真实事件顺序，区分启动前目标、启动回执和健康身份，明确哪些字段只验证一次但必须持久固定。
+- 不得遗漏的检查：每个等待阶段同时测pending超时和迟到success；用上一步nextState串联并变更目标/期限做反例；完成一次spawn后不再重复注入其回执，验证仅health更新也可推进；未知结果不能靠else落入成功分支；未认领的save/spawn success不能跳过本轮动作。失败状态也测试迟到success不能覆盖，不只测正常完成终态。
+
 ## 新条目模板
 
 ```text
