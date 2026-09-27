@@ -4,10 +4,12 @@ import { fetchActiveTraining, fetchEnv } from './api'
 import type { TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
+import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
 import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
+import TrainingSettings from './components/TrainingSettings.vue'
 import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
 import { readRecordingFile } from './recording/recordingFile'
 import type { RecordingSummary } from './recording/types'
@@ -172,7 +174,7 @@ function onTrainingEnded(): void {
         <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
-      <button class="rail-item rail-bottom" title="设置（M5 开放）" disabled>⚙<span>设置</span></button>
+      <button class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="trainingSettingsOpen ? closeTrainingSettings() : openTrainingSettings()">⚙<span>设置</span></button>
     </aside>
 
     <main class="workspace">
@@ -236,6 +238,8 @@ function onTrainingEnded(): void {
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
       <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
+      <!-- 训练默认设置（TRAIN-01）：局部弹层，Training 保持挂载，录制不被中断 -->
+      <TrainingSettings v-if="trainingSettingsOpen" @close="closeTrainingSettings" />
     </main>
   </div>
 </template>

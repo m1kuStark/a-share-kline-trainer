@@ -9,6 +9,7 @@ import { loadAdjustmentEvents, refreshAdjustmentCache } from './tdx/adjustment-c
 import { applyForwardAdjustment } from './tdx/gbbq.js'
 import { parseTdxSymbol } from './tdx/symbol.js'
 import { getActiveTraining } from './train/engine.js'
+import { registerTrainingSettingsRoutes } from './settings/training.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
@@ -85,6 +86,8 @@ export async function registerApi(
     return () => { for (const restore of restores) restore() }
   })()
   await registerRecordingContextRoutes(app, config, database)
+  // TRAIN-01：训练默认设置（费用/T+1）GET/PUT；经统一注册进入 drain 门闩
+  registerTrainingSettingsRoutes(app, database)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null

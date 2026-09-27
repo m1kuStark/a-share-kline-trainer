@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { legacyMigrationRules, serializeTrainingRules } from './train/rules.js'
 
 export function openDatabase(filePath: string): DatabaseSync {
   return new DatabaseSync(filePath)
@@ -84,6 +85,38 @@ export function migrateDatabase(database: DatabaseSync): void {
   addColumnIfMissing(database, 'trainings', 'range_notes', 'TEXT')
   // Early drawing tables have no save timestamp; keep it unknown until the next write.
   addColumnIfMissing(database, 'drawings', 'updated_at', "TEXT NOT NULL DEFAULT ''")
+  // TRAIN-01：新增列与旧训练规则回填在同一个迁移事务中完成（DDL 在 SQLite 内可回滚）；
+  // journal_mode 等 PRAGMA 留在事务之外。
+  migrateTrainingRules(database)
+}
+
+/** TRAIN-01 规则快照迁移：trainings.rules_json（版本化不可变 JSON）。
+ * 旧行一次性冻结"迁移时点实际观察到的" fees/T+1 与既有固定参数（origin=legacy-migration）；
+ * 反复迁移不改已冻结值（只回填 NULL 行）。失败整体回滚，不留半迁移状态。 */
+function migrateTrainingRules(database: DatabaseSync): void {
+  const columns = database.prepare('PRAGMA table_info(trainings)').all() as unknown as Array<{ name: string }>
+  const hasColumn = columns.some(entry => entry.name === 'rules_json')
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    if (!hasColumn) database.exec('ALTER TABLE trainings ADD COLUMN rules_json TEXT')
+    backfillTrainingRules(database)
+    database.exec('COMMIT')
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
+}
+
+/** 为 rules_json 为 NULL 的训练行按当前设置一次性冻结规则；幂等，可单独用于夹具补齐。 */
+export function backfillTrainingRules(database: DatabaseSync): void {
+  const pending = database.prepare('SELECT COUNT(*) AS count FROM trainings WHERE rules_json IS NULL').get() as unknown as { count: number }
+  if (pending.count === 0) return
+  const capturedAt = new Date().toISOString()
+  const rows = database.prepare('SELECT id, adjust_mode FROM trainings WHERE rules_json IS NULL').all() as unknown as Array<{ id: number; adjust_mode: string }>
+  const update = database.prepare('UPDATE trainings SET rules_json = ? WHERE id = ?')
+  for (const row of rows) {
+    update.run(serializeTrainingRules(legacyMigrationRules(database, row.adjust_mode, capturedAt)), row.id)
+  }
 }
 
 function addColumnIfMissing(database: DatabaseSync, table: string, column: string, definition: string): void {

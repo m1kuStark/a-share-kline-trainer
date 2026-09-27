@@ -68,8 +68,40 @@ export interface TrainingMeta {
   adjustMode: 'forward' | 'raw'
   initialCash: number
   createdAt: string
+  /** 本局冻结的交易规则（TRAIN-01）；快照损坏时服务端交易路径显式报错 */
+  rules?: TrainingRulesView
   /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
   range?: TrainingRangeMeta
+}
+
+/** 服务端训练规则快照镜像（trainings.rules_json v1；TRAIN-01 冻结合同） */
+export interface TrainingRulesView {
+  version: number
+  feesEnabled: boolean
+  tPlusOne: boolean
+  commissionRate: number
+  minimumCommission: number
+  stampDutyRate: number
+  lotSize: number
+  execution: string
+  weightBasis: string
+  corporateActionPolicy: 'cash-shares-v1' | 'legacy-raw-unverified'
+  capturedAt: string
+  origin: 'created' | 'legacy-migration'
+}
+
+/** 训练默认设置视图（GET/PUT /api/settings/training；capturedAt/origin 属于已冻结规则，不在默认里） */
+export interface TrainingSettingsView {
+  version: number
+  feesEnabled: boolean
+  tPlusOne: boolean
+  commissionRate: number
+  minimumCommission: number
+  stampDutyRate: number
+  lotSize: number
+  execution: string
+  weightBasis: string
+  corporateActionPolicy: string
 }
 
 export interface AccountView {
@@ -137,6 +169,20 @@ export function fetchRecordingContext(id: number): Promise<RecordingContext> {
 
 export function fetchEnv(): Promise<{ status: string; tdxRoot: string | null; dataCutoff: string | null; stockCount: number; capabilities: Record<string, boolean>; activeTrainingId: number | null }> {
   return request('/api/env')
+}
+
+// ===== 训练默认设置（TRAIN-01）：费用开关与 T+1 开关，默认只影响新训练 =====
+
+export function fetchTrainingSettings(): Promise<TrainingSettingsView> {
+  return request('/api/settings/training')
+}
+
+export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean }): Promise<TrainingSettingsView> {
+  return request('/api/settings/training', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
 }
 
 export function searchStocks(q: string): Promise<{ items: Stock[]; total: number }> {

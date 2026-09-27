@@ -10,7 +10,7 @@
 
 买入增加取得成本及费用；卖出按卖出股数占原持仓比例减少成本，现金增加成交额减费用。现金分红不冲减取得成本。
 
-当前费用默认关闭；开启后佣金万分之 2.5、最低 5 元，卖出另收万分之 5 印花税。费用总额保存于成交记录 fee，重放沿用实际记录。`feeConfigOf/t1Enabled` 每次读取全局 settings，尚未冻结为训练创建时的规则；缺口见 [TRAIN-01](../../../../docs/work-items/tasks/TRAIN-01.md)。
+费用默认关闭；开启后佣金万分之 2.5、最低 5 元，卖出另收万分之 5 印花税。费用总额保存于成交记录 fee，重放沿用实际记录。是否收费与 T+1 自 TRAIN-01 起读取本局冻结的规则快照（`trainings.rules_json`，见 [rules.ts](../rules.ts) 的严格解析与 `trainingRulesOf`），全局默认（`GET/PUT /api/settings/training`）只影响新训练；快照缺失/损坏/版本不支持以 409 `TRAIN_RULES_UNREADABLE` 拒绝交易，不静默回退。
 
 ## 权息入账与重放
 
@@ -20,7 +20,7 @@
 
 旧 position_events 的 cost_delta 为 NULL 时，只有权息因子、实际新增股数和净现金同时匹配才恢复缴款成本；不改写旧行。已有明确数值的事件以流水为准，不随权息缓存刷新重新猜测。
 
-当前 `advanceTraining` 仅在 adjust_mode=forward 时调用权息入账，raw 路径存在权益缺口；显示复权方式不应改变真实现金和持股要求，统一跟踪于 [TRAIN-01](../../../../docs/work-items/tasks/TRAIN-01.md)。目前只处理推进到的日线日期上的事件，也不能把实现描述成完整交易所权息清算系统。
+自 TRAIN-01 起，`advanceTraining` 按规则快照的 `corporateActionPolicy=cash-shares-v1` 入账权息，raw 与 forward 新训练的现金/持股/成本/权益逐项一致；显示复权方式不改变真实账户。旧迁移训练中 `legacy-raw-unverified`（旧不复权）历史权息缺失，禁止新增交易/推进/结算（409 `LEGACY_RAW_ACCOUNTING_UNVERIFIED`）。推进的 async 行情读取之后进入短 `BEGIN IMMEDIATE` 重查状态/日期，冲突返回 409 `TRAIN_STATE_CHANGED` 零写入，权息流水、推进日/close、权益点同事务提交；事务内重放最新账户余额。目前只处理推进到的日线日期上的事件，也不能把实现描述成完整交易所权息清算系统。
 
 ## 成交标记与当前成本
 

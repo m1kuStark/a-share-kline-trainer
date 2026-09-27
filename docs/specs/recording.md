@@ -22,11 +22,11 @@
 
 **范围录像（schemaVersion=3，TRAIN-02 第二片冻结合同）**：任一录像包含RANGE训练元数据必须以v3持久化（`range.version=1`沿后端TrainingRangeMeta；tier哨兵RANGE不伪装五档），v2+RANGE为禁止的中间态；新读取器兼容v1/v2/v3，v1/v2只接受旧五档（旧档伪装五档携带range在任何版本拒绝），v3容纳创建前null检查点；未知版本显式拒绝。版本升级与首次RANGE持久化一致。旧训练继续v2，既有文件不破坏性重写。
 
-导入压缩体积25MiB、v2解压JSON128MiB、旧v1迁移256MiB；事件50000、轻量检查点20000，资源预算与取消规则见v2合同。无效文件拒绝且不改变现有训练；这些是导入保护，不是自动停录。两年正常训练必须支持完整记录/导出。规则只描述实际观察值，不伪称创建时规则冻结。
+导入压缩体积25MiB、v2解压JSON128MiB、旧v1迁移256MiB；事件50000、轻量检查点20000，资源预算与取消规则见v2合同。无效文件拒绝且不改变现有训练；这些是导入保护，不是自动停录。两年正常训练必须支持完整记录/导出。规则自TRAIN-01起来自本局创建时冻结的快照（origin/capturedAt 以可选元数据透出，见[训练规则](training/rules.md) TRAIN-RULE-SNAPSHOT），旧录像缺字段按原reader读取；全局默认修改后已冻结规则与录像不漂移。
 
 录制准备阶段阻止操作，失败明确提示后允许继续训练并提供重试。复制标签页若已有录制写者，本页建立独立录制；原场不被覆盖。暂停恢复与未记录区间持续显示，失败期间不声称遗漏操作已被记录。
 
-现行格式见[v2接口](../engineering/recording-v2-contract.md)，旧格式见[v1兼容合同](../engineering/recording-contract.md)，设计理由见[紧凑方案](../proposals/session-recorder/compact-storage.md)。后续确定性业务重算仍受DATA-03/TRAIN-01约束。
+现行格式见[v2接口](../engineering/recording-v2-contract.md)，旧格式见[v1兼容合同](../engineering/recording-contract.md)，设计理由见[紧凑方案](../proposals/session-recorder/compact-storage.md)。后续确定性业务重算仍受DATA-03约束（规则冻结已由TRAIN-01交付）。
 
 
 ## 本轮用户返修口径
