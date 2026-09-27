@@ -32,6 +32,7 @@
     "docs/work-items/tasks/TRAIN-01.md",
     "docs/work-items/tasks/M5-01.md",
     "docs/status.md",
+    "docs/verification/README.md",
     "docs/verification/2026-09/TRAIN-01/**",
     "server/src/train/docs/accounting.md"
   ],
