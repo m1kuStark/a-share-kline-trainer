@@ -88,6 +88,13 @@
 - 控制层教训：前两轮合同只强调状态名和正PID，未充分冻结跨轮证据与PID产生时机，促使夹具预填未来PID。之后冻结接口须先画出真实事件顺序，区分启动前目标、启动回执和健康身份，明确哪些字段只验证一次但必须持久固定。
 - 不得遗漏的检查：每个等待阶段同时测pending超时和迟到success；用上一步nextState串联并变更目标/期限做反例；完成一次spawn后不再重复注入其回执，验证仅health更新也可推进；未知结果不能靠else落入成功分支；未认领的save/spawn success不能跳过本轮动作。失败状态也测试迟到success不能覆盖，不只测正常完成终态。
 
+### FM-008 收敛与接线提醒（2026-09-27）
+
+- 独立复核事件 `setup-restart-plan-01-independent-review-complete-20260927-29`：GPT重新核对c639507准确字节/提交并复跑GLM14场景探针，全过；隔离候选05b063d定向123/123、build通过。纯模块由控制层采纳，未来OS/UI接线不在本次验收范围，旧失败不删除。
+- 接线新证据：Windows跨进程SIGTERM不会执行Node优雅shutdown；现launcher detached且无IPC，旧服务也不能负责自身退出后的重启。选受保护HTTP控制通道和一次性外部助手，不能照抄POSIX信号含义。
+- 修正Scout判断：spawn独立PID证据来自启动器ChildProcess.pid；ready.json与health都是服务自报，必须与该PID/预先生成runId交叉核对，不可互相自证。
+- 新合同不可遗漏：prepare排空既有请求后同步再查activeTraining；HTTP返回202不代表后台刷新已结束，GET也可能写缓存；进程级门闩不宣称跨进程SQLite全局锁；回复shutdown成功只代表接受，助手仍须验证所属PID退出和端口释放。
+
 ## 新条目模板
 
 ```text
