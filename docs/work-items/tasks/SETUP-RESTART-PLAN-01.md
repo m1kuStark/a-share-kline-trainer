@@ -1,14 +1,14 @@
-# SETUP-RESTART-PLAN-01 受控重启安全计划（GPT Direct 收尾待独立复核）
+# SETUP-RESTART-PLAN-01 受控重启安全计划（纯模块控制层验收完成）
 
 ```json
 {
   "id": "SETUP-RESTART-PLAN-01",
   "title": "SETUP-01 第五片：受控重启安全计划纯函数",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
-  "summary": "v3 两次同因返修后转 GPT Direct。冻结跨轮身份/来源/运行边界/期限；保存、退出、spawn、health、恢复全部有限等待；spawn 回执以 runId/PID 绑定已认领动作；health 单独阶段；失败与完成终态稳定。纯模块未接 launcher，当前待 GLM 独立复核，非产品发布。",
-  "next_action": "GLM 只读独立复核 GPT Direct 提交与反例证据；确认后由控制层冻结 launcher 接线，禁止第三轮原样实现。",
+  "summary": "纯重启计划通过GPT控制层验收与GLM独立复核，已接入隔离候选05b063d。跨轮计划固定、有限等待、动作认领和独立PID回执已交付；真实HTTP退出/launcher重启/UI尚未交付。",
+  "next_action": "按SETUP-DRAIN-01冻结合同实现服务端受保护排空与优雅退出；本模块无待返修项。",
   "allowed_paths": [
     "server/src/setup/restart-plan.ts",
     "server/test/setup-restart-plan.test.ts",
@@ -22,8 +22,8 @@
     "reason": "返修合同授权的四文件切片；纯计划模块重构，不接 launcher/Fastify/UI/数据库/既有 SETUP 模块。",
     "update": ["docs/work-items/tasks/SETUP-RESTART-PLAN-01.md", "docs/status.md"]
   },
-  "verification_refs": ["server/test/setup-restart-plan.test.ts"],
-  "integration_ref": null,
+  "verification_refs": ["server/test/setup-restart-plan.test.ts", "docs/verification/2026-09/SETUP-RESTART-PLAN-01/report.md"],
+  "integration_ref": "integration/product-integration-20260926@05b063d4c3cc3d34b8d9e14529c370eda02729fc",
   "acceptance_ref": null
 }
 ```
