@@ -35,9 +35,25 @@ async function trainSingleAndCluster(page: Page, id: number) {
   return (await (await page.request.get(`/api/trainings/${id}`)).json()).trades as Array<{ seq: number; date: string; price: number; shares: number; amount: number; fee: number }>
 }
 
+/** 首日一笔买入、隔 7 个交易日两笔买入，再隔 30 个交易日卖出 100 股（T+1）：
+ *  B 与 S 徽标间距约 200px，互不落入对方 288px 详情浮层的覆盖范围，B→S→B 可不关闭连续点击 */
+async function trainSingleClusterAndSell(page: Page, id: number) {
+  expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', weightPct: 1 } })).ok()).toBe(true)
+  for (let i = 0; i < 7; i++) expect((await page.request.post(`/api/trainings/${id}/next`)).ok()).toBe(true)
+  expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', weightPct: 0.5 } })).ok()).toBe(true)
+  expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', weightPct: 0.5 } })).ok()).toBe(true)
+  for (let i = 0; i < 30; i++) expect((await page.request.post(`/api/trainings/${id}/next`)).ok()).toBe(true)
+  expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'sell', shares: 100 } })).ok()).toBe(true)
+  await page.reload()
+  await expect(page.locator('.trade-marker-badge')).toHaveCount(3)
+  return (await (await page.request.get(`/api/trainings/${id}`)).json()).trades as Array<{ seq: number; date: string; side: 'buy' | 'sell'; price: number; shares: number; amount: number; fee: number }>
+}
+
 function factValue(page: Page, label: string) {
   return panel(page).locator('.details-facts div', { hasText: label }).locator('dd')
 }
+
+const headerTitle = (page: Page) => panel(page).locator('.details-head strong')
 
 test('DETAILS-single-and-cluster：单笔直显、聚合列笔次选笔、金额费用按笔不合并', async ({ page }) => {
   const id = await open(page)
@@ -97,6 +113,88 @@ test('DETAILS-single-and-cluster：单笔直显、聚合列笔次选笔、金额
   await expect(panel(page)).toBeVisible()
   await expect(factValue(page, '序号')).toHaveText(`#${singleTrade.seq}`)
   await shot(page, 'single-cluster')
+})
+
+test('REPAIR-F1 同一挂载 B→S→B：标题与事实区方向/序号始终一致', async ({ page }) => {
+  const id = await open(page)
+  const trades = await trainSingleClusterAndSell(page, id)
+  const buy = trades.find(item => item.side === 'buy' && item.seq === 1)!
+  const sell = trades.find(item => item.side === 'sell')!
+
+  await page.locator('.trade-marker-badge[data-side="buy"][data-count="1"]').click()
+  await expect(headerTitle(page)).toHaveText('买入')
+  await expect(factValue(page, '方向')).toHaveText('买入')
+  await expect(factValue(page, '序号')).toHaveText(`#${buy.seq}`)
+
+  // 不关闭浮层直接切到卖出徽标：标题必须随当前成交更新（原缺陷：const 停留在首次方向）
+  await page.locator('.trade-marker-badge[data-side="sell"]').click()
+  await expect(headerTitle(page)).toHaveText('卖出')
+  await expect(factValue(page, '方向')).toHaveText('卖出')
+  await expect(factValue(page, '序号')).toHaveText(`#${sell.seq}`)
+  expect(await headerTitle(page).innerText()).toBe(await factValue(page, '方向').innerText())
+
+  // 再切回买入：方向反向更新
+  await page.locator('.trade-marker-badge[data-side="buy"][data-count="1"]').click()
+  await expect(headerTitle(page)).toHaveText('买入')
+  await expect(factValue(page, '方向')).toHaveText('买入')
+  await expect(factValue(page, '序号')).toHaveText(`#${buy.seq}`)
+})
+
+test('REPAIR-F2 hover 浮层键盘进入后不被鼠标离开关闭，焦点与指针均离开才收起', async ({ page }) => {
+  const id = await open(page)
+  await trainSingleAndCluster(page, id)
+  await page.locator('.trade-marker-badge[data-count="1"]').hover()
+  await expect(panel(page)).toBeVisible()
+
+  // 真实键盘进入浮层（浮层被 Teleport 到 body 末尾，Shift+Tab 落到面板内可聚焦元素）
+  await page.keyboard.press('Shift+Tab')
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.trade-marker-details') !== null)).toBe(true)
+  const focusBefore = await page.evaluate(() => document.activeElement?.textContent ?? '')
+
+  // 鼠标离开标记和浮层：焦点仍在面板内 → 浮层必须保留且焦点不丢
+  await page.mouse.move(15, 15)
+  await page.waitForTimeout(400)
+  await expect(panel(page)).toBeVisible()
+  expect(await page.evaluate(() => document.activeElement?.closest('.trade-marker-details') !== null)).toBe(true)
+  expect(await page.evaluate(() => document.activeElement?.textContent ?? '')).toBe(focusBefore)
+
+  // 真正焦点离开面板（指针仍在外）→ 普通预览收起
+  await page.keyboard.press('Tab')
+  await expect(panel(page)).toHaveCount(0)
+})
+
+test('REPAIR-F3 固定后徽标离屏浮层保留当前成交，回视口恢复锚定', async ({ page }) => {
+  const id = await open(page)
+  const trades = await trainSingleAndCluster(page, id)
+  const second = trades.find(item => item.seq === 2)!
+  await page.locator('.trade-marker-badge[data-count="2"]').click()
+  await panel(page).locator('.details-list button', { hasText: `#${second.seq}` }).click()
+  await panel(page).getByRole('button', { name: '固定', exact: true }).click()
+  await expect(panel(page).getByRole('button', { name: '已固定', exact: true })).toBeVisible()
+
+  // 真实滚轮平移让徽标离屏：面板必须继续显示仍存在的选中成交（最后有效位置）
+  const host = await page.locator('.chart-host').boundingBox()
+  await page.mouse.move(host!.x + host!.width * .5, host!.y + host!.height * .4)
+  let offscreen = false
+  for (let i = 0; i < 20 && !offscreen; i++) {
+    await page.mouse.wheel(0, 600)
+    offscreen = await page.locator('.trade-marker-badge').count() === 0
+  }
+  expect(offscreen).toBe(true)
+  await expect(panel(page)).toBeVisible()
+  await expect(factValue(page, '序号')).toHaveText(`#${second.seq}`)
+  await expect(factValue(page, '成交价')).toHaveText(money(second.price))
+  await shot(page, 'pin-offscreen')
+
+  // 平移回视口：恢复徽标锚定，事实不变
+  for (let i = 0; i < 24; i++) {
+    await page.mouse.wheel(0, -600)
+    if (await page.locator('.trade-marker-badge').count() > 0) break
+  }
+  await expect(page.locator('.trade-marker-badge')).not.toHaveCount(0)
+  await expect(panel(page)).toBeVisible()
+  await expect(factValue(page, '序号')).toHaveText(`#${second.seq}`)
+  await expect(factValue(page, '成交价')).toHaveText(money(second.price))
 })
 
 test('DETAILS-pin-lifecycle：固定后移开/切周期/resize 保持，解固定、Esc、外部按下关闭', async ({ page }) => {
@@ -261,6 +359,12 @@ test('DETAILS-visual-regression：深浅主题、840/1440px 面板完整可见�
       await page.setViewportSize({ width, height: 900 })
       await page.waitForTimeout(350)
       await expect(panel(page)).toBeVisible()
+      // F4：聚合列表文字必须随主题可读（深色亮字/浅色暗字），不接受深字叠深底
+      const rowColor = await panel(page).locator('.details-list button').first().evaluate(el => getComputedStyle(el).color)
+      const channels = rowColor.match(/\d+/g)!.map(Number)
+      const brightness = channels[0]! + channels[1]! + channels[2]!
+      if (theme === 'dark') expect(brightness).toBeGreaterThan(400)
+      else expect(brightness).toBeLessThan(400)
       const box = await panel(page).boundingBox()
       expect(box!.x).toBeGreaterThanOrEqual(0)
       expect(box!.y).toBeGreaterThanOrEqual(0)

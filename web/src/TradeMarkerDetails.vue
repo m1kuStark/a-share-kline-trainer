@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { TradeView } from './api'
 import { buildListRow, buildTradeFacts } from './tradeMarkerDetails'
 
 const props = defineProps<{
-  /** 当前聚合内全部成交（单笔时只有一条，不显示列表） */
+  /** 当前聚合内全部成交（单笔时只有一条，不显示列表；标记离屏时为空，仅显示选中事实） */
   trades: TradeView[]
   selected: TradeView
   pinned: boolean
@@ -17,9 +18,13 @@ const emit = defineEmits<{
   close: []
   pointerEnter: []
   pointerLeave: []
+  /** Teleport 根不透传 attrs：焦点事件必须在真实 div 上绑定后显式转发（FM-011/F2） */
+  focusIn: []
+  focusOut: [event: FocusEvent]
 }>()
 
-const sideLabel = props.selected.side === 'buy' ? '买入' : '卖出'
+// 必须随 props.selected 响应：setup 期 const 会把首次方向固定（F1：B→S 标题不更新）
+const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '卖出'))
 </script>
 
 <template>
@@ -34,6 +39,8 @@ const sideLabel = props.selected.side === 'buy' ? '买入' : '卖出'
       @keydown.esc.prevent="emit('close')"
       @pointerenter="emit('pointerEnter')"
       @pointerleave="emit('pointerLeave')"
+      @focusin="emit('focusIn')"
+      @focusout="emit('focusOut', $event)"
     >
       <div class="details-head">
         <strong>{{ sideLabel }}{{ props.trades.length > 1 ? ` · ${props.trades.length} 笔` : '' }}</strong>
@@ -187,6 +194,11 @@ const sideLabel = props.selected.side === 'buy' ? '买入' : '卖出'
 :global(body.dark .details-actions button:hover),
 :global(body.dark .details-list button:hover) {
   background: #2a2e35;
+}
+
+/* F4：列表行浅色主题文字色不得带入深色主题（深字叠深底不可读） */
+:global(body.dark .details-list button) {
+  color: var(--text-primary, #e5e7eb);
 }
 
 :global(body.dark .details-list button.selected) {

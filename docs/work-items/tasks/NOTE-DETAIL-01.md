@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "V4",
   "summary": "B/S 标记悬停/聚焦/点击打开只读详情浮层：单笔直显、聚合列笔次选笔、固定、Esc 关闭；仅展示 TradeView 已有事实，理由/阶段/订单字段待 TRAIN-03。",
-  "next_action": "GPT 集中验收四场景集合（DETAILS-*）；验收通过后由集成侧串行整合并运行完整发布门禁。",
+  "next_action": "F1-F4 限定返修已交付（control-handoff-20260927-39：标题响应 props、焦点事件转发、固定离屏保留渲染、深色列表可读），待 GPT 限定复核；通过后由集成侧串行整合并运行完整发布门禁。",
   "allowed_paths": [
     "web/src/TradeMarkerRail.vue",
     "web/src/TradeMarkerDetails.vue",

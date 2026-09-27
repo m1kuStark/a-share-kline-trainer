@@ -34,7 +34,13 @@ function dispatch(event: DetailsEvent): void {
 
 const currentMarker = computed(() => keyedMarkers.value.find(marker => marker.key === panel.value?.markerKey) ?? null)
 const panelTrades = computed(() => currentMarker.value?.trades ?? [])
-const panelSelected = computed(() => panelTrades.value.find(item => item.seq === panel.value?.selectedSeq) ?? null)
+// F3：固定面板的徽标离屏（聚合集合不含该笔）时，选中成交仍从当前 props.trades 取得——
+// 只用受限当前数据渲染，绝不缓存已消失/未来成交；回放后退 trades 收缩时此处为 null，浮层立即移除
+const panelSelected = computed(() =>
+  panelTrades.value.find(item => item.seq === panel.value?.selectedSeq)
+  ?? props.trades.find(item => item.seq === panel.value?.selectedSeq)
+  ?? null,
+)
 
 function markerLabel(marker: TradeMarkerCluster): string {
   const letter = marker.side === 'buy' ? 'B' : 'S'
@@ -237,8 +243,8 @@ onBeforeUnmount(() => {
     @close="closePanel(true)"
     @pointer-enter="onPanelPointerEnter"
     @pointer-leave="onPanelPointerLeave"
-    @focusin="onPanelFocusIn"
-    @focusout="onPanelFocusOut"
+    @focus-in="onPanelFocusIn"
+    @focus-out="onPanelFocusOut"
   />
 </template>
 
