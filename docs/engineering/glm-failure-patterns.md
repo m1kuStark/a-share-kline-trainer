@@ -52,6 +52,24 @@
 - 残余风险：ISO 合同当前只接受 UTC `Z` 形式和四位年份，范围未扩展。
 - 下一次GLM合同必须增加：严格校验必须同时包含非法反例和合法正例；解析字段先统一类型，再做逐项比较。
 
+### FM-007：只保留 tail 导致首次失败不可追溯
+
+- event_id / task / attempt：`setup-restart-plan-01-flaky-report-20260927-02` / `SETUP-RESTART-PLAN-01` / 首次执行。
+- 现象：执行者报告首次全量 1023/1024，仅保存 tail，失败测试名丢失；之后两次绿色复跑不能重建首次错误。
+- 失败指纹与根因：日志捕获被输出截断替代；测试失败本身的根因未知，尚不能归类资源竞争。
+- 修复与独立验证：本次控制层将完整定向日志先落盘再取摘要，98/98 exit 0；未声称定位首次失败，也未认证未提供路径的两次全量报告。
+- 残余风险：首次用例名和完整 stderr 未记录，无法精确重放；保留所有剩余证据并明确缺失，不补造。
+- 下一次合同：命令执行前确定完整 stdout/stderr 工件，记录 cwd/命令/退出码/提交或源码指纹；摘要只从已保存原件派生。再失败才针对有名用例有限重放/串行对照，不反复全量刷绿。
+
+### FM-008：布尔结果冒充生命周期与身份确认
+
+- event_id / task / attempt：`setup-restart-plan-01-complete-20260927-01` / `SETUP-RESTART-PLAN-01` / 首次执行，提交 `836a1e470cacb89cc4458cf12770ef1e7b4d62db`。
+- 最小复现：正常输入仅将 newRun.port/origin 改为 9999 仍 ready；目标与健康观测均设空 runId/0 PID 仍 ready；started=false 即声称 rolled-back；drain 未完成却 retainOldState=false；deadline+exitConfirmed 声称 SIGKILL 已执行。
+- 失败指纹与根因：只校验旧字段外形，新身份只作相等比较；没有独立旧观测和阶段/动作回执，pending、failed、unknown 被布尔值合并。原合同未冻结输入阶段结构，控制层此次明确修订，不能只口头要求实现者猜补。
+- 独立验证：既有定向98/98、build/docs均exit 0；外置 probe.mjs exit 1（1正例通过、5反例失败）。完整输入输出/文件SHA256在全局缓存 accept-20260927/restart-review-24/probe.json；代码与日志未被覆盖。
+- 修复状态：尚未修复/验收；不集成，交原Zcode会话按revision 2限定返修。
+- 下一次合同：期望身份与观测分离、合法性先于相等；动作建议与完成事实分离；pending/failed/unknown显式区分；逐阶段正反例覆盖超时、退出和回滚，只有确认回执允许完成终态。未成功前保留恢复依据。
+
 ## 新条目模板
 
 ```text
