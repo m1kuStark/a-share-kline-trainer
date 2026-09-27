@@ -117,6 +117,9 @@ export function createDataRefreshCoordinator(
   const calendarBundle: CalendarBundle | null = options.calendar === undefined ? OFFICIAL_SSE_2026_BUNDLE : options.calendar
   let running: RunningTask | null = null
   let lastState: Exclude<RefreshState, 'running'> = 'idle'
+  // SETUP-DRAIN-01：在途刷新任务完整生命周期（含 202 返回后的 watchdog/catch/finally 写库）
+  // 的可观测 Promise；排空控制器据此等待真实完成。running 置 null 不等于任务结束。
+  const inFlightTaskPromises = new Set<Promise<void>>()
 
   function complete(taskId: string, state: RefreshState, entry: RefreshLogEntry | null): void {
     if (running?.id !== taskId) return
@@ -258,7 +261,12 @@ export function createDataRefreshCoordinator(
       running = null
       return null
     }
-    void runTask(taskId, selection.source)
+    const taskPromise: Promise<void> = runTask(taskId, selection.source)
+    inFlightTaskPromises.add(taskPromise)
+    void taskPromise.then(
+      () => { inFlightTaskPromises.delete(taskPromise) },
+      () => { inFlightTaskPromises.delete(taskPromise) },
+    )
     return { taskId, state: 'running', joined: false }
   }
 
@@ -341,7 +349,12 @@ export function createDataRefreshCoordinator(
     }
   }
 
-  return { start, getStatus }
+  return {
+    start,
+    getStatus,
+    /** 当前在途刷新任务的完整 Promise 快照（SETUP-DRAIN-01 排空观测用） */
+    pendingTasks: (): readonly Promise<void>[] => [...inFlightTaskPromises],
+  }
 }
 
 export type DataRefreshCoordinator = ReturnType<typeof createDataRefreshCoordinator>

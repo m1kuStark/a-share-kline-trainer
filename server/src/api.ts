@@ -20,6 +20,7 @@ import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
 import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
+import type { DrainGate } from './setup/drain-controller.js'
 import { defaultTdxCandidates } from './tdx/discover.js'
 
 export interface RegisterApiOptions {
@@ -28,6 +29,11 @@ export interface RegisterApiOptions {
     processQuery?: () => Promise<import('./tdx/process-clues.js').ProcessQueryResult>
     inspect?: (roots: readonly string[]) => Promise<import('./tdx/inspect.js').TdxCandidateCheck[]>
   }
+  /** SETUP-DRAIN-01：业务接纳 gate。提供时全部 /api/ 业务路由（含 GET 隐式缓存写）
+   * 在注册阶段统一包装：gate 关闭后新业务 503 SERVER_DRAINING；已接纳 handler 在其
+   * Promise 真正完成前持有租约（客户端 abort 不提前放行）。/api/health 与
+   * /api/setup/control/* 豁免；非 /api/ 路径（静态资源）不受 gate 影响。 */
+  drain?: DrainGate
 }
 
 export async function registerApi(
@@ -36,6 +42,48 @@ export async function registerApi(
   database: DatabaseSync,
   options: RegisterApiOptions = {},
 ): Promise<void> {
+  const drainGate = options.drain ?? null
+  const exemptFromGate = (url: string): boolean =>
+    url === '/api/health' || url.startsWith('/api/setup/control/') || !url.startsWith('/api/')
+  const restoreRouteDecorators = (() => {
+    if (!drainGate) return () => {}
+    const methods = ['get', 'post', 'put', 'delete'] as const
+    const restores: Array<() => void> = []
+    for (const method of methods) {
+      const instance = app as unknown as Record<string, unknown>
+      const original = instance[method]
+      if (typeof original !== 'function') continue
+      const bound = (original as (...args: unknown[]) => unknown).bind(app)
+      const wrapper = (url: string, opts: unknown, handler?: unknown) => {
+        const actualHandler = typeof opts === 'function' ? opts : handler
+        const routeOptions = typeof opts === 'function' ? undefined : opts
+        if (typeof actualHandler !== 'function' || exemptFromGate(url)) {
+          return routeOptions === undefined
+            ? bound(url, actualHandler)
+            : bound(url, routeOptions, actualHandler)
+        }
+        const gated = async (request: unknown, reply: {
+          code(statusCode: number): { send(payload: unknown): unknown }
+        }) => {
+          const admission = drainGate.admit()
+          if (!admission.ok) {
+            return reply.code(503).send({ error: 'SERVER_DRAINING' })
+          }
+          try {
+            return await (actualHandler as (request: unknown, reply: unknown) => unknown)(request, reply)
+          } finally {
+            admission.release()
+          }
+        }
+        return routeOptions === undefined
+          ? bound(url, gated)
+          : bound(url, routeOptions, gated)
+      }
+      instance[method] = wrapper
+      restores.push(() => { instance[method] = original })
+    }
+    return () => { for (const restore of restores) restore() }
+  })()
   await registerRecordingContextRoutes(app, config, database)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
@@ -374,6 +422,8 @@ export async function registerApi(
 
   // ===== R1 统一日线更新服务：状态查询 + 手动/启动/激活共用的单飞行刷新任务 =====
   const dataRefresh = createDataRefreshCoordinator(database, config)
+  // SETUP-DRAIN-01：202 返回后的完整刷新任务纳入排空等待（源头 track，无竞态窗口）
+  drainGate?.registerTaskSource(() => dataRefresh.pendingTasks())
 
   app.get('/api/data/status', async () => dataRefresh.getStatus())
 
@@ -382,4 +432,6 @@ export async function registerApi(
     if (!started) return reply.code(409).send({ error: '未检测到通达信数据目录，且未配置在线数据源' })
     return reply.code(started.joined ? 200 : 202).send({ taskId: started.taskId, state: started.state, joined: started.joined })
   })
+
+  restoreRouteDecorators()
 }
