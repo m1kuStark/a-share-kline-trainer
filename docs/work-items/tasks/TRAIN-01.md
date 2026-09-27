@@ -5,10 +5,10 @@
   "id": "TRAIN-01",
   "title": "冻结训练规则并统一权息入账",
   "owner": "GLM-5.3-Flash",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
-  "summary": "已交付：设置默认费用/T+1 API与局部面板、创建规则快照（rules_json v1）与旧局不漂移、新raw/forward权息一致入账、推进短事务状态重查、旧训练迁移幂等与legacy raw只读保护、录像规则接本局快照；首轮审查F1-F3限定返修完成（快照数值驱动执行+支持域校验、一次迁移标记、modal焦点/背景隔离），待GPT限定复核。",
-  "next_action": "control-handoff-20260928-44 F1-F3返修完成待GPT复核；followup：TRAIN-RULES-SOURCE-OBSERVATION（五档训练来源kind/创建观察截止未持久记录，追溯项，不扩DATA-03/04）。未复核通过不集成。",
+  "summary": "TRAIN-01五场景及F1-F3已通过GPT限定验收，保留TRAIN-RULES-SOURCE-OBSERVATION；准备隔离集成，未上main或发布。",
+  "next_action": "保留080cdb3/c0fa04c已接受范围；相同代码快进隔离候选，后续M5/DATA工作另按依赖，不重派本片。",
   "allowed_paths": [
     "server/src/db.ts",
     "server/src/train/**",
@@ -53,7 +53,7 @@
     "docs/verification/2026-09/TRAIN-01/report.md"
   ],
   "integration_ref": "not integrated; task/TRAIN-01 candidate pending GPT review (control-handoff-20260928-43)",
-  "acceptance_ref": null
+  "acceptance_ref": "docs/verification/2026-09/TRAIN-01/acceptance-45.md"
 }
 ```
 
