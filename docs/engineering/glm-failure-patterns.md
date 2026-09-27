@@ -70,6 +70,14 @@
 - 修复状态：尚未修复/验收；不集成，交原Zcode会话按revision 2限定返修。
 - 下一次合同：期望身份与观测分离、合法性先于相等；动作建议与完成事实分离；pending/failed/unknown显式区分；逐阶段正反例覆盖超时、退出和回滚，只有确认回执允许完成终态。未成功前保留恢复依据。
 
+### FM-008 追记：v2仍缺跨阶段记忆（2026-09-27）
+
+- 事件 `setup-restart-plan-01-v2-repair-complete-20260927-25`，首次repair提交 `afae53581d41bb22738c9a0ec46d8c822bd056af`。
+- 原五反例与身份形状已修；独立定向110/110、build/docs exit0。但新序列显示 rolled-back 后迟到匹配health重新ready；unknown退出在SIGTERM未发时仍建议信号；fallback已发+pending仍等待；启动pending混同未启动/进行中，重复建议spawn。
+- 根因：给布尔改名或加判别联合没有提供上一阶段/动作认领状态。计划还强制在spawn前知道PID；前合同未按PID产生时机拆开，控制层明确修订此设计边界。
+- 证据：全局缓存 accept-20260927/restart-review-26/probe.json（绑定文件SHA256，1正例通过、4反例未满足）及review.md；当前不集成。第二次repair必须传递nextState、保留终态、区分未请求/进行中/未知、由spawn回执绑定PID、显式有限deadline。再同因失败转GPT Direct，不重置预算。
+- FM-007相关：回调称98项而日志实为110；green-restart-plan.meta为exit1，配对log却passed且开始时间不同。保留矛盾原件，不能认作同一次运行；未来每轮唯一日志前缀＋源码指纹，禁止覆盖日志再沿用旧meta。
+
 ## 新条目模板
 
 ```text
