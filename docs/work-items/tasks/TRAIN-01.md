@@ -24,6 +24,7 @@
     "web/src/components/TrainingSettings.vue",
     "web/src/settingsPanel.ts",
     "e2e/training-rules.spec.ts",
+    "e2e/training-range.spec.ts",
     "docs/specs/training/rules.md",
     "docs/specs/recording.md",
     "docs/user/training-rules.md",
