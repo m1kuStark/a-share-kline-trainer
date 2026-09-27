@@ -5,10 +5,10 @@
   "id": "SETUP-DRAIN-01",
   "title": "SETUP-01 第六片：受保护排空与优雅退出通道（drain/cancel/shutdown 服务端闭环）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
-  "summary": "drain-controller.ts：业务接纳 gate＋租约跟踪＋prepare/cancel/shutdown 状态机（同 attempt 重复 prepare 共用结果与原 deadline 不延长租约；其他 attempt 409 CONTROL_BUSY；排空预算到期 504 DRAIN_TIMEOUT 撤销接纳；prepared 租约 30s 到期自动撤销；排空完成后无 await 同步复查活动训练，在途创建刚提交则 409 ACTIVE_TRAINING 并撤销；cancel 幂等，closing 后不可逆；关停不双调）。control-api.ts：POST /api/setup/control/{prepare,cancel,shutdown} 严格防护链——body 仅 {runId,attemptId}(400 CONTROL_REQUEST_INVALID)→remoteAddress loopback→Host 逐字等于实际绑定 127.0.0.1:port(PORT=0 取 address)→Origin 完全缺席(空串也拒)→Sec-Fetch-Site 出现即拒(均 403 CONTROL_HELPER_ONLY)→令牌三态(401 TOKEN_UNCONFIGURED/MISSING/INVALID，不接数组)→config.runId 非空(503 CONTROL_UNAVAILABLE)→body.runId 逐字(409 RUN_ID_MISMATCH)；全部验证前零副作用。api.ts：注册阶段统一包装全部 /api/ 业务路由（含 GET 隐式缓存写与 recording-context），gate 关闭后 503 SERVER_DRAINING，已接纳 handler 在 Promise 真正完成前持有租约（客户端 abort 不提前放行）；豁免 /api/health 与控制端点；静态资源不受影响。refresh.ts：仅增加在途刷新任务完整 Promise 可观测（202 返回后的 watchdog/catch/finally 写库纳入排空；源头 track 与返回之间无竞态），不改发布语义。index.ts：创建控制器/注册控制端点/onClose 清理定时器；真实 shutdown 由 control-api 在 202 回包后调用现有 shutdown 一次（202 不证明 PID 退出）。真实子进程测试（实际入口经 tsx、动态端口、临时 DB/static/ready、独立 runId/token、TDX_ROOT 空）验证 202→exit 0→端口可重绑→ready 清理→SQLite 完整。测试 46 项（本片新增）：drain 单元 18＋控制端点 HTTP 14＋真实子进程 1＋刷新观测 1＋既有 data-refresh 12。",
-  "next_action": "GPT 复核；通过后下一片为一次性 launcher 助手跨旧服务退出执行重启（detached 模式保留，不建常驻 daemon），spawn 独立依据=助手 ChildProcess.pid＋预定新 runId（ready/health 为服务自报需交叉核对）。",
+  "summary": "受保护排空/取消/优雅关闭服务端行为已通过控制层冻结范围复核，F1/F2/F3闭合，带4项非阻断followup接入隔离候选8e7da05。完整首次接入/launcher重启/UI仍待交付。",
+  "next_action": "复用本片实现SETUP完整用户闭环，不重做已验收模块；followup与证据见本片验收报告。",
   "allowed_paths": [
     "server/src/setup/drain-controller.ts",
     "server/src/setup/control-api.ts",
@@ -32,9 +32,10 @@
     "server/test/setup-drain.test.ts",
     "server/test/setup-control-api.test.ts",
     "server/test/setup-control-process.test.ts",
-    "server/test/data-refresh.test.ts"
+    "server/test/data-refresh.test.ts",
+    "docs/verification/2026-09/SETUP-DRAIN-01/report.md"
   ],
-  "integration_ref": "integration/product-integration-20260926@e5a7b8f",
+  "integration_ref": "integration/product-integration-20260926@8e7da052f557d0fda1e75b0a262dd9914c39e7a3",
   "acceptance_ref": null
 }
 ```
@@ -79,3 +80,8 @@
 - 新 3 测试（setup-drain/setup-control-api/setup-control-process）＋data-refresh/catalog-protection＋原 6 个 SETUP 测试；完整 unit 单次；npm run build；docs:check；docs:impact --base e5a7b8f --task SETUP-DRAIN-01；docs:status --check；git diff --check。
 - RED 证据：red30-tests.log/.meta（基线 e5a7b8f 仅测试在场，exit=1）。
 - 全部日志唯一前缀 drain30-*，每命令 .meta 成对（cmd/cwd/HEAD/源码 hash/起止/exit）。
+
+
+## 控制层最终裁决
+
+2026-09-27 accepted_with_followups；原历史条目均保留，当前结论见 [验收报告](../../verification/2026-09/SETUP-DRAIN-01/report.md)。正式测试弱断言及Journey flaky均如实登记，非整体验收或main提升。
