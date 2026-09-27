@@ -1,6 +1,33 @@
 # TRAIN-01 交付报告：训练规则快照、默认设置与权息一致
 
-状态：**候选完成，待 GPT 集中验收**（reply_to=control-handoff-20260928-43）。分支 `task/TRAIN-01`，基线 `645ad6c2f4018d1c6785ac35d499537011334f61`；候选提交 `0ed7d54`（实现）→ `64e908a`（卡路径补齐）→ `1c6ccbf`（e2e 顺序依赖修复，最终候选）。本报告记录实现范围、五验收场景证据与验证运行；不代表集成、发布或用户验收。
+状态：**返修完成，待 GPT 限定复核**（reply_to=control-handoff-20260928-44）。分支 `task/TRAIN-01`，基线 `645ad6c2f4018d1c6785ac35d499537011334f61`；首轮候选 `0ed7d54`（实现）→ `64e908a`（卡路径补齐）→ `1c6ccbf`（e2e 顺序依赖修复，门禁候选）→ `de19009`（验证文档）。**返修 F1-F3：`c0fa04c`（实现）→ `ac6abb1`（卡补列 verification README）→ `8849c97`（M2 报告刷新，docs-only）**，工作树干净；返修证据 `C:/Users/Stark_Du666/.codex/headroom-cache/train-repair-20260928-44/evidence/`（manifest.json 含 16 个变更源码/测试文件 SHA256、dirty 路径空、18 个运行日志绑定）。本报告记录实现范围、五验收场景证据与验证运行；不代表集成、发布或用户验收。
+
+## 限定返修 F1-F3（control-handoff-20260928-44）
+
+- **先 RED 后实现**：`red-f1f2.log` exit 1，12 用例真实失败且与审查反例逐项吻合——fee 12.5≠50（快照率 0.001 未驱动计算）、lotSize 4900≠4800、6 类非法数值（负率/负最低佣金/率>1/lotSize 0 与 1.5/坏 capturedAt）全部放行成交、F2 损坏 NULL 行被重启迁移按新默认重冻、F3 无 inert/焦点陷阱。
+- **F1 快照数值驱动执行**：`FeeConfig` 扩展为完整数值（commissionRate/minimumCommission/stampDutyRate/lotSize），`tradeTraining` 把整份认可快照传入 `planBuy/planSell`（佣金、印花税、整手取整全部按快照执行）；`parseTrainingRules` 支持域校验（比率 ∈[0,1]、最低佣金 ∈[0,1e6]、lotSize ∈[1,1e6] 整数、capturedAt 可解析时间——顺手闭合 TIMESTAMP-VALIDATION 低影响项），域外/损坏 409 `TRAIN_RULES_UNREADABLE` 零写；`DEFAULT_FEES` 保持无快照纯账户调用兼容；设置 API 仍只接受两布尔，不开放费率编辑。
+- **F2 一次迁移标记**：`cache_meta.train_rules_migration` 与加列/回填同事务写入；标记后任何启动不再按 `rules_json IS NULL` 回填——已迁移库中损坏/缺失快照保持 NULL（读取 409），不按当前默认重冻、不伪装 legacy-migration；列已存在但无标记（旧候选 lineage）只补标记不回填；首次迁移/幂等/失败回滚/旧流水不变全部保持。
+- **F3 modal 焦点与背景隔离**：设置弹层挂 app-shell 根（main 之外），打开期间 rail 与 workspace 整体 `inert`（焦点+指针双隔离，背景原生按钮激活被浏览器阻断）；面板 Tab 焦点陷阱（首/末回绕）；文档级 Esc 兜底＋保存后焦点收回弹层（实测 disabled 期间焦点回落 body 的缺陷）；关闭 nextTick 后焦点返还设置入口；Training/录像全程挂载不销毁。
+- **正式回归**：新增 12 项单测（F1 手算 fee 50/150、lotSize 4800、7 类非法零写；F2 损坏不重冻；F3 接线 pin）＋F3 行为 e2e（Tab/Shift+Tab 各 14 轮不出弹层、开关上 Enter/Space 零业务写、键盘走完保存/失败/取消、Esc 关闭还焦点、深 1440/浅 840 可见）；e2e 定向 `--grep` 单跑 8s 零重试通过（`green-f3-e2e-5.log`）。
+
+## 返修后最终门禁（代码 c0fa04c）
+
+| 运行 | 结果 |
+|---|---|
+| repair-final-unit | exit 1（1 失败）→ 失败为 release-launcher 固定夹具端口 5061 瞬态被占（当时占用进程已消失、端口现空闲，归因 unknown）；`repair-launcher-retry` 串行重放 exit 0 |
+| repair-final-unit-2 | exit 0，**1138/1138**（86 文件；首轮 1126＋返修 12） |
+| repair-final-build | exit 0（vue-tsc＋tsc＋vite） |
+| docs check/status/impact | 全 0 error（impact 按任务基线 645ad6c 计） |
+| repair-final-m2 | exit 0，**24/24**（新做冻结样本隔离副本，结算日 2026-09-04、终权益 1,008,951、+0.9%） |
+| repair-final-journey | exit 0，**89 过 / 0 失败 / 2 flaky**（drawing-basis、recording-long 首次 12.1m 超时后重试分别通过；如实保留） |
+
+原五场景通过范围（raw/forward 手算、推进冲突/回滚、创建边界与 RANGE、legacy raw 保护、录像 gzip 元数据、UI A/B 规则流程）未重新设计，相关既有回归全绿。
+
+## Followup
+
+- `TRAIN-RULES-SOURCE-OBSERVATION`：五档训练的来源 kind/创建观察截止未持久记录（RANGE 既有 fingerprint 保留）；追溯项，不扩 DATA-03/04，已登记任务卡。
+- 首轮 full-unit-2/3 的 exit 127 与本轮 5061 端口瞬态冲突的根因均保持 unknown，不写成负载/外部终止定案。
+- 预算：设计 1/1、执行 2/2、审查 1/2、总 4/5；剩一次 GPT 限定复核。
 
 ## 交付范围（一个写者整片完成）
 
