@@ -2,14 +2,19 @@
 // 覆盖：body 严格形状、loopback/Host/Origin 完全缺席/Sec-Fetch-Site、令牌三态、runId 校验、
 // 零副作用（被拒后 gate 功能不受影响）、prepared/cancelled/closing 响应映射、shutdown 单次调用。
 import Fastify from 'fastify'
+import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { createDrainController } from '../src/setup/drain-controller.js'
 import { registerSetupControlApi } from '../src/setup/control-api.js'
+import { registerApi } from '../src/api.js'
+import { migrateDatabase } from '../src/db.js'
+import { registerOnlineSource, type ScanOutcome } from '../src/data/source.js'
 import type { AppConfig } from '../src/config.js'
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
 interface Harness {
+  controller: ReturnType<typeof createDrainController>
   call(path: string, overrides?: {
     token?: string | null
     origin?: string | null
@@ -28,6 +33,8 @@ async function build(overrides: {
   runId?: string | null
   activeTraining?: { id: number } | null
   drainBudgetMs?: number
+  listenHost?: string
+  shutdownBehavior?: 'ok' | 'sync-throw' | 'async-reject'
 } = {}): Promise<Harness> {
   const app = Fastify()
   let shutdownCallCount = 0
@@ -47,13 +54,18 @@ async function build(overrides: {
   await registerSetupControlApi(app, {
     controller,
     config,
-    shutdown: async () => { shutdownCallCount++ },
+    shutdown: async () => {
+      shutdownCallCount++
+      if (overrides.shutdownBehavior === 'sync-throw') throw new Error('probe: synchronous shutdown failure')
+      if (overrides.shutdownBehavior === 'async-reject') await Promise.reject(new Error('probe: shutdown cleanup failed'))
+    },
   })
-  await app.listen({ port: 0, host: '127.0.0.1' })
+  await app.listen({ port: 0, host: overrides.listenHost ?? '127.0.0.1' })
   const address = app.server.address()
   const port = typeof address === 'object' && address !== null ? address.port : 0
   const hostHeader = `127.0.0.1:${port}`
   const harness: Harness = {
+    controller,
     activeTraining: overrides.activeTraining ?? null,
     shutdownCalls: () => shutdownCallCount,
     async call(path, callOverrides = {}) {
@@ -221,5 +233,124 @@ describe('SETUP-DRAIN-01 控制端点：prepare/cancel/shutdown 生命周期映�
       const prepared = await h.call('prepare')
       expect(prepared.statusCode).toBe(200)
     } finally { await h.close() }
+  })
+})
+
+// ===== SETUP-DRAIN-01 限定返修回归（control-handoff-20260927-34）：F1/F2/F3 =====
+
+describe('SETUP-DRAIN-01 限定返修回归', () => {
+  it('F2: 实际监听 0.0.0.0 时控制端点一律 403 且 gate 零副作用；127.0.0.1 正例保持', async () => {
+    const wildcard = await build({ listenHost: '0.0.0.0' })
+    try {
+      const rejected = await wildcard.call('prepare')
+      expect(rejected.statusCode).toBe(403)
+      expect(rejected.json().error).toBe('CONTROL_HELPER_ONLY')
+      expect(wildcard.controller.gate.isOpen()).toBe(true)
+    } finally { await wildcard.close() }
+
+    const loopback = await build()
+    try {
+      const ok = await loopback.call('prepare')
+      expect(ok.statusCode).toBe(200)
+      expect(ok.json().phase).toBe('prepared')
+    } finally { await loopback.close() }
+  })
+
+  it('F3: shutdown 同步 throw 与 Promise rejection 都进受控 catch，不产生 unhandled rejection', async () => {
+    const unhandled: string[] = []
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(String((reason as Error)?.message ?? reason))
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      for (const behavior of ['sync-throw', 'async-reject'] as const) {
+        const h = await build({ shutdownBehavior: behavior })
+        try {
+          const prepared = await h.call('prepare')
+          expect(prepared.statusCode).toBe(200)
+          const response = await h.call('shutdown')
+          expect(response.statusCode).toBe(202)
+          expect(response.json().phase).toBe('closing')
+          await delay(60)
+          expect(h.shutdownCalls()).toBe(1)
+        } finally { await h.close() }
+      }
+      await delay(60)
+      expect(unhandled).toEqual([])
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
+  })
+
+  it('F1: 已接纳刷新在 prepare 后才派生 scan 后台任务时不得提前 prepared；scan 完成正例钉住', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let resolveEntered!: () => void
+    let releaseAvailable!: () => void
+    let resolveScan!: (outcome: ScanOutcome) => void
+    const entered = new Promise<void>(resolve => { resolveEntered = resolve })
+    const availableGate = new Promise<void>(resolve => { releaseAvailable = resolve })
+    const scanGate = new Promise<ScanOutcome>(resolve => { resolveScan = resolve })
+    const unregister = registerOnlineSource({
+      kind: 'online',
+      name: 'drain-inflight-probe',
+      available: async () => {
+        resolveEntered()
+        await availableGate
+        return true
+      },
+      scan: async () => scanGate,
+    })
+    const app = Fastify()
+    const controller = createDrainController({ drainBudgetMs: 2_000, preparedLeaseMs: 5_000 })
+    let shutdownCalls = 0
+    const config = {
+      host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null,
+      runId: 'run-x', controlToken: 'tok-123',
+    } as AppConfig
+    await registerApi(app, config, database, { drain: controller.gate })
+    await registerSetupControlApi(app, {
+      controller, config,
+      shutdown: async () => { shutdownCalls++ },
+    })
+    await app.listen({ port: 0, host: '127.0.0.1' })
+    const address = app.server.address()
+    const port = typeof address === 'object' && address !== null ? address.port : 0
+    const call = (path: string) => app.inject({
+      method: 'POST', url: `/api/setup/control/${path}`, remoteAddress: '127.0.0.1',
+      headers: { host: `127.0.0.1:${port}`, 'x-control-token': 'tok-123' },
+      payload: { runId: 'run-x', attemptId: 'a1' },
+    })
+    try {
+      // 已接纳刷新挂在 available()
+      const refreshPending = app.inject({ method: 'POST', url: '/api/data/refresh' })
+      await entered
+      const preparePending = controller.prepare('a1')
+      // available 放行 → scan 后台任务在此之后才入册 → 202 返回、业务租约释放
+      releaseAvailable()
+      const refresh = await refreshPending
+      expect(refresh.statusCode).toBe(202)
+      await delay(60)
+      // 修复前缺陷：此刻已 prepared。修复后必须仍在排空（scan 未完成）
+      expect(controller.gate.isOpen()).toBe(false)
+      // 任务尚在途：shutdown 入口不允许关闭
+      expect(controller.beginShutdown('a1').kind).toBe('not-prepared')
+      // scan 完成正例：真实结束后才 prepared
+      resolveScan({
+        kind: 'online', name: 'drain-inflight-probe', baseline: true, totalStocks: 0,
+        added: 0, removed: 0, revised: 0, sourceMaxDate: null, files: [],
+      })
+      const outcome = await preparePending
+      expect(outcome.kind).toBe('prepared')
+      const shutdown = await call('shutdown')
+      expect(shutdown.statusCode).toBe(202)
+      expect(shutdown.json()).toMatchObject({ phase: 'closing', attemptId: 'a1' })
+      await delay(40)
+      expect(shutdownCalls).toBe(1)
+    } finally {
+      unregister()
+      await app.close()
+      database.close()
+    }
   })
 })

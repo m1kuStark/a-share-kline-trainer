@@ -180,10 +180,23 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
       deadlineHit = true
       settleDrain(record, true)
     })
-    void Promise.allSettled(collectOutstanding()).then(() => {
+    // 静默循环：已接纳 handler 在排空中可能派生新的后台任务（如刷新 202 后的 scan），
+    // 必须反复重收任务来源，直到确无新增在途，才允许进入 prepared。预算到期强制收敛。
+    void (async () => {
+      const awaited = new Set<Promise<unknown>>()
+      for (;;) {
+        if (current !== record || record.state !== 'draining') {
+          disarmTimer(timer)
+          return
+        }
+        const outstanding = collectOutstanding().filter(p => !awaited.has(p))
+        if (outstanding.length === 0) break
+        for (const pending of outstanding) awaited.add(pending)
+        await Promise.allSettled(outstanding)
+      }
       disarmTimer(timer)
       settleDrain(record, deadlineHit)
-    })
+    })()
   }
 
   function collectOutstanding(): Promise<unknown>[] {
@@ -199,6 +212,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
         finish(current, { kind: 'expired' })
         return { kind: 'not-prepared' }
       }
+      if (collectOutstanding().length > 0) return { kind: 'not-prepared' }
       if (getActiveTraining() !== null) return { kind: 'active-training' }
       const record = current
       finished.set(record.id, { kind: 'closing' })

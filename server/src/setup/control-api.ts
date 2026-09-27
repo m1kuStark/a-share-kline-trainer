@@ -63,15 +63,20 @@ export async function registerSetupControlApi(
   const invokeShutdownOnce = (): void => {
     if (shutdownInvoked) return
     shutdownInvoked = true
-    void Promise.resolve(shutdown()).catch(error => {
-      app.log.error(error, '受控 shutdown 执行失败；失败已留日志，不冒充已退出')
-    })
+    // 经微任务调用：同步 throw 与 Promise rejection 一律进受控 catch，留可行动日志
+    Promise.resolve()
+      .then(() => shutdown())
+      .catch(error => {
+        app.log.error(error, '受控 shutdown 执行失败；失败已留日志，不冒充已退出')
+      })
   }
 
   /** 实际绑定端口（PORT=0 时取内核分配值；不从请求反推） */
   function actualHostPort(): string | null {
     const address = app.server.address()
     if (address === null || typeof address === 'string') return null
+    // 只允许服务真实监听 127.0.0.1；0.0.0.0 等非合同监听一律拒绝
+    if (address.address !== '127.0.0.1') return null
     return `127.0.0.1:${address.port}`
   }
 
@@ -148,8 +153,16 @@ export async function registerSetupControlApi(
     if (!guarded.ok) return replyError(reply, guarded)
     const outcome = controller.beginShutdown(guarded.attemptId)
     if (outcome.kind === 'closing') {
-      // 先回 202 再异步调用现有 shutdown；调用一次；202 不证明进程已退出
-      setImmediate(() => { invokeShutdownOnce() })
+      // 真实响应完成后才触发关闭（原生 res 'finish'）；连接提前关闭按既有关闭语义保守触发。
+      // 只触发一次；202 可读；202 不证明进程已退出。
+      let scheduled = false
+      const schedule = (): void => {
+        if (scheduled) return
+        scheduled = true
+        invokeShutdownOnce()
+      }
+      reply.raw.once('finish', schedule)
+      reply.raw.once('close', schedule)
       return reply.code(202).send({ phase: 'closing', runId: config.runId, attemptId: guarded.attemptId })
     }
     if (outcome.kind === 'active-training') return reply.code(409).send({ error: 'ACTIVE_TRAINING' })

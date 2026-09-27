@@ -48,7 +48,7 @@
 
 ## 恢复轮（control-handoff-20260927-32，babb70b WIP 之后）
 
-- **旧全量 11 失败分类定案：environment_failure（非代码缺陷）**。串行复核：docs-tooling 30/30、worktree-tools 28/28 全过（glmr32-serial-*）；npm ci 退出码 3221225794（0xC0000402 fail-fast）与 20s 超时均为并行负载下的环境症状，verify:candidate 未执行是 npm ci 失败的下游表现，非独立缺陷。
+- **旧全量 11 失败：environment_failure 迹象、根因 unknown（不编造确定归因）**。串行复核 docs-tooling 30/30、worktree-tools 28/28 全过（glmr32-serial-*），恢复后完整单跑也未复现；npm ci 退出码 3221225794（0xC0000402 fail-fast）与 20s 超时属环境/进程异常迹象，verify:candidate 未执行系 npm ci 失败的下游表现。未复现≠排除，不开全仓 flaky 工程。
 - **完整 unit 单跑（恢复后）**：81 文件 / 1075 tests 全绿 exit=0（glmr32-full-unit），含此前失败的两文件。
 - **Journey/M2 子门禁缺 oracle → needs_replan**：prepareJourneySnapshot 与 verify:m2 均要求 TDX_ROOT/真实通达信源制作冻结快照（runtime/snapshot.ts:73-77 无源即抛错）；磁盘检索 51 份 tdx-browser-sample manifest 仅存 sha256 清单，快照字节本体已随临时 run 目录清理，重建必须读用户真实 TDX（本片禁止）。请控制层指定现存冻结样本路径或裁决快照制作授权；其余门禁全部完成，不受此阻塞。
 - **证据卫生更正**：暂停前对全量门禁的"仅中断无结果"说法不完整——drain30-full-unit.log 实为 11 failed/1064 passed 且 meta 缺 exit/end（原件保留未改写）；本轮已按恢复指令以新前缀 glmr32-* 补齐串行复核与完整单跑证据。
@@ -65,6 +65,14 @@
 - 助手崩溃后 prepared 租约到期自动撤销已测，但"租约撤销时有在途 handler"的组合属超时路径已由预算覆盖，未单列长稳测试。
 - 202 后子进程收到关闭但 DB 写入失败等极端 IO 错误路径未注入故障验证。
 - drain-timeout 的 504 映射在 control-api 层由代码路径保证，HTTP 层断言以单元层等价覆盖（无业务路由夹具可制造排空阻塞）。
+
+## 限定返修轮（control-handoff-20260927-34，首次 repair）
+
+- **F1/P1 admission-and-inflight**（implementation_defect）：runDrain 原只对任务来源做一次快照，已接纳刷新 202 后才注册的 scan 后台任务逃出排空等待。修复：静默循环反复重收任务来源直到确无新增在途（预算内强制收敛）；beginShutdown 增加在途守卫（任务在途 → CONTROL_NOT_PREPARED）。交错场景已入正式回归（setup-control-api F1 用例：available 挂起→prepare→202→scan 未完成不得 prepared/shutdown 拒绝→scan 完成→prepared→closing），scan 完成正例钉住。
+- **F2/P2 authentication**（implementation_defect）：actualHostPort 只取端口拼 127.0.0.1，实际监听 0.0.0.0 也放行。修复：校验 address.address 逐字为 127.0.0.1，非合同监听一律 403 且零副作用；127.0.0.1 动态端口正例保留。回归入 setup-control-api F2 用例。
+- **F3/P2 real-process-shutdown**（implementation_defect）：index `void shutdown()` 丢 Promise（同步 throw 绕过 catch 变 uncaughtException、rejection 变 unhandledRejection）；setImmediate 在异步 onSend 完成前触发关闭。修复：control-api 经微任务调用（同步 throw 与 rejection 一律进受控 catch 留日志）；触发点改为原生 res `finish`（连接提前关闭按既有关闭语义保守触发，只触发一次）。回归入 setup-control-api F3 用例（sync-throw/async-reject 均无 unhandled）。
+- **非阻断 followup（不拖住本片）**：SETUP-CONTROL-ATTEMPT-REPORT（closing 后非匹配 attempt 也返回 202 closing，只关一次无副作用）、SETUP-CONTROL-HEADER-STRICTNESS（含逗号 token 与重复 header 拼接等值边界，未显示绕过凭据）。
+- 旧失败归因措辞修正：环境/进程异常迹象、根因 unknown、串行与恢复后完整单跑未复现；不编造"并行负载"确定结论。
 
 ## 门禁
 
