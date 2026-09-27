@@ -895,3 +895,36 @@ describe('data status freshness integration', () => {
     }
   })
 })
+
+// ===== SETUP-DRAIN-01：在途刷新任务完整生命周期可观测（202 返回后的后台 Promise） =====
+
+describe('SETUP-DRAIN-01: 在途刷新任务生命周期可观测', () => {
+  it('pendingTasks 在 start 后可见完整任务 Promise；完成/失败后清空；running 置 null 不等于任务结束', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let releaseScan!: (outcome: ScanOutcome) => void
+    const unregister = registerOnlineSource(fakeOnlineSource('排空观测在线源', (): Promise<ScanOutcome> => new Promise<ScanOutcome>(resolve => { releaseScan = resolve })))
+    try {
+      const coordinator = createDataRefreshCoordinator(
+        database,
+        { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null },
+        { timeoutMs: 5_000 },
+      )
+      const started = await coordinator.start()
+      expect(started).not.toBeNull()
+      expect(started?.joined).toBe(false)
+      // 202 已可返回，但完整任务 Promise 仍在途（watchdog/catch/finally 写库未结束）
+      expect(coordinator.pendingTasks().length).toBe(1)
+      // running 字段先于 Promise 结束置 null：running===null 不能证明任务完成
+      releaseScan({
+        kind: 'online', name: '排空观测在线源', totalStocks: 0,
+        added: 0, removed: 0, revised: 0, sourceMaxDate: null, baseline: true, files: [],
+      } as ScanOutcome)
+      await waitFor(() => coordinator.pendingTasks().length === 0)
+      expect(coordinator.pendingTasks().length).toBe(0)
+    } finally {
+      unregister()
+      database.close()
+    }
+  })
+})
