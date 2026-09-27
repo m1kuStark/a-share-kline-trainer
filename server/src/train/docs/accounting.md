@@ -10,7 +10,7 @@
 
 买入增加取得成本及费用；卖出按卖出股数占原持仓比例减少成本，现金增加成交额减费用。现金分红不冲减取得成本。
 
-费用默认关闭；开启后佣金万分之 2.5、最低 5 元，卖出另收万分之 5 印花税。费用总额保存于成交记录 fee，重放沿用实际记录。是否收费与 T+1 自 TRAIN-01 起读取本局冻结的规则快照（`trainings.rules_json`，见 [rules.ts](../rules.ts) 的严格解析与 `trainingRulesOf`），全局默认（`GET/PUT /api/settings/training`）只影响新训练；快照缺失/损坏/版本不支持以 409 `TRAIN_RULES_UNREADABLE` 拒绝交易，不静默回退。
+费用默认关闭；开启后佣金万分之 2.5、最低 5 元，卖出另收万分之 5 印花税。费用总额保存于成交记录 fee，重放沿用实际记录。是否收费、T+1 与费率/手数数值自返修 F1 起全部来自本局冻结规则快照（`trainings.rules_json`，见 [rules.ts](../rules.ts) 支持域校验与 `trainingRulesOf`）：被认可的数值由同一快照传入 `planBuy/planSell` 执行；快照缺失/损坏/数值超出支持域以 409 `TRAIN_RULES_UNREADABLE` 拒绝交易，不回退全局设置或模块常量。全局默认（`GET/PUT /api/settings/training`）只影响新训练。`account.ts` 的 `DEFAULT_FEES` 仅为无快照纯账户调用的兼容缺省。
 
 ## 权息入账与重放
 

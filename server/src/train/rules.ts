@@ -65,7 +65,9 @@ export function legacyMigrationRules(database: DatabaseSync, adjustMode: string,
 
 }
 
-/** 严格解析规则快照：任何字段缺失/类型不符/版本不支持都返回 null（不可静默回退）。 */
+/** 严格解析规则快照：任何字段缺失/类型不符/版本不支持/数值超出支持域都返回 null（不可静默回退）。
+ * 支持域（返修 F1）：比率 ∈ [0,1]、最低佣金 ∈ [0,1e6]、lotSize 为 [1,1e6] 整数、capturedAt 为可解析时间；
+ * 被认可的数值由同一快照供账户计算执行，支持之外 409 零写，不回退常量。 */
 export function parseTrainingRules(raw: string | null | undefined): TrainingRulesV1 | null {
   if (!raw) return null
   let value: unknown
@@ -78,12 +80,17 @@ export function parseTrainingRules(raw: string | null | undefined): TrainingRule
   const candidate = value as Record<string, unknown>
   if (candidate.version !== 1) return null
   if (typeof candidate.feesEnabled !== 'boolean' || typeof candidate.tPlusOne !== 'boolean') return null
-  for (const key of ['commissionRate', 'minimumCommission', 'stampDutyRate', 'lotSize'] as const) {
-    if (typeof candidate[key] !== 'number' || !Number.isFinite(candidate[key])) return null
-  }
+  const rateInDomain = (key: 'commissionRate' | 'stampDutyRate'): boolean =>
+    typeof candidate[key] === 'number' && Number.isFinite(candidate[key]) && candidate[key] >= 0 && candidate[key] <= 1
+  if (!rateInDomain('commissionRate') || !rateInDomain('stampDutyRate')) return null
+  if (typeof candidate.minimumCommission !== 'number' || !Number.isFinite(candidate.minimumCommission)
+    || candidate.minimumCommission < 0 || candidate.minimumCommission > 1e6) return null
+  if (typeof candidate.lotSize !== 'number' || !Number.isInteger(candidate.lotSize)
+    || candidate.lotSize < 1 || candidate.lotSize > 1e6) return null
   if (candidate.execution !== 'same-day-raw-close' || candidate.weightBasis !== 'total-equity') return null
   if (candidate.corporateActionPolicy !== 'cash-shares-v1' && candidate.corporateActionPolicy !== 'legacy-raw-unverified') return null
-  if (typeof candidate.capturedAt !== 'string' || candidate.capturedAt === '') return null
+  if (typeof candidate.capturedAt !== 'string' || candidate.capturedAt === ''
+    || Number.isNaN(Date.parse(candidate.capturedAt))) return null
   if (candidate.origin !== 'created' && candidate.origin !== 'legacy-migration') return null
   return candidate as unknown as TrainingRulesV1
 }

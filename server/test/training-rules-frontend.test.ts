@@ -28,6 +28,27 @@ describe('TRAINING-RULES 前端接线', () => {
     expect(training).toMatch(/trainingSettingsOpen\.value/)
   })
 
+  it('返修 F3：背景界面 inert 隔离、弹层挂 app-shell 根、关闭还焦点设置入口', async () => {
+    const app = await readFile(appPath, 'utf8')
+    // 弹层挂在 app-shell 根（main 之外），rail 与 workspace 打开期间整体 inert（焦点+指针双隔离）
+    expect(app).toMatch(/:inert="trainingSettingsOpen"/)
+    expect(app).toMatch(/<aside class="rail"([^>]*)?:inert="trainingSettingsOpen"/s)
+    expect(app).toMatch(/<main class="workspace"([^>]*)?:inert="trainingSettingsOpen"/s)
+    // 弹层元素位于 </main> 之后（app-shell 根层级），不受 main inert 影响
+    const afterMain = app.slice(app.indexOf('</main>'))
+    expect(afterMain).toMatch(/<TrainingSettings /)
+    // 关闭后焦点回到设置入口（返还焦点）
+    expect(app).toMatch(/settingsButton/)
+    expect(app).toMatch(/settingsButton.*focus|focus.*settingsButton/s)
+  })
+
+  it('返修 F3：设置面板实现 Tab 焦点陷阱', async () => {
+    const panel = await readFile(panelPath, 'utf8')
+    // Tab 循环限制在弹层内：捕获 Tab 并在首/末可聚焦元素间回绕
+    expect(panel).toMatch(/focusableElements|trapFocus|focusable/i)
+    expect(panel).toMatch(/Shift/)
+  })
+
   it('训练页展示本局规则（费用/T+1 冻结）与旧训练来源说明', async () => {
     const training = await readFile(trainingPath, 'utf8')
     expect(training).toMatch(/training\.rules/)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, type TrainingSettingsView } from '../api'
 
 // TRAIN-01 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
@@ -18,6 +18,9 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 
 onMounted(async () => {
+  // 返修 F3：文档级 Esc 兜底——焦点因任何原因离开弹层（如保存期间按钮 disabled 回落 body）
+  // 时仍能关闭；Tab 隔离由面板 trapFocus + 背景 inert 共同保证。
+  document.addEventListener('keydown', onDocumentKeydown)
   panelRef.value?.focus()
   try {
     const current = await fetchTrainingSettings()
@@ -28,6 +31,14 @@ onMounted(async () => {
     loadError.value = error instanceof Error ? error.message : '无法读取训练默认设置'
   }
 })
+onUnmounted(() => {
+  document.removeEventListener('keydown', onDocumentKeydown)
+})
+function onDocumentKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  close()
+}
 
 async function save(): Promise<void> {
   if (saving.value) return
@@ -44,6 +55,30 @@ async function save(): Promise<void> {
     saveError.value = error instanceof Error ? error.message : '保存失败，设置未更改'
   } finally {
     saving.value = false
+    // 保存按钮 disabled 期间浏览器会把焦点回落到 body：完成后把焦点收回弹层
+    panelRef.value?.focus()
+  }
+}
+
+// 返修 F3：Tab 焦点陷阱——焦点在首/末可聚焦元素时回绕到另一端，
+// 配合背景 inert，保证 Tab/Shift+Tab 永远不出弹层；Esc 关闭。
+function trapFocus(event: KeyboardEvent): void {
+  if (event.key === 'Escape') { event.preventDefault(); close(); return }
+  if (event.key !== 'Tab') return
+  const focusable = panelRef.value?.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+  )
+  if (!focusable || focusable.length === 0) return
+  const list = Array.from(focusable)
+  const first = list[0]
+  const last = list[list.length - 1]
+  const active = document.activeElement as HTMLElement | null
+  if (event.shiftKey && (active === first || !panelRef.value?.contains(active))) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && (active === last || !panelRef.value?.contains(active))) {
+    event.preventDefault()
+    first.focus()
   }
 }
 
@@ -55,7 +90,7 @@ function close(): void {
 
 <template>
   <div class="settings-mask" @click.self="close">
-    <div ref="panelRef" class="settings-panel" role="dialog" aria-modal="true" aria-label="训练默认设置" tabindex="-1" @keydown.esc.prevent="close" @keydown.stop>
+    <div ref="panelRef" class="settings-panel" role="dialog" aria-modal="true" aria-label="训练默认设置" tabindex="-1" @keydown="trapFocus" @keydown.stop>
       <header class="settings-head">
         <h2>训练默认设置</h2>
         <button class="ghost-button" aria-label="关闭" title="关闭" @click="close">✕</button>

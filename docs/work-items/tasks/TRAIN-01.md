@@ -7,8 +7,8 @@
   "owner": "GLM-5.3-Flash",
   "state": "review",
   "milestone": "M5",
-  "summary": "已交付：设置默认费用/T+1 API与局部面板、创建规则快照（rules_json v1）与旧局不漂移、新raw/forward权息一致入账、推进短事务状态重查、旧训练迁移幂等与legacy raw只读保护、录像规则接本局快照；待GPT集中验收。",
-  "next_action": "control-handoff-20260928-43 五场景（RULES-defaults-current-next/persistence-create/corporate-accounting/legacy-safe/recording-ui-regression）待GPT验收；未验收不集成。",
+  "summary": "已交付：设置默认费用/T+1 API与局部面板、创建规则快照（rules_json v1）与旧局不漂移、新raw/forward权息一致入账、推进短事务状态重查、旧训练迁移幂等与legacy raw只读保护、录像规则接本局快照；首轮审查F1-F3限定返修完成（快照数值驱动执行+支持域校验、一次迁移标记、modal焦点/背景隔离），待GPT限定复核。",
+  "next_action": "control-handoff-20260928-44 F1-F3返修完成待GPT复核；followup：TRAIN-RULES-SOURCE-OBSERVATION（五档训练来源kind/创建观察截止未持久记录，追溯项，不扩DATA-03/04）。未复核通过不集成。",
   "allowed_paths": [
     "server/src/db.ts",
     "server/src/train/**",

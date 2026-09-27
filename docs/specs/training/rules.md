@@ -40,8 +40,9 @@
 
 - **默认设置 API**：`GET/PUT /api/settings/training`，只开放费用开关与 T+1 开关（默认费用关、T+1 开），落既有 settings 键 `fees_enabled`/`t1_enabled` 并保留其他键。PUT 要求两项布尔齐备，非法类型/缺字段/未知字段 400 且零写；两值同一事务更新，不部分成功；重复保存安全，最后一次成功保存供未来创建使用。无 TDX 也可读写。费用数值沿固定口径（佣金万 2.5、最低 5 元、印花税万 5、一手 100 股、当日收盘成交、仓位按总权益），不开放费率编辑。此 API 进入业务 admission 门闩，draining 拒绝。
 - **创建冻结**：规则为版本化不可变 JSON（`trainings.rules_json`，version=1），含 feesEnabled、tPlusOne、固定数值与执行口径、`corporateActionPolicy='cash-shares-v1'`、capturedAt、origin='created'。旧五档与 RANGE 范围训练共用 `commitTrainingCreation` 的 BEGIN IMMEDIATE 提交段：默认在提交边界内读取（等待期间更新的默认进入最终快照），规则与训练行、初始权益同事务共提交，失败全回滚。
+- **快照数值即执行口径（返修 F1）**：解析器支持的数值域为比率 ∈ [0,1]、最低佣金 ∈ [0,1e6]、lotSize ∈ [1,1e6] 整数、capturedAt 可解析时间；被认可的 commissionRate/minimumCommission/stampDutyRate/lotSize 由同一快照传入账户计算（佣金、印花税、整手取整全部按快照执行），支持域之外或损坏/版本不支持的完整快照 409 `TRAIN_RULES_UNREADABLE` 零写，不回退全局常量或模块默认。设置 API 仍只接受两个布尔，不开放费率编辑。
 - **本局只读快照**：交易、可卖数量、`recording-context.rules` 及相关返回一律读本局快照，全局默认修改后不漂移；服务端主导，客户端不能伪造本局规则。快照缺失/损坏/版本不支持返回 409 `TRAIN_RULES_UNREADABLE` 零副作用，绝不静默回退当前设置继续交易。
-- **旧训练迁移**：新增列与回填在一个迁移事务内（DDL 可回滚，PRAGMA 留在事务外）。旧行只一次冻结“迁移升级时实际可见”的费用/T+1 与固定参数，origin='legacy-migration'、capturedAt 为迁移时点，UI 明示“旧训练按升级时设置继续，历史设置未记录”；反复迁移不改已冻结值。旧 forward 沿 `cash-shares-v1` 继续服务；旧 raw 记 `legacy-raw-unverified`：可查看、导出、放弃，新增交易/推进/结算返回 409 `LEGACY_RAW_ACCOUNTING_UNVERIFIED` 并提示保留记录后新建训练；已结束旧训练照常只读。旧流水（成交/权息/权益曲线/画线）逐字段不变。
+- **旧训练迁移（返修 F2）**：首次迁移以 `cache_meta.train_rules_migration` 标记识别，与加列、回填同一事务（DDL 可回滚，PRAGMA 留在事务外）。旧行只在该一次事务中冻结“迁移时点实际可见”的费用/T+1 与固定参数（origin='legacy-migration'、capturedAt 为迁移时点，UI 明示“旧训练按升级时设置继续，历史设置未记录”）。标记写入后任何后续启动不再回填：已迁移库中新出现的 NULL/损坏快照保持 NULL（读取 409），不得按当前默认重冻或伪装成旧局迁移。首次合法迁移、幂等、失败回滚、旧流水逐字段不变、legacy raw 只读保护均保持。
 - **录像一致**：`recording-context.rules` 来自本局快照，origin/capturedAt 以可选元数据如实透出；observedAt 仍为观察时点。不改录像 schema、不新增事件类型；旧录像缺字段按原 reader 读取。
 - 来源观察边界：kind=tdx、创建时可取得的截止元信息、已有 RANGE fingerprint（五档为 null）；不向普通响应或录像加入完整本机路径，不声称保存可恢复的历史行情字节（DATA-03/04 未交付）。
 

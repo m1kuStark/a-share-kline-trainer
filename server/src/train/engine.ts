@@ -941,10 +941,16 @@ export async function tradeTraining(database: DatabaseSync, id: number, input: T
   if (input.side !== 'buy' && input.side !== 'sell') throw new HttpError(400, "side 必须是 'buy' 或 'sell'")
   const close = row.current_close
   if (close === null || close === undefined) throw new HttpError(500, '训练缺少当前收盘价')
-  // 费用/T+1 只读本局冻结快照，不读全局 settings（旧局不漂移）
+  // 费用/T+1/费率/手数只读本局冻结快照（返修 F1：被认可的数值供实际计算），不读全局 settings 或常量
   const rules = trainingRulesOf(row)
   assertTradablePolicy(rules)
-  const fees: FeeConfig = { enabled: rules.feesEnabled }
+  const fees: FeeConfig = {
+    enabled: rules.feesEnabled,
+    commissionRate: rules.commissionRate,
+    minimumCommission: rules.minimumCommission,
+    stampDutyRate: rules.stampDutyRate,
+    lotSize: rules.lotSize,
+  }
   const state = replayState(database, row)
   const boughtToday = sharesBoughtOn(database, id, row.current_date ?? row.start_date)
   const available = rules.tPlusOne ? state.shares - boughtToday : state.shares

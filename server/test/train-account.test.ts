@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_FEES, LOT_SIZE, applyTrade, dilutedCostPrice, equityOf, initialAccountState,
+  COMMISSION_MIN, COMMISSION_RATE, DEFAULT_FEES, LOT_SIZE, STAMP_TAX_RATE, applyTrade, dilutedCostPrice, equityOf, initialAccountState,
   planBuy, planSell, replayAccount,
   type FeeConfig,
 } from '../src/train/account.js'
 
-const FEES_ON: FeeConfig = { enabled: true }
+// 返修 F1：FeeConfig 携带完整数值；开费用用例沿用既有固定口径常量（与旧语义逐值一致）
+const FEES_ON: FeeConfig = { enabled: true, commissionRate: COMMISSION_RATE, minimumCommission: COMMISSION_MIN, stampDutyRate: STAMP_TAX_RATE, lotSize: LOT_SIZE }
 
 describe('training account', () => {
   it('matches a hand-computed buy, hold, and partial sell round trip', () => {

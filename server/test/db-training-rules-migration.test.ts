@@ -156,6 +156,42 @@ describe('TRAINING-RULES：旧库迁移', () => {
     }
   })
 
+  it('首次迁移完成后：后续启动不再把 NULL/损坏快照按当前默认重冻（返修 F2）', () => {
+    const database = createOldSchemaDatabase()
+    try {
+      migrateDatabase(database)
+      const frozenForward = rulesOf(database, 1)
+      const frozenRaw = rulesOf(database, 2)
+      // 首次迁移后新增训练（origin=created），随后快照损坏为 NULL
+      const createdRules = JSON.stringify({
+        version: 1, feesEnabled: false, tPlusOne: true,
+        commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005, lotSize: 100,
+        execution: 'same-day-raw-close', weightBasis: 'total-equity',
+        corporateActionPolicy: 'cash-shares-v1',
+        capturedAt: '2026-09-28T10:00:00.000Z', origin: 'created',
+      })
+      database.prepare(`
+        INSERT INTO trainings (tier, code, name, market, start_date, planned_end, status, blind,
+          adjust_mode, initial_cash, created_at, current_date, current_close, rules_json)
+        VALUES ('1M', '600000', '新局', 'sh', '2025-01-02', '2025-02-02', 'running', 0,
+          'forward', 1000000, '2025-01-01T00:00:00.000Z', '2025-01-02', 10, ?)
+      `).run(createdRules)
+      database.prepare('UPDATE trainings SET rules_json = NULL WHERE id = 3').run()
+      // 重启前损坏快照必须不可读（409 语义由 engine 层保证，这里验证解析层）
+      expect(database.prepare('SELECT rules_json FROM trainings WHERE id = 3').get()).toEqual({ rules_json: null })
+      // 修改默认后再跑启动迁移：不得把损坏 NULL 行按新默认重冻、不得改写已冻结旧行
+      database.prepare("UPDATE settings SET value = '0' WHERE key = 'fees_enabled'").run()
+      database.prepare("UPDATE settings SET value = '1' WHERE key = 't1_enabled'").run()
+      migrateDatabase(database)
+      migrateDatabase(database)
+      expect(rulesOf(database, 1)).toEqual(frozenForward)
+      expect(rulesOf(database, 2)).toEqual(frozenRaw)
+      expect(database.prepare('SELECT rules_json FROM trainings WHERE id = 3').get()).toEqual({ rules_json: null })
+    } finally {
+      database.close()
+    }
+  })
+
   it('重启（关闭后重开文件库）再迁移：默认与本局快照不变', async () => {
     const root = await mkdtemp(join(tmpdir(), 'rules-migration-'))
     const databasePath = join(root, 'trainer.sqlite')

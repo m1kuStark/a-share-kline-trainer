@@ -8,9 +8,20 @@ const CASH_EPSILON = 1e-6
 
 export interface FeeConfig {
   enabled: boolean
+  /** 费用数值自 TRAIN-01 返修 F1 起由规则快照提供；缺省等于既有固定口径（兼容无快照纯账户调用） */
+  commissionRate: number
+  minimumCommission: number
+  stampDutyRate: number
+  lotSize: number
 }
 
-export const DEFAULT_FEES: FeeConfig = { enabled: false }
+export const DEFAULT_FEES: FeeConfig = {
+  enabled: false,
+  commissionRate: COMMISSION_RATE,
+  minimumCommission: COMMISSION_MIN,
+  stampDutyRate: STAMP_TAX_RATE,
+  lotSize: LOT_SIZE,
+}
 
 export interface AccountState {
   cash: number
@@ -42,15 +53,15 @@ export function dilutedCostPrice(state: AccountState): number | null {
 }
 
 export function buyCommission(amount: number, fees: FeeConfig): number {
-  return fees.enabled ? Math.max(COMMISSION_MIN, amount * COMMISSION_RATE) : 0
+  return fees.enabled ? Math.max(fees.minimumCommission, amount * fees.commissionRate) : 0
 }
 
 export function sellFee(amount: number, fees: FeeConfig): number {
   if (!fees.enabled) return 0
-  return Math.max(COMMISSION_MIN, amount * COMMISSION_RATE) + amount * STAMP_TAX_RATE
+  return Math.max(fees.minimumCommission, amount * fees.commissionRate) + amount * fees.stampDutyRate
 }
 
-// 仓位比例按总权益（现金＋持仓市值）计，再受可用资金约束；金额向下取整到一手。
+// 仓位比例按总权益（现金＋持仓市值）计，再受可用资金约束；金额向下取整到一手（手数=快照 lotSize）。
 // 若连费用一起超出可用资金，逐手缩减；缩到不足一手则拒绝。
 export function planBuy(
   state: AccountState,
@@ -60,15 +71,16 @@ export function planBuy(
 ): TradePlanResult {
   if (!(price > 0) || !Number.isFinite(price)) return { ok: false, error: '无效的成交价格' }
   if (!(weightPct > 0) || weightPct > 100) return { ok: false, error: '买入仓位比例必须在 (0, 100] 内' }
+  const lotSize = fees.lotSize
   const equity = equityOf(state, price)
-  let lots = Math.floor((equity * weightPct) / 100 / price / LOT_SIZE)
+  let lots = Math.floor((equity * weightPct) / 100 / price / lotSize)
   if (lots < 1) return { ok: false, error: '按该比例计算的金额不足一手' }
-  let shares = lots * LOT_SIZE
+  let shares = lots * lotSize
   let amount = shares * price
   let fee = buyCommission(amount, fees)
   while (lots >= 1 && amount + fee > state.cash + CASH_EPSILON) {
     lots -= 1
-    shares = lots * LOT_SIZE
+    shares = lots * lotSize
     amount = shares * price
     fee = buyCommission(amount, fees)
   }
@@ -84,7 +96,7 @@ export interface SellRequest {
   weightPct?: number
 }
 
-// 卖出数量必须是一手的整数倍；整份清仓（等于可卖数量）允许零股。
+// 卖出数量必须是一手（快照 lotSize）的整数倍；整份清仓（等于可卖数量）允许零股。
 // A 股 T+1 下可卖数量由引擎传入。
 export function planSell(
   state: AccountState,
@@ -97,6 +109,7 @@ export function planSell(
   if (!Number.isInteger(availableShares) || availableShares <= 0) {
     return { ok: false, error: '当前没有可卖持仓' }
   }
+  const lotSize = fees.lotSize
   let shares: number
   if (request.shares !== undefined) {
     if (!Number.isInteger(request.shares) || request.shares <= 0) {
@@ -105,7 +118,7 @@ export function planSell(
     if (request.shares > availableShares) {
       return { ok: false, error: `可卖数量不足（T+1 限可卖 ${availableShares} 股）` }
     }
-    if (request.shares !== availableShares && request.shares % LOT_SIZE !== 0) {
+    if (request.shares !== availableShares && request.shares % lotSize !== 0) {
       return { ok: false, error: '卖出数量必须是一手的整数倍（清仓可整份卖出）' }
     }
     shares = request.shares
@@ -114,17 +127,17 @@ export function planSell(
       return { ok: false, error: '卖出仓位比例必须在 (0, 100] 内' }
     }
     const raw = (availableShares * request.weightPct) / 100
-    const lots = Math.floor(raw / LOT_SIZE)
+    const lots = Math.floor(raw / lotSize)
     if (lots < 1) {
       if (request.weightPct === 100) {
         shares = availableShares
       } else {
         return { ok: false, error: '按该比例计算的卖出数量不足一手' }
       }
-    } else if (lots * LOT_SIZE >= availableShares) {
+    } else if (lots * lotSize >= availableShares) {
       shares = availableShares
     } else {
-      shares = lots * LOT_SIZE
+      shares = lots * lotSize
     }
   } else {
     return { ok: false, error: '卖出请求必须提供 shares 或 weightPct' }

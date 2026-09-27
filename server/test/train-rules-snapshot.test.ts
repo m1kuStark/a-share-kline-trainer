@@ -415,3 +415,69 @@ describe('TRAINING-RULES：迁移回填夹具辅助', () => {
     }
   })
 })
+
+describe('TRAINING-RULES 限定返修 F1：快照数值驱动执行（control-handoff-20260928-44）', () => {
+  function overwriteRules(database: DatabaseSync, id: number, patch: Record<string, unknown>): void {
+    const rules = { ...parsedRules(database, id), ...patch }
+    database.prepare('UPDATE trainings SET rules_json = ? WHERE id = ?').run(JSON.stringify(rules), id)
+  }
+
+  it('解析器认可的佣金/最低佣金/印花税率由同一快照驱动费用计算（非全局常量）', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0], initial_cash: 100_000,
+      })
+      overwriteRules(database, training.id, {
+        feesEnabled: true, tPlusOne: false,
+        commissionRate: 0.001, minimumCommission: 10, stampDutyRate: 0.002,
+      })
+      const bought = await tradeTraining(database, training.id, { side: 'buy', weightPct: 50 })
+      // 手算：权益 100000×50% = 50000 → 5000 股 @10；佣金 max(10, 50000×0.001)=50（旧常量会算 12.5）
+      expect(bought.plan.shares).toBe(5000)
+      expect(bought.plan.fee).toBeCloseTo(50, 10)
+      const sold = await tradeTraining(database, training.id, { side: 'sell', shares: 5000 })
+      // 手算：金额 50000 → 佣金 50 + 印花税 50000×0.002=100 → 合计 150
+      expect(sold.plan.fee).toBeCloseTo(150, 10)
+    })
+  })
+
+  it('解析器认可的 lotSize 由同一快照驱动整手取整', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0], initial_cash: 99_000,
+      })
+      overwriteRules(database, training.id, { lotSize: 200 })
+      const bought = await tradeTraining(database, training.id, { side: 'buy', weightPct: 50 })
+      // 手算：权益 99000×50% = 49500 → 4950 股 → 200 一手取 24 手 = 4800（常量 100 会给 4900）
+      expect(bought.plan.shares).toBe(4800)
+    })
+  })
+
+  for (const patch of [
+    { commissionRate: -1 },
+    { minimumCommission: -5 },
+    { stampDutyRate: -1 },
+    { commissionRate: 2 },
+    { lotSize: 0 },
+    { lotSize: 1.5 },
+    { capturedAt: 'definitely-not-a-date' },
+  ]) {
+    it(`支持域之外的快照数值拒绝交易并零写（${JSON.stringify(patch)}）`, async () => {
+      await withFixture(async ({ database, config, dates }) => {
+        const training = await createTraining(database, config, {
+          tier: '1M', code: '600000', start_date: dates[0], initial_cash: 100_000,
+        })
+        overwriteRules(database, training.id, patch)
+        const curveBefore = equityCurveOf(database, training.id)
+        const caught = await tradeTraining(database, training.id, { side: 'buy', weightPct: 50 }).then(
+          () => null, (error: unknown) => error,
+        )
+        expect(caught).toBeInstanceOf(HttpError)
+        expect((caught as HttpError).statusCode).toBe(409)
+        expect((caught as HttpError).code).toBe('TRAIN_RULES_UNREADABLE')
+        expect(equityCurveOf(database, training.id)).toEqual(curveBefore)
+        expect(database.prepare('SELECT COUNT(*) AS n FROM trades').get()).toEqual({ n: 0 })
+      })
+    })
+  }
+})

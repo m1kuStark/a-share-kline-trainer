@@ -155,6 +155,108 @@ test('设置弹层：取消不保存、非法载荷失败反馈、打开期间�
   expect(errors).toEqual([])
 })
 
+test('返修F3 设置弹层键盘隔离：Tab/Shift+Tab不出弹层、Enter/Space不触发背景业务写、关闭还焦点、保存/失败/取消', async ({ page }: { page: Page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await resetDefaults(page)
+  await abandonActive(page)
+  const id = await createSampleTraining(page)
+  await openTrainingPage(page)
+
+  // 背景：已有 1 笔成交；监听交易/推进业务写
+  await page.getByRole('button', { name: '100%', exact: true }).click()
+  await page.getByRole('button', { name: '买入', exact: true }).click()
+  await expect.poll(async () => (await (await page.request.get(`/api/trainings/${id}/bars?tf=1D`)).json()).trades.length).toBe(1)
+  let businessWrites = 0
+  await page.route(/\/api\/trainings\/\d+\/(trade|next|settle|abandon)$/, async route => {
+    businessWrites += 1
+    await route.continue()
+  })
+
+  // 深色 1440：打开设置弹层
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.getByTitle('训练默认设置').click()
+  const dialog = page.getByRole('dialog', { name: '训练默认设置' })
+  await expect(dialog).toBeVisible()
+
+  // 连续 Tab / Shift+Tab：焦点始终留在弹层内（背景买入/推进/录像开关不可达）
+  const activeInDialog = () => page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]')
+    return !!dialog && dialog.contains(document.activeElement)
+  })
+  for (let index = 0; index < 14; index += 1) {
+    await page.keyboard.press('Tab')
+    expect(await activeInDialog()).toBe(true)
+  }
+  for (let index = 0; index < 14; index += 1) {
+    await page.keyboard.press('Shift+Tab')
+    expect(await activeInDialog()).toBe(true)
+  }
+
+  // 弹层内 Enter/Space 落在开关上：只切换本地勾选，不产生背景业务写
+  const feesToggle = dialog.getByLabel('新训练收取手续费（佣金/印花税）')
+  await feesToggle.click()
+  await feesToggle.press('Enter')
+  await page.waitForTimeout(300)
+  expect(businessWrites).toBe(0)
+  await feesToggle.press('Space')
+  expect(businessWrites).toBe(0)
+  await expect(page.locator('.panel-heading .live-mark')).toContainText('进行中')
+
+  // 键盘走完保存路径：从开关 Tab 到「保存设置」并 Enter → 保存成功反馈
+  while (!(await page.evaluate(() => (document.activeElement as HTMLElement | null)?.textContent?.includes('保存设置')))) {
+    await page.keyboard.press('Tab')
+    expect(await activeInDialog()).toBe(true)
+  }
+  await page.keyboard.press('Enter')
+  await expect(dialog).toContainText('已保存')
+
+  // Esc 关闭：弹层消失、焦点返还设置入口、训练与录像保持挂载
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await expect(page.locator('.recording-strip')).toBeVisible()
+  expect(businessWrites).toBe(0)
+  const focusOnTrigger = await page.evaluate(() => {
+    const trigger = document.querySelector('[title="训练默认设置"]')
+    return !!trigger && (trigger === document.activeElement || trigger.contains(document.activeElement))
+  })
+  expect(focusOnTrigger).toBe(true)
+
+  // 失败路径（键盘打开弹层后仍隔离）：注入 400 → 保存给出错误反馈且不假称保存
+  await page.route('**/api/settings/training', async route => {
+    if (route.request().method() !== 'PUT') return route.continue()
+    await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'feesEnabled 与 tPlusOne 必须是布尔值' }) })
+  })
+  await page.getByTitle('训练默认设置').click()
+  await expect(dialog).toBeVisible()
+  await expect(await activeInDialog()).toBe(true)
+  await page.keyboard.press('Tab')
+  await expect(await activeInDialog()).toBe(true)
+  while (!(await page.evaluate(() => (document.activeElement as HTMLElement | null)?.textContent?.includes('保存设置')))) {
+    await page.keyboard.press('Tab')
+    expect(await activeInDialog()).toBe(true)
+  }
+  await page.keyboard.press('Enter')
+  await expect(dialog.getByRole('alert')).toContainText('必须是布尔值')
+  await expect(dialog).not.toContainText('已保存')
+  await page.unroute('**/api/settings/training')
+
+  // 取消路径：Esc 关闭无业务写、无 PUT 副作用；浅色 840 弹层可见
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  await page.setViewportSize({ width: 840, height: 900 })
+  await page.getByRole('button', { name: '切换到浅色主题' }).click()
+  await page.getByTitle('训练默认设置').click()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消' }).click()
+  await expect(dialog).not.toBeVisible()
+  expect(businessWrites).toBe(0)
+  expect((await (await page.request.get(`/api/trainings/${id}/bars?tf=1D`)).json()).trades.length).toBe(1)
+  await abandonActive(page)
+  expect(errors).toEqual([])
+})
+
 test('legacy raw 训练：只读警示、交易入口停用；浅色主题与 840 宽度弹层可见', async ({ page }: { page: Page }) => {
   test.setTimeout(90_000)
   const errors: string[] = []

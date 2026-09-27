@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { fetchActiveTraining, fetchEnv } from './api'
 import type { TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
@@ -158,6 +158,26 @@ onUnmounted(() => {
   cancelDataWatchers()
   if (shakeTimer !== undefined) { clearInterval(shakeTimer); shakeTimer = undefined }
 })
+
+// ===== 训练默认设置入口（返修 F3）：打开期间 rail 与 workspace 整体 inert（焦点+指针双隔离），
+// 关闭（含 Esc/遮罩/取消）后焦点返还设置按钮；Training/录像保持挂载。 =====
+const settingsButton = ref<HTMLElement | null>(null)
+async function returnFocusToSettingsTrigger(): Promise<void> {
+  await nextTick() // 等 inert 解除后再还焦点，否则 inert 容器内的元素不可聚焦
+  settingsButton.value?.focus()
+}
+function onSettingsToggle(): void {
+  if (trainingSettingsOpen.value) {
+    closeTrainingSettings()
+    void returnFocusToSettingsTrigger()
+  } else {
+    openTrainingSettings()
+  }
+}
+function onSettingsClose(): void {
+  closeTrainingSettings()
+  void returnFocusToSettingsTrigger()
+}
 function onTrainingEnded(): void {
   recordingOptions.value = { enabled: true }
   history.replaceState(null, '', location.pathname)
@@ -167,17 +187,17 @@ function onTrainingEnded(): void {
 
 <template>
   <div class="app-shell">
-    <aside class="rail" aria-label="主导航">
+    <aside class="rail" aria-label="主导航" :inert="trainingSettingsOpen">
       <div class="brand-mark">K</div>
       <nav>
         <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
         <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
-      <button class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="trainingSettingsOpen ? closeTrainingSettings() : openTrainingSettings()">⚙<span>设置</span></button>
+      <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
     </aside>
 
-    <main class="workspace">
+    <main class="workspace" :inert="trainingSettingsOpen">
       <header class="topbar" @keydown.space.stop>
         <div class="product-heading">
           <div class="product-name">A股 K线训练器</div>
@@ -238,9 +258,11 @@ function onTrainingEnded(): void {
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
       <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
-      <!-- 训练默认设置（TRAIN-01）：局部弹层，Training 保持挂载，录制不被中断 -->
-      <TrainingSettings v-if="trainingSettingsOpen" @close="closeTrainingSettings" />
     </main>
+
+    <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
+         inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
+    <TrainingSettings v-if="trainingSettingsOpen" @close="onSettingsClose" />
   </div>
 </template>
 
