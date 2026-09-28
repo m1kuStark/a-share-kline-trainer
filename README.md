@@ -29,7 +29,14 @@
 | 下载安装、通达信目录配置、源码运行 | [安装与配置](docs/user/install.md) |
 | 录制、回放与分享 | [录制说明](docs/user/recording.md) |
 | 启动失败、找不到数据、端口占用等 | [常见问题](docs/user/troubleshooting.md) |
-| 下一版本设计 | [v0.4 训练时钟、条件单与成交理由](docs/proposals/v0.4-training-clock-orders-notes.md) |
+| 下一版本设计 | [v0.4 训练时钟、条件单与成交理由](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/docs/proposals/v0.4-training-clock-orders-notes.md) |
+
+## v0.3.3 更新（测试版，未公开发布）
+
+- 创建训练时保存费用、T+1 等交易规则快照；本局执行按快照数值驱动，旧训练保持兼容（见[训练规则](docs/user/training-rules.md)）。
+- 训练范围新增"到最新日线"与"自定义日K根数"模式：周期预设联动起始日，创建前显示请求区间、实际首末日与调整原因。
+- 数据新鲜度接入官方日历来源，修复盘后新鲜度误判。
+- B/S 标记支持成交明细浮层；设置层底层能力（通达信候选诊断、受保护排空与重启计划）已集成，完整设置界面仍待后续版本。
 
 ## v0.3.2 更新
 
