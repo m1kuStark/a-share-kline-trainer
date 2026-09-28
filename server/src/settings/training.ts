@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
 import { HttpError } from '../train/engine.js'
 import { observedDefaultRules, type TrainingRulesV1 } from '../train/rules.js'
-import { DEFAULT_INITIAL_CASH, readCreationDefaults, readCreationDefaultsLenient, isInitialCashInDomain } from './creation-defaults.js'
+import { readCreationDefaults, readCreationDefaultsLenient, isInitialCashInDomain } from './creation-defaults.js'
 
 // TRAIN-01/M5-DEFAULTS-01：训练默认设置 API：GET/PUT /api/settings/training。
 // M5 起支持四字段完整对象（费用开关、T+1、默认初始资金、默认复权），四键同一事务原子保存，
@@ -49,25 +49,19 @@ export function trainingSettingsView(database: DatabaseSync): TrainingSettingsVi
   }
 }
 
-/** 宽松视图：损坏的新默认字段以 undefined 表示（旧两布尔 PUT 的兼容响应不假称已修复）。 */
-function trainingSettingsViewLenient(database: DatabaseSync): TrainingSettingsView {
-  const lenient = readCreationDefaultsLenient(database)
-  const view = trainingSettingsViewStrictBooleans(database)
-  return {
-    ...view,
-    ...(lenient.initialCash === undefined ? {} : { initialCash: lenient.initialCash }),
-    ...(lenient.adjustMode === undefined ? {} : { adjustMode: lenient.adjustMode }),
-  } as TrainingSettingsView
-}
+/** 宽松视图（旧两布尔 PUT 兼容响应）：只包含能如实表达的键——损坏的新默认字段整体缺席
+ *（返修 F2：不得凭空返回内建默认冒称有效或已修复；坏字节由 GET 409 如实呈现）。 */
+type TrainingSettingsViewLenient = Omit<TrainingSettingsView, 'initialCash' | 'adjustMode'> & Partial<Pick<TrainingSettingsView, 'initialCash' | 'adjustMode'>>
 
-function trainingSettingsViewStrictBooleans(database: DatabaseSync): TrainingSettingsView {
+function trainingSettingsViewLenient(database: DatabaseSync): TrainingSettingsViewLenient {
+  const lenient = readCreationDefaultsLenient(database)
   const rules = observedDefaultRules(database, '')
   return {
     version: rules.version,
     feesEnabled: rules.feesEnabled,
     tPlusOne: rules.tPlusOne,
-    initialCash: DEFAULT_VIEW_FALLBACK.initialCash,
-    adjustMode: DEFAULT_VIEW_FALLBACK.adjustMode,
+    ...(lenient.initialCash === undefined ? {} : { initialCash: lenient.initialCash }),
+    ...(lenient.adjustMode === undefined ? {} : { adjustMode: lenient.adjustMode }),
     commissionRate: rules.commissionRate,
     minimumCommission: rules.minimumCommission,
     stampDutyRate: rules.stampDutyRate,
@@ -77,8 +71,6 @@ function trainingSettingsViewStrictBooleans(database: DatabaseSync): TrainingSet
     corporateActionPolicy: rules.corporateActionPolicy,
   }
 }
-
-const DEFAULT_VIEW_FALLBACK = { initialCash: DEFAULT_INITIAL_CASH, adjustMode: 'forward' as TrainingAdjustMode }
 
 interface TrainingSettingsPutBody {
   feesEnabled?: unknown
@@ -137,7 +129,7 @@ export function parseTrainingSettingsPut(body: unknown): ParsedTrainingSettingsP
 }
 
 /** 同一事务原子保存；legacy 只更新旧两键（保留新默认、不声称修复坏键），full 更新四键。 */
-export function saveTrainingSettings(database: DatabaseSync, parsed: ParsedTrainingSettingsPut): TrainingSettingsView {
+export function saveTrainingSettings(database: DatabaseSync, parsed: ParsedTrainingSettingsPut): TrainingSettingsView | TrainingSettingsViewLenient {
   database.exec('BEGIN IMMEDIATE')
   try {
     const upsert = database.prepare(`

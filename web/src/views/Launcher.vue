@@ -191,6 +191,9 @@ function onRangeInputChanged(): void {
   rangePreview.value = null
   clampNotice.value = ''
   errorMessage.value = ''
+  // 返修 F5：失效在途预览时立即释放加载所有权——旧响应迟到被版本守卫丢弃，
+  // 不得出现按钮永久“生成预览中/disabled”；新请求的加载态由新请求自己持有。
+  previewing.value = false
 }
 
 function markAdjustMode(mode: 'forward' | 'raw'): void {

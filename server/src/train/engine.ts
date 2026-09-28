@@ -16,7 +16,7 @@ import {
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
-import { readCreationDefaults, type CreationDefaults } from '../settings/creation-defaults.js'
+import { readCreationDefaultsFields, type CreationDefaults } from '../settings/creation-defaults.js'
 
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 /** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
@@ -332,21 +332,29 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
   try {
     const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
     if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
-    // M5-DEFAULTS：省略的资金/复权在 BEGIN IMMEDIATE 提交事务边界解析持久默认
-    //（损坏默认 409 TRAINING_DEFAULTS_UNREADABLE 零写）；显式值不依赖默认。
+    // M5-DEFAULTS＋返修 F1：省略的资金/复权在 BEGIN IMMEDIATE 提交事务边界按实际依赖字段
+    // 解析持久默认（只实际依赖的损坏字段才 409 TRAINING_DEFAULTS_UNREADABLE 零写，无关字段
+    // 的损坏不扩散）；显式值不依赖任何默认。
     let adjustMode = row.adjustMode
     let initialCash = row.initialCash
     if (adjustMode === null || initialCash === null) {
-      const read = readCreationDefaults(database)
-      if (!read.ok) {
+      const fields = readCreationDefaultsFields(database)
+      const corruptKeys: string[] = []
+      if (adjustMode === null) {
+        if (fields.mode.state === 'corrupt') corruptKeys.push('training_adjust_mode')
+        else adjustMode = fields.mode.state === 'ok' ? fields.mode.value : 'forward'
+      }
+      if (initialCash === null) {
+        if (fields.cash.state === 'corrupt') corruptKeys.push('training_initial_cash')
+        else initialCash = fields.cash.state === 'ok' ? fields.cash.value : 1_000_000
+      }
+      if (corruptKeys.length > 0) {
         throw new HttpError(
           409,
-          `训练默认设置损坏（${read.corruptKeys.join('、')} 无法读取）：请在设置中核对表单并重新保存即可修复，或创建时显式填写资金与复权`,
+          `训练默认设置损坏（${corruptKeys.join('、')} 无法读取）：请在设置中核对表单并重新保存即可修复，或创建时显式填写资金与复权`,
           'TRAINING_DEFAULTS_UNREADABLE',
         )
       }
-      if (adjustMode === null) adjustMode = read.defaults.adjustMode
-      if (initialCash === null) initialCash = read.defaults.initialCash
     }
     // RANGE 提交省略复权时：提交边界最新默认若与预览固化复权不一致，409 零写要求重新预览
     if (row.previewAdjustMode !== undefined && row.previewAdjustMode !== adjustMode) {
@@ -568,18 +576,19 @@ function parseRangeSymbol(value: string): { market: TdxMarket; code: string } {
 
 export async function previewTrainingRange(database: DatabaseSync, config: AppConfig, input: PreviewTrainingRangeInput): Promise<{ preview: RangePreview }> {
   const now = input.now ?? new Date()
-  // M5-DEFAULTS：预览未给复权时取当时持久默认（损坏 409 UNREADABLE），并作为有效复权固化进预览。
+  // M5-DEFAULTS＋返修 F1：预览只依赖复权字段——未给复权时取当时持久默认的复权（该键损坏
+  // 409 UNREADABLE；坏资金键不阻断预览），并作为有效复权固化进预览。
   let adjustMode: 'forward' | 'raw'
   if (input.adjustMode === undefined) {
-    const read = readCreationDefaults(database)
-    if (!read.ok) {
+    const fields = readCreationDefaultsFields(database)
+    if (fields.mode.state === 'corrupt') {
       throw new HttpError(
         409,
-        `训练默认设置损坏（${read.corruptKeys.join('、')} 无法读取）：请在设置中核对表单并重新保存即可修复，或预览/创建时显式选择复权方式`,
+        '训练默认设置损坏（training_adjust_mode 无法读取）：请在设置中核对表单并重新保存即可修复，或预览/创建时显式选择复权方式',
         'TRAINING_DEFAULTS_UNREADABLE',
       )
     }
-    adjustMode = read.defaults.adjustMode
+    adjustMode = fields.mode.state === 'ok' ? fields.mode.value : 'forward'
   } else if (input.adjustMode !== 'forward' && input.adjustMode !== 'raw') {
     throw new HttpError(400, '复权方式必须是 forward 或 raw', 'INVALID_INPUT')
   } else {

@@ -231,6 +231,79 @@ describe('M5-DEFAULTS：四字段训练默认设置（control-handoff-20260928-5
   })
 })
 
+describe('M5-DEFAULTS 返修 F2/F3（control-handoff-20260928-51）', () => {
+  it('F2 旧两布尔 PUT 响应不伪造损坏新键：损坏字段整体缺席于响应', async () => {
+    const context = await createApp()
+    try {
+      context.database.prepare("INSERT INTO settings (key, value) VALUES ('training_initial_cash', 'broken')").run()
+      context.database.prepare("INSERT INTO settings (key, value) VALUES ('training_adjust_mode', 'sideways')").run()
+      const legacy = await context.app.inject({
+        method: 'PUT', url: '/api/settings/training',
+        payload: { feesEnabled: true, tPlusOne: false },
+      })
+      expect(legacy.statusCode).toBe(200)
+      const body = legacy.json()
+      expect(body.feesEnabled).toBe(true)
+      expect(body.tPlusOne).toBe(false)
+      // 不得凭空返回 1,000,000/forward 冒称有效或已修复
+      expect(body).not.toHaveProperty('initialCash')
+      expect(body).not.toHaveProperty('adjustMode')
+      // 坏字节原样保留，GET 仍 409
+      expect(settingsRows(context.database)).toEqual(expect.arrayContaining([
+        { key: 'training_initial_cash', value: 'broken' },
+        { key: 'training_adjust_mode', value: 'sideways' },
+      ]))
+      const after = await context.app.inject({ method: 'GET', url: '/api/settings/training' })
+      expect(after.statusCode).toBe(409)
+    } finally {
+      await closeApp(context)
+    }
+  })
+
+  it('F2 缺键（非损坏）时旧两布尔 PUT 响应保留内建默认形状', async () => {
+    const context = await createApp()
+    try {
+      const legacy = await context.app.inject({
+        method: 'PUT', url: '/api/settings/training',
+        payload: { feesEnabled: true, tPlusOne: true },
+      })
+      expect(legacy.statusCode).toBe(200)
+      expect(legacy.json()).toMatchObject({ feesEnabled: true, tPlusOne: true, initialCash: 1_000_000, adjustMode: 'forward' })
+    } finally {
+      await closeApp(context)
+    }
+  })
+
+  it('F3 十进制语义：合法 10000000.03/.04/.05 可保存；0.010000000001 等超精度 400 零写', async () => {
+    const context = await createApp()
+    try {
+      for (const initialCash of [10000000.03, 10000000.04, 10000000.05, 0.01, 0.1, 123.45, 1_000_000_000]) {
+        const ok = await context.app.inject({
+          method: 'PUT', url: '/api/settings/training',
+          payload: { feesEnabled: false, tPlusOne: true, initialCash, adjustMode: 'forward' },
+        })
+        expect(ok.statusCode).toBe(200)
+        expect(ok.json().initialCash).toBe(initialCash)
+        // 合法值保存后 GET 可读
+        const readBack = await context.app.inject({ method: 'GET', url: '/api/settings/training' })
+        expect(readBack.json().initialCash).toBe(initialCash)
+      }
+      for (const initialCash of [0.010000000001, 10000000.034, 1.001]) {
+        const bad = await context.app.inject({
+          method: 'PUT', url: '/api/settings/training',
+          payload: { feesEnabled: false, tPlusOne: true, initialCash, adjustMode: 'forward' },
+        })
+        expect(bad.statusCode).toBe(400)
+      }
+      // 最后一次成功保存仍是 1,000,000,000，超精度尝试零写
+      const view = await context.app.inject({ method: 'GET', url: '/api/settings/training' })
+      expect(view.json().initialCash).toBe(1_000_000_000)
+    } finally {
+      await closeApp(context)
+    }
+  })
+})
+
 describe('TRAINING-RULES：设置默认值 API', () => {
   it('GET 返回默认口径：费用关、T+1 开、固定数值与执行口径', async () => {
     const context = await createApp()

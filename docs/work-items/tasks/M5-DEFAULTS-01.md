@@ -37,6 +37,7 @@
     "docs/work-items/current-feature.json",
     "docs/status.md",
     "docs/verification/2026-09/M5-DEFAULTS-01/**",
+    "docs/verification/2026-09/V1-INTEGRATE-01/repair-48.md",
     "docs/verification/README.md",
     "e2e/README.md"
   ],

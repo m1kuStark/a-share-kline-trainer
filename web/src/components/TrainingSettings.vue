@@ -19,10 +19,28 @@ const saveSuccess = ref('')
 const saving = ref(false)
 const feesEnabled = ref(false)
 const tPlusOne = ref(true)
-const initialCashText = ref('1000000')
+const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
+// 返修 F4：读取/编辑/保存的时序与归属——成功保存递增 readVersion 使挂起中的初次 GET 作废；
+// 用户手改过任一字段（formDirty）后迟到的 GET 一律不覆盖表单。
+let readVersion = 0
+let formDirty = false
+
+/** 用户手改任一字段时标记：迟到的 GET 不覆盖表单（返修 F4）。 */
+function markFormDirty(): void {
+  formDirty = true
+}
 
 const INITIAL_CASH_MAX = 1_000_000_000
+
+/** 至多两位十进制小数：基于 Number 最短字符串表示（科学记数法一律拒绝），
+ * 与服务端同一语义（返修 F3：固定浮点容差会误拒 10000000.03、放过 0.010000000001）。 */
+function hasAtMostTwoDecimalPlaces(value: number): boolean {
+  const text = String(value)
+  if (text.includes('e') || text.includes('E')) return false
+  const dot = text.indexOf('.')
+  return dot === -1 || text.length - dot - 1 <= 2
+}
 
 function parseInitialCash(input: string | number): number | null {
   // v-model 在 type="number" 输入上会把 ref 自动转成数字（y.trim is not a function 的教训）：
@@ -32,8 +50,7 @@ function parseInitialCash(input: string | number): number | null {
   const value = Number(text)
   if (!Number.isFinite(value)) return null
   if (value < 0.01 || value > INITIAL_CASH_MAX) return null
-  const cents = value * 100
-  if (Math.abs(cents - Math.round(cents)) > 1e-9) return null
+  if (!hasAtMostTwoDecimalPlaces(value)) return null
   return value
 }
 
@@ -44,11 +61,14 @@ onMounted(async () => {
   // 时仍能关闭；Tab 隔离由面板 trapFocus + 背景 inert 共同保证。
   document.addEventListener('keydown', onDocumentKeydown)
   panelRef.value?.focus()
+  const version = ++readVersion
   try {
     const current = await fetchTrainingSettings()
+    if (version !== readVersion || formDirty) return
     applyView(current)
     settings.value = current
   } catch (error) {
+    if (version !== readVersion || formDirty) return
     // 读取失败（含损坏默认 409）：表单以内建缺省呈现，保存完整四字段即修复入口
     loadError.value = error instanceof Error ? error.message : '无法读取训练默认设置'
     initialCashText.value = '1000000'
@@ -87,6 +107,9 @@ async function save(): Promise<void> {
       initialCash,
       adjustMode: adjustMode.value,
     })
+    // 返修 F4：成功保存递增 readVersion——挂起中的旧 GET 迟到到达后不得回退已保存的新默认
+    // 或复写“已保存”状态
+    readVersion += 1
     settings.value = saved
     applyView(saved)
     saveSuccess.value = '已保存：新默认将应用于之后新建的训练，当前训练不受影响'
@@ -138,14 +161,14 @@ function close(): void {
       <p class="settings-note">这里的默认只影响新训练；进行中的训练按创建时冻结的规则继续。</p>
       <p v-if="loadError" class="settings-repair" role="alert">{{ loadError }}：核对以下表单并重新保存即可修复。</p>
       <label class="settings-row">
-        <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" />
+        <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" @change="markFormDirty()" />
         <span class="settings-row-text">
           <strong>收取手续费</strong>
           <small>佣金万分之 2.5（最低 5 元），卖出另收万分之 5 印花税。默认关闭。</small>
         </span>
       </label>
       <label class="settings-row">
-        <input v-model="tPlusOne" type="checkbox" aria-label="新训练启用 T+1（当日买入次日可卖）" />
+        <input v-model="tPlusOne" type="checkbox" aria-label="新训练启用 T+1（当日买入次日可卖）" @change="markFormDirty()" />
         <span class="settings-row-text">
           <strong>T+1 限制</strong>
           <small>当日买入的股票次一交易日才能卖出。默认开启。</small>
@@ -155,7 +178,7 @@ function close(): void {
         <label class="settings-field-label" for="training-default-initial-cash">默认初始资金（元，仅影响新训练）</label>
         <input
           id="training-default-initial-cash" v-model="initialCashText" type="number" step="0.01" min="0.01"
-          :max="1000000000" aria-label="默认初始资金（元）" @input="saveSuccess = ''"
+          :max="1000000000" aria-label="默认初始资金（元）" @input="markFormDirty(); saveSuccess = ''"
         />
         <small>0.01 至 1,000,000,000 元，至多两位小数；默认 1,000,000。</small>
       </div>
@@ -164,11 +187,11 @@ function close(): void {
         <div class="settings-adjust-grid" role="radiogroup" aria-labelledby="training-default-adjust-label">
           <button
             type="button" :class="{ selected: adjustMode === 'forward' }" role="radio"
-            :aria-checked="adjustMode === 'forward'" @click="adjustMode = 'forward'; saveSuccess = ''"
+            :aria-checked="adjustMode === 'forward'" @click="adjustMode = 'forward'; markFormDirty(); saveSuccess = ''"
           >前复权</button>
           <button
             type="button" :class="{ selected: adjustMode === 'raw' }" role="radio"
-            :aria-checked="adjustMode === 'raw'" @click="adjustMode = 'raw'; saveSuccess = ''"
+            :aria-checked="adjustMode === 'raw'" @click="adjustMode = 'raw'; markFormDirty(); saveSuccess = ''"
           >不复权</button>
         </div>
         <small>默认复权用于之后新建的训练；创建时仍可显式选择覆盖。</small>

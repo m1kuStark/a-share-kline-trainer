@@ -25,6 +25,10 @@
 
 全量 unit `m5-full-unit.log` exit 0 **1161/1161**（87 文件）。完整候选门禁（docs/impact/unit/types/build/snapshot/M2/Journey retries=0）在本提交后一次运行，proof 或失败原件见 evidence。
 
+## 限定返修 F1-F5（control-handoff-20260928-51）
+
+GPT 集中审查五项真实反例一次限定返修，详见 [repair-48.md](../V1-INTEGRATE-01/repair-48.md) 末节（repair-51 章节）。要点：F1 按字段默认解析（无关字段损坏不阻断）、F2 旧两布尔 PUT 响应不伪造损坏新键、F3 金额至多两位小数十进制语义（前后端同口径，弃 1e-9 容差）、F4 读取/编辑/保存时序守卫（readVersion/formDirty/保存作废在途 GET）、F5 预览失效释放加载所有权。原预览"坏cash/好mode 409"正例按按字段合同纠正为成功正例；"90/91 同机制"旧归因纠正为不同已证实根因。全量 unit 1168/1168（两次 exit 127 环境中止如实保留，根因 unknown）。
+
 ## 边界
 
 不做 TDX 路径/重启、自动检查偏好、训练时钟、条件单、排行、DATA 版本系统；不声称 M5 整体完成。预算：设计 1＋本次执行＝2/5 已用，余初审 1/必要返修 1/末审 1；TRAIN/NOTE/V1 历史不动。

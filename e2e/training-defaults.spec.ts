@@ -156,22 +156,149 @@ test('设置保存失败反馈/取消不保存/键盘路径；迟到读取不覆
   await expect(dialog).toContainText('已保存')
   await page.keyboard.press('Escape')
 
-  // 迟到读取不覆盖已编辑字段：挂起 GET 期间手动改初始资金/复权，响应到达后保留用户输入
+  // 返修 F4（显式门闩，非 sleep）：挂起 GET（旧默认）期间手动改字段，释放后用户输入保留
+  let releaseStaleGet!: () => void
+  const staleGate = new Promise<void>(resolve => { releaseStaleGet = resolve })
   await abandonActive(page)
   await page.route('**/api/settings/training', async route => {
-    if (route.request().method() !== 'GET') return route.continue()
-    await new Promise(resolve => setTimeout(resolve, 1200))
+    if (route.request().method() !== 'GET') { await route.continue(); return }
+    await staleGate
     await route.continue()
   })
   await page.reload()
   await expect(page.getByText('创建训练').first()).toBeVisible()
   const cashInput = page.locator('input[type="number"]').first()
-  await cashInput.fill('666666')
+  await expect(cashInput).toBeDisabled().catch(() => {}) // 读取未完成：输入可能仍不可用属允许
+  await cashInput.fill('666666', { timeoutMs: 8000 })
   await page.getByRole('button', { name: '不复权' }).last().click()
-  await tab_playwright_waitReady(page)
-  // 迟到响应（默认 1000000/forward）已到达：用户编辑值不被覆盖
+  releaseStaleGet()
+  // 迟到响应（默认 1000000/forward）释放后：用户编辑值不被覆盖
   await expect(cashInput).toHaveValue('666666')
   await expect(page.getByRole('button', { name: '不复权' }).last()).toHaveClass(/selected/)
+  await page.unroute('**/api/settings/training')
+
+  // 返修 F4 真实点击创建：保存默认→表单未手改采用→实际点击创建
+  // 数据守卫 mock 为 current：真实点击创建不被"建议先更新"确认弹窗拦截
+  const CURRENT_DATA_STATUS = JSON.stringify({
+    state: 'unchanged', needsUpdate: false, reason: '本地日线数据与数据源一致',
+    source: { kind: 'tdx', name: '通达信本地数据', available: true },
+    tdx: { available: true, root: 'C:/new_tdx' },
+    online: { configured: false, provider: null },
+    sourceMaxDate: '2026-09-24', lastCheckedAt: '2026-09-28T01:00:00.000Z', lastResult: null, revisionWarning: null,
+    freshness: { state: 'current', expectedDate: '2026-09-24', sourceMaxDate: '2026-09-24', checkedAt: '2026-09-28T01:00:00.000Z', reason: '来源最大日期 2026-09-24 已达到应收收盘日 2026-09-24。' },
+    calendar: { id: 'sse-2026-annual', from: '2026-01-01', through: '2026-12-31', version: 'e2e' },
+  })
+  await page.route('**/api/data/status**', route => route.fulfill({ json: CURRENT_DATA_STATUS }))
+  await resetFullDefaults(page)
+  // data/status 的 store 状态在页面加载时已取（unknown）：reload 使 current mock 生效
+  await page.reload()
+  await expect(page.getByText('创建训练').first()).toBeVisible()
+  await page.route('**/api/settings/training', async route => {
+    if (route.request().method() !== 'PUT') return route.continue()
+    const saved = { feesEnabled: false, tPlusOne: true, initialCash: 1200000, adjustMode: 'raw' }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: 1, ...saved, commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005, lotSize: 100, execution: 'same-day-raw-close', weightBasis: 'total-equity', corporateActionPolicy: 'cash-shares-v1' }) })
+  })
+  await openSettings(page)
+  const savedDialog = page.getByRole('dialog', { name: '训练默认设置' })
+  await savedDialog.getByLabel('默认初始资金（元）').fill('1200000')
+  await savedDialog.getByRole('radio', { name: '不复权' }).click()
+  await savedDialog.getByRole('button', { name: '保存设置' }).click()
+  await expect(savedDialog).toContainText('已保存')
+  await page.keyboard.press('Escape')
+  await expect(savedDialog).not.toBeVisible()
+  // 真实用户路径：搜索并选择股票后再点击创建
+  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('300857')
+  await page.getByRole('button', { name: /300857 协创数据/ }).click()
+  await page.getByRole('button', { name: '开始训练' }).click()
+  await expect(page.locator('.training-topbar .workspace-title')).toContainText(SAMPLE.code, { timeout: 15_000 })
+  const createdViaClick = await (await page.request.get('/api/trainings/active')).json()
+  expect(createdViaClick.training.initialCash).toBe(1_200_000)
+  expect(createdViaClick.training.adjustMode).toBe('raw')
+  await abandonActive(page)
+  expect(errors).toEqual([])
+})
+
+test('返修F4 modal迟到GET：保存130万/raw成功后释放旧GET，表单不回退且已保存保持；DB为新值', async ({ page }: { page: Page }) => {
+  test.setTimeout(120_000)
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await resetFullDefaults(page)
+  await abandonActive(page)
+  // 门闩：挂起 modal 初次 GET（旧默认）
+  let releaseModalGet!: () => void
+  const modalGate = new Promise<void>(resolve => { releaseModalGet = resolve })
+  await page.route('**/api/settings/training', async route => {
+    if (route.request().method() !== 'GET') { await route.continue(); return }
+    await modalGate
+    await route.continue()
+  })
+  await page.goto('/')
+  await expect(page.getByText('创建训练').first()).toBeVisible()
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: '训练默认设置' })
+  await expect(dialog).toBeVisible()
+  // GET 仍挂起：用户填 1300000/raw 并保存成功（PUT 不经门闩）
+  await dialog.getByLabel('默认初始资金（元）').fill('1300000')
+  await dialog.getByRole('radio', { name: '不复权' }).click()
+  await dialog.getByRole('button', { name: '保存设置' }).click()
+  await expect(dialog).toContainText('已保存')
+  // 释放旧 GET：表单不回退 1000000/forward，已保存保持，DB 为 1300000/raw
+  releaseModalGet()
+  await page.waitForTimeout(600)
+  await expect(dialog.getByLabel('默认初始资金（元）')).toHaveValue('1300000')
+  await expect(dialog.getByRole('radio', { name: '不复权' })).toBeChecked()
+  await expect(dialog).toContainText('已保存')
+  expect(await (await page.request.get('/api/settings/training')).json())
+    .toMatchObject({ initialCash: 1_300_000, adjustMode: 'raw' })
+  await abandonActive(page)
+  expect(errors).toEqual([])
+})
+
+test('返修F5 设置保存使在途预览失效：加载所有权释放可重新预览；旧响应不覆盖新请求', async ({ page }: { page: Page }) => {
+  test.setTimeout(150_000)
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await resetFullDefaults(page)
+  await abandonActive(page)
+  await page.goto('/')
+  await expect(page.getByText('创建训练').first()).toBeVisible()
+  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('300857')
+  await page.getByRole('button', { name: /300857 协创数据/ }).click()
+  await page.getByRole('button', { name: '自定义范围' }).click()
+  await page.locator('input[type="date"]').fill('2026-04-15')
+  // 门闩：挂起首次预览请求
+  let releasePreview!: () => void
+  const previewGate = new Promise<void>(resolve => { releasePreview = resolve })
+  let previewReleases = 0
+  await page.route('**/api/training-ranges/preview', async route => {
+    await previewGate
+    previewReleases += 1
+    await route.continue()
+  })
+  await page.getByRole('button', { name: '生成范围预览' }).click()
+  await expect(page.getByRole('button', { name: /生成预览中/ })).toBeVisible()
+  // 在途预览期间：设置保存使默认复权变化 → 在途预览失效（加载所有权释放，按钮恢复）
+  releasePreview()
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: '训练默认设置' })
+  await dialog.getByRole('radio', { name: '不复权' }).click()
+  await dialog.getByRole('button', { name: '保存设置' }).click()
+  await expect(dialog).toContainText('已保存')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: '生成范围预览' })).toBeEnabled({ timeout: 5_000 })
+  // 换新门闩：重新预览可用且完成（新请求未被旧请求干扰）
+  let releasePreview2!: () => void
+  const previewGate2 = new Promise<void>(resolve => { releasePreview2 = resolve })
+  await page.unroute('**/api/training-ranges/preview')
+  await page.route('**/api/training-ranges/preview', async route => {
+    await previewGate2
+    previewReleases += 1
+    await route.continue()
+  })
+  await page.getByRole('button', { name: '生成范围预览' }).click()
+  releasePreview2()
+  // 范围 2026-04-15..07-15 在冻结样本覆盖内：预览成功显示实际区间
+  await expect(page.getByText(/实际 2026-04-15 ~ /)).toBeVisible({ timeout: 8_000 })
   await abandonActive(page)
   expect(errors).toEqual([])
 })

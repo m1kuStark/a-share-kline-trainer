@@ -255,13 +255,69 @@ describe('M5-DEFAULTS：RANGE 预览与复权一致性', () => {
       setDefaults(database, 'oops', 'raw')
       const now = new Date('2026-09-01T08:00:00.000Z')
       const range = { mode: 'preset' as const, startDate: dates[0], months: 1 as const }
+      // 返修 F1（control-handoff-20260928-51）：预览只依赖复权字段——坏 cash＋有效 raw 时
+      // 省略复权的预览必须成功（原期望 409 与按字段合同冲突，已按裁决纠正）。
+      const { preview: ok } = await previewTrainingRange(database, config, { code: 'sh600000', range, now })
+      expect(ok.adjustMode).toBe('raw')
+      const { preview: explicit } = await previewTrainingRange(database, config, { code: 'sh600000', range, now, adjustMode: 'forward' })
+      expect(explicit.adjustMode).toBe('forward')
+      // 真实依赖坏复权键的省略预览仍 409
+      setDefaults(database, '800000', 'oops')
       const error = await previewTrainingRange(database, config, { code: 'sh600000', range, now }).then(
         () => null, (e: unknown) => e,
       )
       expect(error).toBeInstanceOf(HttpError)
       expect((error as HttpError).code).toBe('TRAINING_DEFAULTS_UNREADABLE')
-      const { preview: stored } = await previewTrainingRange(database, config, { code: 'sh600000', range, now, adjustMode: 'forward' })
-      expect(stored.adjustMode).toBe('forward')
+    })
+  })
+})
+
+describe('M5-DEFAULTS 返修 F1：按实际依赖字段解析默认（control-handoff-20260928-51）', () => {
+  it('坏 cash＋有效 raw：显式 initial_cash 而省略 mode 应成功 600000/raw', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      setDefaults(database, 'not-a-number', 'raw')
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0], initial_cash: 600000,
+      })
+      expect(training.initialCash).toBe(600000)
+      expect(training.adjustMode).toBe('raw')
+    })
+  })
+
+  it('好 cash＋坏 mode：显式 forward 而省略 cash 应成功 800000/forward', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      setDefaults(database, '800000', 'sideways')
+      const training = await createTraining(database, config, {
+        tier: '1M', code: '600000', start_date: dates[0], adjust_mode: 'forward',
+      })
+      expect(training.initialCash).toBe(800000)
+      expect(training.adjustMode).toBe('forward')
+    })
+  })
+
+  it('两字段均省略且均损坏：仍 409 零写', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      setDefaults(database, 'not-a-number', 'sideways')
+      const error = await createTraining(database, config, { tier: '1M', code: '600000', start_date: dates[0] }).then(
+        () => null, (e: unknown) => e,
+      )
+      expect(error).toBeInstanceOf(HttpError)
+      expect((error as HttpError).code).toBe('TRAINING_DEFAULTS_UNREADABLE')
+      expect(trainingsRows(database)).toHaveLength(0)
+    })
+  })
+
+  it('RANGE 提交显式两字段齐全：不读任何默认，坏键不阻断', async () => {
+    await withFixture(async ({ database, config, dates }) => {
+      setDefaults(database, 'not-a-number', 'sideways')
+      const now = new Date('2026-09-01T08:00:00.000Z')
+      const range = { mode: 'preset' as const, startDate: dates[0], months: 1 as const }
+      const { preview: stored } = await previewTrainingRange(database, config, { code: 'sh600000', range, now, adjustMode: 'raw' })
+      const created = await createTraining(database, config, {
+        code: 'sh600000', range, previewId: stored.previewId, now, adjust_mode: 'raw', initial_cash: 500000,
+      })
+      expect(created.initialCash).toBe(500000)
+      expect(created.adjustMode).toBe('raw')
     })
   })
 })
