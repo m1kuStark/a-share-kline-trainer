@@ -16,6 +16,9 @@ const loading = ref(false)
 const errorMessage = ref('')
 const activeGuard = ref(false)
 const selectedId = ref<number | null>(null)
+// FM-015/F2 三态归属：仅当"当前请求成功返回"后（loaded=true）才允许渲染空态或列表；
+// 加载期间只显示加载态，不显示空态/列表/分页；失效响应不得回写任何状态。
+const loaded = ref(false)
 let loadVersion = 0
 
 async function load(): Promise<void> {
@@ -30,12 +33,14 @@ async function load(): Promise<void> {
     limit.value = payload.limit
     offset.value = payload.offset
     activeGuard.value = false
+    loaded.value = true
   } catch (error) {
     if (requestVersion !== loadVersion) return
     if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
       activeGuard.value = true
       items.value = []
       total.value = 0
+      loaded.value = false
     } else {
       errorMessage.value = error instanceof Error ? error.message : '无法读取历史训练'
     }
@@ -93,10 +98,13 @@ function percentText(item: HistoryItem): string {
       <button class="ghost-button" @click="load()">重试</button>
     </div>
 
+    <!-- FM-015/F2：请求未完成时只显示加载态；仅成功响应后按 total 渲染空态或列表 -->
+    <p v-else-if="loading" class="history-loading" role="status">加载中…</p>
+
     <template v-else>
       <p v-if="!total" class="history-empty">暂无已结算训练</p>
       <div v-else class="history-list">
-        <button v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" @click="selectedId = item.id">
+        <button v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" @click="selectedId = item.id">
           <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small>{{ tierText(item) }}</small></span>
           <span class="history-row-dates">{{ item.startDate }} ~ {{ item.settleDate ?? '未知' }}</span>
           <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}</span>
@@ -113,7 +121,6 @@ function percentText(item: HistoryItem): string {
         <button class="ghost-button" :disabled="!hasNext || loading" @click="turnPage(1)">下一页</button>
       </div>
     </template>
-    <p v-if="loading" class="history-loading" role="status">加载中…</p>
 
     <!-- 详情与列表共存：可在多局间直接切换（A→B 迟到响应由版本守卫丢弃，不留永续 loading） -->
     <HistoryReport v-if="selectedId !== null" :id="selectedId" @back="selectedId = null" />

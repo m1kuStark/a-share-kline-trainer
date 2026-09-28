@@ -1,9 +1,11 @@
 // M4-HISTORY-01 历史成绩单 e2e：真实隔离服务＋真实样本数据（600519/300857）。
-// 覆盖冻结合同主链（真实用户动作，不用 API 替代关键路径）：
-// 真实结算按钮结算一局 → 历史训练入口 → 稳定排序列表与分类 → 只读事实成绩单
+// 覆盖冻结合同主链（真实用户动作，不用 API 替代关键用户路径）：
+// 真实结算按钮结算一局 → 历史训练入口 → 按本局 id 定位列表行（分类/事实）→ 只读事实成绩单
 // （初始/最终权益、收益率、逐笔成交、已保存权益曲线、画线清单）→ 返回；
-// 空列表返回创建；运行中守卫提示；放弃不入列表；详情 A→B 迟到响应不覆盖；
+// 加载三态真实延迟门闩（FM-015/F2）；运行中守卫提示；放弃不入列表；详情 A→B 迟到响应不覆盖；
 // 深/浅 1440/840 截图与 pageerror 0。
+// 共享库约定（FM-015/F1）：完整 Journey 共用同一隔离 SQLite，前序 spec 可能留下 settled 记录；
+// 历史列表断言一律按本局创建的 training id 定位（data-training-id），不作绝对行数假设。
 import { startTrainingFromForm } from './training-flow'
 import { expect, test, type Page } from '@playwright/test'
 import { evidencePath } from './runtime'
@@ -19,14 +21,23 @@ async function resetToLauncher(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '开始训练' })).toBeVisible()
 }
 
-async function createTrainingFromForm(page: Page, code: string): Promise<void> {
+/** 表单创建训练并返回本局 id（后续一切历史断言按此 id 定位自己的行）。 */
+async function createTrainingFromForm(page: Page, code: string): Promise<number> {
   await resetToLauncher(page)
+  const created = page.waitForResponse(response => response.request().method() === 'POST'
+    && new URL(response.url()).pathname === '/api/trainings', { timeout: 30_000 })
   await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill(code)
   await page.getByRole('button', { name: new RegExp(`${code}`) }).click()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
+  const payload = await (await created).json()
+  return payload.training.id
+}
+
+async function fetchHistory(page: Page): Promise<{ total: number; items: Array<{ id: number; code: string }> }> {
+  return (await (await page.request.get('/api/trainings/history')).json())
 }
 
 async function waitRecordingReady(page: Page): Promise<void> {
@@ -98,24 +109,66 @@ function railTrainingButton(page: Page): ReturnType<Page['locator']> {
   return page.locator('.rail-item').filter({ has: page.locator('text="训练"') })
 }
 
-test('空历史：列表空态可返回创建训练', async ({ page }) => {
-  test.setTimeout(60_000)
+test('历史页加载三态与错误重试（真实延迟门闩，FM-015/F2）', async ({ page }) => {
+  test.setTimeout(90_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await resetToLauncher(page)
+  // 真实服务响应挂起门闩：fetch 真实数据后延迟释放，不伪造内容
+  let historyRequests = 0
+  await page.route(url => url.pathname === '/api/trainings/history', async route => {
+    historyRequests += 1
+    const response = await route.fetch()
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    await route.fulfill({ response })
+  })
+  const total = (await fetchHistory(page)).total
   await page.getByRole('button', { name: '历史训练' }).click()
-  await expect(page.getByRole('region', { name: '历史训练' })).toBeVisible()
-  await expect(page.getByText('暂无已结算训练')).toBeVisible()
-  await page.getByRole('button', { name: '返回创建训练' }).click()
-  await expect(page.getByRole('heading', { name: '创建训练' })).toBeVisible()
+  const history = page.getByRole('region', { name: '历史训练' })
+  await expect(history).toBeVisible()
+
+  // 挂起期间：只允许加载态；空态/列表/分页不得出现
+  await expect(history.locator('.history-loading')).toBeVisible()
+  expect(historyRequests).toBeGreaterThanOrEqual(1)
+  await expect(history.getByText('暂无已结算训练')).not.toBeVisible()
+  await expect(history.locator('.history-row')).toHaveCount(0)
+  await expect(history.getByRole('button', { name: '上一页' })).not.toBeVisible()
+  await expect(history.getByRole('button', { name: '下一页' })).not.toBeVisible()
+
+  // 释放后由真实响应决定：有数据→列表（分页可见），无数据→空态
+  await expect(history.locator('.history-loading')).toBeHidden({ timeout: 10_000 })
+  if (total === 0) {
+    await expect(history.getByText('暂无已结算训练')).toBeVisible()
+    await history.getByRole('button', { name: '返回创建训练' }).click()
+    await expect(page.getByRole('heading', { name: '创建训练' })).toBeVisible()
+    expect(errors).toEqual([])
+    return
+  }
+  await expect(history.locator('.history-row').first()).toBeVisible()
+  await expect(history.getByRole('button', { name: '上一页' })).toBeDisabled()
+
+  // 错误注入（真实路由一次性 500，predicate 形式与门闩一致）→ 错误态与重试；解除后重试恢复列表
+  await page.route(url => url.pathname === '/api/trainings/history', route => route.fulfill({
+    status: 500, contentType: 'application/json', body: JSON.stringify({ error: '注入错误' }),
+  }), { times: 1 })
+  await railTrainingButton(page).click()
+  await page.getByRole('button', { name: '历史训练' }).click()
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('注入错误')
+  const retry = page.getByRole('button', { name: '重试' })
+  await expect(retry).toBeVisible()
+  await page.unrouteAll()
+  await retry.click()
+  await expect(history.locator('.history-row').first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('alert')).toHaveCount(0)
   expect(errors).toEqual([])
 })
 
-test('结算→历史列表→事实成绩单→返回（深色1440）', async ({ page }) => {
+test('结算→按本局id定位历史行→事实成绩单→返回（深色1440）', async ({ page }) => {
   test.setTimeout(180_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  await createTrainingFromForm(page, '600519')
+  const id = await createTrainingFromForm(page, '600519')
   await waitRecordingReady(page)
   await drawSegment(page)
   await buyAll(page)
@@ -128,17 +181,17 @@ test('结算→历史列表→事实成绩单→返回（深色1440）', async (
   await expect(history).toBeVisible()
   await expect(history.getByText('历史训练', { exact: true })).toBeVisible()
 
-  // 列表：稳定排序与分类；单页时上一页/下一页不可用
-  const rows = history.locator('.history-row')
-  await expect(rows).toHaveCount(1)
-  const row = rows.first()
+  // 共享库：前序 spec 的 settled 记录保留；只按本局 id 断言自己的行
+  const row = history.locator(`.history-row[data-training-id="${id}"]`)
+  await expect(row).toBeVisible()
   await expect(row).toContainText('600519')
   await expect(row).toContainText('提前结算')
   await expect(history.getByRole('button', { name: '上一页' })).toBeDisabled()
-  await expect(history.getByRole('button', { name: '下一页' })).toBeDisabled()
+  const { total } = await fetchHistory(page)
+  if (total <= 20) await expect(history.getByRole('button', { name: '下一页' })).toBeDisabled()
   await page.screenshot({ path: evidencePath('m4-history-list-dark-1440.png'), fullPage: true })
 
-  // 详情：只读事实成绩单
+  // 详情：只读事实成绩单（按本局 id 进入）
   await row.click()
   const report = page.getByRole('region', { name: '成绩单' })
   await expect(report).toBeVisible()
@@ -160,13 +213,10 @@ test('结算→历史列表→事实成绩单→返回（深色1440）', async (
   expect(reportText).not.toContain('undefined')
   await page.screenshot({ path: evidencePath('m4-history-report-dark-1440.png'), fullPage: true })
   // 详情是内部滚动容器（history-page 与内层 report-page 各自滚动）：都滚到底补拍画线标注区块
-  async function scrollReportToBottom(): Promise<void> {
-    for (const selector of ['.history-page', '.report-page']) {
-      await page.locator(selector).evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
-    }
-    await page.waitForTimeout(200)
+  for (const selector of ['.history-page', '.report-page']) {
+    await page.locator(selector).evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })
   }
-  await scrollReportToBottom()
+  await page.waitForTimeout(200)
   await page.screenshot({ path: evidencePath('m4-history-report-drawings-dark-1440.png'), fullPage: true })
 
   // 返回列表 → 录像库 → 训练入口仍可用（结算时 URL 带 ?training=N，训练入口回到该局只读视图）
@@ -183,9 +233,8 @@ test('运行中守卫与放弃不入列表（浅色840）', async ({ page }) => 
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  await createTrainingFromForm(page, '600519')
+  const runningId = await createTrainingFromForm(page, '600519')
   await waitRecordingReady(page)
-  const runningId = (await (await page.request.get('/api/trainings/active')).json()).training.id
 
   // 运行中打开历史：守卫提示、零历史内容，可返回当前训练
   await page.getByRole('button', { name: '切换到浅色主题' }).click()
@@ -199,14 +248,16 @@ test('运行中守卫与放弃不入列表（浅色840）', async ({ page }) => 
   await railTrainingButton(page).click()
   await expect(page.locator('.training-topbar')).toBeVisible()
 
-  // 放弃（清理约定走 API）：不入历史列表，原已结算行不受影响
+  // 放弃（清理约定走 API）：自己的行不得出现；既有 settled 记录不受影响
   await page.request.post(`/api/trainings/${runningId}/abandon`)
   await page.getByRole('button', { name: '历史训练' }).click()
-  await expect(history.locator('.history-row')).toHaveCount(1)
-  await expect(history.locator('.history-row').first()).not.toContainText('放弃')
+  await expect(history.locator(`.history-row[data-training-id="${runningId}"]`)).toHaveCount(0)
 
-  // 浅色 840：详情成绩单可用
-  await history.locator('.history-row').first().click()
+  // 浅色 840：详情成绩单可用（按最新结算行进入，不假设它来自哪个 spec）
+  const { items } = await fetchHistory(page)
+  expect(items.length).toBeGreaterThan(0)
+  const latestId = items[0].id
+  await history.locator(`.history-row[data-training-id="${latestId}"]`).click()
   const report = page.getByRole('region', { name: '成绩单' })
   await expect(report).toBeVisible()
   await expect(report.getByText('逐笔成交')).toBeVisible()
@@ -223,27 +274,38 @@ test('详情A→B迟到响应不覆盖、不留永续loading；列表按settle_d
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
-  await createTrainingFromForm(page, '300857')
+  const idNew = await createTrainingFromForm(page, '300857')
   await waitRecordingReady(page)
   await buyAll(page)
   await settleThroughButtons(page)
   await page.getByRole('button', { name: '查看历史成绩单' }).click()
   const history = page.getByRole('region', { name: '历史训练' })
-  const rows = history.locator('.history-row')
-  await expect(rows).toHaveCount(2)
-  // 稳定排序：600519（结算日更晚）在前，300857（刚创建即结算）在后
-  await expect(rows.first()).toContainText('600519')
+  // 本局 300857 与此前 600519 已结算行都可见（不假设库中总行数）
+  const newRow = history.locator(`.history-row[data-training-id="${idNew}"]`)
+  await expect(newRow).toBeVisible()
+  const { items } = await fetchHistory(page)
+  const old = items.find(item => item.code === '600519')
+  expect(old).toBeTruthy()
+  const idOld = old!.id
+  const oldRow = history.locator(`.history-row[data-training-id="${idOld}"]`)
+  await expect(oldRow).toBeVisible()
+  // 稳定排序：600519（结算日更晚）在 300857（本局新结算）之前
+  const ordered = await page.evaluate(([a, b]) => {
+    const first = document.querySelector(`.history-row[data-training-id="${a}"]`)
+    const second = document.querySelector(`.history-row[data-training-id="${b}"]`)
+    return !!(first && second && (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING))
+  }, [idOld, idNew])
+  expect(ordered).toBe(true)
 
-  const idOld = (await (await page.request.get('/api/trainings/history')).json()).items[0].id
+  // A→B 竞态：延迟旧行 A 的真实 report 响应，先点 A 立刻点 B
   let blockedA = 0
   await page.route(`**/api/trainings/${idOld}/report`, async route => {
     blockedA += 1
     await new Promise(resolve => setTimeout(resolve, 1500))
     await route.continue()
   })
-  // 先点旧行 A（响应被延迟），立刻切到新行 B：B 正常呈现
-  await rows.first().click()
-  await rows.nth(1).click()
+  await oldRow.click()
+  await newRow.click()
   const report = page.getByRole('region', { name: '成绩单' })
   await expect(report.getByText('300857').first()).toBeVisible({ timeout: 10_000 })
   // 释放 A 的迟到响应：界面仍是 B，且不留下永续 loading

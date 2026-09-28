@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "M4",
   "summary": "在已接受 V1 基线 888778c 上交付完整用户行为：真实结算一局后进入历史训练列表，打开只读事实成绩单查看分类、初始/最终权益、收益率、逐笔成交、已保存权益曲线与画线并返回；运行中/放弃不出现，任何 running 存在时新接口 409 拒答。不实现排行、最大回撤、胜率、盈亏比、基准超额、训练时钟、成交理由或条件单。",
-  "next_action": "执行已完成（服务 23/23、相邻回归 48/48、Journey 4/4 retries0、深浅1440/840截图主代理实查），等待 GPT 按 control-handoff-20260928-53 集中审查五 scope。",
+  "next_action": "F1/F2限定返修完成（FM-015：历史行按本局data-training-id定位、History页加载三态门控），共库组合回归20/20、单文件4/4、定向单测46/46、docs四检0错误；等待GPT复查并安排完整候选门禁一次执行。",
   "allowed_paths": [
     "server/src/api.ts",
     "server/src/train/history-report.ts",
@@ -51,9 +51,10 @@
   "verification_refs": [
     "docs/verification/2026-09/M4-HISTORY-01/server-red-green.md",
     "docs/verification/2026-09/M4-HISTORY-01/journey-red-green.md",
-    "docs/verification/2026-09/M4-HISTORY-01/report.md"
+    "docs/verification/2026-09/M4-HISTORY-01/report.md",
+    "docs/verification/2026-09/M4-HISTORY-01/repair-55.md"
   ],
-  "integration_ref": "candidate pending review（base 888778c；最终 HEAD 由门禁 proof 与执行报告记录，未上 main）",
+  "integration_ref": "F1/F2限定返修完成（control-handoff-20260928-55，base 888778c，未上main）；完整门禁待GPT安排一次执行",
   "acceptance_ref": null
 }
 ```
