@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "M5",
   "summary": "已接受NOTE和TRAIN相同代码在独立V1组合候选快进整合与完整门禁；不含停止的SETUP，不授权实现返修。",
-  "next_action": "V1-INTEGRATE-01 组合候选与门禁已完成，待GPT一次限定复核（control-handoff-20260928-46）；未复核不集成。",
+  "next_action": "I1测试隔离限定返修（control-handoff-20260928-48）已实现并过有序回归；完整verify:candidate运行后待GPT一次限定复核；有效预算4/5。",
   "base_commit": "3f8c61246d5c057743fc312b07ebdd704d23658a",
   "source_commit": "52889a70b6bd3037339e3414adc47ccdad0d104f",
   "allowed_paths": [

@@ -152,10 +152,17 @@ test('c) 已最新（freshness current）初始态：绿点＋"数据已最新 �
   await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
   await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
   let createCalls = 0
-  await page.route('**/api/trainings', route => { createCalls++; void route.continue() })
+  // 返修 I1：与 g 同样的 continue 泄漏（真实创建会写入隔离服务）——fallback 链回创建夹具并等待响应
+  await page.route('**/api/trainings', route => { createCalls++; return route.fallback() })
+  const createResponsePromise = page.waitForResponse(
+    response => /\/api\/trainings(\?|$)/.test(response.url()) && response.request().method() === 'POST',
+  )
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect(page.locator('.data-confirm-panel')).toHaveCount(0)
+  const createResponse = await createResponsePromise
   await expect.poll(() => createCalls).toBe(1)
+  const createdBody = await createResponse.json()
+  expect(createdBody.training.id).toBe(77)
 })
 
 test('d) freshness unknown 不显示绿色最新：中性"数据截至…最新交易日待确认"，手动重新读取入口仍可用', async ({ page }) => {
@@ -256,7 +263,10 @@ test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启
     }),
   }))
   let createCalls = 0
-  await page.route('**/api/trainings', route => { createCalls++; void route.continue() })
+  // 返修 I1（control-handoff-20260928-48）：fallback 链回 installBaseMocks 的创建夹具
+  // （continue 会把请求打进真实隔离服务），并返回 Promise 让 Playwright 等待处理完成，
+  // 不用 void 丢 Promise；用例退出前真实等待创建响应（见下方 oracle）。
+  await page.route('**/api/trainings', route => { createCalls++; return route.fallback() })
   await page.goto('/')
   const okRow = page.locator('.data-status-ok')
   await expect(okRow).toBeVisible()
@@ -264,7 +274,21 @@ test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启
   // Launcher 守卫由 freshness 驱动：current → 直接创建，不弹确认框
   await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
   await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  // I1 零真实副作用 oracle（返修 control-handoff-20260928-48）：
+  // 1) 创建响应身份必须是 mock 夹具（id 77）——route.continue() 把请求打进真实隔离服务时，
+  //    响应来自真实库（id≠77），用例失败；
+  // 2) 真实服务（page.request 绕过 page.route）的活动训练在创建前后不变——旧实现泄漏的真实
+  //    创建会成为新的活动训练，用例失败。
+  const createResponsePromise = page.waitForResponse(
+    response => /\/api\/trainings(\?|$)/.test(response.url()) && response.request().method() === 'POST',
+  )
+  const activeBefore = await (await page.request.get('/api/trainings/active')).json()
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect(page.locator('.data-confirm-panel')).toHaveCount(0)
+  const createResponse = await createResponsePromise
   await expect.poll(() => createCalls).toBe(1)
+  const createdBody = await createResponse.json()
+  expect(createdBody.training.id).toBe(77)
+  const activeAfter = await (await page.request.get('/api/trainings/active')).json()
+  expect(activeAfter.training?.id ?? null).toBe(activeBefore.training?.id ?? null)
 })

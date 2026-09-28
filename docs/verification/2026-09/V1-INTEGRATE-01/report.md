@@ -44,6 +44,10 @@ base..52889a7 恰为 49 个变更文件（`inherited-paths.json`），覆盖已�
 - **840/1440 深浅**：1440 深色与 840 浅色下设置弹层、详情浮层、训练页均完整可读（截图存证据目录）。
 - 离线回放后退清未来详情由门禁 Journey 内 `recording-daily.spec`（"按交易日回放…只读安全"）与既有 trade-marker-details/recording 回归覆盖，本轮全部通过；pageerror 由各 spec 的 `expect(errors).toEqual([])` 断言覆盖，全绿。
 
+## 限定返修 repair-48（control-handoff-20260928-48）
+
+用户批准一次 I1 测试隔离修复执行＋一次限定复核（有效预算 4/5）。I1 的根因/修法/RED→GREEN/有序回归与防遗漏见 [repair-48.md](repair-48.md)：仅改 `e2e/data-update.spec.ts`（g 与同文件同模式泄漏的 c：continue→fallback＋等待创建响应＋零真实副作用 oracle）；完整门禁按合同仅一次运行，结果写外部证据目录。
+
 ## 边界与预算
 
 不声称完整 1.0、完整 M4/M5、DATA-03/04、两布尔之外的设置项或用户发布批准。新功能 V1-ACCEPTED-INTEGRATION 预算 3 单位：设计 1＋本次执行 1 已用，剩一次 GPT review；TRAIN/NOTE 历史 5/5 不变，不声称降本。
