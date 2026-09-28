@@ -18,6 +18,7 @@ import {
   equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
+import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
 import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
@@ -300,6 +301,21 @@ export async function registerApi(
     if (!training) return { training: null }
     const snapshot = trainingSnapshot(database, training.id)
     return snapshot
+  })
+
+  // M4-HISTORY-01 历史训练：只读事实查询。存在 running 训练时先 409 拒答（防旧局记录
+  // 泄漏当前局未来）；守卫与读取是同一同步调用内的只读 SQL，无 await 间隙，不读行情。
+  app.get('/api/trainings/history', async request => {
+    assertNoActiveTraining(database)
+    return historyList(database, parseHistoryListQuery(request.query as Record<string, unknown>))
+  })
+
+  app.get('/api/trainings/:id/report', async request => {
+    const { id } = request.params as { id: string }
+    const trainingId = Number(id)
+    if (!Number.isSafeInteger(trainingId) || trainingId < 1) throw new HttpError(400, 'id 必须是正整数')
+    assertNoActiveTraining(database)
+    return historyReport(database, trainingId)
   })
 
   app.get('/api/trainings/:id', async request => {
