@@ -72,6 +72,29 @@ describe('TRAINING-RULES 前端接线', () => {
     expect(panel).toMatch(/已保存/)
   })
 
+  it('M5-DEFAULTS：设置面板四字段与损坏默认修复入口', async () => {
+    const panel = await readFile(panelPath, 'utf8')
+    expect(panel).toMatch(/默认初始资金/)
+    expect(panel).toMatch(/默认复权方式/)
+    expect(panel).toMatch(/1,000,000,000/)
+    // 损坏默认（409 UNREADABLE）不是死局：读取失败提示 + 完整保存即修复入口
+    expect(panel).toMatch(/repair|修复/)
+    // 保存前本地域校验（不取整不截断）
+    expect(panel).toMatch(/两位小数/)
+  })
+
+  it('M5-DEFAULTS：Launcher 默认装配、dirty 守卫与保存通知', async () => {
+    const launcher = await readFile(new URL('../../web/src/views/Launcher.vue', import.meta.url), 'utf8')
+    expect(launcher).toMatch(/fetchTrainingSettings/)
+    expect(launcher).toMatch(/initialCashDirty/)
+    expect(launcher).toMatch(/adjustModeDirty/)
+    expect(launcher).toMatch(/settingsSavedVersion/)
+    expect(launcher).toMatch(/本次使用自定义值/)
+    expect(launcher).toMatch(/重试读取/)
+    // 读取完成前不允许按旧默认偷偷创建
+    expect(launcher).toMatch(/defaultsState !== 'ready'/)
+  })
+
   it('设置 API 客户端绑定 /api/settings/training 并校验布尔载荷', async () => {
     const api = await readFile(apiPath, 'utf8')
     expect(api).toMatch(/\/api\/settings\/training/)

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { createTraining, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest } from '../api'
+import { computed, onMounted, ref, watch } from 'vue'
+import { createTraining, fetchTrainingSettings, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest, type TrainingSettingsView } from '../api'
 import { isBarCountValid, minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
+import { lastSavedSettings, settingsSavedVersion } from '../settingsPanel'
 
 const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | TrainingRangeRequest> }] }>()
 const recordingEnabled = ref(true)
@@ -102,6 +103,72 @@ watch(dataStatus, () => {
 // 创建仍走服务端复核。任何范围输入变化使旧校验/在途校验失效（版本守卫）。
 const rangeStart = ref(minusMonthsShanghai(anchorDate.value, 3))
 const rangeBarCount = ref(60)
+
+// —— M5-DEFAULTS：默认资金/复权装配 ——
+// 挂载读取最新设置作为表单初值；读取完成前不允许按旧默认偷偷创建（开始训练禁用）。
+// 读取失败提供重试；迟到/重复响应不覆盖用户已编辑字段（按字段 dirty + 请求版本守卫）。
+// 设置保存成功只更新未编辑字段；实际复权变化使范围预览与在途预览失效。
+const defaultsState = ref<'loading' | 'ready' | 'error'>('loading')
+const defaultsError = ref('')
+const initialCashDirty = ref(false)
+const adjustModeDirty = ref(false)
+const customNotice = ref('')
+let defaultsRequestVersion = 0
+
+async function loadDefaults(): Promise<void> {
+  const version = ++defaultsRequestVersion
+  defaultsState.value = 'loading'
+  defaultsError.value = ''
+  try {
+    const view = await fetchTrainingSettings()
+    if (version !== defaultsRequestVersion) return
+    applyDefaults(view)
+    defaultsState.value = 'ready'
+  } catch (error) {
+    if (version !== defaultsRequestVersion) return
+    defaultsError.value = error instanceof Error ? error.message : '无法读取训练默认设置'
+    defaultsState.value = 'error'
+  }
+}
+
+function applyDefaults(view: TrainingSettingsView): void {
+  if (!initialCashDirty.value) initialCash.value = view.initialCash
+  if (!adjustModeDirty.value) adjustMode.value = view.adjustMode
+}
+
+function retryDefaults(): void {
+  void loadDefaults()
+}
+
+// 设置保存成功广播（F4 返修续）：递增读取版本使在途/迟到的 GET 全部作废（过期响应不得
+// 覆盖保存后的新默认或表单），再应用保存结果到未手改字段；实际复权变化使预览失效；
+// 已编辑字段保留并提示“本次使用自定义值”。
+// F4-final（loading 收敛）：保存结果来自服务器成功往返，等价于拿到了最新默认——
+// 作废在途初读后必须把完成所有权移交给保存结果：loading/error 一律收敛为 ready，
+// 否则“初读在途→保存成功→旧 GET 被丢弃”会让开始训练永久禁用。
+watch(settingsSavedVersion, () => {
+  const saved = lastSavedSettings.value
+  if (!saved) return
+  defaultsRequestVersion += 1
+  defaultsError.value = ''
+  if (defaultsState.value !== 'ready') defaultsState.value = 'ready'
+  let usedCustom = false
+  if (!initialCashDirty.value) initialCash.value = saved.initialCash
+  else usedCustom = true
+  const adjustChanged = adjustMode.value !== saved.adjustMode
+  if (!adjustModeDirty.value) {
+    adjustMode.value = saved.adjustMode
+    if (adjustChanged && tier.value === 'RANGE') onRangeInputChanged()
+  } else {
+    usedCustom = true
+    if (adjustChanged && tier.value === 'RANGE') onRangeInputChanged()
+  }
+  customNotice.value = usedCustom ? '本次使用自定义值：已编辑字段保留你的输入' : ''
+})
+
+onMounted(() => {
+  void loadDefaults()
+})
 const rangePreview = ref<{ request: TrainingRangeRequest; preview: TrainingRangePreview } | null>(null)
 const previewing = ref(false)
 const clampNotice = ref('')
@@ -126,6 +193,11 @@ function onRangeInputChanged(): void {
   errorMessage.value = ''
 }
 
+function markAdjustMode(mode: 'forward' | 'raw'): void {
+  adjustMode.value = mode
+  adjustModeDirty.value = true
+  onAdjustModeChanged()
+}
 function onAdjustModeChanged(): void {
   if (tier.value === 'RANGE') onRangeInputChanged()
 }
@@ -403,7 +475,7 @@ function confirmStartAnyway(): void {
         </div>
         <div v-if="tier !== 'RANGE'" class="form-field">
           <label>初始资金</label>
-          <input v-model.number="initialCash" type="number" min="10000" step="10000" />
+          <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
         </div>
         <div v-else class="form-field">
           <label>K 线根数</label>
@@ -414,7 +486,7 @@ function confirmStartAnyway(): void {
 
       <div v-if="tier === 'RANGE'" class="form-field">
         <label>初始资金</label>
-        <input v-model.number="initialCash" type="number" min="10000" step="10000" />
+        <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
       </div>
 
       <div v-if="tier === 'RANGE'" class="form-field wide">
@@ -432,15 +504,21 @@ function confirmStartAnyway(): void {
       <div class="form-field">
         <label>复权方式（创建后锁定）</label>
         <div class="tier-grid">
-          <button :class="{ selected: adjustMode === 'forward' }" @click="adjustMode = 'forward'; onAdjustModeChanged()">前复权</button>
-          <button :class="{ selected: adjustMode === 'raw' }" @click="adjustMode = 'raw'; onAdjustModeChanged()">不复权</button>
+          <button :class="{ selected: adjustMode === 'forward' }" @click="markAdjustMode('forward')">前复权</button>
+          <button :class="{ selected: adjustMode === 'raw' }" @click="markAdjustMode('raw')">不复权</button>
         </div>
       </div>
 
       <label class="recording-choice"><input v-model="recordingEnabled" type="checkbox" aria-label="记录操作" />记录操作</label>
       <small class="form-hint">建议保持开启，方便复盘、分享操作和排查问题。记录保存在本机浏览器，可随时暂停。</small>
+      <p v-if="customNotice" class="form-hint" role="status">{{ customNotice }}</p>
+      <p v-if="defaultsState === 'error'" class="error-text" role="alert">
+        {{ defaultsError || '无法读取训练默认设置' }}
+        <button class="ghost-button" @click="retryDefaults">重试读取</button>
+      </p>
+      <p v-if="defaultsState === 'loading'" class="form-hint">正在读取训练默认设置…</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
-      <button class="submit-button" :disabled="submitting" @click="submit">{{ submitting ? '创建中…' : '开始训练' }}</button>
+      <button class="submit-button" :disabled="submitting || defaultsState !== 'ready'" :title="defaultsState !== 'ready' ? '训练默认设置读取完成后可开始训练' : ''" @click="submit">{{ submitting ? '创建中…' : '开始训练' }}</button>
     </section>
 
     <!-- 建议先更新日线数据：复用结算面板的模态风格（settle-mask/settle-panel） -->

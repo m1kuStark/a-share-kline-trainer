@@ -6,6 +6,8 @@
 
 ## 当前入口
 
+- [M5-DEFAULTS-01候选交付](2026-09/M5-DEFAULTS-01/report.md)：训练默认初始资金与复权（四字段原子保存/创建优先级/RANGE预览一致性/用户流/兼容五scope）；RED先行、全量1161单测、e2e三用例；完整门禁一次运行见evidence；待GPT验收。
+
 - [TRAIN-01候选交付](2026-09/TRAIN-01/report.md)：训练规则快照、默认费用/T+1设置、raw/forward权息一致与legacy保护；RED先行、最终HEAD 1126单测+M2 24/24+全量Journey 89过（1 flaky如实记）；待GPT验收未集成。
 
 - [TRAIN-02第一片服务端交付](2026-09/TRAIN-02-server/report.md)：范围预览/创建复核/兼容迁移，RED先行与全量874测试；[并发与权息指纹修复](2026-09/TRAIN-02-server/wake02-fix.md)：GPT-WAKE-02两项P2。

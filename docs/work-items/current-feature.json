@@ -1,85 +1,91 @@
 {
-  "acceptance_records": [],
   "accepted_slices": [
+    "TRAIN-01",
+    "V1-INTEGRATE-01",
     "NOTE-DETAIL-01",
-    "TRAIN-01"
+    "TRAIN-02",
+    "REC-01"
   ],
-  "budget_exhausted": false,
-  "can_dispatch": false,
   "candidate": {
-    "commit": "3f8c61246d5c057743fc312b07ebdd704d23658a",
-    "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/V1-INTEGRATE-01"
+    "commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
+    "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-01"
   },
   "contract_revision": 1,
   "evidence": [
-    "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\v1-integration-20260928-46\\contract.md",
-    "TRAIN source docs/verification/2026-09/TRAIN-01/acceptance-45.md",
-    "NOTE source acceptance-42.md"
+    "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m5-defaults-20260928-50\\contract.md",
+    "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\docs\\verification\\2026-09\\V1-INTEGRATE-01\\acceptance-49.md",
+    "User request to continue V1 roadmap via original Zcode"
   ],
-  "feature_id": "V1-ACCEPTED-INTEGRATION",
+  "feature_id": "M5-CREATION-DEFAULTS",
   "historical_usage": null,
-  "historical_usage_note": "New user-authorized integration-only phase. Prior TRAIN/NOTE/SETUP implementation budgets and histories preserved; no reset or extra source fixes.",
-  "history_event_count": 2,
+  "historical_usage_note": "New planned M5 creation defaults behavior, not reopening TRAIN rule snapshot, NOTE details, V1 integration or stopped FIRST-USE; unmeasured historical token cost unknown",
   "limits": {
     "contract_revisions": 1,
-    "executions": 1,
-    "reviews": 1,
-    "work_units": 3
+    "executions": 2,
+    "reviews": 2,
+    "work_units": 5
   },
-  "next_action": "Original TRAIN Zcode session fast-forwards isolated V1 integration worktree and runs bounded combined gate; no implementation fixes",
+  "next_action": "原Zcode会话按control-handoff-20260928-50整片实现API、创建、UI和测试；一次回调；SETUP继续停止",
   "remaining": [
-    "INTEGRATION-accepted-history",
-    "INTEGRATION-clean-proof",
-    "INTEGRATION-train-note-coexistence",
-    "INTEGRATION-evidence-and-isolation"
+    "DEFAULTS-api-atomic",
+    "DEFAULTS-create-precedence",
+    "DEFAULTS-preview-races",
+    "DEFAULTS-user-flow",
+    "DEFAULTS-compatibility"
   ],
-  "remaining_budget": {
-    "contract_revisions": 0,
-    "executions": 0,
-    "reviews": 1,
-    "work_units": 1
-  },
   "review_scope": [
-    "INTEGRATION-accepted-history",
-    "INTEGRATION-clean-proof",
-    "INTEGRATION-train-note-coexistence",
-    "INTEGRATION-evidence-and-isolation"
+    "DEFAULTS-api-atomic",
+    "DEFAULTS-create-precedence",
+    "DEFAULTS-preview-races",
+    "DEFAULTS-user-flow",
+    "DEFAULTS-compatibility"
   ],
   "schema_version": 1,
   "status": "active",
   "tasks": {
-    "V1-INTEGRATE-01": {
+    "M5-DEFAULTS-01": {
       "accepted": false,
-      "branch": "task/V1-INTEGRATE-01",
-      "candidate_commit": "3f8c61246d5c057743fc312b07ebdd704d23658a",
+      "branch": "codex/m5-training-defaults",
+      "candidate_commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
       "card": {
-        "integration_ref": "pending task/V1-INTEGRATE-01; base 3f8c61246d5c057743fc312b07ebdd704d23658a",
-        "next_action": "按control-handoff-20260928-46快进52889a7，准备文档并一次运行verify:candidate/组合UI，成功或失败回调GPT。",
+        "integration_ref": "not integrated; codex/m5-training-defaults base 888778cfc7a4b69e4446012a26618b93a8b05b20",
+        "next_action": "原Zcode会话按control-handoff-20260928-50整片实现API、创建、UI和测试；一次回调；SETUP继续停止",
         "state": "active",
-        "summary": "已接受NOTE和TRAIN相同代码在独立V1组合候选快进整合与完整门禁；不含停止的SETUP，不授权实现返修。"
+        "summary": "实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；基于已接受V1候选888778c"
       },
-      "contract_path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\v1-integration-20260928-46\\contract.md",
+      "contract_path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m5-defaults-20260928-50\\contract.md",
       "contract_revision": 1,
       "depends_on": [
-        "NOTE-DETAIL-01",
-        "TRAIN-01"
+        "TRAIN-01",
+        "V1-INTEGRATE-01"
       ],
       "must_be_absent": [
-        "docs/work-items/tasks/V1-INTEGRATE-01.md"
+        "docs/work-items/tasks/M5-DEFAULTS-01.md",
+        "e2e/training-defaults.spec.ts",
+        "server/test/training-creation-defaults.test.ts",
+        "server/src/settings/creation-defaults.ts"
       ],
-      "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/V1-INTEGRATE-01",
+      "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-01",
       "required_commits": [
-        "3f8c61246d5c057743fc312b07ebdd704d23658a"
+        "888778cfc7a4b69e4446012a26618b93a8b05b20"
       ],
-      "source_commit": "52889a70b6bd3037339e3414adc47ccdad0d104f",
-      "source_worktree": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-01",
       "status": "ready"
     }
   },
+  "acceptance_records": [],
   "usage": {
-    "contract_revisions": 1,
     "executions": 1,
     "reviews": 0,
+    "contract_revisions": 1,
     "work_units": 2
-  }
+  },
+  "remaining_budget": {
+    "executions": 1,
+    "reviews": 2,
+    "contract_revisions": 0,
+    "work_units": 3
+  },
+  "budget_exhausted": false,
+  "history_event_count": 2,
+  "can_dispatch": true
 }

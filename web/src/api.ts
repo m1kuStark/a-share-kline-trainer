@@ -90,11 +90,13 @@ export interface TrainingRulesView {
   origin: 'created' | 'legacy-migration'
 }
 
-/** 训练默认设置视图（GET/PUT /api/settings/training；capturedAt/origin 属于已冻结规则，不在默认里） */
+/** 训练默认设置视图（GET/PUT /api/settings/training；M5-DEFAULTS 起含默认资金与复权） */
 export interface TrainingSettingsView {
   version: number
   feesEnabled: boolean
   tPlusOne: boolean
+  initialCash: number
+  adjustMode: 'forward' | 'raw'
   commissionRate: number
   minimumCommission: number
   stampDutyRate: number
@@ -171,13 +173,13 @@ export function fetchEnv(): Promise<{ status: string; tdxRoot: string | null; da
   return request('/api/env')
 }
 
-// ===== 训练默认设置（TRAIN-01）：费用开关与 T+1 开关，默认只影响新训练 =====
+// ===== 训练默认设置（TRAIN-01/M5-DEFAULTS）：四字段原子保存，默认只影响新训练 =====
 
 export function fetchTrainingSettings(): Promise<TrainingSettingsView> {
   return request('/api/settings/training')
 }
 
-export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean }): Promise<TrainingSettingsView> {
+export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean; initialCash: number; adjustMode: 'forward' | 'raw' }): Promise<TrainingSettingsView> {
   return request('/api/settings/training', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

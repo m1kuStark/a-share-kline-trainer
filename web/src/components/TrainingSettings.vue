@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, type TrainingSettingsView } from '../api'
+import { notifySettingsSaved } from '../settingsPanel'
 
-// TRAIN-01 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
-// 保存成功给明确反馈；取消/失败不假称保存，也不改变任何进行中的训练。
+// TRAIN-01/M5-DEFAULTS 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
+// 四字段一起原子保存：费用开关、T+1、默认初始资金（0.01..1,000,000,000 元、至多两位小数）、
+// 默认复权（forward/raw）。保存成功给明确反馈；取消/失败不假称保存，也不改变任何进行中的训练。
 // 默认只影响之后新建的训练；本局规则在创建时冻结。
+// 损坏默认（409 TRAINING_DEFAULTS_UNREADABLE）不是死局：面板即修复入口，完整保存即可修复。
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -16,6 +19,25 @@ const saveSuccess = ref('')
 const saving = ref(false)
 const feesEnabled = ref(false)
 const tPlusOne = ref(true)
+const initialCashText = ref('1000000')
+const adjustMode = ref<'forward' | 'raw'>('forward')
+
+const INITIAL_CASH_MAX = 1_000_000_000
+
+function parseInitialCash(input: string | number): number | null {
+  // v-model 在 type="number" 输入上会把 ref 自动转成数字（y.trim is not a function 的教训）：
+  // 先统一字符串化再做域与两位小数校验，不取整不截断。
+  const text = (typeof input === 'number' ? String(input) : input).trim()
+  if (text === '') return null
+  const value = Number(text)
+  if (!Number.isFinite(value)) return null
+  if (value < 0.01 || value > INITIAL_CASH_MAX) return null
+  const cents = value * 100
+  if (Math.abs(cents - Math.round(cents)) > 1e-9) return null
+  return value
+}
+
+const initialCashInvalid = (): boolean => parseInitialCash(initialCashText.value) === null
 
 onMounted(async () => {
   // 返修 F3：文档级 Esc 兜底——焦点因任何原因离开弹层（如保存期间按钮 disabled 回落 body）
@@ -24,11 +46,13 @@ onMounted(async () => {
   panelRef.value?.focus()
   try {
     const current = await fetchTrainingSettings()
+    applyView(current)
     settings.value = current
-    feesEnabled.value = current.feesEnabled
-    tPlusOne.value = current.tPlusOne
   } catch (error) {
+    // 读取失败（含损坏默认 409）：表单以内建缺省呈现，保存完整四字段即修复入口
     loadError.value = error instanceof Error ? error.message : '无法读取训练默认设置'
+    initialCashText.value = '1000000'
+    adjustMode.value = 'forward'
   }
 })
 onUnmounted(() => {
@@ -39,18 +63,34 @@ function onDocumentKeydown(event: KeyboardEvent): void {
   event.preventDefault()
   close()
 }
+function applyView(view: TrainingSettingsView): void {
+  feesEnabled.value = view.feesEnabled
+  tPlusOne.value = view.tPlusOne
+  initialCashText.value = String(view.initialCash)
+  adjustMode.value = view.adjustMode
+}
 
 async function save(): Promise<void> {
   if (saving.value) return
+  const initialCash = parseInitialCash(initialCashText.value)
+  if (initialCash === null) {
+    saveError.value = '初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数'
+    return
+  }
   saving.value = true
   saveError.value = ''
   saveSuccess.value = ''
   try {
-    const saved = await putTrainingSettings({ feesEnabled: feesEnabled.value, tPlusOne: tPlusOne.value })
+    const saved = await putTrainingSettings({
+      feesEnabled: feesEnabled.value,
+      tPlusOne: tPlusOne.value,
+      initialCash,
+      adjustMode: adjustMode.value,
+    })
     settings.value = saved
-    feesEnabled.value = saved.feesEnabled
-    tPlusOne.value = saved.tPlusOne
+    applyView(saved)
     saveSuccess.value = '已保存：新默认将应用于之后新建的训练，当前训练不受影响'
+    notifySettingsSaved(saved)
   } catch (error) {
     saveError.value = error instanceof Error ? error.message : '保存失败，设置未更改'
   } finally {
@@ -96,45 +136,74 @@ function close(): void {
         <button class="ghost-button" aria-label="关闭" title="关闭" @click="close">✕</button>
       </header>
       <p class="settings-note">这里的默认只影响新训练；进行中的训练按创建时冻结的规则继续。</p>
-      <p v-if="loadError" class="error-text" role="alert">{{ loadError }}</p>
-      <template v-if="settings">
-        <label class="settings-row">
-          <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" />
-          <span class="settings-row-text">
-            <strong>收取手续费</strong>
-            <small>佣金万分之 2.5（最低 5 元），卖出另收万分之 5 印花税。默认关闭。</small>
-          </span>
-        </label>
-        <label class="settings-row">
-          <input v-model="tPlusOne" type="checkbox" aria-label="新训练启用 T+1（当日买入次日可卖）" />
-          <span class="settings-row-text">
-            <strong>T+1 限制</strong>
-            <small>当日买入的股票次一交易日才能卖出。默认开启。</small>
-          </span>
-        </label>
-        <div class="settings-fixed">
-          <span>固定口径（不可修改）：一手 {{ settings.lotSize }} 股 · 买入仓位按总权益 · 按当日原始收盘价成交</span>
+      <p v-if="loadError" class="settings-repair" role="alert">{{ loadError }}：核对以下表单并重新保存即可修复。</p>
+      <label class="settings-row">
+        <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" />
+        <span class="settings-row-text">
+          <strong>收取手续费</strong>
+          <small>佣金万分之 2.5（最低 5 元），卖出另收万分之 5 印花税。默认关闭。</small>
+        </span>
+      </label>
+      <label class="settings-row">
+        <input v-model="tPlusOne" type="checkbox" aria-label="新训练启用 T+1（当日买入次日可卖）" />
+        <span class="settings-row-text">
+          <strong>T+1 限制</strong>
+          <small>当日买入的股票次一交易日才能卖出。默认开启。</small>
+        </span>
+      </label>
+      <div class="settings-row settings-column">
+        <label class="settings-field-label" for="training-default-initial-cash">默认初始资金（元，仅影响新训练）</label>
+        <input
+          id="training-default-initial-cash" v-model="initialCashText" type="number" step="0.01" min="0.01"
+          :max="1000000000" aria-label="默认初始资金（元）" @input="saveSuccess = ''"
+        />
+        <small>0.01 至 1,000,000,000 元，至多两位小数；默认 1,000,000。</small>
+      </div>
+      <div class="settings-row settings-column">
+        <span class="settings-field-label" id="training-default-adjust-label">默认复权方式（仅影响新训练，创建后锁定）</span>
+        <div class="settings-adjust-grid" role="radiogroup" aria-labelledby="training-default-adjust-label">
+          <button
+            type="button" :class="{ selected: adjustMode === 'forward' }" role="radio"
+            :aria-checked="adjustMode === 'forward'" @click="adjustMode = 'forward'; saveSuccess = ''"
+          >前复权</button>
+          <button
+            type="button" :class="{ selected: adjustMode === 'raw' }" role="radio"
+            :aria-checked="adjustMode === 'raw'" @click="adjustMode = 'raw'; saveSuccess = ''"
+          >不复权</button>
         </div>
-        <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
-        <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
-        <div class="settings-actions">
-          <button class="trade-action buy" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
-          <button class="ghost-button" :disabled="saving" @click="close">取消</button>
-        </div>
-      </template>
+        <small>默认复权用于之后新建的训练；创建时仍可显式选择覆盖。</small>
+      </div>
+      <div class="settings-fixed">
+        <span>固定口径（不可修改）：一手 {{ settings?.lotSize ?? 100 }} 股 · 买入仓位按总权益 · 按当日原始收盘价成交</span>
+      </div>
+      <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
+      <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
+      <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
+      <div class="settings-actions">
+        <button class="trade-action buy" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
+        <button class="ghost-button" :disabled="saving" @click="close">取消</button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .settings-mask { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 32, 0.45); }
-.settings-panel { width: min(460px, calc(100vw - 40px)); max-height: min(560px, calc(100dvh - 60px)); overflow-y: auto; padding: 18px 20px; border-radius: 10px; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(15, 23, 32, 0.25); outline: none; }
+.settings-panel { width: min(460px, calc(100vw - 40px)); max-height: min(640px, calc(100dvh - 60px)); overflow-y: auto; padding: 18px 20px; border-radius: 10px; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(15, 23, 32, 0.25); outline: none; }
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; }
 .settings-head h2 { margin: 0; font-size: 17px; }
 .settings-note { margin: 0 0 14px; font-size: 12px; color: var(--text-secondary, #51637a); }
+.settings-repair { margin: 0 0 14px; padding: 8px 10px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+:global(body.dark) .settings-repair { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .settings-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-top: 1px solid var(--surface-border, #eef2f6); cursor: pointer; }
-.settings-row-text { display: flex; flex-direction: column; gap: 2px; }
-.settings-row-text small { font-size: 11px; color: var(--text-secondary, #51637a); }
+.settings-row.settings-column { flex-direction: column; gap: 4px; cursor: default; }
+.settings-field-label { font-size: 13px; font-weight: 600; }
+.settings-column small { font-size: 11px; color: var(--text-secondary, #51637a); }
+.settings-column input[type="number"] { width: 100%; padding: 6px 8px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: transparent; color: inherit; font-variant-numeric: tabular-nums; }
+.settings-adjust-grid { display: flex; gap: 8px; }
+.settings-adjust-grid button { flex: 0 0 auto; padding: 5px 14px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+.settings-adjust-grid button.selected { border-color: #2b8b99; color: #1c6076; background: rgba(43, 139, 153, 0.08); }
+:global(body.dark) .settings-adjust-grid button.selected { color: #7fd0dc; border-color: #2b8b99; }
 .settings-fixed { margin-top: 10px; font-size: 11px; color: var(--text-secondary, #51637a); }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
 :global(body.dark) .settings-saved { color: #57bd7c; }
