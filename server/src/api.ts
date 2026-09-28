@@ -8,6 +8,7 @@ import { refreshStockCatalog } from './tdx/catalog.js'
 import { loadAdjustmentEvents, refreshAdjustmentCache } from './tdx/adjustment-cache.js'
 import { applyForwardAdjustment } from './tdx/gbbq.js'
 import { parseTdxSymbol } from './tdx/symbol.js'
+import { buildStockSearchIndex, searchStockIndex, type StockSearchIndex } from './tdx/stock-search.js'
 import { getActiveTraining } from './train/engine.js'
 import { registerTrainingSettingsRoutes } from './settings/training.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
@@ -91,6 +92,15 @@ export async function registerApi(
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null
+  // 搜索索引随目录引用一次构建（UI-03）：目录刷新整体替换引用后下一次查询才重建
+  let searchIndexCache: { source: unknown; index: StockSearchIndex } | null = null
+
+  function searchIndexFor(stocks: NonNullable<typeof stockCache>): StockSearchIndex {
+    if (!searchIndexCache || searchIndexCache.source !== stocks) {
+      searchIndexCache = { source: stocks, index: buildStockSearchIndex(stocks) }
+    }
+    return searchIndexCache.index
+  }
 
   async function getStocks(): Promise<Awaited<ReturnType<typeof refreshStockCatalog>>['stocks']> {
     if (!config.tdxRoot) return []
@@ -191,11 +201,7 @@ export async function registerApi(
     if (!config.tdxRoot) return { items: [], total: 0, error: 'TDX directory not found' }
     const stocks = await getStocks()
     const query = request.query as { market?: string; q?: string }
-    const q = query.q?.trim().toLowerCase() ?? ''
-    const items = stocks.filter(stock =>
-      (!query.market || stock.market === query.market) &&
-      (!q || stock.code.includes(q) || stock.name.toLowerCase().includes(q)),
-    )
+    const items = searchStockIndex(searchIndexFor(stocks), query.q ?? '', query.market)
     return { items: items.slice(0, 100), total: items.length }
   })
 

@@ -51,6 +51,7 @@
 | [TRAIN-03](<work-items/tasks/TRAIN-03.md>) | planned / integrator | 保留默认 close_only 收盘模式，并为显式开启的训练增加 open/close 阶段、形成中 K 线和旧训练迁移。 | 未记录 | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [UI-02](<work-items/tasks/UI-02.md>) | review / integrator | 按用户要求移除首页顶部录像横栏，保留左侧录像导航及录像页导入、历史和回放。 | [证据1](<verification/2026-09/REL-03/ui-02-journey.json>)；[证据2](<verification/2026-09/REL-03/recording-daily-journey.json>)；[证据3](<../e2e/acceptance-feedback.spec.ts>)；[证据4](<../e2e/recording-migration.spec.ts>)；[证据5](<../e2e/recording-daily.spec.ts>) | c8f8836 | 未记录 |
+| [UI-03](<work-items/tasks/UI-03.md>) | review / integrator | 用户 v0.3.3 测试反馈三点：周期点击不联动起始日；自定义范围三模式繁琐冗余；单框选股重复罗列候选且无法拼音检索。重构为周期→起始日自动回退、自定义只留起始日+根数（超限自动截取并提醒）、代码/名称双框选股＋拼音首字母搜索。 | 未记录 | 未记录 | 未记录 |
 | [V1-INTEGRATE-01](<work-items/tasks/V1-INTEGRATE-01.md>) | review / GLM-5.3-Flash | 已接受NOTE和TRAIN相同代码在独立V1组合候选快进整合与完整门禁；不含停止的SETUP，不授权实现返修。 | 未记录 | 未记录 | 未记录 |
 | [V4-01](<work-items/tasks/V4-01.md>) | planned / integrator | 串行集成阶段时钟、理由录制、B/S 笔记和条件单，完成真实训练、回放和旧数据兼容验收。 | 未记录 | 未记录 | 未记录 |
 <!-- generated:status:end -->

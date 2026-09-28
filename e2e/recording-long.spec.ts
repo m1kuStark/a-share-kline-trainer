@@ -27,8 +27,8 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   const pageErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))
   await page.goto('/')
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
-  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '2年', exact: true }).click()
   await page.locator('input[type="date"]').fill('2024-09-13')
   await startTrainingFromForm(page)

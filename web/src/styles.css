@@ -48,6 +48,9 @@ button { cursor: pointer; }
 .form-field input { height: 36px; border: 1px solid #d5dde7; border-radius: 4px; padding: 0 12px; outline: none; font-size: 13px; background: #fff; }
 .form-field input:focus { border-color: #6d9aaf; box-shadow: 0 0 0 2px #e0eff1; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.stock-input-row { position: relative; display: grid; grid-template-columns: 2fr 3fr; gap: 10px; }
+.stock-input-row .suggestions { top: calc(100% + 4px); }
+.clamp-notice { color: #a05a1f; font-weight: 600; }
 .form-hint { color: #94a2b2; font-size: 11px; }
 .tier-grid { display: flex; gap: 6px; flex-wrap: wrap; }
 .tier-grid button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 8px 14px; color: #5c7187; font-size: 12px; border-radius: 3px; }
@@ -183,6 +186,7 @@ body.dark .timeframe-tabs button.selected { color: #ffffff; border-bottom-color:
 body.dark .account-stats span, body.dark .equity-block span, body.dark .order-heading small,
 body.dark .form-hint, body.dark .shares-row small, body.dark .trade-log, body.dark .launcher-head p,
 body.dark .trade-empty, body.dark .tool-list-empty, body.dark .other-tools-toggle span { color: var(--text-muted); }
+body.dark .clamp-notice { color: #d8a35a; }
 body.dark .equity-block, body.dark .account-stats, body.dark .trade-panel { color: var(--text-primary); }
 body.dark .equity-block { border-color: var(--surface-border); }
 body.dark .panel-divider { background: var(--surface-border); }

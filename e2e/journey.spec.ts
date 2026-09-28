@@ -19,8 +19,8 @@ async function resetToLauncher(page: import('@playwright/test').Page): Promise<v
 
 test('Act1 创建训练并进入训练视图', async ({ page }) => {
   await resetToLauncher(page)
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
-  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -38,8 +38,8 @@ test('Act1 创建训练并进入训练视图', async ({ page }) => {
 test('Act5 买入推进卖出结算', async ({ page }) => {
   await resetToLauncher(page)
   // 重建训练（serial 顺序在 Act1 之后，库中状态由 Act5 前置步骤决定）
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
-  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -96,8 +96,8 @@ async function moveTo(page: Page, x: number, y: number, options?: Parameters<Pag
 }
 async function openTraining(page: import('@playwright/test').Page): Promise<void> {
   await resetToLauncher(page)
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
-  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)

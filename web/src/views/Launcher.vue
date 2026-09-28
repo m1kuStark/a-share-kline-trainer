@@ -1,47 +1,128 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { createTraining, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest } from '../api'
-import { defaultRangeStart, isBarCountValid, rangeRequestOf, shanghaiToday } from '../rangeDate'
+import { isBarCountValid, minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 
 const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | TrainingRangeRequest> }] }>()
 const recordingEnabled = ref(true)
 
-const query = ref('')
-const suggestions = ref<Stock[]>([])
+// ===== 股票选择（UI-03 用户反馈）：代码/名称双框联动 =====
+// 任一框输入即清空另一框与已选股票（重新选择从两框空白开始）；精确命中（六位代码或全名）
+// 自动选中；非精确走下拉（前缀优先，服务端支持拼音首字母）；匹配不到给行内提示。
+const codeText = ref('')
+const nameText = ref('')
 const selected = ref<Stock | null>(null)
-const tier = ref<Tier | 'RANGE'>('3M')
-const startDate = ref(new Date().toISOString().slice(0, 10))
+const suggestions = ref<Stock[]>([])
+const matchHint = ref('')
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+let searchSeq = 0
 
-// —— 自定义范围模式（TRAIN-02 第二片冻结合同）：三模式；默认 3M 按上海自然月回退并月末裁切；
-// 任何范围输入变化都使旧预览/在途预览失效（版本守卫）；预览必须创建前可见供审阅。 ——
-const rangeMonths = ref(3)
-const RANGE_MONTH_OPTIONS = [1, 3, 6, 12, 24] as const
-const rangeStart = ref(defaultRangeStart())
-const rangeMode = ref<'preset' | 'latest' | 'bars'>('preset')
-const rangeBarCount = ref(1)
+function clearOtherAndSelection(edited: 'code' | 'name'): void {
+  if (edited === 'code') nameText.value = ''
+  else codeText.value = ''
+  selected.value = null
+  matchHint.value = ''
+}
+
+function onCodeInput(): void {
+  if (selected.value || nameText.value) clearOtherAndSelection('code')
+  scheduleSearch('code')
+}
+
+function onNameInput(): void {
+  if (selected.value || codeText.value) clearOtherAndSelection('name')
+  scheduleSearch('name')
+}
+
+function scheduleSearch(field: 'code' | 'name'): void {
+  const text = (field === 'code' ? codeText.value : nameText.value).trim()
+  if (searchTimer) clearTimeout(searchTimer)
+  if (!text) {
+    suggestions.value = []
+    matchHint.value = ''
+    return
+  }
+  searchTimer = setTimeout(() => { void runSearch(text) }, 250)
+}
+
+async function runSearch(text: string): Promise<void> {
+  const seq = ++searchSeq
+  try {
+    const result = await searchStocks(text)
+    if (seq !== searchSeq) return // 期间又有输入：过期响应丢弃
+    // 精确命中（代码、市场前缀代码或全名一致）直接选中，不再罗列待选项
+    const exact = result.items.find(stock =>
+      stock.code === text || `${stock.market}${stock.code}` === text || stock.name === text)
+    if (exact) {
+      choose(exact)
+      return
+    }
+    suggestions.value = result.items.slice(0, 8)
+    matchHint.value = result.items.length
+      ? ''
+      : '未匹配到股票：请检查代码/名称是否正确，或试试名称拼音首字母（如 GZMT）'
+  } catch {
+    if (seq !== searchSeq) return
+    suggestions.value = []
+    matchHint.value = '股票搜索失败，请重试'
+  }
+}
+
+function choose(stock: Stock): void {
+  selected.value = stock
+  codeText.value = stock.code
+  nameText.value = stock.name
+  suggestions.value = []
+  matchHint.value = ''
+  onRangeInputChanged() // 换股票使旧范围校验失效
+}
+
+// ===== 周期与起始日（UI-03 用户反馈）：选择周期＝从最新数据日回退对应长度 =====
+const TIER_MONTHS: Record<Exclude<Tier, 'RANGE'>, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, '2Y': 24 }
+const tier = ref<Tier | 'RANGE'>('3M')
+// 起始日锚点＝行情最新日（数据状态 sourceMaxDate）；未扫描时回退上海今天
+const anchorDate = computed(() => dataStatus.value?.sourceMaxDate || shanghaiToday())
+const startDate = ref(minusMonthsShanghai(anchorDate.value, TIER_MONTHS['3M']))
+const startDateTouched = ref(false)
+const initialCash = ref<number>(1_000_000)
+const adjustMode = ref<'forward' | 'raw'>('forward')
+const submitting = ref(false)
+const errorMessage = ref('')
+
+// 数据状态到达/变化后，手填过的起始日不覆盖；未动过则随最新锚点重算（选股、刷新不打扰）
+watch(dataStatus, () => {
+  if (tier.value !== 'RANGE' && !startDateTouched.value) {
+    startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[tier.value])
+  }
+})
+
+// ===== 自定义范围（UI-03 用户反馈）：只留「范围起始日＋K线根数」一档 =====
+// 根数超过最新数据时服务端按合同拒绝（不静默截短）；前端自动收缩到可用根数并常驻提醒，
+// 创建仍走服务端复核。任何范围输入变化使旧校验/在途校验失效（版本守卫）。
+const rangeStart = ref(minusMonthsShanghai(anchorDate.value, 3))
+const rangeBarCount = ref(60)
 const rangePreview = ref<{ request: TrainingRangeRequest; preview: TrainingRangePreview } | null>(null)
 const previewing = ref(false)
+const clampNotice = ref('')
 let inputVersion = 0
 
 function resetRangeDefaults(): void {
-  rangeStart.value = defaultRangeStart()
-  rangeMonths.value = 3
-  rangeBarCount.value = 1
+  rangeStart.value = minusMonthsShanghai(anchorDate.value, 3)
+  rangeBarCount.value = 60
   rangePreview.value = null
+  clampNotice.value = ''
 }
 
 function currentRangeRequest(): TrainingRangeRequest {
-  if (rangeMode.value === 'latest') return { mode: 'latest', startDate: rangeStart.value }
-  if (rangeMode.value === 'bars') return { mode: 'bars', startDate: rangeStart.value, count: rangeBarCount.value }
-  return { mode: 'preset', startDate: rangeStart.value, months: rangeMonths.value }
+  return { mode: 'bars', startDate: rangeStart.value, count: rangeBarCount.value }
 }
 
-/** 任何范围输入（起点/月数/N/模式/股票/复权）变化：旧预览与在途预览全部失效，
- * 旧的错误提示（如"非法 N"）也随之作废——输入已改，错误文案不再成立。 */
+/** 任何范围输入（起点/根数/股票/复权）变化：旧校验与在途校验全部失效，旧的错误提示随之作废 */
 function onRangeInputChanged(): void {
   inputVersion += 1
   rangePreview.value = null
+  clampNotice.value = ''
   errorMessage.value = ''
 }
 
@@ -49,14 +130,10 @@ function onAdjustModeChanged(): void {
   if (tier.value === 'RANGE') onRangeInputChanged()
 }
 
-/** 生成预览：显式动作，完成后元信息可见供审阅；期间输入变化即丢弃（版本守卫） */
 async function generateRangePreview(): Promise<boolean> {
-  if (tier.value !== 'RANGE' || !selected.value) return false
-  // 预览与提交共用同一校验：非法 N 在此报错保留原输入，绝不静默缩量后发请求
-  if (rangeMode.value === 'bars' && !isBarCountValid(rangeBarCount.value)) {
-    errorMessage.value = '训练根数 N 必须是正整数（当前输入无效），请修正后重新生成预览'
-    return false
-  }
+  if (tier.value !== 'RANGE' || !selected.value || previewing.value) return false
+  // 非法 N 不预览（避免输入中途刷错误）；提交路径另行校验报错并保留原输入
+  if (!isBarCountValid(rangeBarCount.value)) return false
   const versionAtRequest = inputVersion
   const requestAtRequest = currentRangeRequest()
   previewing.value = true
@@ -67,37 +144,88 @@ async function generateRangePreview(): Promise<boolean> {
       range: requestAtRequest,
       adjustMode: adjustMode.value,
     })
-    // await 之后重读输入（版本＋请求内容）：期间任何编辑/模式/股票/复权变化都使结果过期
     if (versionAtRequest !== inputVersion ||
         JSON.stringify(currentRangeRequest()) !== JSON.stringify(requestAtRequest)) {
       return false
     }
     rangePreview.value = { request: requestAtRequest, preview }
-    errorMessage.value = '' // 成功生成预览后，此前的非法输入错误不再成立
+    errorMessage.value = ''
     return true
-  } catch {
-    if (versionAtRequest === inputVersion) rangePreview.value = null
+  } catch (error) {
+    if (versionAtRequest !== inputVersion) return false
+    rangePreview.value = null
+    // 根数超过最新数据（服务端 INSUFFICIENT_DATA 不截短）：自动收缩到可用根数并重试
+    const message = error instanceof Error ? error.message : ''
+    if (requestAtRequest.mode === 'bars' && /可用日线仅|INSUFFICIENT_DATA/.test(message)) {
+      const clamped = await clampPreviewToLatest(versionAtRequest, requestAtRequest)
+      if (clamped) return true
+    }
+    if (versionAtRequest === inputVersion) errorMessage.value = message || '范围校验失败，请重试'
     return false
   } finally {
     if (versionAtRequest === inputVersion) previewing.value = false
   }
 }
 
-/** 当前输入是否有匹配的有效预览（请求内容逐字段一致） */
+/** 用 latest 模式取「起始日到最新日线」的实际根数，收缩后重新校验；全程受版本守卫保护 */
+async function clampPreviewToLatest(versionAtRequest: number, requestAtRequest: TrainingRangeRequest): Promise<boolean> {
+  try {
+    if (!selected.value) return false
+    const latest = await previewTrainingRange({
+      code: selected.value.code,
+      market: selected.value.market,
+      range: { mode: 'latest', startDate: requestAtRequest.startDate },
+      adjustMode: adjustMode.value,
+    })
+    if (versionAtRequest !== inputVersion || latest.barCount < 1) return false
+    rangeBarCount.value = latest.barCount
+    const clampedRequest: TrainingRangeRequest = { mode: 'bars', startDate: requestAtRequest.startDate, count: latest.barCount }
+    const preview = await previewTrainingRange({
+      code: selected.value.code,
+      market: selected.value.market,
+      range: clampedRequest,
+      adjustMode: adjustMode.value,
+    })
+    if (versionAtRequest !== inputVersion ||
+        JSON.stringify(currentRangeRequest()) !== JSON.stringify(clampedRequest)) {
+      return false
+    }
+    rangePreview.value = { request: clampedRequest, preview }
+    clampNotice.value = `所选根数超过最新数据，已自动截取到最新数据截止日：实际 ${preview.barCount} 根（${preview.startDate} ~ ${preview.endDate}）。如需更少请调小根数，或先更新日线数据`
+    errorMessage.value = ''
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** 当前输入是否有匹配的有效校验（请求内容逐字段一致） */
 function hasMatchingPreview(request: TrainingRangeRequest): boolean {
   const held = rangePreview.value
   if (!held) return false
-  const a = JSON.stringify(held.request)
-  const b = JSON.stringify(request)
-  return a === b
+  return JSON.stringify(held.request) === JSON.stringify(request)
 }
-const initialCash = ref<number>(1_000_000)
-const adjustMode = ref<'forward' | 'raw'>('forward')
-const submitting = ref(false)
-const errorMessage = ref('')
+
+let previewTimer: ReturnType<typeof setTimeout> | null = null
+/** 自动校验：自定义范围下选中股票且输入合法时防抖触发（UI-03：去掉意义不明的手动按钮） */
+function schedulePreviewGeneration(): void {
+  if (tier.value !== 'RANGE' || !selected.value) return
+  if (previewTimer) clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => {
+    previewTimer = null
+    if (hasMatchingPreview(currentRangeRequest())) return
+    void generateRangePreview()
+  }, 400)
+}
+
+watch([tier, rangeStart, rangeBarCount, adjustMode, selected], () => {
+  if (tier.value !== 'RANGE' || !selected.value) return
+  if (hasMatchingPreview(currentRangeRequest())) return
+  schedulePreviewGeneration()
+})
+
 // 开始训练守卫（DATA-05 收敛）：以 freshness 为准——stale/unknown 先弹"建议先更新"，
-// current（官方离线日历判定已最新）零打扰直接创建。needsUpdate 仅为旧服务端兼容回退，
-// 不再驱动确认框（否则周末/节假日启发误报会与首页绿色"已最新"自相矛盾）。
+// current（官方离线日历判定已最新）零打扰直接创建。needsUpdate 仅为旧服务端兼容回退。
 const showDataConfirm = ref(false)
 const dataCutoff = computed(() => dataStatus.value?.sourceMaxDate ?? '未知')
 const shouldSuggestDataUpdate = computed(() => {
@@ -117,27 +245,15 @@ const tiers: Array<{ value: Tier | 'RANGE'; label: string }> = [
   { value: 'RANGE', label: '自定义范围' },
 ]
 
-async function onQuery(): Promise<void> {
-  if (!query.value.trim()) { suggestions.value = []; return }
-  try {
-    const result = await searchStocks(query.value.trim())
-    suggestions.value = result.items.slice(0, 8)
-  } catch {
-    suggestions.value = []
-  }
-}
-
-function choose(stock: Stock): void {
-  selected.value = stock
-  query.value = `${stock.code} ${stock.name}`
-  suggestions.value = []
-  onRangeInputChanged() // 换股票使旧范围预览失效
-}
-
-/** 预设点击：回到旧五档直接生效；点「自定义范围」则重置默认区间（起点回退3自然月、3个月） */
+/** 预设点击＝从锚点（最新数据日）回退对应周期重新生成起始日；自定义则重置默认区间 */
 function onTierClick(value: Tier | 'RANGE'): void {
   tier.value = value
-  if (value === 'RANGE') resetRangeDefaults()
+  if (value === 'RANGE') {
+    resetRangeDefaults()
+  } else {
+    startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[value])
+    startDateTouched.value = false
+  }
   onRangeInputChanged()
 }
 
@@ -155,7 +271,7 @@ async function performCreate(): Promise<void> {
   if (submitting.value) return
   errorMessage.value = ''
   if (!selected.value) {
-    errorMessage.value = '请先搜索并选择一只股票'
+    errorMessage.value = '请先选择一只股票（在代码或名称框输入，从下拉选择或输完整代码/名称自动匹配）'
     return
   }
   const cash = Number(initialCash.value)
@@ -168,19 +284,23 @@ async function performCreate(): Promise<void> {
       errorMessage.value = '请选择范围起始日'
       return
     }
-    if (rangeMode.value === 'bars' && !isBarCountValid(rangeBarCount.value)) {
-      errorMessage.value = '训练根数 N 必须是正整数（当前输入无效），请修正后再开始训练'
+    if (!isBarCountValid(rangeBarCount.value)) {
+      errorMessage.value = 'K 线根数必须是正整数（当前输入无效），请修正后再开始训练'
+      return
+    }
+    if (previewing.value) {
+      errorMessage.value = '范围校验生成中，请稍候再点击「开始训练」'
       return
     }
     const request = currentRangeRequest()
-    // 预览必须创建前可见供审阅：无匹配当前输入的预览时先生成并停下让用户确认，不直接创建
+    // 校验必须创建前可见供审阅：无匹配当前输入的校验时先生成并停下让用户确认
     if (!hasMatchingPreview(request)) {
       const ok = await generateRangePreview()
       if (!ok) {
-        errorMessage.value = '生成范围预览失败，请重试'
+        errorMessage.value = errorMessage.value || '范围校验失败，请重试'
         return
       }
-      errorMessage.value = '已生成范围预览，请核对下方预览信息后再次点击「开始训练」'
+      errorMessage.value = '已生成范围校验，请核对下方信息后再次点击「开始训练」'
       return
     }
     submitting.value = true
@@ -197,8 +317,9 @@ async function performCreate(): Promise<void> {
       emit('created', { enabled: recordingEnabled.value, params: { ...params, start_date: preview.startDate } })
     } catch (error) {
       if (error instanceof Error && /409|RANGE_PREVIEW_STALE|过期|预览/.test(error.message)) {
-        onRangeInputChanged() // TTL/409：旧预览失效，需要重新生成审阅
-        errorMessage.value = '范围预览已失效，请重新生成预览并确认'
+        onRangeInputChanged() // TTL/409：旧校验失效，自动重新生成
+        schedulePreviewGeneration()
+        errorMessage.value = '范围校验已失效，请核对下方最新校验信息后再次点击「开始训练」'
       } else {
         errorMessage.value = error instanceof Error ? error.message : '创建失败'
       }
@@ -250,15 +371,19 @@ function confirmStartAnyway(): void {
     </header>
 
     <section class="launcher-form">
-      <div class="form-field wide">
+      <div class="form-field wide stock-field">
         <label>股票</label>
-        <input v-model="query" placeholder="搜索代码或名称，如 600519 或 贵州茅台" @input="onQuery" />
-        <div v-if="suggestions.length" class="suggestions">
-          <button v-for="stock in suggestions" :key="stock.code" @click="choose(stock)">
-            <strong>{{ stock.code }}</strong><span>{{ stock.name }}</span><small>{{ stock.market.toUpperCase() }}</small>
-          </button>
+        <div class="stock-input-row">
+          <input v-model="codeText" placeholder="股票代码，如 600519" aria-label="股票代码" @input="onCodeInput" />
+          <input v-model="nameText" placeholder="股票名称，如 贵州茅台（可用拼音首字母 GZMT）" aria-label="股票名称" @input="onNameInput" />
+          <div v-if="suggestions.length" class="suggestions">
+            <button v-for="stock in suggestions" :key="stock.code" @click="choose(stock)">
+              <strong>{{ stock.code }}</strong><span>{{ stock.name }}</span><small>{{ stock.market.toUpperCase() }}</small>
+            </button>
+          </div>
         </div>
-        <small v-if="selected" class="form-hint">已选：{{ selected.name }}（{{ selected.code }}，数据截至 {{ selected.lastDate ?? 'N/A' }}）</small>
+        <small v-if="matchHint" class="form-hint">{{ matchHint }}</small>
+        <small v-if="selected" class="form-hint">已选：{{ selected.name }}（{{ selected.code }}，数据截至 {{ selected.lastDate ?? 'N/A' }}）；重新选择请清空任一框</small>
       </div>
 
       <div class="form-field">
@@ -268,55 +393,38 @@ function confirmStartAnyway(): void {
         </div>
       </div>
 
-      <div v-if="tier === 'RANGE'" class="form-field">
-        <label>范围模式</label>
-        <div class="tier-grid">
-          <button :class="{ selected: rangeMode === 'preset' }" @click="rangeMode = 'preset'; onRangeInputChanged()">起始日＋月数</button>
-          <button :class="{ selected: rangeMode === 'latest' }" @click="rangeMode = 'latest'; onRangeInputChanged()">起始日到最新日线</button>
-          <button :class="{ selected: rangeMode === 'bars' }" @click="rangeMode = 'bars'; onRangeInputChanged()">起始日＋根数</button>
-        </div>
-      </div>
-
       <div class="form-row">
         <div class="form-field">
-          <label>{{ tier === 'RANGE' ? '范围起始日' : '起始日' }}</label>
-          <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" />
+          <label>起始日</label>
+          <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" @input="startDateTouched = true" />
           <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged" />
-          <small v-if="tier !== 'RANGE'" class="form-hint">起始日之前最多 840 根 K 线同屏显示</small>
-          <small v-else class="form-hint">默认按上海日历回退 3 个自然月（月末自动对齐）</small>
+          <small v-if="tier !== 'RANGE'" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
+          <small v-else class="form-hint">默认为最新数据日回退 3 个自然月（月末自动对齐）</small>
         </div>
-        <div v-if="tier === 'RANGE' && rangeMode === 'preset'" class="form-field">
-          <label>训练月数</label>
-          <div class="tier-grid">
-            <button v-for="m in RANGE_MONTH_OPTIONS" :key="m" :class="{ selected: rangeMonths === m }" @click="rangeMonths = m; onRangeInputChanged()">{{ m }}个月</button>
-          </div>
-        </div>
-        <div v-else-if="tier === 'RANGE' && rangeMode === 'bars'" class="form-field">
-          <label>训练根数 N</label>
-          <input v-model.number="rangeBarCount" type="number" min="1" step="1" @input="onRangeInputChanged" />
-          <small class="form-hint">从起始日（含）向后的日线根数，至少 1</small>
-        </div>
-        <div v-else class="form-field">
+        <div v-if="tier !== 'RANGE'" class="form-field">
           <label>初始资金</label>
           <input v-model.number="initialCash" type="number" min="10000" step="10000" />
         </div>
+        <div v-else class="form-field">
+          <label>K 线根数</label>
+          <input v-model.number="rangeBarCount" type="number" min="1" step="1" @input="onRangeInputChanged" />
+          <small class="form-hint">从起始日（含）向后的日线根数，至少 1</small>
+        </div>
       </div>
 
-      <div v-if="tier === 'RANGE' && (rangeMode === 'latest' || rangeMode === 'bars')" class="form-field">
+      <div v-if="tier === 'RANGE'" class="form-field">
         <label>初始资金</label>
         <input v-model.number="initialCash" type="number" min="10000" step="10000" />
       </div>
 
       <div v-if="tier === 'RANGE'" class="form-field wide">
-        <div class="form-row" style="align-items:center">
-          <button class="ghost-button" :disabled="previewing || !selected" @click="generateRangePreview">{{ previewing ? '生成预览中…' : '生成范围预览' }}</button>
-          <small class="form-hint">创建前请先核对预览；任何输入改动都会使预览失效</small>
-        </div>
+        <div v-if="clampNotice" class="form-hint clamp-notice">{{ clampNotice }}</div>
         <div v-if="rangePreview" class="form-hint">
-          <strong>范围预览</strong>：<template v-if="rangePreview.request.mode === 'bars'">从 {{ rangePreview.request.startDate }}（含）共 {{ rangePreview.request.count }} 根</template><template v-else-if="rangePreview.request.mode === 'latest'">从 {{ rangePreview.request.startDate }} 到最新日线</template><template v-else>从 {{ rangePreview.request.startDate }} 共 {{ rangePreview.request.months }} 个月</template>；
+          <strong>范围校验</strong>：从 {{ rangePreview.request.startDate }}（含）共 {{ rangePreview.request.count }} 根；
           实际 {{ rangePreview.preview.startDate }} ~ {{ rangePreview.preview.endDate }}，共 {{ rangePreview.preview.barCount }} 根日线
           <span v-if="rangePreview.preview.notes.length">；{{ rangePreview.preview.notes.join('；') }}</span>
         </div>
+        <div v-else-if="previewing" class="form-hint">范围校验生成中…</div>
       </div>
 
       <!-- 双盲遮蔽已从 V1 移除（股票由用户手动选定，隐藏名称无意义）；

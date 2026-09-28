@@ -64,8 +64,8 @@ test('复制标签页的续录指针不会产生同会话双写', async ({ page,
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('600519')
-  await page.getByRole('button', { name: /600519 贵州茅台/ }).click()
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.getByRole('status').filter({ hasText: '正在记录' })).toBeVisible()
