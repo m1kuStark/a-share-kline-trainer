@@ -4,7 +4,7 @@ M4-HISTORY-01 交付：训练真实结算（提前/到期）后，提供历史�
 
 | 任务 | 入口 |
 |---|---|
-| API 参数/错误契约 | [api.ts](../api.ts)：`GET /api/trainings/history`、`GET /api/trainings/:id/report` |
+| API 参数/错误契约 | [api.ts](../../api.ts)：`GET /api/trainings/history`、`GET /api/trainings/:id/report` |
 | 列表/报告事实口径 | [history-report.ts](../history-report.ts)：`historyList`、`historyReport`、`settledFact` |
 | 回归 | [history-report.test.ts](../../../test/history-report.test.ts)（23 项：分类/稳定排序/分页/冻结手算/损坏行隔离/no-future oracle） |
 

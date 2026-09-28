@@ -19,7 +19,7 @@ import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDa
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
-const emit = defineEmits<{ ended: [] }>()
+const emit = defineEmits<{ ended: []; 'open-history': [] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
 const bars = ref<Bar[]>([])
@@ -731,6 +731,8 @@ void load()
         <label class="keep-recording"><input v-model="keepRecording" type="checkbox" :disabled="finishingSession || recording.finalized.value" />保留到本机训练历史</label>
         <p v-if="endError" class="error-text" role="alert">{{ endError }}</p>
         <button class="trade-action buy" :disabled="finishingSession" @click="backToLauncher">完成，返回首页</button>
+        <!-- M4-HISTORY-01 最小入口：结算完成后可直接进入历史训练成绩单（不改账户/录制行为） -->
+        <button class="ghost-button" :disabled="finishingSession" @click="emit('open-history')">查看历史成绩单</button>
         <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出本场录制</button>
         <button class="ghost-button" @click="settledView = null">继续查看图表</button>
       </div>

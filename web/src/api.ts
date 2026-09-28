@@ -148,13 +148,13 @@ export interface Bar {
 export interface EquityPoint { date: string; equity: number }
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) { super(message); this.name = 'ApiError' }
+  constructor(message: string, readonly status: number, readonly code?: string) { super(message); this.name = 'ApiError' }
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
-  const payload = await response.json().catch(() => ({})) as T & { error?: string; message?: string }
-  if (!response.ok) throw new ApiError(payload.message ?? payload.error ?? `请求失败（${response.status}）`, response.status)
+  const payload = await response.json().catch(() => ({})) as T & { error?: string; message?: string; code?: string }
+  if (!response.ok) throw new ApiError(payload.message ?? payload.error ?? `请求失败（${response.status}）`, response.status, payload.code)
   return payload
 }
 
@@ -260,6 +260,99 @@ export async function saveDrawings(id: number, drawings: Drawing[], keepalive = 
   await request(`/api/trainings/${id}/drawings`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(drawings), keepalive,
   })
+}
+
+// ===== 结算历史与只读事实成绩单（M4-HISTORY-01；只读查询，运行中训练存在时服务端 409） =====
+
+export type HistoryRangeMode = 'tier' | 'preset' | 'latest' | 'bars'
+
+/** 结算方式（不认证数据完整性）：complete=到期结算，early-settled=提前结算 */
+export type HistoryClassification = 'complete' | 'early-settled'
+
+export interface HistoryItem {
+  id: number
+  code: string
+  name: string
+  tier: TrainingTier
+  rangeMode: HistoryRangeMode
+  classification: HistoryClassification
+  startDate: string
+  settleDate: string | null
+  initialCash: number
+  finalEquity: number | null
+  returnRate: number | null
+  tradeCount: number
+  integrity: 'ok' | 'unavailable'
+  /** integrity=unavailable 时的中文原因 */
+  integrityReason?: string
+}
+
+export interface HistoryListPayload {
+  total: number
+  limit: number
+  offset: number
+  items: HistoryItem[]
+}
+
+export function fetchTrainingHistory(params: { limit?: number; offset?: number } = {}): Promise<HistoryListPayload> {
+  const search = new URLSearchParams()
+  if (params.limit !== undefined) search.set('limit', String(params.limit))
+  if (params.offset !== undefined) search.set('offset', String(params.offset))
+  const query = search.toString()
+  return request(`/api/trainings/history${query ? `?${query}` : ''}`)
+}
+
+export interface HistoryReportTraining {
+  id: number
+  tier: TrainingTier
+  rangeMode: HistoryRangeMode
+  code: string
+  name: string
+  market: string
+  startDate: string
+  plannedEnd: string
+  settleDate: string
+  classification: HistoryClassification
+  adjustMode: 'forward' | 'raw'
+  blind: boolean
+  initialCash: number
+  createdAt: string
+  range?: {
+    mode: 'preset' | 'latest' | 'bars'
+    requestedStart: string
+    requestedEnd: string | null
+    startDate: string
+    endDate: string
+    barCount: number
+  }
+}
+
+export interface HistoryReportTrade {
+  seq: number
+  date: string
+  side: 'buy' | 'sell'
+  price: number
+  shares: number
+  amount: number
+  fee: number
+}
+
+export interface HistoryReportPayload {
+  training: HistoryReportTraining
+  rules: TrainingRulesView
+  finalEquity: number
+  /** 比率；UI 层转百分比 */
+  returnRate: number
+  tradeCount: number
+  trades: HistoryReportTrade[]
+  equityCurve: EquityPoint[]
+  drawings: Drawing[] | null
+  drawingsStatus: 'ok' | 'unavailable'
+  drawingsReason?: string
+}
+
+export function fetchTrainingReport(id: number): Promise<HistoryReportPayload> {
+  return request(`/api/trainings/${id}/report`)
 }
 
 // ===== 日线数据更新（R1：状态检查 + 触发更新） =====

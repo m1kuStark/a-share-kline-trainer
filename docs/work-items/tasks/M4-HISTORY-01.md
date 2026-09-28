@@ -5,10 +5,10 @@
   "id": "M4-HISTORY-01",
   "title": "结算历史到事实成绩单",
   "owner": "GLM-5.3-Flash",
-  "state": "active",
+  "state": "review",
   "milestone": "M4",
   "summary": "在已接受 V1 基线 888778c 上交付完整用户行为：真实结算一局后进入历史训练列表，打开只读事实成绩单查看分类、初始/最终权益、收益率、逐笔成交、已保存权益曲线与画线并返回；运行中/放弃不出现，任何 running 存在时新接口 409 拒答。不实现排行、最大回撤、胜率、盈亏比、基准超额、训练时钟、成交理由或条件单。",
-  "next_action": "按 control-handoff-20260928-53 合同先 RED 后 GREEN 实现五 scope（list/report/ui/no-future/compat），完成后回调 GPT 集中审查。",
+  "next_action": "执行已完成（服务 23/23、相邻回归 48/48、Journey 4/4 retries0、深浅1440/840截图主代理实查），等待 GPT 按 control-handoff-20260928-53 集中审查五 scope。",
   "allowed_paths": [
     "server/src/api.ts",
     "server/src/train/history-report.ts",
@@ -49,9 +49,11 @@
     "reason": "新增历史查询与只读成绩单产品规格（specs/training/history.md）、用户说明（user/training-history.md）及两处 README 最小链接；roadmap §2.7 标注本片已交付范围与仍未交付范围。"
   },
   "verification_refs": [
-    "docs/verification/2026-09/M4-HISTORY-01/server-red-green.md"
+    "docs/verification/2026-09/M4-HISTORY-01/server-red-green.md",
+    "docs/verification/2026-09/M4-HISTORY-01/journey-red-green.md",
+    "docs/verification/2026-09/M4-HISTORY-01/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "candidate pending review（base 888778c；最终 HEAD 由门禁 proof 与执行报告记录，未上 main）",
   "acceptance_ref": null
 }
 ```

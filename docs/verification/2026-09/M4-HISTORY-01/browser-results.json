@@ -1,0 +1,302 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/m4-history.spec.ts",
+      "--retries=0"
+    ],
+    "configFile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\playwright.config.ts",
+    "rootDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01/.runs/run-f454b5c9-e1fd-4746-a36d-2d9fa9558241/artifacts/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\.runs\\run-f454b5c9-e1fd-4746-a36d-2d9fa9558241\\artifacts\\browser-results.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\.runs\\run-f454b5c9-e1fd-4746-a36d-2d9fa9558241\\artifacts\\html"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "m4-history.spec.ts",
+      "file": "m4-history.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "空历史：列表空态可返回创建训练",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4865,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-28T12:20:52.675Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbb62fb14823fd7ca1a9-36dbac4635562306b960",
+          "file": "m4-history.spec.ts",
+          "line": 101,
+          "column": 1
+        },
+        {
+          "title": "结算→历史列表→事实成绩单→返回（深色1440）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13239,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-28T12:20:57.952Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbb62fb14823fd7ca1a9-3bbfd98198ca9f55c349",
+          "file": "m4-history.spec.ts",
+          "line": 114,
+          "column": 1
+        },
+        {
+          "title": "运行中守卫与放弃不入列表（浅色840）",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10912,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-28T12:21:11.204Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbb62fb14823fd7ca1a9-a450f56e11b7d3719300",
+          "file": "m4-history.spec.ts",
+          "line": 182,
+          "column": 1
+        },
+        {
+          "title": "详情A→B迟到响应不覆盖、不留永续loading；列表按settle_date DESC稳定排序",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 13351,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-09-28T12:21:22.124Z",
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\M4-HISTORY-01\\e2e\\m4-history.spec.ts",
+                        "line": 0,
+                        "column": 0
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "cbb62fb14823fd7ca1a9-844c8e9c496f4416b61a",
+          "file": "m4-history.spec.ts",
+          "line": 222,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-09-28T12:20:52.112Z",
+    "duration": 43750.195,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
