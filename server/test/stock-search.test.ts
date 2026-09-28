@@ -49,6 +49,8 @@ describe('stock search index', () => {
 
   it('returns everything for empty query and honors market filter', () => {
     expect(searchStockIndex(INDEX, '  ')).toHaveLength(4)
+    // 公开字段固定五项，索引内部键（codeLower/nameLower/initialsLower）不得外泄
+    expect(Object.keys(searchStockIndex(INDEX, '6005')[0])).toEqual(['code', 'market', 'name', 'bars', 'lastDate'])
     expect(codes(searchStockIndex(INDEX, '6005', 'sz'))).toEqual([])
     expect(codes(searchStockIndex(INDEX, '6005', 'sh'))).toEqual(['600519', '600589'])
   })

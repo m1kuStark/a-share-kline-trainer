@@ -38,14 +38,17 @@ export type StockSearchIndex = ReturnType<typeof buildStockSearchIndex>
 
 /**
  * 搜索口径（用户拍板）：前缀命中优先于子串命中；前缀含代码、名称与拼音首字母，
- * 子串仅代码与名称。空查询返回全部（调用方裁剪上限）。
+ * 子串仅代码与名称。空查询返回全部（调用方裁剪上限）。返回公开字段，不泄露索引内部键。
  */
 export function searchStockIndex(index: StockSearchIndex, q: string, market?: string): StockSearchItem[] {
   const query = q.trim().toLowerCase()
   const candidates = market ? index.filter(stock => stock.market === market) : index
-  if (!query) return [...candidates]
-  const prefix: StockSearchItem[] = []
-  const contains: StockSearchItem[] = []
+  const toPublic = (stock: IndexedStock): StockSearchItem => ({
+    code: stock.code, market: stock.market, name: stock.name, bars: stock.bars, lastDate: stock.lastDate,
+  })
+  if (!query) return candidates.map(toPublic)
+  const prefix: IndexedStock[] = []
+  const contains: IndexedStock[] = []
   for (const stock of candidates) {
     const isPrefix =
       stock.codeLower.startsWith(query) ||
@@ -57,5 +60,5 @@ export function searchStockIndex(index: StockSearchIndex, q: string, market?: st
       contains.push(stock)
     }
   }
-  return [...prefix, ...contains]
+  return [...prefix, ...contains].map(toPublic)
 }
