@@ -52,7 +52,7 @@
   "verification_refs": [
     "docs/verification/2026-09/TRAIN-01/report.md"
   ],
-  "integration_ref": "not integrated; task/TRAIN-01 candidate pending GPT review (control-handoff-20260928-43)",
+  "integration_ref": "v1-integration candidate 52889a70 (accepted code inherited unchanged)",
   "acceptance_ref": "docs/verification/2026-09/TRAIN-01/acceptance-45.md"
 }
 ```

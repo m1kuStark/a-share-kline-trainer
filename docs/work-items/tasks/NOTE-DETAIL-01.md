@@ -37,7 +37,7 @@
   "verification_refs": [
     "docs/verification/2026-09/NOTE-DETAIL-01/report.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "v1-integration candidate 52889a70 (accepted code inherited unchanged)",
   "acceptance_ref": "docs/verification/2026-09/NOTE-DETAIL-01/acceptance-42.md"
 }
 ```
