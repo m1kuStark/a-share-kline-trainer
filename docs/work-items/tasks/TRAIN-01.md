@@ -4,35 +4,63 @@
 {
   "id": "TRAIN-01",
   "title": "冻结训练规则并统一权息入账",
-  "owner": "unassigned",
-  "state": "planned",
+  "owner": "GLM-5.3-Flash",
+  "state": "closed",
   "milestone": "M5",
-  "summary": "费用/T+1每笔读全局设置，raw显示路径不入账权息。",
-  "next_action": "v0.3.2已发布；实施前冻结费用、T+1、复权和来源快照规则，并补旧训练兼容。",
+  "summary": "TRAIN-01五场景及F1-F3已通过GPT限定验收，保留TRAIN-RULES-SOURCE-OBSERVATION；准备隔离集成，未上main或发布。",
+  "next_action": "保留080cdb3/c0fa04c已接受范围；相同代码快进隔离候选，后续M5/DATA工作另按依赖，不重派本片。",
   "allowed_paths": [
-    "server/src/train/**",
     "server/src/db.ts",
+    "server/src/train/**",
+    "server/src/settings/**",
+    "server/src/api.ts",
+    "server/src/recording-context.ts",
+    "server/src/docs/recording-context.md",
     "server/test/**",
-    "docs/work-items/tasks/TRAIN-01.md",
+    "web/src/api.ts",
+    "web/src/App.vue",
+    "web/src/views/Launcher.vue",
+    "web/src/views/Training.vue",
+    "web/src/components/TrainingSettings.vue",
+    "web/src/settingsPanel.ts",
+    "e2e/training-rules.spec.ts",
+    "e2e/training-range.spec.ts",
     "docs/specs/training/rules.md",
+    "docs/specs/recording.md",
+    "docs/user/training-rules.md",
+    "docs/user/README.md",
+    "docs/work-items/tasks/TRAIN-01.md",
+    "docs/work-items/tasks/M5-01.md",
+    "docs/status.md",
+    "docs/verification/README.md",
+    "docs/verification/2026-09/TRAIN-01/**",
     "server/src/train/docs/accounting.md"
   ],
   "depends_on": [
-    "REC-01"
+    "REC-01",
+    "TRAIN-02"
   ],
   "docs_impact": {
     "update": [
       "docs/specs/training/rules.md",
+      "docs/specs/recording.md",
+      "docs/user/training-rules.md",
       "server/src/train/docs/accounting.md"
     ],
-    "reason": "未来实施时按实际diff同步行为和边界。"
+    "reason": "TRAIN-01 行为交付：快照冻结、设置API、raw权息一致、legacy保护与录像接线。"
   },
   "verification_refs": [
-    "docs/verification/architecture-audit-2026-09-17.json"
+    "docs/verification/2026-09/TRAIN-01/report.md"
   ],
-  "integration_ref": null,
-  "acceptance_ref": null
+  "integration_ref": "v1-integration candidate 52889a70 (accepted code inherited unchanged)",
+  "acceptance_ref": "docs/verification/2026-09/TRAIN-01/acceptance-45.md"
 }
 ```
 
-当前登记为后续任务，本轮文档迁移不实现其业务变更。
+实现事实（control-handoff-20260928-43，分支 task/TRAIN-01，基线 645ad6c）：
+
+- 规则快照：`trainings.rules_json`（version=1 不可变 JSON），迁移新增列+旧训练回填同事务（幂等、失败回滚、旧行逐字段不变）；旧训练按迁移时点观察值冻结（origin=legacy-migration），legacy raw 记 `legacy-raw-unverified` 并只读保护（409 `LEGACY_RAW_ACCOUNTING_UNVERIFIED`）。
+- 设置 API：`GET/PUT /api/settings/training`（`server/src/settings/training.ts`），两布尔严格校验、同事务整体更新、进入 drain 门闩；UI 局部弹层 `web/src/components/TrainingSettings.vue`（不卸载录制中训练、热键隔离经 `web/src/settingsPanel.ts`）。
+- 创建冻结：`commitTrainingCreation` 在 BEGIN IMMEDIATE 内读默认并与训练行/初始权益同事务；旧五档与 RANGE 同口径。
+- 本局只读快照：交易/可卖数量/recording-context 均读快照；损坏 409 `TRAIN_RULES_UNREADABLE` 零副作用。
+- 推进：async 行情读取后短事务重查 status/current_date（409 `TRAIN_STATE_CHANGED`），事务内重放最新余额，权息+推进日+权益点同事务；raw 新训练与 forward 同权息口径。

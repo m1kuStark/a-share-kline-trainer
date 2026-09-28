@@ -13,12 +13,12 @@
 ## TRAIN-ACCOUNT
 
 - 按当日原始收盘价成交；买入仓位以总权益计算，受现金约束向下取整到 100 股；卖出可按比例或股数，T+1 默认开。
-- 费用默认关闭；开启后佣金万 2.5、最低 5 元，卖出印花税 0.05%。引擎已有费用/T+1 设置读取，用户设置界面仍待 M5。
-- 现金分红入现金、送转增加股数、配股按现有足额自动认购口径处理；认购款增加取得成本，以 `position_events.cost_delta` 记录。
-- 当前实现的权息处理位于前复权训练路径；M5 开放“不复权”默认配置前须核查账户权息一致性，显示方式不应改变真实持仓权益。
+- 费用默认关闭；开启后佣金万 2.5、最低 5 元，卖出印花税 0.05%。是否收费与 T+1 由本局规则快照决定（见 TRAIN-RULE-SNAPSHOT），全局默认只影响新训练；设置入口见“训练默认设置”（[用户说明](../../user/training-rules.md)）。
+- 现金分红入现金、送转增加股数、配股按现有足额自动认购口径处理；认购款增加取得成本，以 `position_events.cost_delta` 记录。显示复权方式（raw/forward）不改变真实账户：新训练两模式都沿 `applyPositionEvents` 入账推进目标交易日的现金分红、送转、足额配股/不足放弃。
 - 成本线＝剩余持仓取得成本÷当前股数；含买入费及配股款，减仓按比例结转，清仓重置；现金分红只入现金。成本线与账户同源，不再以历史复权成交股数单独重放。
 - B/S 在图表下方独立窄条展示：橙底白字 B、天蓝底白字 S；密集同向聚合并可查看明细。成交明细保留真实价，图表投影使用 `chartPrice`。
 - 涨跌停和流动性不模拟；停牌/非交易日不能简单等同于下载失败，结算须依据数据覆盖范围判断。
+- 推进的异步行情读取之后，进入短 `BEGIN IMMEDIATE` 事务重读训练状态与当前日：期间已推进/结束返回 409 `TRAIN_STATE_CHANGED` 零写入；权息流水、推进日/close、权益点同事务提交或回滚，事务内重放最新账户余额。不引入部分配股、撮合算法或交易所清算新政策；权息日期覆盖范围如实见[账户与成本](../../../server/src/train/docs/accounting.md)。
 
 ## TRAIN-NO-FUTURE
 
@@ -28,6 +28,22 @@
 - 权息事件与账户同步入账，不能以“前复权已体现收益”为由省略。
 - 当前直接读取外部 TDX 文件，尚无历史数据版本冻结。R1 须识别末尾追加与历史修订；跨来源及完整历史复现须记录来源/版本，不能无声混用新旧口径。
 
-## TRAIN-RULE-SNAPSHOT
+## 范围模式训练（TRAIN-02 第二片）
 
-创建时固定规则与来源口径，默认设置仅影响新训练。当前全局费用/T+1读取与raw权息处理缺口统一在 [TRAIN-01](../../work-items/tasks/TRAIN-01.md)。实现见[训练模块](../../../server/src/train/README.md)。
+除旧五档周期外，创建训练可选三种范围模式：**起始日＋月数**（preset，合法月数 1/3/6/12/24）、**起始日到最新日线**（latest，终点为来源实际截止日）、**起始日＋根数**（bars，N 为正安全整数且至少 1）。范围默认起点为上海日历今天回退 3 个自然月，月末自动对齐（如 05-31 回退 3 月为 02-28），不使用 UTC 日期。
+
+创建前必须生成**范围预览**并供用户核对：预览只含请求/实际首末日、根数与 notes，不含未来 OHLC；任何输入（股票/模式/起点/月数/N/复权）变化都使旧预览与在途预览失效。提交携带与当前输入一致的 previewId，服务端复核失败（409 RANGE_PREVIEW_STALE/过期）须清空预览并提示重新生成；非法 N 拒绝并保留用户原输入，不静默缩量。范围训练 tier 记为 RANGE 哨兵并携带 `range.version=1` 元数据（`TrainingRangeMeta`），不伪装五档；录像持久化沿 schemaVersion=3 合同（见[录制规格](../recording.md)）。旧五档训练与旧录像语义完全不变。
+
+## TRAIN-RULE-SNAPSHOT（TRAIN-01 已交付）
+
+创建训练时冻结完整交易规则，默认设置只影响新训练。
+
+- **默认设置 API**：`GET/PUT /api/settings/training`，只开放费用开关与 T+1 开关（默认费用关、T+1 开），落既有 settings 键 `fees_enabled`/`t1_enabled` 并保留其他键。PUT 要求两项布尔齐备，非法类型/缺字段/未知字段 400 且零写；两值同一事务更新，不部分成功；重复保存安全，最后一次成功保存供未来创建使用。无 TDX 也可读写。费用数值沿固定口径（佣金万 2.5、最低 5 元、印花税万 5、一手 100 股、当日收盘成交、仓位按总权益），不开放费率编辑。此 API 进入业务 admission 门闩，draining 拒绝。
+- **创建冻结**：规则为版本化不可变 JSON（`trainings.rules_json`，version=1），含 feesEnabled、tPlusOne、固定数值与执行口径、`corporateActionPolicy='cash-shares-v1'`、capturedAt、origin='created'。旧五档与 RANGE 范围训练共用 `commitTrainingCreation` 的 BEGIN IMMEDIATE 提交段：默认在提交边界内读取（等待期间更新的默认进入最终快照），规则与训练行、初始权益同事务共提交，失败全回滚。
+- **快照数值即执行口径（返修 F1）**：解析器支持的数值域为比率 ∈ [0,1]、最低佣金 ∈ [0,1e6]、lotSize ∈ [1,1e6] 整数、capturedAt 可解析时间；被认可的 commissionRate/minimumCommission/stampDutyRate/lotSize 由同一快照传入账户计算（佣金、印花税、整手取整全部按快照执行），支持域之外或损坏/版本不支持的完整快照 409 `TRAIN_RULES_UNREADABLE` 零写，不回退全局常量或模块默认。设置 API 仍只接受两个布尔，不开放费率编辑。
+- **本局只读快照**：交易、可卖数量、`recording-context.rules` 及相关返回一律读本局快照，全局默认修改后不漂移；服务端主导，客户端不能伪造本局规则。快照缺失/损坏/版本不支持返回 409 `TRAIN_RULES_UNREADABLE` 零副作用，绝不静默回退当前设置继续交易。
+- **旧训练迁移（返修 F2）**：首次迁移以 `cache_meta.train_rules_migration` 标记识别，与加列、回填同一事务（DDL 可回滚，PRAGMA 留在事务外）。旧行只在该一次事务中冻结“迁移时点实际可见”的费用/T+1 与固定参数（origin='legacy-migration'、capturedAt 为迁移时点，UI 明示“旧训练按升级时设置继续，历史设置未记录”）。标记写入后任何后续启动不再回填：已迁移库中新出现的 NULL/损坏快照保持 NULL（读取 409），不得按当前默认重冻或伪装成旧局迁移。首次合法迁移、幂等、失败回滚、旧流水逐字段不变、legacy raw 只读保护均保持。
+- **录像一致**：`recording-context.rules` 来自本局快照，origin/capturedAt 以可选元数据如实透出；observedAt 仍为观察时点。不改录像 schema、不新增事件类型；旧录像缺字段按原 reader 读取。
+- 来源观察边界：kind=tdx、创建时可取得的截止元信息、已有 RANGE fingerprint（五档为 null）；不向普通响应或录像加入完整本机路径，不声称保存可恢复的历史行情字节（DATA-03/04 未交付）。
+
+实现见[训练模块](../../../server/src/train/README.md)、[设置 API](../../../server/src/settings/training.ts)；用户说明见[训练规则与费用](../../user/training-rules.md)。

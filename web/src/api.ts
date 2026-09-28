@@ -11,9 +11,49 @@ export interface Stock {
   lastDate: string | null
 }
 
+/** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02 冻结合同） */
+export type TrainingTier = Tier | 'RANGE'
+
+/** 服务端 TrainingRangeMeta 的前端镜像（version/mode/requested/actual/指纹与notes） */
+export interface TrainingRangeMeta {
+  version: 1
+  mode: 'preset' | 'latest' | 'bars'
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  sourceFingerprint: string
+  notes: string[]
+}
+
+export interface TrainingRangeRequest {
+  mode: 'preset' | 'latest' | 'bars'
+  startDate: string
+  months?: number
+  endDate?: string | null
+  count?: number
+}
+
+export interface TrainingRangePreview {
+  version: 1
+  previewId: string
+  code: string
+  market: string
+  request: TrainingRangeRequest
+  requestedStart: string
+  requestedEnd: string | null
+  startDate: string
+  endDate: string
+  barCount: number
+  notes: string[]
+  sourceFingerprint: string
+  expiresAt: string
+}
+
 export interface TrainingMeta {
   id: number
-  tier: Tier
+  tier: TrainingTier
   code: string | null
   name: string | null
   market: string
@@ -28,6 +68,40 @@ export interface TrainingMeta {
   adjustMode: 'forward' | 'raw'
   initialCash: number
   createdAt: string
+  /** 本局冻结的交易规则（TRAIN-01）；快照损坏时服务端交易路径显式报错 */
+  rules?: TrainingRulesView
+  /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
+  range?: TrainingRangeMeta
+}
+
+/** 服务端训练规则快照镜像（trainings.rules_json v1；TRAIN-01 冻结合同） */
+export interface TrainingRulesView {
+  version: number
+  feesEnabled: boolean
+  tPlusOne: boolean
+  commissionRate: number
+  minimumCommission: number
+  stampDutyRate: number
+  lotSize: number
+  execution: string
+  weightBasis: string
+  corporateActionPolicy: 'cash-shares-v1' | 'legacy-raw-unverified'
+  capturedAt: string
+  origin: 'created' | 'legacy-migration'
+}
+
+/** 训练默认设置视图（GET/PUT /api/settings/training；capturedAt/origin 属于已冻结规则，不在默认里） */
+export interface TrainingSettingsView {
+  version: number
+  feesEnabled: boolean
+  tPlusOne: boolean
+  commissionRate: number
+  minimumCommission: number
+  stampDutyRate: number
+  lotSize: number
+  execution: string
+  weightBasis: string
+  corporateActionPolicy: string
 }
 
 export interface AccountView {
@@ -97,11 +171,39 @@ export function fetchEnv(): Promise<{ status: string; tdxRoot: string | null; da
   return request('/api/env')
 }
 
+// ===== 训练默认设置（TRAIN-01）：费用开关与 T+1 开关，默认只影响新训练 =====
+
+export function fetchTrainingSettings(): Promise<TrainingSettingsView> {
+  return request('/api/settings/training')
+}
+
+export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean }): Promise<TrainingSettingsView> {
+  return request('/api/settings/training', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
 export function searchStocks(q: string): Promise<{ items: Stock[]; total: number }> {
   return request(`/api/stocks?q=${encodeURIComponent(q)}`)
 }
 
-export function createTraining(input: { tier: Tier; code: string; start_date: string; initial_cash?: number; blind?: boolean; adjust_mode?: string }): Promise<{ training: TrainingMeta }> {
+/** 范围预览：只返回日期元信息与指纹，不含任何未来 OHLC（TRAIN-02 冻结合同）。
+ * 服务端响应形如 { preview: {...} }，此处解包并对缺字段失败。 */
+export async function previewTrainingRange(input: { code: string; market: string; range: TrainingRangeRequest; adjustMode?: string }): Promise<TrainingRangePreview> {
+  const payload = await request<{ preview?: TrainingRangePreview }>('/api/training-ranges/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!payload.preview || !payload.preview.previewId) {
+    throw new Error('范围预览响应格式错误（缺少 preview 字段）')
+  }
+  return payload.preview
+}
+
+export function createTraining(input: { tier?: Tier; code: string; start_date?: string; initial_cash?: number; blind?: boolean; adjust_mode?: string; range?: TrainingRangeRequest; previewId?: string }): Promise<{ training: TrainingMeta }> {
   return request('/api/trainings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -179,6 +281,26 @@ export interface DataRefreshResult {
   message: string
 }
 
+/** 市场数据新鲜度（服务端 FRESH-01 纯模块按官方离线日历逐次重算） */
+export type DataFreshnessState = 'current' | 'stale' | 'unknown'
+
+export interface DataFreshness {
+  state: DataFreshnessState
+  expectedDate: string | null
+  sourceMaxDate: string | null
+  checkedAt: string
+  reason: string
+}
+
+/** 注入协调器的交易日历来源元信息（离线官方资料，不联网） */
+export interface DataCalendarInfo {
+  id: string
+  from: string
+  through: string
+  sourceUrl: string
+  version: string
+}
+
 export interface DataStatus {
   state: DataState
   needsUpdate: boolean
@@ -190,6 +312,10 @@ export interface DataStatus {
   lastCheckedAt: string | null
   lastResult: DataRefreshResult | null
   revisionWarning: string | null
+  /** 市场新鲜度：绿色"已最新"只对应 current；unknown/stale 不得显示绿色 */
+  freshness: DataFreshness
+  /** null＝服务端未注入可信日历（freshness 必为 unknown） */
+  calendar: DataCalendarInfo | null
 }
 
 export function fetchDataStatus(): Promise<DataStatus> {

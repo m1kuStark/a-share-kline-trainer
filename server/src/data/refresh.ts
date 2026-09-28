@@ -12,8 +12,10 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from '../config.js'
 import { applyCatalogChanges, scanCatalogChanges, type CatalogChanges } from '../tdx/catalog.js'
 import { applyAdjustmentChanges, scanAdjustmentChanges, type AdjustmentChanges } from '../tdx/adjustment-cache.js'
+import { OFFICIAL_SSE_2026_BUNDLE, type CalendarBundle } from './calendar.js'
+import { assessFreshness, COMPLETENESS_NOTE, type FreshnessResult } from './freshness.js'
 import { selectSource } from './selection.js'
-import { createTdxSource } from './tdxSource.js'
+import { createTdxSource, probeTdxDayDirectories } from './tdxSource.js'
 import { appendFailureLog, applyScanResult, loadRefreshLog, loadScanBaseline, publishBatchVersion, type RefreshLogEntry, type RefreshOutcome } from './snapshot.js'
 import type { DailySource, ScanOutcome } from './source.js'
 
@@ -53,6 +55,20 @@ export interface DataStatusPayload {
     message: string
   } | null
   revisionWarning: string | null
+  /**
+   * 市场数据新鲜度（FRESH-01 纯模块，每次 getStatus 用注入时钟重算）：
+   * current 才可显示绿色已最新；unknown 表示无法确认应收收盘日；stale 表示落后。
+   * needsUpdate 保留为兼容提示（最近工作日启发），界面不得再用它断言"已最新"。
+   */
+  freshness: FreshnessResult
+  /** 注入日历的来源元信息；null＝未注入可信日历（freshness 必为 unknown） */
+  calendar: {
+    id: string
+    from: string
+    through: string
+    sourceUrl: string
+    version: string
+  } | null
 }
 
 export interface CreateRefreshCoordinatorOptions {
@@ -62,6 +78,13 @@ export interface CreateRefreshCoordinatorOptions {
   tdxSource?: DailySource
   /** 测试注入：发布屏障前最后一次 await，用于把看门狗超时插到目录/权息扫描之后 */
   beforePublish?: () => Promise<void>
+  /** 测试注入时钟：getStatus 每次用它重算 freshness；默认取系统当前时间 */
+  now?: () => Date
+  /**
+   * 交易日历捆绑：undefined＝内置上交所2026离线官方日历；null＝显式无日历
+   * （freshness 保守 unknown）。生产不联网，日历来自 server/src/data/calendar.ts。
+   */
+  calendar?: CalendarBundle | null
 }
 
 interface RunningTask { id: string }
@@ -89,8 +112,14 @@ export function createDataRefreshCoordinator(
 ) {
   const timeoutMs = options.timeoutMs ?? REFRESH_TIMEOUT_MS
   const tdxSource = options.tdxSource ?? createTdxSource(config.tdxRoot)
+  const nowFn = options.now ?? (() => new Date())
+  // undefined=内置官方2026离线日历；null=显式无日历（freshness 保守 unknown）
+  const calendarBundle: CalendarBundle | null = options.calendar === undefined ? OFFICIAL_SSE_2026_BUNDLE : options.calendar
   let running: RunningTask | null = null
   let lastState: Exclude<RefreshState, 'running'> = 'idle'
+  // SETUP-DRAIN-01：在途刷新任务完整生命周期（含 202 返回后的 watchdog/catch/finally 写库）
+  // 的可观测 Promise；排空控制器据此等待真实完成。running 置 null 不等于任务结束。
+  const inFlightTaskPromises = new Set<Promise<void>>()
 
   function complete(taskId: string, state: RefreshState, entry: RefreshLogEntry | null): void {
     if (running?.id !== taskId) return
@@ -232,7 +261,12 @@ export function createDataRefreshCoordinator(
       running = null
       return null
     }
-    void runTask(taskId, selection.source)
+    const taskPromise: Promise<void> = runTask(taskId, selection.source)
+    inFlightTaskPromises.add(taskPromise)
+    void taskPromise.then(
+      () => { inFlightTaskPromises.delete(taskPromise) },
+      () => { inFlightTaskPromises.delete(taskPromise) },
+    )
     return { taskId, state: 'running', joined: false }
   }
 
@@ -268,6 +302,29 @@ export function createDataRefreshCoordinator(
       ? `检测到 ${lastSuccess.revised} 只股票历史日线疑似修订，已有训练按旧数据口径继续，建议核对`
       : null
 
+    // 市场新鲜度：每次状态查询用注入时钟与官方离线日历重算（廉价GET即可跨15:00/跨日/跨休市重判）。
+    // sourceMaxDate 是目录最大日，不证明每股完整；首次未扫描时 freshness 亦为 unknown。
+    let freshness = assessFreshness({
+      now: nowFn(),
+      sourceMaxDate: lastSuccess?.sourceMaxDate ?? null,
+      calendar: calendarBundle?.calendar,
+    })
+    // 来源失效降级（有界结构探测，非全盘扫描）：配置了 TDX 来源且已有成功扫描时，
+    // 只要当前 vipdoc 不可达（selection 退化为 none）或日线目录结构不可读，
+    // 沿用上次扫描的结果宣称 current/stale 都会误导（来源失效≠市场数据过期，
+    // 历史末日不能证明当前来源已验证），明确降级为"可读性未知"；
+    // 目录恢复后探测通过即自动回到正常判定。
+    if (config.tdxRoot && lastSuccess) {
+      const structuredOk = await probeTdxDayDirectories(config.tdxRoot)
+      if (!selection.tdxAvailable || !structuredOk) {
+        freshness = {
+          ...freshness,
+          state: 'unknown',
+          reason: `本地数据来源当前不可用或日线目录不可读（整个数据目录缺失、目录结构损坏或权限不足），数据可读性未知，无法确认新鲜度。${COMPLETENESS_NOTE}。`,
+        }
+      }
+    }
+
     return {
       state,
       needsUpdate,
@@ -279,10 +336,25 @@ export function createDataRefreshCoordinator(
       lastCheckedAt: last?.finishedAt ?? null,
       lastResult: last ? entryToLastResult(last) : null,
       revisionWarning,
+      freshness,
+      calendar: calendarBundle
+        ? {
+            id: calendarBundle.source.id,
+            from: calendarBundle.source.from,
+            through: calendarBundle.source.through,
+            sourceUrl: calendarBundle.source.sourceUrl,
+            version: calendarBundle.source.version,
+          }
+        : null,
     }
   }
 
-  return { start, getStatus }
+  return {
+    start,
+    getStatus,
+    /** 当前在途刷新任务的完整 Promise 快照（SETUP-DRAIN-01 排空观测用） */
+    pendingTasks: (): readonly Promise<void>[] => [...inFlightTaskPromises],
+  }
 }
 
 export type DataRefreshCoordinator = ReturnType<typeof createDataRefreshCoordinator>

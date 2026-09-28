@@ -1,11 +1,12 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
-import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rename, rm, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
+import type { CalendarBundle } from '../src/data/calendar.js'
 import { createDataRefreshCoordinator, lastWeekdayBeforeToday, type DataRefreshCoordinator } from '../src/data/refresh.js'
 import { registerOnlineSource, type DailySource, type ScanOutcome } from '../src/data/source.js'
 import { createTdxSource, TDX_SOURCE_NAME } from '../src/data/tdxSource.js'
@@ -118,6 +119,8 @@ type StatusBody = {
   lastCheckedAt: string | null
   lastResult: { finishedAt: string; outcome: string; added: number; removed: number; revised: number; message: string } | null
   revisionWarning: string | null
+  freshness: { state: 'current' | 'stale' | 'unknown'; expectedDate: string | null; sourceMaxDate: string | null; checkedAt: string; reason: string }
+  calendar: { id: string; from: string; through: string; sourceUrl: string; version: string } | null
 }
 
 async function getStatus(app: FastifyInstance): Promise<StatusBody> {
@@ -642,6 +645,286 @@ describe('data refresh service', () => {
     } finally {
       database.close()
       await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+// ===== DATA-05：freshness 与日历注入的状态集成 =====
+
+/** 合成日历捆绑：无休市日、覆盖面宽，配合注入时钟获得确定性判定 */
+function syntheticBundle(): CalendarBundle {
+  return {
+    calendar: { id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', closedDates: [] },
+    source: {
+      id: 'synthetic-integration', from: '2020-01-01', through: '2030-12-31', version: 'test',
+      sourceUrl: 'https://example.test/calendar', sourceTitle: '测试日历', timezone: 'Asia/Shanghai',
+      retrievedAt: '2026-01-01T00:00:00Z', snapshotSha256: 'deadbeef', officialNotice: '测试',
+      publishedDate: null, corroborationNote: '测试注入，非官方',
+    },
+  }
+}
+
+describe('data status freshness integration', () => {
+  it('n) /api/data/status carries freshness and built-in offline calendar metadata', async () => {
+    const root = await createFixtureRoot()
+    const { app, database } = await createApp(root)
+    try {
+      const status = await getStatus(app)
+      expect(['current', 'stale', 'unknown']).toContain(status.freshness.state)
+      expect(status.freshness.checkedAt).toBeTruthy()
+      expect(() => new Date(status.freshness.checkedAt)).not.toThrow()
+      // 任何状态的原因都声明"末日不证明每股完整"
+      expect(status.freshness.reason).toContain('来源末日不证明所有股票完整')
+      // 内置官方2026离线日历元信息（不联网）
+      expect(status.calendar).not.toBeNull()
+      expect(status.calendar).toMatchObject({
+        id: 'sse-2026-annual',
+        from: '2026-01-01',
+        through: '2026-12-31',
+      })
+      expect(status.calendar?.sourceUrl).toContain('sse.com.cn')
+      expect(status.calendar?.version).toBeTruthy()
+      // legacy 字段一个不少
+      for (const key of ['state', 'needsUpdate', 'reason', 'source', 'tdx', 'online', 'sourceMaxDate', 'lastCheckedAt', 'lastResult', 'revisionWarning']) {
+        expect(status).toHaveProperty(key)
+      }
+    } finally {
+      await app.close()
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('o) failed task downgrades freshness to readability-unknown when the day structure is gone', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3) // 注入时钟的应收日：D2 后第3个工作日，必然领先于夹具末日
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`), // 上海15:00整
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+      expect(first.freshness.expectedDate).toBe(expected)
+
+      // 破坏 sh lday 目录 → 任务失败；结构探测同步失败，freshness 不得沿用上次扫描宣称 stale/current
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      const second = await runCoordinatorAndWait(coordinator)
+      expect(second.state).toBe('failed')
+      expect(second.lastResult?.outcome).toBe('failed')
+      expect(second.freshness.state).toBe('unknown')
+      expect(second.freshness.reason).toContain('可读性未知')
+      expect(second.freshness.sourceMaxDate).toBe(D2)
+      expect(second.freshness.expectedDate).toBe(expected)
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('r) unreadable day structure downgrades freshness without any task failing, and recovers', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // 移除 sh/lday：available()（vipdoc 级）仍为真，但状态查询的结构探测把 freshness 降级
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(true)
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+      expect(degraded.freshness.expectedDate).toBe(expected)
+      expect(degraded.freshness.sourceMaxDate).toBe(D2)
+
+      // 目录恢复后探测通过，自动回到正常判定（无需任何扫描任务）
+      await writeStockDayFile(root, 'sh', 'sh600519.day', [dateInt(D1), dateInt(D2)])
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('s) online source failure preserves computed freshness (no structural probe for online sources)', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let scans = 0
+    const unregister = registerOnlineSource(fakeOnlineSource('失败在线源', async () => {
+      scans += 1
+      if (scans >= 2) throw new Error('在线源扫描失败（测试注入）')
+      return {
+        kind: 'online', name: '失败在线源', totalStocks: 1, added: 0, removed: 0,
+        revised: 0, baseline: true, sourceMaxDate: '2026-01-08', files: [],
+      }
+    }))
+    const coordinator = directCoordinator(database, null, {
+      calendar: syntheticBundle(),
+      now: () => new Date('2026-01-12T07:00:00Z'), // 周一15:00，应收 01-12 > 来源末日 01-08 → stale
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+      const second = await runCoordinatorAndWait(coordinator)
+      expect(second.state).toBe('failed')
+      // 在线源无结构探测：freshness 保持按上次成功扫描的计算值
+      expect(second.freshness.state).toBe('stale')
+      expect(second.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      unregister()
+      database.close()
+    }
+  })
+
+  it('p) freshness current does not block the manual re-read entry', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let scans = 0
+    const unregister = registerOnlineSource(fakeOnlineSource('测试在线源', async () => {
+      scans += 1
+      return {
+        kind: 'online', name: '测试在线源', totalStocks: 1, added: 0, removed: 0,
+        revised: 0, baseline: scans === 1, sourceMaxDate: '2026-01-08', files: [],
+      }
+    }))
+    const coordinator = directCoordinator(database, null, {
+      calendar: syntheticBundle(),
+      now: () => new Date('2026-01-08T07:00:00Z'), // 周四15:00，应收=2026-01-08=来源末日 → current
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.freshness.state).toBe('current')
+      expect(first.freshness.expectedDate).toBe('2026-01-08')
+      // current 状态下手动"重新读取本地日线"依然可用（返回新任务并到终态）
+      const started = await coordinator.start()
+      expect(started).not.toBeNull()
+      expect(started?.joined).toBe(false)
+      await waitFor(async () => (await coordinator.getStatus()).state !== 'running')
+      const final = await coordinator.getStatus()
+      expect(final.state).toBe('unchanged')
+      expect(final.freshness.state).toBe('current')
+    } finally {
+      unregister()
+      database.close()
+    }
+  })
+
+  // ===== 2026-09-26 review：两项来源失效边界（P2） =====
+
+  it('t) entire vipdoc disappearing downgrades freshness even though the selected source becomes none', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // 整个 vipdoc 消失：selection.source 退化为 none、tdxAvailable=false，
+      // 但 lastSuccess.sourceMaxDate 仍在——不得据此宣称 current/stale（历史末日≠当前来源已验证）。
+      await rename(join(root, 'vipdoc'), join(root, 'vipdoc.saved'))
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(false)
+      expect(degraded.tdx.available).toBe(false)
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+      expect(degraded.freshness.sourceMaxDate).toBe(D2)
+      expect(degraded.freshness.expectedDate).toBe(expected)
+
+      // 来源恢复后自动回到正常判定
+      await rename(join(root, 'vipdoc.saved'), join(root, 'vipdoc'))
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('u) lday replaced by a plain file downgrades freshness (directory type must be validated)', async () => {
+    const root = await createFixtureRoot()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const expected = shiftWeekdays(D2, 3)
+    const coordinator = directCoordinator(database, root, {
+      calendar: syntheticBundle(),
+      now: () => new Date(`${expected}T07:00:00Z`),
+    })
+    try {
+      const first = await runCoordinatorAndWait(coordinator)
+      expect(first.state).toBe('updated')
+      expect(first.freshness.state).toBe('stale')
+
+      // lday 换成同名普通文件：access(F_OK) 探测应失效——与 scanTdx 同口径视为结构不可读
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true, force: true })
+      await writeFile(join(root, 'vipdoc', 'sh', 'lday'), 'not a directory')
+      const degraded = await coordinator.getStatus() as unknown as StatusBody
+      expect(degraded.source.available).toBe(true) // vipdoc 仍在
+      expect(degraded.freshness.state).toBe('unknown')
+      expect(degraded.freshness.reason).toContain('可读性未知')
+
+      // 恢复真实目录结构后自动回到正常判定
+      await rm(join(root, 'vipdoc', 'sh', 'lday'), { force: true })
+      await writeStockDayFile(root, 'sh', 'sh600519.day', [dateInt(D1), dateInt(D2)])
+      const recovered = await coordinator.getStatus() as unknown as StatusBody
+      expect(recovered.freshness.state).toBe('stale')
+      expect(recovered.freshness.reason).not.toContain('可读性未知')
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
+
+// ===== SETUP-DRAIN-01：在途刷新任务完整生命周期可观测（202 返回后的后台 Promise） =====
+
+describe('SETUP-DRAIN-01: 在途刷新任务生命周期可观测', () => {
+  it('pendingTasks 在 start 后可见完整任务 Promise；完成/失败后清空；running 置 null 不等于任务结束', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    let releaseScan!: (outcome: ScanOutcome) => void
+    const unregister = registerOnlineSource(fakeOnlineSource('排空观测在线源', (): Promise<ScanOutcome> => new Promise<ScanOutcome>(resolve => { releaseScan = resolve })))
+    try {
+      const coordinator = createDataRefreshCoordinator(
+        database,
+        { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null },
+        { timeoutMs: 5_000 },
+      )
+      const started = await coordinator.start()
+      expect(started).not.toBeNull()
+      expect(started?.joined).toBe(false)
+      // 202 已可返回，但完整任务 Promise 仍在途（watchdog/catch/finally 写库未结束）
+      expect(coordinator.pendingTasks().length).toBe(1)
+      // running 字段先于 Promise 结束置 null：running===null 不能证明任务完成
+      releaseScan({
+        kind: 'online', name: '排空观测在线源', totalStocks: 0,
+        added: 0, removed: 0, revised: 0, sourceMaxDate: null, baseline: true, files: [],
+      } as ScanOutcome)
+      await waitFor(() => coordinator.pendingTasks().length === 0)
+      expect(coordinator.pendingTasks().length).toBe(0)
+    } finally {
+      unregister()
+      database.close()
     }
   })
 })

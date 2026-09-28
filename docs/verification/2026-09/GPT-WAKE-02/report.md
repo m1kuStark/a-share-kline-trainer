@@ -1,32 +1,38 @@
-# GPT-WAKE-02 控制器 gpt_direct 自动派发验证记录
+# GPT-WAKE-02 · DATA-05 收敛修复报告（工作树 task/DATA-05-integration）
 
-2026-09-25 晚。目标：真实端到端演练"控制器自动派发 gpt_direct → pinned Codex 会话完成提交 → 独立验证收据 → verified"。
+日期：2026-09-26。基线：`d4aa4e8`（干净、单写者）。授权：control-handoff-20260926-05（GPT 裁决续接）。
+说明：裁决详情 `integrator-review-20260926.md`（DATA-05 节）在本工作树中不存在（控制层持有），本报告按派发单三项修复逐项记录证据。
 
-## 实现范围（全部合成测试先行 RED→GREEN）
+## 修复1：ticker/poll 乱序导致永久「更新中」
 
-- runner config schema v2：可选 `gpt` 段（runner_entry/home/session_id/sandbox/timeout_minutes），v1 兼容；sandbox 允许 workspace-write 与 danger-full-access。
-- `run_gpt_job`＋`build_gpt_argv`：镜像 run_job 契约（argv 数组、owned 进程、ORCH_* env、jobs 注册表归属 id/worktree/logPath）；run_codex 新增 `--log`（固定事件日志路径）与 `--add-dir`（沙箱附加可写目录）。
-- controller_loop 门：`_gpt_takeover` 在 route=gpt_direct＋next_action=take_over＋policy `gpt_dispatch=true`＋runner config gpt 段**四条件齐备**时自动派发；GPT worker 的 `assessment=continuous_judgment` 合法（其本身就是该路由执行者），不触发 GLM 的 worker_escalation 自升级。
-- **新增 `resume --verify-only`**：工作已提交到 expected_commit 而验证未跑（升级/外部中断后）时，操作者显式授权后跳过重派、直接对最后一份报告跑 run_verification＋verify_evidence。全部身份/cleanup/pin/scope 校验与普通 resume 相同。
+- 根因：`web/src/dataStatus.ts` 中 60s 廉价检查（ticker）与 running 轮询（poll）共用 `checkSeq`。当更新的检查先返回终态时，旧 poll 响应按序号过期被丢弃；旧代码中 ticker 的 `checkDataStatus` 不清 `dataPolling` 也不触发 `onDataFinished`，过期 poll 也不补排程 → 轮询标记永久为真，UI 永久「更新中」。
+- 修复：新增统一终态应用 `applyStatus()`（任何来源的最新检查：running 交回轮询循环；终态终止 `dataPolling` 并恰好触发一次轻提示）；新增 `ensurePollingAlive()` + 在途检查计数 `checksInFlight`，在每个检查结算路径（finally）保活轮询循环——乱序丢弃过期响应后不会丢失排程；隐藏时保活自动跳过（保留暂停语义）。
+- 行为测试（非源码正则）：`server/test/data-status-store-order.test.ts`，用受控 deferred promise＋假定时器驱动真实异步路径，覆盖 4 个场景：ticker 终态先到/旧 poll 后到、poll 终态先到/ticker 后到不重复触发、ticker 报 running 而旧 poll 在途（过期后必须补排程继续循环）、无轮询时终态不误触轻提示。
+- 红灯证据：[red-first-order-test.txt](./red-first-order-test.txt)（对未修复 HEAD 代码 3/4 失败，exit=1；修复后 4/4 通过）。
 
-## 真实演练（合成任务 DRILL-GPT-01，真实 Codex 会话 01a0d79e）
+## 修复2：Launcher 与首页提示自相矛盾
 
-临时 git 仓库：app.py 值为 0、check.py 断言为 1；合同 task_shape=continuous_judgment（路由直选 gpt_direct/take_over）；policy gpt_dispatch=true；runner v2 gpt 段指向真实 run_codex.py 与用户 Desktop 中枢会话。
+- 场景：2026-09-26（周六）15:00 上海、cutoff 09-24——官方日历 freshness=current（首页绿色"已最新"），而旧 `needsUpdate` 启发式按 09-25（中秋休市）误报 → Launcher 弹"建议先更新日线数据"，与首页相反。
+- 修复：`web/src/views/Launcher.vue` 守卫改为 `shouldSuggestDataUpdate`（freshness 驱动）：current 零打扰直接创建，stale/unknown 先弹确认；`needsUpdate` 降级为旧服务端（无 freshness 字段）兼容回退。弹窗文案增加 unknown 分支："最新交易日待确认。建议先重新读取本地日线再开始训练"（不声称"可能落后"）。
+- 测试：前端契约测试更新守卫与文案断言（保留其余断言）；新增 e2e `g)` 用例直接编码上述矛盾场景（首页绿色＋开始训练零打扰），journey 7/7 通过。
 
-1. **首轮（workspace-write）**：GPT 被唤醒（355s），改对 app.py、check 通过、按 REPORT 协议写报告——但 **codex 沙箱把 `.git` 保护为只读，git add 无法建 index.lock**；GPT 诚实报告 status=partial＋needs_replan，控制器正确落 waiting_control（no_commit→fault 路径）。结论：执行类派发必须 danger-full-access（与 GLM worker 的 yolo 对位）。
-2. **二轮（danger-full-access）attempt 1**：GPT 完成编辑＋**真实提交 fbed6e1**＋check.log 留证；报告完整（facts 带 sha256、observed=fbed6e1），仅因 unexpected_findings 含一条环境备注触发保守升级 → waiting_control。
-3. **attempt 2（resume 后同会话续接）**：GPT 确认"已提交、无需重复提交"，未产生新提交 → 控制器 no_commit fault——暴露"工作已提交但验证未跑"时无补验证入口的结构缺口（该缺口先于 GPT 存在，对 GLM 修复同样适用）。
-4. **verify-only 补完**：`resume --verify-only --expected-commit fbed6e1b…` → 独立验证通过 → **stage=verified**，收据 verify-2983099a…，tested_commit=fbed6e1b，can_promote=false（语义正确），租约释放。
+## 修复3：来源失效仍显示 available/current
 
-三轮真实 GPT 调用全部续接同一会话（resumedFrom=01a0d79e…），usage 显示大线程缓存命中 ≈94%（cached 261,212,828 / input 277,159,559 为其中一轮）；GPT 用量无计费基线，只记 provider 计数。
+- 根因：`isTdxAvailable` 只检查 `vipdoc` 目录，`vipdoc/sh/lday` 被移除后状态查询仍报 `source.available=true` 且 freshness 沿用上次扫描宣称 current/stale。
+- 修复（有界廉价结构探测，非全盘扫描、非每分钟扫描）：`DailySource` 增加可选 `probeReadability()`；`tdxSource` 实现并导出 `probeTdxDayDirectories`（对 sh/sz/bj 中已存在的市场目录检查 `lday` 可读，容错口径与扫描一致：市场目录缺失=正常，lday 缺失=不可读；≤3 次 access）。协调器 `getStatus` 在选中 TDX 且探测失败时把 freshness 降级为 unknown，reason 明确"数据可读性未知"，不得沿用上次扫描宣称已最新；expectedDate/sourceMaxDate 保留，目录恢复后自动回到正常判定。在线来源无结构探测，扫描失败时 freshness 保持计算值。
+- 测试：`data-refresh.test.ts` 改写 o（失败任务＋结构缺失→unknown 可读性未知）、新增 r（降级与自动恢复生命周期：available 仍真、reason 含"可读性未知"、恢复后回到 stale）、s（在线源失败保持 stale、无"可读性未知"）。
 
-## 测试与门禁
+## 门禁与退出码
 
-- agent-routing 262 项（252 存量＋10 新增：GPT 配置/argv 契约/派发成功/双旗标缺失等待/verify-only 补验证）、agent-monitor 90 项、docs 0 错误。
-- 已验证：派发链路、同会话续接、worker 报告协议、双旗标缺省回退 waiting_control、verify-only 补验证、失败降级（锁忙/超时/注册表不一致走原 fault 路径）。
-- 边界：Desktop 持锁时的等待释放（--wait-writer-minutes）在控制器路径未单测；`--output-schema` 结构化决策仍未启用；fork 迁移未实测；成本节省不做宣称。
+| 命令（仓库根） | 结果 | exit |
+|---|---|---|
+| `npm test --` 七套件（freshness26/calendar7/timing6/refresh18/store-order4/catalog3/contract17） | 81 passed | 0（[final-test-run.txt](./final-test-run.txt)） |
+| `npm run build` | typecheck:web + tsc + vite 通过（chunk 警告为既有） | 0（[build.txt](./build.txt)） |
+| `npm run journey -- e2e/data-update.spec.ts --retries=0` | 7 passed / 0 unexpected；evidence：.runs/run-e0fbc3fc-27ff-451a-9abf-1ca4cb798627 | 0（[journey-run.txt](./journey-run.txt)） |
+| 行为测试对未修复 HEAD 复跑 | 3/4 失败（红） | 1（[red-first-order-test.txt](./red-first-order-test.txt)） |
 
-## 证据
+## 范围与遗留
 
-- 演练脚本：`drill.py`（本目录）；控制存储/收据/rollout 原件在仓库外本机留存（`%TEMP%\gpt-wake-drill-*`、`~/.codex/headroom-cache/codex-bridge/`），不入 Git。
-- 命令与结果摘录：`evidence.jsonl`（本目录）。
+- 本次改动文件：`web/src/dataStatus.ts`、`web/src/views/Launcher.vue`（授权扩入）、`server/src/data/{source,tdxSource,refresh,freshness}.ts`、`server/test/{data-status-store-order,data-refresh,frontend-data-status-contract}.test.ts`、`e2e/data-update.spec.ts`、`docs/specs/market-data/requirements.md`、本目录。
+- 遗留（超出本次授权范围，留集成人裁决）：`web/src/views/Training.vue:484,525` 训练页小按钮的 title/attention 类仍由旧 `needsUpdate` 兼容位驱动，周末/节假日会与首页 freshness=current 并存（仅强调样式与悬浮文案，不弹窗、不阻断）。
+- FRESH-01 纯模块仅追加导出 `COMPLETENESS_NOTE`，判定逻辑零改动。

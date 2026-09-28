@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { registerApi } from '../src/api.js'
-import { migrateDatabase } from '../src/db.js'
+import { backfillTrainingRules, migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 import { drawingPriceBasis } from '../src/train/drawing-price-basis.js'
 
@@ -19,7 +19,7 @@ function insertTraining(
   database: DatabaseSync,
   options: { adjustMode?: 'forward' | 'raw'; startDate?: string; currentDate?: string | null; blind?: boolean; code?: string } = {},
 ): number {
-  return Number(database.prepare(`
+  const id = Number(database.prepare(`
     INSERT INTO trainings (tier, code, name, market, start_date, planned_end, status, blind, adjust_mode, initial_cash, created_at, current_date, current_close)
     VALUES ('6M', ?, ?, 'sh', ?, '2025-12-31', 'running', ?, ?, 100000, '2025-06-01T00:00:00Z', ?, 4.81)
   `).run(
@@ -30,6 +30,9 @@ function insertTraining(
     options.adjustMode ?? 'forward',
     options.currentDate === undefined ? '2025-06-20' : options.currentDate,
   ).lastInsertRowid)
+  // TRAIN-01：直插旧行按当前设置补齐规则快照夹具（默认费用关、T+1 开）
+  backfillTrainingRules(database)
+  return id
 }
 
 // 权息事件直接写入缓存表（与 refreshAdjustmentCache 相同的 m/c 口径），参数绑定，不走二进制 gbbq。

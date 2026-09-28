@@ -1,0 +1,24 @@
+{
+  "baseline": "e9d7e8c（feat(train): add range preview, create re-check and legacy tier compatibility）",
+  "worktree": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-02-integration，分支 task/TRAIN-02-integration",
+  "contract": "docs/work-items/prompts/TRAIN-02-integration.md（7c01b11 冻结）",
+  "environment": "Windows 11 (win32 10.0.26200)，Node >=24，Git Bash；合成 .day 夹具于临时目录，SQLite :memory:，TRAINER_DB 未接入个人库，未读 TDX 真实目录",
+  "redBaseline": {
+    "command": "npm test -- server/test/train-range-preview.test.ts --maxWorkers=2",
+    "result": "15 failed | 1 passed (旧tier兼容守卫按实现前现状通过)",
+    "when": "实现前工作树（基线 7c01b11 + 新测试文件）"
+  },
+  "checks": [
+    { "command": "npm test -- server/test/train-range.test.ts server/test/train-engine.test.ts server/test/train-range-preview.test.ts --maxWorkers=2", "exitCode": 0, "result": "3 files, 66 passed", "when": "e9d7e8c 提交树复跑" },
+    { "command": "npm run build:server", "exitCode": 0, "when": "e9d7e8c 提交树复跑" },
+    { "command": "npm test -- server/test/train-range.test.ts server/test/train-engine.test.ts server/test/train-range-preview.test.ts server/test/api.test.ts server/test/train-account.test.ts server/test/recording-chart.test.ts --maxWorkers=2", "exitCode": 0, "result": "6 files, 93 passed", "when": "实现后、提交前工作树" },
+    { "command": "npm test", "exitCode": 0, "result": "66 files, 874 passed", "when": "实现后、提交前工作树（内容与 e9d7e8c 一致）" }
+  ],
+  "dataScope": "仅合成日线（2026-07-01~2026-08-14 工作日序列）与合成 gbbq 记录；无个人训练库、无 TDX 真实目录、无网络数据",
+  "outOfScope": [
+    "web/src/**（第二片表单与预览守卫）",
+    "web/src/recording/**（第二片录制 schema）",
+    "docs/specs/training/rules.md 与 docs/specs/recording.md（随第二片/集成同步）",
+    "server/src/train/range.ts（RANGE-01 权威实现未改动）"
+  ]
+}

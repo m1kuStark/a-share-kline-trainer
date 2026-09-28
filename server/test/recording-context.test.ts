@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { registerApi } from '../src/api.js'
-import { migrateDatabase } from '../src/db.js'
+import { backfillTrainingRules, migrateDatabase } from '../src/db.js'
 import { readAppInfo, registerRecordingContextRoutes, resolveProjectRoot } from '../src/recording-context.js'
 import type { AppConfig } from '../src/config.js'
 
@@ -45,7 +45,10 @@ function insertTraining(
       adjust_mode, initial_cash, created_at, current_date, current_close)
     VALUES ('3M', '600519', '贵州茅台', 'sh', ?, ?, ?, 0, ?, 1000000, '2026-09-18T00:00:00.000Z', ?, 1500)
   `).run(row.startDate, row.plannedEnd, row.status, row.adjustMode, row.currentDate)
-  return Number(result.lastInsertRowid)
+  const id = Number(result.lastInsertRowid)
+  // TRAIN-01：录像规则来自本局冻结快照；直插旧行按当前设置补齐快照夹具
+  backfillTrainingRules(database)
+  return id
 }
 
 function insertEvent(
@@ -119,12 +122,16 @@ describe('recording-context API', () => {
     }
   })
 
-  it('rules 读取 settings 当前实际值而非默认冻结值', async () => {
+  it('rules 来自本局冻结快照：创建/迁移后修改 settings 不漂移，并如实透出规则来源元数据', async () => {
     const context = await createApp(database => {
+      // 冻结时点观察值：费用开、T+1 关
       database.prepare("INSERT INTO settings (key, value) VALUES ('fees_enabled', '1'), ('t1_enabled', '0')").run()
     })
     try {
       const id = insertTraining(context.database)
+      // 快照冻结之后修改全局默认：录像规则不得漂移（TRAIN-01）
+      context.database.prepare("UPDATE settings SET value = '0' WHERE key = 'fees_enabled'").run()
+      context.database.prepare("UPDATE settings SET value = '1' WHERE key = 't1_enabled'").run()
       const response = await context.app.inject({ method: 'GET', url: `/api/trainings/${id}/recording-context` })
       expect(response.statusCode).toBe(200)
       const body = response.json()
@@ -137,9 +144,14 @@ describe('recording-context API', () => {
         stampDutyRate: 0.0005,
         execution: 'same-day-raw-close',
         weightBasis: 'total-equity',
+        corporateActionPolicy: 'cash-shares-v1',
+        rulesOrigin: 'legacy-migration',
         adjustMode: 'forward',
       })
       expect(Number.isNaN(Date.parse(body.rules.observedAt))).toBe(false)
+      expect(Number.isNaN(Date.parse(body.rules.rulesCapturedAt))).toBe(false)
+      // observedAt 是本次观察时点，rulesCapturedAt 是冻结时点；两者独立
+      expect(body.rules.observedAt).not.toBe(body.rules.rulesCapturedAt)
     } finally {
       await closeApp(context)
     }

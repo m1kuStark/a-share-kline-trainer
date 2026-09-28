@@ -10,6 +10,8 @@ export interface AppConfig {
   runId?: string
   staticDirectory?: string
   readyFile?: string
+  /** 受保护 setup 端点的控制令牌（只读环境透传；不生成、不持久化、不回显） */
+  controlToken: string | null
 }
 
 export async function loadConfig(): Promise<AppConfig> {
@@ -33,5 +35,6 @@ export async function loadConfig(): Promise<AppConfig> {
     runId,
     staticDirectory: process.env.TRAINER_STATIC_DIR,
     readyFile: process.env.TRAINER_READY_FILE,
+    controlToken: process.env.TRAINER_CONTROL_TOKEN?.trim() || null,
   }
 }

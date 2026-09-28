@@ -210,12 +210,12 @@ function parseJson(text: string): unknown {
   }
 }
 
-/** 按schema路由：v2直接校验；v1按迁移预算校验后转v2再校验；未知schema显式拒绝 */
+/** 按schema路由：v2直接校验；v3接受RANGE+range元数据；v1按迁移预算校验后转v2再校验；未知schema显式拒绝 */
 function validateBySchema(value: unknown, byteLength: number, budgets: RecordingFileBudgets): CompactRecordingFile {
   if (!isRecord(value)) fail('顶层', '必须是 JSON 对象')
-  if (value.schemaVersion === 2) {
+  if (value.schemaVersion === 2 || value.schemaVersion === 3) {
     if (byteLength > budgets.v2Bytes) {
-      fail('文件大小', `v2 录制文件 ${byteLength} 字节超过 v2 预算 ${budgets.v2Bytes} 字节（128MiB）`)
+      fail('文件大小', `v${value.schemaVersion} 录制文件 ${byteLength} 字节超过 v2 预算 ${budgets.v2Bytes} 字节（128MiB）`)
     }
     return validateCompactRecording(value)
   }
@@ -226,7 +226,7 @@ function validateBySchema(value: unknown, byteLength: number, budgets: Recording
     const v1 = validateRecording(value, { maxCheckpoints: V1_MIGRATION_MAX_CHECKPOINTS })
     return validateCompactRecording(compactRecording(v1))
   }
-  fail('schemaVersion', `不支持的录制文件版本（收到 ${JSON.stringify(value.schemaVersion)}），仅支持 1 或 2`)
+  fail('schemaVersion', `不支持的录制文件版本（收到 ${JSON.stringify(value.schemaVersion)}），仅支持 1、2 或 3`)
 }
 
 export async function readRecordingFile(blob: Blob): Promise<CompactRecordingFile> {

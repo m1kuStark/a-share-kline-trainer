@@ -14,10 +14,11 @@ import { DrawingOutbox } from '../drawingOutbox'
 import type { DrawingPriceBasis } from '../drawingPriceBasis'
 import { cycleDirection, nextTimeframe, MAX_VISIBLE_BARS } from '../chartNavigation'
 import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavoriteTools } from '../toolFavorites'
+import { trainingSettingsOpen } from '../settingsPanel'
 import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
-const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, string | number> } }>()
+const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
 const emit = defineEmits<{ ended: [] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
@@ -225,8 +226,22 @@ function onToolbarKeydown(event: KeyboardEvent): void {
 const training = computed(() => snapshot.value.training)
 const account = computed(() => snapshot.value.account)
 const returnPct = computed(() => ((account.value.equity - training.value.initialCash) / training.value.initialCash) * 100)
+// TRAIN-01：legacy raw 训练成绩未经验证，运行中禁止交易/推进/结算（服务端同样 409 兜底）
+const legacyRawLocked = computed(() =>
+  training.value.rules?.corporateActionPolicy === 'legacy-raw-unverified' && training.value.status === 'running')
+const rulesSummary = computed(() => {
+  const rules = training.value.rules
+  if (!rules) return ''
+  return `费用 ${rules.feesEnabled ? '开' : '关'} · T+1 ${rules.tPlusOne ? '开' : '关'}（本局冻结）`
+})
 const isTyping = (event: KeyboardEvent) => event.isComposing || !!(event.target as HTMLElement)?.closest?.('input, textarea, select, [contenteditable="true"]')
-const tierLabel = computed(() => ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier))
+const tierLabel = computed(() => {
+  if (training.value.tier === 'RANGE') {
+    const range = training.value.range
+    return range ? `自定义范围 ${range.startDate} ~ ${range.endDate}` : '自定义范围'
+  }
+  return ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier)
+})
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
   if (!drawTool.value) return message.value
@@ -413,6 +428,8 @@ function setTrainingUrl(): void {
 }
 
 function onKeydown(event: KeyboardEvent): void {
+  // 设置弹层打开期间完全隔离训练热键：不能从设置触发买卖/推进/画线
+  if (trainingSettingsOpen.value) return
   if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
@@ -513,6 +530,8 @@ void load()
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>
           <div class="training-meta">
             <span>{{ training.adjustMode === 'forward' ? '前复权' : '不复权' }}（已锁定）</span>
+            <span v-if="rulesSummary">{{ rulesSummary }}</span>
+            <span v-if="training.rules?.origin === 'legacy-migration'">旧训练按升级时设置继续，历史设置未记录</span>
             <span>起始 {{ training.startDate }}</span>
             <span>当前 <strong>{{ training.currentDate }}</strong></span>
             <span>计划结束 {{ training.plannedEnd }}</span>
@@ -525,12 +544,16 @@ void load()
         <button class="ghost-button data-refresh-btn" :class="{ 'is-updating': dataUpdating, attention: dataStatus?.needsUpdate && !dataUpdating, 'flash-ok': miniFlash === 'ok', 'flash-fail': miniFlash === 'fail' }" :disabled="dataUpdating" :title="miniTitle" :aria-label="`日线数据更新：${miniTitle}`" @click="onMiniRefresh">{{ miniLabel }}</button>
         <button class="ghost-button compact-icon-button" title="刷新图表" aria-label="刷新图表" :disabled="loading" @click="load"><RefreshCw :size="14" /></button>
         <button class="ghost-button compact-icon-button" title="回到最新K线" aria-label="回到最新K线" :disabled="loading" @click="chartRef?.resetView()"><SkipForward :size="14" /></button>
-        <button class="advance-button" :disabled="loading || training.status !== 'running'" title="推进下一日（空格）" @click="advance"><StepForward :size="14" />推进下一日</button>
-        <template v-if="training.status === 'running'"><button class="ghost-button" @click="requestEnd('settle')">提前结算</button><button class="ghost-button danger" @click="requestEnd('abandon')">放弃训练</button></template>
+        <button class="advance-button" :disabled="loading || legacyRawLocked || training.status !== 'running'" title="推进下一日（空格）" @click="advance"><StepForward :size="14" />推进下一日</button>
+        <template v-if="training.status === 'running'"><button class="ghost-button" :disabled="legacyRawLocked" @click="requestEnd('settle')">提前结算</button><button class="ghost-button danger" @click="requestEnd('abandon')">放弃训练</button></template>
         <button v-else class="ghost-button" @click="backToLauncher">返回首页</button>
       </div>
     </header>
 
+
+    <div v-if="legacyRawLocked" class="legacy-raw-banner" role="alert">
+      旧版不复权训练缺少完整权息记录，请保留记录后新建训练。本训练已只读：不能交易、推进或结算，可查看、导出录像或放弃。
+    </div>
 
     <section class="status-strip" aria-live="polite">
       <span class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
@@ -595,8 +618,8 @@ void load()
           <small>留空则按左侧比例卖出</small>
         </div>
         <div class="trade-actions">
-          <button class="trade-action buy" :disabled="training.status !== 'running'" @click="trade('buy')">买入</button>
-          <button class="trade-action sell" :disabled="training.status !== 'running'" @click="trade('sell')">卖出</button>
+          <button class="trade-action buy" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('buy')">买入</button>
+          <button class="trade-action sell" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('sell')">卖出</button>
         </div>
 
         <div class="panel-divider"></div>
@@ -722,5 +745,7 @@ void load()
 .recording-feedback { position: absolute; right: 0; top: 28px; z-index: 30; max-width: min(360px, 70vw); padding: 8px; white-space: normal; overflow-wrap: anywhere; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; }
 .shortcut-hint { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 .keep-recording { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 14px; }
+.legacy-raw-banner { margin: 8px 16px 0; padding: 8px 12px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; }
+:global(body.dark) .legacy-raw-banner { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .legacy-drawing-notice { white-space: normal; line-height: 1.5; }
 </style>

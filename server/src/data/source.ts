@@ -41,6 +41,11 @@ export interface DailySource {
   name: string
   /** 廉价可用性检查（不得做全量扫描） */
   available(): Promise<boolean>
+  /**
+   * 可选的廉价结构探测（比 available 更进一步、远轻于 scan）：检查扫描所需的目录结构
+   * 当前是否可读。未实现＝来源无可探测结构（状态查询跳过降级）。
+   */
+  probeReadability?(): Promise<boolean>
   /** 全市场扫描；previous 为上次基线，缺省/为空视为建立首个基线。
    *  任何文件级失败必须抛错（中文 message 指明文件），不得返回部分结果。 */
   scan(previous?: ScanBaseline): Promise<ScanOutcome>

@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, it } from 'vitest'
-import { migrateDatabase } from '../src/db.js'
+import { backfillTrainingRules, migrateDatabase } from '../src/db.js'
 import { buildChartSpace, trainingSnapshot } from '../src/train/engine.js'
 
 const databases: DatabaseSync[] = []
@@ -20,6 +20,8 @@ function ledger(adjustMode: 'forward' | 'raw' = 'forward') {
     ) VALUES (1, '2Y', '300857', 'Fixture', 'sz', '2025-05-08', '2027-05-08',
       'running', ?, 1000000, '2025-05-08T00:00:00Z', '2025-05-08', 100)
   `).run(adjustMode)
+  // TRAIN-01：直插旧行按当前设置补齐规则快照夹具（默认费用关、T+1 开，行为与旧用例一致）
+  backfillTrainingRules(database)
   let tradeSeq = 0
   let eventSeq = 0
   const cursor = (date: string, price: number) => {

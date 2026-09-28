@@ -1,0 +1,32 @@
+{
+  "tested_commit": "05b063d4c3cc3d34b8d9e14529c370eda02729fc",
+  "scope": "pure module; synthetic fixtures; no private TDX/database",
+  "files": [
+    {
+      "git_blob": "843ac0cbb085858d6ccbd69b6608873496b62d61",
+      "path": "server/src/setup/restart-plan.ts",
+      "sha256": "317BBA688E761C71316067305D83AEDE7E664BB47EBDE8F9D774FE957F2304F9"
+    },
+    {
+      "git_blob": "c07bed75f7705b79468bed7848d2899674b81218",
+      "path": "server/test/setup-restart-plan.test.ts",
+      "sha256": "9C9EDE1AF68055DCBAD2906DC3E387B4A05683FCCCD9BA7AA7126F7950DCD066"
+    }
+  ],
+  "checks": [
+    {
+      "exit_code": 0,
+      "passed": 123,
+      "command": "npm test -- server/test/setup-restart-plan.test.ts server/test/setup-saved-choice.test.ts server/test/process-clues.test.ts server/test/tdx-inspect.test.ts server/test/setup-api.test.ts server/test/setup-control-guard.test.ts",
+      "log": "headroom-cache/accept-20260927/restart-accept-30/integration-unit.log"
+    },
+    {
+      "exit_code": 0,
+      "command": "npm run build:server",
+      "log": "headroom-cache/accept-20260927/restart-accept-30/integration-build.log"
+    }
+  ],
+  "user_acceptance": false,
+  "source_commit": "c639507157c3f90e9785cefd5e78a3ccd9a2887e",
+  "date": "2026-09-27"
+}

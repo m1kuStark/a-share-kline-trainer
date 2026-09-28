@@ -6,6 +6,10 @@
 
 ## 当前入口
 
+- [TRAIN-01候选交付](2026-09/TRAIN-01/report.md)：训练规则快照、默认费用/T+1设置、raw/forward权息一致与legacy保护；RED先行、最终HEAD 1126单测+M2 24/24+全量Journey 89过（1 flaky如实记）；待GPT验收未集成。
+
+- [TRAIN-02第一片服务端交付](2026-09/TRAIN-02-server/report.md)：范围预览/创建复核/兼容迁移，RED先行与全量874测试；[并发与权息指纹修复](2026-09/TRAIN-02-server/wake02-fix.md)：GPT-WAKE-02两项P2。
+
 - [当前返修交付](2026-09/ACCEPT-01-release/report.md)：完整工程验收通过，已更新7529，待用户验收。
 
 - [夜间返修与工具核验](2026-09/ACCEPT-01-night/report.md)：日回放、官方CLI资料及多模态实测。

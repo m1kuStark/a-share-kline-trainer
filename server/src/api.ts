@@ -9,17 +9,85 @@ import { loadAdjustmentEvents, refreshAdjustmentCache } from './tdx/adjustment-c
 import { applyForwardAdjustment } from './tdx/gbbq.js'
 import { parseTdxSymbol } from './tdx/symbol.js'
 import { getActiveTraining } from './train/engine.js'
+import { registerTrainingSettingsRoutes } from './settings/training.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
-  equityCurveOf, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
+  equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
+import { validateSetupRequest } from './setup/control-guard.js'
+import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
+import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
+import type { DrainGate } from './setup/drain-controller.js'
+import { defaultTdxCandidates } from './tdx/discover.js'
 
-export async function registerApi(app: FastifyInstance, config: AppConfig, database: DatabaseSync): Promise<void> {
+export interface RegisterApiOptions {
+  /** 受保护 setup 端点的可注入依赖（测试用合成 stub，生产缺省走真实查询） */
+  setup?: {
+    processQuery?: () => Promise<import('./tdx/process-clues.js').ProcessQueryResult>
+    inspect?: (roots: readonly string[]) => Promise<import('./tdx/inspect.js').TdxCandidateCheck[]>
+  }
+  /** SETUP-DRAIN-01：业务接纳 gate。提供时全部 /api/ 业务路由（含 GET 隐式缓存写）
+   * 在注册阶段统一包装：gate 关闭后新业务 503 SERVER_DRAINING；已接纳 handler 在其
+   * Promise 真正完成前持有租约（客户端 abort 不提前放行）。/api/health 与
+   * /api/setup/control/* 豁免；非 /api/ 路径（静态资源）不受 gate 影响。 */
+  drain?: DrainGate
+}
+
+export async function registerApi(
+  app: FastifyInstance,
+  config: AppConfig,
+  database: DatabaseSync,
+  options: RegisterApiOptions = {},
+): Promise<void> {
+  const drainGate = options.drain ?? null
+  const exemptFromGate = (url: string): boolean =>
+    url === '/api/health' || url.startsWith('/api/setup/control/') || !url.startsWith('/api/')
+  const restoreRouteDecorators = (() => {
+    if (!drainGate) return () => {}
+    const methods = ['get', 'post', 'put', 'delete'] as const
+    const restores: Array<() => void> = []
+    for (const method of methods) {
+      const instance = app as unknown as Record<string, unknown>
+      const original = instance[method]
+      if (typeof original !== 'function') continue
+      const bound = (original as (...args: unknown[]) => unknown).bind(app)
+      const wrapper = (url: string, opts: unknown, handler?: unknown) => {
+        const actualHandler = typeof opts === 'function' ? opts : handler
+        const routeOptions = typeof opts === 'function' ? undefined : opts
+        if (typeof actualHandler !== 'function' || exemptFromGate(url)) {
+          return routeOptions === undefined
+            ? bound(url, actualHandler)
+            : bound(url, routeOptions, actualHandler)
+        }
+        const gated = async (request: unknown, reply: {
+          code(statusCode: number): { send(payload: unknown): unknown }
+        }) => {
+          const admission = drainGate.admit()
+          if (!admission.ok) {
+            return reply.code(503).send({ error: 'SERVER_DRAINING' })
+          }
+          try {
+            return await (actualHandler as (request: unknown, reply: unknown) => unknown)(request, reply)
+          } finally {
+            admission.release()
+          }
+        }
+        return routeOptions === undefined
+          ? bound(url, gated)
+          : bound(url, routeOptions, gated)
+      }
+      instance[method] = wrapper
+      restores.push(() => { instance[method] = original })
+    }
+    return () => { for (const restore of restores) restore() }
+  })()
   await registerRecordingContextRoutes(app, config, database)
+  // TRAIN-01：训练默认设置（费用/T+1）GET/PUT；经统一注册进入 drain 门闩
+  registerTrainingSettingsRoutes(app, database)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null
@@ -51,7 +119,8 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
   // 否则前端只能看到默认的 "Bad Request"，丢失具体原因。
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof HttpError) {
-      return reply.code(error.statusCode).send({ error: error.message })
+      // 携带业务错误码的失败（如 RANGE 预览/RANGE_PREVIEW_STALE）把 code 一并下发，前端据此分流
+      return reply.code(error.statusCode).send(error.code ? { error: error.message, code: error.code } : { error: error.message })
     }
     const statusCode = (error as { statusCode?: number }).statusCode
     if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
@@ -59,6 +128,50 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     }
     app.log.error(error)
     return reply.code(500).send({ error: '服务器内部错误' })
+  })
+
+  // 受保护候选诊断只读端点（SETUP-API-01）：guard 先行，失败不调用任何诊断；
+  // expectedHost 由配置监听地址构造，不从请求 Host 反推；诊断异常结构化 503，
+  // 不把失败伪装成空候选。响应可含本机路径，绝不回显控制令牌。
+  app.get('/api/setup/candidates', async (request, reply) => {
+    const expectedHost = `${config.host}:${config.port}`
+    const guard = validateSetupRequest({
+      host: request.host,
+      origin: request.headers.origin,
+      // 这两个头是单值语义；Fastify 类型给 string|string[]，取首值并按 undefined 保留
+      secFetchSite: Array.isArray(request.headers['sec-fetch-site'])
+        ? request.headers['sec-fetch-site'][0]
+        : request.headers['sec-fetch-site'],
+      controlToken: Array.isArray(request.headers['x-control-token'])
+        ? request.headers['x-control-token'][0]
+        : request.headers['x-control-token'],
+      expectedHost,
+      expectedOrigin: `http://${expectedHost}`,
+      expectedToken: config.controlToken ?? '',
+    })
+    if (!guard.ok) {
+      return reply.code(guard.statusCode).send({ error: guard.code })
+    }
+    const processQuery = options.setup?.processQuery ?? defaultProcessQuery
+    const inspect = options.setup?.inspect
+    try {
+      // 注入点替换的是"查询"，clues 提取固定走 collectProcessClues（五态/去重/白名单）
+      const processResult = await collectProcessClues(processQuery)
+      const diagnostics = await collectTdxCandidateDiagnostics(
+        { process: processResult, manualRoots: defaultTdxCandidates() },
+        inspect,
+      )
+      const body: Record<string, unknown> = {
+        processStatus: diagnostics.processStatus,
+        candidates: diagnostics.candidates,
+      }
+      if (diagnostics.processReason !== undefined) {
+        body.processReason = diagnostics.processReason
+      }
+      return body
+    } catch (error) {
+      return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
+    }
   })
 
   app.get('/api/env', async () => {
@@ -138,11 +251,32 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     }
   })
 
+  // TRAIN-02 范围预览：只返回日期元信息与指纹，不含任何OHLC/收益；创建时据此复核。
+  app.post('/api/training-ranges/preview', async (request, reply) => {
+    if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
+    const body = request.body as { code?: string; market?: string; range?: unknown; adjustMode?: string }
+    return previewTrainingRange(database, config, body)
+  })
+
   app.post('/api/trainings', async (request, reply) => {
     if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
     const body = request.body as {
       tier?: string; code?: string; start_date?: string
       initial_cash?: number; blind?: boolean; adjust_mode?: string
+      range?: unknown; previewId?: string
+    }
+    // 新范围模式：range/previewId 与 tier 互斥，复核失败返回 409 RANGE_PREVIEW_STALE
+    if (body.range !== undefined || body.previewId !== undefined) {
+      const training = await createTraining(database, config, {
+        tier: body.tier,
+        range: body.range,
+        previewId: body.previewId,
+        code: body.code,
+        initial_cash: body.initial_cash,
+        blind: body.blind,
+        adjust_mode: body.adjust_mode,
+      })
+      return reply.code(201).send({ training })
     }
     if (!body.tier || !TIERS.includes(body.tier as never)) {
       return reply.code(400).send({ error: `tier 必须是 ${TIERS.join(' / ')} 之一` })
@@ -291,6 +425,8 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
 
   // ===== R1 统一日线更新服务：状态查询 + 手动/启动/激活共用的单飞行刷新任务 =====
   const dataRefresh = createDataRefreshCoordinator(database, config)
+  // SETUP-DRAIN-01：202 返回后的完整刷新任务纳入排空等待（源头 track，无竞态窗口）
+  drainGate?.registerTaskSource(() => dataRefresh.pendingTasks())
 
   app.get('/api/data/status', async () => dataRefresh.getStatus())
 
@@ -299,4 +435,6 @@ export async function registerApi(app: FastifyInstance, config: AppConfig, datab
     if (!started) return reply.code(409).send({ error: '未检测到通达信数据目录，且未配置在线数据源' })
     return reply.code(started.joined ? 200 : 202).send({ taskId: started.taskId, state: started.state, joined: started.joined })
   })
+
+  restoreRouteDecorators()
 }

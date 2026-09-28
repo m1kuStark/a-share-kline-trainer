@@ -1,0 +1,22 @@
+{
+  "baseline": "11eef7a（fix(train): serialize training creation at commit boundary and derive preview fingerprint from gbbq bytes）",
+  "worktree": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-02-integration，分支 task/TRAIN-02-integration",
+  "authority": "GPT 裁决 control-handoff-20260926-05（GPT-WAKE-02 integrator-review TRAIN-02 节两项 P2）",
+  "environment": "Windows 11 (win32 10.0.26200)，Node >=24，Git Bash；合成 .day/gbbq 夹具于临时目录，SQLite :memory:；未读个人库与 TDX 真实目录",
+  "redBaseline": {
+    "command": "npm test -- server/test/train-range-preview.test.ts --maxWorkers=2",
+    "result": "4 failed（同token并发、旧tier并发、回滚、gbbq字节过期）| 16 passed",
+    "when": "修复前工作树（基线 73d3e87 + 新测试）"
+  },
+  "checks": [
+    { "command": "npm test -- server/test/train-range.test.ts server/test/train-engine.test.ts server/test/train-range-preview.test.ts <19 个 server/test/recording-*.test.ts> --maxWorkers=2", "exitCode": 0, "result": "22 files, 424 passed（range/engine/preview 78 + v1/v2 录像回归）", "when": "11eef7a 提交树复跑" },
+    { "command": "npm run build:server", "exitCode": 0, "when": "11eef7a 提交树复跑" },
+    { "command": "npm test", "exitCode": 0, "result": "66 files, 878 passed", "when": "修复后、提交前工作树（内容与 11eef7a 一致）" }
+  ],
+  "dataScope": "仅合成日线（2026-07-01~2026-08-14 工作日序列）与合成 gbbq 加密记录（rightsShares 0/1 双变体）；无个人训练库、无 TDX 真实目录、无网络数据",
+  "scopeLimits": [
+    "未改 web/**、录制 schema、Launcher（第二片与集成范围）",
+    "未改全局复权规则：训练引擎仍读 adj_factors 缓存，与 stat 缓存一致性问题不在本修复范围",
+    "tdx 侧仅导出 gbbqFilePath 路径公式，无解码/复权行为改动"
+  ]
+}

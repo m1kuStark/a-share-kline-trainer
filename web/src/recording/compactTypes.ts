@@ -91,7 +91,7 @@ export interface CompactResources {
 }
 
 export type CompactRecordingFile = Omit<RecordingFile, 'schemaVersion' | 'checkpoints'> & {
-  schemaVersion: 2
+  schemaVersion: 2 | 3
   checkpoints: CompactCheckpoint[]
   resources: CompactResources
 }

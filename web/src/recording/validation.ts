@@ -23,6 +23,7 @@ const TIERS: ReadonlySet<string> = new Set(['1M', '3M', '6M', '1Y', '2Y'])
 const TRAINING_STATUS: ReadonlySet<string> = new Set(['running', 'settled', 'abandoned'])
 const ADJUST_MODES: ReadonlySet<string> = new Set(['forward', 'raw'])
 const TRADE_SIDES: ReadonlySet<string> = new Set(['buy', 'sell'])
+const RANGE_MODES: ReadonlySet<string> = new Set(['preset', 'latest', 'bars'])
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const MONTH_PATTERN = /^\d{4}-\d{2}$/
 const OHLC_KEYS = ['open', 'high', 'low', 'close', 'volume', 'amount'] as const
@@ -309,11 +310,48 @@ export function assertTrade(raw: unknown, field: string): void {
   if (trade.blindLabel !== undefined) assertString(trade.blindLabel, `${field}.blindLabel`)
 }
 
-/** 训练元数据：field 传入训练快照内 training 字段的路径（REC-V2-VALIDATION 复用，错误文案不变） */
-export function assertTrainingMeta(raw: unknown, field: string): void {
+/** 范围元数据（TRAIN-02 第二片冻结合同第 6 条）：严格校验并与训练快照字段一致 */
+export function assertTrainingRangeMeta(raw: unknown, field: string, training: Record<string, unknown>): void {
+  const range = assertRecord(raw, field)
+  if (range.version !== 1) fail(`${field}.version`, `必须是 1（收到 ${JSON.stringify(range.version)}）`)
+  assertEnum(range.mode, `${field}.mode`, RANGE_MODES)
+  assertDate(range.requestedStart, `${field}.requestedStart`)
+  assertDateOrNull(range.requestedEnd, `${field}.requestedEnd`)
+  assertDate(range.startDate, `${field}.startDate`)
+  assertDate(range.endDate, `${field}.endDate`)
+  if (typeof range.barCount !== 'number' || !Number.isSafeInteger(range.barCount) || range.barCount <= 0) {
+    fail(`${field}.barCount`, `必须是正安全整数（收到 ${JSON.stringify(range.barCount)}）`)
+  }
+  if (typeof range.sourceFingerprint !== 'string' || !range.sourceFingerprint) {
+    fail(`${field}.sourceFingerprint`, '必须是非空字符串')
+  }
+  if (!Array.isArray(range.notes) || !range.notes.every(note => typeof note === 'string')) {
+    fail(`${field}.notes`, '必须是字符串数组')
+  }
+  if (range.startDate !== training.startDate) {
+    fail(`${field}.startDate`, `必须与训练 startDate（${JSON.stringify(training.startDate)}）一致`)
+  }
+  if (range.endDate !== training.plannedEnd) {
+    fail(`${field}.endDate`, `必须与训练 plannedEnd（${JSON.stringify(training.plannedEnd)}）一致`)
+  }
+}
+
+/** 训练元数据：field 传入训练快照内 training 字段的路径（REC-V2-VALIDATION 复用，错误文案不变）。
+ * allowRange=true（schemaVersion=3）时 tier 额外接受 RANGE 哨兵并要求合规 range 元数据；
+ * 旧五档在任何版本都不得携带 range。 */
+export function assertTrainingMeta(raw: unknown, field: string, options?: { allowRange?: boolean }): void {
   const meta = assertRecord(raw, field)
   assertInteger(meta.id, `${field}.id`)
-  assertEnum(meta.tier, `${field}.tier`, TIERS)
+  if (options?.allowRange && meta.tier === 'RANGE') {
+    if (!isRecord(meta.range)) fail(`${field}.range`, 'RANGE 训练必须携带合规的范围元数据对象')
+    assertTrainingRangeMeta(meta.range, `${field}.range`, meta)
+  } else {
+    assertEnum(meta.tier, `${field}.tier`, TIERS)
+    // 旧五档 tier 在任何 schemaVersion 都不得携带范围元数据（v1/v2 伪装 3M+range 同样拒绝）
+    if ('range' in meta) {
+      fail(`${field}.range`, '旧五档 tier 不得携带范围元数据')
+    }
+  }
   assertStringOrNull(meta.code, `${field}.code`)
   assertStringOrNull(meta.name, `${field}.name`)
   assertString(meta.market, `${field}.market`)

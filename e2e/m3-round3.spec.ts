@@ -127,9 +127,10 @@ test('频繁成交聚合标记不覆盖主副图与时间轴，颜色明细正�
   const chart = await page.locator('.chart-wrap').boundingBox()
   const badges = await page.locator('.trade-marker-badge').evaluateAll(elements => elements.map(el => {
     const box = el.getBoundingClientRect()
-    return { y: box.y, x: box.x, right: box.right, side: el.getAttribute('data-side'), count: Number(el.getAttribute('data-count')), color: getComputedStyle(el).backgroundColor, title: el.getAttribute('title') }
+    // NOTE-DETAIL-01：原生 title 由详情浮层取代，明细文本移至 aria-label（断言意图不变）
+    return { y: box.y, x: box.x, right: box.right, side: el.getAttribute('data-side'), count: Number(el.getAttribute('data-count')), color: getComputedStyle(el).backgroundColor, label: el.getAttribute('aria-label') }
   }))
-  for (const badge of badges) { expect(badge.y).toBeGreaterThanOrEqual(chart!.y + chart!.height); expect(badge.count).toBe(20); expect(badge.title).toContain('20 笔') }
+  for (const badge of badges) { expect(badge.y).toBeGreaterThanOrEqual(chart!.y + chart!.height); expect(badge.count).toBe(20); expect(badge.label).toContain('20 笔') }
   expect(badges.find(b => b.side === 'buy')!.color).toBe('rgb(232, 137, 24)')
   expect(badges.find(b => b.side === 'sell')!.color).toBe('rgb(36, 166, 217)')
   await page.keyboard.press('BracketRight')

@@ -47,7 +47,9 @@ let timer: ReturnType<typeof setTimeout> | undefined
 let replayViewClearFrame: number | null = null
 
 const compactFile = computed(() =>
-  props.recording.schemaVersion === 2 ? props.recording : compactRecording(props.recording),
+  props.recording.schemaVersion === 1
+    ? compactRecording(props.recording)
+    : (props.recording as CompactRecordingFile),
 )
 const session = computed(() => new DailyReplaySession(compactFile.value))
 const dayCount = computed(() => session.value.dayCount)

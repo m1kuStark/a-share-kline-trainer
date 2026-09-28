@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { fetchActiveTraining, fetchEnv } from './api'
 import type { TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
-import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow } from './dataStatus'
+import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
+import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
 import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
+import TrainingSettings from './components/TrainingSettings.vue'
 import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
 import { readRecordingFile } from './recording/recordingFile'
 import type { RecordingSummary } from './recording/types'
@@ -20,7 +22,7 @@ const libraryBusy = ref(false)
 const snapshot = ref<TrainingSnapshot | null>(null)
 const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
-const recordingOptions = ref<{ enabled: boolean; params?: Record<string, string | number> }>({ enabled: true })
+const recordingOptions = ref<{ enabled: boolean; params?: Record<string, unknown> }>({ enabled: true })
 const replay = shallowRef<CompactRecordingFile | null>(null)
 const recentRecordings = ref<RecordingSummary[]>([])
 const recordingError = ref('')
@@ -45,7 +47,7 @@ async function returnToTraining(): Promise<void> {
   replay.value = null
   await refresh()
 }
-async function onCreated(options: { enabled: boolean; params: Record<string, string | number> }): Promise<void> {
+async function onCreated(options: { enabled: boolean; params: Record<string, unknown> }): Promise<void> {
   recordingOptions.value = options
   await refresh()
 }
@@ -98,20 +100,34 @@ function onDataFocus(): void {
 }
 function onDataVisibilityChange(): void {
   if (document.visibilityState === 'visible') onDataActive()
+  else stopStatusTicker()
 }
 
-// 首页顶栏"更新日线"控件状态机：legacy＝状态未知（回退旧 env 文案）
-const dataWidgetState = computed<'legacy' | 'ok' | 'running' | 'failed' | 'attention' | 'unavailable'>(() => {
+// 首页顶栏"更新日线"控件状态机（DATA-05）：绿色"已最新"只对应官方离线日历判定的
+// freshness.current；unknown 一律显示"数据截至…最新交易日待确认"，不得绿色；
+// stale 提示先去通达信完成盘后下载、再回来重新读取本地日线（不联网）。
+// needsUpdate 是兼容提示，不再驱动界面断言"已最新"。
+const dataWidgetState = computed<'legacy' | 'ok' | 'running' | 'failed' | 'attention' | 'unavailable' | 'unknown'>(() => {
   const status = dataStatus.value
   if (!status) return 'legacy'
   if (dataUpdating.value) return 'running'
   if (status.state === 'failed' || status.lastResult?.outcome === 'failed') return 'failed'
-  if (status.needsUpdate && (status.tdx.available || status.source.available)) return 'attention'
-  if (!status.needsUpdate && status.source.available) return 'ok'
   if (!status.tdx.available && !status.online.configured) return 'unavailable'
-  return 'legacy'
+  const freshness = status.freshness
+  if (!freshness) return 'legacy'
+  if (freshness.state === 'current') return 'ok'
+  if (freshness.state === 'stale') return 'attention'
+  return 'unknown'
 })
 const dataCutoffText = computed(() => dataStatus.value?.sourceMaxDate ?? env.value?.dataCutoff ?? 'N/A')
+// stale 的可行动提示：先去通达信下载盘后日线，再回来重新读取（不暗示联网下载）
+const STALE_HINT = '请先在通达信完成盘后数据下载，再点击重新读取本地日线（不联网）'
+const attentionTitle = computed(() => {
+  const reason = dataStatus.value?.freshness?.reason
+  return reason ? `${reason}${STALE_HINT}` : STALE_HINT
+})
+// 常驻手动入口：ok/unknown 状态下始终提供"重新读取本地日线"（attention/failed 已有主按钮）
+const showManualReread = computed(() => dataWidgetState.value === 'ok' || dataWidgetState.value === 'unknown')
 function updateData(): void {
   void refreshDataNow()
 }
@@ -128,6 +144,7 @@ onMounted(async () => {
   window.addEventListener('focus', onDataFocus)
   document.addEventListener('visibilitychange', onDataVisibilityChange)
   void checkDataStatus({ force: true })
+  startStatusTicker()
   try {
     env.value = await fetchEnv()
   } catch (error) {
@@ -141,6 +158,26 @@ onUnmounted(() => {
   cancelDataWatchers()
   if (shakeTimer !== undefined) { clearInterval(shakeTimer); shakeTimer = undefined }
 })
+
+// ===== 训练默认设置入口（返修 F3）：打开期间 rail 与 workspace 整体 inert（焦点+指针双隔离），
+// 关闭（含 Esc/遮罩/取消）后焦点返还设置按钮；Training/录像保持挂载。 =====
+const settingsButton = ref<HTMLElement | null>(null)
+async function returnFocusToSettingsTrigger(): Promise<void> {
+  await nextTick() // 等 inert 解除后再还焦点，否则 inert 容器内的元素不可聚焦
+  settingsButton.value?.focus()
+}
+function onSettingsToggle(): void {
+  if (trainingSettingsOpen.value) {
+    closeTrainingSettings()
+    void returnFocusToSettingsTrigger()
+  } else {
+    openTrainingSettings()
+  }
+}
+function onSettingsClose(): void {
+  closeTrainingSettings()
+  void returnFocusToSettingsTrigger()
+}
 function onTrainingEnded(): void {
   recordingOptions.value = { enabled: true }
   history.replaceState(null, '', location.pathname)
@@ -150,17 +187,17 @@ function onTrainingEnded(): void {
 
 <template>
   <div class="app-shell">
-    <aside class="rail" aria-label="主导航">
+    <aside class="rail" aria-label="主导航" :inert="trainingSettingsOpen">
       <div class="brand-mark">K</div>
       <nav>
         <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
         <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
-      <button class="rail-item rail-bottom" title="设置（M5 开放）" disabled>⚙<span>设置</span></button>
+      <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
     </aside>
 
-    <main class="workspace">
+    <main class="workspace" :inert="trainingSettingsOpen">
       <header class="topbar" @keydown.space.stop>
         <div class="product-heading">
           <div class="product-name">A股 K线训练器</div>
@@ -178,12 +215,17 @@ function onTrainingEnded(): void {
             </span>
             <button v-else-if="dataWidgetState === 'running'" class="data-update-btn running" disabled>更新中<span class="data-ellipsis" aria-hidden="true"><i></i><i></i><i></i></span></button>
             <button v-else-if="dataWidgetState === 'failed'" class="data-update-btn failed" :title="dataStatus?.reason || '更新失败，点击重试'" @click="updateData">更新失败 · 点击重试</button>
-            <button v-else-if="dataWidgetState === 'attention'" :key="shakeTick" class="data-update-btn attention shake" :title="dataStatus?.reason || '本地数据落后于数据源，点击更新'" @click="updateData">更新日线</button>
+            <button v-else-if="dataWidgetState === 'attention'" :key="shakeTick" class="data-update-btn attention shake" :title="attentionTitle" @click="updateData">更新日线</button>
             <button v-else-if="dataWidgetState === 'unavailable'" class="data-update-btn unavailable" title="未检测到通达信数据目录，也未配置在线数据来源" @click="updateData">未检测到通达信数据</button>
+            <span v-else-if="dataWidgetState === 'unknown'" class="data-status-unknown" role="status" :title="dataStatus?.freshness?.reason || ''">
+              数据截至 {{ dataCutoffText }}，最新交易日待确认
+            </span>
             <template v-else>
               <span class="connection-dot" :class="{ offline: !env?.tdxRoot }"></span>
               <span class="connection-text">{{ env?.tdxRoot ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
             </template>
+            <!-- 常驻手动入口：重新读取本地日线（仅扫描本地通达信文件，不联网下载） -->
+            <button v-if="showManualReread" class="data-reread-btn" title="重新扫描本地通达信日线文件（不联网）" @click="updateData">重新读取</button>
             <span v-if="dataWidgetState === 'attention'" class="data-status-note">截止 {{ dataCutoffText }}</span>
             <span v-if="dataRefreshError" class="data-refresh-error" role="alert">{{ dataRefreshError }}</span>
             <details v-if="dataStatus?.revisionWarning" class="revision-warning">
@@ -217,10 +259,22 @@ function onTrainingEnded(): void {
       <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>
+
+    <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
+         inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
+    <TrainingSettings v-if="trainingSettingsOpen" @close="onSettingsClose" />
   </div>
 </template>
 
 <style scoped>
+/* DATA-05：unknown 状态与常驻"重新读取"入口的顶栏样式（双主题；styles.css 未动） */
+.data-status-unknown { display: inline-flex; align-items: center; gap: 5px; color: #8a6d1d; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+:global(body.dark) .data-status-unknown { color: #d9b45c; }
+.data-reread-btn { height: 22px; padding: 0 8px; border-radius: 3px; border: 1px solid #d8e0e8; background: transparent; color: #51637a; font-size: 11px; white-space: nowrap; cursor: pointer; }
+.data-reread-btn:hover { border-color: #94bec5; color: #1c6076; }
+:global(body.dark) .data-reread-btn { border-color: var(--surface-border); color: var(--text-secondary); }
+:global(body.dark) .data-reread-btn:hover { border-color: #969696; color: #ffffff; }
+
 .recording-library { margin: 10px 28px 0; padding: 10px 14px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
 .recording-import { display: inline-flex; position: relative; align-items: center; border: 1px solid #94bec5; padding: 8px 12px; border-radius: 4px; cursor: pointer; color: #2b8b99; }
 .recording-import input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; cursor: pointer; }

@@ -4,8 +4,7 @@ import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from './config.js'
-import { HttpError, feeConfigOf, t1Enabled } from './train/engine.js'
-import { COMMISSION_MIN, COMMISSION_RATE, LOT_SIZE, STAMP_TAX_RATE } from './train/account.js'
+import { HttpError, trainingRulesOf } from './train/engine.js'
 
 interface AppInfo {
   version: string
@@ -51,6 +50,7 @@ interface RecordingTrainingRow {
   start_date: string
   current_date: string | null
   adjust_mode: string
+  rules_json: string | null
 }
 
 interface PositionEventRow {
@@ -74,9 +74,12 @@ export async function registerRecordingContextRoutes(app: FastifyInstance, confi
     if (!/^[1-9][0-9]*$/.test(id) || !Number.isSafeInteger(trainingId)) throw new HttpError(400, 'id 必须是正整数')
     // current_date 在 SQLite 里是 CURRENT_DATE 关键字，选择列表中必须加引号才是列名（engine.ts 走 SELECT * 故未踩坑）。
     const training = database.prepare(
-      'SELECT start_date, "current_date" AS current_date, adjust_mode FROM trainings WHERE id = ?',
+      'SELECT start_date, "current_date" AS current_date, adjust_mode, rules_json FROM trainings WHERE id = ?',
     ).get(trainingId) as unknown as RecordingTrainingRow | undefined
     if (!training) throw new HttpError(404, `训练 ${trainingId} 不存在`)
+    // 录像规则来自本局冻结快照（TRAIN-01）：全局默认修改后不漂移；快照损坏显式报错，
+    // 不静默回退当前设置伪装规则。origin/capturedAt 以可选元数据如实透出（旧录像缺字段按原 reader 读取）。
+    const rules = trainingRulesOf(training)
     const cutoff = training.current_date ?? training.start_date
     const events = database.prepare(`
       SELECT seq, date, kind, shares_delta, cash_delta, cost_delta
@@ -92,15 +95,17 @@ export async function registerRecordingContextRoutes(app: FastifyInstance, confi
         chartLibrary: '10.0.3',
       },
       rules: {
-        // 费用/T+1 每次请求读取 settings 当前值，是"实际观察到的规则"，不是创建时的冻结快照（见 TRAIN-01）。
-        feesEnabled: feeConfigOf(database).enabled,
-        tPlusOne: t1Enabled(database),
-        lotSize: LOT_SIZE,
-        commissionRate: COMMISSION_RATE,
-        minimumCommission: COMMISSION_MIN,
-        stampDutyRate: STAMP_TAX_RATE,
-        execution: 'same-day-raw-close',
-        weightBasis: 'total-equity',
+        feesEnabled: rules.feesEnabled,
+        tPlusOne: rules.tPlusOne,
+        lotSize: rules.lotSize,
+        commissionRate: rules.commissionRate,
+        minimumCommission: rules.minimumCommission,
+        stampDutyRate: rules.stampDutyRate,
+        execution: rules.execution,
+        weightBasis: rules.weightBasis,
+        corporateActionPolicy: rules.corporateActionPolicy,
+        rulesOrigin: rules.origin,
+        rulesCapturedAt: rules.capturedAt,
         adjustMode: training.adjust_mode,
         observedAt: new Date().toISOString(),
       },

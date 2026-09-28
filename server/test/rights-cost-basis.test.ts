@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, it } from 'vitest'
-import { migrateDatabase } from '../src/db.js'
+import { backfillTrainingRules, migrateDatabase } from '../src/db.js'
 import { applyPositionEvents, buildChartSpace, trainingSnapshot } from '../src/train/engine.js'
 import type { AccountState } from '../src/train/account.js'
 
@@ -26,6 +26,8 @@ function holding(initialCash = 600000) {
     ) VALUES (1, '1Y', '600000', 'Fixture', 'sh', '2026-04-20', '2027-04-20',
       'running', ?, '2026-04-20T00:00:00Z', '2026-04-22', 10)
   `).run(initialCash)
+  // TRAIN-01：直插旧行按当前设置补齐规则快照夹具（默认费用关、T+1 开，行为与旧用例一致）
+  backfillTrainingRules(database)
   database.prepare(`
     INSERT INTO trades (training_id, seq, trade_date, side, price, shares, amount,
       fee, cash_after, shares_after, cost_after)

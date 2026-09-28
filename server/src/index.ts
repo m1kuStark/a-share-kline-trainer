@@ -2,6 +2,9 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import staticFiles from '@fastify/static'
 import { registerApi } from './api.js'
+import { registerSetupControlApi } from './setup/control-api.js'
+import { createDrainController } from './setup/drain-controller.js'
+import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
 import { dirname, join } from 'node:path'
@@ -16,9 +19,18 @@ const database = openDatabase(config.databasePath)
 migrateDatabase(database)
 
 const app = Fastify({ logger: true })
+const drainController = createDrainController({
+  getActiveTraining: () => getActiveTraining(database),
+})
 app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid }))
 await app.register(cors, { origin: true })
-await registerApi(app, config, database)
+await registerApi(app, config, database, { drain: drainController.gate })
+await registerSetupControlApi(app, {
+  controller: drainController,
+  config,
+  shutdown: () => shutdown(),
+})
+app.addHook('onClose', async () => { drainController.gate.close() })
 
 const serverDirectory = dirname(fileURLToPath(import.meta.url))
 const webDirectory = config.staticDirectory ?? join(serverDirectory, '..', '..', 'web', 'dist')
