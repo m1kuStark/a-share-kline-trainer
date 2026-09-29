@@ -13,6 +13,10 @@ import { parseTdxSymbol } from './tdx/symbol.js'
 import { buildStockSearchIndex, searchStockIndex, type StockSearchIndex } from './tdx/stock-search.js'
 import { getActiveTraining } from './train/engine.js'
 import { registerTrainingSettingsRoutes } from './settings/training.js'
+// M5-01 集成接线（卡面"注册/App接线待集成"——模块头注明的集成人单写行）：
+// 应用偏好与 TDX 路径设置端点注册进统一 registerApi，自动进入业务 admission 门闩（draining 503）
+import { registerAppSettingsRoutes } from './settings/app.js'
+import { registerTdxPathSettingsRoutes } from './settings/tdx-path.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
@@ -235,6 +239,10 @@ export async function registerApi(
   await registerRecordingContextRoutes(app, config, database)
   // TRAIN-01：训练默认设置（费用/T+1）GET/PUT；经统一注册进入 drain 门闩
   registerTrainingSettingsRoutes(app, database)
+  // M5-01 集成接线（模块头指定的注册行）：应用偏好 GET/PUT /api/settings/app 与
+  // TDX 路径设置 GET/PUT/validate /api/settings/tdx-path（dataDir 与保存选择文件同目录）
+  registerAppSettingsRoutes(app, database)
+  registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null
