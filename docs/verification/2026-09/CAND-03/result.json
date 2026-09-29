@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "status": "not_executed",
+  "note": "本文件是收编后全量门禁的记录骨架（CAND-03），由开发槽位预备；verify:baseline 由集成阶段在集成工作树统一执行后回填真实值并移除本 note。任何字段不得在未实际运行时填入编造值；proof 仅在全部检查通过且提交/工作树指纹不变时存在。",
+  "taskId": "CAND-03",
+  "testedCommit": null,
+  "tree": null,
+  "environment": {
+    "worktree": "trainer-wt/int-v1",
+    "branch": "wt/integration/v1",
+    "PORT": 18810,
+    "VITE_PORT": 18910,
+    "TRAINER_RUN_ID": "待填（集成工作树专用 runId）",
+    "TRAINER_DB": "待填（集成工作树内显式路径）",
+    "TRAINER_STATIC_DIR": "待填（集成工作树内显式路径）",
+    "TRAINER_READY_FILE": "待填（集成工作树内显式路径）",
+    "TDX_ROOT": "待填（控制层指定的现存冻结样本路径或经裁决授权制作）"
+  },
+  "dataScope": "冻结真实三股票/指数样本（TDX_ROOT），不触个人训练库、原 dist 与历史报告",
+  "checks": [
+    { "name": "docs", "action": "docs check", "exitCode": null, "log": null },
+    { "name": "unit", "action": "unit tests", "exitCode": null, "log": null },
+    { "name": "types", "action": "web types", "exitCode": null, "log": null },
+    { "name": "build", "action": "production build", "exitCode": null, "log": null },
+    { "name": "snapshot", "action": "journey snapshot", "exitCode": null, "log": null },
+    { "name": "m2", "action": "m2 closed loop", "exitCode": null, "log": null },
+    { "name": "journey", "action": "browser journey", "exitCode": null, "log": null },
+    { "name": "cleanup", "exitCode": null, "log": null }
+  ],
+  "passed": null,
+  "cleanBefore": null,
+  "cleanAfter": null,
+  "runManifest": null,
+  "proof": null,
+  "createdAt": null
+}
