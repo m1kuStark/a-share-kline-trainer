@@ -43,3 +43,4 @@
 - 提交：wt/D-M4-HISTORY-01 `6d50385`＋`36a25f9`（含其 report.md 返修段）；wt/D-M4-01 `71f1438`（cherry-pick）＋`41a9510`。
 - 复验：`TDX_ROOT=<本worktree>.runs/fixture/tdx-20260916-d8339f32 npm run journey -- e2e/m4-history.spec.ts e2e/m4-rankings.spec.ts`（runtime per-run 隔离 manifest/动态端口/独立库，e2e 规则要求的唯一入口）——首轮（run-f2a2c63c，仅双框修复）2 failed/1 skipped 暴露②③④；终轮（run-9653eee0，全部修复）**6 passed (1.3m)，退出码 0**。首轮失败原件与截图保留于 run artifacts；未占用 8787/8791/5173。
 - 注：e2e spec 不参与 vitest 全量（`npm test` 不受影响，本轮未重跑全量；journey 实跑即本项验证）。
+- 后续门禁复报（2026-09-30 二次）：m4-rankings.spec.ts:27 旧 placeholder 240s 超时——只读核实为集成侧旧副本：`wt/integration/v1` 在 7e2509f 时点合并本分支，`41a9510 不在 integration`，其 m4-rankings.spec.ts 仍为旧单框版本；本分支 tip（13e4f8b）已含全部修复（全仓 grep 旧 placeholder 零残留）。本分支复跑 `npm run journey -- e2e/m4-rankings.spec.ts` → **2 passed (35.4s)，退出码 0**（run-e6950659）。集成侧重合并 wt/D-M4-01（tip 13e4f8b）即消除。
