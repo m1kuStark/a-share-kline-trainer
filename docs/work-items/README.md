@@ -16,6 +16,7 @@ v0.4执行入口：[V4-01](tasks/V4-01.md)，阶段时钟、条件单、成交�
 - [START-01](tasks/START-01.md)：本轮诊断规划已完成；[下一批计划](../proposals/first-use-batch.md)中的FRESH-01/TDX-CHECK-01/RANGE-01底层模块与UI-02入口修订已完成，DATA-05/SETUP-01/TRAIN-02/REL-LAUNCH-UX-01运行接线仍待开发。
 - 数据保护：[DATA-01](tasks/DATA-01.md)、[DATA-02](tasks/DATA-02.md)、[DATA-03](tasks/DATA-03.md)、[DATA-04](tasks/DATA-04.md)。
 - 后续：[TRAIN-01](tasks/TRAIN-01.md)、[DEV-01](tasks/DEV-01.md)、[UI-01](tasks/UI-01.md)、[REL-LAUNCH-UX-01](tasks/REL-LAUNCH-UX-01.md)、[M4-01](tasks/M4-01.md)、[M5-01](tasks/M5-01.md)、[R2-01](tasks/R2-01.md)。
+- 待拍板收编：[M4-HISTORY-01](tasks/M4-HISTORY-01.md)——结算历史到事实成绩单；卡自分支 task/M4-HISTORY-01（tip f707a14，实测非基线 5bf4484 祖先）索引入 main，代码未收编，verification 证据暂存该分支，处置待 S5 拍板。
 - 阶段：[BASE](milestones/BASE.md)、[M3](milestones/M3.md)、[R1](milestones/R1.md)、[M4](milestones/M4.md)、[M5](milestones/M5.md)、[R2](milestones/R2.md)、[DOC](milestones/DOC.md)、[DEV](milestones/DEV.md)。
 - v0.4任务：[TRAIN-03](tasks/TRAIN-03.md)、[REC-04](tasks/REC-04.md)、[ORDER-00](tasks/ORDER-00.md)、[ORDER-01](tasks/ORDER-01.md)、[NOTE-01](tasks/NOTE-01.md)、[V4-01](tasks/V4-01.md)；阶段：[V4](milestones/V4.md)。
 
