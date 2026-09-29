@@ -24,7 +24,11 @@ const drainController = createDrainController({
 })
 app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid }))
 await app.register(cors, { origin: true })
-await registerApi(app, config, database, { drain: drainController.gate })
+await registerApi(app, config, database, {
+  drain: drainController.gate,
+  // REL-LAUNCH-UX-01：页面"保存并退出"与控制桥共用同一冻结排空实现与真实关闭函数
+  lifecycle: { controller: drainController, shutdown: () => shutdown() },
+})
 await registerSetupControlApi(app, {
   controller: drainController,
   config,

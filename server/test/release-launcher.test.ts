@@ -1332,3 +1332,11 @@ describe('SETUP-01 controlled restart supervisor', () => {
       .rejects.toThrow(/restart attempt file is malformed|appId/)
   }, 30_000)
 })
+
+describe('REL-LAUNCH-UX-01 stop semantics honesty', () => {
+  it('--stop usage declares emergency force-stop and points to the in-app exit', () => {
+    const usage = launcher.usage()
+    expect(usage).toContain('应急强制结束')
+    expect(usage).toContain('退出训练器')
+  })
+})

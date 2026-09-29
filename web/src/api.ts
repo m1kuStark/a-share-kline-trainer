@@ -261,6 +261,76 @@ export function fetchRestartStatus(): Promise<RestartStatusView> {
   return request('/api/setup/restart-status')
 }
 
+// ===== 页面"保存并退出"生命周期（REL-LAUNCH-UX-01）：同源受保护端点 =====
+// 会话令牌是服务端随机签发的能力凭证，公开 health 中的 runId 不能替代。
+
+export interface LifecycleSessionView {
+  sessionId: string
+  exitToken: string
+  heartbeatIntervalMs: number
+  freshWindowMs: number
+}
+
+export function createLifecycleSession(): Promise<LifecycleSessionView> {
+  return request('/api/lifecycle/session', { method: 'POST' })
+}
+
+export interface LifecyclePendingExit {
+  requestId: string
+  requestedByMe: boolean
+}
+
+export interface LifecycleHeartbeatView {
+  ok: boolean
+  phase: 'idle' | 'awaiting' | 'draining' | 'failed' | 'cancelled'
+  pendingExit: LifecyclePendingExit | null
+}
+
+export function heartbeatLifecycle(sessionId: string, exitToken: string): Promise<LifecycleHeartbeatView> {
+  return request('/api/lifecycle/heartbeat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, exitToken }),
+  })
+}
+
+export type LifecycleExitPhase = 'idle' | 'awaiting' | 'draining' | 'failed' | 'cancelled'
+
+export function requestLifecycleExit(sessionId: string, exitToken: string): Promise<{ phase: LifecycleExitPhase; requestId: string | null; remaining?: number }> {
+  return request('/api/lifecycle/exit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, exitToken }),
+  })
+}
+
+export function confirmLifecycleExit(sessionId: string, exitToken: string, requestId: string): Promise<{ phase: LifecycleExitPhase; requestId?: string; remaining?: number }> {
+  return request('/api/lifecycle/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, exitToken, requestId }),
+  })
+}
+
+export function cancelLifecycleExit(sessionId: string, exitToken: string, requestId: string): Promise<{ phase: LifecycleExitPhase }> {
+  return request('/api/lifecycle/cancel-exit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, exitToken, requestId }),
+  })
+}
+
+export interface LifecycleStatusView {
+  phase: LifecycleExitPhase
+  requestId?: string
+  remaining?: number
+  reason?: string
+}
+
+export function fetchLifecycleStatus(): Promise<LifecycleStatusView> {
+  return request('/api/lifecycle/status')
+}
+
 // ===== 训练默认设置（TRAIN-01）：费用开关与 T+1 开关，默认只影响新训练 =====
 
 export function fetchTrainingSettings(): Promise<TrainingSettingsView> {
