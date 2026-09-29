@@ -4,11 +4,14 @@
 // 胜率/盈亏比/基准超额为口径冻结前骨架字段，恒 null——本断言防止骨架冒充口径值。
 import Fastify from 'fastify'
 import { DatabaseSync } from 'node:sqlite'
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
-import { maxDrawdownOf } from '../src/train/metrics.js'
+import { maxDrawdownOf, profitLossRatioOf, realizedSellResults, winRateOf } from '../src/train/metrics.js'
 import { rankingGroups } from '../src/train/rankings.js'
 
 type Database = InstanceType<typeof DatabaseSync>
@@ -70,6 +73,55 @@ function insertTraining(database: Database, overrides: TrainingOverrides = {}): 
 
 function insertEquity(database: Database, id: number, date: string, equity: number): void {
   database.prepare('INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)').run(id, date, equity)
+}
+
+function insertTrade(database: Database, id: number, seq: number, date: string, side: 'buy' | 'sell', price: number, shares: number, amount: number, fee: number, cashAfter: number): void {
+  database.prepare(`
+    INSERT INTO trades (training_id, seq, trade_date, side, price, shares, amount, fee, cash_after, shares_after, cost_after)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, seq, date, side, price, shares, amount, fee, cashAfter, side === 'buy' ? shares : 0, side === 'buy' ? amount + fee : 0)
+}
+
+function insertPositionEvent(database: Database, id: number, seq: number, date: string, sharesDelta: number, cashDelta: number, costDelta: number | null): void {
+  database.prepare(`
+    INSERT INTO position_events (training_id, seq, date, kind, shares_delta, cash_delta, cost_delta)
+    VALUES (?, ?, ?, 'corporate_action', ?, ?, ?)
+  `).run(id, seq, date, sharesDelta, cashDelta, costDelta)
+}
+
+/** 32 字节通达信日线记录（与 src/tdx/dayfile.ts 解码互逆；价格分单位）。 */
+function dayRecord(date: number, close: number): Buffer {
+  const buffer = Buffer.alloc(32)
+  buffer.writeInt32LE(date, 0)
+  buffer.writeInt32LE(close, 4)
+  buffer.writeInt32LE(close, 8)
+  buffer.writeInt32LE(close, 12)
+  buffer.writeInt32LE(close, 16)
+  buffer.writeFloatLE(0, 20)
+  buffer.writeInt32LE(0, 24)
+  return buffer
+}
+
+async function withTdxRoot(run: (context: { app: ReturnType<typeof Fastify>; database: Database; config: AppConfig; root: string }) => Promise<void>, options: { withBenchmark?: boolean } = {}): Promise<void> {
+  const root = await mkdtemp(join(tmpdir(), 'trainer-rankings-'))
+  if (options.withBenchmark) {
+    await mkdir(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true })
+    await writeFile(
+      join(root, 'vipdoc', 'sh', 'lday', 'sh000300.day'),
+      Buffer.concat([dayRecord(20260731, 400_000), dayRecord(20260828, 410_000)]),
+    )
+  }
+  const database = new DatabaseSync(':memory:')
+  migrateDatabase(database)
+  const app = Fastify()
+  const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: root }
+  await registerApi(app, config, database)
+  try {
+    await run({ app, database, config, root })
+  } finally {
+    await app.close()
+    database.close()
+  }
 }
 
 async function withApp(run: (context: { app: ReturnType<typeof Fastify>; database: Database; config: AppConfig }) => Promise<void>): Promise<void> {
@@ -197,7 +249,7 @@ describe('GET /api/rankings', () => {
     })
   })
 
-  it('无 running 时纯持久查询成功：tdxRoot 缺失下照常返回分组', async () => {
+  it('无 running 时纯持久查询成功：tdxRoot 缺失下照常返回分组（基准如实 unavailable）', async () => {
     await withApp(async ({ app, database }) => {
       const id = insertTraining(database, { tier: '6M' })
       insertEquity(database, id, '2026-08-03', 100_000)
@@ -208,7 +260,141 @@ describe('GET /api/rankings', () => {
       expect(body.tier).toBe('6M')
       expect(body.complete).toHaveLength(1)
       expect(body.complete[0].returnRate).toBeCloseTo(0.12, 10)
+      expect(body.benchmark.status).toBe('unavailable')
+      expect(body.complete[0].benchmarkExcess).toBeNull()
     })
+  })
+})
+
+describe('已实现盈亏（拍板 S4 冻结：摊薄成本法，费用含入，持有期分红不进单笔）', () => {
+  function seedTrading(database: Database, id: number): void {
+    insertEquity(database, id, '2026-08-03', 100_000)
+    insertEquity(database, id, '2026-08-28', 100_000)
+  }
+
+  it('部分卖出摊薄成本手算（买入费按卖出比例摊销）：400+600 两笔均赢，零亏损盈亏比 null', () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const id = insertTraining(database, {})
+    seedTrading(database, id)
+    // 买 1000@10：金额 10000，佣金 max(5, 2.5)=5 → 成本 10005
+    insertTrade(database, id, 1, '2026-08-03', 'buy', 10, 1000, 10_000, 5, 89_995)
+    // 卖 400@12：金额 4800，费 max(5,1.2)+4800*0.0005=5+2.4=7.4；摊薄成本 10005*0.4=4002
+    //   已实现盈亏 = (4800−7.4) − 4002 = 790.6
+    insertTrade(database, id, 2, '2026-08-10', 'sell', 12, 400, 4_800, 7.4, 94_787.6)
+    // 卖 600@11：金额 6600，费 max(5,1.65)+3.3=8.3；摊薄成本 10005*0.6=6003
+    //   已实现盈亏 = (6600−8.3) − 6003 = 588.7
+    insertTrade(database, id, 3, '2026-08-20', 'sell', 11, 600, 6_600, 8.3, 101_379.3)
+    const sells = realizedSellResults(database, id, 100_000, 'sh', '600519')
+    expect(sells[0].pnl).toBeCloseTo(790.6, 10)
+    expect(sells[1].pnl).toBeCloseTo(588.7, 10)
+    expect(sells.every(sell => sell.win)).toBe(true)
+    expect(winRateOf(sells)).toBe(1)
+    expect(profitLossRatioOf(sells)).toBeNull()
+    const groups = rankingGroups(database, '1M')
+    expect(groups.complete[0].winRate).toBe(1)
+    expect(groups.complete[0].profitLossRatio).toBeNull()
+  })
+
+  it('一赢一亏盈亏比手算：489.75/509.75；胜率 0.5', () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const id = insertTraining(database, {})
+    seedTrading(database, id)
+    insertTrade(database, id, 1, '2026-08-03', 'buy', 10, 1000, 10_000, 5, 89_995)
+    // 卖 500@9：金额 4500，费 5+2.25=7.25；摊薄成本 5002.5 → −509.75
+    insertTrade(database, id, 2, '2026-08-10', 'sell', 9, 500, 4_500, 7.25, 94_987.75)
+    // 卖 500@11：金额 5500，费 5+2.75=7.75；摊薄成本 5002.5 → +489.75
+    insertTrade(database, id, 3, '2026-08-20', 'sell', 11, 500, 5_500, 7.75, 100_477.5)
+    const sells = realizedSellResults(database, id, 100_000, 'sh', '600519')
+    expect(sells.map(sell => sell.pnl)).toEqual([-509.75, 489.75])
+    expect(winRateOf(sells)).toBeCloseTo(0.5, 12)
+    expect(profitLossRatioOf(sells)).toBeCloseTo(489.75 / 509.75, 12)
+  })
+
+  it('持有期分红不进单笔已实现盈亏：分红 1000 入现金后卖出，单笔仍为 −15 亏损', () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const id = insertTraining(database, {})
+    seedTrading(database, id)
+    insertTrade(database, id, 1, '2026-08-03', 'buy', 10, 1000, 10_000, 5, 89_995)
+    // 权息：每 10 股分红 10 → 1000 股入现金 1000，成本不变
+    insertPositionEvent(database, id, 1, '2026-08-10', 0, 1_000, 0)
+    // 卖 1000@10：金额 10000，费 max(5,2.5)+10000*0.0005=5+5=10；摊薄成本 10005
+    //   单笔已实现盈亏 = (10000−10) − 10005 = −15（分红 1000 不计入）
+    insertTrade(database, id, 2, '2026-08-20', 'sell', 10, 1000, 10_000, 10, 100_985)
+    const sells = realizedSellResults(database, id, 100_000, 'sh', '600519')
+    expect(sells).toHaveLength(1)
+    expect(sells[0].pnl).toBeCloseTo(-15, 10)
+    expect(sells[0].win).toBe(false)
+    expect(winRateOf(sells)).toBe(0)
+    expect(profitLossRatioOf(sells)).toBeNull()
+  })
+})
+
+describe('胜率排序键（冻结链第三键，null 殿后在 id 破平局之前）', () => {
+  it('同收益率同回撤：有胜率（全赢）排在零交易（null）之前；双 null 才落 id↓', () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const zeroTradeSmallId = insertTraining(database, {})
+    for (const [date, equity] of [['2026-08-03', 100_000], ['2026-08-28', 110_000]] as const) {
+      insertEquity(database, zeroTradeSmallId, date, equity)
+    }
+    const winnerBigId = insertTraining(database, {})
+    for (const [date, equity] of [['2026-08-03', 100_000], ['2026-08-28', 110_000]] as const) {
+      insertEquity(database, winnerBigId, date, equity)
+    }
+    insertTrade(database, winnerBigId, 1, '2026-08-03', 'buy', 10, 1000, 10_000, 0, 90_000)
+    insertTrade(database, winnerBigId, 2, '2026-08-28', 'sell', 12, 1000, 12_000, 0, 102_000)
+    const groups = rankingGroups(database, '1M')
+    expect(groups.complete.map(item => item.id)).toEqual([winnerBigId, zeroTradeSmallId])
+  })
+})
+
+describe('沪深300超额（拍板 S4：向后对齐 sh000300，算术差；缺失不冒充）', () => {
+  function seedReturn(database: Database, tier = '1M'): number {
+    const id = insertTraining(database, { tier })
+    insertEquity(database, id, '2026-08-03', 100_000)
+    insertEquity(database, id, '2026-08-28', 112_000)
+    return id
+  }
+
+  it('对齐手算：基准 4000→4100（+2.5%），训练 +12% → 超额 +9.5%', async () => {
+    await withTdxRoot(async ({ app, database }) => {
+      seedReturn(database)
+      const response = await app.inject({ method: 'GET', url: '/api/rankings?tier=1M' })
+      expect(response.statusCode).toBe(200)
+      const body = response.json()
+      expect(body.benchmark.status).toBe('ok')
+      expect(body.complete[0].benchmarkExcess).toBeCloseTo(0.12 - 0.025, 10)
+      expect(body.complete[0].benchmarkExcessReason).toBeUndefined()
+    }, { withBenchmark: true })
+  })
+
+  it('基准文件缺失：整组 benchmark unavailable＋行级 null＋中文原因', async () => {
+    await withTdxRoot(async ({ app, database }) => {
+      seedReturn(database)
+      const response = await app.inject({ method: 'GET', url: '/api/rankings?tier=1M' })
+      expect(response.statusCode).toBe(200)
+      const body = response.json()
+      expect(body.benchmark.status).toBe('unavailable')
+      expect(body.complete[0].benchmarkExcess).toBeNull()
+      expect(body.complete[0].benchmarkExcessReason).toContain('缺失')
+    }, { withBenchmark: false })
+  })
+
+  it('训练起点早于基准覆盖：行级 null＋原因（基准文件本身可用）', async () => {
+    await withTdxRoot(async ({ app, database }) => {
+      const id = insertTraining(database, { start_date: '2020-01-02', settle_date: '2020-02-03' })
+      insertEquity(database, id, '2020-01-02', 100_000)
+      insertEquity(database, id, '2020-02-03', 108_000)
+      const response = await app.inject({ method: 'GET', url: '/api/rankings?tier=1M' })
+      expect(response.statusCode).toBe(200)
+      const body = response.json()
+      expect(body.benchmark.status).toBe('ok')
+      expect(body.complete[0].benchmarkExcess).toBeNull()
+      expect(body.complete[0].benchmarkExcessReason).toContain('早于基准数据覆盖')
+    }, { withBenchmark: true })
   })
 })
 

@@ -129,7 +129,10 @@ function daysText(item: RankingItem): string {
                 <td>{{ ratioPercent(item.winRate) }}</td>
                 <td>{{ ratioText(item.profitLossRatio) }}</td>
                 <td>{{ item.tradeCount }}</td>
-                <td :class="{ up: (item.benchmarkExcess ?? 0) > 0, down: (item.benchmarkExcess ?? 0) < 0 }">{{ percent(item.benchmarkExcess) }}</td>
+                <td
+                  :class="{ up: (item.benchmarkExcess ?? 0) > 0, down: (item.benchmarkExcess ?? 0) < 0 }"
+                  :title="item.benchmarkExcess === null ? item.benchmarkExcessReason : undefined"
+                >{{ percent(item.benchmarkExcess) }}</td>
                 <td>{{ item.settleDate ?? '--' }}</td>
               </tr>
             </tbody>
@@ -156,7 +159,10 @@ function daysText(item: RankingItem): string {
                 <td>{{ ratioPercent(item.winRate) }}</td>
                 <td>{{ ratioText(item.profitLossRatio) }}</td>
                 <td>{{ item.tradeCount }}</td>
-                <td :class="{ up: (item.benchmarkExcess ?? 0) > 0, down: (item.benchmarkExcess ?? 0) < 0 }">{{ percent(item.benchmarkExcess) }}</td>
+                <td
+                  :class="{ up: (item.benchmarkExcess ?? 0) > 0, down: (item.benchmarkExcess ?? 0) < 0 }"
+                  :title="item.benchmarkExcess === null ? item.benchmarkExcessReason : undefined"
+                >{{ percent(item.benchmarkExcess) }}</td>
                 <td>{{ daysText(item) }}</td>
               </tr>
             </tbody>
@@ -166,6 +172,9 @@ function daysText(item: RankingItem): string {
 
         <p v-if="groups.excludedUnavailable" class="rankings-excluded" role="note">
           另有 {{ groups.excludedUnavailable }} 局因历史数据不可认证（坏规则/旧版不复权/结算权益缺失）未计入排行；明细见历史列表。
+        </p>
+        <p v-if="groups.benchmark.status === 'unavailable'" class="rankings-excluded" role="note">
+          沪深300超额暂不可用：{{ groups.benchmark.reason }}；其余指标不受影响。
         </p>
       </template>
     </template>

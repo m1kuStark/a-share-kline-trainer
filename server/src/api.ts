@@ -20,7 +20,7 @@ import {
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
-import { parseRankingsQuery, rankingGroups } from './train/rankings.js'
+import { parseRankingsQuery, rankingsPayload } from './train/rankings.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
 import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
@@ -327,11 +327,11 @@ export async function registerApi(
 
   // M4-01 五档排行：按档独立分组（完整/提前结算），放弃与 RANGE 不入榜；
   // 行级不可认证（坏规则/legacy-raw/结算点缺失）不入榜并如实计数。守卫与历史同一口径：
-  // 存在 running 训练时 409 拒答（防旧局记录泄漏当前局未来），纯持久查询、TDX 离线可查。
+  // 存在 running 训练时 409 拒答（防旧局记录泄漏当前局未来），并在异步基准读取后复守卫。
   app.get('/api/rankings', async request => {
     const { tier } = parseRankingsQuery(request.query as Record<string, unknown>)
     assertNoActiveTraining(database)
-    return rankingGroups(database, tier)
+    return rankingsPayload(database, config, tier)
   })
 
   app.get('/api/trainings/:id', async request => {

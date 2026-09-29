@@ -1,15 +1,18 @@
 import type { DatabaseSync } from 'node:sqlite'
+import type { AppConfig } from '../config.js'
 import { HttpError, TIERS, type Tier } from './engine.js'
 import { parseTrainingRules } from './rules.js'
-import { settledFact } from './history-report.js'
-import { maxDrawdownOf } from './metrics.js'
+import { assertNoActiveTraining, settledFact } from './history-report.js'
+import { maxDrawdownOf, profitLossRatioOf, realizedSellResults, winRateOf } from './metrics.js'
+import { benchmarkReturnOf, loadBenchmarkSeries } from './benchmark.js'
 
-// M4-01 五档排行：1M/3M/6M/1Y/2Y 独立分组排行，纯同步只读查询。
+// M4-01 五档排行：1M/3M/6M/1Y/2Y 独立分组排行，纯只读查询。
 // 范围（roadmap §2.7 冻结）：RANGE 训练不混入五档；放弃不入榜；完整周期与提前结算分组。
 // 排序（roadmap §2.7 冻结）：完整组 收益率降序→最大回撤升序→胜率降序→稳定键 id 降序；
-// 提前结算组 收益率降序→稳定键 id 降序，展示实际天数。
-// 胜率/盈亏比/基准超额依赖固定样例口径（部分卖出计平仓笔、费用权息归属、基准对齐），
-// 拍板 S4 冻结前一律输出 null，绝不以猜测口径冒充（骨架阶段字段框架先行）。
+// 提前结算组 收益率降序→稳定键 id 降序，展示实际天数（＝区间内持久权益点数）。
+// 指标口径已按拍板 S4 冻结（2026-09-29）：胜率/盈亏比＝摊薄成本法逐笔卖出已实现盈亏
+// （持有期分红不进单笔）；沪深300超额＝训练收益率−向后对齐基准区间收益，基准缺失行级 null＋原因。
+// null 一律殿后且 UI 显示"--"，不冒充 0。
 
 export type RankingClassification = 'complete' | 'early-settled'
 
@@ -30,22 +33,25 @@ export interface RankingItem {
   /** 最大回撤（比率 0..1，基于持久权益点峰值，不插值） */
   maxDrawdown: number
   tradeCount: number
-  /** 口径冻结前恒 null（骨架）；冻结后＝盈利卖出笔占比 */
+  /** 盈利卖出笔占比；零卖出 → null（"--"） */
   winRate: number | null
-  /** 口径冻结前恒 null（骨架）；冻结后＝平均盈利额/平均亏损额 */
+  /** 平均单笔盈利÷平均单笔亏损；零卖出/零亏损/零盈利 → null（"--"） */
   profitLossRatio: number | null
-  /** 口径冻结前恒 null（骨架）；冻结后＝收益率−同期沪深300收益率 */
+  /** 收益率−同期沪深300收益率；基准不可用/未覆盖 → null（"--"）＋原因 */
   benchmarkExcess: number | null
+  benchmarkExcessReason?: string
 }
 
 export interface RankingGroups {
   tier: Tier
-  /** 到期结算组：收益率↓→最大回撤↑→胜率↓（null 殿后）→id↓ */
+  /** 到期结算组：收益率↓→最大回撤↑→胜率↓(null 殿后)→id↓ */
   complete: RankingItem[]
   /** 提前结算组：收益率↓→id↓ */
   earlySettled: RankingItem[]
   /** 坏规则/legacy-raw/结算点缺失/权益点非有限而行级不可认证的局数（如实展示，不入榜） */
   excludedUnavailable: number
+  /** 基准数据整体状态：文件缺失/无TDX 时整组超额置 null 并说明（行级未覆盖另有行级原因） */
+  benchmark: { status: 'ok' | 'unavailable'; reason?: string }
 }
 
 /** 排行查询参数：tier 必填且必须是五档之一；非法一律 400。 */
@@ -62,6 +68,7 @@ interface RankingRow {
   tier: string
   code: string
   name: string
+  market: string
   start_date: string
   settle_date: string | null
   early_settle: number
@@ -101,6 +108,8 @@ function itemOf(database: DatabaseSync, row: RankingRow): { item: RankingItem } 
   const tradeCount = (database.prepare(
     'SELECT COUNT(*) AS count FROM trades WHERE training_id = ?',
   ).get(row.id) as unknown as { count: number }).count
+  // 摊薄成本法逐笔卖出已实现盈亏（拍板 S4）：费用含在内，持有期分红不进单笔。
+  const sells = realizedSellResults(database, row.id, row.initial_cash, row.market, row.code)
   return {
     item: {
       id: row.id,
@@ -116,14 +125,14 @@ function itemOf(database: DatabaseSync, row: RankingRow): { item: RankingItem } 
       returnRate: fact.returnRate,
       maxDrawdown: maxDrawdownOf(curve),
       tradeCount,
-      winRate: null,
-      profitLossRatio: null,
+      winRate: winRateOf(sells),
+      profitLossRatio: profitLossRatioOf(sells),
       benchmarkExcess: null,
     },
   }
 }
 
-/** null 视为最小（排序中殿后）：零交易/口径未冻结值不冒充 0，也不挡住有值行。 */
+/** null 视为最小（排序中殿后）：零交易/基准缺失值不冒充 0，也不挡住有值行。 */
 function byWinRateDesc(left: RankingItem, right: RankingItem): number {
   return (right.winRate ?? Number.NEGATIVE_INFINITY) - (left.winRate ?? Number.NEGATIVE_INFINITY)
 }
@@ -136,10 +145,10 @@ function byReturnDesc(left: RankingItem, right: RankingItem): number {
   return right.returnRate - left.returnRate
 }
 
-/** 五档分组排行：完整组 收益率↓→回撤↑→胜率↓→id↓；提前组 收益率↓→id↓。 */
+/** 五档分组排行（同步核心）：完整组 收益率↓→回撤↑→胜率↓→id↓；提前组 收益率↓→id↓。 */
 export function rankingGroups(database: DatabaseSync, tier: Tier): RankingGroups {
   const rows = database.prepare(`
-    SELECT id, tier, code, name, start_date, settle_date, early_settle, initial_cash, rules_json
+    SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json
     FROM trainings WHERE status = 'settled' AND tier = ?
   `).all(tier) as unknown as RankingRow[]
   const complete: RankingItem[] = []
@@ -159,5 +168,34 @@ export function rankingGroups(database: DatabaseSync, tier: Tier): RankingGroups
     || byWinRateDesc(left, right)
     || byIdDesc(left, right))
   earlySettled.sort((left, right) => byReturnDesc(left, right) || byIdDesc(left, right))
-  return { tier, complete, earlySettled, excludedUnavailable }
+  return { tier, complete, earlySettled, excludedUnavailable, benchmark: { status: 'ok' } }
+}
+
+/**
+ * 排行响应装配：分组后异步读基准指数日线并逐行计算超额；读文件后重查 running 守卫
+ * （守卫→同步读库→异步读基准→复守卫），杜绝异步窗口内新开训练绕过防未来。
+ */
+export async function rankingsPayload(database: DatabaseSync, config: AppConfig, tier: Tier): Promise<RankingGroups> {
+  const groups = rankingGroups(database, tier)
+  if (!groups.complete.length && !groups.earlySettled.length) return groups
+  const benchmark = await loadBenchmarkSeries(config)
+  if (!benchmark.ok) {
+    groups.benchmark = { status: 'unavailable', reason: benchmark.reason }
+    for (const item of [...groups.complete, ...groups.earlySettled]) {
+      item.benchmarkExcess = null
+      item.benchmarkExcessReason = benchmark.reason
+    }
+  } else {
+    for (const item of [...groups.complete, ...groups.earlySettled]) {
+      const outcome = benchmarkReturnOf(benchmark.bars, item.startDate, item.settleDate ?? item.startDate)
+      if (outcome.ok) {
+        item.benchmarkExcess = item.returnRate - outcome.value
+      } else {
+        item.benchmarkExcess = null
+        item.benchmarkExcessReason = outcome.reason
+      }
+    }
+  }
+  assertNoActiveTraining(database)
+  return groups
 }

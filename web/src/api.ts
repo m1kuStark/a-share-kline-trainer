@@ -378,6 +378,8 @@ export interface RankingItem {
   winRate: number | null
   profitLossRatio: number | null
   benchmarkExcess: number | null
+  /** benchmarkExcess 为 null 时给出中文原因（文件缺失/未覆盖等） */
+  benchmarkExcessReason?: string
 }
 
 export interface RankingGroups {
@@ -386,6 +388,8 @@ export interface RankingGroups {
   earlySettled: RankingItem[]
   /** 行级不可认证而不入榜的局数（坏规则/legacy-raw/结算点缺失） */
   excludedUnavailable: number
+  /** 基准数据整体状态：文件缺失/无 TDX 时整组超额置 null 并说明 */
+  benchmark: { status: 'ok' | 'unavailable'; reason?: string }
 }
 
 export function fetchRankings(tier: string): Promise<RankingGroups> {
