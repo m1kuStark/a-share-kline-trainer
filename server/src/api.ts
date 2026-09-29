@@ -137,10 +137,18 @@ export interface RegisterApiOptions {
     /** apply 的可注入实现（测试用）；默认走启动器监管进程 */
     applyRestart?: (attempt: SetupRestartAttempt) => Promise<{ started: boolean }>
   }
+  /** REL-LAUNCH-UX-01：页面"保存并退出"生命周期协议。controller/shutdown 与
+   * /api/setup/control/* 共用同一冻结排空实现（index.ts 注入）；now 可注入时钟。 */
+  lifecycle?: {
+    controller: import('./setup/drain-controller.js').DrainController
+    shutdown: () => void | Promise<void>
+    now?: () => number
+  }
   /** SETUP-DRAIN-01：业务接纳 gate。提供时全部 /api/ 业务路由（含 GET 隐式缓存写）
    * 在注册阶段统一包装：gate 关闭后新业务 503 SERVER_DRAINING；已接纳 handler 在其
-   * Promise 真正完成前持有租约（客户端 abort 不提前放行）。/api/health 与
-   * /api/setup/control/* 豁免；非 /api/ 路径（静态资源）不受 gate 影响。 */
+   * Promise 真正完成前持有租约（客户端 abort 不提前放行）。/api/health、
+   * /api/setup/control/* 与 /api/lifecycle/* 豁免；非 /api/ 路径（静态资源）不受
+   * gate 影响。 */
   drain?: DrainGate
 }
 
@@ -181,7 +189,8 @@ export async function registerApi(
 ): Promise<void> {
   const drainGate = options.drain ?? null
   const exemptFromGate = (url: string): boolean =>
-    url === '/api/health' || url.startsWith('/api/setup/control/') || !url.startsWith('/api/')
+    url === '/api/health' || url.startsWith('/api/setup/control/')
+    || url.startsWith('/api/lifecycle/') || !url.startsWith('/api/')
   const restoreRouteDecorators = (() => {
     if (!drainGate) return () => {}
     const methods = ['get', 'post', 'put', 'delete'] as const
@@ -576,6 +585,284 @@ export async function registerApi(
     } catch {
       return { phase: 'idle', done: false }
     }
+  })
+
+  // ===== 页面"保存并退出"生命周期（REL-LAUNCH-UX-01） =====
+  // 与 /api/setup/control/* 复用同一冻结排空控制器：退出不结算、不放弃训练；
+  // 排空控制器对活动训练的阻断是唯一权威。多页协调：会话注册＋续约；有其他
+  // 活跃页面时广播退出请求、逐页确认保存，拒绝或限时无响应一律不停止服务。
+  // 会话令牌是每会话随机串，公开 /api/health 里的 runId 不能替代它。
+  // 本组端点豁免业务 gate（排空期间心跳/状态/确认必须可达）。
+  const lifecycleNow = options.lifecycle?.now ?? Date.now
+  const LIFECYCLE_HEARTBEAT_MS = 15_000
+  // 活跃判定窗：必须覆盖后台标签被浏览器节流到每分钟一次心跳的情形
+  const LIFECYCLE_FRESH_MS = 90_000
+  // 其他页面确认限时：超时如实判失败，绝不转强制结束
+  const LIFECYCLE_EXIT_TTL_MS = 120_000
+  interface LifecycleSession { id: string; token: string; createdAt: number; lastSeenAt: number }
+  interface LifecycleExitRequest {
+    id: string
+    requestedBy: string
+    requestedAt: number
+    live: string[]
+    confirmed: Set<string>
+  }
+  type LifecycleExitState =
+    | { phase: 'idle' }
+    | { phase: 'awaiting'; request: LifecycleExitRequest }
+    | { phase: 'draining'; request: LifecycleExitRequest | null; attemptId: string }
+    | { phase: 'failed' | 'cancelled'; request: LifecycleExitRequest | null; reason: string }
+  const lifecycleSessions = new Map<string, LifecycleSession>()
+  let lifecycleExit: LifecycleExitState = { phase: 'idle' }
+  let lifecycleShutdownInvoked = false
+
+  function lifecycleGcSessions(now: number): void {
+    for (const [id, session] of lifecycleSessions) {
+      if (now - session.lastSeenAt > 3 * LIFECYCLE_FRESH_MS) lifecycleSessions.delete(id)
+    }
+  }
+
+  /** 读取当前退出状态（函数边界规避控制流收窄：evaluate 会在内部改写状态）。 */
+  function lifecycleCurrent(): LifecycleExitState {
+    return lifecycleExit
+  }
+
+  /** 协调看门狗：请求超时、发起页失联，或活跃成员的会话已被垃圾回收（长时间静默，
+   * 只能是页面已关闭或浏览器整体冻结）时，保守取消本次退出；确认例外见实现。 */
+  function lifecycleEvaluate(now: number): void {
+    if (lifecycleExit.phase !== 'awaiting') return
+    const request = lifecycleExit.request
+    const requester = lifecycleSessions.get(request.requestedBy)
+    if (now - request.requestedAt > LIFECYCLE_EXIT_TTL_MS) {
+      lifecycleExit = { phase: 'failed', request: null, reason: `其他页面未在 ${Math.round(LIFECYCLE_EXIT_TTL_MS / 1000)} 秒内确认保存，已停止本次退出（服务未停止）` }
+      return
+    }
+    if (!requester || now - requester.lastSeenAt > LIFECYCLE_FRESH_MS) {
+      lifecycleExit = { phase: 'cancelled', request: null, reason: '发起退出的页面已关闭或失联，已停止本次退出（服务未停止）' }
+      return
+    }
+    // 已被 GC 的成员（静默远超节流上限）视为已关闭页面，不再阻塞；其余成员必须显式确认
+    for (const memberId of [...request.live]) {
+      if (memberId === request.requestedBy || request.confirmed.has(memberId)) continue
+      if (!lifecycleSessions.has(memberId)) request.live = request.live.filter(id => id !== memberId)
+    }
+    if (request.live.every(id => id === request.requestedBy || request.confirmed.has(id))) {
+      lifecycleExit = { phase: 'draining', request, attemptId: `lifecycle-${request.id}` }
+    }
+  }
+
+  /** 进入排空：状态置 draining，真正的 prepare→shutdown 在本次响应完成后触发
+   * （202 先可读）。prepare 的活动训练/超时结果如实写回状态；任何失败都不转强制结束。 */
+  function lifecycleBeginDraining(request: LifecycleExitRequest | null): string {
+    if (lifecycleExit.phase === 'draining') return lifecycleExit.attemptId
+    const attemptId = `lifecycle-${request?.id ?? randomUUID()}`
+    lifecycleExit = { phase: 'draining', request, attemptId }
+    return attemptId
+  }
+
+  /** 若当前处于 draining，则在本响应完成后触发一次排空+关闭（幂等）。 */
+  function lifecycleArmShutdown(reply: { raw: { once(event: string, listener: () => void): unknown } }): void {
+    if (lifecycleExit.phase !== 'draining') return
+    const attemptId = lifecycleExit.attemptId
+    let scheduled = false
+    const schedule = (): void => {
+      if (scheduled) return
+      scheduled = true
+      lifecycleInvokeShutdownOnce(attemptId)
+    }
+    reply.raw.once('finish', schedule)
+    reply.raw.once('close', schedule)
+  }
+
+  function lifecycleInvokeShutdownOnce(attemptId: string): void {
+    if (lifecycleShutdownInvoked) return
+    lifecycleShutdownInvoked = true
+    const controller = options.lifecycle!.controller
+    const shutdown = options.lifecycle!.shutdown
+    Promise.resolve()
+      .then(() => controller.prepare(attemptId))
+      .then(outcome => {
+        if (outcome.kind !== 'prepared') {
+          const reason = outcome.kind === 'active-training'
+            ? '有进行中的训练，已停止退出（本局进度保留）'
+            : outcome.kind === 'drain-timeout'
+              ? '在途请求未能在限时内排空，已停止退出（服务未停止）'
+              : '排空控制器拒绝本次退出，服务未停止'
+          lifecycleExit = { phase: 'failed', request: null, reason }
+          return
+        }
+        return Promise.resolve()
+          .then(() => shutdown())
+          .catch(error => {
+            lifecycleExit = { phase: 'failed', request: null, reason: `关闭服务失败：${error instanceof Error ? error.message : String(error)}` }
+          })
+      })
+      .catch(error => {
+        lifecycleExit = { phase: 'failed', request: null, reason: `排空过程发生错误：${error instanceof Error ? error.message : String(error)}` }
+      })
+  }
+
+  function lifecycleBody<T extends { sessionId?: unknown; exitToken?: unknown; requestId?: unknown }>(body: unknown): T | null {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return null
+    const record = body as Record<string, unknown>
+    for (const key of ['sessionId', 'exitToken', 'requestId'] as const) {
+      const value = record[key]
+      if (value !== undefined && (typeof value !== 'string' || value.length === 0 || value.length > 128)) return null
+    }
+    return record as T
+  }
+
+  function lifecycleAuth(body: { sessionId?: string; exitToken?: string } | null): LifecycleSession | null {
+    if (!body?.sessionId || !body.exitToken) return null
+    const session = lifecycleSessions.get(body.sessionId)
+    if (!session || session.token !== body.exitToken) return null
+    return session
+  }
+
+  function lifecycleView(): Record<string, unknown> {
+    const now = lifecycleNow()
+    lifecycleEvaluate(now)
+    if (lifecycleExit.phase === 'awaiting') {
+      const request = lifecycleExit.request
+      const remaining = request.live.filter(id => id !== request.requestedBy && !request.confirmed.has(id)).length
+      return { phase: 'awaiting', requestId: request.id, remaining }
+    }
+    if (lifecycleExit.phase === 'draining') return { phase: 'draining', requestId: lifecycleExit.request?.id ?? null }
+    if (lifecycleExit.phase === 'failed' || lifecycleExit.phase === 'cancelled') {
+      return { phase: lifecycleExit.phase, reason: lifecycleExit.reason }
+    }
+    return { phase: 'idle' }
+  }
+
+  app.post('/api/lifecycle/session', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const now = lifecycleNow()
+    lifecycleGcSessions(now)
+    const session: LifecycleSession = {
+      id: randomUUID(),
+      token: randomUUID(),
+      createdAt: now,
+      lastSeenAt: now,
+    }
+    lifecycleSessions.set(session.id, session)
+    return {
+      sessionId: session.id,
+      exitToken: session.token,
+      heartbeatIntervalMs: LIFECYCLE_HEARTBEAT_MS,
+      freshWindowMs: LIFECYCLE_FRESH_MS,
+    }
+  })
+
+  app.post('/api/lifecycle/heartbeat', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const body = lifecycleBody<{ sessionId: string; exitToken: string }>(request.body)
+    const session = lifecycleAuth(body)
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    session.lastSeenAt = lifecycleNow()
+    lifecycleGcSessions(session.lastSeenAt)
+    const view = lifecycleView()
+    lifecycleArmShutdown(reply)
+    const pending = lifecycleExit.phase === 'awaiting' && lifecycleExit.request.live.includes(session.id)
+      && !lifecycleExit.request.confirmed.has(session.id)
+      ? { requestId: lifecycleExit.request.id, requestedByMe: lifecycleExit.request.requestedBy === session.id }
+      : null
+    return { ok: true, phase: view.phase, pendingExit: pending }
+  })
+
+  app.post('/api/lifecycle/exit', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const body = lifecycleBody<{ sessionId: string; exitToken: string }>(request.body)
+    const session = lifecycleAuth(body)
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    const now = lifecycleNow()
+    session.lastSeenAt = now
+    lifecycleGcSessions(now)
+    if (lifecycleExit.phase === 'draining') {
+      return reply.code(202).send({ phase: 'draining', requestId: lifecycleExit.request?.id ?? null })
+    }
+    if (lifecycleExit.phase === 'awaiting') {
+      const view = lifecycleView()
+      return reply.code(202).send({ phase: 'awaiting', requestId: lifecycleExit.request.id, remaining: view.remaining })
+    }
+    // 冻结"请求时刻的活跃页面集合"：其中每一页都必须显式确认；不因超时自动放行
+    const live = [...lifecycleSessions.values()]
+      .filter(candidate => now - candidate.lastSeenAt <= LIFECYCLE_FRESH_MS)
+      .map(candidate => candidate.id)
+    const others = live.filter(id => id !== session.id)
+    const exitRequest: LifecycleExitRequest = {
+      id: randomUUID(),
+      requestedBy: session.id,
+      requestedAt: now,
+      live,
+      confirmed: new Set([session.id]),
+    }
+    if (others.length === 0) {
+      lifecycleBeginDraining(exitRequest)
+      lifecycleArmShutdown(reply)
+      return reply.code(202).send({ phase: 'draining', requestId: exitRequest.id, remaining: 0 })
+    }
+    lifecycleExit = { phase: 'awaiting', request: exitRequest }
+    return reply.code(202).send({ phase: 'awaiting', requestId: exitRequest.id, remaining: others.length })
+  })
+
+  app.post('/api/lifecycle/confirm', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const body = lifecycleBody<{ sessionId: string; exitToken: string; requestId: string }>(request.body)
+    if (!body) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    const session = lifecycleAuth(body)
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    session.lastSeenAt = lifecycleNow()
+    if (lifecycleExit.phase !== 'awaiting' || !body.requestId || lifecycleExit.request.id !== body.requestId) {
+      return { phase: lifecycleExit.phase === 'draining' ? 'draining' : 'idle' }
+    }
+    const exitRequest = lifecycleExit.request
+    if (!exitRequest.live.includes(session.id)) {
+      return reply.code(409).send({ error: 'NOT_PARTICIPATING', message: '本页面不在本次退出协调范围内' })
+    }
+    exitRequest.confirmed.add(session.id)
+    lifecycleEvaluate(lifecycleNow())
+    if (lifecycleCurrent().phase === 'draining') {
+      lifecycleArmShutdown(reply)
+      return { phase: 'draining', requestId: exitRequest.id }
+    }
+    const view = lifecycleView()
+    return { phase: view.phase, requestId: exitRequest.id, remaining: view.remaining }
+  })
+
+  app.post('/api/lifecycle/cancel-exit', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const body = lifecycleBody<{ sessionId: string; exitToken: string; requestId: string }>(request.body)
+    const session = lifecycleAuth(body)
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    session.lastSeenAt = lifecycleNow()
+    if (lifecycleExit.phase !== 'awaiting') return { phase: lifecycleExit.phase }
+    lifecycleExit = { phase: 'cancelled', request: null, reason: '有页面拒绝了退出，已停止本次退出（服务未停止）' }
+    return { phase: 'cancelled' }
+  })
+
+  app.get('/api/lifecycle/status', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!options.lifecycle) {
+      return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
+    }
+    const view = lifecycleView()
+    lifecycleArmShutdown(reply)
+    return view
   })
 
   app.get('/api/env', async () => {

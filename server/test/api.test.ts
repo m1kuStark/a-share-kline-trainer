@@ -250,3 +250,353 @@ describe('market-data API', () => {
     }
   })
 })
+
+// ===== REL-LAUNCH-UX-01：页面"保存并退出"生命周期协议 =====
+// 与 /api/setup/control/* 共用冻结排空控制器；测试全程注入 stub controller/shutdown，
+// 断言：守卫、会话令牌（runId 不可替代）、多标签确认/拒绝/超时、失败不转强制结束、
+// 真实监听下的 app.close+database.close 完成与端口释放。
+import type { DrainController, PrepareOutcome } from '../src/setup/drain-controller.js'
+
+const EXIT_HOST = { host: '127.0.0.1:8787', origin: 'http://127.0.0.1:8787', 'sec-fetch-site': 'same-origin' }
+
+interface ControllerSpy {
+  prepareCalls: string[]
+  prepareOutcome: PrepareOutcome
+  prepareGate: (() => void) | null
+  shutdownCalls: number
+  controller: DrainController
+}
+
+function makeControllerSpy(overrides: Partial<Pick<ControllerSpy, 'prepareOutcome'>> = {}): ControllerSpy {
+  const spy: ControllerSpy = {
+    prepareCalls: [],
+    prepareOutcome: { kind: 'prepared', leaseExpiresAtMs: Date.now() + 30_000 },
+    prepareGate: null,
+    shutdownCalls: 0,
+    controller: null as unknown as DrainController,
+  }
+  if (overrides.prepareOutcome) spy.prepareOutcome = overrides.prepareOutcome
+  spy.controller = {
+    gate: { isOpen: () => true, admit: () => ({ ok: true, release: () => {} }), registerTaskSource: () => {}, close: () => {} },
+    prepare: async attemptId => {
+      spy.prepareCalls.push(attemptId)
+      if (spy.prepareGate) await new Promise<void>(resolve => { spy.prepareGate = (() => { spy.prepareGate = null; resolve() }) as () => void })
+      return spy.prepareOutcome
+    },
+    cancel: () => ({ kind: 'cancelled' }),
+    beginShutdown: () => ({ kind: 'closing' }),
+  }
+  return spy
+}
+
+async function createLifecycleApp(spy: ControllerSpy, options: { now?: () => number } = {}) {
+  const database = new DatabaseSync(':memory:')
+  migrateDatabase(database)
+  const app = Fastify()
+  const config: AppConfig = { host: '127.0.0.1', port: 8787, databasePath: ':memory:', tdxRoot: null }
+  let clock = options.now ?? (() => Date.now())
+  await registerApi(app, config, database, {
+    lifecycle: { controller: spy.controller, shutdown: () => { spy.shutdownCalls += 1 }, now: () => clock() },
+  })
+  return {
+    app,
+    database,
+    setClock: (next: () => number) => { clock = next },
+    async createSession(): Promise<{ sessionId: string, exitToken: string }> {
+      const response = await app.inject({ method: 'POST', url: '/api/lifecycle/session', headers: EXIT_HOST })
+      expect(response.statusCode).toBe(200)
+      const body = response.json() as { sessionId: string, exitToken: string }
+      return { sessionId: body.sessionId, exitToken: body.exitToken }
+    },
+  }
+}
+
+describe('lifecycle exit protocol (REL-LAUNCH-UX-01)', () => {
+  it('issues per-session random capability tokens and never exposes runId-shaped credentials', async () => {
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const first = await createSession()
+      const second = await createSession()
+      expect(first.sessionId).not.toBe(second.sessionId)
+      expect(first.exitToken).not.toBe(second.exitToken)
+      // 令牌是随机能力凭证，不是任何可公开获取的 runId/健康字段
+      expect(first.exitToken).not.toMatch(/^run-/)
+      const health = await app.inject({ method: 'GET', url: '/api/health' })
+      expect(health.body).not.toContain(first.exitToken)
+    } finally { await app.close() }
+  })
+
+  it('rejects cross-origin requests, bad session tokens, and unavailable lifecycle wiring', async () => {
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const crossOrigin = await app.inject({
+        method: 'POST', url: '/api/lifecycle/session',
+        headers: { host: '127.0.0.1:8787', origin: 'http://evil.example:8787' },
+      })
+      expect(crossOrigin.statusCode).toBe(403)
+      expect(crossOrigin.json().error).toBe('ORIGIN_MISMATCH')
+
+      const session = await createSession()
+      const badToken = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: session.sessionId, exitToken: 'forged' },
+      })
+      expect(badToken.statusCode).toBe(403)
+      expect(badToken.json().error).toBe('SESSION_TOKEN_INVALID')
+      expect(spy.shutdownCalls).toBe(0)
+    } finally { await app.close() }
+
+    // 未注入 lifecycle → 503，且不创建任何会话
+    const bare = Fastify()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const bareConfig: AppConfig = { host: '127.0.0.1', port: 8787, databasePath: ':memory:', tdxRoot: null }
+    await registerApi(bare, bareConfig, database)
+    try {
+      const response = await bare.inject({ method: 'POST', url: '/api/lifecycle/session', headers: EXIT_HOST })
+      expect(response.statusCode).toBe(503)
+      expect(response.json().error).toBe('LIFECYCLE_UNAVAILABLE')
+    } finally { await bare.close() }
+  })
+
+  it('single tab: exit drains via the frozen controller then closes the app exactly once', async () => {
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const session = await createSession()
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: session.sessionId, exitToken: session.exitToken },
+      })
+      expect(exit.statusCode).toBe(202)
+      expect(exit.json()).toMatchObject({ phase: 'draining', remaining: 0 })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.prepareCalls).toEqual([expect.stringMatching(/^lifecycle-/)])
+      expect(spy.shutdownCalls).toBe(1)
+      // 状态保持 draining 直到进程真的退出（页面以端口不可达判定）
+      const status = await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })
+      expect(status.json().phase).toBe('draining')
+    } finally { await app.close() }
+  })
+
+  it('maps honest failures: active training and drain timeout never become a force stop', async () => {
+    for (const outcome of [
+      { kind: 'active-training' } as PrepareOutcome,
+      { kind: 'drain-timeout' } as PrepareOutcome,
+    ]) {
+      const spy = makeControllerSpy({ prepareOutcome: outcome })
+      const { app, createSession } = await createLifecycleApp(spy)
+      try {
+        const session = await createSession()
+        const exit = await app.inject({
+          method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+          payload: { sessionId: session.sessionId, exitToken: session.exitToken },
+        })
+        expect(exit.statusCode).toBe(202)
+        await new Promise(resolve => setTimeout(resolve, 20))
+        expect(spy.shutdownCalls).toBe(0)
+        const status = await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })
+        const body = status.json() as { phase: string, reason: string }
+        expect(body.phase).toBe('failed')
+        if (outcome.kind === 'active-training') expect(body.reason).toContain('训练')
+        else expect(body.reason).toContain('排空')
+      } finally { await app.close() }
+    }
+  })
+
+  it('multi-tab: every live tab must explicitly confirm before draining; refusal cancels', async () => {
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const a = await createSession()
+      const b = await createSession()
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      expect(exit.json()).toMatchObject({ phase: 'awaiting', remaining: 1 })
+
+      // B 心跳发现退出请求
+      const beat = await app.inject({
+        method: 'POST', url: '/api/lifecycle/heartbeat', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken },
+      })
+      const pending = beat.json().pendingExit as { requestId: string, requestedByMe: boolean }
+      expect(pending).toMatchObject({ requestedByMe: false })
+      expect(pending.requestId).toBeTruthy()
+
+      // 错误 requestId 的确认不生效
+      const wrongConfirm = await app.inject({
+        method: 'POST', url: '/api/lifecycle/confirm', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken, requestId: 'wrong-id' },
+      })
+      expect(wrongConfirm.json().phase).toBe('idle')
+      expect(spy.shutdownCalls).toBe(0)
+
+      // B 拒绝 → 取消，服务不停止
+      const refuse = await app.inject({
+        method: 'POST', url: '/api/lifecycle/cancel-exit', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken, requestId: pending.requestId },
+      })
+      expect(refuse.json().phase).toBe('cancelled')
+      const status = await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })
+      expect(status.json()).toMatchObject({ phase: 'cancelled' })
+      expect(spy.prepareCalls).toEqual([])
+      expect(spy.shutdownCalls).toBe(0)
+
+      // 重新发起：B 确认 → draining
+      const retry = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      expect(retry.json()).toMatchObject({ phase: 'awaiting' })
+      const confirm = await app.inject({
+        method: 'POST', url: '/api/lifecycle/confirm', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken, requestId: (retry.json() as { requestId: string }).requestId },
+      })
+      expect(confirm.json().phase).toBe('draining')
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.prepareCalls).toEqual([expect.stringMatching(/^lifecycle-/)])
+      expect(spy.shutdownCalls).toBe(1)
+    } finally { await app.close() }
+  })
+
+  it('coordination watchdogs: TTL expiry and a vanished requester cancel instead of stopping', async () => {
+    let nowMs = 1_000_000
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy, { now: () => nowMs })
+    try {
+      const a = await createSession()
+      const b = await createSession()
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      expect(exit.json().phase).toBe('awaiting')
+
+      // TTL 超时：B 始终不确认 → 如实失败，不排空
+      nowMs += 121_000
+      const ttl = await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })
+      expect(ttl.json()).toMatchObject({ phase: 'failed' })
+      expect(String(ttl.json().reason)).toContain('秒')
+      expect(spy.shutdownCalls).toBe(0)
+
+      // 发起页失联：先让 A/B 都活跃，B 发起退出后 A 停止心跳 → 取消
+      await app.inject({
+        method: 'POST', url: '/api/lifecycle/heartbeat', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      await app.inject({
+        method: 'POST', url: '/api/lifecycle/heartbeat', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken },
+      })
+      const retry = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      expect(retry.json()).toMatchObject({ phase: 'awaiting', remaining: 1 })
+      nowMs += 91_000
+      const beat = await app.inject({
+        method: 'POST', url: '/api/lifecycle/heartbeat', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken },
+      })
+      expect(beat.json().phase).toBe('cancelled')
+      expect(spy.shutdownCalls).toBe(0)
+
+      // 长时间静默的成员（GC 后）不再阻塞：A 独自请求可进入排空
+      nowMs += 300_000
+      const solo = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken },
+      })
+      expect(solo.json()).toMatchObject({ phase: 'draining', remaining: 0 })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.shutdownCalls).toBe(1)
+    } finally { await app.close() }
+  })
+
+  it('lifecycle endpoints stay reachable while the business gate is closed', async () => {
+    const spy = makeControllerSpy()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const app = Fastify()
+    const config: AppConfig = { host: '127.0.0.1', port: 8787, databasePath: ':memory:', tdxRoot: null }
+    const closedGate = {
+      isOpen: () => false,
+      admit: () => ({ ok: false as const }),
+      registerTaskSource: () => {},
+      close: () => {},
+    }
+    await registerApi(app, config, database, {
+      drain: closedGate,
+      lifecycle: { controller: spy.controller, shutdown: () => { spy.shutdownCalls += 1 } },
+    })
+    try {
+      const env = await app.inject({ method: 'GET', url: '/api/env' })
+      expect(env.statusCode).toBe(503)
+      const status = await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })
+      expect(status.statusCode).toBe(200)
+    } finally { await app.close() }
+  })
+
+  it('real listener: graceful exit completes app.close + database.close and releases the port', async () => {
+    const spy = makeControllerSpy()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const app = Fastify()
+    const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null }
+    await registerApi(app, config, database, {
+      lifecycle: {
+        controller: spy.controller,
+        shutdown: async () => {
+          spy.shutdownCalls += 1
+          await app.close()
+          database.close()
+        },
+      },
+    })
+    // /api/health 由 index.ts 注册；此测试为了真实端口/健康复核按同样形状补齐
+    app.get('/api/health', async () => ({ status: 'ok' }))
+    await app.listen({ port: 0, host: '127.0.0.1' })
+    const address = app.server.address()
+    expect(address !== null && typeof address === 'object').toBe(true)
+    const port = (address as { port: number }).port
+    config.port = port
+    const origin = `http://127.0.0.1:${port}`
+    try {
+      const health = await fetch(`${origin}/api/health`)
+      expect(health.status).toBe(200)
+
+      const sessionResponse = await fetch(`${origin}/api/lifecycle/session`, {
+        method: 'POST', headers: { origin },
+      })
+      expect(sessionResponse.status).toBe(200)
+      const session = await sessionResponse.json() as { sessionId: string, exitToken: string }
+
+      const exit = await fetch(`${origin}/api/lifecycle/exit`, {
+        method: 'POST', headers: { origin, 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.sessionId, exitToken: session.exitToken }),
+      })
+      expect(exit.status).toBe(202)
+
+      // 正常退出 = app.close + database.close 完成、端口释放；绝不依赖 SIGKILL
+      for (let attempt = 0; attempt < 100 && spy.shutdownCalls === 0; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+      expect(spy.shutdownCalls).toBe(1)
+      for (let attempt = 0; attempt < 100 && app.server.listening; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+      expect(app.server.listening).toBe(false)
+      let refused = false
+      try { await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(1_000) }) } catch { refused = true }
+      expect(refused).toBe(true)
+      expect(() => database.prepare('SELECT 1').get()).toThrow()
+    } finally {
+      if (app.server.listening) await app.close()
+      try { database.close() } catch { /* 已被退出路径关闭：这正是被验证的行为 */ }
+    }
+  })
+})
