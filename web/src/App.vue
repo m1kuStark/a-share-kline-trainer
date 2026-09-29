@@ -14,13 +14,14 @@ import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
 import History from './views/History.vue'
+import Rankings from './views/Rankings.vue'
 import TrainingSettings from './components/TrainingSettings.vue'
 import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
 import { readRecordingFile } from './recording/recordingFile'
 import type { RecordingSummary } from './recording/types'
 import type { CompactRecordingFile } from './recording/compactTypes'
 
-type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay' | 'history'
+type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay' | 'history' | 'rankings'
 const view = ref<View>('loading')
 const trainingRef = ref<InstanceType<typeof Training> | null>(null)
 const libraryBusy = ref(false)
@@ -54,6 +55,13 @@ async function showHistory(): Promise<void> {
     if (!await trainingRef.value?.prepareForLibrary()) return
   }
   view.value = 'history'
+}
+// 五档排行（M4-01）：同一条离开协议；运行中训练存在时由服务端 409 守卫并说明。
+async function showRankings(): Promise<void> {
+  if (view.value === 'training') {
+    if (!await trainingRef.value?.prepareForLibrary()) return
+  }
+  view.value = 'rankings'
 }
 async function returnToTraining(): Promise<void> {
   if (view.value === 'training') return
@@ -511,6 +519,7 @@ function onTrainingEnded(): void {
       <div class="brand-mark">K</div>
       <nav>
         <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
+        <button class="rail-item" :class="{ active: view === 'rankings' }" title="五档排行" aria-label="五档排行" @click="showRankings">▲<span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory">▤<span>历史</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
@@ -654,6 +663,7 @@ function onTrainingEnded(): void {
       </section>
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
       <History v-else-if="view === 'history'" @create="returnToTraining" />
+      <Rankings v-else-if="view === 'rankings'" @create="returnToTraining" />
       <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" @open-history="showHistory" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>

@@ -515,6 +515,47 @@ export function fetchTrainingReport(id: number): Promise<HistoryReportPayload> {
   return request(`/api/trainings/${id}/report`)
 }
 
+// ===== 五档排行（M4-01）：1M/3M/6M/1Y/2Y 独立分组；放弃与自定义范围不入榜 =====
+
+export type RankingClassification = 'complete' | 'early-settled'
+
+export interface RankingItem {
+  id: number
+  code: string
+  name: string
+  tier: string
+  classification: RankingClassification
+  startDate: string
+  settleDate: string | null
+  /** 实际经历交易日数＝区间内持久权益点数（提前结算组展示） */
+  actualDays: number
+  initialCash: number
+  finalEquity: number
+  returnRate: number
+  maxDrawdown: number
+  tradeCount: number
+  /** null＝该局无法给出此指标（零卖出/基准缺失/口径未冻结），UI 显示 "--"，不冒充 0 */
+  winRate: number | null
+  profitLossRatio: number | null
+  benchmarkExcess: number | null
+  /** benchmarkExcess 为 null 时给出中文原因（文件缺失/未覆盖等） */
+  benchmarkExcessReason?: string
+}
+
+export interface RankingGroups {
+  tier: string
+  complete: RankingItem[]
+  earlySettled: RankingItem[]
+  /** 行级不可认证而不入榜的局数（坏规则/legacy-raw/结算点缺失） */
+  excludedUnavailable: number
+  /** 基准数据整体状态：文件缺失/无 TDX 时整组超额置 null 并说明 */
+  benchmark: { status: 'ok' | 'unavailable'; reason?: string }
+}
+
+export function fetchRankings(tier: string): Promise<RankingGroups> {
+  return request(`/api/rankings?tier=${encodeURIComponent(tier)}`)
+}
+
 // ===== 日线数据更新（R1：状态检查 + 触发更新） =====
 
 export type DataState = 'idle' | 'running' | 'unchanged' | 'updated' | 'failed'

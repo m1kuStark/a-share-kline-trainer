@@ -22,6 +22,7 @@ import {
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
+import { parseRankingsQuery, rankingsPayload } from './train/rankings.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
 import { collectProcessClues, defaultProcessQuery, appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
@@ -1023,6 +1024,15 @@ export async function registerApi(
     return historyReport(database, trainingId)
   })
 
+  // M4-01 五档排行：按档独立分组（完整/提前结算），放弃与 RANGE 不入榜；
+  // 行级不可认证（坏规则/legacy-raw/结算点缺失）不入榜并如实计数。守卫与历史同一口径：
+  // 存在 running 训练时 409 拒答（防旧局记录泄漏当前局未来），并在异步基准读取后复守卫。
+  app.get('/api/rankings', async request => {
+    const { tier } = parseRankingsQuery(request.query as Record<string, unknown>)
+    assertNoActiveTraining(database)
+    return rankingsPayload(database, config, tier)
+  })
+
   app.get('/api/trainings/:id', async request => {
     const { id } = request.params as { id: string }
     const trainingId = Number(id)
@@ -1042,6 +1052,15 @@ export async function registerApi(
 
   app.get('/api/trainings/:id/bars', async (request, reply) => {
     const params = request.params as { id: string }
+    const id = Number(params.id)
+    if (!Number.isInteger(id)) return reply.code(400).send({ error: 'id 必须是整数' })
+    // M4-01 复盘防未来（roadmap §2.7）：进行中训练存在时，只允许访问它自己的 K 线
+    // （推进日截断，天然无未来）；其他任何训练的历史 K 线一律 409 与历史/成绩单同一守卫码，
+    // 杜绝经由旧局复盘旁路看到当前局盲区的行情。
+    const active = getActiveTraining(database)
+    if (active && active.id !== id) {
+      return reply.code(409).send({ error: '当前有进行中的训练，结束当前训练后可查看历史', code: 'HISTORY_ACTIVE_TRAINING' })
+    }
     const query = request.query as { tf?: Timeframe; before?: string; count?: string }
     const timeframe = query.tf ?? '1D'
     if (!['1D', '1W', '1M'].includes(timeframe)) {
@@ -1057,8 +1076,6 @@ export async function registerApi(
       if (!Number.isInteger(count) || count < 1 || count > 1000) {
         return reply.code(400).send({ error: 'count 必须是 1~1000 的整数' })
       }
-      const id = Number(params.id)
-      if (!Number.isInteger(id)) return reply.code(400).send({ error: 'id 必须是整数' })
       try {
         chunk = await trainingBarsBefore(database, config, id, timeframe, query.before, count)
       } catch (error) {
@@ -1066,8 +1083,6 @@ export async function registerApi(
         throw error
       }
     }
-    const id = Number(params.id)
-    if (!Number.isInteger(id)) return reply.code(400).send({ error: 'id 必须是整数' })
     try {
       const snapshot = trainingSnapshot(database, id)
       const bars = chunk ? chunk.bars : await trainingBars(database, config, id, timeframe)

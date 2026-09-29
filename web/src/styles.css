@@ -367,6 +367,34 @@ body.dark .report-curve { color: #52b394; }
 .report-drawing-basis { font-size: 11px; }
 .report-empty { margin: 8px 0; color: var(--text-secondary, #51637a); }
 .report-note { margin-top: 16px; font-size: 11px; color: var(--text-secondary, #51637a); }
+/* ===== M4-01：五档排行 + 只读K线复盘 ===== */
+.rankings-page { margin: 10px 14px 0; padding: 14px; overflow-y: auto; }
+.rankings-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.rankings-header h1 { margin: 0 0 4px; font-size: 18px; }
+.rankings-header p { margin: 0; font-size: 12px; color: var(--text-secondary, #51637a); }
+.rankings-tabs { display: flex; gap: 8px; margin: 4px 0 14px; }
+.rankings-tab { padding: 6px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
+.rankings-tab:hover { border-color: #94bec5; }
+.rankings-tab.active { border-color: #2b8b99; color: #22758a; font-weight: 700; background: var(--surface-hover, #f4f8fa); }
+body.dark .rankings-tab.active { color: #52b394; border-color: #2e7d6b; }
+.rankings-page h2 { margin: 18px 0 8px; font-size: 14px; }
+.rankings-page h2 small { margin-left: 8px; font-weight: 400; font-size: 11px; color: var(--text-secondary, #51637a); }
+.rankings-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12px; }
+.rankings-table th, .rankings-table td { padding: 8px 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); text-align: right; white-space: nowrap; }
+.rankings-table th:nth-child(-n+3), .rankings-table td:nth-child(-n+3) { text-align: left; }
+.rankings-table th { font-size: 11px; font-weight: 600; color: var(--text-secondary, #51637a); }
+.rankings-row { cursor: pointer; }
+.rankings-row:hover { background: var(--surface-hover, #f4f8fa); }
+.rankings-excluded { margin: 14px 0 0; font-size: 11px; color: var(--text-secondary, #51637a); }
+.report-review-toggle { margin-left: 10px; }
+.report-review { margin: 4px 0 8px; }
+.report-review-chart { position: relative; height: 480px; border: 1px solid var(--surface-border, #dfe5eb); background: var(--chart-background, #ffffff); }
+body.dark .report-review-chart { border-color: #383838; }
+@media (max-width: 960px) {
+  .rankings-page { margin: 10px 14px 0; padding: 14px; }
+  .rankings-tabs { flex-wrap: wrap; }
+  .rankings-table { display: block; overflow-x: auto; }
+}
 @media (max-width: 960px) {
   .history-page, .report-page { margin: 10px 14px 0; padding: 14px; }
   .history-row { grid-template-columns: 1fr 60px; grid-auto-rows: auto; }

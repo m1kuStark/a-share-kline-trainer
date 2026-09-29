@@ -216,9 +216,15 @@ describe('full acceptance matrix', () => {
     })
   })
 
-  it('M4 and M5 are explicitly not open yet instead of silently pretending to be complete', async () => {
+  it('delivered M4 rankings respond explicitly while M5 settings stay closed instead of silently pretending to be complete', async () => {
     await withApp(async ({ app }) => {
-      expect((await app.inject({ method: 'GET', url: '/api/rankings?tier=1M' })).statusCode).toBe(404)
+      // M4 排行已交付（M4-01，拍板 S4 冻结 2026-09-29）：合法档位显式 200（空库=空分组），
+      // 非法档位显式 400；不可认证行计数如实，不假装完整。
+      const rankings = await app.inject({ method: 'GET', url: '/api/rankings?tier=1M' })
+      expect(rankings.statusCode).toBe(200)
+      expect(rankings.json()).toMatchObject({ tier: '1M', complete: [], earlySettled: [], excludedUnavailable: 0 })
+      expect((await app.inject({ method: 'GET', url: '/api/rankings?tier=RANGE' })).statusCode).toBe(400)
+      // M5 设置仍未开放：显式 404，不静默假装存在。
       expect((await app.inject({ method: 'GET', url: '/api/settings' })).statusCode).toBe(404)
     })
   })
