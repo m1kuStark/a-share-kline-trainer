@@ -109,7 +109,11 @@ test('按交易日回放：键盘步进、观察周期独立、画线终态与�
   page.on('pageerror', error => pageErrors.push(error.message))
   const writes: string[] = []
   page.on('request', request => {
-    if (/\/api\//.test(request.url()) && ['POST', 'PUT', 'DELETE'].includes(request.method())) writes.push(request.url())
+    const url = request.url()
+    // /api/lifecycle/*（会话注册/心跳）是页面在场簿记，不是对训练/录像/画线的
+    // 业务写（REL-LAUNCH-UX-01）；只读回放仍须零业务写。
+    if (/\/api\/lifecycle\//.test(url)) return
+    if (/\/api\//.test(url) && ['POST', 'PUT', 'DELETE'].includes(request.method())) writes.push(url)
   })
 
   await Promise.all([
