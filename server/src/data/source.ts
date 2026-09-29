@@ -4,13 +4,24 @@
 
 export type SourceKind = 'tdx' | 'online'
 
-/** 单个日线文件的扫描状态（与 data_file_state 表字段一一对应） */
+/** 单个日线文件的扫描状态（与 data_file_state 表字段一一对应；sha256 系列仅存于历史版本保护库） */
 export interface ScannedFileState {
   path: string
   size: number
   mtimeMs: number
   maxDate: string | null
   rows: number
+  /**
+   * 完整内容 SHA-256（DATA-03）：本批实际读取该文件时计算；元数据复用时沿用基线值。
+   * null/缺省＝无内容证据（保护库未建立或来源注入夹具未提供），差异分类退回元数据口径。
+   */
+  sha256?: string | null
+  /**
+   * 瞬态差异证据（不入库）：本批读取时对「上一版本前 prefixRows 条记录」计算的前缀哈希。
+   * 前缀哈希等于上一版本整文件哈希 ⇒ 纯追加（历史逐字节未变）；不等 ⇒ 追加同时改写历史。
+   */
+  prefixSha256?: string | null
+  prefixRows?: number | null
 }
 
 /** 上一次成功扫描留下的基线（path → 文件状态），用于增量比较 */
@@ -65,7 +76,10 @@ export function listOnlineSources(): DailySource[] {
   return [...onlineSources.values()]
 }
 
-/** 与上次基线比较得出 added/removed/revised；基线首扫全部记为基线（计数为 0）。 */
+/** 与上次基线比较得出 added/removed/revised；基线首扫全部记为基线（计数为 0）。
+ *  DATA-03 修漏报：maxDate 前移过去一律记 added，「追加同时改写历史」因此漏报——
+ *  现在两侧都有内容指纹时用前缀哈希判别：前缀一致＝纯追加（added），前缀不一致＝历史被改写（revised）。
+ *  无内容证据（任一侧无 sha256）保持元数据口径，不虚构结论。 */
 export function diffAgainstBaseline(
   previous: ScanBaseline | undefined,
   files: ScannedFileState[],
@@ -83,7 +97,13 @@ export function diffAgainstBaseline(
     }
     // max_date 变大＝正常追加（记入“新增数据”）；相同或变小但字节/时间变化＝疑似历史修订
     if (file.maxDate && prev.maxDate && file.maxDate > prev.maxDate) {
-      added += 1
+      if (file.prefixSha256 && file.prefixRows != null && prev.sha256) {
+        // 内容证据可用：前缀哈希逐字节比对上一版本全部记录
+        if (file.prefixSha256 === prev.sha256) added += 1
+        else revised += 1
+      } else {
+        added += 1
+      }
       continue
     }
     if (file.size !== prev.size || file.mtimeMs !== prev.mtimeMs) revised += 1

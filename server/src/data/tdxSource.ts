@@ -3,12 +3,13 @@
 // 稳定读取：单文件读取前后 size/mtime 必须一致、字节数必须是 32 的整数倍；
 // 失败有限重试一次，仍不稳定则抛错（中文 message 指明文件），绝不返回部分结果。
 
-import { access, readdir, stat } from 'node:fs/promises'
+import { access, readdir, readFile, stat } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
 import { join } from 'node:path'
-import { readLastDayDate } from '../tdx/dayfile.js'
+import { lastDayDateFromBuffer } from '../tdx/dayfile.js'
 import { codeFromDayFile } from '../tdx/names.js'
 import { isAShareCode, type TdxMarket } from '../tdx/stocks.js'
+import { prefixSha256Hex, sha256Hex } from './history/fingerprint.js'
 import { diffAgainstBaseline } from './source.js'
 import type { DailySource, ScanBaseline, ScannedFileState, ScanOutcome } from './source.js'
 
@@ -105,11 +106,21 @@ async function scanTdx(tdxRoot: string | null, previous?: ScanBaseline): Promise
   }
 }
 
-/** 逐文件稳定读取：size+mtime 未变化直接沿用上次结果；否则读前读后双校验。 */
+/**
+ * 逐文件稳定读取（DATA-03 扩展）：
+ * - 元数据复用的前提收紧为「上一版本已有内容指纹且 size+mtime 未变」——
+ *   基线尚无指纹（保护库未建立或夹具来源）时全量读取以取得内容指纹（迁移时基线只贵一次）。
+ * - 全量读取为单次快照：读前读后 size/mtime 双校验，字节同时用于取末条日期、
+ *   计算整文件 SHA-256 与相对上一版本的前缀哈希（追加同时改写历史的判别证据）。
+ * 失败有限重试一次，仍不稳定则抛错（中文 message 指明文件），绝不返回部分结果。
+ */
 async function readStableFileState(filePath: string, previous: ScannedFileState | undefined): Promise<ScannedFileState> {
   const info = await statFileOrThrow(filePath)
-  if (previous && previous.size === info.size && previous.mtimeMs === info.mtimeMs) {
-    return { path: filePath, size: info.size, mtimeMs: info.mtimeMs, maxDate: previous.maxDate, rows: previous.rows }
+  if (previous && previous.sha256 && previous.size === info.size && previous.mtimeMs === info.mtimeMs) {
+    return {
+      path: filePath, size: info.size, mtimeMs: info.mtimeMs,
+      maxDate: previous.maxDate, rows: previous.rows, sha256: previous.sha256,
+    }
   }
   let lastError: Error | null = null
   for (let attempt = 0; attempt <= STABLE_READ_RETRIES; attempt += 1) {
@@ -118,12 +129,28 @@ async function readStableFileState(filePath: string, previous: ScannedFileState 
       if (before.size % RECORD_SIZE !== 0) {
         throw new Error(`文件大小 ${before.size} 字节不是 ${RECORD_SIZE} 的整数倍（记录可能只写入了一半）`)
       }
-      const maxDate = await readLastDayDate(filePath)
+      const bytes = await readFile(filePath)
       const after = await statFileOrThrow(filePath)
       if (after.size !== before.size || after.mtimeMs !== before.mtimeMs) {
         throw new Error('读取前后文件大小或修改时间发生变化（文件可能仍在写入）')
       }
-      return { path: filePath, size: after.size, mtimeMs: after.mtimeMs, maxDate, rows: after.size / RECORD_SIZE }
+      if (bytes.byteLength !== after.size) {
+        throw new Error(`读取字节数 ${bytes.byteLength} 与文件大小 ${after.size} 不一致`)
+      }
+      const state: ScannedFileState = {
+        path: filePath,
+        size: after.size,
+        mtimeMs: after.mtimeMs,
+        maxDate: lastDayDateFromBuffer(bytes),
+        rows: after.size / RECORD_SIZE,
+        sha256: sha256Hex(bytes),
+      }
+      if (previous?.sha256) {
+        // 相对上一版本的前缀哈希：纯追加（前缀逐字节一致）与追加同时改写的判别证据
+        state.prefixRows = previous.rows
+        state.prefixSha256 = prefixSha256Hex(bytes, previous.rows)
+      }
+      return state
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
     }

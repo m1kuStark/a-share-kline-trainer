@@ -7,13 +7,14 @@
 // 任务状态只在内存，服务重启自然回到 idle，绝不从库里恢复出 running。
 
 import { randomUUID } from 'node:crypto'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from '../config.js'
 import { applyCatalogChanges, scanCatalogChanges, type CatalogChanges } from '../tdx/catalog.js'
 import { applyAdjustmentChanges, scanAdjustmentChanges, type AdjustmentChanges } from '../tdx/adjustment-cache.js'
 import { OFFICIAL_SSE_2026_BUNDLE, type CalendarBundle } from './calendar.js'
 import { assessFreshness, COMPLETENESS_NOTE, type FreshnessResult } from './freshness.js'
+import { HistoryStore, mergeScanBaselineWithFingerprints } from './history/store.js'
 import { selectSource } from './selection.js'
 import { createTdxSource, probeTdxDayDirectories } from './tdxSource.js'
 import { appendFailureLog, applyScanResult, loadRefreshLog, loadScanBaseline, publishBatchVersion, type RefreshLogEntry, type RefreshOutcome } from './snapshot.js'
@@ -85,6 +86,12 @@ export interface CreateRefreshCoordinatorOptions {
    * （freshness 保守 unknown）。生产不联网，日历来自 server/src/data/calendar.ts。
    */
   calendar?: CalendarBundle | null
+  /**
+   * 历史版本保护库（DATA-03）：undefined＝按 config.databasePath 派生（同目录 history-versions/；
+   * 内存库无数据目录则禁用版本记录）；null＝显式禁用；传入实例＝测试注入。
+   * 打开失败会使刷新任务失败（明确暴露，不静默放弃版本记录）。
+   */
+  historyStore?: HistoryStore | null
 }
 
 interface RunningTask { id: string }
@@ -121,6 +128,21 @@ export function createDataRefreshCoordinator(
   // 的可观测 Promise；排空控制器据此等待真实完成。running 置 null 不等于任务结束。
   const inFlightTaskPromises = new Set<Promise<void>>()
 
+  // DATA-03 历史版本保护库：惰性解析一次并缓存；undefined=未决定，null=显式禁用/内存库。
+  let historyStore: HistoryStore | null | undefined = options.historyStore
+  async function resolveHistoryStore(): Promise<HistoryStore | null> {
+    if (historyStore !== undefined) return historyStore
+    if (config.databasePath === ':memory:') {
+      historyStore = null
+      return null
+    }
+    try {
+      historyStore = await HistoryStore.open(join(dirname(config.databasePath), 'history-versions'))
+    } catch (error) {
+      throw new Error(`历史版本保护存储无法初始化（${join(dirname(config.databasePath), 'history-versions')}）：${errorMessage(error)}。请检查数据目录磁盘与权限后重试`)
+    }
+    return historyStore
+  }
   function complete(taskId: string, state: RefreshState, entry: RefreshLogEntry | null): void {
     if (running?.id !== taskId) return
     running = null
@@ -164,7 +186,12 @@ export function createDataRefreshCoordinator(
     watchdog.unref()
 
     try {
-      const previous = loadScanBaseline(database)
+      // DATA-03：保护库先行解析（失败＝任务失败，明确暴露，不在扫描完成后才放弃版本记录）
+      const history = await resolveHistoryStore()
+      // 扫描基线＝主库 data_file_state 叠加保护库内容指纹（sha256）；有指纹才做内容级差异分类
+      const previous = history
+        ? mergeScanBaselineWithFingerprints(loadScanBaseline(database), history.latestFingerprints())
+        : loadScanBaseline(database)
       const outcome = await source.scan(previous)
       if (!barrierOpen()) return
       let catalogChanges: CatalogChanges | null = null
@@ -218,6 +245,16 @@ export function createDataRefreshCoordinator(
       } catch (error) {
         database.exec('ROLLBACK')
         throw error
+      }
+      // DATA-03：主库整批提交成功后记录市场版本（迁移时首版即基线；内容指纹差异在保护库分层记账）。
+      // 记录失败＝任务失败：行情已更新但版本未记账，下次扫描将以最近成功版本做内容校验（跨批可验），
+      // 明确报错而非静默放弃。
+      if (history) {
+        try {
+          history.recordMarketVersion({ batchId, finishedAt, outcome })
+        } catch (error) {
+          throw new Error(`历史版本记录失败：${errorMessage(error)}。行情数据已更新，但本批未记入历史版本基线；请检查磁盘与权限后重试，下次刷新将以最近成功版本重新校验并补记`)
+        }
       }
       complete(taskId, resultOutcome, entry)
     } catch (error) {
