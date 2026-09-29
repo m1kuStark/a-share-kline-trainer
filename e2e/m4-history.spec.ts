@@ -26,8 +26,10 @@ async function createTrainingFromForm(page: Page, code: string): Promise<number>
   await resetToLauncher(page)
   const created = page.waitForResponse(response => response.request().method() === 'POST'
     && new URL(response.url()).pathname === '/api/trainings', { timeout: 30_000 })
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill(code)
-  await page.getByRole('button', { name: new RegExp(`${code}`) }).click()
+  // UI-03 双框选股（Launcher.vue 代码框 placeholder＝『股票代码，如 600519』）：填精确代码，
+  // 250ms 去抖后精确命中自动选中（『已选：』提示），无需点击建议按钮——旧单框流程已不存在。
+  await page.getByPlaceholder('股票代码，如 600519').fill(code)
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -198,12 +200,12 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await expect(report.getByText('600519').first()).toBeVisible()
   await expect(report.getByText('提前结算').first()).toBeVisible()
   await expect(report.getByText('¥1,000,000').first()).toBeVisible()
-  await expect(report.getByText('逐笔成交')).toBeVisible()
+  await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await expect(report.locator('.report-trade-row')).toHaveCount(1)
   await expect(report.locator('.report-trade-row').first()).toContainText('买入')
-  await expect(report.getByText('已保存权益曲线')).toBeVisible()
+  await expect(report.getByRole('heading', { name: '已保存权益曲线' })).toBeVisible()
   await expect(report.locator('svg.equity-curve-svg')).toBeVisible()
-  await expect(report.getByText('画线标注')).toBeVisible()
+  await expect(report.getByRole('heading', { name: '画线标注' })).toBeVisible()
   await expect(report.locator('.report-drawing-item')).toHaveCount(1)
   await expect(report.locator('.report-drawing-item').first()).toContainText('线段')
   await expect(report.locator('.report-drawing-item').first()).toContainText('主图')
@@ -260,7 +262,7 @@ test('运行中守卫与放弃不入列表（浅色840）', async ({ page }) => 
   await history.locator(`.history-row[data-training-id="${latestId}"]`).click()
   const report = page.getByRole('region', { name: '成绩单' })
   await expect(report).toBeVisible()
-  await expect(report.getByText('逐笔成交')).toBeVisible()
+  await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await page.screenshot({ path: evidencePath('m4-history-report-light-840.png'), fullPage: true })
   for (const selector of ['.history-page', '.report-page']) {
     await page.locator(selector).evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })

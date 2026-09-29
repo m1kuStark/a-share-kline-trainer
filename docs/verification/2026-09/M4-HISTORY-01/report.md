@@ -57,3 +57,9 @@ ef952328…c856e e2e/m4-history.spec.ts
 - 本片不实现排行/回撤/胜率/盈亏比/基准超额/训练时钟/成交理由/条件单；不宣称 M4 整体完成（roadmap §2.7 已改为"部分交付"并保留未开发清单）。
 - 空列表态仅 run 首局可覆盖；legacy-migration 合法展示、坏 drawings 行为由服务测试覆盖，UI 未逐一截图。
 - 完整门禁（verify:candidate --base 888778c --task M4-HISTORY-01）按合同在本报告提交、树干净后**一次执行**，结果与 proof 单独记录；proof 不等于 GPT 语义接受。
+
+## 返修（2026-09-30，收编基线 journey 适配）
+
+- 全量门禁 journey 失败：`createTrainingFromForm` 的 `getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台')` 30s 超时——该单框 placeholder 写于候选基线 888778c，收编到含 UI-03 的基线 5bf4484 后 UI 已是双框（Launcher.vue:377-378），旧选择器在当前 UI 不存在。
+- 修复（wt/D-M4-HISTORY-01 6d50385＋断言锚定）：填『股票代码，如 600519』框（精确代码 250ms 去抖自动选中）→断言『已选：』→后续不变，与 journey.spec.ts:22-24 同规范；成绩单三处断言改 `getByRole('heading')`（M4-01 成绩单复盘文案含『逐笔成交标记』『画线标注清单』字样，getByText 双命中 strict violation）。
+- 复验（在后代分支 wt/D-M4-01 同内容副本上，TDX_ROOT 指向本 worktree 冻结样本 `.runs/fixture/tdx-20260916-d8339f32`）：`npm run journey -- e2e/m4-history.spec.ts e2e/m4-rankings.spec.ts` → **6 passed (1.3m)，退出码 0**（run-9653eee0；首轮修复前同命令 2 failed/1 skipped，失败原件保留于 run-f2a2c63c artifacts）。
