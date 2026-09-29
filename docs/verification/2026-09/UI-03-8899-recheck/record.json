@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "not_performed",
+  "note": "用户复验记录骨架（V1-ACCEPT-01 组织）。结论由用户在 8899 测试包上执行复验后回填；未执行前不得填写任何结果字段，缺失即如实保持 null/未记录，不补造用户验收。",
+  "taskId": "V1-ACCEPT-01",
+  "taskUnderTest": "UI-03",
+  "package": {
+    "name": "v0.3.3 用户测试版（8899 测试包）",
+    "fixCommit": "58cc210",
+    "fixInBaseline": "5bf4484（用户 2026-09-29 拍板并入）",
+    "recheckBuild": "待填（复验所用包的构建版本/提交）",
+    "testedBy": null,
+    "testedAt": null,
+    "environment": "待填（本机环境概述）"
+  },
+  "checks": [
+    { "id": 1, "name": "周期联动起始日（2年→2024-09-28、1个月→2026-08-28；手动修改保留到下次周期点击）", "result": null, "notes": null },
+    { "id": 2, "name": "自定义范围收敛（起始日＋根数；超限自动截取到最新数据日并常驻提醒；校验自动生成）", "result": null, "notes": null },
+    { "id": 3, "name": "选股双框与拼音检索（补全/双清/写错提示/前缀下拉/GZMT→贵州茅台、GZ→贵字头）", "result": null, "notes": null },
+    { "id": 4, "name": "创建链路 sanity（选股→范围→创建正常建立，旧训练兼容）", "result": null, "notes": null }
+  ],
+  "result": null,
+  "failures": [],
+  "disposition": {
+    "onFail": "返工归槽位 B；插入 order 17（REL-V1-01 之前）；REL-V1-01 顺延 order 18",
+    "triggered": null
+  },
+  "decisionBy": null,
+  "decidedAt": null
+}

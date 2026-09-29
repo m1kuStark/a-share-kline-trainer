@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "R1",
   "summary": "DATA-05 freshness coordinator, offline SSE 2026 calendar, home status, poll ordering and unreadable-source downgrade are present in the isolated integration candidate.",
-  "next_action": "Candidate machine gates and GPT semantic review passed; reconciliation (2026-09-29) confirmed the integration candidate content has reached main via the V1-INTEGRATE-01 candidate 888778c, promoted at merge 8858dc4, so the isolated-candidate hold is obsolete. User acceptance not yet recorded; product development paused 2026-09-27 per the TRAIN-02 card — resume via the control-layer FIRST-USE-PRODUCT snapshot reconciliation.",
+  "next_action": "Candidate machine gates and GPT semantic review passed; reconciliation (2026-09-29) confirmed the integration candidate content has reached main via the V1-INTEGRATE-01 candidate 888778c, promoted at merge 8858dc4, so the isolated-candidate hold is obsolete. User acceptance not yet recorded; product development paused 2026-09-27 per the TRAIN-02 card — resume via the control-layer FIRST-USE-PRODUCT snapshot reconciliation. 用户验收组织并入 V1-ACCEPT-01，待用户给结论后回填。",
   "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
   "allowed_paths": [
     "server/src/data/**",
