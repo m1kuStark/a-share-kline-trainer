@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import {
-  applySetupChoice, fetchActiveTraining, fetchEnv, fetchRestartStatus, fetchSetupCandidates,
-  inspectSetupRoot, saveSetupChoice, selectSetupDirectory,
+  applySetupChoice, cancelLifecycleExit, confirmLifecycleExit, createLifecycleSession, fetchActiveTraining,
+  fetchEnv, fetchLifecycleStatus, fetchRestartStatus, fetchSetupCandidates, heartbeatLifecycle,
+  inspectSetupRoot, requestLifecycleExit, saveSetupChoice, selectSetupDirectory,
 } from './api'
-import type { SetupCandidate, TdxCandidateCheck, TrainingSnapshot } from './api'
+import type { LifecyclePendingExit, LifecycleSessionView, SetupCandidate, TdxCandidateCheck, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
@@ -272,6 +273,180 @@ watch(disconnected, value => {
 })
 watch(view, value => { if (value !== 'launcher') wizardOpen.value = false })
 
+// ===== 保存并退出训练器（REL-LAUNCH-UX-01） =====
+// 退出不结算、不放弃训练：先冲刷本页画线/录像保存，再经同源受保护协议协调其他
+// 页面确认，最后服务端排空、关闭 Fastify 与 SQLite 后进程自然退出；页面轮询到
+// 端口不可达才显示"已退出"。任何拒绝、超时或失败都如实呈现，绝不静默强制结束。
+type ExitFlowStep = 'closed' | 'confirm' | 'saving' | 'coordinating' | 'exiting' | 'exited' | 'failed'
+const exitFlow = ref<ExitFlowStep>('closed')
+const exitReason = ref('')
+const exitRemaining = ref(0)
+const exitRequestId = ref<string | null>(null)
+const pendingExitRequest = ref<LifecyclePendingExit | null>(null)
+const lifecycle = ref<LifecycleSessionView | null>(null)
+const LIFECYCLE_STORAGE_KEY = 'trainer.lifecycle.session'
+let heartbeatTimer: ReturnType<typeof setInterval> | undefined
+let exitPollTimer: ReturnType<typeof setTimeout> | undefined
+const exitModalOpen = computed(() => exitFlow.value !== 'closed')
+
+function startHeartbeat(): void {
+  stopHeartbeat()
+  const interval = lifecycle.value?.heartbeatIntervalMs ?? 15_000
+  heartbeatTimer = setInterval(() => { void beatOnce() }, interval)
+}
+function stopHeartbeat(): void {
+  if (heartbeatTimer !== undefined) { clearInterval(heartbeatTimer); heartbeatTimer = undefined }
+}
+async function beatOnce(): Promise<void> {
+  const session = lifecycle.value
+  if (!session || exitFlow.value === 'exited') return
+  try {
+    const result = await heartbeatLifecycle(session.sessionId, session.exitToken)
+    if (result.pendingExit && exitFlow.value === 'closed') {
+      pendingExitRequest.value = result.pendingExit
+    }
+  } catch {
+    // 会话可能因服务重启失效：重建一次；网络抖动则下次心跳自然重试
+    try {
+      const fresh = await createLifecycleSession()
+      lifecycle.value = fresh
+      sessionStorage.setItem(LIFECYCLE_STORAGE_KEY, JSON.stringify({ sessionId: fresh.sessionId, exitToken: fresh.exitToken }))
+    } catch { /* 服务暂不可达（可能正在退出），停心跳避免无意义重试 */
+      if (exitFlow.value === 'exiting') return
+      stopHeartbeat()
+    }
+  }
+}
+async function ensureLifecycleSession(): Promise<LifecycleSessionView | null> {
+  if (lifecycle.value) return lifecycle.value
+  try {
+    const stored = sessionStorage.getItem(LIFECYCLE_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored) as { sessionId?: string; exitToken?: string }
+      if (parsed.sessionId && parsed.exitToken) {
+        lifecycle.value = { sessionId: parsed.sessionId, exitToken: parsed.exitToken, heartbeatIntervalMs: 15_000, freshWindowMs: 90_000 }
+        startHeartbeat()
+        return lifecycle.value
+      }
+    }
+  } catch { /* 损坏的本地记录按无会话处理 */ }
+  try {
+    const fresh = await createLifecycleSession()
+    lifecycle.value = fresh
+    sessionStorage.setItem(LIFECYCLE_STORAGE_KEY, JSON.stringify({ sessionId: fresh.sessionId, exitToken: fresh.exitToken }))
+    startHeartbeat()
+    return fresh
+  } catch { /* 生命周期未启用/服务不可达：退出入口降级为提示 */ return null }
+}
+function openExitFlow(): void {
+  exitReason.value = ''
+  exitFlow.value = 'confirm'
+}
+function closeExitFlow(): void {
+  if (exitFlow.value === 'exiting' || exitFlow.value === 'exited') return
+  exitFlow.value = 'closed'
+}
+/** 冲刷本页待保存内容：训练页复用 prepareForLibrary（画线冲刷＋录像冲刷）。 */
+async function flushLocalSaves(): Promise<void> {
+  if (view.value === 'training' && trainingRef.value) {
+    const ok = await trainingRef.value.prepareForLibrary()
+    if (!ok) throw new Error('画线或录像尚未保存成功（训练页加载中、画线取点中或保存失败）')
+  }
+}
+async function beginExit(): Promise<void> {
+  const session = await ensureLifecycleSession()
+  if (!session) {
+    exitReason.value = '当前运行方式未启用退出协调（服务端生命周期不可用）'
+    exitFlow.value = 'failed'
+    return
+  }
+  exitFlow.value = 'saving'
+  exitReason.value = ''
+  try {
+    await flushLocalSaves()
+  } catch (error) {
+    exitReason.value = error instanceof Error ? error.message : '保存失败'
+    exitFlow.value = 'failed'
+    return
+  }
+  try {
+    const result = await requestLifecycleExit(session.sessionId, session.exitToken)
+    if (result.phase === 'draining') {
+      enterExiting()
+      return
+    }
+    exitRequestId.value = result.requestId
+    exitRemaining.value = result.remaining ?? 0
+    exitFlow.value = 'coordinating'
+    scheduleExitPoll()
+  } catch (error) {
+    exitReason.value = error instanceof Error ? error.message : '退出请求失败'
+    exitFlow.value = 'failed'
+  }
+}
+function enterExiting(): void {
+  exitFlow.value = 'exiting'
+  scheduleExitPoll()
+}
+/** 排空/退出轮询：轮询失败时用 /api/health 复核，端口确实不可达才算"已退出"。 */
+function scheduleExitPoll(): void {
+  if (exitPollTimer !== undefined) clearTimeout(exitPollTimer)
+  exitPollTimer = setTimeout(() => { void pollExitOnce() }, 800)
+}
+async function pollExitOnce(): Promise<void> {
+  if (exitFlow.value !== 'coordinating' && exitFlow.value !== 'exiting') return
+  try {
+    const status = await fetchLifecycleStatus()
+    if (status.phase === 'draining') { enterExiting(); return }
+    if (status.phase === 'awaiting') {
+      exitRemaining.value = status.remaining ?? 0
+      scheduleExitPoll()
+      return
+    }
+    exitReason.value = status.reason ?? `退出未完成（${status.phase}），服务未停止`
+    exitFlow.value = 'failed'
+  } catch {
+    // 状态接口不可达：复核健康端点，确实失联才宣告已退出
+    try {
+      await fetch('/api/health', { signal: AbortSignal.timeout(2_000) })
+      scheduleExitPoll()
+    } catch {
+      exitFlow.value = 'exited'
+      stopHeartbeat()
+    }
+  }
+}
+async function confirmPendingExit(): Promise<void> {
+  const session = lifecycle.value
+  const request = pendingExitRequest.value
+  if (!session || !request) return
+  pendingExitRequest.value = null
+  exitRequestId.value = request.requestId
+  exitFlow.value = 'saving'
+  try {
+    await flushLocalSaves()
+  } catch (error) {
+    exitReason.value = error instanceof Error ? error.message : '保存失败'
+    exitFlow.value = 'failed'
+    return
+  }
+  try {
+    const result = await confirmLifecycleExit(session.sessionId, session.exitToken, request.requestId)
+    if (result.phase === 'draining') enterExiting()
+    else { exitRemaining.value = result.remaining ?? 0; exitFlow.value = 'coordinating'; scheduleExitPoll() }
+  } catch (error) {
+    exitReason.value = error instanceof Error ? error.message : '确认退出失败'
+    exitFlow.value = 'failed'
+  }
+}
+async function refusePendingExit(): Promise<void> {
+  const session = lifecycle.value
+  const request = pendingExitRequest.value
+  if (!session || !request) return
+  pendingExitRequest.value = null
+  try { await cancelLifecycleExit(session.sessionId, session.exitToken, request.requestId) } catch { /* 拒绝语义不依赖回执 */ }
+}
+
 onMounted(async () => {
   window.addEventListener('focus', onDataFocus)
   document.addEventListener('visibilitychange', onDataVisibilityChange)
@@ -282,6 +457,8 @@ onMounted(async () => {
   } catch (error) {
     envError.value = error instanceof Error ? error.message : '无法连接本地服务'
   }
+  // 退出协调会话：env 可达后注册并开始心跳（不可达时在退出流程内降级提示）
+  void ensureLifecycleSession()
   await refresh()
 })
 onUnmounted(() => {
@@ -289,6 +466,8 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', onDataVisibilityChange)
   cancelDataWatchers()
   if (shakeTimer !== undefined) { clearInterval(shakeTimer); shakeTimer = undefined }
+  stopHeartbeat()
+  if (exitPollTimer !== undefined) clearTimeout(exitPollTimer)
 })
 
 // ===== 训练默认设置入口（返修 F3）：打开期间 rail 与 workspace 整体 inert（焦点+指针双隔离），
@@ -326,6 +505,7 @@ function onTrainingEnded(): void {
         <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
+      <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" @click="openExitFlow">⏻<span>退出</span></button>
       <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
     </aside>
 
@@ -471,10 +651,90 @@ function onTrainingEnded(): void {
     <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
          inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
     <TrainingSettings v-if="trainingSettingsOpen" @close="onSettingsClose" />
+
+    <!-- 保存并退出训练器（REL-LAUNCH-UX-01）：保存→协调→排空→端口不可达才算已退出 -->
+    <div v-if="exitModalOpen" class="exit-overlay" role="dialog" aria-modal="true" aria-label="退出训练器">
+      <div class="exit-panel">
+        <template v-if="exitFlow === 'confirm'">
+          <h2>保存并退出训练器？</h2>
+          <p>未结算的训练进度会保留，不会自动结算或放弃。退出前会等待画线、录像等保存完成。</p>
+          <div class="exit-actions">
+            <button class="exit-primary" @click="beginExit">保存并退出</button>
+            <button class="exit-secondary" @click="closeExitFlow">取消</button>
+          </div>
+        </template>
+        <template v-else-if="exitFlow === 'saving'">
+          <h2>正在保存…</h2>
+          <p>正在等待画线、录像与在途请求保存完成。</p>
+        </template>
+        <template v-else-if="exitFlow === 'coordinating'">
+          <h2>等待其他页面确认…</h2>
+          <p>检测到还有 {{ exitRemaining }} 个页面打开。请在其他训练器页面上确认"保存并退出"；若有页面拒绝或未响应，本次退出会自动取消，服务不会停止。</p>
+          <div class="exit-actions">
+            <button class="exit-secondary" @click="closeExitFlow">后台等待</button>
+          </div>
+        </template>
+        <template v-else-if="exitFlow === 'exiting'">
+          <h2>正在退出…</h2>
+          <p>正在关闭数据写入并等待服务退出（端口、数据库与本机录像保持不变）。</p>
+        </template>
+        <template v-else-if="exitFlow === 'failed'">
+          <h2>退出未完成</h2>
+          <p class="exit-error" role="alert">{{ exitReason }}</p>
+          <p>服务仍在运行，未保存的内容不会丢失。</p>
+          <div class="exit-actions">
+            <button class="exit-primary" @click="openExitFlow">重试</button>
+            <button class="exit-secondary" @click="closeExitFlow">取消</button>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 其他页面发来的退出请求：确认保存或拒绝（拒绝后发起方会收到取消结果） -->
+    <div v-if="pendingExitRequest && !exitModalOpen" class="exit-overlay" role="alertdialog" aria-modal="true" aria-label="另一页面请求退出">
+      <div class="exit-panel">
+        <h2>另一页面请求退出训练器</h2>
+        <p>请先确认本页面的画线、录像已保存，再确认退出；选择拒绝则服务继续运行。</p>
+        <div class="exit-actions">
+          <button class="exit-primary" @click="confirmPendingExit">保存并退出</button>
+          <button class="exit-secondary" @click="refusePendingExit">拒绝</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已退出：服务已停止、端口已释放；此页只剩本地内容，可安全关闭 -->
+    <div v-if="exitFlow === 'exited'" class="exit-exited-screen">
+      <div class="exit-exited-panel">
+        <h2>训练器已退出</h2>
+        <p>服务已正常关闭，端口已释放；训练进度、数据库与本机录像都已保留。</p>
+        <p>本页面已与后台断开，可以关闭此标签页。下次双击 Start.cmd 即可继续使用。</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* REL-LAUNCH-UX-01 保存并退出：遮罩/面板/已退出页（双主题） */
+.exit-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; z-index: 90; }
+.exit-panel { background: #fff; color: #1e293b; border-radius: 10px; padding: 22px 24px; width: min(440px, calc(100vw - 40px)); box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25); }
+.exit-panel h2 { margin: 0 0 10px; font-size: 17px; }
+.exit-panel p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: #475569; }
+:global(body.dark) .exit-panel { background: #10192a; color: #e2e8f0; }
+:global(body.dark) .exit-panel p { color: #94a3b8; }
+.exit-error { color: #a03030; font-weight: 600; }
+:global(body.dark) .exit-error { color: #e0a0a0; }
+.exit-actions { display: flex; gap: 10px; margin-top: 16px; }
+.exit-primary { border: 1px solid #1f7a93; background: #1f7a93; color: #fff; border-radius: 4px; padding: 7px 16px; cursor: pointer; }
+.exit-primary:hover { filter: brightness(1.08); }
+.exit-secondary { border: 1px solid var(--surface-border, #dfe5eb); background: transparent; color: inherit; border-radius: 4px; padding: 7px 16px; cursor: pointer; }
+.exit-exited-screen { position: fixed; inset: 0; background: #f6f8fa; display: flex; align-items: center; justify-content: center; z-index: 100; }
+.exit-exited-panel { text-align: center; max-width: 460px; padding: 24px; }
+.exit-exited-panel h2 { margin: 0 0 12px; font-size: 20px; color: #1e293b; }
+.exit-exited-panel p { margin: 6px 0; font-size: 13px; line-height: 1.7; color: #475569; }
+:global(body.dark) .exit-exited-screen { background: #0b1220; }
+:global(body.dark) .exit-exited-panel h2 { color: #e2e8f0; }
+:global(body.dark) .exit-exited-panel p { color: #94a3b8; }
+
 /* SETUP-01 首次接入向导：跟随训练器面板风格（双主题，不引外部样式） */
 .setup-wizard { margin: 10px 28px 0; padding: 14px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
 .setup-wizard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
