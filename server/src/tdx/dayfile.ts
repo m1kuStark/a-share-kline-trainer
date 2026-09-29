@@ -85,6 +85,17 @@ export async function readDayFileRange(filePath: string, from?: string, to?: str
   return bars.slice(start, end)
 }
 
+/** 从已读取的 .day 字节缓冲取末条日期（DATA-03 扫描路径用：一次读文件同时取日期与指纹，不再二次打开文件）。
+ * 只校验末条记录的日期字段，中间记录的内容校验留给读取方（parseDayBuffer）。 */
+export function lastDayDateFromBuffer(buffer: Uint8Array): string | null {
+  if (buffer.byteLength === 0) return null
+  if (buffer.byteLength % RECORD_SIZE !== 0) {
+    throw new Error(`TDX .day files must contain 32-byte records; got ${buffer.byteLength} bytes`)
+  }
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+  return formatDate(view.getInt32(buffer.byteLength - RECORD_SIZE, true))
+}
+
 export async function readLastDayDate(filePath: string): Promise<string | null> {
   const handle = await open(filePath, 'r')
   try {
