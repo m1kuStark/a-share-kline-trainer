@@ -1,41 +1,28 @@
-# CAND-03 收编后全量门禁（记录骨架，未执行）
+# CAND-03 收编后全量门禁（执行记录）
 
-结论：**未执行**。本卡只做门禁前置准备与记录模板；`npm run verify:baseline` 全量由集成阶段脚本在集成工作树统一执行，执行后回填本目录 result.json 并将本报告补为短报告（结论＋异常如实）。在未实际运行前，本文件不得被引用为任何通过证据；缺失 proof 不能覆盖真实错误。
+结论：**未通过（unit 步骤失败，收编基线未确立）**。2026-09-29 集成阶段在 trainer-wt/int-v1（wt/integration/v1，testedCommit 48e0ba3e154fd03a0587fb22a538857e4bdee956，tree be4e842…61e，cleanBefore=true/cleanAfter=true）实际执行 `npm run verify:baseline`（= tsx scripts/verify-candidate.ts，baseline profile 全序列）。原始 run 目录：`.runs/run-c3c3ea1a-3c0c-4faf-8f4b-5ad2a029189f/`（manifest.json＋artifacts/unit.log、verification.json、docs.log）。
 
-## 门禁构成（docs/engineering/testing.md:38，scripts/verify-candidate.ts:15-27）
+## 实际执行结果
 
-`verify:baseline`（=`tsx scripts/verify-candidate.ts`，baseline profile 无 impact/无候选 proof）依次执行：
-
-| 步骤 | 动作 | 依据 |
+| 步骤 | 结果 | 依据 |
 |---|---|---|
-| docs | docs check | verify-candidate.ts:15 |
-| unit | 全量单测（vitest run --config server/vitest.config.ts --allowOnly=false） | verify-candidate.ts:68 |
-| types | web 类型 | verify-candidate.ts:23 |
-| build | 独立生产构建 | verify-candidate.ts:24,70 |
-| snapshot | Journey 快照 | verify-candidate.ts:25 |
-| m2 | 样本 M2 闭环（tsx scripts/verify-m2.ts） | verify-candidate.ts:26,73 |
-| journey | 全量浏览器 Journey（playwright test --retries=0 --forbid-only） | verify-candidate.ts:27,77 |
-| cleanup | 服务器停止与现场清理 | verify-candidate.ts:88-91 |
+| docs | 通过（exit 0） | verification.json checks[0] |
+| unit | **失败（exit 1）**：Test Files 4 failed \| 83 passed (87)；Tests 4 failed \| 1141 passed (1145) | artifacts/unit.log |
+| types / build / snapshot / m2 / journey | 未执行 | runner 首败即停（verify-candidate.ts:84 顺序执行）；无服务器启动，cleanup 无独立记录 |
 
-所有检查通过且提交/工作树指纹运行前后不变才产生候选 proof（testing.md:38；verify-candidate.ts:93 cleanAfter 核验）。
+unit 四个失败与归因（串行复跑命令：`npx vitest run --config server/vitest.config.ts --allowOnly=false --no-file-parallelism <四个失败文件>`，结果 1 failed \| 3 passed (4)，Tests 1 failed \| 48 passed (49)）：
 
-## 前置条件（集成阶段执行前逐项确认）
+1. `server/test/api.test.ts`「reports cached catalog…」— 5000ms 超时；串行复跑**通过** → 并行负载抖动（与 CAND-01/02 轮 docs-tooling/api 等夹具类口径一致）。
+2. `server/test/data-refresh.test.ts`「e) rejects a torn…」— 5000ms 超时；串行复跑**通过** → 同上。
+3. `server/test/drawings.test.ts`「replaces drawings independently…」— 5000ms 超时；串行复跑**通过** → 同上。
+4. `server/test/runtime-isolation.test.ts`「cancels an owned child command and preserves its failure log」— **AssertionError：期望 rejects 抛 /abort/i，实得 'cleanup incomplete; see …\cancel.log'**（runtime-isolation.test.ts:172）；串行复跑**仍失败且错误逐字一致** → 既有确定性基线失败（RUN-CANCEL-01 范围，与本卡已知失败登记完全吻合），非负载抖动。
 
-1. **执行位置**：仅集成工作树 trainer-wt/int-v1（分支 wt/integration/v1，含 CAND-01/CAND-02 收编文档提交），固定端口 18810/18910；开发槽位（18801/18901）不执行本门禁。
-2. **工作树干净**：运行前提交全部变更；verify-candidate.ts:42,93 以 testedCommit/tree 核验运行前后 HEAD 与工作树不变。
-3. **TDX_ROOT 必须显式设置**：snapshot 步骤经 scripts/runtime/snapshot.ts:52 无可读源直接抛错（"Journey needs a readable TDX sample source; set TDX_ROOT"）；m2 步骤经 scripts/verify-m2.ts:24 无源抛错。**开放项（已知阻塞）**：2026-09-27 暂停前磁盘仅存 tdx-browser-sample 的 sha256 清单、快照字节本体已清理（见 SETUP-DRAIN-01 恢复轮记录，当时 Journey/M2 子门禁因此 needs_replan）；须由控制层指定现存冻结样本路径，或裁决读用户真实 TDX 制作快照的授权。未解决前本门禁的 snapshot/m2/journey 步骤无法通过。
-4. **数据隔离**：TRAINER_RUN_ID 与 TRAINER_DB/TRAINER_STATIC_DIR/TRAINER_READY_FILE 显式指向集成工作树内路径（server/src/config.ts:18-37），不共享默认数据目录，不修改个人库、原 dist 与历史报告。
-5. **基线事实**：58cc210/5bf4484 已由用户拍板并入基线（2026-09-29），无重跑需要；本门禁对象是收编后的集成基线尖端。
+## 异常与阻塞（如实）
 
-## 已知基线失败与预期处置（如实，不得静默豁免）
+- **确定性失败 1 项**：runtime-isolation.test.ts。按本卡执行口径，须 RUN-CANCEL-01 修复，或控制层显式裁决豁免并记录依据；本次未做任何跳过/删除断言处置。
+- **TDX_ROOT 前置不可用**：本机未设 TDX_ROOT，`TongDaXin`/`TDX` 默认候选（server/src/tdx/discover.ts:37，ProgramFiles/ProgramData/LOCALAPPDATA 等根）无一路径存在；现存冻结样本仅 sha256 清单、字节本体已清理（SETUP-DRAIN-01 恢复轮 needs_replan 记录）。即使 unit 通过，snapshot（scripts/runtime/snapshot.ts:52 无源抛错）与 m2（scripts/verify-m2.ts:24 无源抛错）也无法通过。须控制层指定现存冻结样本路径，或裁决读用户真实 TDX 制作快照的授权。
+- 本次 run 的 PORT/VITE_PORT 指定为 18810/18910（集成工作树专用，未与开发槽位共享）；unit 首败未达服务器启动步骤，TRAINER_RUN_ID/TRAINER_DB/TRAINER_STATIC_DIR/TRAINER_READY_FILE 未实际设置（详见 result.json environment 字段）。
 
-- runtime-isolation.test.ts 为基线确定性失败（RUN-CANCEL-01 范围，两轮全量 npm test 复现且串行复跑仍失败）。verify:baseline 的 unit 步骤跑全量单测，会命中该失败：集成阶段须先由 RUN-CANCEL-01 修复，或由控制层显式裁决豁免并记录依据；不得为绿灯静默跳过或删除断言。
-- unit/build 等 GitHub 夹具类测试在并行负载下有超时抖动（CAND-01/CAND-02 轮实测：docs-tooling/review-profile/worktree-tools/release-metadata/train-range-preview 等）；失败时先串行复跑确认再归因。
+## 后续（按失败处置口径）
 
-## 失败处置（按派发口径）
-
-任一步骤失败：保留首次失败 stderr/退出码/日志与失败截图，二分定位到具体候选并回退其集成提交；失败与复跑分开记录（一个 run 一个测试对象），复跑写明原因。修复/回退后整门禁重跑，不按步骤拼凑通过。
-
-## 通过后效力
-
-门禁通过即收编基线确立：开发槽位成果方可进入集成队列；开发分支仍并行自 5bf4484 切出。主代理视觉记录与用户验收仍是独立后续条件，本门禁不生成用户 accepted。
+非拼凑通过：任一阻塞解除后（RUN-CANCEL-01 修复或豁免裁决＋TDX 样本来源指定），在集成工作树**整门禁重跑** `npm run verify:baseline`，新 run 新记录；本报告不作为任何通过证据引用。docs/unit 两步本次已绿/已知归因，重跑时仍以重跑结果为准。

@@ -1,36 +1,41 @@
 {
   "schemaVersion": 1,
-  "status": "not_executed",
-  "note": "本文件是收编后全量门禁的记录骨架（CAND-03），由开发槽位预备；verify:baseline 由集成阶段在集成工作树统一执行后回填真实值并移除本 note。任何字段不得在未实际运行时填入编造值；proof 仅在全部检查通过且提交/工作树指纹不变时存在。",
+  "status": "failed",
+  "note": "2026-09-29 集成阶段在 trainer-wt/int-v1（wt/integration/v1，48e0ba3）实际执行 npm run verify:baseline 全量：docs 通过，unit 失败（4 failed / 1141 passed of 1145），后续 types/build/snapshot/m2/journey 因 runner 首败即停未执行。四个失败文件已按口径串行复跑（--no-file-parallelism）归因：api/data-refresh/drawings 三个超时类串行全过（负载抖动，与 CAND-01/02 轮口径一致）；runtime-isolation.test.ts 串行仍以同一 AssertionError 失败（RUN-CANCEL-01 范围既有确定性基线失败）。另 snapshot/m2 前置 TDX_ROOT 本机无任何可读通达信源（冻结样本仅存 sha256 清单，字节本体已清理），即使 unit 通过也无法通过。原始日志见 .runs/run-c3c3ea1a-3c0c-4faf-8f4b-5ad2a029189f/artifacts/（unit.log、verification.json）。未通过即收编基线未确立；处置须 RUN-CANCEL-01 修复或控制层显式裁决豁免、以及控制层指定 TDX 样本来源后整门禁重跑。",
   "taskId": "CAND-03",
-  "testedCommit": null,
-  "tree": null,
+  "testedCommit": "48e0ba3e154fd03a0587fb22a538857e4bdee956",
+  "tree": "be4e842bc20ac30fa08406d1c3dc9c1ae58be61e",
   "environment": {
     "worktree": "trainer-wt/int-v1",
     "branch": "wt/integration/v1",
     "PORT": 18810,
     "VITE_PORT": 18910,
-    "TRAINER_RUN_ID": "待填（集成工作树专用 runId）",
-    "TRAINER_DB": "待填（集成工作树内显式路径）",
-    "TRAINER_STATIC_DIR": "待填（集成工作树内显式路径）",
-    "TRAINER_READY_FILE": "待填（集成工作树内显式路径）",
-    "TDX_ROOT": "待填（控制层指定的现存冻结样本路径或经裁决授权制作）"
+    "TRAINER_RUN_ID": "未设置（unit 首败，未到需隔离环境的服务器步骤；server 步骤若达将按 config.ts:18-37 显式路径要求设置）",
+    "TRAINER_DB": "未设置（同上）",
+    "TRAINER_STATIC_DIR": "未设置（同上）",
+    "TRAINER_READY_FILE": "未设置（同上）",
+    "TDX_ROOT": "不可用：未设置且本机无 TongDaXin/TDX 默认候选可发现（server/src/tdx/discover.ts:37）；现存冻结样本仅 sha256 清单、字节本体已清理（SETUP-DRAIN-01 恢复轮 needs_replan 记录）"
   },
-  "dataScope": "冻结真实三股票/指数样本（TDX_ROOT），不触个人训练库、原 dist 与历史报告",
+  "dataScope": "冻结真实三股票/指数样本（TDX_ROOT），不触个人训练库、原 dist 与历史报告；本次 unit/docs 步骤未触任何 TDX 数据",
   "checks": [
-    { "name": "docs", "action": "docs check", "exitCode": null, "log": null },
-    { "name": "unit", "action": "unit tests", "exitCode": null, "log": null },
-    { "name": "types", "action": "web types", "exitCode": null, "log": null },
-    { "name": "build", "action": "production build", "exitCode": null, "log": null },
-    { "name": "snapshot", "action": "journey snapshot", "exitCode": null, "log": null },
-    { "name": "m2", "action": "m2 closed loop", "exitCode": null, "log": null },
-    { "name": "journey", "action": "browser journey", "exitCode": null, "log": null },
-    { "name": "cleanup", "exitCode": null, "log": null }
+    { "name": "docs", "action": "docs check", "exitCode": 0, "log": ".runs/run-c3c3ea1a-3c0c-4faf-8f4b-5ad2a029189f/artifacts/docs.log" },
+    { "name": "unit", "action": "unit tests", "exitCode": 1, "log": ".runs/run-c3c3ea1a-3c0c-4faf-8f4b-5ad2a029189f/artifacts/unit.log", "detail": "Test Files 4 failed | 83 passed (87)；Tests 4 failed | 1141 passed (1145)。失败：api.test.ts（5000ms 超时）、data-refresh.test.ts（5000ms 超时）、drawings.test.ts（5000ms 超时）、runtime-isolation.test.ts（AssertionError：期望 /abort/i 实得 'cleanup incomplete; see …cancel.log'，runtime-isolation.test.ts:172）" },
+    { "name": "types", "action": "web types", "exitCode": null, "log": null, "detail": "未执行：runner 首败即停（verify-candidate.ts:84 顺序执行，unit 抛错中断）" },
+    { "name": "build", "action": "production build", "exitCode": null, "log": null, "detail": "未执行（同上）" },
+    { "name": "snapshot", "action": "journey snapshot", "exitCode": null, "log": null, "detail": "未执行（同上）；且 TDX_ROOT 前置不可用，scripts/runtime/snapshot.ts:52 无可读源将抛错" },
+    { "name": "m2", "action": "m2 closed loop", "exitCode": null, "log": null, "detail": "未执行（同上）；且 TDX_ROOT 前置不可用，scripts/verify-m2.ts:24 无源抛错" },
+    { "name": "journey", "action": "browser journey", "exitCode": null, "log": null, "detail": "未执行（同上）" },
+    { "name": "cleanup", "exitCode": null, "log": null, "detail": "未单独记录：无服务器启动（未到 journey 步骤），finally 中 server?.stop() 空操作，verification.json 的 checks 数组仅含 docs/unit 两项" }
   ],
-  "passed": null,
-  "cleanBefore": null,
-  "cleanAfter": null,
-  "runManifest": null,
+  "serialRerun": {
+    "command": "npx vitest run --config server/vitest.config.ts --allowOnly=false --no-file-parallelism server/test/api.test.ts server/test/data-refresh.test.ts server/test/drawings.test.ts server/test/runtime-isolation.test.ts",
+    "result": "Test Files 1 failed | 3 passed (4)；Tests 1 failed | 48 passed (49)",
+    "attribution": "api/data-refresh/drawings 三个 5000ms 超时串行全过→并行负载抖动（沿用 CAND-01/02 轮口径）；runtime-isolation.test.ts 串行仍失败且错误与全量轮逐字一致→既有确定性基线失败（RUN-CANCEL-01 范围），非负载抖动"
+  },
+  "passed": false,
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "runManifest": ".runs/run-c3c3ea1a-3c0c-4faf-8f4b-5ad2a029189f/manifest.json",
   "proof": null,
-  "createdAt": null
+  "createdAt": "2026-09-29T13:31:38.671Z"
 }
