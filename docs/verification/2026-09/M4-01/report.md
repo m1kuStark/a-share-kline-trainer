@@ -19,3 +19,11 @@
 - 排行与指标全部为持久事实只读派生：不新增持久化指标表、不写库、不重算账户；基准只读 `vipdoc/sh/lday/sh000300.day`（与 `tdx/inspect.ts` 同源）。
 - 防未来：`/api/rankings` 与历史同守卫（running 存在 409，异步基准读取后复守卫）；`/api/trainings/:id/bars` 复盘守卫——running 存在时仅放行该局自身（推进日截断），其余训练 409。
 - 明确未做：RANGE 训练排行展示分组（roadmap §2.7 留存）、复盘画线编辑、M5 设置。浏览器 Journey（含 `e2e/m4-rankings.spec.ts`）不在本槽执行，集成阶段串行跑。
+
+## 返修：集成门禁 settings-training 超时（2026-09-30）
+
+- 门禁失败原件：`npm test` 退出码 1，唯一失败用例 `settings-training.test.ts > 同一请求内两值同事务更新，不部分成功（第二次更新失败则整体回滚）` 超时 5000ms（release-package 的 stderr 行为通过用例的正常输出，非失败）。
+- 归因：该文件每个用例都做真实临时文件 SQLite＋迁移＋Fastify 注入，threads 池满载并行下整体耗时数倍于串行；失败用例串行实测仅 965ms（本槽复跑两次 12/12 全绿），`saveTrainingSettings` 事务语义正确（RAISE(ABORT)→catch→ROLLBACK，server/src/settings/training.ts），无挂起路径；settings 路由不在 M4-01 改动路径内，属负载超时抖动，与此前 setup-api/review-profile 各例同型。
+- 修复：按仓库既有先例（docs-tooling `testTimeout 20_000`、review-profile `30_000`、worktree-tools `90_000`）给该文件文件级 `vi.setConfig({ testTimeout: 20_000 })`，注释记录门禁失败与预算理由；断言零改动——时间预算修正，不是产品延迟 SLO。
+- 复验：`npx vitest run --config server/vitest.config.ts server/test/settings-training.test.ts` 12/12；全量 `npm test`（551.39s）：1184/1186 通过——settings-training 12/12（含原失败用例，整文件 10985ms，新预算内）；剩余失败＝runtime-isolation（任务明示排除的已知确定性失败，RUN-CANCEL-01 范围）＋docs-tooling 一例 20000ms 纯超时（串行复跑 30/30 绿，与前几轮同型抖动）。符合槽内口径"仅 runtime-isolation 失败视为通过＋抖动串行复跑确认"。
+- 提交位置：wt/D-M4-01（settings-training.test.ts 在 M4-01 卡 allowed_paths `server/test/**` 内；M4-HISTORY-01 卡不含该路径，提交到该分支会打破其 assertScope 门禁）。

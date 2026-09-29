@@ -3,10 +3,17 @@ import { DatabaseSync } from 'node:sqlite'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
+
+// 每个用例都做真实临时文件 SQLite＋迁移＋Fastify 注入（含触发器回滚路径），
+// threads 池满载并行下整体耗时可数倍于串行（集成门禁 2026-09-30 曾在事务回滚用例上
+// 以默认 5000ms 超时失败，该用例串行仅 965ms）。与 docs-tooling（20s）、
+// review-profile（30s）、worktree-tools（90s）同一先例：真实 I/O 预算放宽到 20s，
+// 断言不变——这是时间预算修正，不是产品延迟 SLO（testing.md 同款口径）。
+vi.setConfig({ testTimeout: 20_000 })
 
 // TRAIN-01：/api/settings/training 默认设置 GET/PUT。真实临时 SQLite 文件 + Fastify.inject；
 // 不需要 TDX 目录（无 TDX 也可读写这两项默认）。
