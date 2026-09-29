@@ -19,3 +19,10 @@
 
 - 分支 wt/A/CAND-02 tip 77a3ed6；工作树干净；Node 24 / vitest 3.2.7 / win32-x64。
 - runtime-isolation.test.ts 为任务约定排除的基线确定性失败（RUN-CANCEL-01 范围，本轮修复范围外），本槽历轮全量运行均复现。
+
+## 第二轮门禁复核（2026-09-29，302a4ba 之后）
+
+1. 门禁第 2 次失败仅 1 项：setup-api.test.ts「helper request with the configured token succeeds」（`Test timed out in 5000ms`，setup-api.test.ts:106）——与第 1 轮失败集合（api/data-refresh/full-acceptance）完全不同。
+2. 本槽同日全量复跑（`npm test`）：87 文件 5 failed/82 passed，失败集又不同（docs-tooling、review-profile、runtime-isolation（已知排除）、train-range-preview、worktree-tools，逐项超时类）。
+3. 串行复跑覆盖两轮全部抖动文件（`npx vitest run --config server/vitest.config.ts --no-file-parallelism`：setup-api/docs-tooling/review-profile/train-range-preview/worktree-tools）：**5 passed (5) / 103 passed (103)，exit 0**（462s）。
+4. 连续两次门禁运行、四次全量/串行运行，失败集每轮不同且全部为超时类、串行全绿——进一步坐实根因是并行负载下的预算抖动，分支内容（docs-only）无关。根治仍须集成人对门禁基建裁决（串行执行或上调预算，见上文建议）；在此之前，重跑遇超时按同一口径串行确认即可，不需回退本分支。
