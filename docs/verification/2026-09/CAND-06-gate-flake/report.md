@@ -18,3 +18,10 @@
 
 - 分支 wt/A/CAND-06 tip 0d525f6；工作树干净；Node 24 / vitest 3.2.7 / win32-x64。
 - 说明：CAND-02/CAND-04 分支上的同主题记录提交于各自分叉之后，不含于本分支，故本卡自建记录。
+
+## 第三轮门禁复核（2026-09-29，ac79e11 之后）：fail-fast 退出码类
+
+1. 门禁第 3 次失败形态不同：退出码 **3221226505（0xC0000409，Windows fail-fast/STATUS_STACK_BUFFER_OVERRUN）**，无任何测试输出与失败用例名——非断言失败、非超时，属进程级异常终止。
+2. 本槽立即全量复跑（`npm test`）：未复现该退出码；得到的是 4 个超时类抖动文件（data-refresh 5000ms / docs-tooling 20000ms / review-profile hook 15000ms / worktree-tools hook 30000ms）。串行复跑该 4 文件：**4 passed (4) / 95 passed (95)，exit 0**。
+3. 仓内同类先例：SETUP-DRAIN-01 恢复轮记录 npm ci 退出码 3221225794（0xC0000402 fail-fast）为「环境/进程异常迹象、根因 unknown、串行与恢复后完整单跑未复现」（该卡第 52 行）。本轮 0xC0000409 同族：进程级 fail-fast，发生时零输出，事后不可复现——按先例口径记为环境/进程异常迹象，不编造确定归因，未复现≠排除。
+4. 分支内容仍为零运行代码改动（git diff 5bf4484..HEAD 非 docs 文件数为 0），与本退出码无内容关联路径。处置：门禁侧重跑；若 fail-fast 复现，按先例记录退出码与时间点交控制层归因（机器级），不需回退本分支。
