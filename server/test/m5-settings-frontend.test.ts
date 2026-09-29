@@ -55,7 +55,9 @@ describe('M5-01 应用偏好接线', () => {
     expect(source).toMatch(/检查此路径/)
     expect(source).toMatch(/保存数据目录/)
     expect(source).toMatch(/重启应用后生效/)
-    expect(source).toMatch(/保存失败不会改动已保存的选择/)
+    // journey 返修：静态文案不得包含『已保存』子串（弹层级 not.toContainText('已保存') 负向断言依赖）
+    expect(source).toMatch(/保存失败不会改动之前的选择/)
+    expect(source).not.toMatch(/保存失败不会改动已保存的选择/)
     // 校验结果展示问题清单与权息/名称/基准
     expect(source).toMatch(/tdxCheck\.problems/)
     expect(source).toMatch(/基准指数/)
