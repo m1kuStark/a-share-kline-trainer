@@ -2,12 +2,18 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, type TrainingSettingsView } from '../api'
 import { notifySettingsSaved } from '../settingsPanel'
+import {
+  fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
+  type TdxPathSettingsView, type TdxCandidateCheckInfo,
+} from '../appSettings'
 
 // TRAIN-01/M5-DEFAULTS 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
 // 四字段一起原子保存：费用开关、T+1、默认初始资金（0.01..1,000,000,000 元、至多两位小数）、
 // 默认复权（forward/raw）。保存成功给明确反馈；取消/失败不假称保存，也不改变任何进行中的训练。
 // 默认只影响之后新建的训练；本局规则在创建时冻结。
 // 损坏默认（409 TRAINING_DEFAULTS_UNREADABLE）不是死局：面板即修复入口，完整保存即可修复。
+// M5-01 新增两个区块：应用偏好（自动检查日线数据，即时保存即时生效）与
+// 数据目录（通达信）（查看/校验/保存，保存后需重启应用生效；失败保留原选择）。
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -61,6 +67,7 @@ onMounted(async () => {
   // 时仍能关闭；Tab 隔离由面板 trapFocus + 背景 inert 共同保证。
   document.addEventListener('keydown', onDocumentKeydown)
   panelRef.value?.focus()
+  void loadAppSections()
   const version = ++readVersion
   try {
     const current = await fetchTrainingSettings()
@@ -120,6 +127,111 @@ async function save(): Promise<void> {
     saving.value = false
     // 保存按钮 disabled 期间浏览器会把焦点回落到 body：完成后把焦点收回弹层
     panelRef.value?.focus()
+  }
+}
+
+// ===== M5-01 应用偏好：自动检查日线数据（即时保存，失败还原开关） =====
+const autoDataCheckForm = ref(true)
+const appPrefLoadError = ref('')
+const appPrefSaving = ref(false)
+const appPrefError = ref('')
+const appPrefSaved = ref('')
+
+async function loadAppSections(): Promise<void> {
+  appPrefLoadError.value = ''
+  try {
+    const view = await fetchAppSettings()
+    autoDataCheckForm.value = view.autoDataCheck
+  } catch (error) {
+    // 含损坏偏好 409：表单按缺省呈现，重新切换并保存即修复（服务端 message 已含指引）
+    appPrefLoadError.value = error instanceof Error ? error.message : '无法读取应用偏好'
+    autoDataCheckForm.value = true
+  }
+  tdxLoadError.value = ''
+  try {
+    const view = await fetchTdxPathSettings()
+    tdxView.value = view
+    if (view.savedChoice !== null && !tdxPathTouched.value) tdxPathInput.value = view.savedChoice.root
+  } catch (error) {
+    tdxLoadError.value = error instanceof Error ? error.message : '无法读取数据目录设置'
+  }
+}
+
+async function onAutoDataCheckChange(): Promise<void> {
+  if (appPrefSaving.value) return
+  const previous = !autoDataCheckForm.value
+  appPrefSaving.value = true
+  appPrefError.value = ''
+  appPrefSaved.value = ''
+  try {
+    const saved = await putAppSettings(autoDataCheckForm.value)
+    autoDataCheckForm.value = saved.autoDataCheck
+    appPrefSaved.value = saved.autoDataCheck
+      ? '已保存：自动检查保持开启'
+      : '已保存：将只在点击「更新日线 / 重新读取」时检查日线数据'
+  } catch (error) {
+    autoDataCheckForm.value = previous
+    appPrefError.value = error instanceof Error ? error.message : '保存失败，偏好未更改'
+  } finally {
+    appPrefSaving.value = false
+  }
+}
+
+// ===== M5-01 数据目录（通达信）：查看 / 校验 / 保存（重启生效） =====
+const tdxView = ref<TdxPathSettingsView | null>(null)
+const tdxLoadError = ref('')
+const tdxPathInput = ref('')
+const tdxPathTouched = ref(false)
+const tdxChecking = ref(false)
+const tdxCheck = ref<TdxCandidateCheckInfo | null>(null)
+const tdxCheckError = ref('')
+const tdxSaving = ref(false)
+const tdxError = ref('')
+const tdxSavedMessage = ref('')
+
+async function checkTdxPath(): Promise<void> {
+  if (tdxChecking.value || tdxSaving.value) return
+  const root = tdxPathInput.value.trim()
+  if (root === '') {
+    tdxCheckError.value = '请先填写通达信安装根目录'
+    return
+  }
+  tdxChecking.value = true
+  tdxCheckError.value = ''
+  tdxSavedMessage.value = ''
+  try {
+    const result = await validateTdxPath(root)
+    tdxCheck.value = result.check
+  } catch (error) {
+    tdxCheck.value = null
+    tdxCheckError.value = error instanceof Error ? error.message : '检查失败，可重试'
+  } finally {
+    tdxChecking.value = false
+  }
+}
+
+async function saveTdxPath(): Promise<void> {
+  if (tdxSaving.value || tdxChecking.value) return
+  const root = tdxPathInput.value.trim()
+  if (root === '') {
+    tdxError.value = '请先填写通达信安装根目录'
+    return
+  }
+  tdxSaving.value = true
+  tdxError.value = ''
+  tdxSavedMessage.value = ''
+  try {
+    // 服务端保存前复验＋原子替换：失败 400 带可行动问题清单，已保存选择原样保留
+    const result = await putTdxPath(root)
+    tdxView.value = { effectiveRoot: result.effectiveRoot, savedChoice: result.saved }
+    tdxCheck.value = null
+    tdxSavedMessage.value = result.effectiveRoot === result.saved.root
+      ? '已保存：与当前生效目录一致，重启应用后按此目录读取'
+      : '已保存：重启应用后生效（当前会话仍使用原目录；离线导入回放不受影响）'
+  } catch (error) {
+    tdxError.value = error instanceof Error ? error.message : '保存失败，已保留原选择'
+  } finally {
+    tdxSaving.value = false
   }
 }
 
@@ -199,6 +311,57 @@ function close(): void {
       <div class="settings-fixed">
         <span>固定口径（不可修改）：一手 {{ settings?.lotSize ?? 100 }} 股 · 买入仓位按总权益 · 按当日原始收盘价成交</span>
       </div>
+      <section class="settings-section" aria-label="应用偏好">
+        <h3>应用偏好</h3>
+        <label class="settings-row">
+          <input
+            v-model="autoDataCheckForm" type="checkbox" :disabled="appPrefSaving"
+            aria-label="自动检查日线数据" @change="onAutoDataCheckChange"
+          />
+          <span class="settings-row-text">
+            <strong>自动检查日线数据</strong>
+            <small>开启时：应用启动、回到前台与页面停留期间自动检查本地日线状态（约 60 秒一次，只读状态，不下载数据）。关闭后仅在点击「更新日线 / 重新读取」时检查。默认开启，切换后立即保存生效。</small>
+          </span>
+        </label>
+        <p v-if="appPrefLoadError" class="error-text" role="alert">{{ appPrefLoadError }}</p>
+        <p v-if="appPrefError" class="error-text" role="alert">{{ appPrefError }}</p>
+        <p v-if="appPrefSaved" class="settings-saved" role="status">{{ appPrefSaved }}</p>
+      </section>
+      <section class="settings-section" aria-label="数据目录（通达信）">
+        <h3>数据目录（通达信）</h3>
+        <p class="settings-section-note">
+          <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code></span>
+          <span v-if="tdxView?.savedChoice">；已保存：<code>{{ tdxView.savedChoice.root }}</code><template v-if="tdxView.savedChoice.root !== tdxView.effectiveRoot">（与当前不同，重启后生效）</template></span>
+          <span v-else>；尚未保存过选择</span>
+        </p>
+        <div class="settings-row settings-column">
+          <label class="settings-field-label" for="tdx-path-input">通达信安装根目录</label>
+          <input
+            id="tdx-path-input" v-model="tdxPathInput" type="text" spellcheck="false"
+            aria-label="通达信安装根目录" placeholder="例如 D:\new_tdx"
+            @input="tdxPathTouched = true; tdxSavedMessage = ''"
+          />
+          <small>保存前会重新校验目录可识别、可读（日线 / 权息 / 名称 / 基准指数）。保存失败不会改动已保存的选择。</small>
+        </div>
+        <div class="settings-actions">
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
+          <button class="trade-action buy" :disabled="tdxSaving || tdxChecking || tdxPathInput.trim() === ''" @click="saveTdxPath">{{ tdxSaving ? '保存中…' : '保存数据目录' }}</button>
+        </div>
+        <div v-if="tdxCheck" class="settings-tdx-check" role="status">
+          <span>
+            {{ tdxCheck.recognized && tdxCheck.readable ? '✓ 该目录可用' : '✕ 该目录暂不可用' }}：
+            日线文件 {{ tdxCheck.dailyFileCount }} 个<template v-if="tdxCheck.latestDate">，最新 {{ tdxCheck.latestDate }}</template>；
+            权息{{ tdxCheck.hasAdjustment ? '有' : '缺' }}、股票名称{{ tdxCheck.hasNames ? '有' : '缺' }}、基准指数{{ tdxCheck.hasBenchmark ? '有' : '缺' }}
+          </span>
+          <ul v-if="tdxCheck.problems.length > 0">
+            <li v-for="problem in tdxCheck.problems" :key="problem">{{ problem }}</li>
+          </ul>
+        </div>
+        <p v-if="tdxCheckError" class="error-text" role="alert">{{ tdxCheckError }}</p>
+        <p v-if="tdxLoadError" class="error-text" role="alert">{{ tdxLoadError }}</p>
+        <p v-if="tdxError" class="error-text" role="alert">{{ tdxError }}</p>
+        <p v-if="tdxSavedMessage" class="settings-saved" role="status">{{ tdxSavedMessage }}</p>
+      </section>
       <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
       <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
       <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
@@ -228,6 +391,13 @@ function close(): void {
 .settings-adjust-grid button.selected { border-color: #2b8b99; color: #1c6076; background: rgba(43, 139, 153, 0.08); }
 :global(body.dark) .settings-adjust-grid button.selected { color: #7fd0dc; border-color: #2b8b99; }
 .settings-fixed { margin-top: 10px; font-size: 11px; color: var(--text-secondary, #51637a); }
+.settings-section { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--surface-border, #eef2f6); }
+.settings-section h3 { margin: 0 0 4px; font-size: 14px; }
+.settings-section-note { margin: 0 0 8px; font-size: 11px; color: var(--text-secondary, #51637a); line-height: 1.6; overflow-wrap: anywhere; }
+.settings-section-note code { font-size: 11px; overflow-wrap: anywhere; }
+.settings-section .settings-actions { margin-top: 10px; }
+.settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; line-height: 1.6; }
+.settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
 :global(body.dark) .settings-saved { color: #57bd7c; }
 .settings-actions { display: flex; gap: 10px; margin-top: 14px; }
