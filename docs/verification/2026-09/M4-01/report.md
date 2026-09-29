@@ -27,3 +27,11 @@
 - 修复：按仓库既有先例（docs-tooling `testTimeout 20_000`、review-profile `30_000`、worktree-tools `90_000`）给该文件文件级 `vi.setConfig({ testTimeout: 20_000 })`，注释记录门禁失败与预算理由；断言零改动——时间预算修正，不是产品延迟 SLO。
 - 复验：`npx vitest run --config server/vitest.config.ts server/test/settings-training.test.ts` 12/12；全量 `npm test`（551.39s）：1184/1186 通过——settings-training 12/12（含原失败用例，整文件 10985ms，新预算内）；剩余失败＝runtime-isolation（任务明示排除的已知确定性失败，RUN-CANCEL-01 范围）＋docs-tooling 一例 20000ms 纯超时（串行复跑 30/30 绿，与前几轮同型抖动）。符合槽内口径"仅 runtime-isolation 失败视为通过＋抖动串行复跑确认"。
 - 提交位置：wt/D-M4-01（settings-training.test.ts 在 M4-01 卡 allowed_paths `server/test/**` 内；M4-HISTORY-01 卡不含该路径，提交到该分支会打破其 assertScope 门禁）。
+
+## 返修二：集成门禁 setup-onboarding 超时——归属 wt-B 切片，槽内加固同型隐患（2026-09-30）
+
+- 门禁失败原件：`npm test` 退出码 1，唯一失败用例 `setup-onboarding.test.ts:196 > rejects missing/oversized root with 400 before any inspection` 超时 5000ms（release-package 的 stderr 行仍为通过用例正常输出）。
+- 归属核实（只读 git）：`server/test/setup-onboarding.test.ts` **不在 wt/D-M4-01 上**（分支内无此文件）；它来自 wt-B 的 SETUP-01 切片（分支 wt/B-SETUP-01，tip 93ebc6a——该 tip 本身即"给六个 market-data 用例显式 20s"的同型修复）。集成门禁跑在 `wt/integration/v1`（b2714ce，合并 wt/D-M4-01＋wt/B-SETUP-01＋wt/B-REL-LAUNCH-UX-01），该文件在集成分支的 blob（cc1eae2）与 wt-B tip 完全一致，且**没有任何 testTimeout 覆盖**（无 setConfig/用例级超时），每用例真实 mkdtemp＋Fastify 全量注册＋递归清理，默认 5000ms——与 settings-training 同型满载抖动。
+- 槽内无法合法修复该文件：复制 wt-B 文件进本分支＝合入他人改动（且会在下次集成合并制造 add/add 冲突）；全局改 `server/vitest.config.ts` 默认值不在 M4-01 卡 allowed_paths（仅 `server/src/**`、`server/test/**`），会打破本候选 assertScope；亦不得改动 wt-B 工作树。已升级上报，建议由 SETUP-01 槽（同一行修法：文件级 `vi.setConfig({ testTimeout: 20_000 })`）或集成人在集成分支直接应用。
+- 槽内顺带加固（同型已实证隐患，均在 allowed_paths 内）：`setup-api.test.ts`（本仓全量运行两次在不同用例上 5000ms 超时，串行绿）与 `drawings.test.ts`（一次"重开数据库"用例 5000ms 超时，串行绿）各加文件级 `vi.setConfig({ testTimeout: 20_000 })`，断言零改动。
+- 复验：`npx vitest run --config server/vitest.config.ts server/test/setup-api.test.ts server/test/drawings.test.ts` → 16/16；全量 `npm test`（507.93s）：1184/1186——settings-training 12/12（10377ms）、setup-api 9/9（8229ms）、drawings 7/7（7759ms）均在新预算内通过；剩余失败＝runtime-isolation（任务明示排除）＋review-profile 一例 30000ms 纯超时（该文件已有 30s 预算，串行复跑 16/16 绿，同型抖动）。符合槽内口径。
