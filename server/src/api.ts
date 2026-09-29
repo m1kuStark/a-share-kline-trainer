@@ -311,6 +311,19 @@ export async function registerApi(
     return { statusCode: guard.statusCode, code: guard.code }
   }
 
+  /** REL-LAUNCH-UX-01 lifecycle 端点共用 setup 请求守卫（判定复用 setupGuardFailure）：
+   *  失败时守卫内回结构化拒绝并返回 false，调用方按 `if (!setupGuard(request, reply)) return reply` 原样返回。
+   *  集成层修复：该定义在 SETUP-01 与 REL-LAUNCH-UX-01 两分支文本合并时丢失，致 lifecycle 端点 ReferenceError→500。 */
+  function setupGuard(
+    request: { host: string; headers: Record<string, unknown> },
+    reply: { code(statusCode: number): { send(payload: unknown): unknown } },
+  ): boolean {
+    const failure = setupGuardFailure(request)
+    if (!failure) return true
+    reply.code(failure.statusCode).send({ error: failure.code })
+    return false
+  }
+
   /** 请求体目录字段校验：非空字符串、长度有界；失败返回 null（由调用方回 400） */
   function parseRootBody(body: unknown): string | null {
     if (!body || typeof body !== 'object' || Array.isArray(body)) return null
