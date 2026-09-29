@@ -32,9 +32,18 @@
 
 实现测试入口为 [data-refresh.test.ts](../../../test/data-refresh.test.ts) 与 [history-protection.test.ts](../../../test/history-protection.test.ts)；格式边界见 [TDX 格式](../../tdx/docs/formats.md)。
 
+## 统一行情读取入口（DATA-04）
+
+[reader.ts](../reader.ts) 定义 `MarketDataReader`：训练/结算的 bars（原始日线，未复权未聚合未截断）、actions（权息事件，cached 读持久缓存 / fresh 绕过缓存解码现势字节）、coverage（个股尾日与根数）、version（当前整批发布标识 snapshot_batch）、catalog（股票目录）一律经它读取，训练不再直读 TDX 文件路径。来源解析与刷新扫描同口径（[selection.ts](../selection.ts)）：`config.tdxRoot` 非空 → TDX 读取器（包装既有 tdx/* 读取与缓存刷新，行为与旧直读路径逐点一致）；否则按注册顺序取第一个 `available()` 的注册读取器（[registerMarketReader](../reader.ts)，测试夹具与未来在线适配器用）；均不可用由引擎映射为既有 503 状态码合约。
+
+- 覆盖/版本语义：TDX 覆盖读目录缓存（随最近一次目录刷新），version 读 `cache_meta` 的 snapshot_batch（DATA-01 整批发布标识）；来源证明不了的字段为 null，不用全市场尾日冒充个股覆盖。
+- fresh 权息与 GPT-WAKE-02：范围预览指纹用 `readActions(fresh)` 绕过 stat 指纹缓存直接解码现势 gbbq 字节——字节已变而 size/mtime 未变时缓存保持陈旧，fresh 保证「数据已变」的预览不复用旧指纹。
+- 写入边界：读取器只承载读取前的缓存保障（`ensureCaches`，TDX＝权息缓存刷新；目录刷新随 readCatalog），整批发布（DATA-01）与市场版本记账（DATA-03）仍归刷新协调器，读取器绝不写行情。
+- 非 TDX 夹具训练：注册合成读取器后训练创建/K线/交易/推进（含权息入账）/结算/范围预览全程可跑，无 TDX 目录与任何文件（回归见 [data-reader.test.ts](../../../test/data-reader.test.ts)）。
+
 ## 接入来源时必须面对的边界
 
-`DailySource` 注册成功只意味着刷新协调器能扫描。当前 [api.ts](../../api.ts) 和 [train/engine.ts](../../train/engine.ts) 仍依赖 `tdxRoot`、`.day` 路径及 TDX 权息缓存。在线来源尚不能独立支撑训练；统一读取合约见 [DATA-04](../../../../docs/work-items/tasks/DATA-04.md)，历史修订与版本保护见 [DATA-03](../../../../docs/work-items/tasks/DATA-03.md)（已实施，见上节）。
+训练引擎的同步段（replayState 旧流水兼容、buildChartSpace 画线基准）仍直接读 `adj_factors` 持久缓存——这是同步 API 无法经 async 读取器的既有边界；缓存新鲜度由读取器 `ensureCaches` 保障，替代来源须在 ensureCaches 中把权息镜像进缓存，否则这两处的画线基准与 legacy 兼容读不到事件。`registerMarketReader` 注册后 [api.ts](../../api.ts) 的路由级 `tdxRoot` 503 守卫与 /api/kline 直读、env/stocks 独立刷新仍在（api.ts 为集成人单写文件），替代来源经 API 创建训练需集成接线放开该守卫；引擎层已可全程非 TDX 运行（服务级验证归集成阶段）。统一读取合约见 [DATA-04](../../../../docs/work-items/tasks/DATA-04.md)，历史修订与版本保护见 [DATA-03](../../../../docs/work-items/tasks/DATA-03.md)（已实施，见上节）。
 
 扫描元数据不能替代个股区间完整性，结算守卫见 [DATA-02](../../../../docs/work-items/tasks/DATA-02.md)。提交成功也不能替代整批版本发布，事务说明见 [publication](./publication.md)。
 

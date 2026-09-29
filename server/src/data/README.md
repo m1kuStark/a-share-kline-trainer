@@ -8,6 +8,7 @@
 | 新增来源或修改增量比较 | [来源合约](./docs/source-contract.md) | [source.ts](./source.ts)、[selection.ts](./selection.ts) |
 | 修改本地文件稳定扫描 | [来源合约](./docs/source-contract.md) | [tdxSource.ts](./tdxSource.ts)，格式见 [TDX](../tdx/README.md) |
 | 修改历史版本保护（指纹、记账、保留版） | [来源合约·历史版本保护](./docs/source-contract.md) | [history/store.ts](./history/store.ts)、[history/protect.ts](./history/protect.ts)、[history/fingerprint.ts](./history/fingerprint.ts) |
+| 修改统一行情读取（训练用 bars/actions/coverage/version） | [来源合约·统一读取入口](./docs/source-contract.md) | [reader.ts](./reader.ts)（TDX 实现＋注册解析，回归见 [data-reader.test.ts](../../test/data-reader.test.ts)） |
 | 修改新鲜度判定或交易日历 | [freshness 合同](../../../docs/engineering/release-032-contracts.md) | [freshness.ts](./freshness.ts)、[calendar.ts](./calendar.ts)（离线2026日历，生产不联网） |
 | 调查刷新后训练能否继续 | [数据要求](../../../docs/specs/market-data/requirements.md) | [训练生命周期](../train/docs/lifecycle.md)、[DATA-02](../../../docs/work-items/tasks/DATA-02.md) |
 
