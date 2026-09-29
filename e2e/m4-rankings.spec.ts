@@ -24,8 +24,10 @@ async function resetToLauncher(page: Page): Promise<void> {
 /** 表单创建 3 个月训练并返回本局 id（排行断言一律按此 id 定位自己的行）。 */
 async function createTrainingFromForm(page: Page, code: string): Promise<number> {
   await resetToLauncher(page)
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill(code)
-  await page.getByRole('button', { name: new RegExp(`${code}`) }).click()
+  // UI-03 双框选股（Launcher.vue 代码框 placeholder＝『股票代码，如 600519』）：填精确代码，
+  // 250ms 去抖后精确命中自动选中（『已选：』提示），无需点击建议按钮——与 journey.spec.ts 同规范。
+  await page.getByPlaceholder('股票代码，如 600519').fill(code)
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -94,6 +96,8 @@ test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘�
   await waitRecordingReady(page)
   await buyAll(page)
   await settleThroughButtons(page)
+  // 结算面板是模态（settle-mask 拦截指针）：先关闭再走侧栏入口，否则排行按钮点不进
+  await page.getByRole('dialog', { name: '训练结算' }).getByRole('button', { name: '完成，返回首页' }).click()
 
   await openRankings(page)
   // 默认 1个月档为空或只有他局：切到 3个月档
@@ -108,24 +112,27 @@ test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘�
   await expect(tradedRow).toBeVisible()
   await expect(buyOnlyRow).toBeVisible()
   await expect(tradedRow).toContainText('600519')
-  await expect(tradedRow).toContainText('买入')
-  // 指标呈现：数值不含 NaN/undefined；零卖出行胜率/盈亏比为 '--'
+  // 指标呈现：数值不含 NaN/undefined
   for (const row of [tradedRow, buyOnlyRow]) {
     const text = await row.innerText()
     expect(text).not.toContain('NaN')
     expect(text).not.toContain('undefined')
   }
-  const tradedText = await tradedRow.innerText()
-  expect(tradedText).toContain('100.00%') // 胜率 100%（1 笔全赢）
-  const buyOnlyText = await buyOnlyRow.innerText()
-  expect(buyOnlyText).toContain('--') // 零卖出：胜率/盈亏比（可能含超额）为 '--'
+  // 胜率/盈亏比列（td 序 5/6）数据无关断言：1 笔卖出的局胜率必有值（100% 或 0% 取决于
+  // 样本方向）、盈亏比必为 '--'（单笔无另一侧）；零卖出局两列均 '--'，不冒充 0。
+  const winRateCell = (row: typeof tradedRow) => row.locator('td').nth(5)
+  const plrCell = (row: typeof tradedRow) => row.locator('td').nth(6)
+  await expect(winRateCell(tradedRow)).not.toContainText('--')
+  await expect(plrCell(tradedRow)).toContainText('--')
+  await expect(winRateCell(buyOnlyRow)).toContainText('--')
+  await expect(plrCell(buyOnlyRow)).toContainText('--')
   await page.screenshot({ path: evidencePath('m4-rankings-tier3m-dark-1440.png'), fullPage: true })
 
   // 点行打开成绩单，展开只读K线复盘
   await tradedRow.click()
   const report = page.getByRole('region', { name: '成绩单' })
   await expect(report).toBeVisible()
-  await expect(report.getByText('逐笔成交')).toBeVisible()
+  await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await report.getByRole('button', { name: '展开复盘' }).click()
   await expect(report.locator('.report-review-chart .chart-frame')).toBeVisible({ timeout: 20_000 })
   await expect(report.getByText('复盘为只读回看')).toBeVisible()
