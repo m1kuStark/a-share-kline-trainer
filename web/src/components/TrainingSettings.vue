@@ -341,7 +341,7 @@ function close(): void {
             aria-label="通达信安装根目录" placeholder="例如 D:\new_tdx"
             @input="tdxPathTouched = true; tdxSavedMessage = ''"
           />
-          <small>保存前会重新校验目录可识别、可读（日线 / 权息 / 名称 / 基准指数）。保存失败不会改动已保存的选择。</small>
+          <small>保存前会重新校验目录可识别、可读（日线 / 权息 / 名称 / 基准指数）。保存失败不会改动之前的选择。</small>
         </div>
         <div class="settings-actions">
           <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>

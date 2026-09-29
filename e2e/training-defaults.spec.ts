@@ -207,8 +207,9 @@ test('设置保存失败反馈/取消不保存/键盘路径；迟到读取不覆
   await page.keyboard.press('Escape')
   await expect(savedDialog).not.toBeVisible()
   // 真实用户路径：搜索并选择股票后再点击创建
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('300857')
-  await page.getByRole('button', { name: /300857 协创数据/ }).click()
+  // journey 返修：UI-03 后搜索框为双框（代码/名称），旧单框 placeholder 不存在
+  await page.getByPlaceholder('股票代码，如 600519').fill('300857')
+  await expect(page.getByText(/已选：协创数据/)).toBeVisible()
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect(page.locator('.training-topbar .workspace-title')).toContainText(SAMPLE.code, { timeout: 15_000 })
   const createdViaClick = await (await page.request.get('/api/trainings/active')).json()
@@ -262,43 +263,61 @@ test('返修F5 设置保存使在途预览失效：加载所有权释放可重�
   await abandonActive(page)
   await page.goto('/')
   await expect(page.getByText('创建训练').first()).toBeVisible()
-  await page.getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台').fill('300857')
-  await page.getByRole('button', { name: /300857 协创数据/ }).click()
-  await page.getByRole('button', { name: '自定义范围' }).click()
-  await page.locator('input[type="date"]').fill('2026-04-15')
-  // 门闩：挂起首次预览请求
+  // journey 返修：UI-03 后搜索框为双框（代码/名称），旧单框 placeholder 不存在
+  await page.getByPlaceholder('股票代码，如 600519').fill('300857')
+  await expect(page.getByText(/已选：协创数据/)).toBeVisible()
+  // 门闩：先装路由再进自定义范围（UI-03 后预览为 400ms 防抖自动触发，无手动按钮）。
+  // 第一个到达的请求＝在途旧预览：释放时以“投毒 endDate”回包——若版本守卫失守，
+  // 陈旧响应会把结果写成 1999-12-31，最终断言即可抓到；第二个到达的＝失效后自动
+  // 重新生成的新预览，放行真实服务端响应。
   let releasePreview!: () => void
   const previewGate = new Promise<void>(resolve => { releasePreview = resolve })
-  let previewReleases = 0
+  let arrivals = 0
+  let secondArrived!: () => void
+  const secondArrivedPromise = new Promise<void>(resolve => { secondArrived = resolve })
   await page.route('**/api/training-ranges/preview', async route => {
+    const isFirst = arrivals === 0
+    arrivals += 1
+    if (arrivals === 2) secondArrived()
     await previewGate
-    previewReleases += 1
+    if (isFirst) {
+      const body = route.request().postDataJSON() as { range?: { startDate?: string; count?: number } }
+      await route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({
+          version: 1, previewId: 'poisoned-stale', code: '300857', market: 'sz',
+          request: { mode: 'bars', startDate: body.range?.startDate ?? '2026-04-15', count: body.range?.count ?? 60 },
+          requestedStart: '2026-04-15', requestedEnd: null,
+          startDate: '2026-04-15', endDate: '1999-12-31', barCount: 1,
+          notes: [], sourceFingerprint: 'stale', expiresAt: '2999-01-01T00:00:00.000Z',
+        }),
+      })
+      return
+    }
     await route.continue()
   })
-  await page.getByRole('button', { name: '生成范围预览' }).click()
-  await expect(page.getByRole('button', { name: /生成预览中/ })).toBeVisible()
-  // 在途预览期间：设置保存使默认复权变化 → 在途预览失效（加载所有权释放，按钮恢复）
-  releasePreview()
+  await page.getByRole('button', { name: '自定义范围' }).click()
+  await page.locator('input[type="date"]').fill('2026-04-15')
+  // 首次（旧）预览在途：加载提示由该请求持有
+  await expect(page.getByText('范围校验生成中')).toBeVisible()
+  // 在途期间：设置保存使默认复权变化 → 在途预览失效并自动重新生成（F5：旧请求
+  // 迟到被丢弃、不得永久占用加载所有权；新请求由新请求自己持有加载态）
   await openSettings(page)
   const dialog = page.getByRole('dialog', { name: '训练默认设置' })
   await dialog.getByRole('radio', { name: '不复权' }).click()
   await dialog.getByRole('button', { name: '保存设置' }).click()
   await expect(dialog).toContainText('已保存')
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('button', { name: '生成范围预览' })).toBeEnabled({ timeout: 5_000 })
-  // 换新门闩：重新预览可用且完成（新请求未被旧请求干扰）
-  let releasePreview2!: () => void
-  const previewGate2 = new Promise<void>(resolve => { releasePreview2 = resolve })
-  await page.unroute('**/api/training-ranges/preview')
-  await page.route('**/api/training-ranges/preview', async route => {
-    await previewGate2
-    previewReleases += 1
-    await route.continue()
-  })
-  await page.getByRole('button', { name: '生成范围预览' }).click()
-  releasePreview2()
-  // 范围 2026-04-15..07-15 在冻结样本覆盖内：预览成功显示实际区间
+  await expect(dialog).not.toBeVisible()
+  // 失效后的自动重新预览确实发出（第二个请求到达门闩，确定性等待，不靠 sleep）
+  await secondArrivedPromise
+  expect(arrivals).toBeGreaterThanOrEqual(2)
+  // 释放两个在途请求：投毒旧响应必须被丢弃，新响应落地
+  releasePreview()
+  // 范围 2026-04-15.. 在冻结样本覆盖内：新预览成功显示真实区间（非 1999 投毒值）
   await expect(page.getByText(/实际 2026-04-15 ~ /)).toBeVisible({ timeout: 8_000 })
+  await expect(page.getByText(/1999-12-31/)).toHaveCount(0)
+  await expect(page.getByText('范围校验生成中')).toBeHidden()
   await abandonActive(page)
   expect(errors).toEqual([])
 })
