@@ -66,7 +66,7 @@ interface LauncherModule {
   DATA_DIR_NAME: string
   DEFAULT_PORT: number
   TDX_CANDIDATES: string[]
-  parseArgs(argv: string[]): { root?: string, configPath?: string, openBrowser: boolean, stop?: boolean, help?: boolean }
+  parseArgs(argv: string[]): { root?: string, configPath?: string, openBrowser: boolean, stop?: boolean, help?: boolean, restartAttemptPath?: string }
   resolveConfig(root: string, raw: unknown, env?: Record<string, string | undefined>): {
     port: number
     dataDir: string
@@ -87,6 +87,14 @@ interface LauncherModule {
     options?: { attempts?: number, timeoutMs?: number },
   ): Promise<boolean>
   usage(): string
+  readSavedChoice(dataDir: string): Promise<{ version: number, root: string } | null>
+  resolveTdxWithSource(input: {
+    config: { tdxRoot: string | null }
+    dataDir: string
+    env: Record<string, string | undefined>
+    tdxCandidates: string[]
+  }): Promise<{ root?: string | null, source?: string | null, error?: string }>
+  runSetupRestartAttempt(options: Record<string, unknown>): Promise<{ ready: boolean, phase: string, stage: string, reason: string }>
 }
 
 const launcher = launcherModule as unknown as LauncherModule
@@ -102,6 +110,13 @@ const counterFile = process.env.FIXTURE_SPAWN_COUNTER
 if (counterFile) await appendFile(counterFile, process.pid + '\\n')
 const pidFile = process.env.FIXTURE_PID_FILE
 if (pidFile) await writeFile(pidFile, String(process.pid))
+// SETUP-01：把注入的会话环境变量原样落盘，供测试断言启动器注入与令牌不落盘
+const envFile = process.env.FIXTURE_ENV_FILE
+if (envFile) {
+  const keys = ['TRAINER_RUN_ID', 'TRAINER_DB', 'TRAINER_STATIC_DIR', 'TRAINER_READY_FILE', 'TDX_ROOT',
+    'TRAINER_TDX_SOURCE', 'TRAINER_DATA_DIR', 'TRAINER_LAUNCHER_CJS', 'TRAINER_CONTROL_TOKEN', 'PORT']
+  await writeFile(envFile, JSON.stringify(Object.fromEntries(keys.map(key => [key, process.env[key] ?? null]))))
+}
 
 const mode = process.env.FIXTURE_MODE ?? 'ok'
 if (mode === 'crash') {
@@ -985,5 +1000,333 @@ describe('release launcher probe hardening', () => {
       return fake
     }
     await expect(launcher.openURL('http://127.0.0.1:9/', failingSpawn as never)).resolves.toBe(false)
+  }, 30_000)
+})
+
+// ===== SETUP-01：保存选择的启动解析与受控重启监管模式 =====
+// 夹具通达信目录满足 isTdxRootPath 判定（vipdoc/<市场>/lday 有 .day + T0002/hq_cache），
+// 监管模式用冻结的 restart-plan 纯函数（vitest 直接加载 TS 源），不读取真实通达信。
+
+const SETUP_OLD_RUN = 'run-11111111-1111-1111-1111-111111111111'
+const SETUP_NEW_RUN = 'run-22222222-2222-2222-2222-222222222222'
+
+const OLD_SERVER_FIXTURE = [
+  "import http from 'node:http'",
+  "const runId = process.env.OLD_RUN_ID ?? ''",
+  'const port = Number(process.env.OLD_PORT ?? 0)',
+  'const server = http.createServer((request, response) => {',
+  "  const url = request.url ?? ''",
+  "  if (url === '/api/health') {",
+  "    response.writeHead(200, { 'content-type': 'application/json' })",
+  "    response.end(JSON.stringify({ status: 'ok', runId, pid: process.pid }))",
+  '    return',
+  '  }',
+  "  if (url === '/api/trainings/active') {",
+  "    response.writeHead(200, { 'content-type': 'application/json' })",
+  "    response.end(JSON.stringify({ training: null }))",
+  '    return',
+  '  }',
+  "  if (url === '/api/setup/control/prepare') {",
+  "    request.on('data', () => {})",
+  "    request.on('end', () => {",
+  "      response.writeHead(200, { 'content-type': 'application/json' })",
+  "      response.end(JSON.stringify({ phase: 'prepared', runId }))",
+  '    })',
+  '    return',
+  '  }',
+  "  if (url === '/api/setup/control/shutdown') {",
+  "    response.writeHead(202, { 'content-type': 'application/json' })",
+  "    response.end(JSON.stringify({ phase: 'closing', runId }))",
+  '    setTimeout(() => process.exit(0), 150)',
+  '    return',
+  '  }',
+  '  response.writeHead(404)',
+  "  response.end('old fixture')",
+  '})',
+  "server.listen(port, '127.0.0.1')",
+  '',
+].join('\n')
+
+async function makeTdxDir(prefix: string): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), `tdx-${prefix}-`))
+  activeRoots.add(root)
+  await mkdir(join(root, 'vipdoc', 'sh', 'lday'), { recursive: true })
+  await mkdir(join(root, 'T0002', 'hq_cache'), { recursive: true })
+  await writeFile(join(root, 'vipdoc', 'sh', 'lday', 'sh600519.day'), Buffer.alloc(32))
+  return root
+}
+
+function savedChoicePayload(root: string): string {
+  return JSON.stringify({ version: 1, root, savedAt: '2026-09-29T10:00:00.000Z', inspectedAt: '2026-09-29T10:00:00.000Z' })
+}
+
+interface SupervisorAttempt {
+  attemptId: string
+  old: { runId: string, pid: number, port: number, databasePath: string, origin: string, dataDir: string }
+  planned: { dataDir: string, databasePath: string, port: number, origin: string, tdxRoot: string, source: string }
+  target: { runId: string, port: number, origin: string }
+  previousSavedChoice: { version: number, root: string, savedAt: string, inspectedAt: string } | null
+}
+
+function buildSupervisorAttempt(parts: {
+  dataDir: string
+  databasePath: string
+  port: number
+  oldPid: number
+  tdxRoot: string
+  previousSavedChoice: SupervisorAttempt['previousSavedChoice']
+}): SupervisorAttempt {
+  const origin = `http://127.0.0.1:${parts.port}`
+  return {
+    attemptId: 'attempt-supervisor-1',
+    old: {
+      runId: SETUP_OLD_RUN,
+      pid: parts.oldPid,
+      port: parts.port,
+      databasePath: parts.databasePath,
+      origin,
+      dataDir: parts.dataDir,
+    },
+    planned: {
+      dataDir: parts.dataDir,
+      databasePath: parts.databasePath,
+      port: parts.port,
+      origin,
+      tdxRoot: parts.tdxRoot,
+      source: 'explicit-env',
+    },
+    target: { runId: SETUP_NEW_RUN, port: parts.port, origin },
+    previousSavedChoice: parts.previousSavedChoice,
+  }
+}
+
+function supervisorTimeouts() {
+  return { saveMs: 2_000, drainMs: 4_000, sigtermMs: 2_500, spawnMs: 6_000, healthMs: 6_000, restoreMs: 2_000 }
+}
+
+describe('SETUP-01 saved choice in launcher resolution', () => {
+  it('resolveTdxWithSource follows env, config, saved choice, then discovery', async () => {
+    const envTdx = await makeTdxDir('env')
+    const savedTdx = await makeTdxDir('saved')
+    const discoveredTdx = await makeTdxDir('disc')
+    const dataDir = await mkdtemp(join(tmpdir(), 'resolve-data-'))
+    activeRoots.add(dataDir)
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(savedTdx))
+
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: envTdx }, dataDir, env: { TDX_ROOT: envTdx }, tdxCandidates: [],
+    })).toMatchObject({ root: resolve(envTdx), source: 'env' })
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: envTdx }, dataDir, env: {}, tdxCandidates: [],
+    })).toMatchObject({ root: resolve(envTdx), source: 'explicit-config' })
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [],
+    })).toMatchObject({ root: resolve(savedTdx), source: 'saved-choice' })
+    await rm(join(dataDir, 'saved-tdx-choice.json'))
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [discoveredTdx],
+    })).toMatchObject({ root: resolve(discoveredTdx), source: 'auto-discovered' })
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [],
+    })).toMatchObject({ root: null, source: null })
+  })
+
+  it('ignores a saved choice that is not a valid TDX root', async () => {
+    const discoveredTdx = await makeTdxDir('fallback')
+    const dataDir = await mkdtemp(join(tmpdir(), 'resolve-invalid-'))
+    activeRoots.add(dataDir)
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(join(dataDir, 'not-a-tdx')))
+    expect(await launcher.resolveTdxWithSource({
+      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [discoveredTdx],
+    })).toMatchObject({ root: resolve(discoveredTdx), source: 'auto-discovered' })
+  })
+
+  it('launch adopts the saved choice, injects session env, and never leaks the control token', async () => {
+    const root = await makeFixture()
+    const savedTdx = await makeTdxDir('launch-saved')
+    const dataDir = join(root, 'data dir with spaces')
+    await mkdir(dataDir, { recursive: true })
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(savedTdx))
+    await writeConfig(root, { port: await freePort(), dataDir })
+    const envFile = join(root, 'env-dump.json')
+    const result = await launchFixture(root, { FIXTURE_ENV_FILE: envFile }, { configPath: join(root, 'trainer.config.json') })
+    expect(result.tdxRoot).toBe(resolve(savedTdx))
+
+    const recorded = JSON.parse(await readFile(stateFile(dataDir), 'utf8')) as { tdxRoot?: string }
+    expect(recorded.tdxRoot).toBe(resolve(savedTdx))
+
+    const injected = JSON.parse(await readFile(envFile, 'utf8')) as Record<string, string | null>
+    expect(injected.TRAINER_TDX_SOURCE).toBe('saved-choice')
+    expect(injected.TRAINER_DATA_DIR).toBe(dataDir)
+    expect(String(injected.TRAINER_LAUNCHER_CJS ?? '')).toMatch(/launcher\.cjs$/)
+    expect(injected.TDX_ROOT).toBe(resolve(savedTdx))
+    expect(String(injected.TRAINER_CONTROL_TOKEN ?? '')).toMatch(/^ctr-/)
+
+    const token = String(injected.TRAINER_CONTROL_TOKEN ?? 'ctr-')
+    expect(await readFile(stateFile(dataDir), 'utf8')).not.toContain(token)
+    expect(await readFile(join(dataDir, 'server.log'), 'utf8')).not.toContain(token)
+  }, 30_000)
+})
+
+describe('SETUP-01 controlled restart supervisor', () => {
+  it('reaches ready: drain, old exit, new run on the same port, bound health, state file', async () => {
+    const root = await makeFixture()
+    const tdx = await makeTdxDir('supervisor')
+    const dataDir = join(root, 'restart data')
+    await mkdir(dataDir, { recursive: true })
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(tdx))
+    const oldPort = await freePort()
+    const oldServerPath = join(root, 'old-server.mjs')
+    await writeFile(oldServerPath, OLD_SERVER_FIXTURE)
+    const oldChild = spawn(process.execPath, [oldServerPath], {
+      env: { ...process.env, NODE_OPTIONS: '', OLD_RUN_ID: SETUP_OLD_RUN, OLD_PORT: String(oldPort) },
+      stdio: 'ignore',
+    })
+    activeChildren.push(oldChild)
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const probe = await launcher.probeHealth(oldPort, { timeoutMs: 400 })
+      if (launcher.probeMatchesState(probe, { runId: SETUP_OLD_RUN, pid: oldChild.pid ?? 0 })) break
+      await delay(60)
+    }
+
+    const attempt = buildSupervisorAttempt({
+      dataDir,
+      databasePath: join(dataDir, 'trainer.sqlite'),
+      port: oldPort,
+      oldPid: oldChild.pid ?? 0,
+      tdxRoot: tdx,
+      previousSavedChoice: null,
+    })
+    const attemptPath = join(dataDir, 'setup-restart-attempt.json')
+    await writeFile(attemptPath, JSON.stringify({ version: 1, appId: launcher.APP_ID, createdAt: '2026-09-29T10:00:00.000Z', ...attempt }))
+
+    const planModule = await import('../../server/src/setup/restart-plan.js')
+    const result = await launcher.runSetupRestartAttempt({
+      root,
+      attemptPath,
+      env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_CONTROL_TOKEN: 'ctr-supervisor-test' },
+      planModule,
+      timeouts: supervisorTimeouts(),
+      pollDelayMs: 40,
+    })
+    expect(result.ready).toBe(true)
+    expect(result.phase).toBe('ready')
+
+    const recorded = JSON.parse(await readFile(stateFile(dataDir), 'utf8')) as { runId: string, pid: number, port: number, tdxRoot: string }
+    expect(recorded.runId).toBe(SETUP_NEW_RUN)
+    expect(recorded.port).toBe(oldPort)
+    expect(recorded.tdxRoot).toBe(resolve(tdx))
+    activeServers.push({ pid: recorded.pid, port: recorded.port, runId: recorded.runId, healthDelayMs: 0 })
+    expect(await launcher.confirmOwnedServer(recorded)).toBe(true)
+
+    await expect(readFile(attemptPath)).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(await readFile(join(dataDir, 'saved-tdx-choice.json'), 'utf8')).toBe(savedChoicePayload(tdx))
+    const status = JSON.parse(await readFile(join(dataDir, 'setup-restart-status.json'), 'utf8')) as { done: boolean, phase: string }
+    expect(status.done).toBe(true)
+    expect(status.phase).toBe('ready')
+    expect(JSON.stringify(status)).not.toContain('ctr-supervisor-test')
+
+    await writeConfig(root, { port: oldPort, dataDir })
+    const relaunch = await launcher.launch({
+      root,
+      openBrowser: false,
+      env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_DB: '' },
+      tdxCandidates: [],
+      startTimeoutMs: 10_000,
+      lockWaitMs: 4_000,
+    })
+    expect(relaunch.reused).toBe(true)
+    expect(relaunch.runId).toBe(SETUP_NEW_RUN)
+    activeServers.push({ pid: relaunch.pid, port: relaunch.port, runId: relaunch.runId, healthDelayMs: 0 })
+  }, 60_000)
+
+  it('restores the previous saved choice and rolls back when the new run never becomes healthy', async () => {
+    const root = await makeFixture()
+    const tdx = await makeTdxDir('rollback')
+    const dataDir = join(root, 'rollback data')
+    await mkdir(dataDir, { recursive: true })
+    const previous = { version: 1, root: 'D:\\old_tdx', savedAt: '2026-09-28T10:00:00.000Z', inspectedAt: '2026-09-28T10:00:00.000Z' }
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(tdx))
+    const deadOldPid = deadPid()
+    const attempt = buildSupervisorAttempt({
+      dataDir,
+      databasePath: join(dataDir, 'trainer.sqlite'),
+      port: await freePort(),
+      oldPid: deadOldPid,
+      tdxRoot: tdx,
+      previousSavedChoice: previous,
+    })
+    const attemptPath = join(dataDir, 'setup-restart-attempt.json')
+    await writeFile(attemptPath, JSON.stringify({ version: 1, appId: launcher.APP_ID, createdAt: '2026-09-29T10:00:00.000Z', ...attempt }))
+
+    let oldAlive = true
+    const fetchImpl = async (url: string | URL) => {
+      const target = String(url)
+      if (target.endsWith('/api/trainings/active')) return { responded: true, status: 200, json: { training: null } }
+      if (target.endsWith('/control/prepare')) return { responded: true, status: 200, json: { phase: 'prepared' } }
+      if (target.endsWith('/control/shutdown')) {
+        queueMicrotask(() => { oldAlive = false })
+        return { responded: true, status: 202, json: { phase: 'closing' } }
+      }
+      return { responded: false, reason: `unexpected fetch ${target}` }
+    }
+    const probeImpl = async () => (oldAlive
+      ? { responded: true, refused: false, status: 200, json: { status: 'ok', runId: SETUP_OLD_RUN, pid: deadOldPid } }
+      : { responded: false, refused: true })
+    const fakeChild = Object.assign(new EventEmitter(), {
+      pid: 4_242_424,
+      unref() {},
+      exitCode: null,
+      signalCode: null,
+    }) as unknown as ChildProcess & { kill(): void }
+    fakeChild.kill = () => { fakeChild.emit('exit', null, 'SIGKILL') }
+    const spawned: Array<{ env: Record<string, unknown>, script: string }> = []
+    const spawnImpl = (_node: string, args: string[], opts: { env?: Record<string, unknown> }) => {
+      spawned.push({ env: opts.env ?? {}, script: String(args[1]) })
+      return fakeChild
+    }
+
+    const planModule = await import('../../server/src/setup/restart-plan.js')
+    const result = await launcher.runSetupRestartAttempt({
+      root,
+      attemptPath,
+      env: { ...process.env, NODE_OPTIONS: '', TRAINER_CONTROL_TOKEN: 'ctr-rollback' },
+      planModule,
+      timeouts: { saveMs: 500, drainMs: 1_000, sigtermMs: 600, spawnMs: 700, healthMs: 700, restoreMs: 1_000 },
+      pollDelayMs: 25,
+      probeHealthImpl: probeImpl,
+      fetchImpl,
+      spawnImpl,
+      pidAliveImpl: () => oldAlive,
+    })
+    expect(result.ready).toBe(false)
+    expect(result.phase).toBe('rolled-back')
+
+    expect(JSON.parse(await readFile(join(dataDir, 'saved-tdx-choice.json'), 'utf8'))).toEqual(previous)
+    await expect(readFile(stateFile(dataDir))).rejects.toMatchObject({ code: 'ENOENT' })
+    const status = JSON.parse(await readFile(join(dataDir, 'setup-restart-status.json'), 'utf8')) as { done: boolean, phase: string }
+    expect(status.done).toBe(true)
+    expect(status.phase).toBe('rolled-back')
+    await expect(readFile(attemptPath)).rejects.toMatchObject({ code: 'ENOENT' })
+
+    expect(spawned.length).toBeGreaterThanOrEqual(1)
+    const injected = spawned[0].env
+    expect(injected.TRAINER_RUN_ID).toBe(SETUP_NEW_RUN)
+    expect(injected.TDX_ROOT).toBe(resolve(tdx))
+    expect(injected.TRAINER_TDX_SOURCE).toBe('saved-choice')
+    expect(injected.PORT).toBe(String(attempt.planned.port))
+    // 新服务经环境继承控制令牌（未来重启仍可用）；令牌不得落入任何落盘文件（上方已断言）
+    expect(injected.TRAINER_CONTROL_TOKEN).toBe('ctr-rollback')
+  }, 30_000)
+
+  it('refuses a malformed attempt file instead of guessing', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, 'bad attempt')
+    await mkdir(dataDir, { recursive: true })
+    const attemptPath = join(dataDir, 'setup-restart-attempt.json')
+    await writeFile(attemptPath, JSON.stringify({ version: 1, appId: 'other-app' }))
+    const planModule = await import('../../server/src/setup/restart-plan.js')
+    await expect(launcher.runSetupRestartAttempt({ root, attemptPath, planModule, env: { ...process.env, NODE_OPTIONS: '' } }))
+      .rejects.toThrow(/restart attempt file is malformed|appId/)
   }, 30_000)
 })
