@@ -62,7 +62,8 @@ test('a) 单标签保存并退出：确认→排空轮询→健康端点失联�
   await page.goto('/')
   await page.getByRole('button', { name: '保存并退出训练器' }).click()
   await expect(page.getByRole('dialog', { name: '退出训练器' })).toBeVisible()
-  await page.getByRole('button', { name: '保存并退出' }).click()
+  // 对话框主按钮必须 exact：侧栏按钮的无障碍名是"保存并退出训练器"，子串匹配会同时命中两者
+  await page.getByRole('button', { name: '保存并退出', exact: true }).click()
   await expect(page.getByText('正在退出…')).toBeVisible()
   await expect(page.getByText('训练器已退出')).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('端口已释放')).toBeVisible()
@@ -82,7 +83,7 @@ test('b) 多标签：另一页面拒绝后发起方收到"退出未完成"，服
 
   await page.goto('/')
   await page.getByRole('button', { name: '保存并退出训练器' }).click()
-  await page.getByRole('button', { name: '保存并退出' }).click()
+  await page.getByRole('button', { name: '保存并退出', exact: true }).click()
   await expect(page.getByRole('heading', { name: '等待其他页面确认…' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '退出未完成' })).toBeVisible({ timeout: 10_000 })
   await expect(page.getByText('服务仍在运行，未保存的内容不会丢失。')).toBeVisible()

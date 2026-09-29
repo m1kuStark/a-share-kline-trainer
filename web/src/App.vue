@@ -326,6 +326,9 @@ async function ensureLifecycleSession(): Promise<LifecycleSessionView | null> {
       if (parsed.sessionId && parsed.exitToken) {
         lifecycle.value = { sessionId: parsed.sessionId, exitToken: parsed.exitToken, heartbeatIntervalMs: 15_000, freshWindowMs: 90_000 }
         startHeartbeat()
+        // 恢复会话后立即跳一次心跳：新打开/刷新的页面必须在秒级发现其他页面
+        // 发起的退出请求，而不是等满第一个 15s 周期
+        void beatOnce()
         return lifecycle.value
       }
     }
@@ -335,6 +338,7 @@ async function ensureLifecycleSession(): Promise<LifecycleSessionView | null> {
     lifecycle.value = fresh
     sessionStorage.setItem(LIFECYCLE_STORAGE_KEY, JSON.stringify({ sessionId: fresh.sessionId, exitToken: fresh.exitToken }))
     startHeartbeat()
+    void beatOnce()
     return fresh
   } catch { /* 生命周期未启用/服务不可达：退出入口降级为提示 */ return null }
 }
