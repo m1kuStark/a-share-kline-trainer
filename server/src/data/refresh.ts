@@ -42,7 +42,8 @@ export interface DataStatusPayload {
   /** 中文一句话，可直接展示 */
   reason: string
   source: DataSourceInfoPayload
-  tdx: { available: boolean; root: string | null }
+  /** 隐私边界（SETUP-01）：开放端点只给可用性，不给本机绝对路径 */
+  tdx: { available: boolean }
   online: { configured: boolean; provider: string | null }
   sourceMaxDate: string | null
   lastCheckedAt: string | null
@@ -330,7 +331,7 @@ export function createDataRefreshCoordinator(
       needsUpdate,
       reason,
       source,
-      tdx: { available: selection.tdxAvailable, root: config.tdxRoot },
+      tdx: { available: selection.tdxAvailable },
       online: { configured: selection.onlineConfigured, provider: selection.onlineProvider },
       sourceMaxDate: lastSuccess?.sourceMaxDate ?? null,
       lastCheckedAt: last?.finishedAt ?? null,

@@ -27,7 +27,7 @@ function statusBody(overrides: Partial<DataStatus> = {}): DataStatus {
     needsUpdate: false,
     reason: '测试状态',
     source: { kind: 'tdx', name: '测试来源', available: true },
-    tdx: { available: true, root: 'C:/tdx-test' },
+    tdx: { available: true },
     online: { configured: false, provider: null },
     sourceMaxDate: '2026-09-24',
     lastCheckedAt: '2026-09-25T01:00:00.000Z',

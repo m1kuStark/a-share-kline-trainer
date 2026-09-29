@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
-import { join } from 'node:path'
+import { randomUUID } from 'node:crypto'
+import { access, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { readDayFileRange, readLastDayDate, isDayDate } from './tdx/dayfile.js'
 import { aggregateBars, type Timeframe } from './tdx/kline.js'
 import type { AppConfig } from './config.js'
@@ -21,21 +23,154 @@ import {
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
-import { collectProcessClues, defaultProcessQuery } from './tdx/process-clues.js'
+import { collectProcessClues, defaultProcessQuery, appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
 import type { DrainGate } from './setup/drain-controller.js'
-import { defaultTdxCandidates } from './tdx/discover.js'
+import { collectNearbyCandidateRoots, defaultTdxCandidates, NEARBY_SUGGESTION_LIMIT } from './tdx/discover.js'
+import { inspectTdxCandidate, inspectTdxCandidates, type TdxCandidateCheck } from './tdx/inspect.js'
+import { readSavedTdxChoice, saveTdxChoice, type SavedTdxChoice, type TdxRootSource } from './setup/saved-choice.js'
+import { spawn } from 'node:child_process'
+
+// ===== 受保护 setup 能力（SETUP-01 接线）=====
+// 这些端点全部经 validateSetupRequest 防护（Host/Origin/Sec-Fetch-Site/控制令牌），
+// 只服务本应用页面与本机助手；浏览器路径不要求令牌，助手路径要求逐字令牌。
+
+const TRAINER_APP_ID = 'a-share-kline-trainer'
+const ATTEMPT_FILE = 'setup-restart-attempt.json'
+const RESTART_STATUS_FILE = 'setup-restart-status.json'
+const SETUP_ROOT_MAX_LENGTH = 500
+/** 原生目录选择框的有界等待：超时结束子进程并按 timeout 上报，不无限等待 */
+const DIRECTORY_PICKER_TIMEOUT_MS = 300_000
+
+export interface DirectoryPickerResult {
+  status: 'selected' | 'cancelled' | 'timeout' | 'denied' | 'unavailable' | 'not_applicable'
+  /** 仅在 selected 时返回用户自己选择的目录；其余状态绝不携带路径 */
+  path?: string
+  reason?: string
+}
+
+/** 受控本机桥：固定字面 PowerShell 脚本弹出 Windows 原生目录选择框。
+ * 只接收选择动作，不拼接任何用户输入；输出有界、超时有限、失败分态。 */
+export function defaultDirectoryPicker(): Promise<DirectoryPickerResult> {
+  if (process.platform !== 'win32') {
+    return Promise.resolve({ status: 'not_applicable' })
+  }
+  const script = [
+    "Add-Type -AssemblyName System.Windows.Forms | Out-Null",
+    '$dialog = New-Object System.Windows.Forms.FolderBrowserDialog',
+    "$dialog.Description = '请选择通达信安装根目录（包含 vipdoc 与 T0002 文件夹的目录）'",
+    '$dialog.ShowNewFolderButton = $false',
+    'if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.SelectedPath }',
+  ].join('\n')
+  return new Promise(resolve => {
+    let settled = false
+    let timedOut = false
+    const output: BoundedOutput = { stdout: '', stderr: '', byteTotal: 0, truncated: false }
+    const deadline = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+    }, DIRECTORY_PICKER_TIMEOUT_MS)
+    const settle = (result: DirectoryPickerResult): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(deadline)
+      resolve(result)
+    }
+    const child = spawn('powershell', ['-NoProfile', '-STA', '-Command', script], { windowsHide: true })
+    const boundedAppend = (target: 'stdout' | 'stderr', chunk: Buffer | string): void => {
+      if (typeof chunk === 'string') appendBounded(output, target, chunk)
+      else appendBoundedChunk(output, target, chunk)
+      if (output.truncated) child.kill('SIGTERM')
+    }
+    child.stdout.on('data', chunk => boundedAppend('stdout', chunk))
+    child.stderr.on('data', chunk => boundedAppend('stderr', chunk))
+    child.on('error', error => {
+      settle({ status: 'unavailable', reason: `目录选择组件启动失败：${error.message}` })
+    })
+    child.on('close', (exitCode, signal) => {
+      flushBoundedChunk(output, 'stdout')
+      flushBoundedChunk(output, 'stderr')
+      if (output.truncated) {
+        settle({ status: 'unavailable', reason: '目录选择输出超过有界上限，结果不完整' })
+        return
+      }
+      if (timedOut) {
+        settle({ status: 'timeout', reason: '目录选择框超时未返回（超过 5 分钟），已自动取消' })
+        return
+      }
+      const detail = output.stderr.trim().slice(0, 200)
+      if (exitCode !== 0) {
+        const denied = /拒绝|denied|access/i.test(detail)
+        settle({ status: denied ? 'denied' : 'unavailable', reason: detail || `目录选择未完成（exit ${exitCode ?? signal}）` })
+        return
+      }
+      const selected = output.stdout.split(/\r?\n/).map(line => line.trim()).find(line => line.length > 0)
+      if (!selected) {
+        settle({ status: 'cancelled' })
+        return
+      }
+      if (selected.length > SETUP_ROOT_MAX_LENGTH || (!selected.includes('\\') && !selected.includes('/'))) {
+        settle({ status: 'unavailable', reason: '目录选择返回了意外内容，已忽略' })
+        return
+      }
+      settle({ status: 'selected', path: selected })
+    })
+  })
+}
+
+/** 原子写小文件：同目录随机临时文件（wx）+ rename；失败保留旧目标（与 saved-choice 同口径）。 */
+async function writeFileAtomic(path: string, content: string): Promise<void> {
+  await mkdir(dirname(path), { recursive: true })
+  const temporary = `${path}.${randomUUID()}.tmp`
+  await writeFile(temporary, content, { flag: 'wx', encoding: 'utf8' })
+  await rename(temporary, path)
+}
 
 export interface RegisterApiOptions {
   /** 受保护 setup 端点的可注入依赖（测试用合成 stub，生产缺省走真实查询） */
   setup?: {
     processQuery?: () => Promise<import('./tdx/process-clues.js').ProcessQueryResult>
     inspect?: (roots: readonly string[]) => Promise<import('./tdx/inspect.js').TdxCandidateCheck[]>
+    /** 单目录复验（保存/检查端点用）；默认 inspectTdxCandidate */
+    inspectOne?: (root: string) => Promise<import('./tdx/inspect.js').TdxCandidateCheck>
+    /** 原生目录选择桥；默认 defaultDirectoryPicker */
+    directoryPicker?: () => Promise<DirectoryPickerResult>
+    /** apply 的可注入实现（测试用）；默认走启动器监管进程 */
+    applyRestart?: (attempt: SetupRestartAttempt) => Promise<{ started: boolean }>
   }
   /** SETUP-DRAIN-01：业务接纳 gate。提供时全部 /api/ 业务路由（含 GET 隐式缓存写）
    * 在注册阶段统一包装：gate 关闭后新业务 503 SERVER_DRAINING；已接纳 handler 在其
    * Promise 真正完成前持有租约（客户端 abort 不提前放行）。/api/health 与
    * /api/setup/control/* 豁免；非 /api/ 路径（静态资源）不受 gate 影响。 */
   drain?: DrainGate
+}
+
+/** 受控重启交接文件（写入 dataDir，由启动器监管模式消费；不含控制令牌） */
+export interface SetupRestartAttempt {
+  version: 1
+  appId: string
+  attemptId: string
+  createdAt: string
+  old: {
+    runId: string
+    pid: number
+    port: number
+    databasePath: string
+    origin: string
+    dataDir: string
+  }
+  planned: {
+    dataDir: string
+    databasePath: string
+    port: number
+    origin: string
+    tdxRoot: string
+    source: 'explicit-env' | 'recalculate'
+  }
+  target: { runId: string; port: number; origin: string }
+  /** 本次保存前的旧选择（可能为 null）；回滚时按它原样恢复或删除 */
+  previousSavedChoice: SavedTdxChoice | null
+  /** 旧生效来源（仅解释用；回滚恢复服务时参考） */
+  oldEffective: { tdxRoot: string | null; source: TdxRootSource | null }
 }
 
 export async function registerApi(
@@ -140,28 +275,50 @@ export async function registerApi(
     return reply.code(500).send({ error: '服务器内部错误' })
   })
 
-  // 受保护候选诊断只读端点（SETUP-API-01）：guard 先行，失败不调用任何诊断；
-  // expectedHost 由配置监听地址构造，不从请求 Host 反推；诊断异常结构化 503，
-  // 不把失败伪装成空候选。响应可含本机路径，绝不回显控制令牌。
-  app.get('/api/setup/candidates', async (request, reply) => {
+  // ===== 受保护 setup 防护（SETUP-API-01 冻结合同的共享封装）=====
+  // guard 先行，失败不调用任何诊断/文件操作；expectedHost 由配置监听地址构造，
+  // 不从请求 Host 反推。响应绝不回显控制令牌。
+  function setupGuard(
+    request: { host: string; headers: Record<string, unknown> },
+    reply: { code(statusCode: number): { send(payload: unknown): unknown } },
+  ): boolean {
     const expectedHost = `${config.host}:${config.port}`
     const guard = validateSetupRequest({
       host: request.host,
-      origin: request.headers.origin,
+      origin: request.headers.origin as string | undefined,
       // 这两个头是单值语义；Fastify 类型给 string|string[]，取首值并按 undefined 保留
       secFetchSite: Array.isArray(request.headers['sec-fetch-site'])
-        ? request.headers['sec-fetch-site'][0]
-        : request.headers['sec-fetch-site'],
+        ? (request.headers['sec-fetch-site'] as string[])[0]
+        : request.headers['sec-fetch-site'] as string | undefined,
       controlToken: Array.isArray(request.headers['x-control-token'])
-        ? request.headers['x-control-token'][0]
-        : request.headers['x-control-token'],
+        ? (request.headers['x-control-token'] as string[])[0]
+        : request.headers['x-control-token'] as string | undefined,
       expectedHost,
       expectedOrigin: `http://${expectedHost}`,
       expectedToken: config.controlToken ?? '',
     })
     if (!guard.ok) {
-      return reply.code(guard.statusCode).send({ error: guard.code })
+      void reply.code(guard.statusCode).send({ error: guard.code })
+      return false
     }
+    return true
+  }
+
+  /** 请求体目录字段校验：非空字符串、长度有界；失败返回 null（由调用方回 400） */
+  function parseRootBody(body: unknown): string | null {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return null
+    const root = (body as Record<string, unknown>).root
+    if (typeof root !== 'string') return null
+    const trimmed = root.trim()
+    if (!trimmed || trimmed.length > SETUP_ROOT_MAX_LENGTH) return null
+    return trimmed
+  }
+
+  // 受保护候选诊断只读端点（SETUP-API-01）：诊断异常结构化 503，
+  // 不把失败伪装成空候选。响应可含本机路径（用户主动请求候选时展示安装位置），
+  // 绝不回显控制令牌。
+  app.get('/api/setup/candidates', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
     const processQuery = options.setup?.processQuery ?? defaultProcessQuery
     const inspect = options.setup?.inspect
     try {
@@ -179,8 +336,245 @@ export async function registerApi(
         body.processReason = diagnostics.processReason
       }
       return body
-    } catch (error) {
+    } catch {
       return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
+    }
+  })
+
+  // 原生目录选择桥（SETUP-01）：固定字面脚本弹 Windows 原生目录选择框，只接收
+  // 选择动作。取消是正常结果（不报错）；结果不做任何自动采用——用户必须经
+  // /api/setup/inspect 看到检查结果并确认后才可能保存。
+  app.post('/api/setup/select-directory', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    const picker = options.setup?.directoryPicker ?? defaultDirectoryPicker
+    try {
+      return await picker()
+    } catch (error) {
+      return { status: 'unavailable', reason: `目录选择组件调用失败：${error instanceof Error ? error.message : String(error)}` }
+    }
+  })
+
+  // 检查用户提供的目录（选择框结果或手动输入）：返回完整检查结果；误选上层目录/
+  // vipdoc 时只在附近有限范围识别根目录，识别出的候选仅供用户确认，不自动采用。
+  app.post('/api/setup/inspect', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    const root = parseRootBody(request.body)
+    if (root === null) {
+      return reply.code(400).send({ error: 'root 必须是 1~500 字符的目录路径' })
+    }
+    const inspectOne = options.setup?.inspectOne ?? inspectTdxCandidate
+    const inspectMany = options.setup?.inspect ?? inspectTdxCandidates
+    let check: TdxCandidateCheck
+    try {
+      check = await inspectOne(root)
+    } catch {
+      return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
+    }
+    let suggestions: TdxCandidateCheck[] = []
+    if (!check.recognized) {
+      try {
+        const nearbyRoots = await collectNearbyCandidateRoots(root)
+        const nearbyChecks = nearbyRoots.length > 0 ? await inspectMany(nearbyRoots) : []
+        const selectedKey = check.root.toLowerCase()
+        suggestions = nearbyChecks
+          .filter(item => item.recognized && item.root.toLowerCase() !== selectedKey)
+          .slice(0, NEARBY_SUGGESTION_LIMIT)
+      } catch {
+        suggestions = []
+      }
+    }
+    return { check, suggestions }
+  })
+
+  // 保存用户确认的目录（SETUP-SAVE-01 冻结模块）：保存前复验，原子写入 dataDir；
+  // 失败保留旧选择并返回可行动错误。响应不含除用户自选目录以外的本机路径。
+  let lastSavedChoice: { root: string; previous: SavedTdxChoice | null } | null = null
+  app.post('/api/setup/save-choice', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    const root = parseRootBody(request.body)
+    if (root === null) {
+      return reply.code(400).send({ error: 'root 必须是 1~500 字符的目录路径' })
+    }
+    if (!config.dataDir) {
+      return reply.code(503).send({ error: 'SETUP_SAVE_UNAVAILABLE', message: '当前运行未配置数据目录，无法保存选择' })
+    }
+    let previous: SavedTdxChoice | null
+    try {
+      previous = await readSavedTdxChoice(config.dataDir)
+    } catch {
+      previous = null
+    }
+    try {
+      const saved = await saveTdxChoice(config.dataDir, root, options.setup?.inspectOne)
+      lastSavedChoice = { root: saved.root, previous }
+      return {
+        saved: true,
+        root: saved.root,
+        savedAt: saved.savedAt,
+        apply: describeApplyAvailability(),
+      }
+    } catch (error) {
+      // saveTdxChoice 复验失败：旧文件原样保留，错误信息已含具体问题
+      throw new HttpError(400, error instanceof Error ? error.message : '保存选择失败')
+    }
+  })
+
+  /** 保存后能否在本会话内完成受控重启生效；不能时给出一句话原因 */
+  function describeApplyAvailability(): { available: boolean; reason?: string } {
+    if (!config.runId || !process.env.TRAINER_LAUNCHER_CJS) {
+      return { available: false, reason: '当前为手动/开发运行方式，保存的目录将在下次启动服务时生效' }
+    }
+    if (config.tdxSource === 'env' || config.tdxSource === 'explicit-config') {
+      return { available: false, reason: '当前行情目录来自环境变量/配置文件的显式指定，保存的选择不会覆盖它' }
+    }
+    if (getActiveTraining(database)) {
+      return { available: false, reason: '有进行中的训练，结束后再切换数据目录' }
+    }
+    return { available: true }
+  }
+
+  // 受控重启受理（SETUP-01）：仅启动器托管的会话可用。受理后写入交接文件并拉起
+  // 启动器监管模式（detached），由监管进程按 restart-plan 冻结状态机完成
+  // 复验→排空→优雅退出→拉起新服务→健康确认（失败回滚）。202 只表示已受理。
+  let restartAttemptActive: string | null = null
+  app.post('/api/setup/apply', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!config.runId) {
+      return reply.code(503).send({ error: 'SETUP_RESTART_UNAVAILABLE', message: '当前为手动/开发运行方式，请重启开发服务使保存的目录生效' })
+    }
+    // 语义冲突先于能力缺失：显式覆盖/活动训练下任何重启都不被允许（409），
+    // 之后才判断本会话是否具备自动重启能力（503）
+    if (config.tdxSource === 'env' || config.tdxSource === 'explicit-config') {
+      return reply.code(409).send({ error: 'SETUP_SOURCE_EXPLICIT', message: '当前行情目录来自环境变量/配置文件的显式指定，保存的选择不会生效' })
+    }
+    if (getActiveTraining(database)) {
+      return reply.code(409).send({ error: 'ACTIVE_TRAINING', message: '有进行中的训练，结束后再切换数据目录' })
+    }
+    const launcherPath = process.env.TRAINER_LAUNCHER_CJS?.trim() || ''
+    if (!launcherPath || !(await access(launcherPath).then(() => true, () => false)) || !config.dataDir) {
+      return reply.code(503).send({ error: 'SETUP_RESTART_UNAVAILABLE', message: '当前运行方式不支持自动重启；保存的目录将在下次启动服务时生效' })
+    }
+    if (restartAttemptActive) {
+      // 上一次受理若已到达终态（监管进程写 done），允许发起新的受理；仍在进行中则拒绝
+      const previous = await readFile(join(config.dataDir, RESTART_STATUS_FILE), 'utf8')
+        .then(raw => JSON.parse(raw) as Record<string, unknown>)
+        .catch(() => null)
+      if (previous && previous.attemptId === restartAttemptActive && previous.done !== true) {
+        return reply.code(409).send({ error: 'CONTROL_BUSY', message: '已有一个重启流程在进行中' })
+      }
+      restartAttemptActive = null
+    }
+    const body = request.body as { attemptId?: unknown; root?: unknown }
+    const attemptId = typeof body?.attemptId === 'string' && body.attemptId.trim() && body.attemptId.length <= 128
+      ? body.attemptId.trim()
+      : null
+    const root = parseRootBody(body)
+    if (attemptId === null || root === null) {
+      return reply.code(400).send({ error: 'attemptId 与 root 必填（root 为 1~500 字符目录路径）' })
+    }
+    // 必须先保存过且磁盘上的选择与请求一致：apply 不隐式落盘
+    const savedOnDisk = await readSavedTdxChoice(config.dataDir).catch(() => null)
+    if (!lastSavedChoice || !savedOnDisk
+      || lastSavedChoice.root.toLowerCase() !== root.trim().toLowerCase()
+      || savedOnDisk.root.toLowerCase() !== root.trim().toLowerCase()) {
+      return reply.code(409).send({ error: 'SETUP_SAVE_MISMATCH', message: '请先保存该目录，再执行生效' })
+    }
+
+    const port = config.port
+    const origin = `http://127.0.0.1:${port}`
+    const attempt: SetupRestartAttempt = {
+      version: 1,
+      appId: TRAINER_APP_ID,
+      attemptId,
+      createdAt: new Date().toISOString(),
+      old: {
+        runId: config.runId,
+        pid: process.pid,
+        port,
+        databasePath: config.databasePath,
+        origin,
+        dataDir: config.dataDir,
+      },
+      planned: {
+        dataDir: config.dataDir,
+        databasePath: config.databasePath,
+        port,
+        origin,
+        tdxRoot: savedOnDisk.root,
+        source: 'explicit-env',
+      },
+      target: { runId: `run-${randomUUID()}`, port, origin },
+      previousSavedChoice: lastSavedChoice.previous,
+      oldEffective: { tdxRoot: config.tdxRoot, source: config.tdxSource },
+    }
+    const attemptPath = join(config.dataDir, ATTEMPT_FILE)
+    const statusPath = join(config.dataDir, RESTART_STATUS_FILE)
+    try {
+      await writeFileAtomic(attemptPath, `${JSON.stringify(attempt, null, 2)}\n`)
+      await writeFileAtomic(statusPath, `${JSON.stringify({
+        version: 1, appId: TRAINER_APP_ID, attemptId,
+        phase: 'preflight', stage: 'preflight', reason: '已受理重启请求，正在核对身份', updatedAt: new Date().toISOString(), done: false,
+      }, null, 2)}\n`)
+    } catch (error) {
+      return reply.code(503).send({ error: 'SETUP_RESTART_UNAVAILABLE', message: `无法写入重启交接文件：${error instanceof Error ? error.message : String(error)}` })
+    }
+    const apply = options.setup?.applyRestart
+      ? await options.setup.applyRestart(attempt)
+      : await spawnRestartSupervisor(launcherPath, attemptPath)
+    if (!apply.started) {
+      restartAttemptActive = null
+      return reply.code(503).send({ error: 'SETUP_RESTART_UNAVAILABLE', message: '无法启动重启监管进程，保存已生效但需手动重启训练器' })
+    }
+    restartAttemptActive = attemptId
+    return reply.code(202).send({ phase: 'restart-initiated', attemptId, runId: config.runId })
+  })
+
+  /** 拉起 detached 监管进程（启动器 --setup-restart-attempt 模式）；env 原样继承
+   * （含控制令牌，不落盘、不回显）；spawn 失败只影响本次受理，不抛出。 */
+  function spawnRestartSupervisor(launcherPath: string, attemptPath: string): Promise<{ started: boolean }> {
+    return new Promise(resolve => {
+      let settled = false
+      const finish = (started: boolean): void => {
+        if (settled) return
+        settled = true
+        resolve({ started })
+      }
+      try {
+        const child = spawn(process.execPath, [launcherPath, '--setup-restart-attempt', attemptPath], {
+          detached: true,
+          windowsHide: true,
+          stdio: 'ignore',
+          env: process.env,
+        })
+        child.once('error', () => finish(false))
+        child.once('spawn', () => finish(true))
+        child.unref()
+      } catch {
+        finish(false)
+      }
+    })
+  }
+
+  // 重启状态查询：读监管进程写入的状态文件（旧/新服务指向同一 dataDir，重启窗口
+  // 前后都可读）。无文件时按 idle 报告；文件内容不含路径与令牌。
+  app.get('/api/setup/restart-status', async (request, reply) => {
+    if (!setupGuard(request, reply)) return reply
+    if (!config.dataDir) return { phase: 'idle', done: false }
+    try {
+      const raw = await readFile(join(config.dataDir, RESTART_STATUS_FILE), 'utf8')
+      const value = JSON.parse(raw) as Record<string, unknown>
+      if (!value || typeof value !== 'object') return { phase: 'idle', done: false }
+      return {
+        attemptId: typeof value.attemptId === 'string' ? value.attemptId : null,
+        phase: typeof value.phase === 'string' ? value.phase : 'unknown',
+        stage: typeof value.stage === 'string' ? value.stage : null,
+        // 有界透出：状态原因面向进度解释，不携带完整本机路径或令牌
+        reason: typeof value.reason === 'string' ? value.reason.slice(0, 300) : null,
+        updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : null,
+        done: value.done === true,
+      }
+    } catch {
+      return { phase: 'idle', done: false }
     }
   })
 
@@ -189,7 +583,8 @@ export async function registerApi(
     const active = getActiveTraining(database)
     return {
       status: 'ok',
-      tdxRoot: config.tdxRoot,
+      // 隐私边界（SETUP-01）：开放端点只返回连接状态与来源标签，不回传完整本机路径
+      tdx: { connected: config.tdxRoot !== null, source: config.tdxSource ?? null },
       dataCutoff: stocks.map(stock => stock.lastDate).filter(Boolean).sort().at(-1) ?? null,
       stockCount: stocks.length,
       capabilities: { day: true, forwardAdjust: true, benchmark: true, catalogCache: true, training: true },
