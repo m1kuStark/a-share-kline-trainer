@@ -9,13 +9,14 @@ import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
+import History from './views/History.vue'
 import TrainingSettings from './components/TrainingSettings.vue'
 import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
 import { readRecordingFile } from './recording/recordingFile'
 import type { RecordingSummary } from './recording/types'
 import type { CompactRecordingFile } from './recording/compactTypes'
 
-type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay'
+type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay' | 'history'
 const view = ref<View>('loading')
 const trainingRef = ref<InstanceType<typeof Training> | null>(null)
 const libraryBusy = ref(false)
@@ -41,6 +42,14 @@ async function showLibrary(): Promise<void> {
     replay.value = null
     view.value = 'library'
   } finally { libraryBusy.value = false }
+}
+// 历史训练（M4-HISTORY-01）：与录像库同一条离开协议（prepareForLibrary 先落盘画线与录制），
+// 不新增停录或卸载当前 Training 的旁路；运行中进入历史由服务端 409 守卫并给出说明。
+async function showHistory(): Promise<void> {
+  if (view.value === 'training') {
+    if (!await trainingRef.value?.prepareForLibrary()) return
+  }
+  view.value = 'history'
 }
 async function returnToTraining(): Promise<void> {
   if (view.value === 'training') return
@@ -191,7 +200,7 @@ function onTrainingEnded(): void {
       <div class="brand-mark">K</div>
       <nav>
         <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
-        <button class="rail-item" title="排行榜（M4 开放）" disabled>▤<span>排行</span></button>
+        <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory">▤<span>历史</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
       <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
@@ -256,7 +265,8 @@ function onTrainingEnded(): void {
         </div>
       </section>
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
-      <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" />
+      <History v-else-if="view === 'history'" @create="returnToTraining" />
+      <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" @open-history="showHistory" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>
 

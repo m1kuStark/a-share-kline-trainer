@@ -1,79 +1,86 @@
 {
   "acceptance_records": [],
   "accepted_slices": [
+    "TRAIN-01",
+    "V1-INTEGRATE-01",
     "NOTE-DETAIL-01",
-    "TRAIN-01"
+    "TRAIN-02",
+    "REC-01"
   ],
   "budget_exhausted": false,
-  "can_dispatch": false,
+  "can_dispatch": true,
   "candidate": {
-    "commit": "3f8c61246d5c057743fc312b07ebdd704d23658a",
-    "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/V1-INTEGRATE-01"
+    "commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
+    "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01"
   },
   "contract_revision": 1,
   "evidence": [
-    "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\v1-integration-20260928-46\\contract.md",
-    "TRAIN source docs/verification/2026-09/TRAIN-01/acceptance-45.md",
-    "NOTE source acceptance-42.md"
+    "m4-history-20260928-53/contract.md",
+    "V1 base 888778c verified",
+    "execution complete 2026-09-28: docs/verification/2026-09/M4-HISTORY-01/report.md (server 23/23, Journey 4/4 retries0), pending GPT review"
   ],
-  "feature_id": "V1-ACCEPTED-INTEGRATION",
+  "feature_id": "M4-HISTORY-REPORT",
   "historical_usage": null,
-  "historical_usage_note": "New user-authorized integration-only phase. Prior TRAIN/NOTE/SETUP implementation budgets and histories preserved; no reset or extra source fixes.",
+  "historical_usage_note": "New M4 history facts vertical slice; prior M4/M5 cost unknown and not reused",
   "history_event_count": 2,
   "limits": {
     "contract_revisions": 1,
-    "executions": 1,
-    "reviews": 1,
-    "work_units": 3
+    "executions": 2,
+    "reviews": 2,
+    "work_units": 5
   },
-  "next_action": "Original TRAIN Zcode session fast-forwards isolated V1 integration worktree and runs bounded combined gate; no implementation fixes",
+  "next_action": "原Zcode会话执行完成并回调；GPT按control-handoff-20260928-53集中审查五scope（list/report/ui/no-future/compat）",
   "remaining": [
-    "INTEGRATION-accepted-history",
-    "INTEGRATION-clean-proof",
-    "INTEGRATION-train-note-coexistence",
-    "INTEGRATION-evidence-and-isolation"
+    "HISTORY-list",
+    "HISTORY-report",
+    "HISTORY-ui",
+    "HISTORY-no-future",
+    "HISTORY-compat"
   ],
   "remaining_budget": {
     "contract_revisions": 0,
-    "executions": 0,
-    "reviews": 1,
-    "work_units": 1
+    "executions": 1,
+    "reviews": 2,
+    "work_units": 3
   },
   "review_scope": [
-    "INTEGRATION-accepted-history",
-    "INTEGRATION-clean-proof",
-    "INTEGRATION-train-note-coexistence",
-    "INTEGRATION-evidence-and-isolation"
+    "HISTORY-list",
+    "HISTORY-report",
+    "HISTORY-ui",
+    "HISTORY-no-future",
+    "HISTORY-compat"
   ],
   "schema_version": 1,
   "status": "active",
   "tasks": {
-    "V1-INTEGRATE-01": {
+    "M4-HISTORY-01": {
       "accepted": false,
-      "branch": "task/V1-INTEGRATE-01",
-      "candidate_commit": "3f8c61246d5c057743fc312b07ebdd704d23658a",
+      "branch": "task/M4-HISTORY-01",
+      "candidate_commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
       "card": {
-        "integration_ref": "pending task/V1-INTEGRATE-01; base 3f8c61246d5c057743fc312b07ebdd704d23658a",
-        "next_action": "按control-handoff-20260928-46快进52889a7，准备文档并一次运行verify:candidate/组合UI，成功或失败回调GPT。",
-        "state": "active",
-        "summary": "已接受NOTE和TRAIN相同代码在独立V1组合候选快进整合与完整门禁；不含停止的SETUP，不授权实现返修。"
+        "integration_ref": "candidate pending review; base 888778c, 未上main；最终HEAD见执行报告与门禁proof",
+        "next_action": "执行完成已回调；等待GPT集中审查",
+        "state": "review",
+        "summary": "结算历史到事实成绩单：列表、事实详情、权益曲线和画线，排除排行与未冻结指标"
       },
-      "contract_path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\v1-integration-20260928-46\\contract.md",
-      "contract_revision": 1,
+      "contract_path": "C:/Users/Stark_Du666/.codex/headroom-cache/m4-history-20260928-53/contract.md",
       "depends_on": [
-        "NOTE-DETAIL-01",
-        "TRAIN-01"
+        "TRAIN-01",
+        "TRAIN-02",
+        "REC-01"
       ],
       "must_be_absent": [
-        "docs/work-items/tasks/V1-INTEGRATE-01.md"
+        "docs/work-items/tasks/M4-HISTORY-01.md",
+        "server/src/train/history-report.ts",
+        "web/src/views/History.vue",
+        "server/test/history-report.test.ts",
+        "e2e/m4-history.spec.ts"
       ],
-      "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/V1-INTEGRATE-01",
+      "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01",
       "required_commits": [
-        "3f8c61246d5c057743fc312b07ebdd704d23658a"
+        "888778cfc7a4b69e4446012a26618b93a8b05b20"
       ],
-      "source_commit": "52889a70b6bd3037339e3414adc47ccdad0d104f",
-      "source_worktree": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/TRAIN-01",
-      "status": "ready"
+      "status": "review"
     }
   },
   "usage": {
