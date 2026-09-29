@@ -79,9 +79,13 @@ function usage() {
     '',
     '停止只针对本启动器记录的服务：先核对状态与 127.0.0.1 健康身份，只结束',
     '验证过的那个 PID；无法验证时拒绝并保留状态文件。数据库与日志始终保留。',
+    '注意：--stop 是应急强制结束（SIGKILL），不等待页面保存完成；正常的"保存并',
+    '退出"请在训练器页面使用"退出训练器"按钮，Stop.cmd 只作应急兜底。',
     'Stop only targets the service this launcher recorded (state + health identity',
     'on the recorded 127.0.0.1 port, exact verified PID only); it refuses and keeps',
     'the state file when identity cannot be proven. Database and logs are kept.',
+    'Note: --stop is an emergency force stop (SIGKILL) that does not wait for the',
+    'in-app save flow; use the in-app exit button for a normal saved shutdown.',
     '',
     '配置字段 / config fields: tdxRoot, port (default 8787), dataDir, databasePath (absolute).',
     '环境变量优先于配置文件 / environment overrides the config file when set:',
@@ -1356,6 +1360,7 @@ async function main(argv) {
       const result = await stop(parsed)
       if (result.stopped) {
         console.log(`训练服务已停止（PID ${result.pid}，端口 ${result.port}）。数据库与日志保留在 ${result.dataDir} / server stopped; database and logs kept`)
+        console.log('本次为应急强制结束；正常保存退出请使用页面里的"退出训练器" / this was an emergency force stop; use the in-app exit for a normal saved shutdown')
       } else if (result.noop === 'already-dead') {
         console.log(`记录的服务进程（PID ${result.pid}）已不存在，已清理过期状态 / the recorded process is gone; stale state cleaned`)
       } else {
