@@ -7,10 +7,17 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { migrateDatabase } from '../src/db.js'
 import { registerApi, type SetupRestartAttempt } from '../src/api.js'
 import type { AppConfig } from '../src/config.js'
+
+// 满载并行下真实 I/O 用例可数倍于串行耗时（集成门禁第二轮曾在 :196 以默认
+// 5000ms 超时失败，串行绿）。与 docs-tooling（20s）/review-profile（30s）/
+// worktree-tools（90s）/settings-training（20s，fd575f5）/setup-api、drawings
+// （20s，7e2509f）同一先例：时间预算放宽到 20s，断言不变（wt/D-M4-01 返修
+// 记录归属升级给集成人，集成层应用同款单行修法）。
+vi.setConfig({ testTimeout: 20_000 })
 import type { SavedTdxChoice } from '../src/setup/saved-choice.js'
 import type { TdxCandidateCheck } from '../src/tdx/inspect.js'
 
