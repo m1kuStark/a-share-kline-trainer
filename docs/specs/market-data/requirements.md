@@ -2,7 +2,7 @@
 
 ## DATA-SOURCE-CONTRACT
 
-当前TDX目录只读。“更新日线”扫描用户已下载的本地文件，不执行联网下载。目标来源合约覆盖股票目录、原始日线、权息、基准、覆盖证明和修订信息。DailySource目前仅扫描，训练仍直读TDX；见[DATA-04](../../work-items/tasks/DATA-04.md)。
+当前TDX目录只读。“更新日线”扫描用户已下载的本地文件，不执行联网下载。目标来源合约覆盖股票目录、原始日线、权息、基准、覆盖证明和修订信息。统一读取入口已实施（[DATA-04](../../work-items/tasks/DATA-04.md)）：训练/结算的 bars/actions/coverage/version 经 MarketDataReader 读取，来源解析与扫描同口径（TDX 优先，替代来源按注册可用性），非 TDX 来源实现该接口即可支撑训练；同步段（replayState 旧流水、buildChartSpace 画线基准）读 adj_factors 持久缓存、由读取器 ensureCaches 保障新鲜，api.ts 路由级 tdxRoot 守卫与 /api/kline 直读、env/stocks 独立刷新仍待集成接线。真实在线来源仍不在本轮（R2 属 V2 门槛）；实现边界见[统一读取入口](../../../server/src/data/docs/source-contract.md)。
 
 ## DATA-COVERAGE
 
