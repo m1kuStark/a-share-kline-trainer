@@ -63,3 +63,7 @@
 - **创建优先级**：显式合法值 > 持久默认 > 缺省内建（1,000,000/forward）；缺省仅指 undefined，显式 null/错误类型 400；省略字段在 BEGIN IMMEDIATE 提交边界解析（beforeCommit 可控验证等待期漂移取边界值）；写入既有 trainings.initial_cash/adjust_mode，rules_json schema 不变；五档与 RANGE 共用提交段。
 - **RANGE 预览**：预览未给复权取当时默认并固化进预览（响应含 adjustMode 可解释）；提交显式须与预览一致；提交省略复权遇提交边界默认与预览不一致 409 `RANGE_PREVIEW_STALE` 零写；资金不影响范围。
 - **UI**：设置弹层四字段一起保存（inert/Tab陷阱/Esc还焦点/录制不卸载保持）；损坏默认经面板完整保存即可修复；Launcher 挂载读取默认作初值、读取完成前开始训练禁用、读取失败可重试；迟到/重复响应按字段 dirty 不覆盖已编辑字段；设置保存只更新未编辑创建字段（已编辑保留并提示"本次使用自定义值"）；实际复权变化使范围预览与在途预览失效。
+
+## F4-launcher-initial-read-loading-owner 收尾（2026-09-29，M5-01 开发片核证）
+
+控制记录曾把该遗留项指向 `scripts/release/launcher.cjs`；经核证 verdict.json（m5-defaults-review-20260928-51）F4 证据清单（ui-results.json / ui-probe.mts / launcher-stale.png / modal-stale.png），缺陷实体是 **web 创建页 Launcher.vue 初次读取失效后 loading 不收敛**（保存作废在途初读后完成所有权未移交→开始训练永久禁用），与桌面启动器无关。修复已随重建提交落地：`7e9b046` 保存广播 watch 将 defaultsState 收敛为 ready，`e944958` e2e 显式门闩用例覆盖；M5-01 开发片全量单测复跑无回归，浏览器 e2e 复跑归集成阶段。该项视为闭合，无需修改 launcher.cjs。
