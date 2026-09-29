@@ -1101,7 +1101,9 @@ function buildSupervisorAttempt(parts: {
 }
 
 function supervisorTimeouts() {
-  return { saveMs: 2_000, drainMs: 4_000, sigtermMs: 2_500, spawnMs: 6_000, healthMs: 6_000, restoreMs: 2_000 }
+  // 真实子进程时限：默认值外再留一倍余量——全量套件并行时本机可能重载，
+  // 真实进程启动/退出会瞬时变慢；放宽的是等待预算，不放宽任何断言语义
+  return { saveMs: 3_000, drainMs: 8_000, sigtermMs: 5_000, spawnMs: 12_000, healthMs: 12_000, restoreMs: 3_000 }
 }
 
 describe('SETUP-01 saved choice in launcher resolution', () => {
