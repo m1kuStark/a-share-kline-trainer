@@ -11,7 +11,7 @@
   "can_dispatch": true,
   "candidate": {
     "commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
-    "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01"
+    "repo": "trainer-worktrees/M4-HISTORY-01"
   },
   "contract_revision": 1,
   "evidence": [
@@ -76,7 +76,7 @@
         "server/test/history-report.test.ts",
         "e2e/m4-history.spec.ts"
       ],
-      "repo": "D:/Superlinear_Academy/Stock_WorkSpace/trainer-worktrees/M4-HISTORY-01",
+      "repo": "trainer-worktrees/M4-HISTORY-01",
       "required_commits": [
         "888778cfc7a4b69e4446012a26618b93a8b05b20"
       ],
