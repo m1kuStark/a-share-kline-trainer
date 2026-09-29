@@ -1,15 +1,15 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import type { AppConfig } from '../config.js'
-import { isDayDate, parseDayBuffer, readDayFileRange, type DayBar } from '../tdx/dayfile.js'
-import { refreshStockCatalog } from '../tdx/catalog.js'
-import { loadAdjustmentEvents, refreshAdjustmentCache, gbbqFilePath } from '../tdx/adjustment-cache.js'
-import { applyForwardAdjustment, buildForwardAdjustmentSegments, parseGbbqBuffer, type AdjustmentEvent } from '../tdx/gbbq.js'
+import { isDayDate, type DayBar } from '../tdx/dayfile.js'
+// loadAdjustmentEvents 仅剩两处同步调用（replayState 旧流水兼容、buildChartSpace 画线基准），
+// 读的是 adj_factors 持久缓存（同步 API 无法经 async 读取器）；缓存由读取器 ensureCaches 保障新鲜。
+import { loadAdjustmentEvents } from '../tdx/adjustment-cache.js'
+import { applyForwardAdjustment, buildForwardAdjustmentSegments, type AdjustmentEvent } from '../tdx/gbbq.js'
 import { aggregateBars, type KlineBar, type Timeframe } from '../tdx/kline.js'
 import { parseTdxSymbol } from '../tdx/symbol.js'
 import type { TdxMarket } from '../tdx/stocks.js'
+import { MarketReaderUnavailableError, resolveMarketReader, type MarketDataReader } from '../data/reader.js'
 import { planTrainingRange, type TrainingRangeRequest, type TrainingRangeResult } from './range.js'
 import {
   applyTrade, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
@@ -179,10 +179,6 @@ function toMeta(row: TrainingRow): TrainingMeta {
   }
 }
 
-function dayFilePath(config: AppConfig, market: string, code: string): string {
-  return join(config.tdxRoot ?? '', 'vipdoc', market, 'lday', `${market}${code}.day`)
-}
-
 function loadTrainingRow(database: DatabaseSync, id: number): TrainingRow {
   const row = database.prepare('SELECT * FROM trainings WHERE id = ?').get(id) as unknown as TrainingRow | undefined
   if (!row) throw new HttpError(404, `训练 ${id} 不存在`)
@@ -215,9 +211,22 @@ export function addMonths(date: string, months: number): string {
   return `${String(targetYear).padStart(4, '0')}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`
 }
 
+// ===== DATA-04 统一行情读取入口 =====
+// 训练/结算的 bars/actions/coverage/version 读取一律经 MarketDataReader（server/src/data/reader.ts），
+// 不再直读 TDX 文件路径。来源解析与刷新扫描同口径：config.tdxRoot 非空→TDX；否则注册的
+// 替代读取器（测试夹具/未来在线来源）；均不可用→保持既有 503 状态码合约。
+async function marketReader(database: DatabaseSync, config: AppConfig): Promise<MarketDataReader> {
+  try {
+    return await resolveMarketReader(database, config)
+  } catch (error) {
+    if (error instanceof MarketReaderUnavailableError) throw new HttpError(503, error.message)
+    throw error
+  }
+}
+
+/** 兼容导出（旧调用点与测试使用）：等价于「解析读取器＋读取前缓存保障」。 */
 export async function ensureAdjustmentCache(database: DatabaseSync, config: AppConfig): Promise<void> {
-  if (!config.tdxRoot) return
-  await refreshAdjustmentCache(database, config.tdxRoot)
+  await (await marketReader(database, config)).ensureCaches()
 }
 
 export interface CreateTrainingInput {
@@ -261,14 +270,15 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
     throw new HttpError(400, '起始日必须是有效的 YYYY-MM-DD 日期')
   }
 
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
-  await ensureAdjustmentCache(database, config)
-  const stocks = await refreshStockCatalog(database, config.tdxRoot).then(result => result.stocks)
+  // DATA-04：经统一读取入口解析来源并读取目录/日线，不直读 TDX 路径
+  const reader = await marketReader(database, config)
+  await reader.ensureCaches()
+  const stocks = await reader.readCatalog()
   const parsed = parseTdxSymbol(input.code)
   const stock = stocks.find(item => item.market === parsed.market && item.code === parsed.code)
   if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
 
-  const bars = await readDayFileRange(dayFilePath(config, parsed.market, parsed.code))
+  const bars = await reader.readBars(parsed.market, parsed.code)
   const startBar = [...bars].reverse().find(bar => bar.date <= startDate)
   if (!startBar) throw new HttpError(400, `起始日 ${startDate} 早于该股票的上市日`)
 
@@ -495,32 +505,26 @@ function rangeFingerprint(
 }
 
 async function readRangeSnapshot(database: DatabaseSync, config: AppConfig, market: TdxMarket, code: string, now: Date): Promise<RangeSnapshot> {
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
-  await ensureAdjustmentCache(database, config)
-  const path = dayFilePath(config, market, code)
-  let bytes: Buffer
+  // DATA-04：经统一读取入口读取；fresh 权息绕过持久缓存直接解码来源现势字节（GPT-WAKE-02）
+  const reader = await marketReader(database, config)
+  await reader.ensureCaches()
+  let bars: DayBar[]
   try {
-    bytes = await readFile(path)
+    bars = await reader.readBars(market, code)
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new HttpError(404, `TDX data not found for ${market}${code}`)
     throw error
   }
-  let gbbqBytes: Buffer
+  let events: AdjustmentEvent[]
   try {
-    gbbqBytes = await readFile(gbbqFilePath(config.tdxRoot))
+    events = await reader.readActions(market, code, { fresh: true })
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new HttpError(404, 'TDX data not found for gbbq')
     throw error
   }
   const cutoff = shanghaiCompleteDataDate(now)
-  // 单次字节快照：元信息与指纹都派生自这次读取。权息事件直接从捕获的 gbbq 字节解码，
-  // 不经过 stat 缓存的 adj_factors——字节已变而 size/mtime 未变时，DB 缓存会保持陈旧，
-  // 用它算指纹会让"数据已变"的预览永远复用旧指纹（GPT-WAKE-02）。
-  const bars = parseDayBuffer(bytes).filter(bar => bar.date <= cutoff)
-  const events = parseGbbqBuffer(gbbqBytes)
-    .filter(event => event.market === market && event.code === code)
-    .sort((left, right) => left.date.localeCompare(right.date))
-  return { market, code, bars, fingerprint: rangeFingerprint(market, code, bars, events) }
+  const visible = bars.filter(bar => bar.date <= cutoff)
+  return { market, code, bars: visible, fingerprint: rangeFingerprint(market, code, visible, events) }
 }
 
 function parseRangeSymbol(value: string): { market: TdxMarket; code: string } {
@@ -610,8 +614,8 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
   if (!plan.ok) throw stalePreview(`创建复核未通过：${plan.message}`)
   if (plannedRangeKey(plannedRangeOf(plan)) !== plannedRangeKey(stored.planned)) throw stalePreview('复核结果与预览不一致')
 
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
-  const stocks = await refreshStockCatalog(database, config.tdxRoot).then(result => result.stocks)
+  // DATA-04：目录确认同样经统一读取入口（替代来源自带目录，TDX 沿用目录刷新）
+  const stocks = await (await marketReader(database, config)).readCatalog()
   const stock = stocks.find(item => item.market === parsed.market && item.code === parsed.code)
   if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
   const startBar = snapshot.bars.find(bar => bar.date === plan.startDate)
@@ -636,16 +640,17 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
 }
 
 // 训练 K 线：先按推进日截断、再前复权（基准=推进日）、后聚合；任何情况下不含推进日之后的数据。
+// 训练 K 线：先按推进日截断、再前复权（基准=推进日）、后聚合；任何情况下不含推进日之后的数据。
 async function buildTrainingSeries(database: DatabaseSync, config: AppConfig, id: number, timeframe: Timeframe): Promise<KlineBar[]> {
   const row = loadTrainingRow(database, id)
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
-  const daily = await readDayFileRange(dayFilePath(config, row.market, row.code))
+  const reader = await marketReader(database, config)
+  const daily = await reader.readBars(row.market as TdxMarket, row.code)
   const current = row.current_date ?? row.start_date
   const upto = daily.filter(bar => bar.date <= current)
   let adjusted = upto
   if (row.adjust_mode === 'forward') {
-    await ensureAdjustmentCache(database, config)
-    const events = loadAdjustmentEvents(database, row.market as 'sh' | 'sz' | 'bj', row.code)
+    await reader.ensureCaches()
+    const events = await reader.readActions(row.market as TdxMarket, row.code)
     adjusted = applyForwardAdjustment(upto, events, current)
   }
   return aggregateBars(adjusted, timeframe)
@@ -864,18 +869,19 @@ export async function advanceTraining(
 ): Promise<{ snapshot: TrainingSnapshot; settled: boolean; bar: KlineBar | null }> {
   const row = loadTrainingRow(database, id)
   if (row.status !== 'running') throw new HttpError(409, '训练已结束，无法推进')
-  if (!config.tdxRoot) throw new HttpError(503, '未发现 TDX 数据目录')
+  // DATA-04：日线与权息经统一读取入口（替代来源注册后，训练不再要求 TDX 目录存在）
+  const reader = await marketReader(database, config)
   // 规则只读本局快照；legacy raw 历史权息缺失禁止推进（零副作用先决）。
   const rules = trainingRulesOf(row)
   assertTradablePolicy(rules)
   const observation = { status: row.status, currentDate: row.current_date ?? row.start_date }
   await options.afterObserve?.()
-  const daily = await readDayFileRange(dayFilePath(config, row.market, row.code))
+  const daily = await reader.readBars(row.market as TdxMarket, row.code)
   const current = observation.currentDate
   const next = daily.find(bar => bar.date > current && bar.date <= row.planned_end)
   // 权息缓存刷新是 async 只读扫描：留在短事务之外，事务内只做同步入账与提交。
   if (rules.corporateActionPolicy === 'cash-shares-v1') {
-    await ensureAdjustmentCache(database, config)
+    await reader.ensureCaches()
   }
   // 短 BEGIN IMMEDIATE 同步段：重读训练 status/current_date，与请求开始观测值比对；
   // 期间已推进/结束则 409 零写回滚，不能重复对同一天入账。事务内重新重放最新账户，
@@ -910,7 +916,7 @@ export async function advanceTraining(
       if (rules.corporateActionPolicy === 'cash-shares-v1') {
         // 权息入账按规则口径（cash-shares-v1）执行，raw/forward 新训练同权同责：
         // 显示复权方式不改变真实现金/持股/成本。
-        const events = loadAdjustmentEvents(database, row.market as 'sh' | 'sz' | 'bj', row.code)
+        const events = await reader.readActions(row.market as TdxMarket, row.code)
         state = applyPositionEvents(database, fresh, state, next.date, events)
       }
       database.prepare('UPDATE trainings SET current_date = ?, current_close = ? WHERE id = ?').run(next.date, next.close, id)
