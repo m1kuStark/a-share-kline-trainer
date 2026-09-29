@@ -5,10 +5,10 @@
   "id": "SETUP-API-01",
   "title": "SETUP-01 第四片：受保护候选诊断只读端点",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "GET /api/setup/candidates 受 validateSetupRequest 保护（Host/Origin/Sec-Fetch-Site/控制令牌，失败结构化 401/403 且不调用诊断）；expectedHost 由配置监听 host:port 构造、不从请求 Host 反推；成功组合 defaultTdxCandidates＋collectProcessClues＋collectTdxCandidateDiagnostics 返回诊断；诊断异常结构化 503 SETUP_DIAGNOSTICS_UNAVAILABLE 不伪装空候选；TRAINER_CONTROL_TOKEN 环境只读透传 config.controlToken，不生成/不回显/不写日志。",
-  "next_action": "GPT diff 审查（setup-api-01-complete-20260926-18）；通过后接后续切片（原生目录选择、原子保存、受控重启另片冻结）。",
+  "next_action": "对账收编（2026-09-29）关闭：卡面记录 GPT diff 审查会话（setup-api-01-complete-20260926-18）与门禁通过（setup-api 9/9＋相邻 SETUP 合计 85/85、build:server、docs:check、范围表单 E2E 复跑 4/4），片代码 27ea639 已随基线在册（实测 5bf4484 祖先，片测试 setup-api.test.ts 无后续提交）；原生目录选择、原子保存生效接线、受控重启仍按 SETUP-01 另片推进；按对账关闭任务，用户验收尚未记录，恢复按 2026-09-27 暂停口径经控制层 FIRST-USE-PRODUCT 当前快照核对候选 SHA 与依赖。",
   "allowed_paths": [
     "server/src/config.ts",
     "server/src/api.ts",
@@ -22,7 +22,7 @@
     "update": ["docs/work-items/tasks/SETUP-API-01.md"]
   },
   "verification_refs": ["server/test/setup-api.test.ts"],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926@27ea639cff96636b88dd34900d5b41c588a35d93",
   "acceptance_ref": null
 }
 ```

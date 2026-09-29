@@ -5,10 +5,10 @@
   "id": "SETUP-AUTH-01",
   "title": "SETUP-01 第三片：受保护 setup 请求判定",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "control-guard.ts 纯函数 validateSetupRequest：Host 逐字、Origin 逐字＋Fetch Metadata same-origin 浏览器路径（不要求暴露令牌）、无 Origin 助手路径（非空 expectedToken＋controlToken 逐字）、混合身份令牌必须匹配；拒绝码 HOST_MISMATCH/ORIGIN_MISMATCH/FETCH_METADATA_MISMATCH/TOKEN_MISSING/TOKEN_INVALID/TOKEN_UNCONFIGURED（401/403 结构化）。测试 15/15，纯函数零环境/网络/文件读取，不打印令牌。",
-  "next_action": "GPT 定向复核；后续切片（Fastify 接线、一次性令牌颁发、原生目录选择、原子保存、受控重启）按边界另片冻结。",
+  "next_action": "对账收编（2026-09-29）关闭：卡内门禁记录通过（setup-control-guard 15/15，纯函数零环境/网络/文件读取），片代码 d481c1e 已随基线在册（实测 5bf4484 祖先，此后无该片范围提交），validateSetupRequest 已由 SETUP-API-01 端点接线；按对账关闭任务，用户验收尚未记录，恢复按 2026-09-27 暂停口径经控制层 FIRST-USE-PRODUCT 当前快照核对候选 SHA 与依赖。",
   "allowed_paths": [
     "server/src/setup/control-guard.ts",
     "server/test/setup-control-guard.test.ts",
@@ -21,7 +21,7 @@
     "update": ["docs/work-items/tasks/SETUP-AUTH-01.md"]
   },
   "verification_refs": [],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926@d481c1ec0c4780911f0e65104a74b270c67ed87b",
   "acceptance_ref": null
 }
 ```

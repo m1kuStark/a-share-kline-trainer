@@ -5,10 +5,10 @@
   "id": "SETUP-SAVE-01",
   "title": "SETUP-01 第四片：已诊断候选的原子保存与来源解析",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "saved-choice.ts：saveTdxChoice 保存前 inspectTdxCandidate 复验（recognized+readable 才允许，dailyFileCount=0 可保存；失败/抛错保留旧文件并抛可行动错误）；路径固定 dataDir/saved-tdx-choice.json，同目录随机临时文件（wx）+ rename 原子替换；格式 version=1/root(规范化 check.root)/savedAt/inspectedAt（同一 now ISO）；readSavedTdxChoice 对不存在/损坏/版本错误/空 root/非 ISO 时间返回 null。resolveEffectiveTdxRoot 冻结优先级 env→explicit-config→saved-choice→auto-discovered，空白视为缺失。测试 10/10（临时目录+注入 inspect/clock），零真实 TDX/配置读取。",
-  "next_action": "GPT 定向复核；后续重启编排切片（SIGTERM 优雅重启/活动训练拒切源）另片冻结。",
+  "next_action": "对账收编（2026-09-29）关闭：卡内门禁记录通过（setup-saved-choice 10/10、build:server、docs:check），片代码 5e07c31 交付后经 e8181d3（resolveEffectiveTdxRoot 可返回 null）与 b0b5608（保存时间戳严格真实日历校验）两轮修正，最终提交 b0b5608 已随基线在册（实测 5bf4484 祖先）；保存生效接线与重启编排仍按 SETUP-01 另片推进；按对账关闭任务，用户验收尚未记录，恢复按 2026-09-27 暂停口径经控制层 FIRST-USE-PRODUCT 当前快照核对候选 SHA 与依赖。",
   "allowed_paths": [
     "server/src/setup/saved-choice.ts",
     "server/test/setup-saved-choice.test.ts",
@@ -21,7 +21,7 @@
     "update": ["docs/work-items/tasks/SETUP-SAVE-01.md"]
   },
   "verification_refs": ["server/test/setup-saved-choice.test.ts"],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926@b0b560805ea788f9aafdb572618c791d99b5e125",
   "acceptance_ref": null
 }
 ```

@@ -5,10 +5,10 @@
   "id": "SETUP-CLUES-02",
   "title": "SETUP-01 第二片：候选诊断组合",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "candidate-diagnostics.ts 把 process-clues 结果与 inspectTdxCandidates 组合成诊断数组：running-process+manual 双来源、首次出现顺序、Windows 大小写不敏感去重、单次 inspect、返回顺序与 inspect 一致、五态与 reason 原样透传。测试 9/9（注入 stub），零真实 TDX/进程读取。",
-  "next_action": "GPT 定向复核；后续受保护 setup API 与原生选择/保存/重启切片按边界另片冻结。",
+  "next_action": "对账收编（2026-09-29）关闭：卡内门禁记录通过（candidate-diagnostics 9/9＋相邻 61/61、build:server、docs:check），片代码 2ef9dd7 已随基线在册（实测 5bf4484 祖先，此后无该片范围提交），组合结果已由 SETUP-API-01 端点接线；按对账关闭任务，用户验收尚未记录，恢复按 2026-09-27 暂停口径经控制层 FIRST-USE-PRODUCT 当前快照核对候选 SHA 与依赖。",
   "allowed_paths": [
     "server/src/tdx/candidate-diagnostics.ts",
     "server/test/candidate-diagnostics.test.ts",
@@ -21,7 +21,7 @@
     "update": ["docs/work-items/tasks/SETUP-CLUES-02.md"]
   },
   "verification_refs": [],
-  "integration_ref": null,
+  "integration_ref": "integration/product-integration-20260926@2ef9dd73645ee92e04465babaec40da7d4fab6c8",
   "acceptance_ref": null
 }
 ```
