@@ -28,7 +28,7 @@
 
 | 任务 | 状态 / 负责人 | 摘要 | 验证记录 | 集成引用 | 用户验收记录 |
 |---|---|---|---|---|---|
-| [DATA-03](<work-items/tasks/DATA-03.md>) | planned / unassigned | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
+| [DATA-03](<work-items/tasks/DATA-03.md>) | review / GLM-5.3-Flash | 元数据修订检测无法恢复旧行情；追加同时改历史可能漏报。 | [证据1](<../server/test/history-protection.test.ts>)；[证据2](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-04](<work-items/tasks/DATA-04.md>) | planned / unassigned | DailySource仅扫描；训练直读TDX，env/stocks独立刷新仍在。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [DATA-05](<work-items/tasks/DATA-05.md>) | review / GLM-5.3-Flash | DATA-05 freshness coordinator, offline SSE 2026 calendar, home status, poll ordering and unreadable-source downgrade are present in the isolated integration candidate. | [证据1](<verification/2026-09/DATA-05/calendar-source.json>) | integration/product-integration-20260926 | 未记录 |
 | [GLM-MONITOR-02](<work-items/tasks/GLM-MONITOR-02.md>) | review / integrator | CLI native usage and official quota dashboard installed; 78 Python and 13 browser fixture checks plus live verification passed. | [证据1](<verification/2026-09/GLM-MONITOR-02.md>) | 未记录 | 未记录 |
