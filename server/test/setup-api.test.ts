@@ -4,12 +4,19 @@
 // 测试全程注入合成 processQuery/inspect stub，零真实进程/TDX 读取；不打印令牌。
 import Fastify, { type FastifyInstance } from 'fastify'
 import { DatabaseSync } from 'node:sqlite'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { TdxCandidateCheck } from '../src/tdx/inspect'
 import type { ProcessQueryResult } from '../src/tdx/process-clues'
 import { migrateDatabase } from '../src/db.js'
 import { registerApi } from '../src/api.js'
 import type { AppConfig } from '../src/config.js'
+
+// 每个用例都重建内存 SQLite＋迁移＋Fastify 全量注册，threads 池满载并行下整体耗时
+// 可数倍于串行（本仓全量运行曾两次在不同用例上以默认 5000ms 超时失败，串行均绿）。
+// 与 docs-tooling（20s）、review-profile（30s）、worktree-tools（90s）、settings-training
+// （20s，fd575f5）同一先例：真实 I/O 预算放宽到 20s，断言不变——时间预算修正，
+// 不是产品延迟 SLO（testing.md 同款口径）。
+vi.setConfig({ testTimeout: 20_000 })
 
 const TOKEN = 'e2e-control-token'
 const TOKEN_NEVER_PRINT = 'e2e-control-token'

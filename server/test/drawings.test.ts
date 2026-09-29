@@ -3,9 +3,16 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
+
+// 持久化用例做真实临时文件 SQLite＋迁移＋Fastify 全量注册（重开数据库核对），
+// threads 池满载并行下整体耗时可数倍于串行（本仓全量运行曾在"重开数据库"用例上以
+// 默认 5000ms 超时失败，串行绿）。与 docs-tooling（20s）、settings-training（20s，
+// fd575f5）同一先例：真实 I/O 预算放宽到 20s，断言不变——时间预算修正，
+// 不是产品延迟 SLO（testing.md 同款口径）。
+vi.setConfig({ testTimeout: 20_000 })
 
 async function openApp(databasePath = ':memory:') {
   const database = new DatabaseSync(databasePath)
