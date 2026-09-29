@@ -3,6 +3,7 @@
 | 主题 | 何时读 |
 |---|---|
 | [训练与账户](training/rules.md) | 创建、推进、交易、权息、结算 |
+| [结算历史与成绩单](training/history.md) | 历史列表、只读事实成绩单与防未来守卫；已交付 |
 | [图表与工具](chart/interaction.md) | 显示、周期、手势、画线与保存 |
 | [行情与更新](market-data/requirements.md) | 来源、覆盖、历史修订和更新入口 |
 | [后续范围](roadmap.md) | M4/M5/R2与V2 |

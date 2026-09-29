@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "M4",
   "summary": "在已接受 V1 基线 888778c 上交付完整用户行为：真实结算一局后进入历史训练列表，打开只读事实成绩单查看分类、初始/最终权益、收益率、逐笔成交、已保存权益曲线与画线并返回；运行中/放弃不出现，任何 running 存在时新接口 409 拒答。不实现排行、最大回撤、胜率、盈亏比、基准超额、训练时钟、成交理由或条件单。",
-  "next_action": "F1/F2限定返修完成（FM-015：历史行按本局data-training-id定位、History页加载三态门控），共库组合回归20/20、单文件4/4、定向单测46/46、docs四检0错误；等待GPT复查并安排完整候选门禁一次执行。",
+  "next_action": "收编合并 045c07d（wt/D-M4-HISTORY-01＝5bf4484←f707a14，零冲突，合并 diff 32 文件与候选完全一致）已并入；合并树槽内复跑 npm run build 通过，npm test 三轮仅 runtime-isolation.test.ts 持续失败（RUN-CANCEL-01 范围，本轮排除），其余均为负载超时抖动且串行复跑全绿（drawings 7/7、worktree-tools 28/28、setup-api 9/9、docs-tooling 30/30）；完整候选门禁 verify:candidate --base 5bf4484 --task M4-HISTORY-01 留集成阶段执行，不过即打回或待裁决。",
   "allowed_paths": [
     "server/src/api.ts",
     "server/src/train/history-report.ts",
@@ -40,14 +40,22 @@
   ],
   "docs_impact": {
     "update": [
+      "docs/specs/training/history.md",
       "docs/specs/README.md",
+      "docs/user/training-history.md",
       "docs/user/README.md",
       "docs/specs/roadmap.md"
     ],
-    "reason": "新增历史查询与只读成绩单产品规格（specs/training/history.md）、用户说明（user/training-history.md）及两处 README 最小链接；roadmap §2.7 标注本片已交付范围与仍未交付范围。索引侧说明：specs/training/history.md 与 user/training-history.md 现仅存于分支 task/M4-HISTORY-01，收编拍板后随分支恢复完整 update 清单，见下方索引与拍板状态节。"
+    "reason": "新增历史查询与只读成绩单产品规格（specs/training/history.md）、用户说明（user/training-history.md）及两处 README 最小链接；roadmap §2.7 标注本片已交付范围与仍未交付范围。"
   },
-  "verification_refs": [],
-  "integration_ref": "F1/F2限定返修完成（control-handoff-20260928-55，base 888778c，未上main）；完整门禁待GPT安排一次执行",
+  "verification_refs": [
+    "docs/verification/2026-09/M4-HISTORY-01/server-red-green.md",
+    "docs/verification/2026-09/M4-HISTORY-01/journey-red-green.md",
+    "docs/verification/2026-09/M4-HISTORY-01/report.md",
+    "docs/verification/2026-09/M4-HISTORY-01/repair-55.md",
+    "docs/verification/2026-09/M4-HISTORY-01/collect-rerun.md"
+  ],
+  "integration_ref": "收编合并 045c07d（wt/D-M4-HISTORY-01：基线 5bf4484 ← 候选 f707a14，零冲突）；完整候选门禁待集成阶段对 base 5bf4484 重跑",
   "acceptance_ref": null
 }
 ```
@@ -72,13 +80,3 @@
 5. HISTORY-ui：侧栏入口改为可访问"历史训练"；列表分页（上一页/下一页）；详情展示事实、逐笔成交、已保存权益曲线、画线清单；真实结算→历史→详情→返回路径可用；A→B 详情切换迟到响应不覆盖；错误可重试；空列表可返回创建；金额不出现 NaN/undefined；运行中打开历史显示"结束当前训练后可查看历史"且可返回当前训练；录像库导入不回归。
 6. HISTORY-compat：既有 /api/trainings/:id、bars、drawings、recording-context、离线录像行为不变；GET /api/rankings 仍 404；既有单测/构建不回归。
 7. 验证：先 RED 后 GREEN，失败原件保留；服务测试覆盖分类/稳定排序/report 事实/旧 raw 409/running与abandoned排除/no-future oracle；真实 Journey 用真实结算按钮与历史入口（不得 API 替代关键用户动作），深/浅 1440/840 截图主代理实查，pageerror 0；完整门禁按 base 888778c 一次执行。
-
-## 索引与拍板状态（CAND-05，2026-09-29，git 实测）
-
-- 本卡由 CAND-05 从分支 `task/M4-HISTORY-01`（tip `f707a14`）索引入 main，作为 S5 拍板输入。除下列为过主仓门禁所做的引用调整外，卡内容为分支原貌；分支卡仍是权威版本。
-- 引用调整（主仓 docs:status 校验要求 verification_refs 与 docs_impact.update 指向仓内实存文件，而被指文件现仅存于分支，不得为索引提前取回证据/规格）：JSON `verification_refs` 暂置空，`docs_impact.update` 暂移除两条分支侧路径。分支原文如下，收编拍板后按分支卡恢复：
-  - verification_refs 原文：`docs/verification/2026-09/M4-HISTORY-01/server-red-green.md`、`journey-red-green.md`、`report.md`、`repair-55.md`。
-  - docs_impact.update 移除条目：`docs/specs/training/history.md`、`docs/user/training-history.md`（保留的三条在 main 已存在）。
-- 分支状态实测：`git merge-base --is-ancestor f707a14 5bf4484` 失败（exit 1），即 tip **不是**基线 5bf4484 祖先——本任务代码未收编入 main，本卡索引不构成收编；代码收编由 M4-HISTORY-01 任务在拍板后自行执行，本任务不合码。
-- 待拍板处置：是否/何时把 `task/M4-HISTORY-01`（基于 V1 基线 888778c，该基线已在 main）收编入集成基线，由 S5 拍板。
-- 卡面 integration_ref「未上main」的表述在拍板前保持为真；状态保持分支原貌 review。
