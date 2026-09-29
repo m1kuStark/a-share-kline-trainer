@@ -70,7 +70,8 @@ test('设置默认→创建A冻结→运行中改默认A不变→B采用新值�
   await dialog.getByLabel('新训练启用 T+1（当日买入次日可卖）').uncheck()
   await dialog.getByRole('button', { name: '保存设置' }).click()
   await expect(dialog).toContainText('已保存')
-  expect(putBody).toEqual({ feesEnabled: true, tPlusOne: false })
+  // M5-DEFAULTS：设置面板四字段一起保存（资金/复权为此刻未编辑的默认值）
+  expect(putBody).toEqual({ feesEnabled: true, tPlusOne: false, initialCash: 1000000, adjustMode: 'forward' })
   await dialog.getByRole('button', { name: '关闭' }).click()
   await expect(dialog).not.toBeVisible()
   expect((await (await page.request.get('/api/settings/training')).json())).toMatchObject({ feesEnabled: true, tPlusOne: false })

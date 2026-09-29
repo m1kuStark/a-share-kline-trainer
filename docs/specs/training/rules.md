@@ -45,9 +45,15 @@ UI-03 用户反馈后首页表单收敛（服务端 API 与旧训练兼容不变
 
 创建训练时冻结完整交易规则，默认设置只影响新训练。
 
-- **默认设置 API**：`GET/PUT /api/settings/training`，只开放费用开关与 T+1 开关（默认费用关、T+1 开），落既有 settings 键 `fees_enabled`/`t1_enabled` 并保留其他键。PUT 要求两项布尔齐备，非法类型/缺字段/未知字段 400 且零写；两值同一事务更新，不部分成功；重复保存安全，最后一次成功保存供未来创建使用。无 TDX 也可读写。费用数值沿固定口径（佣金万 2.5、最低 5 元、印花税万 5、一手 100 股、当日收盘成交、仓位按总权益），不开放费率编辑。此 API 进入业务 admission 门闩，draining 拒绝。
-- **创建冻结**：规则为版本化不可变 JSON（`trainings.rules_json`，version=1），含 feesEnabled、tPlusOne、固定数值与执行口径、`corporateActionPolicy='cash-shares-v1'`、capturedAt、origin='created'。旧五档与 RANGE 范围训练共用 `commitTrainingCreation` 的 BEGIN IMMEDIATE 提交段：默认在提交边界内读取（等待期间更新的默认进入最终快照），规则与训练行、初始权益同事务共提交，失败全回滚。
-- **快照数值即执行口径（返修 F1）**：解析器支持的数值域为比率 ∈ [0,1]、最低佣金 ∈ [0,1e6]、lotSize ∈ [1,1e6] 整数、capturedAt 可解析时间；被认可的 commissionRate/minimumCommission/stampDutyRate/lotSize 由同一快照传入账户计算（佣金、印花税、整手取整全部按快照执行），支持域之外或损坏/版本不支持的完整快照 409 `TRAIN_RULES_UNREADABLE` 零写，不回退全局常量或模块默认。设置 API 仍只接受两个布尔，不开放费率编辑。
+## TRAIN-RULE-SNAPSHOT（TRAIN-01 已交付；M5-DEFAULTS 扩展默认设置）
+
+创建训练时冻结完整交易规则，默认设置只影响新训练。
+
+- **默认设置 API**：`GET/PUT /api/settings/training`。M5-DEFAULTS 起为四字段完整对象：费用开关、T+1、默认初始资金（`training_initial_cash`）、默认复权（`training_adjust_mode`），四键同一事务原子保存并保留其他 settings 键；旧客户端恰好两布尔的 PUT 继续兼容（只更新旧两键，保留新默认，不声称修复坏键）；部分对象/未知字段/非对象 400 零写。资金域 0.01..1,000,000,000 元、至多两位小数（数字、有限；不取整不截断），此域仅约束新默认字段，不收紧既有显式创建 API 的资金域。缺键＝内建默认 1,000,000/forward，不要求回填；已有损坏键不是缺键：GET 与依赖缺省的创建返回 409 `TRAINING_DEFAULTS_UNREADABLE`，不自动修复，完整合法四字段 PUT 即修复入口，旧两布尔 PUT 不声称修复。无 TDX 可读写；此 API 进入业务 admission 门闩，draining 拒绝。费用数值沿固定口径（佣金万 2.5、最低 5 元、印花税万 5、一手 100 股、当日收盘成交、仓位按总权益），不开放费率编辑。
+- **创建冻结**：规则为版本化不可变 JSON（`trainings.rules_json`，version=1），含 feesEnabled、tPlusOne、固定数值与执行口径、`corporateActionPolicy='cash-shares-v1'`、capturedAt、origin='created'。旧五档与 RANGE 范围训练共用 `commitTrainingCreation` 的 BEGIN IMMEDIATE 提交段：费用/T+1 在提交边界内读取（等待期间更新的默认进入最终快照），规则与训练行、初始权益同事务共提交，失败全回滚。
+- **创建默认优先级（M5-DEFAULTS）**：资金与复权每字段独立取值——显式合法输入 > 持久默认 > 缺省内建（1,000,000/forward）。缺省仅指 undefined/未给，显式 null/错误类型 400；省略字段在 BEGIN IMMEDIATE 提交事务边界解析（行情 await 期间默认变化按最终边界值，显式值不变），写入既有 `trainings.initial_cash/adjust_mode`，不改 rules_json schema 与账户算法；损坏默认在省略依赖时 409 `TRAINING_DEFAULTS_UNREADABLE` 零写，显式两字段齐全则不依赖损坏默认。
+- **RANGE 预览复权一致性（M5-DEFAULTS）**：预览未给复权取当时持久默认并固化进预览（响应 `adjustMode` 可解释）；提交显式复权须与预览一致；提交省略复权时提交边界最新默认若与预览不一致 409 `RANGE_PREVIEW_STALE` 零写、要求重新预览，不静默换复权；资金不影响范围，省略资金用提交边界最新默认。源 fingerprint/TTL/股票/日期/根数防陈旧校验保留。
+- **快照数值即执行口径（返修 F1）**：解析器支持的数值域为比率 ∈ [0,1]、最低佣金 ∈ [0,1e6]、lotSize ∈ [1,1e6] 整数、capturedAt 可解析时间；被认可的 commissionRate/minimumCommission/stampDutyRate/lotSize 由同一快照传入账户计算（佣金、印花税、整手取整全部按快照执行），支持域之外或损坏/版本不支持的完整快照 409 `TRAIN_RULES_UNREADABLE` 零写，不回退全局常量或模块默认。设置 API 不开放费率编辑。
 - **本局只读快照**：交易、可卖数量、`recording-context.rules` 及相关返回一律读本局快照，全局默认修改后不漂移；服务端主导，客户端不能伪造本局规则。快照缺失/损坏/版本不支持返回 409 `TRAIN_RULES_UNREADABLE` 零副作用，绝不静默回退当前设置继续交易。
 - **旧训练迁移（返修 F2）**：首次迁移以 `cache_meta.train_rules_migration` 标记识别，与加列、回填同一事务（DDL 可回滚，PRAGMA 留在事务外）。旧行只在该一次事务中冻结“迁移时点实际可见”的费用/T+1 与固定参数（origin='legacy-migration'、capturedAt 为迁移时点，UI 明示“旧训练按升级时设置继续，历史设置未记录”）。标记写入后任何后续启动不再回填：已迁移库中新出现的 NULL/损坏快照保持 NULL（读取 409），不得按当前默认重冻或伪装成旧局迁移。首次合法迁移、幂等、失败回滚、旧流水逐字段不变、legacy raw 只读保护均保持。
 - **录像一致**：`recording-context.rules` 来自本局快照，origin/capturedAt 以可选元数据如实透出；observedAt 仍为观察时点。不改录像 schema、不新增事件类型；旧录像缺字段按原 reader 读取。

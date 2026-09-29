@@ -38,9 +38,12 @@ describe('日线数据更新前端契约（R1）', () => {
     const app = await readFile(appPath, 'utf8')
     const store = await readFile(storePath, 'utf8')
     expect(app).toMatch(/onMounted\(async \(\) => \{[\s\S]{0,200}checkDataStatus\(\{ force: true \}\)/)
-    // force 绕过节流的实现必须存在于 store
-    expect(store).toMatch(/export async function checkDataStatus\(options\?: \{ force\?: boolean \}\): Promise<void>/)
+    // force 绕过节流的实现必须存在于 store；manual 标记手动路径（M5-01 应用偏好门闩只拦自动检查）
+    expect(store).toMatch(/export async function checkDataStatus\(options\?: \{ force\?: boolean; manual\?: boolean \}\): Promise<void>/)
     expect(store).toMatch(/if \(!options\?\.force && Date\.now\(\) - lastCheckStartedAt < DATA_CHECK_THROTTLE_MS\) return/)
+    // 门闩在隐藏守卫之后、节流之前：偏好关闭只跳过自动检查，manual 显式绕过
+    expect(store).toMatch(/if \(!options\?\.manual\) \{[\s\S]{0,120}if \(!appAutoDataCheck\.value\) return[\s\S]{0,40}\}/)
+    expect(store).toMatch(/checkDataStatus\(\{ force: true, manual: true \}\)/)
   })
 
   it('前台激活 60s 节流：常量 60_000 且 onDataActive 走节流检查', async () => {

@@ -16,6 +16,7 @@ import {
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
+import { readCreationDefaultsFields, type CreationDefaults } from '../settings/creation-defaults.js'
 
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 /** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
@@ -258,13 +259,21 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   }
   const startDate = input.start_date
   const tier = input.tier as Tier
-  const adjustMode = input.adjust_mode ?? 'forward'
-  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
-    throw new HttpError(400, '复权方式必须是 forward 或 raw')
+  // M5-DEFAULTS：缺省仅指 undefined/未给；显式 null/错误类型是非法输入 400，不视为省略。
+  // 省略字段在创建提交事务边界解析持久默认（损坏默认 409 TRAINING_DEFAULTS_UNREADABLE）。
+  let adjustMode: 'forward' | 'raw' | null = null
+  if (input.adjust_mode !== undefined) {
+    if (input.adjust_mode !== 'forward' && input.adjust_mode !== 'raw') {
+      throw new HttpError(400, '复权方式必须是 forward 或 raw')
+    }
+    adjustMode = input.adjust_mode
   }
-  const initialCash = input.initial_cash ?? 1_000_000
-  if (!Number.isFinite(initialCash) || initialCash <= 0) {
-    throw new HttpError(400, '初始资金必须是正数')
+  let initialCash: number | null = null
+  if (input.initial_cash !== undefined) {
+    if (typeof input.initial_cash !== 'number' || !Number.isFinite(input.initial_cash) || input.initial_cash <= 0) {
+      throw new HttpError(400, '初始资金必须是正数')
+    }
+    initialCash = input.initial_cash
   }
   if (!isDayDate(input.start_date)) {
     throw new HttpError(400, '起始日必须是有效的 YYYY-MM-DD 日期')
@@ -303,8 +312,12 @@ interface TrainingCreationRow {
   startDate: string
   plannedEnd: string
   blind: number
-  adjustMode: 'forward' | 'raw'
-  initialCash: number
+  /** null＝创建时省略，在提交事务边界解析持久默认（损坏默认 409） */
+  adjustMode: 'forward' | 'raw' | null
+  /** null＝创建时省略，在提交事务边界解析持久默认（损坏默认 409） */
+  initialCash: number | null
+  /** 仅 RANGE：预览时固化的有效复权；提交省略复权时若提交边界默认与其不一致须 409 零写 */
+  previewAdjustMode?: 'forward' | 'raw'
   createdAt: string
   currentDate: string
   currentClose: number
@@ -329,6 +342,34 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
   try {
     const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
     if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
+    // M5-DEFAULTS＋返修 F1：省略的资金/复权在 BEGIN IMMEDIATE 提交事务边界按实际依赖字段
+    // 解析持久默认（只实际依赖的损坏字段才 409 TRAINING_DEFAULTS_UNREADABLE 零写，无关字段
+    // 的损坏不扩散）；显式值不依赖任何默认。
+    let adjustMode = row.adjustMode
+    let initialCash = row.initialCash
+    if (adjustMode === null || initialCash === null) {
+      const fields = readCreationDefaultsFields(database)
+      const corruptKeys: string[] = []
+      if (adjustMode === null) {
+        if (fields.mode.state === 'corrupt') corruptKeys.push('training_adjust_mode')
+        else adjustMode = fields.mode.state === 'ok' ? fields.mode.value : 'forward'
+      }
+      if (initialCash === null) {
+        if (fields.cash.state === 'corrupt') corruptKeys.push('training_initial_cash')
+        else initialCash = fields.cash.state === 'ok' ? fields.cash.value : 1_000_000
+      }
+      if (corruptKeys.length > 0) {
+        throw new HttpError(
+          409,
+          `训练默认设置损坏（${corruptKeys.join('、')} 无法读取）：请在设置中核对表单并重新保存即可修复，或创建时显式填写资金与复权`,
+          'TRAINING_DEFAULTS_UNREADABLE',
+        )
+      }
+    }
+    // RANGE 提交省略复权时：提交边界最新默认若与预览固化复权不一致，409 零写要求重新预览
+    if (row.previewAdjustMode !== undefined && row.previewAdjustMode !== adjustMode) {
+      throw new HttpError(409, '预览后默认复权已变化，提交未带复权须与预览一致；请重新预览', 'RANGE_PREVIEW_STALE')
+    }
     const rules = observedDefaultRules(database, row.createdAt)
     const rulesJson = serializeTrainingRules(rules)
     const result = row.range === null
@@ -339,7 +380,7 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
           ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
-          row.blind, row.adjustMode, row.initialCash, row.createdAt, row.currentDate, row.currentClose, rulesJson,
+          row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose, rulesJson,
         )
       : database.prepare(`
           INSERT INTO trainings (
@@ -350,7 +391,7 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
           ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
-          row.blind, row.adjustMode, row.initialCash, row.createdAt, row.currentDate, row.currentClose,
+          row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose,
           row.range.mode, row.range.requestedStart, row.range.requestedEnd,
           row.startDate, row.plannedEnd, row.range.barCount, row.range.fingerprint, JSON.stringify(row.range.notes),
           rulesJson,
@@ -358,7 +399,7 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
     const id = Number(result.lastInsertRowid)
     database.prepare(
       'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
-    ).run(id, row.startDate, row.initialCash)
+    ).run(id, row.startDate, initialCash)
     database.exec('COMMIT')
     return id
   } catch (error) {
@@ -391,6 +432,8 @@ export interface RangePreview {
   notes: string[]
   sourceFingerprint: string
   expiresAt: string
+  /** 预览固化的有效复权：未显式给 adjustMode 时取当时的持久默认，提交须与此一致 */
+  adjustMode: 'forward' | 'raw'
 }
 
 export interface PreviewTrainingRangeInput {
@@ -537,9 +580,23 @@ function parseRangeSymbol(value: string): { market: TdxMarket; code: string } {
 
 export async function previewTrainingRange(database: DatabaseSync, config: AppConfig, input: PreviewTrainingRangeInput): Promise<{ preview: RangePreview }> {
   const now = input.now ?? new Date()
-  const adjustMode = input.adjustMode ?? 'forward'
-  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
+  // M5-DEFAULTS＋返修 F1：预览只依赖复权字段——未给复权时取当时持久默认的复权（该键损坏
+  // 409 UNREADABLE；坏资金键不阻断预览），并作为有效复权固化进预览。
+  let adjustMode: 'forward' | 'raw'
+  if (input.adjustMode === undefined) {
+    const fields = readCreationDefaultsFields(database)
+    if (fields.mode.state === 'corrupt') {
+      throw new HttpError(
+        409,
+        '训练默认设置损坏（training_adjust_mode 无法读取）：请在设置中核对表单并重新保存即可修复，或预览/创建时显式选择复权方式',
+        'TRAINING_DEFAULTS_UNREADABLE',
+      )
+    }
+    adjustMode = fields.mode.state === 'ok' ? fields.mode.value : 'forward'
+  } else if (input.adjustMode !== 'forward' && input.adjustMode !== 'raw') {
     throw new HttpError(400, '复权方式必须是 forward 或 raw', 'INVALID_INPUT')
+  } else {
+    adjustMode = input.adjustMode
   }
   const request = normalizeRangeRequest(input.range)
   if (!request) throw new HttpError(400, 'range 必须是包含 mode（preset/latest/bars）与 startDate 的对象', 'INVALID_INPUT')
@@ -570,6 +627,7 @@ export async function previewTrainingRange(database: DatabaseSync, config: AppCo
       ...planned,
       sourceFingerprint: snapshot.fingerprint,
       expiresAt: new Date(expiresAtMs).toISOString(),
+      adjustMode,
     },
   }
 }
@@ -582,13 +640,21 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
     throw new HttpError(400, 'range 创建必须提供预览返回的 previewId')
   }
   if (!input.code) throw new HttpError(400, 'code 必填')
-  const adjustMode = input.adjust_mode ?? 'forward'
-  if (adjustMode !== 'forward' && adjustMode !== 'raw') {
-    throw new HttpError(400, '复权方式必须是 forward 或 raw')
+  // M5-DEFAULTS：缺省仅指 undefined/未给；显式 null/错误类型 400。
+  // 省略复权时以预览固化的有效复权为基准，提交边界默认若与预览不一致由提交事务 409 RANGE_PREVIEW_STALE。
+  let adjustMode: 'forward' | 'raw' | null = null
+  if (input.adjust_mode !== undefined) {
+    if (input.adjust_mode !== 'forward' && input.adjust_mode !== 'raw') {
+      throw new HttpError(400, '复权方式必须是 forward 或 raw')
+    }
+    adjustMode = input.adjust_mode
   }
-  const initialCash = input.initial_cash ?? 1_000_000
-  if (!Number.isFinite(initialCash) || initialCash <= 0) {
-    throw new HttpError(400, '初始资金必须是正数')
+  let initialCash: number | null = null
+  if (input.initial_cash !== undefined) {
+    if (typeof input.initial_cash !== 'number' || !Number.isFinite(input.initial_cash) || input.initial_cash <= 0) {
+      throw new HttpError(400, '初始资金必须是正数')
+    }
+    initialCash = input.initial_cash
   }
 
   const now = input.now ?? new Date()
@@ -599,7 +665,7 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
     throw stalePreview('预览已过期')
   }
   if (JSON.stringify(request) !== JSON.stringify(stored.request)) throw stalePreview('创建请求与预览请求不一致')
-  if (adjustMode !== stored.adjustMode) throw stalePreview('复权方式与预览不一致')
+  if (adjustMode !== null && adjustMode !== stored.adjustMode) throw stalePreview('复权方式与预览不一致')
   const parsed = parseRangeSymbol(input.code)
   if (parsed.code !== stored.code || parsed.market !== stored.market) throw stalePreview('预览与请求的股票不一致')
 
@@ -626,6 +692,7 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
     tier: RANGE_TIER_SENTINEL, code: parsed.code, name: stock.name, market: parsed.market,
     startDate: plan.startDate, plannedEnd: plan.endDate,
     blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt: now.toISOString(),
+    previewAdjustMode: stored.adjustMode,
     currentDate: plan.startDate, currentClose: startBar.close,
     range: {
       mode: plan.mode,

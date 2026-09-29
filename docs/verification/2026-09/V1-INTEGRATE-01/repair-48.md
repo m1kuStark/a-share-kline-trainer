@@ -30,3 +30,15 @@
 ## 防遗漏
 
 测试结束覆盖自己认领的异步工作（handler 返回 Promise＋waitForResponse）；mock 新增 route 先核 continue/fallback/fulfill 语义；重放/单测通过只辅助分类，不拼作门禁通过；修根因前不优化产品以降低竞态概率。已知 unknown：catalog 扫描/I/O 偏慢的确切原因（本合同明确不修、不掩盖）。
+
+## 限定返修 F1-F5（control-handoff-20260928-51）
+
+GPT 集中审查（review51）以真实反例否决候选，五项缺陷一次限定返修；FM-014 已入账本。逐项先 RED 再 GREEN：
+
+- **F1 按字段默认解析**：原 `commitTrainingCreation` 任一字段省略即聚合读取两字段默认并整体验证——坏 cash 阻断显式资金＋省略复权的合法创建（反向同理），RANGE 预览也被坏 cash 阻断。修复＝`readCreationDefaultsFields` 按字段粒度读取，只实际依赖的损坏字段 409；RED：`red-f1f2f3.log` 中"坏cash+raw显式资金应成功600000/raw"等 3 用例失败。原"坏 cash＋好 mode 预览 409"正断言与按字段合同冲突，按裁决纠正为成功正例，保留真实依赖坏 mode 的 409 断言。
+- **F2 旧两布尔 PUT 不伪造新键**：原 lenient 视图以 fallback（1,000,000/forward）垫底，损坏新键时响应冒称有效。修复＝lenient 视图仅包含可如实表达的键，损坏字段整体缺席；坏字节保留、GET 仍 409。RED：F2 用例断言 `not.toHaveProperty('initialCash')` 失败（原响应含 1000000/forward）。
+- **F3 十进制语义**：固定 1e-9 浮点容差误拒 10000000.03/.04/.05、放过 0.010000000001。修复＝前后端统一按 Number 最短字符串表示判定至多两位小数（科学记数法一律拒绝），不调 epsilon、不取整；UI `parseInitialCash` 与服务端 `isInitialCashInDomain` 同口径。RED：F3 用例合法值被拒/超精度被放行。
+- **F4 读取/编辑/保存时序**：Launcher 设置保存成功即递增读取版本使在途/迟到 GET 作废；设置面板初次 GET 带 readVersion＋formDirty 守卫，成功保存同样作废挂起读取。真实 UI 序列（review51 指认）由 e2e 显式门闩（非 sleep）复现旧值回退/表单回退为 RED，修复后 GREEN；并补"保存默认→表单未手改采用→实际点击创建"真实路径（data/status mock current＋reload，绕过数据确认弹窗）。
+- **F5 在途预览失效释放加载所有权**：`onRangeInputChanged` 失效在途预览时同步 `previewing=false`（原 finally 仅版本相同才清，保存失效后按钮永久"生成预览中"）。旧请求迟到被版本守卫丢弃、不清除较新请求加载态。归 existing_invariant_gap（本片保存通知触发的既有生命周期缺口）。
+- e2e 过程修正：F5 范围起始日须落在冻结样本覆盖内（默认 06-28 起 3 个月超出 09-16 数据尾，服务端保守 409——用例数据错误非产品缺陷）；断言锚定实际区间 2026-04-15 起。
+- 环境事实：全量 unit 三次中两次 exit 127（进程外部终止、无断言失败、第二次已推进到更后文件），第三次完整绿 1168/1168——根因保持 unknown，不归因负载；与 V1 旧 90/91 的 mock continue 泄漏、本片 .trim 类型边界均非同因（纠正旧归因）。

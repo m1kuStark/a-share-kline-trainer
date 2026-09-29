@@ -1,0 +1,117 @@
+import { ref } from 'vue'
+
+// M5-01：应用偏好（/api/settings/app）与 TDX 数据目录（/api/settings/tdx-path）的客户端。
+// 独立成文件而不并入 web/src/api.ts：本轮该文件与 App.vue 由集成人单写（first-use-batch
+// 并行调度约定），集成阶段可把这里的请求并入统一 request 助手后再删本模块的本地副本。
+// 应用偏好语义（与服务端 settings/app.ts 同源）：autoDataCheck 缺省 true＝维持既有口径
+// （启动/回前台/可见页 60s 自动检查 /api/data/status）；false＝只保留手动路径。
+// 偏好 store 供 dataStatus.ts 门闩与设置面板共同读写；ensureAppSettingsLoaded 每会话一次
+// 尽力预取，读取失败保持缺省 true（＝现状），设置面板打开时会再读并向用户展示错误。
+
+export interface AppSettingsView {
+  version: number
+  autoDataCheck: boolean
+}
+
+export interface SavedTdxChoiceInfo {
+  version: 1
+  root: string
+  savedAt: string
+  inspectedAt: string
+}
+
+export interface TdxPathSettingsView {
+  effectiveRoot: string | null
+  savedChoice: SavedTdxChoiceInfo | null
+}
+
+export interface TdxCandidateCheckInfo {
+  root: string
+  recognized: boolean
+  readable: boolean
+  dailyFileCount: number
+  latestDate: string | null
+  hasAdjustment: boolean
+  hasNames: boolean
+  hasBenchmark: boolean
+  problems: string[]
+}
+
+export interface TdxPathSaveResult {
+  saved: SavedTdxChoiceInfo
+  effectiveRoot: string | null
+  restartRequired: true
+}
+
+class SettingsApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+    this.name = 'SettingsApiError'
+  }
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init)
+  const payload = await response.json().catch(() => ({})) as T & { error?: string; message?: string }
+  if (!response.ok) throw new SettingsApiError(payload.message ?? payload.error ?? `请求失败（${response.status}）`, response.status)
+  return payload
+}
+
+// ===== 应用偏好：自动检查日线数据 =====
+
+/** 缺省 true＝现状（自动检查开启）；设置面板保存后即时更新，dataStatus 门闩据此放行/跳过 */
+export const appAutoDataCheck = ref(true)
+/** 预取是否已成功读到过服务端视图（未读到时 UI 侧按缺省呈现并可再次读取） */
+export const appSettingsLoaded = ref(false)
+
+let appSettingsPromise: Promise<void> | null = null
+
+/** 每会话一次尽力预取：失败静默保持缺省 true（＝现状），不阻塞调用方 */
+export function ensureAppSettingsLoaded(): Promise<void> {
+  if (appSettingsPromise === null) {
+    appSettingsPromise = fetchAppSettings()
+      .then(view => {
+        appAutoDataCheck.value = view.autoDataCheck
+        appSettingsLoaded.value = true
+      })
+      .catch(() => { /* 保持缺省；设置面板打开时会再次读取并展示可行动错误 */ })
+  }
+  return appSettingsPromise
+}
+
+export function fetchAppSettings(): Promise<AppSettingsView> {
+  return request('/api/settings/app')
+}
+
+export async function putAppSettings(autoDataCheck: boolean): Promise<AppSettingsView> {
+  const saved = await request<AppSettingsView>('/api/settings/app', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ autoDataCheck }),
+  })
+  appAutoDataCheck.value = saved.autoDataCheck
+  appSettingsLoaded.value = true
+  return saved
+}
+
+// ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====
+
+export function fetchTdxPathSettings(): Promise<TdxPathSettingsView> {
+  return request('/api/settings/tdx-path')
+}
+
+export function validateTdxPath(root: string): Promise<{ check: TdxCandidateCheckInfo }> {
+  return request('/api/settings/tdx-path/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ root }),
+  })
+}
+
+export function putTdxPath(root: string): Promise<TdxPathSaveResult> {
+  return request('/api/settings/tdx-path', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ root }),
+  })
+}

@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { fetchDataStatus, postDataRefresh, type DataRefreshResult, type DataStatus } from './api'
+import { appAutoDataCheck, ensureAppSettingsLoaded } from './appSettings'
 
 // ===== 日线数据状态：响应式单例 store =====
 // 节流口径（用户拍板）：应用启动立即检查一次；窗口回到前台（focus/visibilitychange）
@@ -9,6 +10,11 @@ import { fetchDataStatus, postDataRefresh, type DataRefreshResult, type DataStat
 // DATA-05 新鲜度重判：可见页面每 60s 一次廉价 GET /api/data/status（服务端按官方
 // 离线日历逐次重算 freshness，跨 15:00/跨日/跨休市即时重判）；隐藏停止计时，
 // 回前台恢复并立即按节流检查；卸载清理。定时器只 GET，绝不定时 POST 扫描。
+// M5-01 应用偏好：设置里关闭「自动检查日线数据」（autoDataCheck=false）后，自动路径
+// （启动/回前台/60s 重判）一律跳过；手动路径（「更新日线」及其后的 running 轮询、
+// 设置面板「重新检查」）不受影响。偏好异步预取（ensureAppSettingsLoaded，缺省 true＝现状），
+// 设置面板保存后即时生效；偏好尚未读到时的首次自动检查按现状放行（缺省 true），
+// 后续自动检查按已读到的偏好执行。集成阶段可在 App 启动时更早预取以收窄这一窗口。
 
 /** 前台激活后再次检查的最小间隔（60s 节流），同时是可见页面廉价重判 GET 的周期 */
 export const DATA_CHECK_THROTTLE_MS = 60_000
@@ -53,9 +59,14 @@ function isHidden(): boolean {
 /**
  * 可见页面 60s 廉价重判定时器：只 GET /api/data/status（服务端逐次重算 freshness），
  * 隐藏时暂停，回前台由 onDataActive 恢复；不发起任何 POST 扫描。
+ * M5-01：应用偏好关闭自动检查时不启动（每次 tick 也会经 checkDataStatus 的门闩再拦一道）。
  */
 export function startStatusTicker(): void {
   if (statusTicker !== undefined || isHidden()) return
+  if (!appAutoDataCheck.value) {
+    void ensureAppSettingsLoaded()
+    return
+  }
   statusTicker = setInterval(() => {
     if (isHidden()) return
     void checkDataStatus()
@@ -97,9 +108,17 @@ function applyStatus(result: DataStatus): void {
   }
 }
 
-/** 启动立即检查一次（force 绕过 60s 节流）；App onMounted 调用 */
-export async function checkDataStatus(options?: { force?: boolean }): Promise<void> {
+/**
+ * 启动立即检查一次（force 绕过 60s 节流）；App onMounted 调用。
+ * M5-01：manual 标记手动路径（「更新日线」终态同步等），绕过应用偏好门闩；
+ * 未标记的调用都是自动检查——偏好关闭时跳过（偏好本身异步预取，缺省 true＝现状）。
+ */
+export async function checkDataStatus(options?: { force?: boolean; manual?: boolean }): Promise<void> {
   if (isHidden()) return
+  if (!options?.manual) {
+    void ensureAppSettingsLoaded()
+    if (!appAutoDataCheck.value) return
+  }
   if (!options?.force && Date.now() - lastCheckStartedAt < DATA_CHECK_THROTTLE_MS) return
   lastCheckStartedAt = Date.now()
   const seq = ++checkSeq
@@ -193,8 +212,8 @@ export async function refreshDataNow(): Promise<void> {
     if (started.state === 'running') {
       startPolling()
     } else {
-      // 服务端直接返回终态（罕见）：补一次状态检查同步 UI
-      void checkDataStatus({ force: true })
+      // 服务端直接返回终态（罕见）：补一次状态检查同步 UI（manual：绕过自动检查偏好门闩）
+      void checkDataStatus({ force: true, manual: true })
     }
   } catch (error) {
     // 409 等：把服务端中文 message 行内展示（Launcher 小字区，不用 alert）

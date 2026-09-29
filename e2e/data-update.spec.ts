@@ -70,6 +70,11 @@ async function installBaseMocks(page: Page): Promise<void> {
     status: 201, contentType: 'application/json',
     body: JSON.stringify({ training: { id: 77, tier: '3M', code: '600519', name: '贵州茅台', market: 'sh', startDate: '2026-09-16', plannedEnd: '2026-12-16', currentDate: null, status: 'running', settleDate: null, earlySettle: false, blind: false, adjustMode: 'forward', initialCash: 1000000, createdAt: '2026-09-16T01:00:00.000Z' } }),
   }))
+  // M5-DEFAULTS：Launcher 挂载会读取训练默认设置；确定性 mock 避免真实服务往返竞态
+  await page.route('**/api/settings/training', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ version: 1, feesEnabled: false, tPlusOne: true, initialCash: 1000000, adjustMode: 'forward', commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005, lotSize: 100, execution: 'same-day-raw-close', weightBasis: 'total-equity', corporateActionPolicy: 'cash-shares-v1' }),
+  }))
 }
 
 test('a) freshness stale 时顶栏出现摇晃的"更新日线"醒目按钮＋截止日小字＋通达信盘后指引，窄屏不横向溢出', async ({ page }) => {
