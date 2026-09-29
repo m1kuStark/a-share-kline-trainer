@@ -113,7 +113,7 @@ type StatusBody = {
   needsUpdate: boolean
   reason: string
   source: { kind: string; name: string; available: boolean }
-  tdx: { available: boolean; root: string | null }
+  tdx: { available: boolean }
   online: { configured: boolean; provider: string | null }
   sourceMaxDate: string | null
   lastCheckedAt: string | null
@@ -274,7 +274,8 @@ describe('data refresh service', () => {
     const { app, database } = await createApp(null)
     try {
       const status = await getStatus(app)
-      expect(status.tdx).toEqual({ available: false, root: null })
+      // SETUP-01 隐私边界：status 只报可用性，不带 root 路径
+      expect(status.tdx).toEqual({ available: false })
       expect(status.source.kind).toBe('none')
       expect(status.source.available).toBe(false)
       expect(status.needsUpdate).toBe(false)
@@ -446,23 +447,26 @@ describe('data refresh service', () => {
     }
   })
 
-  it('j) keeps /api/env response shape 100% backward compatible', async () => {
+  it('j) keeps /api/env shape stable and never returns the local tdx path (SETUP-01 privacy boundary)', async () => {
     const root = await createFixtureRoot()
     const { app, database } = await createApp(root)
     try {
       const response = await app.inject({ method: 'GET', url: '/api/env' })
       expect(response.statusCode).toBe(200)
       const body = response.json()
+      // SETUP-01 起开放端点不再回传 tdxRoot 完整路径：字段是 tdx:{connected,source}
       expect(Object.keys(body).sort()).toEqual([
-        'activeTrainingId', 'capabilities', 'dataCutoff', 'status', 'stockCount', 'tdxRoot',
+        'activeTrainingId', 'capabilities', 'dataCutoff', 'status', 'stockCount', 'tdx',
       ].sort())
       expect(body).toMatchObject({
         status: 'ok',
-        tdxRoot: root,
+        tdx: { connected: true, source: null },
         dataCutoff: D2,
         stockCount: 2,
         activeTrainingId: null,
       })
+      expect(Object.keys(body.tdx).sort()).toEqual(['connected', 'source'])
+      expect(response.body).not.toContain(root)
       expect(Object.keys(body.capabilities).sort()).toEqual([
         'benchmark', 'catalogCache', 'day', 'forwardAdjust', 'training',
       ].sort())

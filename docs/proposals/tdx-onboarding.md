@@ -1,6 +1,13 @@
 # 首次接入与通达信发现
 
-2026-09-22设计已获用户接受，尚未实现；后续拆分见[下一批计划](first-use-batch.md)，[接受记录](../verification/2026-09/SETUP-design-acceptance/record.json)不代表功能验收。用户反馈：朋友下载后需复制配置、改路径和文件名，甚至把JSON写成JISON。目标是让首次训练无需编辑文本文件。任务入口：[SETUP-01](../work-items/tasks/SETUP-01.md)。
+2026-09-22设计已获用户接受；SETUP-01 已按本方案接线（服务端发现/检查/保存/受控重启＋首页向导＋启动器监管模式），尚未经真实用户验收；后续拆分见[下一批计划](first-use-batch.md)，[接受记录](../verification/2026-09/SETUP-design-acceptance/record.json)不代表功能验收。用户反馈：朋友下载后需复制配置、改路径和文件名，甚至把JSON写成JISON。目标是让首次训练无需编辑文本文件。任务入口：[SETUP-01](../work-items/tasks/SETUP-01.md)。
+
+## 实现口径（2026-09-29 接线，wt/B-SETUP-01）
+
+- **发现**：`GET /api/setup/candidates`（SETUP-API-01 冻结合同，本任务只消费不改协议字段）组合运行中进程线索与有限系统候选；原生目录选择经 `POST /api/setup/select-directory`（受控本机桥，固定字面 PowerShell 脚本弹 Windows 目录框，取消是正常结果）；`POST /api/setup/inspect` 检查用户目录，误选时只在其附近有限范围（直接子目录＋vipdoc 上溯≤4 层，去重封顶）列出建议，不自动采用。
+- **检查与保存**：检查结果区分"未找到程序／缺日线／缺权息／无权限"（`inspectTdxCandidate`）；`POST /api/setup/save-choice` 保存前复验、原子写入数据目录 `saved-tdx-choice.json`，失败保留旧选择。响应与向导界面只向浏览器展示用户主动提供的目录；`/api/env`、`/api/data/status` 自本任务起只返回连接状态与来源标签（`tdx:{connected,source}`、`tdx:{available}`），不回传完整本机路径——这是对旧 `/api/env` 契约（曾回传 `tdxRoot` 完整路径）的有意变更，依据即本方案"普通端点只返回连接状态与来源标签"的隐私边界（用户已接受的设计）。
+- **保存生效**：目录解析优先级冻结为 env → explicit-config → saved-choice → auto-discovered（`saved-choice.ts`），启动器与服务端一致遵守；来源标签随 `TRAINER_TDX_SOURCE` 下发，仅作展示解释。`POST /api/setup/apply` 受守卫保护，写交接文件后拉起启动器 `--setup-restart-attempt` 监管模式：按 `restart-plan.ts` 冻结状态机完成 身份双轨→保存核对→受控排空（control/prepare）→旧进程退出→同端口拉起新服务→健康身份绑定→ready，任何失败先恢复旧选择文件再回滚；进度经 `GET /api/setup/restart-status`（无路径无令牌）供页面轮询。显式覆盖来源（409）或有活动训练时不受理；活动训练不清、不切源。
+- **隐私边界**：默认候选只含通用系统位置；控制令牌只经本机环境传递，不写入交接/状态/启动状态文件，不进任何 HTTP 响应与日志；完整路径只出现在受保护 setup 端点（用户主动检查的候选）与用户自己生成的本地诊断报告中。
 
 ## 建议体验
 

@@ -16,6 +16,7 @@ const {
 } = require('node:fs/promises')
 const { homedir } = require('node:os')
 const { dirname, isAbsolute, join, resolve } = require('node:path')
+const { pathToFileURL } = require('node:url')
 const { setTimeout: delay } = require('node:timers/promises')
 
 const APP_ID = 'a-share-kline-trainer'
@@ -29,6 +30,20 @@ const LAUNCHER_LOG = 'launcher.log'
 const READY_TIMEOUT_MS = 30_000
 const LOCK_WAIT_MS = 15_000
 const STOP_EXIT_TIMEOUT_MS = 5_000
+// SETUP-01 受控重启（监管模式）：交接文件、已保存选择、有界时限与轮询节奏
+const ATTEMPT_FILE = 'setup-restart-attempt.json'
+const RESTART_STATUS_FILE = 'setup-restart-status.json'
+const SAVED_CHOICE_FILE = 'saved-tdx-choice.json'
+const RESTART_TIMEOUTS = {
+  saveMs: 5_000,
+  drainMs: 15_000,
+  sigtermMs: 8_000,
+  spawnMs: 20_000,
+  healthMs: 25_000,
+  restoreMs: 5_000,
+}
+const SUPERVISOR_ITERATION_CAP = 600
+const SUPERVISOR_POLL_MS = 150
 
 function samePath(a, b) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
@@ -53,11 +68,14 @@ function defaultTdxCandidates(environment = process.env) {
 function usage() {
   return [
     '用法 / Usage: node launcher.cjs [--root PATH] [--config PATH] [--no-open] [--stop]',
+    '               node launcher.cjs --setup-restart-attempt PATH（内部模式 / internal）',
     '',
     '  --root PATH    包根目录 / package root (default: the directory holding launcher.cjs)',
     '  --config PATH  配置文件 / config file (default: <root>/trainer.config.json, optional)',
     '  --no-open      不自动打开浏览器 / do not open a browser window',
     '  --stop         停止已记录的训练服务后退出 / stop the recorded trainer, then exit',
+    '  --setup-restart-attempt PATH  受控重启监管模式（由应用内"保存并生效"自动调用，',
+    '                                不手动运行 / controlled-restart supervisor, invoked by the app)',
     '',
     '停止只针对本启动器记录的服务：先核对状态与 127.0.0.1 健康身份，只结束',
     '验证过的那个 PID；无法验证时拒绝并保留状态文件。数据库与日志始终保留。',
@@ -86,6 +104,8 @@ function parseArgs(argv) {
     if (root !== undefined) { parsed.root = root; continue }
     const config = value('config')
     if (config !== undefined) { parsed.configPath = config; continue }
+    const restartAttempt = value('setup-restart-attempt')
+    if (restartAttempt !== undefined) { parsed.restartAttemptPath = restartAttempt; continue }
     if (arg === '--no-open') { parsed.openBrowser = false; continue }
     if (arg === '--stop') { parsed.stop = true; continue }
     if (arg === '--help' || arg === '-h') { parsed.help = true; continue }
@@ -179,6 +199,53 @@ async function discoverTdxRoot(candidates) {
     if (await isTdxRootPath(root)) return root
   }
   return null
+}
+
+/**
+ * Read the saved TDX choice written by the in-app setup flow
+ * (server/src/setup/saved-choice.ts, SETUP-SAVE-01). Returns null for a
+ * missing/foreign/corrupt file; never throws. Only shape version and the root
+ * string are checked here — liveness is decided by isTdxRootPath by the caller.
+ */
+async function readSavedChoice(dataDir) {
+  let raw
+  try {
+    raw = await readFile(join(dataDir, SAVED_CHOICE_FILE), 'utf8')
+  } catch {
+    return null
+  }
+  let value
+  try {
+    value = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  if (value.version !== 1) return null
+  if (typeof value.root !== 'string' || value.root.trim() === '') return null
+  return { version: 1, root: value.root }
+}
+
+/**
+ * Resolve the effective TDX root plus a source label with the frozen priority
+ * (SETUP-01): explicit env → explicit config → saved choice → auto discovery.
+ * The label is display/contract metadata only (TRAINER_TDX_SOURCE); it never
+ * carries the path itself. config.tdxRoot already folds env + config file
+ * together (env wins), so `envSet` distinguishes the top two tiers.
+ */
+async function resolveTdxWithSource({ config, dataDir, env, tdxCandidates }) {
+  const envSet = typeof env.TDX_ROOT === 'string' && env.TDX_ROOT.trim() !== ''
+  if (config.tdxRoot) {
+    if (!(await isTdxRootPath(config.tdxRoot))) return { error: config.tdxRoot }
+    return { root: config.tdxRoot, source: envSet ? 'env' : 'explicit-config' }
+  }
+  const saved = await readSavedChoice(dataDir)
+  if (saved && await isTdxRootPath(saved.root)) {
+    return { root: resolve(saved.root), source: 'saved-choice' }
+  }
+  const discovered = await discoverTdxRoot(tdxCandidates)
+  if (discovered) return { root: discovered, source: 'auto-discovered' }
+  return { root: null, source: null }
 }
 
 /** Validate the fixed release layout; never builds anything. */
@@ -557,13 +624,20 @@ async function launch(options = {}) {
       throw new Error(`数据目录不可写 / data directory is not writable: ${dataDir} (${error && error.message})`)
     }
 
-    const tdxRoot = config.tdxRoot
-      ? (await isTdxRootPath(config.tdxRoot) ? config.tdxRoot : null)
-      : await discoverTdxRoot(options.tdxCandidates ?? defaultTdxCandidates(env))
-    if (config.tdxRoot && !tdxRoot) {
-      throw new Error(`配置的 tdxRoot 不是有效的通达信目录（需要 vipdoc\\<市场>\\lday 下有 .day 文件且存在 T0002\\hq_cache）：${config.tdxRoot} / `
-        + `configured tdxRoot does not look like a TDX installation: ${config.tdxRoot}`)
+    // SETUP-01：目录与来源一起解析（env → 显式配置 → 已保存选择 → 有限系统候选）。
+    // 来源标签只说明"这个目录是怎么来的"，随 TRAINER_TDX_SOURCE 下发；绝不回传路径。
+    const resolved = await resolveTdxWithSource({
+      config,
+      dataDir,
+      env,
+      tdxCandidates: options.tdxCandidates ?? defaultTdxCandidates(env),
+    })
+    if (resolved.error) {
+      throw new Error(`配置的 tdxRoot 不是有效的通达信目录（需要 vipdoc\\<市场>\\lday 下有 .day 文件且存在 T0002\\hq_cache）：${resolved.error} / `
+        + `configured tdxRoot does not look like a TDX installation: ${resolved.error}`)
     }
+    const tdxRoot = resolved.root
+    const tdxSource = resolved.source
 
     // Every reuse/cleanup decision runs under the same single-flight lock
     // stop() uses, so a concurrent stop can never be observed mid-kill.
@@ -649,6 +723,13 @@ async function launch(options = {}) {
               TRAINER_STATIC_DIR: layout.webDir,
               TRAINER_READY_FILE: readyFile,
               TDX_ROOT: tdxRoot ?? '',
+              // SETUP-01：受控重启与保存生效所需的本机会话注入。
+              // TRAINER_CONTROL_TOKEN 只经环境传给服务端与本机监管进程，
+              // 不写入状态文件/日志/任何 HTTP 响应。
+              TRAINER_CONTROL_TOKEN: env.TRAINER_CONTROL_TOKEN?.trim() || `ctr-${randomUUID()}`,
+              TRAINER_DATA_DIR: dataDir,
+              TRAINER_LAUNCHER_CJS: resolve(__filename),
+              TRAINER_TDX_SOURCE: tdxSource ?? '',
               HOST: '127.0.0.1',
               PORT: String(config.port),
               OPEN_BROWSER: '0',
@@ -819,6 +900,432 @@ async function stopRecorded(dataDir, options) {
   }
 }
 
+// ===== SETUP-01 受控重启（--setup-restart-attempt 监管模式） =====
+//
+// 服务端 /api/setup/save-choice 落盘后，/api/setup/apply 写出交接文件并拉起本模块
+// 的 detached 监管进程。监管进程按 SETUP-RESTART-PLAN-01 冻结的纯函数状态机
+// （server/dist/setup/restart-plan.js）逐步执行：preflight 身份双轨 → 保存核对 →
+// 排空（受控 control/prepare）→ 旧服务退出（SIGTERM 一次，超时 SIGKILL 一次）→
+// 拉起新服务（runId/端口/数据库/浏览器 origin 全部保留）→ 健康身份绑定确认 →
+// ready；任何失败先恢复旧的选择文件再终态（restore-old-config）。
+// 每一步先持久化状态再执行动作；交接文件与状态文件不含控制令牌。
+
+/** 解析交接文件（attempt）。任何形状问题都给出可行动错误，不猜测。 */
+async function readAttemptFile(path) {
+  let raw
+  try {
+    raw = await readFile(path, 'utf8')
+  } catch (error) {
+    throw new Error(`无法读取重启交接文件 / cannot read restart attempt file ${path}: ${error && error.message}`)
+  }
+  let value
+  try {
+    value = JSON.parse(raw)
+  } catch (error) {
+    throw new Error(`重启交接文件不是有效 JSON / restart attempt file is not valid JSON: ${path}`)
+  }
+  const problems = []
+  if (!value || typeof value !== 'object' || Array.isArray(value)) problems.push('内容不是 JSON 对象')
+  if (value && value.appId !== APP_ID) problems.push(`appId 应为 ${APP_ID}`)
+  if (value && value.version !== 1) problems.push('version 应为 1')
+  if (value && (typeof value.attemptId !== 'string' || !value.attemptId || value.attemptId.length > 128)) problems.push('attemptId 非法')
+  for (const [label, fields] of [
+    ['old', ['runId', 'pid', 'port', 'databasePath', 'origin', 'dataDir']],
+    ['planned', ['dataDir', 'databasePath', 'port', 'origin', 'tdxRoot', 'source']],
+    ['target', ['runId', 'port', 'origin']],
+  ]) {
+    const section = value ? value[label] : null
+    if (!section || typeof section !== 'object') { problems.push(`${label} 缺失`); continue }
+    for (const field of fields) {
+      if (section[field] === undefined || section[field] === null || section[field] === '') problems.push(`${label}.${field} 缺失`)
+    }
+  }
+  if (problems.length) {
+    throw new Error(`重启交接文件字段不完整（${problems.join('；')}）；拒绝猜测，请重新在页面里执行"保存并生效" / restart attempt file is malformed (${problems.join('; ')}); redo the save-and-apply step in the app`)
+  }
+  return value
+}
+
+/** 加载冻结的重启状态机（打包布局保证 server/dist 存在；inspectPackage 已先校验）。 */
+async function loadRestartPlan(root) {
+  const planPath = join(root, 'server', 'dist', 'setup', 'restart-plan.js')
+  try {
+    return await import(pathToFileURL(planPath).href)
+  } catch (error) {
+    throw new Error(`无法加载受控重启状态机 / cannot load the restart state machine from ${planPath}: ${error && error.message}`)
+  }
+}
+
+/** 状态文件原子写（先 wx 临时文件再 rename），内容供 /api/setup/restart-status 读取。 */
+async function writeRestartStatus(dataDir, payload) {
+  const path = join(dataDir, RESTART_STATUS_FILE)
+  const body = { ...payload, updatedAt: new Date().toISOString() }
+  const temporary = `${path}.${randomUUID()}.tmp`
+  await writeFile(temporary, `${JSON.stringify(body, null, 2)}\n`, { flag: 'wx' })
+  await rename(temporary, path)
+}
+
+/**
+ * 受控重启执行者。options: root, attemptPath, env, planModule?, probeHealthImpl?,
+ * fetchImpl?, spawnImpl?, pidAliveImpl?, pollDelayMs?, lockWaitMs?。
+ * 返回 { ready, phase, stage, reason }；所有失败都以终态状态文件收尾，不抛出
+ * （监管进程 detached 无界面，结果只经状态文件与退出码呈现）。
+ */
+async function runSetupRestartAttempt(options = {}) {
+  const root = resolve(options.root ?? __dirname)
+  const env = options.env ?? process.env
+  const pollDelayMs = options.pollDelayMs ?? SUPERVISOR_POLL_MS
+  let layout
+  try {
+    layout = await inspectPackage(root)
+  } catch (error) {
+    await logSupervisorFailure(null, error)
+    throw error
+  }
+  let attempt
+  try {
+    attempt = await readAttemptFile(resolve(options.attemptPath))
+  } catch (error) {
+    await logSupervisorFailure(null, error)
+    throw error
+  }
+  const dataDir = attempt.old.dataDir
+  const dataDirExists = await pathExists(dataDir)
+  if (!dataDirExists) {
+    const error = new Error(`交接文件里的数据目录不存在 / data directory from the attempt file does not exist: ${dataDir}`)
+    await logSupervisorFailure(dataDir, error)
+    throw error
+  }
+  const plan = options.planModule ?? await loadRestartPlan(root).catch(async error => {
+    await writeStatusBestEffort(dataDir, attempt, {
+      phase: 'new-start-failed', stage: 'restore-failed', reason: '受控重启状态机模块不可用；未改动任何服务', done: true,
+    }).catch(() => {})
+    await logSupervisorFailure(dataDir, error)
+    throw error
+  })
+  const probeImpl = options.probeHealthImpl ?? probeHealth
+  const fetchImpl = options.fetchImpl ?? fetch
+  const spawnImpl = options.spawnImpl ?? spawn
+  const pidAliveImpl = options.pidAliveImpl ?? pidAlive
+  // 有限时限可整体注入（测试用短时限）；生产缺省用冻结默认值
+  const timeouts = { ...RESTART_TIMEOUTS, ...(options.timeouts ?? {}) }
+
+  // 与 launch/stop 共用同一单飞锁：重启全程不允许并行的启动/停止插入
+  const lockDeadline = Date.now() + (options.lockWaitMs ?? LOCK_WAIT_MS)
+  for (;;) {
+    const lock = await acquireLaunchLock(dataDir)
+    if (lock.owned) {
+      try {
+        return await superviseLocked({
+          root, env, layout, attempt, dataDir, plan,
+          probeImpl, fetchImpl, spawnImpl, pidAliveImpl, pollDelayMs, timeouts,
+          attemptPath: resolve(options.attemptPath),
+        })
+      } finally {
+        await rm(lock.path, { force: true }).catch(() => {})
+      }
+    }
+    if (!lock.info) {
+      const error = new Error(`存在无法识别的启动锁 ${lock.path}；重启已放弃 / unrecognized launch lock; restart aborted`)
+      await logSupervisorFailure(dataDir, error)
+      throw error
+    }
+    if (Date.now() >= lockDeadline) {
+      const error = new Error(`另一个启动/停止进程仍在进行（PID ${lock.info.pid}），重启已让位 / another launch or stop is in progress; restart yielded`)
+      await logSupervisorFailure(dataDir, error)
+      throw error
+    }
+    await delay(150)
+  }
+}
+
+async function logSupervisorFailure(dataDir, error) {
+  if (!dataDir) return
+  await appendFile(join(dataDir, LAUNCHER_LOG), `[${new Date().toISOString()}] setup-restart: ${error instanceof Error ? error.message : String(error)}\n`).catch(() => {})
+}
+
+async function writeStatusBestEffort(dataDir, attempt, payload) {
+  try {
+    await writeRestartStatus(dataDir, {
+      version: 1, appId: APP_ID, attemptId: attempt.attemptId, ...payload,
+    })
+  } catch { /* 状态文件写失败不改变既定的终态语义 */ }
+}
+
+/** 持锁后的监督主循环：观测 → planRestartStep → 持久化 → 执行动作。 */
+async function superviseLocked(context) {
+  const { root, env, layout, attempt, dataDir, plan, probeImpl, fetchImpl, spawnImpl, pidAliveImpl, pollDelayMs, timeouts, attemptPath } = context
+  const token = typeof env.TRAINER_CONTROL_TOKEN === 'string' ? env.TRAINER_CONTROL_TOKEN : ''
+  const oldOrigin = attempt.old.origin
+
+  let state = plan.initialRestartState()
+  let pendingSave = null            // null=pending；{ok:true}|{ok:false,detail}
+  let prepareRequested = false
+  let drainOutcome = null           // null=pending；{kind:'success'|'timeout'|'failure'|'unknown',detail?}
+  let shutdownRequested = false
+  let sigtermSent = false
+  let sigkillSent = false
+  let spawnCall = null              // {ok:true,runId,pid}|{ok:false,detail}
+  let child = null
+  let pendingRestore = null
+
+  const fetchJson = async (url, init, timeoutMs = 1_500) => {
+    try {
+      const response = await fetchImpl(url, { ...init, signal: AbortSignal.timeout(timeoutMs) })
+      let json = null
+      if (response.status >= 200 && response.status < 500) {
+        try { json = await response.json() } catch { json = null }
+      }
+      return { responded: true, status: response.status, json }
+    } catch (error) {
+      return { responded: false, reason: `${(error && error.message) || error}` }
+    }
+  }
+  const controlPost = (endpoint, timeoutMs) => fetchJson(`${oldOrigin}/api/setup/control/${endpoint}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-control-token': token },
+    body: JSON.stringify({ runId: attempt.old.runId, attemptId: attempt.attemptId }),
+  }, timeoutMs)
+
+  const observeOldIdentity = async () => {
+    const probe = await probeImpl(attempt.old.port)
+    if (probeMatchesState(probe, { runId: attempt.old.runId, pid: attempt.old.pid })) {
+      return {
+        runId: attempt.old.runId,
+        pid: attempt.old.pid,
+        port: attempt.old.port,
+        databasePath: attempt.old.databasePath,
+        origin: attempt.old.origin,
+      }
+    }
+    return null
+  }
+  const observeActiveTraining = async () => {
+    const result = await fetchJson(`${oldOrigin}/api/trainings/active`, { method: 'GET' })
+    const training = result.responded && result.json && typeof result.json === 'object' ? result.json.training : null
+    return training && Number.isInteger(training.id) ? training.id : null
+  }
+  const observeOldExit = () => (pidAliveImpl(attempt.old.pid) ? { kind: 'alive' } : { kind: 'exited' })
+  const observeSpawn = () => {
+    if (!spawnCall) return { kind: 'pending' }
+    return spawnCall.ok
+      ? { kind: 'success', runId: spawnCall.runId, pid: spawnCall.pid }
+      : { kind: 'failure', detail: spawnCall.detail }
+  }
+  const observeHealth = async () => {
+    if (state.boundNewPid === null) return { kind: 'pending' }
+    const probe = await probeImpl(attempt.planned.port)
+    if (probeMatchesState(probe, { runId: attempt.target.runId, pid: state.boundNewPid })) {
+      return { kind: 'success', runId: attempt.target.runId, pid: state.boundNewPid }
+    }
+    if (probe.responded) return { kind: 'unknown', detail: '健康端点返回了其他身份或非 200' }
+    return { kind: 'pending' }
+  }
+
+  const performSave = async () => {
+    const saved = await readSavedChoice(dataDir)
+    const plannedRoot = String(attempt.planned.tdxRoot)
+    const matches = saved && (process.platform === 'win32'
+      ? saved.root.toLowerCase() === plannedRoot.toLowerCase()
+      : saved.root === plannedRoot)
+    return matches ? { ok: true, root: saved.root } : { ok: false, detail: '已保存的选择文件缺失或与本次计划不一致' }
+  }
+  const performDrain = async () => {
+    const prepare = await controlPost('prepare', 20_000)
+    if (prepare.responded && prepare.status === 200) return { kind: 'success' }
+    if (prepare.responded && prepare.status === 504) return { kind: 'timeout' }
+    if (prepare.responded && prepare.status === 409) {
+      const code = prepare.json && prepare.json.error
+      // 已在关闭中：排空事实上完成；活动训练/其他冲突按失败保守放弃
+      if (code === 'CONTROL_CLOSING') return { kind: 'success' }
+      if (code === 'ACTIVE_TRAINING') return { kind: 'failure', detail: '旧服务报告有进行中的训练' }
+      return { kind: 'unknown', detail: `prepare 返回 ${code || prepare.status}` }
+    }
+    if (prepare.responded) return { kind: 'unknown', detail: `prepare 返回 ${prepare.status}` }
+    return { kind: 'unknown', detail: 'prepare 无法连接旧服务' }
+  }
+  const requestShutdown = async () => {
+    if (shutdownRequested) return
+    shutdownRequested = true
+    await controlPost('shutdown', 3_000)
+    // 202 不证明退出；退出由 oldExit 观测决定
+  }
+  const performRestore = async () => {
+    const previous = attempt.previousSavedChoice
+    const target = join(dataDir, SAVED_CHOICE_FILE)
+    try {
+      if (previous && previous.version === 1 && typeof previous.root === 'string' && previous.root.trim() !== '') {
+        const path = target
+        const temporary = `${path}.${randomUUID()}.tmp`
+        await writeFile(temporary, `${JSON.stringify(previous, null, 2)}\n`, { flag: 'wx' })
+        await rename(temporary, path)
+      } else {
+        await rm(target, { force: true })
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, detail: '恢复已保存选择失败' }
+    }
+  }
+  const performStart = async () => {
+    const runId = attempt.target.runId
+    const readyFile = join(dataDir, READY_FILE)
+    const logPath = join(dataDir, SERVER_LOG)
+    await rm(readyFile, { force: true })
+    const log = await open(logPath, 'a')
+    try {
+      await log.write(`\n[${new Date().toISOString()}] setup-restart ${attempt.attemptId}: starting run ${runId} on port ${attempt.planned.port}\n`)
+      child = spawnImpl(layout.nodePath, [layout.serverScript], {
+        cwd: root,
+        detached: true,
+        windowsHide: true,
+        stdio: ['ignore', log.fd, log.fd],
+        env: {
+          ...env,
+          TRAINER_RUN_ID: runId,
+          TRAINER_DB: attempt.planned.databasePath,
+          TRAINER_STATIC_DIR: layout.webDir,
+          TRAINER_READY_FILE: readyFile,
+          TDX_ROOT: attempt.planned.tdxRoot,
+          TRAINER_TDX_SOURCE: 'saved-choice',
+          TRAINER_DATA_DIR: dataDir,
+          TRAINER_LAUNCHER_CJS: resolve(__filename),
+          HOST: '127.0.0.1',
+          PORT: String(attempt.planned.port),
+          OPEN_BROWSER: '0',
+        },
+      })
+      child.once('error', error => {
+        spawnCall = { ok: false, detail: `新服务进程启动失败：${error && error.message}` }
+      })
+      if (child.unref) child.unref()
+    } catch (error) {
+      spawnCall = { ok: false, detail: `新服务进程无法创建：${error && error.message}` }
+      return
+    }
+    if (Number.isInteger(child.pid) && child.pid >= 1) {
+      spawnCall = { ok: true, runId, pid: child.pid }
+    } else {
+      spawnCall = { ok: false, detail: '新服务进程没有有效 PID' }
+    }
+  }
+
+  for (let iteration = 0; iteration < SUPERVISOR_ITERATION_CAP; iteration += 1) {
+    const nowMs = Date.now()
+    const step = plan.planRestartStep(state, {
+      nowMs,
+      activeTrainingId: await observeActiveTraining(),
+      oldRecorded: attempt.old,
+      oldObserved: await observeOldIdentity(),
+      planned: attempt.planned,
+      target: attempt.target,
+      saveNewSource: pendingSave === null
+        ? { kind: 'pending' }
+        : (pendingSave.ok ? { kind: 'success' } : { kind: 'failure', detail: pendingSave.detail }),
+      drain: drainOutcome ?? { kind: 'pending' },
+      oldExit: observeOldExit(),
+      spawn: observeSpawn(),
+      health: await observeHealth(),
+      restore: pendingRestore === null
+        ? { kind: 'pending' }
+        : (pendingRestore.ok ? { kind: 'success' } : { kind: 'failure', detail: pendingRestore.detail }),
+      timeouts,
+    })
+    state = step.nextState
+    const terminal = state.stageStartedAtMs === null && state.terminalReason !== null
+    // 先持久化本轮状态（含已认领的 claimed），再执行动作
+    await writeStatusBestEffort(dataDir, attempt, {
+      phase: step.phase,
+      stage: state.stage,
+      reason: step.reason,
+      done: terminal,
+      planState: {
+        stage: state.stage,
+        claimed: state.claimed,
+        boundNewPid: state.boundNewPid,
+        stageStartedAtMs: state.stageStartedAtMs,
+        terminalReason: state.terminalReason,
+      },
+    })
+
+    if (terminal) {
+      if (state.stage === 'ready') {
+        const pid = spawnCall && spawnCall.ok ? spawnCall.pid : null
+        if (pid !== null) {
+          await writeStateFile(dataDir, {
+            appId: APP_ID,
+            runId: attempt.target.runId,
+            pid,
+            port: attempt.target.port,
+            baseURL: attempt.target.origin,
+            startedAt: new Date().toISOString(),
+            version: layout.version,
+            gitCommit: layout.gitCommit,
+            databasePath: attempt.planned.databasePath,
+            tdxRoot: attempt.planned.tdxRoot,
+          }).catch(() => {})
+        }
+      } else if (child && child.pid && child.exitCode === null && child.signalCode === null) {
+        // 非就绪终态：半启动的新服务必须收掉，避免与旧/未来服务双写
+        try { child.kill('SIGKILL') } catch { /* already gone */ }
+      }
+      await rm(attemptPath, { force: true }).catch(() => {})
+      return { ready: state.stage === 'ready', phase: step.phase, stage: state.stage, reason: step.reason }
+    }
+
+    switch (step.action) {
+      case 'save-new-source':
+        pendingSave = await performSave()
+        break
+      case 'wait-save':
+        await delay(Math.min(pollDelayMs, 50))
+        break
+      case 'wait-drain':
+        if (!prepareRequested) {
+          prepareRequested = true
+          drainOutcome = await performDrain()
+        } else {
+          await delay(Math.min(pollDelayMs, 50))
+        }
+        break
+      case 'send-sigterm':
+        if (!sigtermSent) {
+          sigtermSent = true
+          void requestShutdown()
+          try { process.kill(attempt.old.pid, 'SIGTERM') } catch { /* already gone */ }
+        }
+        await delay(pollDelayMs)
+        break
+      case 'send-sigkill-once':
+        if (!sigkillSent) {
+          sigkillSent = true
+          try { process.kill(attempt.old.pid, 'SIGKILL') } catch { /* already gone */ }
+        }
+        await delay(pollDelayMs)
+        break
+      case 'start-new-server':
+        await performStart()
+        break
+      case 'restore-old-config':
+        pendingRestore = await performRestore()
+        break
+      default:
+        // await-* / keep-old-state / abort 等等待或无副作用动作：轮询后重观测
+        await delay(pollDelayMs)
+        break
+    }
+  }
+  const reason = '受控重启轮询次数超限；保留旧状态并停止监管'
+  await writeStatusBestEffort(dataDir, attempt, {
+    phase: 'drain-timeout', stage: 'old-exit-unconfirmed', reason, done: true,
+  })
+  if (child && child.pid && child.exitCode === null && child.signalCode === null) {
+    try { child.kill('SIGKILL') } catch { /* already gone */ }
+  }
+  await rm(resolve(options.attemptPath), { force: true }).catch(() => {})
+  return { ready: false, phase: 'drain-timeout', stage: 'old-exit-unconfirmed', reason }
+}
+
 async function main(argv) {
   let parsed
   try {
@@ -833,6 +1340,18 @@ async function main(argv) {
     return
   }
   try {
+    if (parsed.restartAttemptPath) {
+      // SETUP-01 受控重启监管模式：由服务端 detached 拉起，无交互输出；结果经
+      // dataDir/setup-restart-status.json 呈现，退出码 0=ready、1=未就绪/失败。
+      const result = await runSetupRestartAttempt({ ...parsed, env: process.env })
+      if (result.ready) {
+        console.log('受控重启完成，新服务已就绪 / controlled restart ready')
+      } else {
+        console.error(`受控重启未完成（${result.phase}）：${result.reason} / controlled restart did not reach ready`)
+        process.exitCode = 1
+      }
+      return
+    }
     if (parsed.stop) {
       const result = await stop(parsed)
       if (result.stopped) {
@@ -883,16 +1402,17 @@ module.exports = {
   SERVER_LOG,
   STATE_FILE,
   TDX_CANDIDATES: defaultTdxCandidates(),
-  defaultTdxCandidates,
   acquireLaunchLock,
   assertStateIdentity,
   clearState,
   confirmOwnedServer,
   decideRecordedServer,
+  defaultTdxCandidates,
   discoverTdxRoot,
   inspectPackage,
   isTdxRootPath,
   launch,
+  loadRestartPlan,
   lockPath,
   main,
   openURL,
@@ -900,11 +1420,16 @@ module.exports = {
   pidAlive,
   probeHealth,
   probeMatchesState,
+  readAttemptFile,
   readConfigFile,
   readOwnedState,
+  readSavedChoice,
   resolveConfig,
+  resolveTdxWithSource,
+  runSetupRestartAttempt,
   statePath,
   stop,
   usage,
   writeStateFile,
+  writeRestartStatus,
 }

@@ -48,7 +48,7 @@
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REC-04](<work-items/tasks/REC-04.md>) | planned / integrator | 为手动成交和条件单增加可选理由，并在录制、导入和回放中保留阶段、模式与订单事件顺序。 | 未记录 | 未记录 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 发布包服务当前独立于浏览器运行；为新手提供保存完成后可用的“退出训练器”入口，同时保留安全的Stop.cmd兜底。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | 未记录 | 未记录 |
-| [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | 用户已接受接入方案；自动发现、确认、原生选目录及保存生效待实施，并需移除开发者电脑路径泄露。 | 未记录 | 未记录 | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
+| [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | 用户已接受接入方案；自动发现、确认、原生选目录、保存生效已在 wt/B-SETUP-01 实现（含隐私路径清理），待集成审查与真实 Windows/用户验收。 | 未记录 | worktree trainer-wt/wt-B，分支 wt/B-SETUP-01（基线 5bf4484） | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
 | [SETUP-CLUES-01](<work-items/tasks/SETUP-CLUES-01.md>) | review / integrator | process-clues.ts 提取运行中通达信安装根目录线索，保留五态结果、固定 PowerShell 白名单、-First 8、UTF-8 字节上限和跨块中文路径安全；52 项定向测试通过。 | [证据1](<../server/test/process-clues.test.ts>)；[证据2](<../server/test/discover.test.ts>)；[证据3](<../server/test/tdx-inspect.test.ts>) | integration/product-integration-20260926@42378805f2302bafe3e951a7c89fd4cde9f1eba2 | 未记录 |
 | [TRAIN-03](<work-items/tasks/TRAIN-03.md>) | planned / integrator | 保留默认 close_only 收盘模式，并为显式开启的训练增加 open/close 阶段、形成中 K 线和旧训练迁移。 | 未记录 | 未记录 | 未记录 |
 | [UI-01](<work-items/tasks/UI-01.md>) | planned / unassigned | 08:00标签和数据尾空白尚待产品决定；多选价格轴缩放静态路径需核验。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |

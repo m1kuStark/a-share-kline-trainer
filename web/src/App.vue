@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
-import { fetchActiveTraining, fetchEnv } from './api'
-import type { TrainingSnapshot } from './api'
+import {
+  applySetupChoice, fetchActiveTraining, fetchEnv, fetchRestartStatus, fetchSetupCandidates,
+  inspectSetupRoot, saveSetupChoice, selectSetupDirectory,
+} from './api'
+import type { SetupCandidate, TdxCandidateCheck, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
@@ -140,6 +143,135 @@ watch(dataWidgetState, state => {
   if (state === 'attention') shakeTimer = setInterval(() => { shakeTick.value++ }, 12_000)
 }, { immediate: true })
 
+// ===== 首次接入向导（SETUP-01）：未连接时在首页提供"连接你的通达信" =====
+// 自动发现 → 一键确认 / 原生选目录 → 检查确认 → 保存并生效（受控重启）。
+// 浏览器同源可直接调用 /api/setup/*（不需要令牌）；取消、失败都停留在可重试状态。
+const wizardOpen = ref(false)
+const wizardBusy = ref(false)
+const wizardError = ref('')
+const wizardNote = ref('')
+const wizardCandidates = ref<SetupCandidate[]>([])
+const wizardProcessHint = ref('')
+const wizardUsable = computed(() => wizardCandidates.value.filter(item => item.check.recognized && item.check.readable))
+const wizardInspect = ref<{ check: TdxCandidateCheck; suggestions: TdxCandidateCheck[] } | null>(null)
+const wizardChosenRoot = ref('')
+const wizardManualRoot = ref('')
+const wizardApplying = ref(false)
+const disconnected = computed(() => env.value?.tdx?.connected === false)
+const connectedSourceLabel = computed(() => {
+  const source = env.value?.tdx?.source
+  if (!source) return ''
+  return { env: '环境变量', 'explicit-config': '配置文件', 'saved-choice': '已保存选择', 'auto-discovered': '自动发现' }[source] ?? source
+})
+let wizardAutoOpened = false
+async function reloadEnv(): Promise<void> {
+  try { env.value = await fetchEnv() } catch { /* 保留旧值；错误由 envError 呈现 */ }
+}
+function openWizard(): void {
+  wizardOpen.value = true
+  wizardError.value = ''
+  wizardNote.value = ''
+  void loadWizardCandidates()
+}
+function closeWizard(): void {
+  if (wizardApplying.value) return
+  wizardOpen.value = false
+}
+async function loadWizardCandidates(): Promise<void> {
+  wizardBusy.value = true
+  wizardError.value = ''
+  try {
+    const result = await fetchSetupCandidates()
+    wizardCandidates.value = result.candidates
+    wizardProcessHint.value = result.processReason ?? (result.processStatus !== 'ok' ? `运行中的通达信探测：${result.processStatus}` : '')
+  } catch (error) {
+    wizardError.value = error instanceof Error ? error.message : '无法获取候选列表'
+  } finally { wizardBusy.value = false }
+}
+async function inspectWizardRoot(root: string): Promise<void> {
+  const trimmed = root.trim()
+  if (!trimmed || wizardBusy.value) return
+  wizardBusy.value = true
+  wizardError.value = ''
+  try {
+    const result = await inspectSetupRoot(trimmed)
+    wizardInspect.value = result
+    wizardChosenRoot.value = result.check.recognized && result.check.readable ? result.check.root : ''
+    if (wizardChosenRoot.value) wizardNote.value = ''
+  } catch (error) {
+    wizardError.value = error instanceof Error ? error.message : '检查目录失败'
+  } finally { wizardBusy.value = false }
+}
+async function chooseWizardFolder(): Promise<void> {
+  if (wizardBusy.value) return
+  wizardBusy.value = true
+  wizardError.value = ''
+  try {
+    const picked = await selectSetupDirectory()
+    if (picked.status === 'selected' && picked.path) {
+      wizardBusy.value = false
+      await inspectWizardRoot(picked.path)
+      return
+    }
+    if (picked.status !== 'cancelled') {
+      wizardError.value = picked.reason ?? `目录选择不可用（${picked.status}）`
+    }
+  } catch (error) {
+    wizardError.value = error instanceof Error ? error.message : '目录选择失败'
+  } finally { wizardBusy.value = false }
+}
+async function saveAndApplyWizard(): Promise<void> {
+  const root = wizardChosenRoot.value
+  if (!root || wizardBusy.value) return
+  wizardBusy.value = true
+  wizardError.value = ''
+  wizardNote.value = ''
+  try {
+    const saved = await saveSetupChoice(root)
+    if (!saved.apply.available) {
+      wizardNote.value = `已保存选择。${saved.apply.reason ?? ''}`
+      await reloadEnv()
+      return
+    }
+    wizardApplying.value = true
+    await applySetupChoice(root, crypto.randomUUID())
+    // 受控重启轮询：端口与数据库不变；期间页面请求可能短暂失败，持续重试到终态
+    for (let attempt = 0; attempt < 120; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 700))
+      let status: Awaited<ReturnType<typeof fetchRestartStatus>> | null = null
+      try { status = await fetchRestartStatus() } catch { status = null }
+      if (status?.done) {
+        if (status.phase === 'ready') {
+          wizardNote.value = '已切换到新的通达信目录。'
+          await reloadEnv()
+          await checkDataStatus({ force: true })
+          wizardOpen.value = false
+        } else {
+          wizardError.value = status.reason ?? `重启未完成（${status.phase}），保存的选择已回滚`
+          await reloadEnv()
+        }
+        return
+      }
+    }
+    wizardError.value = '重启确认超时：服务可能仍在切换，请稍后刷新页面查看连接状态'
+    await reloadEnv()
+  } catch (error) {
+    wizardError.value = error instanceof Error ? error.message : '保存或生效失败'
+    await reloadEnv()
+  } finally {
+    wizardApplying.value = false
+    wizardBusy.value = false
+  }
+}
+watch(disconnected, value => {
+  // 首次发现未连接时自动展开向导（每会话一次；用户关闭后不再打扰）
+  if (value && view.value === 'launcher' && !wizardAutoOpened) {
+    wizardAutoOpened = true
+    openWizard()
+  }
+})
+watch(view, value => { if (value !== 'launcher') wizardOpen.value = false })
+
 onMounted(async () => {
   window.addEventListener('focus', onDataFocus)
   document.addEventListener('visibilitychange', onDataVisibilityChange)
@@ -221,10 +353,11 @@ function onTrainingEnded(): void {
               数据截至 {{ dataCutoffText }}，最新交易日待确认
             </span>
             <template v-else>
-              <span class="connection-dot" :class="{ offline: !env?.tdxRoot }"></span>
-              <span class="connection-text">{{ env?.tdxRoot ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
+              <span class="connection-dot" :class="{ offline: !env?.tdx?.connected }"></span>
+              <span class="connection-text">{{ env?.tdx?.connected ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
+              <button v-if="disconnected && !wizardOpen" class="data-reread-btn" title="重新连接数据：自动发现或选择通达信目录" @click="openWizard">连接通达信</button>
             </template>
-            <!-- 常驻手动入口：重新读取本地日线（仅扫描本地通达信文件，不联网下载） -->
+            <!-- 常驻手动入口：重新读取本地日线（仅扫描本地通达信日线文件，不联网下载） -->
             <button v-if="showManualReread" class="data-reread-btn" title="重新扫描本地通达信日线文件（不联网）" @click="updateData">重新读取</button>
             <span v-if="dataWidgetState === 'attention'" class="data-status-note">截止 {{ dataCutoffText }}</span>
             <span v-if="dataRefreshError" class="data-refresh-error" role="alert">{{ dataRefreshError }}</span>
@@ -234,8 +367,8 @@ function onTrainingEnded(): void {
             </details>
           </template>
           <template v-else>
-            <span class="connection-dot" :class="{ offline: !env?.tdxRoot }"></span>
-            <span class="connection-text">{{ env?.tdxRoot ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
+            <span class="connection-dot" :class="{ offline: !env?.tdx?.connected }"></span>
+            <span class="connection-text">{{ env?.tdx?.connected ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
           </template>
         </div>
       </header>
@@ -243,6 +376,81 @@ function onTrainingEnded(): void {
       <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
       <template v-if="view === 'launcher'">
+        <!-- 首次接入向导（SETUP-01）：仅在未连接通达信时出现；关闭后可从顶栏"连接通达信"再开 -->
+        <section v-if="wizardOpen && disconnected" class="setup-wizard" aria-label="连接你的通达信">
+          <header class="setup-wizard-head">
+            <div>
+              <h2>连接你的通达信</h2>
+              <p class="setup-wizard-sub">程序只读取本机通达信行情文件，不控制交易、不写入通达信目录、不联网下载行情。</p>
+            </div>
+            <button class="setup-wizard-close" aria-label="关闭连接向导" :disabled="wizardApplying" @click="closeWizard">✕</button>
+          </header>
+
+          <div v-if="wizardError" class="setup-wizard-error" role="alert">{{ wizardError }}</div>
+          <p v-if="wizardNote" class="setup-wizard-note" role="status">{{ wizardNote }}</p>
+
+          <!-- 已确认可用的候选 -->
+          <template v-if="wizardChosenRoot">
+            <div class="setup-wizard-found">
+              <span class="setup-wizard-ok-dot" aria-hidden="true"></span>
+              <div class="setup-wizard-found-text">
+                <strong>已找到可用的通达信目录</strong>
+                <span>日线 {{ wizardInspect?.check.dailyFileCount ?? 0 }} 只 · 行情末日 {{ wizardInspect?.check.latestDate ?? '未知' }}（来源末日，不代表每只股票都最新）{{ wizardInspect?.check.hasAdjustment ? ' · 权息可用' : ' · 缺少权息数据' }}</span>
+                <span class="setup-wizard-path">{{ wizardChosenRoot }}</span>
+              </div>
+              <button class="setup-wizard-primary" :disabled="wizardBusy || wizardApplying" @click="saveAndApplyWizard">{{ wizardApplying ? '正在切换…' : '保存并生效' }}</button>
+            </div>
+            <button class="setup-wizard-link" :disabled="wizardBusy" @click="wizardChosenRoot = ''; wizardInspect = null">换一个目录</button>
+          </template>
+
+          <!-- 候选列表：单个直显"使用这个数据"，多个并列由用户选择，不默认选中 -->
+          <template v-else>
+            <div v-if="wizardUsable.length" class="setup-wizard-candidates">
+              <p v-if="wizardUsable.length === 1" class="setup-wizard-sub">已找到通达信：</p>
+              <p v-else class="setup-wizard-sub">发现多个通达信安装，请选择要使用的一个：</p>
+              <div v-for="item in wizardUsable" :key="item.check.root" class="setup-wizard-candidate">
+                <div class="setup-wizard-candidate-text">
+                  <strong>使用这个数据</strong>
+                  <span>日线 {{ item.check.dailyFileCount }} 只 · 行情末日 {{ item.check.latestDate ?? '未知' }}{{ item.check.hasAdjustment ? ' · 权息可用' : ' · 缺少权息' }}</span>
+                  <span class="setup-wizard-path">{{ item.check.root }}</span>
+                </div>
+                <button class="setup-wizard-primary" :disabled="wizardBusy" @click="inspectWizardRoot(item.check.root)">使用这个数据</button>
+              </div>
+            </div>
+
+            <!-- 未找到/候选不可用：真实原因 + 三条出路 -->
+            <div v-else class="setup-wizard-none">
+              <p class="setup-wizard-sub">没有找到可用的通达信目录。</p>
+              <ul v-if="wizardProcessHint" class="setup-wizard-problems"><li>{{ wizardProcessHint }}</li></ul>
+              <div class="setup-wizard-actions">
+                <button class="setup-wizard-secondary" :disabled="wizardBusy || wizardApplying" @click="loadWizardCandidates">打开通达信后重新检测</button>
+                <button class="setup-wizard-secondary" :disabled="wizardBusy || wizardApplying" @click="chooseWizardFolder">选择通达信文件夹…</button>
+              </div>
+              <div class="setup-wizard-manual">
+                <input v-model="wizardManualRoot" type="text" placeholder="或直接粘贴通达信安装目录（包含 vipdoc 的那层）" aria-label="手动输入通达信目录" :disabled="wizardBusy" @keydown.enter="inspectWizardRoot(wizardManualRoot)" />
+                <button class="setup-wizard-secondary" :disabled="wizardBusy || !wizardManualRoot.trim()" @click="inspectWizardRoot(wizardManualRoot)">检查该目录</button>
+              </div>
+            </div>
+
+            <!-- 检查结果：问题清单 + 附近候选建议（仅供确认，不自动采用） -->
+            <template v-if="wizardInspect && !wizardChosenRoot">
+              <ul v-if="wizardInspect.check.problems.length" class="setup-wizard-problems">
+                <li v-for="problem in wizardInspect.check.problems" :key="problem">{{ problem }}</li>
+              </ul>
+              <div v-if="wizardInspect.suggestions.length" class="setup-wizard-suggestions">
+                <p class="setup-wizard-sub">你选择的目录附近发现这些可能的安装，点击确认：</p>
+                <button v-for="suggestion in wizardInspect.suggestions" :key="suggestion.root" class="setup-wizard-suggestion" :disabled="wizardBusy" @click="inspectWizardRoot(suggestion.root)">
+                  {{ suggestion.root }}（日线 {{ suggestion.dailyFileCount }} 只{{ suggestion.hasAdjustment ? '' : ' · 缺权息' }}）
+                </button>
+              </div>
+            </template>
+          </template>
+
+          <p v-if="wizardBusy && !wizardApplying" class="setup-wizard-note">正在检查…</p>
+          <p class="setup-wizard-sub setup-wizard-offline-hint">
+            暂时没有通达信也可以先导入分享的训练录像回放：左侧"录像" → 导入。
+          </p>
+        </section>
         <Launcher @created="onCreated" />
       </template>
       <section v-else-if="view === 'library'" class="recording-library recording-library-page" aria-label="训练录像库">
@@ -267,6 +475,40 @@ function onTrainingEnded(): void {
 </template>
 
 <style scoped>
+/* SETUP-01 首次接入向导：跟随训练器面板风格（双主题，不引外部样式） */
+.setup-wizard { margin: 10px 28px 0; padding: 14px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
+.setup-wizard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.setup-wizard-head h2 { margin: 0; font-size: 15px; }
+.setup-wizard-sub { margin: 4px 0 8px; color: #64748b; }
+:global(body.dark) .setup-wizard-sub { color: #94a3b8; }
+.setup-wizard-close { border: none; background: transparent; color: inherit; font-size: 13px; cursor: pointer; padding: 2px 6px; }
+.setup-wizard-error { border: 1px solid #e5b4b4; background: #fdf1f1; color: #a03030; border-radius: 4px; padding: 6px 10px; margin: 6px 0; }
+:global(body.dark) .setup-wizard-error { border-color: #6b2c2c; background: #2c1414; color: #e0a0a0; }
+.setup-wizard-note { margin: 4px 0; color: #2b8b99; }
+:global(body.dark) .setup-wizard-note { color: #7ec8d8; }
+.setup-wizard-found, .setup-wizard-candidate { display: flex; align-items: center; gap: 12px; border: 1px solid #bfe0d2; background: #f2faf6; border-radius: 6px; padding: 10px 12px; margin: 6px 0; }
+:global(body.dark) .setup-wizard-found, :global(body.dark) .setup-wizard-candidate { border-color: #2b5c49; background: #14271f; }
+.setup-wizard-ok-dot { width: 8px; height: 8px; border-radius: 50%; background: #1f9d61; flex: none; }
+.setup-wizard-found-text, .setup-wizard-candidate-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.setup-wizard-path { color: #64748b; word-break: break-all; font-variant-numeric: tabular-nums; }
+:global(body.dark) .setup-wizard-path { color: #94a3b8; }
+.setup-wizard-primary { border: 1px solid #1f7a93; background: #1f7a93; color: #fff; border-radius: 4px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+.setup-wizard-primary:disabled { opacity: 0.55; cursor: default; }
+.setup-wizard-secondary { border: 1px solid #94bec5; background: transparent; color: #1c6076; border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+.setup-wizard-secondary:disabled { opacity: 0.55; cursor: default; }
+:global(body.dark) .setup-wizard-secondary { border-color: var(--surface-border); color: var(--text-secondary, #cbd5e1); }
+.setup-wizard-link { border: none; background: transparent; color: #2b8b99; cursor: pointer; padding: 2px 0; font-size: 12px; }
+:global(body.dark) .setup-wizard-link { color: #7ec8d8; }
+.setup-wizard-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+.setup-wizard-manual { display: flex; gap: 8px; margin: 8px 0; }
+.setup-wizard-manual input { flex: 1; min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font-size: 12px; }
+.setup-wizard-problems { margin: 6px 0; padding-left: 18px; color: #a03030; display: grid; gap: 2px; }
+:global(body.dark) .setup-wizard-problems { color: #e0a0a0; }
+.setup-wizard-suggestions { display: grid; gap: 6px; margin: 8px 0; }
+.setup-wizard-suggestion { text-align: left; border: 1px solid var(--surface-border, #dfe5eb); background: transparent; color: inherit; border-radius: 4px; padding: 8px 10px; cursor: pointer; word-break: break-all; }
+.setup-wizard-suggestion:hover { border-color: #94bec5; }
+.setup-wizard-offline-hint { margin-top: 10px; }
+
 /* DATA-05：unknown 状态与常驻"重新读取"入口的顶栏样式（双主题；styles.css 未动） */
 .data-status-unknown { display: inline-flex; align-items: center; gap: 5px; color: #8a6d1d; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 :global(body.dark) .data-status-unknown { color: #d9b45c; }
