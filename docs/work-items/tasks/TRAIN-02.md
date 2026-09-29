@@ -5,10 +5,10 @@
   "id": "TRAIN-02",
   "title": "创建训练范围与周期联动",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "按周期回推默认起始日，增加到最新日线与自定义日K根数，创建前明确覆盖和不足原因。",
-  "next_action": "第二片及 errorMessage 生命周期修复已通过 GPT 定向语义/UI 验收；集成候选机器门禁通过，待候选提升到 main 后关闭任务。",
+  "next_action": "第二片及 errorMessage 生命周期修复已通过 GPT 定向语义/UI 验收；集成候选机器门禁通过，候选已随 V1-INTEGRATE-01 组合候选 888778c 经合并 8858dc4 提升到 main（2026-09-29 对账核实：3f8c612 为 main 祖先，基线 5bf4484 已含全部片内容）；按本卡既定关闭条件随提升关闭任务，用户验收尚未记录。2026-09-27 用户暂停产品开发；恢复须以控制层 FIRST-USE-PRODUCT 当前快照核对候选 SHA、已有实现与依赖。",
   "allowed_paths": [
     "server/src/train/**",
     "server/src/api.ts",
@@ -39,7 +39,7 @@
   "verification_refs": [
     "docs/verification/2026-09/START-01/report.md"
   ],
-  "integration_ref": "integration/product-integration-20260926",
+  "integration_ref": "integration/product-integration-20260926@0ae28a591037869a7252aee2dc4adfc081babcbb",
   "acceptance_ref": null
 }
 ```

@@ -25,7 +25,7 @@
     "server/test/discover.test.ts",
     "server/test/tdx-inspect.test.ts"
   ],
-  "integration_ref": "integration/product-integration-20260926",
+  "integration_ref": "integration/product-integration-20260926@42378805f2302bafe3e951a7c89fd4cde9f1eba2",
   "acceptance_ref": null
 }
 ```

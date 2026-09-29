@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "R1",
   "summary": "DATA-05 freshness coordinator, offline SSE 2026 calendar, home status, poll ordering and unreadable-source downgrade are present in the isolated integration candidate.",
-  "next_action": "Candidate machine gates and GPT semantic review passed; keep isolated until the product integration candidate is promoted to main.",
+  "next_action": "Candidate machine gates and GPT semantic review passed; reconciliation (2026-09-29) confirmed the integration candidate content has reached main via the V1-INTEGRATE-01 candidate 888778c, promoted at merge 8858dc4, so the isolated-candidate hold is obsolete. User acceptance not yet recorded; product development paused 2026-09-27 per the TRAIN-02 card — resume via the control-layer FIRST-USE-PRODUCT snapshot reconciliation.",
   "base_commit": "af0efafc48ce24e247f3c273b1ee4926be8765c5",
   "allowed_paths": [
     "server/src/data/**",
@@ -37,7 +37,7 @@
   "verification_refs": [
     "docs/verification/2026-09/DATA-05/calendar-source.json"
   ],
-  "integration_ref": "integration/product-integration-20260926",
+  "integration_ref": "integration/product-integration-20260926@76ca6c89bdf2906ad6c212f6e4b1a8f37effb512",
   "acceptance_ref": null
 }
 ```
