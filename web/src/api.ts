@@ -167,8 +167,98 @@ export function fetchRecordingContext(id: number): Promise<RecordingContext> {
   return request(`/api/trainings/${id}/recording-context`)
 }
 
-export function fetchEnv(): Promise<{ status: string; tdxRoot: string | null; dataCutoff: string | null; stockCount: number; capabilities: Record<string, boolean>; activeTrainingId: number | null }> {
+/** 行情目录来源标签（服务端 SETUP-01 冻结枚举）；null＝未连接 */
+export type TdxRootSource = 'env' | 'explicit-config' | 'saved-choice' | 'auto-discovered'
+
+/** /api/env 隐私边界（SETUP-01）：只含连接状态与来源标签，不含本机路径 */
+export interface EnvView {
+  status: string
+  tdx: { connected: boolean; source: TdxRootSource | null }
+  dataCutoff: string | null
+  stockCount: number
+  capabilities: Record<string, boolean>
+  activeTrainingId: number | null
+}
+
+export function fetchEnv(): Promise<EnvView> {
   return request('/api/env')
+}
+
+// ===== 首次接入与通达信发现（SETUP-01）：受保护端点，浏览器同源可直接调用 =====
+
+/** 单个候选的检查结果（服务端 TdxCandidateCheck 镜像） */
+export interface TdxCandidateCheck {
+  root: string
+  recognized: boolean
+  readable: boolean
+  dailyFileCount: number
+  latestDate: string | null
+  hasAdjustment: boolean
+  hasNames: boolean
+  hasBenchmark: boolean
+  problems: string[]
+}
+
+export interface SetupCandidate {
+  check: TdxCandidateCheck
+  sources: Array<'running-process' | 'manual'>
+}
+
+export function fetchSetupCandidates(): Promise<{ processStatus: string; processReason?: string; candidates: SetupCandidate[] }> {
+  return request('/api/setup/candidates')
+}
+
+export type DirectoryPickerResult = {
+  status: 'selected' | 'cancelled' | 'timeout' | 'denied' | 'unavailable' | 'not_applicable'
+  path?: string
+  reason?: string
+}
+
+/** 弹出 Windows 原生目录选择框（受控本机桥）；取消是正常结果不报错 */
+export function selectSetupDirectory(): Promise<DirectoryPickerResult> {
+  return request('/api/setup/select-directory', { method: 'POST' })
+}
+
+export function inspectSetupRoot(root: string): Promise<{ check: TdxCandidateCheck; suggestions: TdxCandidateCheck[] }> {
+  return request('/api/setup/inspect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ root }),
+  })
+}
+
+export interface SetupApplyAvailability {
+  available: boolean
+  reason?: string
+}
+
+export function saveSetupChoice(root: string): Promise<{ saved: boolean; root: string; savedAt: string; apply: SetupApplyAvailability }> {
+  return request('/api/setup/save-choice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ root }),
+  })
+}
+
+export function applySetupChoice(root: string, attemptId: string): Promise<{ phase: string; attemptId: string }> {
+  return request('/api/setup/apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ root, attemptId }),
+  })
+}
+
+export interface RestartStatusView {
+  attemptId: string | null
+  phase: string
+  stage: string | null
+  reason: string | null
+  updatedAt: string | null
+  done: boolean
+}
+
+export function fetchRestartStatus(): Promise<RestartStatusView> {
+  return request('/api/setup/restart-status')
 }
 
 // ===== 训练默认设置（TRAIN-01）：费用开关与 T+1 开关，默认只影响新训练 =====
@@ -306,7 +396,8 @@ export interface DataStatus {
   needsUpdate: boolean
   reason: string
   source: DataSourceInfo
-  tdx: { available: boolean; root: string | null }
+  /** 隐私边界（SETUP-01）：只含可用性，不含本机路径 */
+  tdx: { available: boolean }
   online: { configured: boolean; provider: string | null }
   sourceMaxDate: string | null
   lastCheckedAt: string | null
