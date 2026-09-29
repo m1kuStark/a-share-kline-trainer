@@ -16,7 +16,8 @@
     "docs/work-items/tasks/SETUP-API-01.md",
     "docs/work-items/tasks/SETUP-AUTH-01.md",
     "docs/work-items/tasks/SETUP-CLUES-02.md",
-    "docs/work-items/tasks/SETUP-SAVE-01.md"
+    "docs/work-items/tasks/SETUP-SAVE-01.md",
+    "docs/verification/2026-09/CAND-02-gate-flake/**"
   ],
   "depends_on": [
     "CAND-01"
@@ -25,7 +26,9 @@
     "reason": "本任务即文档对账：四张片卡与状态页生成区就是全部影响面，不触运行代码，无其他现行正文需要更新。",
     "update": []
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/CAND-02-gate-flake/report.md"
+  ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
   "acceptance_ref": null
 }
