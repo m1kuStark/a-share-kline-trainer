@@ -1,9 +1,13 @@
 <script setup lang="ts">
 // M4-HISTORY-01 只读事实成绩单：事实元信息、冻结规则（origin/capturedAt）、逐笔成交、
 // 已保存权益曲线与画线标注清单（只读，保留原始价格基准，不提供编辑器/行情K线）。
+// M4-01 增量：K线复盘只读回看——按需加载 /api/trainings/:id/bars（服务端守卫：运行中
+// 训练存在时仅放行其自身，其他训练 409 同历史口径），只读渲染K线＋B/S标记＋已保存画线；
+// 不提供任何编辑写入口，复盘K线止于结算日，不开放之后的行情。
 // 请求版本守卫：A→B 切换后 A 的迟到/失败响应不得覆盖 B，也不得留下永续 loading。
 import { computed, ref, watch } from 'vue'
-import { ApiError, fetchTrainingReport, type HistoryReportPayload } from '../api'
+import { ApiError, fetchTrainingBars, fetchTrainingReport, type HistoryReportPayload, type TrainingBarsPayload } from '../api'
+import KlineChart from './KlineChart.vue'
 import { DRAW_TOOLS } from '../drawTools'
 
 const props = defineProps<{ id: number }>()
@@ -13,6 +17,14 @@ const report = ref<HistoryReportPayload | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
 let loadVersion = 0
+
+// K线复盘（只读）：按需加载，失败/守卫三态分明；A→B 切换时整体复位。
+const reviewOpen = ref(false)
+const review = ref<TrainingBarsPayload | null>(null)
+const reviewLoading = ref(false)
+const reviewError = ref('')
+const reviewGuarded = ref(false)
+let reviewVersion = 0
 
 async function load(): Promise<void> {
   const requestVersion = ++loadVersion
@@ -30,7 +42,49 @@ async function load(): Promise<void> {
     if (requestVersion === loadVersion && targetId === props.id) loading.value = false
   }
 }
-watch(() => props.id, () => { void load() }, { immediate: true })
+watch(() => props.id, () => {
+  reviewOpen.value = false
+  review.value = null
+  reviewError.value = ''
+  reviewGuarded.value = false
+  void load()
+}, { immediate: true })
+
+async function toggleReview(): Promise<void> {
+  if (reviewOpen.value) {
+    reviewOpen.value = false
+    return
+  }
+  reviewOpen.value = true
+  if (review.value) return
+  await loadReview()
+}
+
+async function loadReview(): Promise<void> {
+  const requestVersion = ++reviewVersion
+  const targetId = props.id
+  reviewLoading.value = true
+  reviewError.value = ''
+  reviewGuarded.value = false
+  try {
+    const payload = await fetchTrainingBars(targetId, '1D')
+    if (requestVersion !== reviewVersion || targetId !== props.id) return
+    review.value = payload
+  } catch (error) {
+    if (requestVersion !== reviewVersion || targetId !== props.id) return
+    if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
+      reviewGuarded.value = true
+    } else {
+      reviewError.value = error instanceof Error ? error.message : '无法读取复盘K线'
+    }
+  } finally {
+    if (requestVersion === reviewVersion && targetId === props.id) reviewLoading.value = false
+  }
+}
+
+function fetchEarlier(before: string, count: number): Promise<{ bars: TrainingBarsPayload['bars']; hasMore: boolean }> {
+  return fetchTrainingBars(props.id, '1D', { before, count }).then(payload => ({ bars: payload.bars, hasMore: payload.hasMore }))
+}
 
 const TIER_LABELS: Record<string, string> = { '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }
 const RANGE_MODE_LABELS: Record<string, string> = { preset: '自定义·预设', latest: '自定义·到最新', bars: '自定义·日K根数' }
@@ -154,6 +208,36 @@ const curve = computed(() => {
       </figure>
       <p v-else class="report-empty">该区间没有可展示的持久权益点。</p>
 
+      <h2>K线复盘 <button class="ghost-button report-review-toggle" @click="toggleReview">{{ reviewOpen ? '收起复盘' : '展开复盘' }}</button></h2>
+      <div v-if="reviewOpen" class="report-review">
+        <p v-if="reviewGuarded" class="history-guard" role="status">
+          <strong>结束当前训练后可复盘历史</strong>
+          <span>当前有进行中的训练；为避免旧局K线泄漏当前局的未来行情，复盘在训练进行期间关闭。</span>
+        </p>
+        <p v-else-if="reviewError" class="history-error" role="alert">
+          <span>{{ reviewError }}</span>
+          <button class="ghost-button" @click="loadReview()">重试</button>
+        </p>
+        <p v-else-if="reviewLoading || !review" class="history-loading" role="status">加载复盘K线…</p>
+        <template v-else>
+          <div class="report-review-chart">
+            <KlineChart
+              :bars="review.bars"
+              :trades="review.trades"
+              :cost-price="review.account.costPrice"
+              :chart-cost-price="review.chartCostPrice"
+              :drawing-price-basis="review.drawingPriceBasis ?? null"
+              :has-more-bars="review.hasMore"
+              :fetch-earlier="fetchEarlier"
+              :saved-drawings="report.drawings"
+              :read-only="true"
+            />
+          </div>
+          <p class="report-note">复盘为只读回看：K线止于结算日 {{ report.training.settleDate }}，展示逐笔成交标记与当日保存的画线（不可编辑），权益曲线见上方；不开放结算日之后的行情。</p>
+        </template>
+      </div>
+      <p v-else class="report-empty">复盘未展开。展开后只读回看该局K线、逐笔成交标记与已保存画线。</p>
+
       <h2>画线标注</h2>
       <p v-if="report.drawingsStatus === 'unavailable'" class="history-error" role="alert">{{ report.drawingsReason }}</p>
       <p v-else-if="!report.drawings?.length" class="report-empty">未保存画线。</p>
@@ -167,7 +251,7 @@ const curve = computed(() => {
           <span v-if="drawing.priceBasis" class="report-drawing-basis">数值为保存时的前复权基准（保留原始价格基准，不做换算）</span>
         </li>
       </ul>
-      <p class="report-note">画线为只读标注清单；完整 K 线复盘与原始图表回看不在本页范围内。</p>
+      <p class="report-note">画线标注清单与上方只读复盘共用同一份当日保存记录；复盘不提供画线编辑，历史画线保持结算时原样。</p>
     </template>
   </section>
 </template>

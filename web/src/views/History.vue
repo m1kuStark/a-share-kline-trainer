@@ -83,7 +83,7 @@ function percentText(item: HistoryItem): string {
     <header class="history-header">
       <div>
         <h1>历史训练</h1>
-        <p>只读事实成绩单：来自已结算训练的持久记录，不含排行与未冻结指标。</p>
+        <p>只读事实成绩单：来自已结算训练的持久记录，不重算、不改动。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
