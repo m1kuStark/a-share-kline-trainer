@@ -35,3 +35,12 @@
 - 槽内无法合法修复该文件：复制 wt-B 文件进本分支＝合入他人改动（且会在下次集成合并制造 add/add 冲突）；全局改 `server/vitest.config.ts` 默认值不在 M4-01 卡 allowed_paths（仅 `server/src/**`、`server/test/**`），会打破本候选 assertScope；亦不得改动 wt-B 工作树。已升级上报，建议由 SETUP-01 槽（同一行修法：文件级 `vi.setConfig({ testTimeout: 20_000 })`）或集成人在集成分支直接应用。
 - 槽内顺带加固（同型已实证隐患，均在 allowed_paths 内）：`setup-api.test.ts`（本仓全量运行两次在不同用例上 5000ms 超时，串行绿）与 `drawings.test.ts`（一次"重开数据库"用例 5000ms 超时，串行绿）各加文件级 `vi.setConfig({ testTimeout: 20_000 })`，断言零改动。
 - 复验：`npx vitest run --config server/vitest.config.ts server/test/setup-api.test.ts server/test/drawings.test.ts` → 16/16；全量 `npm test`（507.93s）：1184/1186——settings-training 12/12（10377ms）、setup-api 9/9（8229ms）、drawings 7/7（7759ms）均在新预算内通过；剩余失败＝runtime-isolation（任务明示排除）＋review-profile 一例 30000ms 纯超时（该文件已有 30s 预算，串行复跑 16/16 绿，同型抖动）。符合槽内口径。
+
+## 返修三：全量门禁 journey——m4 spec 适配 UI-03 双框与 M4-01 文案（2026-09-30）
+
+- 门禁失败原件：`m4-history.spec.ts:167` 起用例在 `getByPlaceholder('搜索代码或名称，如 600519 或 贵州茅台')` 30s 超时——旧单框 placeholder 写于候选基线 888778c，收编到含 UI-03 的基线后 UI 已是双框（Launcher.vue:377-378），旧选择器不存在；`m4-rankings.spec.ts` 为我复制同型问题。
+- 修复（两分支同步，e2e/m4-history.spec.ts 两分支字节一致）：①createTrainingFromForm 改双框规范流程（填『股票代码，如 600519』→断言『已选：』，精确代码去抖自动选中，journey.spec.ts:22-24 同款）；②成绩单三处断言改 `getByRole('heading')`——M4-01 复盘文案含『逐笔成交标记』『画线标注清单』字样致 getByText 双命中 strict violation；③m4-rankings 第二局结算后补关『训练结算』模态（settle-mask 拦截指针 240s）；④m4-rankings 指标断言改数据无关（删误加的 `toContainText('买入')`；胜率/盈亏比列 td 5/6——1 笔卖出局胜率必有值、盈亏比必 '--'；零卖出局两列 '--'；原 100.00% 断言依赖样本次日方向不可假设）。
+- 提交：wt/D-M4-HISTORY-01 `6d50385`＋`36a25f9`（含其 report.md 返修段）；wt/D-M4-01 `71f1438`（cherry-pick）＋`41a9510`。
+- 复验：`TDX_ROOT=<本worktree>.runs/fixture/tdx-20260916-d8339f32 npm run journey -- e2e/m4-history.spec.ts e2e/m4-rankings.spec.ts`（runtime per-run 隔离 manifest/动态端口/独立库，e2e 规则要求的唯一入口）——首轮（run-f2a2c63c，仅双框修复）2 failed/1 skipped 暴露②③④；终轮（run-9653eee0，全部修复）**6 passed (1.3m)，退出码 0**。首轮失败原件与截图保留于 run artifacts；未占用 8787/8791/5173。
+- 注：e2e spec 不参与 vitest 全量（`npm test` 不受影响，本轮未重跑全量；journey 实跑即本项验证）。
+- 后续门禁复报（2026-09-30 二次）：m4-rankings.spec.ts:27 旧 placeholder 240s 超时——只读核实为集成侧旧副本：`wt/integration/v1` 在 7e2509f 时点合并本分支，`41a9510 不在 integration`，其 m4-rankings.spec.ts 仍为旧单框版本；本分支 tip（13e4f8b）已含全部修复（全仓 grep 旧 placeholder 零残留）。本分支复跑 `npm run journey -- e2e/m4-rankings.spec.ts` → **2 passed (35.4s)，退出码 0**（run-e6950659）。集成侧重合并 wt/D-M4-01（tip 13e4f8b）即消除。
