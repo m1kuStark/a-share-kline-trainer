@@ -2,7 +2,7 @@
 
 离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的结果。界面为中文，K线红涨绿跌。
 
-本页描述 `wt/integration/v1@9fd5070` 的 V1.0.3 源码候选（2026-10-01 核对）。main 仍为 v0.3.3 源码，当前已确认的公开安装包为 v0.3.2；本地人工验收包源于较早的 `e27885e`（包版本 1.0.1），不含当前候选后续接入的应用偏好与 TDX 路径设置路由。源码、旧包和公开发布分别确认，见[更新记录](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/CHANGELOG.md)（CHANGELOG 不随安装包分发，指向源码仓库）。
+本页描述 `wt/integration/v1@eb385c8` 的 V1.0.3 源码候选（2026-10-01 核对）。main 仍为 v0.3.3 源码，当前已确认的公开安装包为 v0.3.2；本地人工验收包源于较早的 `e27885e`（包版本 1.0.1），不含当前候选后续接入的应用偏好与 TDX 路径设置路由。源码、旧包和公开发布分别确认，见[更新记录](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/CHANGELOG.md)（CHANGELOG 不随安装包分发，指向源码仓库）。
 
 源码候选能做什么：
 

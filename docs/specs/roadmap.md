@@ -1,6 +1,6 @@
 # 剩余产品范围
 
-本页描述 `wt/integration/v1@9fd5070` 的源码候选范围（2026-09-30）；“已实现”仅指该候选中的代码，不替代门禁、用户验收、main 集成或公开发布。任务状态见[任务索引](../work-items/README.md)。本次跨工作树核对记录在主仓库的 `docs/verification/2026-09/DOC-03-state-audit/report.md`。
+本页描述 `wt/integration/v1@eb385c8` 的 V1.0.3 源码候选范围（2026-10-01）；“已实现”仅指该候选中的代码，不替代门禁、用户验收、main 集成或公开发布。任务状态见[任务索引](../work-items/README.md)。本次跨工作树核对记录在主仓库的 `docs/verification/2026-09/DOC-03-state-audit/report.md`。
 
 ## 1.0.3 发布线（进行中）
 

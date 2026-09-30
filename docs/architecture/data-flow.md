@@ -1,6 +1,6 @@
 # 当前数据流
 
-本页按 `wt/integration/v1@9fd5070` 的 V1.0 源码候选说明（2026-09-30），不代表 main 或旧安装包已包含相同能力。跨工作树核对记录在主仓库的 `docs/verification/2026-09/DOC-03-state-audit/report.md`。
+本页按 `wt/integration/v1@eb385c8` 的 V1.0.3 源码候选说明（2026-10-01），不代表 main 或旧安装包已包含相同能力。跨工作树核对记录在主仓库的 `docs/verification/2026-09/DOC-03-state-audit/report.md`。
 
 TDX只读文件→tdx解析与目录/权息缓存→train账户/训练→Fastify API→Launcher/Training→KlineChart交互。data扫描协调器管理状态，仍未统一所有读取/更新入口。
 
