@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "M4",
   "summary": "在已接受 V1 基线 888778c 上交付完整用户行为：真实结算一局后进入历史训练列表，打开只读事实成绩单查看分类、初始/最终权益、收益率、逐笔成交、已保存权益曲线与画线并返回；运行中/放弃不出现，任何 running 存在时新接口 409 拒答。不实现排行、最大回撤、胜率、盈亏比、基准超额、训练时钟、成交理由或条件单。",
-  "next_action": "收编合并 045c07d（wt/D-M4-HISTORY-01＝5bf4484←f707a14，零冲突，合并 diff 32 文件与候选完全一致）已并入；合并树槽内复跑 npm run build 通过，npm test 三轮仅 runtime-isolation.test.ts 持续失败（RUN-CANCEL-01 范围，本轮排除），其余均为负载超时抖动且串行复跑全绿（drawings 7/7、worktree-tools 28/28、setup-api 9/9、docs-tooling 30/30）；完整候选门禁 verify:candidate --base 5bf4484 --task M4-HISTORY-01 留集成阶段执行，不过即打回或待裁决。",
+  "next_action": "收编合并 045c07d（wt/D-M4-HISTORY-01＝5bf4484←f707a14，零冲突，合并 diff 32 文件与候选完全一致）已并入；分支追加 e2e 适配 6d50385（UI-03 双框搜索）＋36a25f9（成绩单断言 heading 锚定，M4-01 文案共存），冻结样本复验 journey 双 spec 6 passed（run-9653eee0），详见 report.md 返修段；终态 36a25f9 槽内复验（collect-rerun.md 终态复验段）：npm run build 通过，npm test 两轮仅 runtime-isolation.test.ts 持续失败（RUN-CANCEL-01 范围，本轮排除），其余失败均为超时/hook 超时抖动且串行复跑全绿（api 6/6、docs-tooling 30/30、drawings 7/7、public-source 3/3、review-profile 16/16、worktree-tools 28/28），history-report 23/23 于全量轮通过，docs:check／status --check／impact(base 5bf4484) 均 0 错误；完整候选门禁 verify:candidate --base 5bf4484 --task M4-HISTORY-01 留集成阶段执行，不过即打回或待裁决。",
   "allowed_paths": [
     "server/src/api.ts",
     "server/src/train/history-report.ts",
@@ -55,7 +55,7 @@
     "docs/verification/2026-09/M4-HISTORY-01/repair-55.md",
     "docs/verification/2026-09/M4-HISTORY-01/collect-rerun.md"
   ],
-  "integration_ref": "收编合并 045c07d（wt/D-M4-HISTORY-01：基线 5bf4484 ← 候选 f707a14，零冲突）；完整候选门禁待集成阶段对 base 5bf4484 重跑",
+  "integration_ref": "收编合并 045c07d（wt/D-M4-HISTORY-01：基线 5bf4484 ← 候选 f707a14，零冲突）＋槽内回填 e8f80f9＋e2e 基线适配 6d50385/36a25f9；完整候选门禁待集成阶段对 base 5bf4484 重跑",
   "acceptance_ref": null
 }
 ```
