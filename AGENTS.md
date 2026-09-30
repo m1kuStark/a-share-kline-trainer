@@ -25,7 +25,7 @@ Vue3＋Fastify＋Node24/SQLite独立工程。先确定任务，再沿模块逐�
 
 改文件前读取其路径适用的局部AGENTS，不依赖客户端自动加载。局部规则不得放松父级硬边界。
 
-当前交付基线为v0.3.2（公开源码与Windows安装包已发布）；M3/REC已获用户验收，v0.3.2工程门禁与公开发布已完成，但用户对v0.3.2的最终验收尚未记录。发布证据见[REL-03](docs/verification/2026-09/REL-03/public-release-verification.json)，接续任务以[状态](docs/status.md)和[任务](docs/work-items/README.md)为准。M4完整指标排行/复盘与M5完整设置仍未完成。
+接续时先核对当前 HEAD、工作树与构建来源，再读[状态](docs/status.md)和[任务](docs/work-items/README.md)。源码候选、安装包、公开发布与用户验收分别记录；版本号或旧任务摘要不能代替当前证据。
 
 
 ## 交付责任
