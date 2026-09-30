@@ -19,6 +19,8 @@ interface LaunchResult {
   logPath: string
   tdxRoot: string | null
   openedBrowser: boolean
+  /** PORT-01：未配置端口回退时的说明；null＝未发生回退 */
+  portFallback: { from: number, to: number, reason: 'reserved' | 'occupied' } | null
 }
 
 interface StopResult {
@@ -59,6 +61,8 @@ interface LaunchOptions {
   tdxCandidates?: string[]
   startTimeoutMs?: number
   lockWaitMs?: number
+  /** PORT-01：端口 bind 探测注入点（测试模拟 WinNAT 保留段等不可 bind 场景） */
+  portProbe?: (port: number) => Promise<{ ok: boolean, code?: string }>
 }
 
 interface LauncherModule {
@@ -69,10 +73,12 @@ interface LauncherModule {
   parseArgs(argv: string[]): { root?: string, configPath?: string, openBrowser: boolean, stop?: boolean, help?: boolean, restartAttemptPath?: string }
   resolveConfig(root: string, raw: unknown, env?: Record<string, string | undefined>): {
     port: number
+    portExplicit: boolean
     dataDir: string
     databasePath: string
     tdxRoot: string | null
   }
+  bindCheckPort(port: number): Promise<{ ok: boolean, code?: string }>
   pidAlive(pid: number): boolean
   isTdxRootPath(root: string): Promise<boolean>
   lockPath(dataDir: string): string
@@ -353,6 +359,16 @@ describe('release launcher config resolution', () => {
     expect(config.tdxRoot).toBeNull()
   })
 
+  it('tracks whether the port was explicitly configured (PORT-01 auto-fallback basis)', () => {
+    expect(launcher.resolveConfig('D:\\pkg', null, {}).portExplicit).toBe(false)
+    expect(launcher.resolveConfig('D:\\pkg', {}, {}).portExplicit).toBe(false)
+    expect(launcher.resolveConfig('D:\\pkg', { port: null }, {}).portExplicit).toBe(false)
+    expect(launcher.resolveConfig('D:\\pkg', { port: '' }, {}).portExplicit).toBe(false)
+    expect(launcher.resolveConfig('D:\\pkg', { port: '9123' }, {})).toMatchObject({ port: 9123, portExplicit: true })
+    // 显式写了默认值同样算显式：用户亲手指定就必须被尊重
+    expect(launcher.resolveConfig('D:\\pkg', { port: 8787 }, {})).toMatchObject({ port: 8787, portExplicit: true })
+  })
+
   it('resolves relative paths against the package root and requires a sane port', () => {
     const config = launcher.resolveConfig('D:\\pkg', { port: '9123', tdxRoot: 'tdx', dataDir: 'data dir' }, {})
     expect(config.port).toBe(9123)
@@ -600,6 +616,104 @@ describe('release launcher lifecycle', () => {
     expect(result.runId).not.toBe(staleRunId)
     expect(await spawnCount(dataDir)).toBe(1)
     expect(await fetchHealth(result.url)).toMatchObject({ body: { runId: result.runId } })
+  }, 30_000)
+})
+
+// ===== PORT-01（REL-LAUNCH-UX-01 增量，2026-09-30 用户拍板"自动换可用端口"） =====
+// 根因：默认端口 8787 可落进 Windows WinNAT 排除端口段（bind EACCES，无监听者），
+// HTTP 探针无法发现。未配置端口 → 自动改用邻近可用端口并提示；显式端口 → 必须
+// 尊重，失败按错误码给出明确原因＋netsh 排查指引＋改端口方法。
+// 隔离注记：注入的 portProbe 把 8787（被模拟为保留段）与本机隔离规则禁用的 8791
+// 都标为不可用，回退扫描从 8788 向上，绝不会在测试里绑定 8787/8791/5173。
+describe('PORT-01 port fallback and explicit-port failures', () => {
+  const UNAVAILABLE = new Set([launcher.DEFAULT_PORT, 8791])
+  const fallbackProbe = (port: number) => (UNAVAILABLE.has(port)
+    ? Promise.resolve({ ok: false, code: 'EACCES' })
+    : launcher.bindCheckPort(port))
+
+  it('auto-falls back to a nearby port when the unconfigured default port is reserved', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, '数 据 dir')
+    await writeConfig(root, { dataDir }) // 不写 port：默认 8787，属"未显式配置"
+    const counter = spawnCounter(dataDir)
+
+    const first = await launchFixture(root, { FIXTURE_SPAWN_COUNTER: counter }, { portProbe: fallbackProbe })
+    expect(first.reused).toBe(false)
+    expect(first.port).not.toBe(launcher.DEFAULT_PORT)
+    expect([launcher.DEFAULT_PORT, 8791, 5173]).not.toContain(first.port)
+    expect(first.url).toBe(`http://127.0.0.1:${first.port}`)
+    expect(first.portFallback).toMatchObject({ from: launcher.DEFAULT_PORT, to: first.port, reason: 'reserved' })
+
+    const health = await fetchHealth(first.url)
+    expect(health).toMatchObject({ status: 200, body: { status: 'ok', runId: first.runId, pid: first.pid } })
+
+    const state = JSON.parse(await readFile(join(dataDir, 'trainer-state.json'), 'utf8'))
+    expect(state).toMatchObject({
+      appId: launcher.APP_ID,
+      pid: first.pid,
+      port: first.port,
+      runId: first.runId,
+      portFallback: { from: launcher.DEFAULT_PORT, reason: 'reserved' },
+    })
+
+    // 启动器日志必须留痕（诊断"为什么换端口"），内容不含令牌
+    const serverLog = await readFile(first.logPath, 'utf8')
+    expect(serverLog).toContain(`auto-fallback from default port ${launcher.DEFAULT_PORT}`)
+    expect(serverLog).toContain(`on port ${first.port}`)
+  }, 30_000)
+
+  it('reuses the fallback port on repeat launch without a configured port (no second writer)', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, '数 据 dir')
+    await writeConfig(root, { dataDir })
+    const counter = spawnCounter(dataDir)
+
+    const first = await launchFixture(root, { FIXTURE_SPAWN_COUNTER: counter }, { portProbe: fallbackProbe })
+    const second = await launchFixture(root, { FIXTURE_SPAWN_COUNTER: counter }, { portProbe: fallbackProbe })
+    expect(second.reused).toBe(true)
+    expect(second.url).toBe(first.url)
+    expect(second.port).toBe(first.port)
+    expect(second.pid).toBe(first.pid)
+    expect(second.portFallback).toMatchObject({ from: launcher.DEFAULT_PORT, to: first.port, reason: 'reserved' })
+    expect(await spawnCount(dataDir)).toBe(1)
+  }, 30_000)
+
+  it('names the exact cause when an explicitly configured port is reserved (simulated WinNAT range)', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, '数 据 dir')
+    const port = await freePort()
+    await writeConfig(root, { port, dataDir })
+
+    await expect(launchFixture(root, {}, { portProbe: async () => ({ ok: false, code: 'EACCES' }) }))
+      .rejects.toThrow(/系统保留/)
+    await expect(launchFixture(root, {}, { portProbe: async () => ({ ok: false, code: 'EACCES' }) }))
+      .rejects.toThrow(/netsh int ipv4 show excludedportrange/)
+    await expect(launchFixture(root, {}, { portProbe: async () => ({ ok: false, code: 'EACCES' }) }))
+      .rejects.toThrow(/trainer\.config\.json/)
+    // 显式端口失败不换端口：没有新进程、没有状态文件
+    await expect(readFile(spawnCounter(dataDir))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(readFile(join(dataDir, 'trainer-state.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+  }, 30_000)
+
+  it('names the exact cause when an explicitly configured port is occupied by another program', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, '数 据 dir')
+    const occupant = http.createServer((_request, response) => {
+      response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+      response.end('{"hello":1}\n')
+    })
+    await new Promise<void>(resolveListen => occupant.listen(0, '127.0.0.1', resolveListen))
+    const address = occupant.address()
+    const port = typeof address === 'object' && address ? address.port : 0
+    activeClosers.push(() => new Promise(resolveClose => occupant.close(() => resolveClose())))
+    await writeConfig(root, { port, dataDir })
+
+    // 真实 bind 探测路径（非注入）：占用者不是训练器 → 显式端口按"被占用"明确拒绝
+    await expect(launchFixture(root)).rejects.toThrow(/被其他程序占用|occupied by another program/)
+    await expect(launchFixture(root)).rejects.toThrow(/netsh int ipv4 show excludedportrange/)
+    await expect(launchFixture(root)).rejects.toThrow(/trainer\.config\.json/)
+    expect(await (await fetch(new URL(`http://127.0.0.1:${port}/`))).text()).toContain('hello')
+    await expect(readFile(join(dataDir, 'trainer-state.json'))).rejects.toMatchObject({ code: 'ENOENT' })
   }, 30_000)
 })
 
