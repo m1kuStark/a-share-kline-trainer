@@ -139,15 +139,18 @@ const curve = computed(() => {
   const width = 640, height = 180, padX = 8, padY = 16
   const equities = points.map(point => point.equity).filter(value => Number.isFinite(value))
   if (!equities.length) return null
-  const min = Math.min(...equities), max = Math.max(...equities)
+  const initialCash = report.value?.training.initialCash ?? equities[0]
+  const rates = points.map(point => (point.equity - initialCash) / initialCash)
+  const min = Math.min(...rates, 0), max = Math.max(...rates, 0)
   const span = max - min || 1
   const x = (index: number) => points.length === 1 ? width / 2 : padX + index / (points.length - 1) * (width - padX * 2)
   const y = (value: number) => padY + (max - value) / span * (height - padY * 2)
   return {
-    polyline: points.map((point, index) => `${x(index)},${y(point.equity)}`).join(' '),
+    polyline: points.map((point, index) => `${x(index)},${y(rates[index])}`).join(' '),
     single: points.length === 1,
-    singleX: x(0), singleY: y(equities[0]),
+    singleX: x(0), singleY: y(rates[0]),
     first: points[0], last: points[points.length - 1],
+    minRate: min, maxRate: max, zeroY: y(0),
   }
 })
 </script>
@@ -209,13 +212,16 @@ const curve = computed(() => {
 
       <h2>已保存权益曲线</h2>
       <figure v-if="curve" class="report-curve">
-        <svg class="equity-curve-svg" :viewBox="`0 0 640 180`" role="img" aria-label="已保存权益曲线">
+        <svg class="equity-curve-svg" :viewBox="`0 0 640 180`" role="img" aria-label="训练收益率曲线">
+          <line x1="8" :y1="curve.zeroY" x2="632" :y2="curve.zeroY" class="curve-zero" />
+          <text x="10" y="14" class="curve-label">{{ (curve.maxRate * 100).toFixed(1) }}%</text>
+          <text x="10" y="176" class="curve-label">{{ (curve.minRate * 100).toFixed(1) }}%</text>
           <polyline v-if="!curve.single" :points="curve.polyline" fill="none" stroke="currentColor" stroke-width="1.5" />
           <circle v-else :cx="curve.singleX" :cy="curve.singleY" r="3" fill="currentColor" />
         </svg>
         <figcaption>
-          {{ curve.first.date }} {{ money(curve.first.equity) }} → {{ curve.last.date }} {{ money(curve.last.equity) }}
-          （{{ report.equityCurve.length }} 个持久权益点，限定 {{ report.training.startDate }} ~ {{ report.training.settleDate }}）
+          {{ curve.first.date }} 0% → {{ curve.last.date }} {{ percent }}
+          （{{ report.equityCurve.length }} 个持久权益点；纵轴收益率，横轴交易日）
         </figcaption>
       </figure>
       <p v-else class="report-empty">该区间没有可展示的持久权益点。</p>
