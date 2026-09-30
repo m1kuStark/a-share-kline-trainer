@@ -238,16 +238,22 @@ export async function updateWorkflowState(controlRoot: string, mutate: (draft: W
   })
 }
 
+export function appendWorkflowEvent(state: WorkflowState, event: WorkflowEvent): void {
+  const existing = state.events.find(item => item.event_id === event.event_id)
+  if (existing) {
+    if (JSON.stringify(existing) !== JSON.stringify(event)) throw new Error(`workflow event_id ${event.event_id} already exists with different content`)
+    return
+  }
+  state.events.push(event)
+}
+
 export async function recordWorkflowEvent(controlRoot: string, event: WorkflowEvent): Promise<WorkflowEvent> {
   return withLock(controlRoot, async () => {
     const current = await readWorkflowState(controlRoot)
     const existing = current.events.find(item => item.event_id === event.event_id)
-    if (existing) {
-      if (JSON.stringify(existing) !== JSON.stringify(event)) throw new Error(`workflow event_id ${event.event_id} already exists with different content`)
-      return existing
-    }
+    if (existing && JSON.stringify(existing) === JSON.stringify(event)) return existing
     const draft = structuredClone(current)
-    draft.events.push(event)
+    appendWorkflowEvent(draft, event)
     draft.state_revision += 1
     draft.updated_at = new Date().toISOString()
     await writeState(controlRoot, draft)

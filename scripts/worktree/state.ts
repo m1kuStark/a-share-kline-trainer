@@ -2,6 +2,7 @@ import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises'
 import { isAbsolute, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { commonDirectory } from './git.js'
+import { mirrorCandidateIfConfigured } from '../workflow/bridge.js'
 
 export interface Candidate {
   schemaVersion: 1
@@ -30,6 +31,7 @@ export async function saveCandidate(root: string, candidate: Candidate): Promise
   const temporary = `${path}.${randomUUID()}.tmp`
   await writeFile(temporary, JSON.stringify(candidate, null, 2) + '\n', { encoding: 'utf8', flag: 'wx' })
   await rename(temporary, path)
+  await mirrorCandidateIfConfigured(root, candidate)
 }
 export async function readCandidate(root: string, id: string): Promise<Candidate> {
   const candidate = JSON.parse(await readFile(statePath(root, id), 'utf8')) as Candidate
