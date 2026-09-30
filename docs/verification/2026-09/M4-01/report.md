@@ -44,3 +44,13 @@
 - 复验：`TDX_ROOT=<本worktree>.runs/fixture/tdx-20260916-d8339f32 npm run journey -- e2e/m4-history.spec.ts e2e/m4-rankings.spec.ts`（runtime per-run 隔离 manifest/动态端口/独立库，e2e 规则要求的唯一入口）——首轮（run-f2a2c63c，仅双框修复）2 failed/1 skipped 暴露②③④；终轮（run-9653eee0，全部修复）**6 passed (1.3m)，退出码 0**。首轮失败原件与截图保留于 run artifacts；未占用 8787/8791/5173。
 - 注：e2e spec 不参与 vitest 全量（`npm test` 不受影响，本轮未重跑全量；journey 实跑即本项验证）。
 - 后续门禁复报（2026-09-30 二次）：m4-rankings.spec.ts:27 旧 placeholder 240s 超时——只读核实为集成侧旧副本：`wt/integration/v1` 在 7e2509f 时点合并本分支，`41a9510 不在 integration`，其 m4-rankings.spec.ts 仍为旧单框版本；本分支 tip（13e4f8b）已含全部修复（全仓 grep 旧 placeholder 零残留）。本分支复跑 `npm run journey -- e2e/m4-rankings.spec.ts` → **2 passed (35.4s)，退出码 0**（run-e6950659）。集成侧重合并 wt/D-M4-01（tip 13e4f8b）即消除。
+
+## 终态复验（2026-09-30，tip 8f7377c）
+
+- 分支 `wt/D-M4-01` 终态 `8f7377c`（docs-only 门禁复报提交，实现代码自 41a9510 未变），工作树干净；`TDX_ROOT` 未设置，本槽未启动任何服务（18804/18904 未占用）。
+- `npm run build`：退出码 0（"chunks larger than 500 kB" 为既有提示）。
+- `npx vitest run --config server/vitest.config.ts server/test/rankings.test.ts`：18/18 通过（8.31s）。
+- `npm test` 全量（634.59s，89 文件）：1183/1186 通过；失败＝`docs-tooling.test.ts:141`（20000ms 超时，afterEach ENOTEMPTY 清理报错为超时的后果非原因）＋`full-acceptance.test.ts:75` M1 数据契约用例（5000ms 超时；同文件 M4/M5 门禁用例通过）＋`runtime-isolation.test.ts`（已知基线确定性失败，RUN-CANCEL-01 范围，本轮排除）。两例非排除失败均为超时抖动，串行复跑：docs-tooling 30/30、full-acceptance 3/3，全绿。符合槽内口径。
+- docs 工具链：docs:check 0 错误（18 条既有长度警告）；docs:status --check 0 错误；docs:impact --base e8f80f9 --task M4-01 0 错误（25 变更路径，17 运行代码/配置/测试路径——工作树预检口径）。
+- 实现抽查与验收条件逐项复核（本轮 Read）：`/api/rankings` 注册与双守卫（server/src/api.ts:331-336、bars 复盘守卫 358-364）、冻结口径实现（metrics.ts 摊薄成本法逐笔卖出/胜率/盈亏比、benchmark.ts 向后对齐 sh000300、rankings.ts 排序链 null 殿后＋excludedUnavailable＋基准复守卫）、手算断言在库（rankings.test.ts:281-310：790.6/588.7、489.75/509.75）、侧栏排行入口与 prepareForLibrary 协议（web/src/App.vue:56-62、211）、full-acceptance 门禁断言更新为 M4 显式 200/400 且 M5 保持 404（bfda780，拍板 S4 授权范围内）。
+- 完整候选门禁 `npm run verify:candidate`（含 M2 与全量 Journey，须显式 TDX_ROOT）留集成阶段执行。
