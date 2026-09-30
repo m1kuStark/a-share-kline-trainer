@@ -8,7 +8,7 @@
 |---|---|---|
 | contract | 控制层，需要取舍时GPT | goal、验收、上下文、invariants、scope、禁止变化、oracle、预算 |
 | report | 执行者 | 带位置和散列的观察、测试声明、未检查项、假设、异常和重规划请求 |
-| history / decision | 控制层 | 跨job任务身份、失败指纹、repair次数、路由原因和输入散列 |
+| history / decision | 控制层 `.control/trainer-state.json` | 跨job任务身份、失败指纹、repair次数、路由原因、输入散列、commit/tree/run/artifact 和验收状态 |
 
 事实引用只证明来源字节，不能证明解释正确；测试声明不是独立验证结果。原始日志/diff/工件按引用留在外部缓存；不传思考全文、凭据、个人库或无关对话。简短决策记录须保留排除过的方案及可推翻结论的证据。
 
@@ -40,4 +40,4 @@ history为控制层事件数组：event_id、task_id、kind；失败另含failur
 
 v1校验关键字段，额外字段不参与决策，未知版本拒绝。JSON最多1MiB，拒绝重复键和非有限数；事实单文件最多2MiB。完整工件独立保存，不因简报预算丢弃错误原件。
 
-当前合同/history由显式文件传入，尚无独立防写或身份认证，影子JSON不能作授权证据。ORCH-03由控制器持有合同及append-only历史。产品任务卡保存稳定状态，运行轨迹不塞进任务卡。
+当前合同由显式文件传入；`.control/trainer-state.json` 是唯一当前状态文件，使用文件锁、`state_revision` 和原子替换，尚无跨用户身份认证。影子 JSON、GLM job 和 DWF report 不能作授权证据。ORCH-03 的完整合同、日志和认证收据仍由控制器外部缓存持有，项目状态只保存可读摘要和证据引用。产品任务卡保存静态 scope/deps/acceptance，运行轨迹不再塞进任务卡或 `current-feature.json`。

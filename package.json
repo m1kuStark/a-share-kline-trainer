@@ -26,6 +26,7 @@
     "docs:check": "tsx scripts/docs.ts check",
     "docs:impact": "tsx scripts/docs.ts impact",
     "docs:status": "tsx scripts/docs.ts status",
+    "workflow:state": "tsx scripts/workflow/state-cli.ts",
     "verify:baseline": "tsx scripts/verify-candidate.ts",
     "verify:candidate": "tsx scripts/verify-candidate.ts",
     "release:windows": "tsx scripts/release/build.mjs",

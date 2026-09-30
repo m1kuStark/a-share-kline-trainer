@@ -4,13 +4,13 @@
 
 ## 控制边界
 
-控制器从候选仓库外运行。每个逻辑task_id绑定contract+policy的已确认SHA256、worktree、基线、runner配置和有限预算；不得因换job/resume清零。控制存储放CODEX_HOME/headroom-cache中，不入Git。复用run_glm.py登记看板与GLM/max配置，禁止worker写主干或改验证策略。
+控制器从候选仓库外运行。工作空间 `.control/trainer-state.json` 是任务、候选、作业、运行、产物和验收的唯一当前状态文件；它保存 `state_revision` 与事件历史，所有写入由 `scripts/workflow/state.ts` 加锁、校验并原子替换。每个逻辑task_id绑定contract+policy的已确认SHA256、worktree别名、基线、runner配置和有限预算；不得因换job/resume清零。完整日志、provider副本、认证收据和 controller SQLite 仍放 CODEX_HOME/headroom-cache 中，只作外部证据和索引，不得反向改写项目结论。复用run_glm.py登记看板与GLM/max配置，禁止worker写主干或改验证策略。
 
 合同只给goal、acceptance、context、invariants、scope、forbidden、tests、risks；首次执行worker自主实现。scope内完成代码、测试、文档和正常git commit。Mimosa拒绝就停止交接，不绕过。返回短结构化事实，完整日志/diff留本机缓存。若退出后仍dirty、越界或缺有效提交，进入waiting_control，不自动git add全部改动。
 
 ## 状态与幂等
 
-使用控制层持久状态：registered / running / verifying / verified / waiting_control / waiting_environment。每次attempt持有唯一job_id、执行前后SHA、runner结果、认证收据、路由理由和失败指纹，事件唯一ID。原始事件只追加，消费重复完成事件不会重复验证/计数/派发。
+使用统一状态文件持久化 `registered / running / verifying / verified / waiting_control / waiting_environment`。每次attempt持有唯一job_id、执行前后SHA、runner结果、认证收据、路由理由和失败指纹，事件唯一ID。原始事件追加到状态文件的 `events[]`，消费重复完成事件不会重复验证/计数/派发；job.json、candidate JSON、DWF report 和 docs/status 都是带 revision/event_id 的视图或证据。
 
 task锁与semantic_scopes所有权由控制层持有；同任务或相同行为不可并行。单进程持锁覆盖执行/验证。崩溃恢复先核对登记进程身份与原job，不自动偷锁，不重派无法确认终止的worker；不把PID复用当仍是同一次任务。
 
