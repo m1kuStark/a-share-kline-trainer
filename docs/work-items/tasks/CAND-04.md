@@ -13,7 +13,8 @@
   "allowed_paths": [
     "docs/status.md",
     "docs/work-items/tasks/CAND-04.md",
-    "docs/work-items/tasks/GLM-MONITOR-02.md"
+    "docs/work-items/tasks/GLM-MONITOR-02.md",
+    "docs/verification/2026-09/CAND-04-gate-flake/**"
   ],
   "depends_on": [
     "CAND-03"
@@ -22,7 +23,9 @@
     "reason": "对账仅触及一张任务卡与状态页生成区，不触运行代码；不收集任何未提交改动。",
     "update": []
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/CAND-04-gate-flake/report.md"
+  ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
   "acceptance_ref": null
 }
