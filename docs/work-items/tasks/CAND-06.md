@@ -13,7 +13,8 @@
   "allowed_paths": [
     "docs/status.md",
     "docs/work-items/tasks/CAND-06.md",
-    "docs/work-items/tasks/GPT-VIS-01.md"
+    "docs/work-items/tasks/GPT-VIS-01.md",
+    "docs/verification/2026-09/CAND-06-gate-flake/**"
   ],
   "depends_on": [
     "CAND-05"
@@ -22,7 +23,9 @@
     "reason": "对账仅触及一张调研卡与状态页生成区，不触运行代码；调研证据已在基线，无需新证据。",
     "update": []
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-09/CAND-06-gate-flake/report.md"
+  ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
   "acceptance_ref": null
 }
