@@ -44,7 +44,7 @@
 | [M5-01](<work-items/tasks/M5-01.md>) | active / integrator | 训练规则快照、应用偏好与 TDX 路由已接入 V1 候选；设置面板现按默认/偏好/数据目录分栏，数据目录支持原生 Windows 选择器。 | [证据1](<verification/architecture-audit-2026-09-17.json>)；[证据2](<verification/2026-09/M5-01/report.md>) | wt/integration/v1@eb385c8 (V1.0.3 UI follow-up) | 未记录 |
 | [M5-DEFAULTS-01](<work-items/tasks/M5-DEFAULTS-01.md>) | review / GLM-5.3-Flash | 实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；基于已接受V1候选888778c | 未记录 | not integrated; codex/m5-training-defaults base 888778cfc7a4b69e4446012a26618b93a8b05b20 | 未记录 |
 | [NOTE-01](<work-items/tasks/NOTE-01.md>) | planned / integrator | 在图表下方 B/S 标记上提供交易理由入口，并支持悬停详情和固定浮层。 | 未记录 | 未记录 | 未记录 |
-| [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | 统一 GPT/GLM/zcode/Git 状态；V1.1 功能切片已集成，待最终候选验证 | 未记录 | 未记录 | 未记录 |
+| [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | V1.1.0 候选已构建并记录 SHA256，等待用户验收 | 未记录 | 未记录 | 未记录 |
 | [ORDER-00](<work-items/tasks/ORDER-00.md>) | planned / integrator | 核查 GitHub 开源条件单实现的许可证、撮合假设和数据模型，只提取适合日线训练器的可验证做法。 | 未记录 | 未记录 | 未记录 |
 | [ORDER-01](<work-items/tasks/ORDER-01.md>) | planned / integrator | 实现单有效订单、限价/止损四种价格行为、跳空成交、取消过期和拒单记录。 | 未记录 | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
