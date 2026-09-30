@@ -1,6 +1,6 @@
 # M5-01 开发片验证报告（wt/E）
 
-状态：**开发片实现与定向验证完成**；`api.ts`/`App.vue`/`web api.ts`/`launcher.cjs` 为集成人单写文件本轮未触碰，接线与浏览器 e2e/Journey 复跑归集成阶段。分支 `wt/E`（基线 `5bf4484`），工作树 `trainer-wt/wt-E`。
+状态：**开发片实现、定向验证与 journey 定向复跑完成**；`api.ts`/`App.vue`/`web api.ts`/`launcher.cjs` 为集成人单写文件本轮未触碰，路由注册接线与完整浏览器 e2e/Journey 回归归集成阶段。分支 `wt/E`（基线 `5bf4484`），工作树 `trainer-wt/wt-E`。
 
 ## 交付范围（本片，2026-09-29）
 
@@ -28,9 +28,32 @@
 - `npm run build`：**通过**（vue-tsc + tsc + vite build，5.97s；chunk>500kB 提示为既有 advisory）。
 - 隔离冒烟（`TRAINER_RUN_ID=wt-E`、PORT=18805、TRAINER_DB/TRAINER_STATIC_DIR/TRAINER_READY_FILE 均指本 worktree 内显式路径）：`/api/health` 200、`/api/settings/training` 200、`/api/settings/app` **404（路由注册待集成，符合预期）**；验证后进程已 taskkill，端口 18805 复测连接拒绝，确认停净。
 
+## journey 残余返修（2026-09-30，`7559c1a`）
+
+首轮 journey 定向复跑（TDX_ROOT＝冻结样本）暴露 2 挂 1 败，三处根因返修：
+
+1. 弹层级 `not.toContainText('已保存')` 永假：设置面板静态文案『保存失败不会改动已保存的选择』含子串『已保存』，保存失败场景三处负向断言必挂。改文案为『…不会改动之前的选择』，契约测试 `m5-settings-frontend` 同步加负向断言（静态文案不得再含『已保存』子串）。
+2. 旧单框搜索定位悬空：UI-03（基线 `58cc210`）已改双框自动选中交互，旧用例的 placeholder/结果按钮不存在。改用仓库既有双框模式（fill『股票代码，如 600519』＋断言『已选：协创数据』）。
+3. F5 用例移植到 UI-03 自动预览模型：手动『生成范围预览』按钮已移除（400ms 防抖自动触发）。重写为门闩化自动预览流——旧请求在途→设置保存改复权使在途失效并自动重新生成→门闩确定性等待→释放两响应，旧响应用投毒 endDate 1999-12-31 回包，版本守卫失守即被最终断言抓获。
+
+返修后验证（证据留存 `.runs/run-d1f3ea5c-d5dd-455f-9734-9ddefbc0c751/artifacts/journey.log`）：
+
+- `TDX_ROOT=<冻结样本> npm run journey -- training-defaults.spec.ts`：**5/5 passed（1.0m）**，含返修 F4 modal 迟到 GET 用例与 F5 在途预览失效用例。
+- `npx vitest run --config server/vitest.config.ts server/test/m5-settings-frontend.test.ts server/test/training-rules-frontend.test.ts`：契约 **14/14 过**。
+- `npm run build`：通过。
+- 已知差异：`training-rules.spec.ts` 的 :153/:242 弹层 alert 断言在本工作树因 `api.ts` 未接线多出两条加载错误 alert，**集成树接线后即消**；其修复①为源级＋契约级验证，门禁复跑在集成树。
+
+## 收尾全量自测（2026-09-30，分支终态 `7559c1a`）
+
+- `npm test`（全量）：**1194 过 / 5 失败 / 1199**（91 文件，1221s，本机负载高）：
+  - `runtime-isolation > cancels an owned child command…`：**已知基线确定性失败**（RUN-CANCEL-01 范围，按任务口径排除；单独复跑确认失败模式一致——`cleanup incomplete` 而非 `/abort/i`，非本片引入）。
+  - `recording-context`（1）、`setup-api`（1）、`worktree-tools`（2）共 4 例均为 5s/30s/90s 超时抖动；**串行复跑（`--pool=forks --poolOptions.forks.singleFork` 三文件）：48/48 全过**。
+- `npm run build`：**通过**（vue-tsc + tsc + vite build；chunk>500kB 为既有 advisory）。
+- 本轮无临时服务启动，无端口占用需要清理。
+
 ## 边界与移交（集成阶段）
 
 - `server/src/api.ts` 两行注册：`registerAppSettingsRoutes(app, database)`；`registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })`（经统一注册自动进入 drain 门闩）。
 - 可选：App 启动更早预取应用偏好（当前 dataStatus 首次自动检查前的偏好读取有尽力而为窗口，缺省 true＝现状）。
-- 浏览器 e2e/Journey（含 F4 用例复跑）在集成工作树串行执行；本片未跑浏览器测试（隔离环境的 journey 需 TDX 冻结样本源，按分工不读取真实 TDX）。
+- 完整浏览器 e2e/Journey 回归（`training-rules.spec` 等）在集成工作树接线后串行执行；本片已用冻结样本定向复跑 `training-defaults.spec.ts` 5/5（见上节），未读取真实 TDX。
 - F4-launcher-initial-read-loading-owner 收尾证据与归属修正见 [M5-01 卡](../../../work-items/tasks/M5-01.md)与 [M5-DEFAULTS-01 卡](../../../work-items/tasks/M5-DEFAULTS-01.md)：缺陷实体在 web Launcher.vue（已随 7e9b046/e944958 修复），与 `scripts/release/launcher.cjs` 无关，无需补卡。
