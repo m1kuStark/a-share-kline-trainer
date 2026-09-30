@@ -187,7 +187,7 @@ function currentRangeRequest(): TrainingRangeRequest {
   return { mode: 'preset', startDate: rangeStart.value, months: 1, endDate: rangeEnd.value }
 }
 
-/** 任何范围输入（起点/根数/股票/复权）变化：旧校验与在途校验全部失效，旧的错误提示随之作废 */
+/** 任何范围输入（起点/终点/股票/复权）变化：旧校验与在途校验全部失效，旧的错误提示随之作废 */
 function onRangeInputChanged(): void {
   inputVersion += 1
   rangePreview.value = null
