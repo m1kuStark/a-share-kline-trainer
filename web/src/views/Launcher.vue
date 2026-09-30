@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { createTraining, fetchTrainingSettings, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest, type TrainingSettingsView } from '../api'
-import { isBarCountValid, minusMonthsShanghai, shanghaiToday } from '../rangeDate'
+import { minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { lastSavedSettings, settingsSavedVersion } from '../settingsPanel'
 
@@ -98,11 +98,11 @@ watch(dataStatus, () => {
   }
 })
 
-// ===== 自定义范围（UI-03 用户反馈）：只留「范围起始日＋K线根数」一档 =====
-// 根数超过最新数据时服务端按合同拒绝（不静默截短）；前端自动收缩到可用根数并常驻提醒，
-// 创建仍走服务端复核。任何范围输入变化使旧校验/在途校验失效（版本守卫）。
+// ===== 自定义范围：用户明确选择起止日期 =====
+// 预设周期仍按自然月回退；自定义范围直接发送起止日期，服务端负责交易日对齐、
+// 尾段覆盖和未来日期校验。任何范围输入变化使旧校验/在途校验失效（版本守卫）。
 const rangeStart = ref(minusMonthsShanghai(anchorDate.value, 3))
-const rangeBarCount = ref(60)
+const rangeEnd = ref(anchorDate.value)
 
 // —— M5-DEFAULTS：默认资金/复权装配 ——
 // 挂载读取最新设置作为表单初值；读取完成前不允许按旧默认偷偷创建（开始训练禁用）。
@@ -176,13 +176,15 @@ let inputVersion = 0
 
 function resetRangeDefaults(): void {
   rangeStart.value = minusMonthsShanghai(anchorDate.value, 3)
-  rangeBarCount.value = 60
+  rangeEnd.value = anchorDate.value
   rangePreview.value = null
   clampNotice.value = ''
 }
 
 function currentRangeRequest(): TrainingRangeRequest {
-  return { mode: 'bars', startDate: rangeStart.value, count: rangeBarCount.value }
+  // 服务端 preset 请求已支持显式 endDate；months=1 保持旧 range schema 兼容，
+  // 实际窗口完全由用户给出的起止日期决定。
+  return { mode: 'preset', startDate: rangeStart.value, months: 1, endDate: rangeEnd.value }
 }
 
 /** 任何范围输入（起点/根数/股票/复权）变化：旧校验与在途校验全部失效，旧的错误提示随之作废 */
@@ -207,8 +209,7 @@ function onAdjustModeChanged(): void {
 
 async function generateRangePreview(): Promise<boolean> {
   if (tier.value !== 'RANGE' || !selected.value || previewing.value) return false
-  // 非法 N 不预览（避免输入中途刷错误）；提交路径另行校验报错并保留原输入
-  if (!isBarCountValid(rangeBarCount.value)) return false
+  if (!rangeStart.value || !rangeEnd.value || rangeEnd.value < rangeStart.value) return false
   const versionAtRequest = inputVersion
   const requestAtRequest = currentRangeRequest()
   previewing.value = true
@@ -229,48 +230,11 @@ async function generateRangePreview(): Promise<boolean> {
   } catch (error) {
     if (versionAtRequest !== inputVersion) return false
     rangePreview.value = null
-    // 根数超过最新数据（服务端 INSUFFICIENT_DATA 不截短）：自动收缩到可用根数并重试
     const message = error instanceof Error ? error.message : ''
-    if (requestAtRequest.mode === 'bars' && /可用日线仅|INSUFFICIENT_DATA/.test(message)) {
-      const clamped = await clampPreviewToLatest(versionAtRequest, requestAtRequest)
-      if (clamped) return true
-    }
     if (versionAtRequest === inputVersion) errorMessage.value = message || '范围校验失败，请重试'
     return false
   } finally {
     if (versionAtRequest === inputVersion) previewing.value = false
-  }
-}
-
-/** 用 latest 模式取「起始日到最新日线」的实际根数，收缩后重新校验；全程受版本守卫保护 */
-async function clampPreviewToLatest(versionAtRequest: number, requestAtRequest: TrainingRangeRequest): Promise<boolean> {
-  try {
-    if (!selected.value) return false
-    const latest = await previewTrainingRange({
-      code: selected.value.code,
-      market: selected.value.market,
-      range: { mode: 'latest', startDate: requestAtRequest.startDate },
-      adjustMode: adjustMode.value,
-    })
-    if (versionAtRequest !== inputVersion || latest.barCount < 1) return false
-    rangeBarCount.value = latest.barCount
-    const clampedRequest: TrainingRangeRequest = { mode: 'bars', startDate: requestAtRequest.startDate, count: latest.barCount }
-    const preview = await previewTrainingRange({
-      code: selected.value.code,
-      market: selected.value.market,
-      range: clampedRequest,
-      adjustMode: adjustMode.value,
-    })
-    if (versionAtRequest !== inputVersion ||
-        JSON.stringify(currentRangeRequest()) !== JSON.stringify(clampedRequest)) {
-      return false
-    }
-    rangePreview.value = { request: clampedRequest, preview }
-    clampNotice.value = `所选根数超过最新数据，已自动截取到最新数据截止日：实际 ${preview.barCount} 根（${preview.startDate} ~ ${preview.endDate}）。如需更少请调小根数，或先更新日线数据`
-    errorMessage.value = ''
-    return true
-  } catch {
-    return false
   }
 }
 
@@ -293,7 +257,7 @@ function schedulePreviewGeneration(): void {
   }, 400)
 }
 
-watch([tier, rangeStart, rangeBarCount, adjustMode, selected], () => {
+watch([tier, rangeStart, rangeEnd, adjustMode, selected], () => {
   if (tier.value !== 'RANGE' || !selected.value) return
   if (hasMatchingPreview(currentRangeRequest())) return
   schedulePreviewGeneration()
@@ -359,8 +323,12 @@ async function performCreate(): Promise<void> {
       errorMessage.value = '请选择范围起始日'
       return
     }
-    if (!isBarCountValid(rangeBarCount.value)) {
-      errorMessage.value = 'K 线根数必须是正整数（当前输入无效），请修正后再开始训练'
+    if (!rangeEnd.value) {
+      errorMessage.value = '请选择范围结束日'
+      return
+    }
+    if (rangeEnd.value < rangeStart.value) {
+      errorMessage.value = '结束日不能早于起始日，请调整日期范围'
       return
     }
     if (previewing.value) {
@@ -472,18 +440,18 @@ function confirmStartAnyway(): void {
         <div class="form-field">
           <label>起始日</label>
           <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" @input="startDateTouched = true" />
-          <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged" />
+          <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged()" />
           <small v-if="tier !== 'RANGE'" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
-          <small v-else class="form-hint">默认为最新数据日回退 3 个自然月（月末自动对齐）</small>
+          <small v-else class="form-hint">自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）</small>
         </div>
         <div v-if="tier !== 'RANGE'" class="form-field">
           <label>初始资金</label>
           <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
         </div>
         <div v-else class="form-field">
-          <label>K 线根数</label>
-          <input v-model.number="rangeBarCount" type="number" min="1" step="1" @input="onRangeInputChanged" />
-          <small class="form-hint">从起始日（含）向后的日线根数，至少 1</small>
+          <label>结束日</label>
+          <input v-model="rangeEnd" type="date" @input="onRangeInputChanged()" />
+          <small class="form-hint">包含起止日期之间可用的交易日；不能选择未来日期</small>
         </div>
       </div>
 
@@ -495,7 +463,7 @@ function confirmStartAnyway(): void {
       <div v-if="tier === 'RANGE'" class="form-field wide">
         <div v-if="clampNotice" class="form-hint clamp-notice">{{ clampNotice }}</div>
         <div v-if="rangePreview" class="form-hint">
-          <strong>范围校验</strong>：从 {{ rangePreview.request.startDate }}（含）共 {{ rangePreview.request.count }} 根；
+          <strong>范围校验</strong>：请求 {{ rangePreview.request.startDate }} ~ {{ rangePreview.request.endDate }}；
           实际 {{ rangePreview.preview.startDate }} ~ {{ rangePreview.preview.endDate }}，共 {{ rangePreview.preview.barCount }} 根日线
           <span v-if="rangePreview.preview.notes.length">；{{ rangePreview.preview.notes.join('；') }}</span>
         </div>

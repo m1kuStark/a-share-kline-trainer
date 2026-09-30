@@ -3,12 +3,12 @@
 ```json
 {
   "id": "REL-V1-01",
-  "title": "V1.0 发布收尾：版本 bump、CHANGELOG、全量门禁、干净解压包验收、tag 与发布说明",
+  "title": "V1.0.3 发布收尾：版本 bump、CHANGELOG、全量门禁、干净解压包验收、tag 与发布说明",
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 0.3.3→1.0.0（package.json 与 package-lock.json 已 bump，CHANGELOG v0.3.3 节改为 1.0.0 发布待确认节，roadmap 增 1.0.0 发布线）。版本 bump 与 CHANGELOG 更新已在槽内提交完成；verify:baseline 全量门禁、Windows 干净解压包全流程、tag 与发布说明由流水线集成/发布阶段执行。发布前置未满足：V1-ACCEPT-01 的 8899 复验结论与五项验收回填、全部槽位任务按 order 合入且 S9 集成回归通过、S11 用户发布确认；隐私红线终检发现 docs/work-items/current-feature.json:11,15,61,70,75 含本机绝对路径，收编时必须清理。",
-  "next_action": "等前置（复验结论、order 合入、S9 回归）就绪后，由流水线在集成工作树执行 verify:baseline（样本 M2/全量 Journey 显式 TDX_ROOT）、干净解压包全流程（先清理 current-feature.json 个人路径）、tag 1.0.0 与发布说明，最后交用户验收与 S11 确认。",
+  "summary": "版本 1.0.3 候选已完成用户反馈修订、定向验证与生产构建；全量回归中除用户当前 8787 服务占用导致的两个启动器测试外均通过。Windows 干净解压包待由本卡生成并校验，用户验收与公开发布仍未确认。",
+  "next_action": "在干净提交上执行发布脚本，核对 Node 24 官方归档、manifest、SHA256、版本与提交；保留 8787 环境冲突证据，完成包内启动/停止与安装后全流程，再交用户验收和 GitHub 发布确认。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",
@@ -22,7 +22,7 @@
     "V1-ACCEPT-01"
   ],
   "docs_impact": {
-    "reason": "版本号与发布线是产品口径变化：CHANGELOG 与 roadmap 直接承载，状态页随卡派生；发布证据待流水线阶段产生后另建 verification 记录。",
+    "reason": "版本号与发布线是产品口径变化：CHANGELOG、roadmap、安装包 manifest 与状态页必须指向同一候选提交；发布证据在本次包构建后回填。",
     "update": []
   },
   "verification_refs": [],

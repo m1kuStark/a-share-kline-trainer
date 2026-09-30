@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { fetchTrainingSettings, putTrainingSettings, type TrainingSettingsView } from '../api'
+import { fetchTrainingSettings, putTrainingSettings, selectSetupDirectory, type TrainingSettingsView } from '../api'
 import { notifySettingsSaved } from '../settingsPanel'
 import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
@@ -27,6 +27,7 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
+const activeSection = ref<'defaults' | 'preferences' | 'data'>('defaults')
 // 返修 F4：读取/编辑/保存的时序与归属——成功保存递增 readVersion 使挂起中的初次 GET 作废；
 // 用户手改过任一字段（formDirty）后迟到的 GET 一律不覆盖表单。
 let readVersion = 0
@@ -235,6 +236,22 @@ async function saveTdxPath(): Promise<void> {
   }
 }
 
+async function chooseTdxDirectory(): Promise<void> {
+  if (tdxChecking.value || tdxSaving.value) return
+  tdxCheckError.value = ''
+  tdxError.value = ''
+  tdxSavedMessage.value = ''
+  try {
+    const picked = await selectSetupDirectory()
+    if (picked.status !== 'selected' || !picked.path) return
+    tdxPathInput.value = picked.path
+    tdxPathTouched.value = true
+    await checkTdxPath()
+  } catch (error) {
+    tdxCheckError.value = error instanceof Error ? error.message : '目录选择失败，可重试'
+  }
+}
+
 // 返修 F3：Tab 焦点陷阱——焦点在首/末可聚焦元素时回绕到另一端，
 // 配合背景 inert，保证 Tab/Shift+Tab 永远不出弹层；Esc 关闭。
 function trapFocus(event: KeyboardEvent): void {
@@ -272,7 +289,15 @@ function close(): void {
       </header>
       <p class="settings-note">这里的默认只影响新训练；进行中的训练按创建时冻结的规则继续。</p>
       <p v-if="loadError" class="settings-repair" role="alert">{{ loadError }}：核对以下表单并重新保存即可修复。</p>
-      <label class="settings-row">
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="设置类别">
+          <button type="button" :class="{ selected: activeSection === 'defaults' }" @click="activeSection = 'defaults'">默认设置</button>
+          <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
+          <button type="button" :class="{ selected: activeSection === 'data' }" @click="activeSection = 'data'">数据目录</button>
+        </nav>
+        <div class="settings-content">
+        <section v-if="activeSection === 'defaults'" class="settings-section settings-default-section" aria-label="默认设置">
+        <label class="settings-row">
         <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" @change="markFormDirty()" />
         <span class="settings-row-text">
           <strong>收取手续费</strong>
@@ -311,7 +336,8 @@ function close(): void {
       <div class="settings-fixed">
         <span>固定口径（不可修改）：一手 {{ settings?.lotSize ?? 100 }} 股 · 买入仓位按总权益 · 按当日原始收盘价成交</span>
       </div>
-      <section class="settings-section" aria-label="应用偏好">
+        </section>
+        <section v-if="activeSection === 'preferences'" class="settings-section" aria-label="应用偏好">
         <h3>应用偏好</h3>
         <label class="settings-row">
           <input
@@ -327,7 +353,7 @@ function close(): void {
         <p v-if="appPrefError" class="error-text" role="alert">{{ appPrefError }}</p>
         <p v-if="appPrefSaved" class="settings-saved" role="status">{{ appPrefSaved }}</p>
       </section>
-      <section class="settings-section" aria-label="数据目录（通达信）">
+      <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录（通达信）">
         <h3>数据目录（通达信）</h3>
         <p class="settings-section-note">
           <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code></span>
@@ -338,12 +364,13 @@ function close(): void {
           <label class="settings-field-label" for="tdx-path-input">通达信安装根目录</label>
           <input
             id="tdx-path-input" v-model="tdxPathInput" type="text" spellcheck="false"
-            aria-label="通达信安装根目录" placeholder="例如 D:\new_tdx"
+            aria-label="通达信安装根目录" placeholder="可点击下方按钮选择目录"
             @input="tdxPathTouched = true; tdxSavedMessage = ''"
           />
-          <small>保存前会重新校验目录可识别、可读（日线 / 权息 / 名称 / 基准指数）。保存失败不会改动之前的选择。</small>
+          <small>选择包含 vipdoc 与 T0002 的通达信根目录；保存前会重新校验，保存失败不会改动之前的选择。</small>
         </div>
         <div class="settings-actions">
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="chooseTdxDirectory">选择文件夹…</button>
           <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
           <button class="trade-action buy" :disabled="tdxSaving || tdxChecking || tdxPathInput.trim() === ''" @click="saveTdxPath">{{ tdxSaving ? '保存中…' : '保存数据目录' }}</button>
         </div>
@@ -362,12 +389,17 @@ function close(): void {
         <p v-if="tdxError" class="error-text" role="alert">{{ tdxError }}</p>
         <p v-if="tdxSavedMessage" class="settings-saved" role="status">{{ tdxSavedMessage }}</p>
       </section>
-      <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
-      <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
-      <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
-      <div class="settings-actions">
-        <button class="trade-action buy" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
-        <button class="ghost-button" :disabled="saving" @click="close">取消</button>
+      <template v-if="activeSection === 'defaults'">
+        <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
+        <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
+        <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
+        <div class="settings-actions">
+          <button class="trade-action buy" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
+          <button class="ghost-button" :disabled="saving" @click="close">取消</button>
+        </div>
+      </template>
+      <button v-else class="settings-cancel-link" type="button" @click="close">关闭设置</button>
+        </div>
       </div>
     </div>
   </div>
@@ -375,10 +407,18 @@ function close(): void {
 
 <style scoped>
 .settings-mask { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 32, 0.45); }
-.settings-panel { width: min(460px, calc(100vw - 40px)); max-height: min(640px, calc(100dvh - 60px)); overflow-y: auto; padding: 18px 20px; border-radius: 10px; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(15, 23, 32, 0.25); outline: none; }
+.settings-panel { width: min(760px, calc(100vw - 40px)); max-height: min(680px, calc(100dvh - 44px)); overflow-y: auto; padding: 18px 20px; border-radius: 10px; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(15, 23, 32, 0.25); outline: none; }
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; }
 .settings-head h2 { margin: 0; font-size: 17px; }
 .settings-note { margin: 0 0 14px; font-size: 12px; color: var(--text-secondary, #51637a); }
+.settings-layout { display: grid; grid-template-columns: 142px minmax(0, 1fr); gap: 18px; align-items: start; }
+.settings-nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; }
+.settings-nav button { border: 1px solid transparent; border-radius: 5px; padding: 10px 12px; text-align: left; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; font-size: 13px; }
+.settings-nav button:hover { background: var(--surface-hover, #f2f5f7); color: var(--text-primary, #1c2733); }
+.settings-nav button.selected { border-color: var(--surface-border, #cdd7df); background: var(--surface-selected, #eaf5f6); color: #1f6978; font-weight: 650; }
+.settings-content { min-width: 0; }
+.settings-default-section { margin-top: 0; padding-top: 0; border-top: 0; }
+.settings-cancel-link { margin-top: 18px; border: 0; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; padding: 4px 0; }
 .settings-repair { margin: 0 0 14px; padding: 8px 10px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 :global(body.dark) .settings-repair { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .settings-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-top: 1px solid var(--surface-border, #eef2f6); cursor: pointer; }
@@ -401,4 +441,9 @@ function close(): void {
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
 :global(body.dark) .settings-saved { color: #57bd7c; }
 .settings-actions { display: flex; gap: 10px; margin-top: 14px; }
+@media (max-width: 640px) {
+  .settings-layout { grid-template-columns: 1fr; gap: 10px; }
+  .settings-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); position: static; }
+  .settings-nav button { text-align: center; padding: 8px 5px; }
+}
 </style>

@@ -1,28 +1,28 @@
 // UI-03 用户反馈后的训练范围表单 e2e：真实路由合同（/api/training-ranges/preview 响应为
 // {preview:{...}} 包装、POST /api/trainings 必须携带 previewId），真实点击走完「选股→自动校验→创建」。
 // 覆盖：股票双框（模糊下拉/精确自动选中/清空联动/未匹配提示）、周期点击从最新数据日回退起始日、
-// 自定义范围只留「起始日＋根数」、校验自动生成、输入变化失效后自动重建、
-// 根数超过最新数据自动截取并常驻提醒、409 后自动重建校验、非法 N 不调用预览。
+// 自定义范围使用起止日期、校验自动生成、输入变化失效后自动重建、
+// 未来/反向日期被拒绝、409 后自动重建校验。
 import { expect, test, type Page } from '@playwright/test'
 
 const MAOTAI = { code: '600519', market: 'sh', name: '贵州茅台', bars: 100, lastDate: '2026-09-24' }
 const TIRE = { code: '000589', market: 'sz', name: '贵州轮胎', bars: 100, lastDate: '2026-09-24' }
 
-// 范围校验 mock：bars 请求 echo 其 range；bars 超过 61 根时按服务端合同拒绝（INSUFFICIENT_DATA 不截短），
-// latest 请求返回实际可用 61 根——与真实 planTrainingRange 行为同构。
+// 范围校验 mock：显式起止日期请求 echo 其 range；结束日超过样本末日时拒绝，
+// 与真实 planTrainingRange 的未来/覆盖校验同构。
 function makePreviewRoute(page: Page) {
   let previewCalls = 0
   void page.route('**/api/training-ranges/preview', async route => {
     previewCalls += 1
     const body = JSON.parse(route.request().postData() ?? '{}')
-    const range = body.range as { mode: string; startDate: string; count?: number }
+    const range = body.range as { mode: string; startDate: string; endDate?: string; count?: number }
     const base = {
       version: 1,
       previewId: `prev-e2e-${previewCalls}`,
       code: '600519',
       market: 'sh',
       requestedStart: range.startDate,
-      requestedEnd: null as string | null,
+      requestedEnd: range.endDate ?? null,
       startDate: range.startDate,
       endDate: '2026-09-24',
       barCount: 61,
@@ -30,19 +30,15 @@ function makePreviewRoute(page: Page) {
       sourceFingerprint: 'fp-e2e',
       expiresAt: '2026-09-26T10:00:00.000Z',
     }
-    if (range.mode === 'latest') {
-      await route.fulfill({ json: { preview: { ...base, barCount: 61 } } })
-      return
-    }
-    if (range.mode === 'bars' && (range.count ?? 0) > 61) {
+    if (range.endDate && range.endDate > '2026-09-24') {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: `对齐首根后可用日线仅 61 根，请求 ${range.count} 根；不截短，请缩小 count 或前移起点`, code: 'INSUFFICIENT_DATA' }),
+        body: JSON.stringify({ error: `请求终点 ${range.endDate} 晚于最新日线 2026-09-24`, code: 'INSUFFICIENT_DATA' }),
       })
       return
     }
-    await route.fulfill({ json: { preview: { ...base, request: range, barCount: Math.min(range.count ?? 61, 61) } } })
+    await route.fulfill({ json: { preview: { ...base, request: range, barCount: 61 } } })
   })
   return { getCalls: () => previewCalls }
 }
@@ -142,13 +138,13 @@ test('range form: auto validation appears and create carries previewId', async (
 
   await selectMaotaiByCode(page)
   await page.getByRole('button', { name: '自定义范围' }).click()
-  // 自定义范围只留「范围起始日＋K线根数」，不再有范围模式切换与月数档
-  await expect(page.getByText('K 线根数')).toBeVisible()
+  // 自定义范围使用起始日＋结束日，不再让用户估算 K 线根数
+  await expect(page.getByText('结束日')).toBeVisible()
   await expect(page.getByRole('button', { name: '起始日到最新日线' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: '生成范围预览' })).toHaveCount(0)
-  // 校验自动生成（防抖）：创建前可见，含请求/实际区间与数量/notes（默认根数 60）
+  // 校验自动生成（防抖）：创建前可见，含请求/实际区间与数量/notes
   await expect(page.getByText('范围校验', { exact: false })).toBeVisible({ timeout: 5000 })
-  await expect(page.getByText(/共 60 根日线/)).toBeVisible()
+  await expect(page.getByText(/共 61 根日线/)).toBeVisible()
   await expect(page.getByText(/合成范围备注/)).toBeVisible()
 
   // 预览已匹配当前输入 → 直接创建，payload 必须带 previewId
@@ -184,37 +180,45 @@ test('range form: editing input invalidates the validation which then auto-regen
   await expect.poll(() => createCalls).toBe(1)
 })
 
-test('bars with N=0 never calls the preview API; fixing N auto-validates and clears the error', async ({ page }) => {
+test('reversed custom dates never call create and show an actionable error', async ({ page }) => {
   await openLauncher(page)
   await page.route('**/api/stocks**', route => route.fulfill({ json: { items: [MAOTAI], total: 1 } }))
   const preview = makePreviewRoute(page)
+  let createCalls = 0
+  await page.route('**/api/trainings', async route => {
+    if (route.request().method() !== 'POST') return route.fallback()
+    createCalls += 1
+    await route.fulfill({ status: 201, json: { training: { id: 1 } } })
+  })
 
   await selectMaotaiByCode(page)
   await page.getByRole('button', { name: '自定义范围' }).click()
   await expect(page.getByText(/范围校验/)).toBeVisible({ timeout: 5000 })
   const before = preview.getCalls()
 
-  await page.locator('input[type="number"][min="1"]').fill('0')
+  const dates = page.locator('input[type="date"]')
+  await dates.nth(1).fill('2026-01-01')
   await expect(page.getByText(/范围校验/)).toHaveCount(0)
   await page.getByRole('button', { name: '开始训练' }).click()
-  await expect(page.getByText(/K 线根数必须是正整数/)).toBeVisible()
+  await expect(page.getByText(/结束日不能早于起始日/)).toBeVisible()
+  await expect.poll(() => createCalls).toBe(0)
   await expect.poll(() => preview.getCalls()).toBe(before)
 
-  // 修正 N 后自动校验，旧的错误提示消失
-  await page.locator('input[type="number"][min="1"]').fill('1')
+  // 修正结束日后自动校验，错误提示消失
+  await dates.nth(1).fill('2026-09-24')
   await expect(page.getByText(/范围校验/)).toBeVisible({ timeout: 5000 })
-  await expect(page.getByText(/K 线根数必须是正整数/)).toHaveCount(0)
+  await expect(page.getByText(/结束日不能早于起始日/)).toHaveCount(0)
   await expect.poll(() => preview.getCalls()).toBeGreaterThan(before)
 })
 
-test('count exceeding latest data auto-clamps with persistent notice and create carries clamped count', async ({ page }) => {
+test('custom end date beyond latest data stays visible and requires correction', async ({ page }) => {
   await openLauncher(page)
   await page.route('**/api/stocks**', route => route.fulfill({ json: { items: [MAOTAI], total: 1 } }))
   makePreviewRoute(page)
-  let createBody: Record<string, unknown> | null = null
+  let createCalls = 0
   await page.route('**/api/trainings', async route => {
     if (route.request().method() !== 'POST') return route.fallback()
-    createBody = JSON.parse(route.request().postData() ?? '{}')
+    createCalls += 1
     await route.fulfill({ status: 201, json: { training: { id: 1 } } })
   })
 
@@ -222,17 +226,11 @@ test('count exceeding latest data auto-clamps with persistent notice and create 
   await page.getByRole('button', { name: '自定义范围' }).click()
   await expect(page.getByText(/范围校验/)).toBeVisible({ timeout: 5000 })
 
-  // 根数超过最新数据：服务端拒绝 → 前端自动收缩到可用根数并常驻提醒
-  await page.locator('input[type="number"][min="1"]').fill('500')
-  await expect(page.getByText(/已自动截取到最新数据截止日/)).toBeVisible({ timeout: 8000 })
-  await expect(page.locator('input[type="number"][min="1"]')).toHaveValue(/\b61\b/)
-  await expect(page.getByText(/共 61 根日线/)).toBeVisible()
-
-  await page.getByRole('button', { name: '开始训练' }).click()
-  await expect.poll(() => (createBody as Record<string, unknown> | null) !== null).toBe(true)
-  const range = (createBody as Record<string, unknown> | null)!.range as { mode: string; count: number }
-  expect(range.mode).toBe('bars')
-  expect(range.count).toBe(61)
+  // 结束日超过最新数据：服务端拒绝，日期保持用户输入，不自动猜测终点
+  await page.locator('input[type="date"]').nth(1).fill('2026-10-01')
+  await expect(page.getByText(/请求终点 2026-10-01 晚于最新日线/)).toBeVisible({ timeout: 8000 })
+  await expect(page.getByRole('button', { name: '开始训练' })).toBeEnabled()
+  await expect.poll(() => createCalls).toBe(0)
 })
 
 test('409 on create clears the stale validation which auto-regenerates; second submit creates', async ({ page }) => {

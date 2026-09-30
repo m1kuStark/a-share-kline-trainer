@@ -561,7 +561,7 @@ function onTrainingEnded(): void {
             <button v-else-if="dataWidgetState === 'running'" class="data-update-btn running" disabled>更新中<span class="data-ellipsis" aria-hidden="true"><i></i><i></i><i></i></span></button>
             <button v-else-if="dataWidgetState === 'failed'" class="data-update-btn failed" :title="dataStatus?.reason || '更新失败，点击重试'" @click="updateData">更新失败 · 点击重试</button>
             <button v-else-if="dataWidgetState === 'attention'" :key="shakeTick" class="data-update-btn attention shake" :title="attentionTitle" @click="updateData">更新日线</button>
-            <button v-else-if="dataWidgetState === 'unavailable'" class="data-update-btn unavailable" title="未检测到通达信数据目录，也未配置在线数据来源" @click="updateData">未检测到通达信数据</button>
+            <button v-else-if="dataWidgetState === 'unavailable'" class="data-update-btn unavailable" title="未检测到通达信数据目录，点击选择通达信文件夹" @click="openWizard">连接通达信</button>
             <span v-else-if="dataWidgetState === 'unknown'" class="data-status-unknown" role="status" :title="dataStatus?.freshness?.reason || ''">
               数据截至 {{ dataCutoffText }}，最新交易日待确认
             </span>
