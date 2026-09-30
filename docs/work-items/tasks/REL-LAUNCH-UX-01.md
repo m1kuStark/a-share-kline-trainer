@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "保存并退出入口与服务端生命周期协议已在 wt/B-REL-LAUNCH-UX-01 实现（复用SETUP-01冻结排空控制器；Stop.cmd保持应急强制语义并已在文档/帮助文案中明确）；最后标签延迟回收经评估暂不启用，结论记录于卡面。",
-  "next_action": "集成串行合入候选；跑受影响回归（api.test lifecycle 组、release-launcher、e2e/exit-flow.spec）与真实浏览器 journey（单标签退出、多标签确认/拒绝、刷新回退缓存、崩溃/休眠恢复、跨站拒绝、端口释放、Start/Stop 并发）；Windows 干净包真实回归在集成工作树/发布包执行。docs_impact 中 docs/engineering/release-m3-contract.md 不在本卡 allowed_paths 内，生命周期与安全边界的服务端合同增补由集成人评估后单独处理。",
+  "summary": "保存并退出入口与服务端生命周期协议已在 wt/B-REL-LAUNCH-UX-01 实现（复用SETUP-01冻结排空控制器；Stop.cmd保持应急强制语义并已在文档/帮助文案中明确）；最后标签延迟回收经评估暂不启用，结论记录于卡面。2026-09-30 增量并入 PORT-01 人工验收整改（用户拍板'自动换可用端口'）：未配置端口遇系统保留/占用自动回退＋页面常驻提示；显式端口失败明确报因（netsh 指引）。",
+  "next_action": "集成串行合入候选；跑受影响回归（api.test lifecycle/env 组、release-launcher 含 PORT-01 四用例、e2e/exit-flow.spec）与真实浏览器 journey（单标签退出、多标签确认/拒绝、刷新回退缓存、崩溃/休眠恢复、跨站拒绝、端口释放、Start/Stop 并发）；PORT-01 的 WinNAT 保留段场景在本机用注入 portProbe 模拟，真实 Windows 保留段命中需集成/验收机抽查（netsh int ipv4 show excludedportrange 覆盖 8787 时启动）。Windows 干净包真实回归在集成工作树/发布包执行。docs_impact 中 docs/engineering/release-m3-contract.md 不在本卡 allowed_paths 内，生命周期与安全边界的服务端合同增补由集成人评估后单独处理。",
   "allowed_paths": [
     "scripts/release/**",
     "server/src/index.ts",
@@ -33,7 +33,7 @@
   "verification_refs": [
     "docs/verification/2026-09/LAUNCH-UX-01/report.md"
   ],
-  "integration_ref": "worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（基线 0f430cd＝wt/B-SETUP-01 头）",
+  "integration_ref": "worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（原从 0f430cd 切出；2026-09-30 已并入 wt/B-SETUP-01 头 93ebc6a 并修复 lifecycle 守卫语义冲突 ca6116a，现包含 SETUP-01 全部提交）",
   "acceptance_ref": null
 }
 ```
@@ -46,6 +46,12 @@
 - **Stop.cmd 语义澄清**：行为保持不变（身份核验后 SIGKILL），但其定位已在 usage 帮助、停止成功输出与三份用户文档中明确为"应急强制结束，不等待页面保存"；正常保存退出只走页面入口。--no-open、开发预览与外部自管服务不受影响：退出按钮对任何会话可用，但生命周期端点未注入时如实返回 503 降级提示。
 
 当前事实：`server/src/index.ts`已有shutdown函数，但发布启动为detached且无IPC；`launcher.cjs --stop`核对状态、健康身份、PID和端口后使用SIGKILL，不能称为正常关闭。Windows信号不能替代应用层正常退出协议。浏览器标签页关闭不会发送停止信号，这是现有设计；未证明朋友的故障由此导致。
+
+## PORT-01 人工验收整改（2026-09-30 用户拍板"自动换可用端口"，增量实施）
+
+- **根因实证（用户提供）**：默认端口 8787 被 Windows WinNAT 保留段盖住（本机 8711-8810、逐次开机漂移；server.log 有 listen EACCES 8787 堆栈），服务端启动即退，launcher 旧文案只报"服务进程在启动期间退出"不点破原因。HTTP 探针看不到保留段（无监听者），必须 bind 探测。
+- **实现口径**：`resolveConfig` 增加 `portExplicit`（仅用户显式写 port 字段才算）。launch 步骤 3 重写：训练器形占用者（无状态文件）任何情况都拒绝（两写库者保护）；其余以 `bindCheckPort`（127.0.0.1 试 bind 后释放）为准——显式端口 bind 失败→`portUnavailableMessage`（EACCES=系统保留段/EADDRINUSE=被占用，附 `netsh int ipv4 show excludedportrange` 指引与 trainer.config.json 改法），绝不换端口；未配置端口 bind 失败→`findFallbackPort` 从默认+1 向上找首个可 bind 端口（≤40 次），落选端口写入状态文件/结果 `portFallback` 并经 `TRAINER_PORT_FALLBACK` env 注入服务端。`assertPortMatchesRunning` 仅在显式端口下拒绝不一致（未配置端口时复用回退端口上的自有服务，正是避免第二个写库者）。控制台（main 端口提示行）与页面（`/api/env` launcher 块→App.vue 常驻提示条，所有视图可见）都如实说明实际端口；录像按访问地址存放的后果在提示与文档中如实说明，不谎称"完全不受影响"。
+- **测试**：release-launcher.test.ts 新增 PORT-01 describe 四用例（未配置端口注入 EACCES 自动回退＋日志留痕／回退后二次启动复用单写库者／显式端口注入 EACCES 报"系统保留"+netsh+config 指引且不 spawn 不写状态／显式端口真实占用者报"被其他程序占用"+指引）；resolveConfig 增 portExplicit 单测；api.test.ts 增 /api/env launcher 块合同两用例。隔离注记：注入探针把 8787（模拟保留）与 8791（本机隔离禁用）标不可用，回退扫描绝不绑定 8787/8791/5173。
 
 第一步提供“保存并退出训练器”：等待本轮在途写入、录像和画线保存并保留训练进度，不自动结算/放弃；保存失败显示重试/取消。有其他页面时广播退出请求，各页确认保存完成，拒绝或无响应则不自动停止。退出接口只允许本机应用页面：校验Host、Origin及不可用公开health中的runId替代的随机控制令牌，禁开放CORS调用；关闭开始后拒绝新写入，等在途请求排空、app.close和database.close完成再退出。与启动互斥，核对版本/库/runId，确认PID退出和端口结果；超时如实报失败，不能静默转强杀。
 

@@ -128,6 +128,30 @@ describe('market-data API', () => {
         dataCutoff: '2002-07-25',
         capabilities: { day: true, forwardAdjust: true, benchmark: true, catalogCache: true, training: true },
       })
+      // PORT-01：launcher 块只有数字与原因枚举（无路径）；未回退时 fallback 字段为 null
+      expect(response.json().launcher).toMatchObject({ port: 0, fallbackFrom: null, fallbackReason: null })
+      expect(JSON.stringify(response.json().launcher)).not.toContain('\\')
+    } finally {
+      await app.close()
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 20_000)
+
+  it('surfaces the PORT-01 fallback note fields when the launcher moved the default port', async () => {
+    const root = await createFixture()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const app = Fastify()
+    const config: AppConfig = {
+      host: '127.0.0.1', port: 8789, databasePath: ':memory:', tdxRoot: root,
+      portFallback: { from: 8787, reason: 'reserved' },
+    }
+    await registerApi(app, config, database)
+    try {
+      const response = await app.inject({ method: 'GET', url: '/api/env' })
+      expect(response.statusCode).toBe(200)
+      expect(response.json().launcher).toEqual({ port: 8789, fallbackFrom: 8787, fallbackReason: 'reserved' })
     } finally {
       await app.close()
       database.close()

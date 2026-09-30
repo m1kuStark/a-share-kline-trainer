@@ -454,9 +454,11 @@ describe('data refresh service', () => {
       const response = await app.inject({ method: 'GET', url: '/api/env' })
       expect(response.statusCode).toBe(200)
       const body = response.json()
-      // SETUP-01 起开放端点不再回传 tdxRoot 完整路径：字段是 tdx:{connected,source}
+      // SETUP-01 起开放端点不再回传 tdxRoot 完整路径：字段是 tdx:{connected,source}；
+      // PORT-01（REL-LAUNCH-UX-01 增量）新增 launcher:{port,fallbackFrom,fallbackReason}——
+      // 只有数字与原因枚举，无路径。
       expect(Object.keys(body).sort()).toEqual([
-        'activeTrainingId', 'capabilities', 'dataCutoff', 'status', 'stockCount', 'tdx',
+        'activeTrainingId', 'capabilities', 'dataCutoff', 'launcher', 'status', 'stockCount', 'tdx',
       ].sort())
       expect(body).toMatchObject({
         status: 'ok',
@@ -466,6 +468,8 @@ describe('data refresh service', () => {
         activeTrainingId: null,
       })
       expect(Object.keys(body.tdx).sort()).toEqual(['connected', 'source'])
+      // PORT-01：launcher 块同样只有固定键（数字/枚举），不回传路径
+      expect(Object.keys(body.launcher).sort()).toEqual(['fallbackFrom', 'fallbackReason', 'port'])
       expect(response.body).not.toContain(root)
       expect(Object.keys(body.capabilities).sort()).toEqual([
         'benchmark', 'catalogCache', 'day', 'forwardAdjust', 'training',

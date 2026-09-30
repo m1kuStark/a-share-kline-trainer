@@ -17,6 +17,14 @@ export interface AppConfig {
   tdxSource: TdxRootSource | null
   /** 保存选择/重启状态等运行数据的目录；独立运行默认数据库所在目录 */
   dataDir: string | null
+  /**
+   * PORT-01 端口回退标记（只读环境透传）：启动器在"未显式配置端口且默认端口被
+   * 系统保留/占用"时自动改用邻近端口，并经 TRAINER_PORT_FALLBACK 注入
+   * "<原端口>,<reserved|occupied>"。仅供页面常驻提示，不含任何路径；未发生
+   * 回退（独立运行/显式端口/格式非法）时为 null。可选字段：测试直接构造
+   * AppConfig 时省略＝未回退。
+   */
+  portFallback?: { from: number, reason: PortFallbackReason } | null
   runId?: string
   staticDirectory?: string
   readyFile?: string
@@ -25,6 +33,19 @@ export interface AppConfig {
 }
 
 const TDX_SOURCE_LABELS: readonly TdxRootSource[] = ['env', 'explicit-config', 'saved-choice', 'auto-discovered']
+
+export type PortFallbackReason = 'reserved' | 'occupied'
+
+/** TRAINER_PORT_FALLBACK 严格解析（"<端口>,<reserved|occupied>"）；任何偏差按未发生回退处理 */
+function parsePortFallback(): { from: number, reason: PortFallbackReason } | null {
+  const raw = process.env.TRAINER_PORT_FALLBACK?.trim()
+  if (!raw) return null
+  const match = /^(\d{1,5}),(reserved|occupied)$/.exec(raw)
+  if (!match) return null
+  const from = Number(match[1])
+  if (from < 1 || from > 65535) return null
+  return { from, reason: match[2] as PortFallbackReason }
+}
 
 function explicitAbsolutePath(name: string): string | null {
   const value = process.env[name]?.trim()
@@ -86,6 +107,7 @@ export async function loadConfig(): Promise<AppConfig> {
     databasePath,
     tdxRoot,
     tdxSource,
+    portFallback: parsePortFallback(),
     // 独立运行必须能落盘保存选择：未显式给定时与解析时同口径取数据库所在目录；
     // 启动器托管运行未注入时保持 null（保存端点据此拒绝而不是猜目录）
     dataDir: dataDir ?? (runId ? null : dirname(resolve(databasePath))),

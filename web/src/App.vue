@@ -181,6 +181,17 @@ const connectedSourceLabel = computed(() => {
   if (!source) return ''
   return { env: '环境变量', 'explicit-config': '配置文件', 'saved-choice': '已保存选择', 'auto-discovered': '自动发现' }[source] ?? source
 })
+// PORT-01（REL-LAUNCH-UX-01 增量）：默认端口被系统保留/占用时启动器自动改用邻近端口；
+// 页面常驻提示实际端口（数字来自 /api/env，无路径）。浏览器录像按访问地址存放，
+// 端口变化后旧录像要回到原地址查看——提示里如实说明，并给出固定端口的方法。
+const portFallbackNote = computed(() => {
+  const launcherInfo = env.value?.launcher
+  if (!launcherInfo || launcherInfo.fallbackFrom === null || launcherInfo.fallbackFrom === undefined) return ''
+  const cause = launcherInfo.fallbackReason === 'reserved' ? '被系统保留（Windows 端口排除段）' : '被其他程序占用'
+  return `本次服务运行在端口 ${launcherInfo.port}：默认端口 ${launcherInfo.fallbackFrom} ${cause}，已自动改用可用端口。`
+    + `训练数据不受影响；浏览器历史录像按访问地址存放，端口变化后需回到原地址查看。`
+    + `如需固定端口，请在 trainer.config.json 设置 port。`
+})
 let wizardAutoOpened = false
 async function reloadEnv(): Promise<void> {
   try { env.value = await fetchEnv() } catch { /* 保留旧值；错误由 envError 呈现 */ }
@@ -575,6 +586,9 @@ function onTrainingEnded(): void {
         </div>
       </header>
 
+      <!-- PORT-01：默认端口不可用自动改用邻近端口时的常驻提示（所有视图可见） -->
+      <div v-if="portFallbackNote" class="port-fallback-note" role="status">{{ portFallbackNote }}</div>
+
       <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
       <template v-if="view === 'launcher'">
@@ -795,6 +809,9 @@ function onTrainingEnded(): void {
 
 /* DATA-05：unknown 状态与常驻"重新读取"入口的顶栏样式（双主题；styles.css 未动） */
 .data-status-unknown { display: inline-flex; align-items: center; gap: 5px; color: #8a6d1d; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* PORT-01：默认端口不可用自动改用邻近端口的常驻提示（双主题；信息级样式，非错误） */
+.port-fallback-note { margin: 12px 30px 0; padding: 8px 14px; background: #eef6fb; border: 1px solid #bcd8e8; color: #1c6076; font-size: 12px; border-radius: 4px; }
+:global(body.dark) .port-fallback-note { background: #1b2833; border-color: #2f4a5c; color: #9ec5da; }
 :global(body.dark) .data-status-unknown { color: #d9b45c; }
 .data-reread-btn { height: 22px; padding: 0 8px; border-radius: 3px; border: 1px solid #d8e0e8; background: transparent; color: #51637a; font-size: 11px; white-space: nowrap; cursor: pointer; }
 .data-reread-btn:hover { border-color: #94bec5; color: #1c6076; }

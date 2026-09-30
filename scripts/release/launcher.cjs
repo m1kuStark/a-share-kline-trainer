@@ -11,6 +11,7 @@
 
 const { spawn } = require('node:child_process')
 const { randomUUID } = require('node:crypto')
+const net = require('node:net')
 const {
   access, appendFile, mkdir, open, readFile, readdir, rename, rm, writeFile,
 } = require('node:fs/promises')
@@ -88,6 +89,10 @@ function usage() {
     'in-app save flow; use the in-app exit button for a normal saved shutdown.',
     '',
     '配置字段 / config fields: tdxRoot, port (default 8787), dataDir, databasePath (absolute).',
+    '端口规则 / port rule: 未写 port 时，默认端口被系统保留(WinNAT 排除段)或被占用会自动改用邻近',
+    '可用端口并在控制台与页面提示实际端口；显式写了 port 则必须可用，失败时报明确原因。/ without',
+    'an explicit "port", a reserved/occupied default port auto-moves to a nearby free port (noted on',
+    'console and page); an explicitly configured port is honored and failures name the exact cause.',
     '环境变量优先于配置文件 / environment overrides the config file when set:',
     '  TDX_ROOT=<absolute path>  TRAINER_DB=<absolute sqlite path>',
   ].join('\n')
@@ -141,6 +146,15 @@ function requireSanePort(value) {
   return port
 }
 
+/** 配置里是否"显式"写了端口。PORT-01 口径：只有用户亲手写了 port 字段才算显式——
+ * 显式端口必须被尊重（失败时报明确原因）；默认端口（未写、写空、写 null）允许
+ * 启动器在不可用时自动改用邻近可用端口，保持零配置一键启动。 */
+function isExplicitPortField(value) {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'string' && value.trim() === '') return false
+  return true
+}
+
 /**
  * Normalize the optional trainer.config.json plus documented environment
  * overrides. Relative tdxRoot/dataDir paths resolve against the package root;
@@ -153,7 +167,8 @@ function resolveConfig(root, raw, env = {}) {
   }
   const fields = raw ?? {}
   const text = key => (typeof fields[key] === 'string' ? fields[key].trim() : '')
-  const config = { port: requireSanePort(fields.port ?? DEFAULT_PORT) }
+  const portExplicit = isExplicitPortField(fields.port)
+  const config = { port: requireSanePort(portExplicit ? fields.port : DEFAULT_PORT), portExplicit }
   const dataDir = text('dataDir')
   config.dataDir = dataDir ? resolve(root, dataDir) : join(homedir(), DATA_DIR_NAME)
   const databasePath = text('databasePath')
@@ -334,6 +349,80 @@ async function confirmOwnedServer(state, { attempts = 3, timeoutMs = 1_200 } = {
     if (attempt + 1 < attempts) await delay(250)
   }
   return false
+}
+
+// ===== PORT-01 端口可用性与自动回退（2026-09-30 用户拍板"自动换可用端口"） =====
+//
+// 根因实证：默认端口 8787 可落进 Windows WinNAT 的排除端口段（本机实测 8711-8810，
+// 逐次开机漂移），bind 直接 EACCES，服务进程启动即退；HTTP 探针只能看到"无监听"，
+// 旧逻辑误判端口空闲后把失败留到服务侧，报错只剩"服务进程在启动期间退出"。
+// 因此端口可用性一律以 bind 探测为准：
+//   - 显式配置端口：必须尊重，bind 失败按错误码给出明确中文原因（系统保留段/
+//     被占用）＋netsh 排查指引＋改端口方法，不自动换端口；
+//   - 未配置端口（默认 8787）：bind 失败时自动改用邻近可用端口，控制台与页面
+//     常驻提示实际端口，保持零配置一键启动。换端口不改数据库与数据目录。
+
+const PORT_FALLBACK_ATTEMPTS = 40
+
+/**
+ * 真实 bind 探测：在 127.0.0.1 上试监听后立即释放。成功=端口可 bind；
+ * 失败返回错误码（Windows 排除端口段为 EACCES，已有监听者为 EADDRINUSE）。
+ * 这是唯一能发现"系统保留段"的手段——保留段没有监听者，HTTP 探针只会看到拒绝连接。
+ */
+function bindCheckPort(port) {
+  return new Promise(resolveCheck => {
+    const probe = net.createServer()
+    const settle = result => {
+      probe.removeAllListeners('listening')
+      probe.removeAllListeners('error')
+      resolveCheck(result)
+    }
+    probe.once('error', error => settle({ ok: false, code: (error && error.code) || 'EUNKNOWN' }))
+    probe.once('listening', () => {
+      probe.close(() => settle({ ok: true }))
+    })
+    probe.listen(port, '127.0.0.1')
+  })
+}
+
+/**
+ * 未配置端口不可用时，从 preferred+1 起向上找第一个可 bind 的端口。
+ * bind 探测本身排除了任何监听者（含无状态文件的训练器进程），不存在"换到一个
+ * 已被占用的端口"的窗口；找不到时返回 null，由调用方如实报错。
+ */
+async function findFallbackPort(preferred, { probe = bindCheckPort, attempts = PORT_FALLBACK_ATTEMPTS } = {}) {
+  for (let offset = 1; offset <= attempts; offset += 1) {
+    const candidate = preferred + offset
+    if (candidate > 65535) return null
+    const state = await probe(candidate)
+    if (state.ok) return candidate
+  }
+  return null
+}
+
+/** bind 失败的明确中文原因（显式端口专用）：区分系统保留段与被占用，附排查与改法。 */
+function portUnavailableMessage(port, code) {
+  const reserved = code === 'EACCES'
+  const cause = reserved
+    ? `端口 ${port} 被系统保留，无法监听（Windows WinNAT 排除端口段会覆盖常见默认端口，且每次开机会漂移）`
+      + ` / port ${port} is reserved by the system (a Windows excluded port range covers it; ranges drift across reboots)`
+    : `端口 ${port} 已被其他程序占用，无法监听 / port ${port} is occupied by another program`
+  return `${cause}。`
+    + `排查：在命令提示符运行 netsh int ipv4 show excludedportrange 查看系统保留段（被占用时用 netstat -ano | findstr :${port} 找进程）。`
+    + `如需固定端口，请编辑 trainer.config.json 的 port 字段后重新 Start.cmd（改端口前先 Stop.cmd）。`
+    + ` / check "netsh int ipv4 show excludedportrange" for reserved ranges (netstat -ano | findstr :${port} for occupants); `
+    + `to pin a port, set "port" in trainer.config.json and restart via Stop.cmd + Start.cmd`
+}
+
+/** 控制台/结果里的自动换端口一句话说明（未配置端口回退时）。 */
+function portFallbackNote(fallback) {
+  if (!fallback) return null
+  const cause = fallback.reason === 'reserved' ? '被系统保留' : '被其他程序占用'
+  return `默认端口 ${fallback.from} ${cause}，本次自动改用可用端口 ${fallback.to}（数据库与训练数据不受影响；`
+    + `浏览器历史录像按访问地址存放，端口变化后需回到原地址查看；如需固定端口，可在 trainer.config.json 设置 port）`
+    + ` / default port ${fallback.from} is ${fallback.reason === 'reserved' ? 'reserved by the system' : 'occupied'}; `
+    + `automatically using port ${fallback.to} instead (database unaffected; browser recordings live per-origin — `
+    + `pin "port" in trainer.config.json to keep one address)`
 }
 
 function statePath(dataDir) { return join(dataDir, STATE_FILE) }
@@ -565,11 +654,20 @@ async function reuseResult(state, { dataDir, tdxRoot, openBrowser: shouldOpen })
     logPath: join(dataDir, SERVER_LOG),
     tdxRoot,
     openedBrowser,
+    portFallback: state.portFallback && Number.isInteger(state.portFallback.from) && state.portFallback.from !== state.port
+      ? { ...state.portFallback, to: state.port }
+      : null,
   }
 }
 
+/**
+ * 显式端口下复用必须核对端口一致（用户指定了端口，静默换用会造成两个写库者或
+ * 打开错误的页面）。PORT-01：未配置端口时豁免——上一次启动可能因默认端口被系统
+ * 保留而自动落在邻近端口，复用我们自己记录的健康服务正是避免第二个写库者，
+ * 不能再因"端口≠默认值"拒绝零配置的第二次 Start.cmd。
+ */
 function assertPortMatchesRunning(state, config) {
-  if (state.port !== config.port) {
+  if (config.portExplicit && state.port !== config.port) {
     throw new Error(`之前的训练服务仍运行在端口 ${state.port}（PID ${state.pid}），而配置要求端口 ${config.port}；`
       + `为避免两个服务写同一个数据库，请先运行 Stop.cmd 停止旧服务或将端口改回 ${state.port} / `
       + `a previous trainer still runs on port ${state.port} (PID ${state.pid}) while the config asks for ${config.port}; `
@@ -694,15 +792,35 @@ async function launch(options = {}) {
         }
         if (existing.action === 'clean') await clearState(dataDir)
 
-        // 3) Stable port only: refuse a foreign occupant, never kill, never auto-change.
+        // 3) Port availability (PORT-01): a trainer-shaped occupant is always
+        //    refused regardless of configuration — adopting or port-hopping past
+        //    it could put two writers on one database. For everything else the
+        //    bind probe decides: an explicitly configured port must be honored
+        //    (fail with an actionable reason, never silently move), while the
+        //    unconfigured default port may move to a nearby free port so the
+        //    zero-config one-click start survives WinNAT reserved ranges.
         const occupancy = await probeHealth(config.port, { timeoutMs: 1_200 })
-        if (!occupancy.refused) {
-          if (occupancy.responded && isTrainerHealth(occupancy.json)) {
-            throw new Error(`端口 ${config.port} 上有训练器服务（PID ${occupancy.json.pid}）但没有对应的启动状态，可能来自旧版本或手动启动；`
-              + `请先关闭该进程或更换端口 / port ${config.port} is served by a trainer process without launcher state (PID ${occupancy.json.pid}); close it or choose another port`)
+        if (occupancy.responded && isTrainerHealth(occupancy.json)) {
+          throw new Error(`端口 ${config.port} 上有训练器服务（PID ${occupancy.json.pid}）但没有对应的启动状态，可能来自旧版本或手动启动；`
+            + `请先关闭该进程或更换端口 / port ${config.port} is served by a trainer process without launcher state (PID ${occupancy.json.pid}); close it or choose another port`)
+        }
+        const checkPort = options.portProbe ?? bindCheckPort
+        let effectivePort = config.port
+        let portFallback = null
+        const bindState = await checkPort(config.port)
+        if (!bindState.ok) {
+          if (config.portExplicit) {
+            throw new Error(portUnavailableMessage(config.port, bindState.code))
           }
-          throw new Error(`端口 ${config.port} 已被其他程序占用；启动器不会更换端口或结束其他进程 / `
-            + `port ${config.port} is occupied; the launcher will not change ports or kill other processes`)
+          const reason = bindState.code === 'EACCES' ? 'reserved' : 'occupied'
+          const picked = await findFallbackPort(config.port, { probe: checkPort })
+          if (picked === null) {
+            throw new Error(`默认端口 ${config.port} 与其上方 ${PORT_FALLBACK_ATTEMPTS} 个邻近端口都不可用（系统保留或被占用），无法自动选择端口；`
+              + `请在 trainer.config.json 显式设置一个可用 port 后重新启动 `
+              + `/ the default port ${config.port} and ${PORT_FALLBACK_ATTEMPTS} ports above it are all unavailable; set an explicit "port" in trainer.config.json`)
+          }
+          effectivePort = picked
+          portFallback = { from: config.port, to: picked, reason }
         }
 
         // 4) Start the detached server: no IPC, hidden window, logs in dataDir.
@@ -714,7 +832,8 @@ async function launch(options = {}) {
         let child
         try {
           await log.write(`\n[${new Date().toISOString()}] launcher v${layout.version} (${layout.gitCommit}) `
-            + `starting run ${runId} on port ${config.port} with database ${config.databasePath}\n`)
+            + `starting run ${runId} on port ${effectivePort} with database ${config.databasePath}`
+            + (portFallback ? ` (auto-fallback from default port ${portFallback.from}, reason: ${portFallback.reason})` : '') + '\n')
           child = spawn(layout.nodePath, [layout.serverScript], {
             cwd: root,
             detached: true,
@@ -734,22 +853,25 @@ async function launch(options = {}) {
               TRAINER_DATA_DIR: dataDir,
               TRAINER_LAUNCHER_CJS: resolve(__filename),
               TRAINER_TDX_SOURCE: tdxSource ?? '',
+              // PORT-01：自动换端口标记（页面常驻提示用）。空串＝未发生回退；
+              // 只含端口号与原因枚举，不含任何本机路径。
+              TRAINER_PORT_FALLBACK: portFallback ? `${portFallback.from},${portFallback.reason}` : '',
               HOST: '127.0.0.1',
-              PORT: String(config.port),
+              PORT: String(effectivePort),
               OPEN_BROWSER: '0',
             },
           })
           child.unref()
           try {
             const { baseURL } = await waitForReady({
-              child, readyFile, runId, port: config.port,
+              child, readyFile, runId, port: effectivePort,
               timeoutMs: options.startTimeoutMs ?? READY_TIMEOUT_MS, logPath,
             })
             const state = {
               appId: APP_ID,
               runId,
               pid: child.pid,
-              port: config.port,
+              port: effectivePort,
               baseURL,
               startedAt: new Date().toISOString(),
               version: layout.version,
@@ -757,6 +879,7 @@ async function launch(options = {}) {
               databasePath: config.databasePath,
               tdxRoot: tdxRoot ?? null,
             }
+            if (portFallback) state.portFallback = { ...portFallback }
             await writeStateFile(dataDir, state)
             let openedBrowser = false
             if (options.openBrowser ?? true) {
@@ -768,13 +891,14 @@ async function launch(options = {}) {
             return {
               reused: false,
               url: baseURL,
-              port: config.port,
+              port: effectivePort,
               pid: child.pid,
               runId,
               dataDir,
               logPath,
               tdxRoot,
               openedBrowser,
+              portFallback,
             }
           } catch (error) {
             // Startup failure: keep the log for diagnosis, stop only our own child.
@@ -1378,11 +1502,13 @@ async function main(argv) {
     if (result.reused) {
       console.log(`训练服务已在运行，直接复用 / reusing the running server: ${result.url}`)
       console.log('如修改过 trainer.config.json 或更换了新版本包，请先运行 Stop.cmd 停止旧服务再启动。/ Config or package changes apply after running Stop.cmd first.')
+      if (result.portFallback) console.log(`端口提示 / port note: ${portFallbackNote(result.portFallback)}`)
     } else {
       console.log(`训练服务已启动 / server started: ${result.url}`)
       console.log(`数据目录 / data directory: ${result.dataDir}`)
       console.log(`行情目录 / market data (tdxRoot): ${result.tdxRoot ?? '未找到通达信目录，可在 trainer.config.json 配置 tdxRoot / not found; set tdxRoot in trainer.config.json'}`)
       console.log(`服务进程 PID: ${result.pid}   日志 / log: ${result.logPath}`)
+      if (result.portFallback) console.log(`端口提示 / port note: ${portFallbackNote(result.portFallback)}`)
       console.log('再次运行 Start.cmd 会复用当前服务并打开浏览器；停止服务请运行 Stop.cmd（关闭浏览器不会停止服务）。/ Run Start.cmd again to reopen the browser; run Stop.cmd to stop the server (closing the browser does not stop it).')
     }
     if (parsed.openBrowser && !result.openedBrowser) {
@@ -1413,6 +1539,8 @@ module.exports = {
   STATE_FILE,
   TDX_CANDIDATES: defaultTdxCandidates(),
   acquireLaunchLock,
+  bindCheckPort,
+  findFallbackPort,
   assertStateIdentity,
   clearState,
   confirmOwnedServer,
