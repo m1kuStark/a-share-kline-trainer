@@ -4,6 +4,11 @@ import { describe, expect, it } from 'vitest'
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+// 每个用例都做真实文件系统夹具（mkdtemp＋日线/gbbq 写入＋目录与权息扫描）＋十
+// 余次 inject：单机串行约 0.4~0.7s，但全量套件 4 并行下真实 IO 的墙钟可被拉长
+// 一个数量级，vitest 默认 5s 会随机击中不同用例（门禁两次分别击中 setup-api 与
+// 本文件）。统一显式 20s 只是等待预算；所有断言语义不变。
 import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
@@ -74,7 +79,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 
   it('reads a benchmark index using its explicit market symbol', async () => {
     const root = await createFixture()
@@ -92,7 +97,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 
   it('rejects malformed and reversed date ranges with 400 instead of an internal error', async () => {
     const root = await createFixture()
@@ -110,7 +115,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 
   it('reports cached catalog and adjustment capabilities in the environment endpoint', async () => {
     const root = await createFixture()
@@ -128,7 +133,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 
   it('refreshes the in-memory catalog after a source day file changes', async () => {
     const root = await createFixture()
@@ -152,7 +157,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 
   it('never serves future bars and closes raw kline while a training is running', async () => {
     const root = await mkdtemp(join(tmpdir(), 'tdx-api-training-'))
@@ -248,7 +253,7 @@ describe('market-data API', () => {
       database.close()
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 20_000)
 })
 
 // ===== REL-LAUNCH-UX-01：页面"保存并退出"生命周期协议 =====

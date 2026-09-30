@@ -286,11 +286,12 @@ export async function registerApi(
 
   // ===== 受保护 setup 防护（SETUP-API-01 冻结合同的共享封装）=====
   // guard 先行，失败不调用任何诊断/文件操作；expectedHost 由配置监听地址构造，
-  // 不从请求 Host 反推。响应绝不回显控制令牌。
-  function setupGuard(
+  // 不从请求 Host 反推。响应绝不回显控制令牌。失败值由调用方以
+  // `return reply.code(status).send({error})` 的冻结合同原型回写（不在本函数内
+  // 发送），保证与 SETUP-API-01 冻结实现逐字同形。
+  function setupGuardFailure(
     request: { host: string; headers: Record<string, unknown> },
-    reply: { code(statusCode: number): { send(payload: unknown): unknown } },
-  ): boolean {
+  ): { statusCode: number; code: string } | null {
     const expectedHost = `${config.host}:${config.port}`
     const guard = validateSetupRequest({
       host: request.host,
@@ -306,11 +307,8 @@ export async function registerApi(
       expectedOrigin: `http://${expectedHost}`,
       expectedToken: config.controlToken ?? '',
     })
-    if (!guard.ok) {
-      void reply.code(guard.statusCode).send({ error: guard.code })
-      return false
-    }
-    return true
+    if (guard.ok) return null
+    return { statusCode: guard.statusCode, code: guard.code }
   }
 
   /** 请求体目录字段校验：非空字符串、长度有界；失败返回 null（由调用方回 400） */
@@ -327,7 +325,8 @@ export async function registerApi(
   // 不把失败伪装成空候选。响应可含本机路径（用户主动请求候选时展示安装位置），
   // 绝不回显控制令牌。
   app.get('/api/setup/candidates', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     const processQuery = options.setup?.processQuery ?? defaultProcessQuery
     const inspect = options.setup?.inspect
     try {
@@ -354,7 +353,8 @@ export async function registerApi(
   // 选择动作。取消是正常结果（不报错）；结果不做任何自动采用——用户必须经
   // /api/setup/inspect 看到检查结果并确认后才可能保存。
   app.post('/api/setup/select-directory', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     const picker = options.setup?.directoryPicker ?? defaultDirectoryPicker
     try {
       return await picker()
@@ -366,7 +366,8 @@ export async function registerApi(
   // 检查用户提供的目录（选择框结果或手动输入）：返回完整检查结果；误选上层目录/
   // vipdoc 时只在附近有限范围识别根目录，识别出的候选仅供用户确认，不自动采用。
   app.post('/api/setup/inspect', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     const root = parseRootBody(request.body)
     if (root === null) {
       return reply.code(400).send({ error: 'root 必须是 1~500 字符的目录路径' })
@@ -399,7 +400,8 @@ export async function registerApi(
   // 失败保留旧选择并返回可行动错误。响应不含除用户自选目录以外的本机路径。
   let lastSavedChoice: { root: string; previous: SavedTdxChoice | null } | null = null
   app.post('/api/setup/save-choice', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     const root = parseRootBody(request.body)
     if (root === null) {
       return reply.code(400).send({ error: 'root 必须是 1~500 字符的目录路径' })
@@ -447,7 +449,8 @@ export async function registerApi(
   // 复验→排空→优雅退出→拉起新服务→健康确认（失败回滚）。202 只表示已受理。
   let restartAttemptActive: string | null = null
   app.post('/api/setup/apply', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!config.runId) {
       return reply.code(503).send({ error: 'SETUP_RESTART_UNAVAILABLE', message: '当前为手动/开发运行方式，请重启开发服务使保存的目录生效' })
     }
@@ -567,7 +570,8 @@ export async function registerApi(
   // 重启状态查询：读监管进程写入的状态文件（旧/新服务指向同一 dataDir，重启窗口
   // 前后都可读）。无文件时按 idle 报告；文件内容不含路径与令牌。
   app.get('/api/setup/restart-status', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!config.dataDir) return { phase: 'idle', done: false }
     try {
       const raw = await readFile(join(config.dataDir, RESTART_STATUS_FILE), 'utf8')

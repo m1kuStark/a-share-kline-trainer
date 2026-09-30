@@ -1206,6 +1206,11 @@ async function superviseLocked(context) {
     } catch (error) {
       spawnCall = { ok: false, detail: `新服务进程无法创建：${error && error.message}` }
       return
+    } finally {
+      // 子进程已继承自己的 fd 副本（stdio 即日志文件）；监管进程自己的句柄必须
+      // 显式关闭，不能留给 GC——否则触发 DEP0137（"Closing file descriptor on
+      // garbage collection"），未来 Node 版本会升级为错误。
+      await log.close().catch(() => {})
     }
     if (Number.isInteger(child.pid) && child.pid >= 1) {
       spawnCall = { ok: true, runId, pid: child.pid }
