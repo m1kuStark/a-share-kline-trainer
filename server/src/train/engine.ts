@@ -707,7 +707,6 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
 }
 
 // 训练 K 线：先按推进日截断、再前复权（基准=推进日）、后聚合；任何情况下不含推进日之后的数据。
-// 训练 K 线：先按推进日截断、再前复权（基准=推进日）、后聚合；任何情况下不含推进日之后的数据。
 async function buildTrainingSeries(database: DatabaseSync, config: AppConfig, id: number, timeframe: Timeframe): Promise<KlineBar[]> {
   const row = loadTrainingRow(database, id)
   const reader = await marketReader(database, config)
