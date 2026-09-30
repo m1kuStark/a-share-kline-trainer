@@ -40,6 +40,21 @@ class MonitorTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_snapshot_exposes_canonical_workflow_state_when_configured(self):
+        control = self.root / 'control'
+        control.mkdir()
+        (control / 'trainer-state.json').write_text(json.dumps({
+            'schema_version': 1, 'state_revision': 3, 'project_id': 'a-share-kline-trainer',
+            'active_task': 'TASK-01', 'tasks': {}, 'candidate': None, 'candidates': {},
+            'runs': {}, 'artifacts': {},
+            'acceptance': {'engineering': 'unknown', 'user': 'unknown', 'publish': 'unknown'},
+            'events': [], 'reconcile': {'status': 'clean', 'checked_at': '2026-10-01T00:00:00Z'},
+            'next_action': 'wait', 'updated_at': '2026-10-01T00:00:00Z'}, ensure_ascii=False), encoding='utf-8')
+        with patch.dict(os.environ, {'TRAINER_CONTROL_ROOT': str(control)}):
+            value = monitor.snapshot(self.registry, self.database)
+        self.assertEqual(value['workflowState']['state_revision'], 3)
+        self.assertEqual(value['workflowState']['active_task'], 'TASK-01')
+
     def test_only_registered_session_and_safe_activity_are_returned(self):
         value = monitor.snapshot(self.registry, self.database)
         text = json.dumps(value, ensure_ascii=False)

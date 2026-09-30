@@ -16,6 +16,7 @@ export interface WorkflowTaskState {
 }
 
 export interface WorkflowCandidateState {
+  candidate_id?: string
   task_id: string
   status: CandidateStatus
   updated_at: string
@@ -28,6 +29,7 @@ export interface WorkflowCandidateState {
 
 export interface WorkflowRunState {
   run_id: string
+  source: 'glm' | 'dwf' | 'controller' | 'local'
   status: RunStatus
   updated_at: string
   task_id?: string
@@ -35,6 +37,7 @@ export interface WorkflowRunState {
   worktree_alias?: string
   commit?: string
   artifact_id?: string
+  exit_code?: number | null
 }
 
 export interface WorkflowArtifactState {
@@ -74,6 +77,7 @@ export interface WorkflowState {
   project_id: 'a-share-kline-trainer'
   active_task: string | null
   candidate: WorkflowCandidateState | null
+  candidates: Record<string, WorkflowCandidateState>
   tasks: Record<string, WorkflowTaskState>
   runs: Record<string, WorkflowRunState>
   artifacts: Record<string, WorkflowArtifactState>
@@ -121,7 +125,7 @@ function assertWorkflowState(value: unknown): asserts value is WorkflowState {
   if (!Number.isSafeInteger(value.state_revision) || (value.state_revision as number) < 0) throw new Error('workflow state state_revision must be a non-negative integer')
   if (value.project_id !== 'a-share-kline-trainer') throw new Error('workflow state project_id is invalid')
   if (!(value.active_task === null || typeof value.active_task === 'string')) throw new Error('workflow state active_task is invalid')
-  if (!isRecord(value.tasks) || !isRecord(value.runs) || !isRecord(value.artifacts)) throw new Error('workflow state registries are invalid')
+  if (!isRecord(value.tasks) || !isRecord(value.runs) || !isRecord(value.artifacts) || !isRecord(value.candidates)) throw new Error('workflow state registries are invalid')
   if (!Array.isArray(value.events)) throw new Error('workflow state events must be an array')
   if (!isRecord(value.acceptance)) throw new Error('workflow state acceptance is invalid')
   for (const key of ['engineering', 'user', 'publish']) {
@@ -137,8 +141,13 @@ function assertWorkflowState(value: unknown): asserts value is WorkflowState {
     if (!isRecord(task) || !TASK_STATUSES.has(task.status as TaskStatus)) throw new Error(`workflow task ${taskId} status is invalid`)
     assertString(task.updated_at, `workflow task ${taskId}.updated_at`)
   }
+  for (const [candidateId, candidate] of Object.entries(value.candidates)) {
+    if (!isRecord(candidate) || candidate.candidate_id !== candidateId || typeof candidate.task_id !== 'string' || !CANDIDATE_STATUSES.has(candidate.status as CandidateStatus)) throw new Error(`workflow candidate ${candidateId} is invalid`)
+    assertString(candidate.updated_at, `workflow candidate ${candidateId}.updated_at`)
+    for (const field of ['worktree_alias'] as const) if (candidate[field] !== undefined && !isRelativeAlias(candidate[field])) throw new Error(`workflow candidate ${candidateId}.${field} must be relative`)
+  }
   for (const [runId, run] of Object.entries(value.runs)) {
-    if (!isRecord(run) || run.run_id !== runId || !RUN_STATUSES.has(run.status as RunStatus)) throw new Error(`workflow run ${runId} is invalid`)
+    if (!isRecord(run) || run.run_id !== runId || !['glm', 'dwf', 'controller', 'local'].includes(String(run.source)) || !RUN_STATUSES.has(run.status as RunStatus)) throw new Error(`workflow run ${runId} is invalid`)
     assertString(run.updated_at, `workflow run ${runId}.updated_at`)
     if (run.worktree_alias !== undefined && !isRelativeAlias(run.worktree_alias)) throw new Error(`workflow run ${runId}.worktree_alias must be relative`)
   }
@@ -166,6 +175,7 @@ function initialState(now = new Date().toISOString()): WorkflowState {
     project_id: 'a-share-kline-trainer',
     active_task: null,
     candidate: null,
+    candidates: {},
     tasks: {},
     runs: {},
     artifacts: {},
@@ -222,6 +232,12 @@ export async function initializeWorkflowState(controlRoot: string): Promise<Work
 
 export async function readWorkflowState(controlRoot: string): Promise<WorkflowState> {
   const parsed: unknown = JSON.parse(await readFile(statePath(controlRoot), 'utf8'))
+  if (isRecord(parsed)) {
+    if (!('candidates' in parsed)) parsed.candidates = {}
+    if (isRecord(parsed.runs)) {
+      for (const run of Object.values(parsed.runs)) if (isRecord(run) && !('source' in run)) run.source = 'controller'
+    }
+  }
   assertWorkflowState(parsed)
   return parsed
 }
@@ -231,6 +247,7 @@ export async function updateWorkflowState(controlRoot: string, mutate: (draft: W
     const current = await readWorkflowState(controlRoot)
     const draft = structuredClone(current)
     mutate(draft)
+    if (JSON.stringify(draft) === JSON.stringify(current)) return current
     draft.state_revision = current.state_revision + 1
     draft.updated_at = new Date().toISOString()
     await writeState(controlRoot, draft)

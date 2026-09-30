@@ -231,6 +231,22 @@ class RunnerMetadataTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_glm_lifecycle_projects_to_canonical_workflow_state(self):
+        control = self.root / 'control'
+        job = {'id': 'glm-batch-1', 'state': 'completed', 'startedAt': 1000,
+               'finishedAt': 2000, 'taskId': 'TASK-01', 'branch': 'wt/A',
+               'commit': 'a' * 40, 'tree': 'b' * 40, 'exitCode': 0}
+        run_glm.mirror_workflow_run(control, job)
+        state = json.loads((control / 'trainer-state.json').read_text(encoding='utf-8'))
+        self.assertEqual(state['runs']['glm:glm-batch-1']['status'], 'completed')
+        self.assertEqual(state['runs']['glm:glm-batch-1']['commit'], 'a' * 40)
+        self.assertEqual(state['acceptance'], {'engineering': 'unknown', 'user': 'unknown', 'publish': 'unknown'})
+        before_revision = state['state_revision']
+        run_glm.mirror_workflow_run(control, job)
+        state = json.loads((control / 'trainer-state.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(state['events']), 1)
+        self.assertEqual(state['state_revision'], before_revision)
+
     def build(self, batch, cli_code, resume=None, with_attachment=False):
         cli = self.root / 'resources/glm/mock.cjs'
         cli.parent.mkdir(parents=True, exist_ok=True)

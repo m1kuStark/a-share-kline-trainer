@@ -1,5 +1,6 @@
 """Bounded parallel GLM runner with exclusive worktrees, durable per-job status, and bounded waits."""
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -10,10 +11,76 @@ import signal
 import subprocess
 import sys
 import time
+import uuid
 from monitor import DEFAULT_DB, DEFAULT_HOME, atomic_write, read_result, redact, session_activity_stamp
 from telemetry import ModelLogReader
 
 MODEL_ID = 'GLM-5.3-Flash'
+
+
+def mirror_workflow_run(control_root, job):
+    """Project one GLM lifecycle fact into canonical trainer-state.json.
+
+    The job registry remains telemetry. This adapter deliberately writes only
+    execution facts; engineering/user acceptance stays unknown until a
+    controller or human records it.
+    """
+    if not control_root:
+        return
+    root = pathlib.Path(control_root)
+    root.mkdir(parents=True, exist_ok=True)
+    lock = root / 'trainer-state.json.lock'
+    state_path = root / 'trainer-state.json'
+    try:
+        handle = open(lock, 'x', encoding='utf-8')
+    except FileExistsError:
+        raise RuntimeError('workflow state is locked: %s' % lock)
+    try:
+        if state_path.exists():
+            state = json.loads(state_path.read_text(encoding='utf-8'))
+        else:
+            now = datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+            state = {'schema_version': 1, 'state_revision': 0, 'project_id': 'a-share-kline-trainer',
+                     'active_task': None, 'candidate': None, 'candidates': {}, 'tasks': {}, 'runs': {},
+                     'artifacts': {}, 'acceptance': {'engineering': 'unknown', 'user': 'unknown', 'publish': 'unknown'},
+                     'events': [], 'reconcile': {'status': 'unknown', 'checked_at': None},
+                     'next_action': '等待控制器验证 GLM 执行结果', 'updated_at': now}
+        if 'candidates' not in state: state['candidates'] = {}
+        for value in state.get('runs', {}).values(): value.setdefault('source', 'controller')
+        source = 'glm'
+        run_id = str(job['id'])
+        key = '%s:%s' % (source, run_id)
+        status = {'starting': 'starting', 'running': 'running', 'completed': 'completed', 'failed': 'failed'}.get(job.get('state'), 'waiting_control')
+        updated = datetime.datetime.fromtimestamp(job.get('finishedAt') or job.get('startedAt') or time.time(), datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+        run = {'run_id': key, 'source': source, 'status': status, 'updated_at': updated,
+               'task_id': job.get('taskId'), 'attempt_id': job.get('attemptId') or run_id,
+               'worktree_alias': job.get('branch'), 'commit': job.get('commit'), 'tree': job.get('tree'),
+               'exit_code': job.get('exitCode')}
+        previous = state.setdefault('runs', {}).get(key)
+        if previous:
+            if previous.get('status') in ('completed', 'failed') and status != previous.get('status'):
+                raise RuntimeError('workflow run %s state drift after terminal status' % key)
+            for field in ('commit', 'tree', 'task_id', 'attempt_id', 'worktree_alias'):
+                if previous.get(field) and run.get(field) and previous[field] != run[field]:
+                    raise RuntimeError('workflow run %s state drift' % key)
+            if previous.get('status') == status and previous.get('exit_code') == run.get('exit_code'):
+                return
+        state['runs'][key] = run
+        event_id = 'run:%s:%s:%s:%s' % (key, status, run.get('commit') or 'none', run.get('tree') or 'none')
+        if not any(event.get('event_id') == event_id for event in state.get('events', [])):
+            state.setdefault('events', []).append({'event_id': event_id, 'kind': 'run.%s' % status,
+                'timestamp': updated, 'task_id': run.get('task_id'), 'attempt_id': run.get('attempt_id'),
+                'commit': run.get('commit'), 'tree': run.get('tree'), 'worktree_alias': run.get('worktree_alias'),
+                'run_id': key, 'reason': 'glm lifecycle projection'})
+        state['state_revision'] = int(state.get('state_revision', 0)) + 1
+        state['updated_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+        temporary = state_path.with_name(state_path.name + '.' + uuid.uuid4().hex + '.tmp')
+        temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        os.replace(temporary, state_path)
+    finally:
+        handle.close()
+        try: lock.unlink()
+        except FileNotFoundError: pass
 # 非图像理解的重活可显式 --model GLM-5.3（用户 2026-09-25 授权白名单）；默认仍 Flash
 ALLOWED_MODEL_IDS = ('GLM-5.3-Flash', 'GLM-5.3')
 # CLI 0.16.9 实测仅接受图片/视频附件后缀
@@ -197,7 +264,16 @@ def run(args):
     child = None
 
     def update():
+        if not job.get('commit'):
+            try:
+                job['commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=args.cwd, text=True,
+                                                        creationflags=subprocess.CREATE_NO_WINDOW).strip()
+                job['tree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], cwd=args.cwd, text=True,
+                                                      creationflags=subprocess.CREATE_NO_WINDOW).strip()
+            except (OSError, subprocess.CalledProcessError):
+                pass
         atomic_write(path, job)
+        mirror_workflow_run(getattr(args, 'control_root', None), job)
         if args.wake_state:
             atomic_write(args.wake_state, {**job, 'batch': args.batch, 'log': job['logPath'], 'handled': False})
 
@@ -298,6 +374,7 @@ def parser():
     p.add_argument('--cli', type=pathlib.Path, required=True)
     p.add_argument('--node', default=shutil.which('node'))
     p.add_argument('--db', type=pathlib.Path, default=DEFAULT_DB)
+    p.add_argument('--control-root', type=pathlib.Path, help='canonical .control directory for project state projection')
     p.add_argument('--wake-state', type=pathlib.Path)
     p.add_argument('--resume')
     p.add_argument('--attach', action='append', type=pathlib.Path, default=[], help='Explicit task image/video attachment; repeat for multiple files')

@@ -41,6 +41,21 @@ def read_result(path):
     return None
 
 
+def read_workflow_state(control_root=None):
+    """Read the canonical project snapshot without becoming its writer."""
+    configured = control_root or os.environ.get('TRAINER_CONTROL_ROOT')
+    if not configured:
+        return None
+    path = pathlib.Path(configured) / 'trainer-state.json'
+    try:
+        value = json.loads(path.read_text(encoding='utf-8'))
+        if value.get('schema_version') != 1 or value.get('project_id') != 'a-share-kline-trainer':
+            return {'status': 'invalid', 'message': '统一状态 schema 或项目不匹配'}
+        return value
+    except (OSError, ValueError, TypeError):
+        return {'status': 'unavailable', 'message': '统一状态暂不可读'}
+
+
 def redact(value):
     text = str(value or '')
     text = re.sub(r'(?im)(authorization\s*[:=]\s*)(?:bearer\s+)?[^\r\n]+', r'\1[已隐藏]', text)
@@ -232,7 +247,11 @@ def snapshot(registry, database):
     summary = {'running': sum(1 for j in current if j['phase'] == 'running'),
                'awaitingReview': sum(1 for j in current if j['phase'] == 'awaiting_review'),
                'needsAttention': sum(1 for j in current if j['phase'] in ('failed', 'interrupted', 'needs_changes'))}
-    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'summary': summary, 'warnings': warnings}
+    workflow_state = read_workflow_state()
+    if workflow_state and workflow_state.get('status') in ('invalid', 'unavailable'):
+        warnings.append(workflow_state['message'])
+    return {'generatedAt': int(time.time() * 1000), 'jobs': jobs, 'summary': summary,
+            'workflowState': workflow_state, 'warnings': warnings}
 
 
 def open_window(url):
