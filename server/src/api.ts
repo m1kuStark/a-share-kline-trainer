@@ -739,7 +739,8 @@ export async function registerApi(
   }
 
   app.post('/api/lifecycle/session', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
@@ -761,7 +762,8 @@ export async function registerApi(
   })
 
   app.post('/api/lifecycle/heartbeat', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
@@ -780,7 +782,8 @@ export async function registerApi(
   })
 
   app.post('/api/lifecycle/exit', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
@@ -819,7 +822,8 @@ export async function registerApi(
   })
 
   app.post('/api/lifecycle/confirm', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
@@ -846,7 +850,8 @@ export async function registerApi(
   })
 
   app.post('/api/lifecycle/cancel-exit', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
@@ -860,7 +865,8 @@ export async function registerApi(
   })
 
   app.get('/api/lifecycle/status', async (request, reply) => {
-    if (!setupGuard(request, reply)) return reply
+    const guardFailure = setupGuardFailure(request)
+    if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
