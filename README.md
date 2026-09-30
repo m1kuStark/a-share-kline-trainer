@@ -34,13 +34,13 @@
 | 录制、回放与分享 | [录制说明](docs/user/recording.md) |
 | 启动失败、找不到数据、端口占用等 | [常见问题](docs/user/troubleshooting.md) |
 | 后续设计（原 v0.4 提案，版本待定） | [训练时钟、条件单与成交理由](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/docs/proposals/v0.4-training-clock-orders-notes.md) |
-| GPT/GLM/zcode 协作与自动化门禁 | [协作框架改进提案](docs/proposals/zcode-orchestration-v2.md) |
+| GPT/GLM/zcode 协作与自动化门禁 | [协作框架改进提案](https://github.com/m1kuStark/kline-trainer/blob/main/docs/proposals/zcode-orchestration-v2.md) |
 
 ## V1.0.3 更新（候选，待人工验收）
 
 - 自定义范围改为起始日＋结束日；未来或反向日期会提示修正，服务端仍负责最终校验，旧的 bars/latest 请求保持兼容。
 - 未连接通达信时，右上角按钮直接进入接入向导；设置页改为默认设置、偏好设置、数据目录三栏，数据目录支持 Windows 原生文件夹选择。
-- 当前候选已完成定向单测、类型检查、生产构建和隔离 Journey；Windows 包、全量门禁和用户验收状态见[当前开发状态](docs/status.md)。
+- 当前候选已完成定向单测、类型检查、生产构建和隔离 Journey；Windows 包、全量门禁和用户验收状态见[当前开发状态](https://github.com/m1kuStark/kline-trainer/blob/main/docs/status.md)。
 
 ## v0.3.3 更新（测试版，未公开发布）
 
