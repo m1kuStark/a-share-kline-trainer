@@ -5,6 +5,7 @@ import { parseTrainingRules } from './rules.js'
 import { assertNoActiveTraining, settledFact } from './history-report.js'
 import { maxDrawdownOf, profitLossRatioOf, realizedSellResults, winRateOf } from './metrics.js'
 import { benchmarkReturnOf, loadBenchmarkSeries } from './benchmark.js'
+import { industryByCode, loadIndustryCatalog } from '../tdx/industry.js'
 
 // M4-01 五档排行：1M/3M/6M/1Y/2Y 独立分组排行，纯只读查询。
 // 范围（roadmap §2.7 冻结）：RANGE 训练不混入五档；放弃不入榜；完整周期与提前结算分组。
@@ -40,10 +41,16 @@ export interface RankingItem {
   /** 收益率−同期沪深300收益率；基准不可用/未覆盖 → null（"--"）＋原因 */
   benchmarkExcess: number | null
   benchmarkExcessReason?: string
+  rangeKey?: string
+  industryId?: string | null
+  industryName?: string | null
 }
 
 export interface RankingGroups {
-  tier: Tier
+  tier: Tier | 'RANGE'
+  view?: 'tier' | 'range' | 'industry'
+  rangeGroups?: Array<{ key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>
+  industry?: { status: 'ok' | 'unavailable'; reason?: string; entries?: Array<{ id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }> }
   /** 到期结算组：收益率↓→最大回撤↑→胜率↓(null 殿后)→id↓ */
   complete: RankingItem[]
   /** 提前结算组：收益率↓→id↓ */
@@ -55,12 +62,15 @@ export interface RankingGroups {
 }
 
 /** 排行查询参数：tier 必填且必须是五档之一；非法一律 400。 */
-export function parseRankingsQuery(raw: unknown): { tier: Tier } {
-  const tier = (raw as { tier?: unknown } | undefined)?.tier
+export function parseRankingsQuery(raw: unknown): { view: 'tier'; tier: Tier } | { view: 'range' } | { view: 'industry'; industry?: string } {
+  const query = (raw as { tier?: unknown; view?: unknown; industry?: unknown } | undefined) ?? {}
+  if (query.view === 'range') return { view: 'range' }
+  if (query.view === 'industry') return { view: 'industry', industry: typeof query.industry === 'string' ? query.industry : undefined }
+  const tier = query.tier
   if (typeof tier !== 'string' || !TIERS.includes(tier as Tier)) {
-    throw new HttpError(400, `tier 必须是 ${TIERS.join(' / ')} 之一`)
+    throw new HttpError(400, `tier 必须是 ${TIERS.join(' / ')} 之一；或使用 view=range / view=industry`)
   }
-  return { tier: tier as Tier }
+  return { view: 'tier', tier: tier as Tier }
 }
 
 interface RankingRow {
@@ -74,6 +84,10 @@ interface RankingRow {
   early_settle: number
   initial_cash: number
   rules_json: string | null
+  range_start?: string | null
+  range_end?: string | null
+  industry_id?: string | null
+  industry_name?: string | null
 }
 
 /** 规则层面的不可认证判定：与历史列表同一口径（坏/缺快照、legacy-raw），只影响本行。 */
@@ -128,6 +142,9 @@ function itemOf(database: DatabaseSync, row: RankingRow): { item: RankingItem } 
       winRate: winRateOf(sells),
       profitLossRatio: profitLossRatioOf(sells),
       benchmarkExcess: null,
+      ...(row.tier === 'RANGE' && row.range_start && row.range_end ? { rangeKey: `RANGE:${row.range_start}:${row.range_end}` } : {}),
+      industryId: row.industry_id ?? null,
+      industryName: row.industry_name ?? null,
     },
   }
 }
@@ -171,6 +188,29 @@ export function rankingGroups(database: DatabaseSync, tier: Tier): RankingGroups
   return { tier, complete, earlySettled, excludedUnavailable, benchmark: { status: 'ok' } }
 }
 
+/** 自定义范围排行：起止日期必须完全相同，不能混入五档周期。 */
+export function rangeRankingGroups(database: DatabaseSync): RankingGroups {
+  const rows = database.prepare(`
+    SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
+           range_start, range_end, industry_id, industry_name
+    FROM trainings WHERE status = 'settled' AND tier = 'RANGE' AND range_start IS NOT NULL AND range_end IS NOT NULL
+  `).all() as unknown as RankingRow[]
+  const groups = new Map<string, { key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>()
+  for (const row of rows) {
+    const built = itemOf(database, row)
+    if ('reason' in built || !row.range_start || !row.range_end) continue
+    const key = `RANGE:${row.range_start}:${row.range_end}`
+    const group = groups.get(key) ?? { key, startDate: row.range_start, endDate: row.range_end, complete: [], earlySettled: [] }
+    ;(built.item.classification === 'early-settled' ? group.earlySettled : group.complete).push(built.item)
+    groups.set(key, group)
+  }
+  for (const group of groups.values()) {
+    group.complete.sort((a, b) => byReturnDesc(a, b) || a.maxDrawdown - b.maxDrawdown || byWinRateDesc(a, b) || byIdDesc(a, b))
+    group.earlySettled.sort((a, b) => byReturnDesc(a, b) || byIdDesc(a, b))
+  }
+  return { tier: 'RANGE', view: 'range', rangeGroups: [...groups.values()].sort((a, b) => a.key.localeCompare(b.key)), complete: [], earlySettled: [], excludedUnavailable: 0, benchmark: { status: 'ok' } }
+}
+
 /**
  * 排行响应装配：分组后异步读基准指数日线并逐行计算超额；读文件后重查 running 守卫
  * （守卫→同步读库→异步读基准→复守卫），杜绝异步窗口内新开训练绕过防未来。
@@ -198,4 +238,56 @@ export async function rankingsPayload(database: DatabaseSync, config: AppConfig,
   }
   assertNoActiveTraining(database)
   return groups
+}
+
+export async function rangeRankingsPayload(database: DatabaseSync, config: AppConfig): Promise<RankingGroups> {
+  const groups = rangeRankingGroups(database)
+  const items = groups.rangeGroups?.flatMap(group => [...group.complete, ...group.earlySettled]) ?? []
+  if (items.length) {
+    const benchmark = await loadBenchmarkSeries(config)
+    if (!benchmark.ok) groups.benchmark = { status: 'unavailable', reason: benchmark.reason }
+    else for (const item of items) {
+      const outcome = benchmarkReturnOf(benchmark.bars, item.startDate, item.settleDate ?? item.startDate)
+      if (outcome.ok) item.benchmarkExcess = item.returnRate - outcome.value
+      else item.benchmarkExcessReason = outcome.reason
+    }
+  }
+  assertNoActiveTraining(database)
+  return groups
+}
+
+/** 行业排行只使用训练创建时冻结的 industry_id/name；无目录时整视图不可用。 */
+export async function industryRankingsPayload(database: DatabaseSync, config: AppConfig, selectedIndustry?: string): Promise<RankingGroups> {
+  const result = await loadIndustryCatalog(config)
+  if (!result.ok) {
+    return { tier: 'RANGE', view: 'industry', complete: [], earlySettled: [], excludedUnavailable: 0, benchmark: { status: 'ok' }, industry: { status: 'unavailable', reason: result.reason } }
+  }
+  const byCode = industryByCode(result.catalog)
+  const rows = database.prepare(`
+    SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
+           range_start, range_end, industry_id, industry_name
+    FROM trainings WHERE status = 'settled'
+  `).all() as unknown as RankingRow[]
+  const entries = new Map<string, { id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }>()
+  let excludedUnavailable = 0
+  for (const row of rows) {
+    const built = itemOf(database, row)
+    if ('reason' in built) { excludedUnavailable++; continue }
+    const mapped = row.industry_id ? result.catalog.entries.find(entry => entry.id === row.industry_id) : byCode.get(row.code)
+    const id = mapped?.id ?? row.industry_id ?? 'UNCLASSIFIED'
+    const name = mapped?.name ?? row.industry_name ?? '未分类'
+    if (selectedIndustry && selectedIndustry !== id) continue
+    const entry = entries.get(id) ?? { id, name, complete: [], earlySettled: [] }
+    ;(built.item.classification === 'early-settled' ? entry.earlySettled : entry.complete).push(built.item)
+    entries.set(id, entry)
+  }
+  for (const entry of entries.values()) {
+    entry.complete.sort((a, b) => byReturnDesc(a, b) || a.maxDrawdown - b.maxDrawdown || byWinRateDesc(a, b) || byIdDesc(a, b))
+    entry.earlySettled.sort((a, b) => byReturnDesc(a, b) || byIdDesc(a, b))
+  }
+  return {
+    tier: 'RANGE', view: 'industry', complete: [], earlySettled: [], excludedUnavailable,
+    benchmark: { status: 'ok' },
+    industry: { status: 'ok', entries: [...entries.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')) },
+  }
 }

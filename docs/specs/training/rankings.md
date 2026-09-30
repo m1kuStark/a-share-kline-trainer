@@ -5,6 +5,8 @@
 ## 排行接口与分组
 
 - `GET /api/rankings?tier=<1M|3M|6M|1Y|2Y>`：非法/缺档位 400；存在 running 训练时 409 `HISTORY_ACTIVE_TRAINING`（与历史/成绩单同一守卫，异步基准读取后复守卫）；TDX 离线时除超额外照常可用。
+- `GET /api/rankings?view=range`：仅返回 `tier='RANGE'` 且 `range_start`、`range_end` 完全相同的自定义区间组；起止日期不同的训练不会互相比较，也不会混入五档排行。
+- `GET /api/rankings?view=industry[&industry=<id>]`：按明确版本化行业目录分组；未配置或目录不是 56 个有效行业时返回 `industry.status=unavailable`，不扫描本机目录猜测板块归属。
 - 只收五档 settled 训练：RANGE（自定义范围 preset/latest/bars）不入榜，放弃不入榜。行级不可认证（坏规则/legacy-raw/结算点缺失/权益点非有限）不入榜，并以 `excludedUnavailable` 如实计数。
 - 分组：`complete`（到期结算）/`earlySettled`（提前结算）。
 - 排序：完整组 收益率↓→最大回撤↑→胜率↓（null 殿后）→id↓（稳定键）；提前组 收益率↓→id↓。
@@ -24,6 +26,11 @@
 - 防未来：存在 running 训练时该接口只放行 running 局自身（其K线本就截断在推进日），其余任何训练 409 `HISTORY_ACTIVE_TRAINING`——历史复盘不得成为当前局盲区的旁路；复盘不开放结算日之后的行情。
 - 只读边界：复盘无画线/成交编辑入口，历史画线保持结算时原样（画线编辑仅存在于运行中的训练）。
 
+## 行业目录与历史稳定性
+
+- 行业目录通过 `TRAINER_INDUSTRY_MAP` 显式指定 JSON 文件，响应记录版本和 SHA-256；目录缺失、格式错误或不是 56 个行业时整个行业视图不可用。
+- 训练记录保留 `industry_id`、`industry_name` 和目录哈希列。旧记录没有快照时显示“未分类”；发布前应使用创建时快照填充，不能把当前目录变化静默解释为历史归属。
+
 ## 明确不做
 
-自定义范围训练的排行展示与分组（后续单独定义，不混入五档可比成绩）；排行指标持久化缓存或回填；复盘画线编辑；训练时钟、成交理由、条件单（V4 范围）。
+排行指标持久化缓存或回填；复盘画线编辑；训练时钟、成交理由、条件单（V4 范围）。

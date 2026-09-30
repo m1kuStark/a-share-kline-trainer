@@ -17,6 +17,7 @@ import {
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
 import { readCreationDefaultsFields, type CreationDefaults } from '../settings/creation-defaults.js'
+import { industryByCode, loadIndustryCatalog } from '../tdx/industry.js'
 
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 /** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
@@ -295,11 +296,12 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   // 末根 K 线在前复权序列中恒等于原始收盘价，因此 current_close 直接存原始收盘，
   // 快照/交易无需再读文件，也杜绝把未来权息混进当前价格。
   await input.beforeCommit?.()
+  const industry = await industrySnapshot(config, parsed.code)
   const id = commitTrainingCreation(database, {
     tier, code: parsed.code, name: stock.name, market: parsed.market,
     startDate: startBar.date, plannedEnd: addMonths(startBar.date, TIER_MONTHS[tier]),
     blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt,
-    currentDate: startBar.date, currentClose: startBar.close, range: null,
+    currentDate: startBar.date, currentClose: startBar.close, range: null, industry,
   })
   return toMeta(loadTrainingRow(database, id))
 }
@@ -330,6 +332,14 @@ interface TrainingCreationRow {
     fingerprint: string
     notes: string[]
   } | null
+  industry?: { id: string; name: string; sha256: string } | null
+}
+
+async function industrySnapshot(config: AppConfig, code: string): Promise<{ id: string; name: string; sha256: string } | null> {
+  const catalog = await loadIndustryCatalog(config)
+  if (!catalog.ok) return null
+  const entry = industryByCode(catalog.catalog).get(code)
+  return entry ? { id: entry.id, name: entry.name, sha256: catalog.catalog.sha256 } : null
 }
 
 // 并发与原子性边界（GPT-WAKE-02）：所有异步读取都已完成，从这里到 COMMIT 是同步段。
@@ -376,24 +386,24 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
       ? database.prepare(`
           INSERT INTO trainings (
             tier, code, name, market, start_date, planned_end, status, blind,
-            adjust_mode, initial_cash, created_at, current_date, current_close, rules_json
-          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?)
+            adjust_mode, initial_cash, created_at, current_date, current_close, industry_id, industry_name, industry_source_sha256, rules_json
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
-          row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose, rulesJson,
+          row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose, row.industry?.id ?? null, row.industry?.name ?? null, row.industry?.sha256 ?? null, rulesJson,
         )
       : database.prepare(`
           INSERT INTO trainings (
             tier, code, name, market, start_date, planned_end, status, blind,
             adjust_mode, initial_cash, created_at, current_date, current_close,
             range_version, range_mode, requested_start, requested_end, range_start, range_end,
-            range_bar_count, range_source_fingerprint, range_notes, rules_json
-          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            range_bar_count, range_source_fingerprint, range_notes, industry_id, industry_name, industry_source_sha256, rules_json
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
           row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose,
           row.range.mode, row.range.requestedStart, row.range.requestedEnd,
-          row.startDate, row.plannedEnd, row.range.barCount, row.range.fingerprint, JSON.stringify(row.range.notes),
+          row.startDate, row.plannedEnd, row.range.barCount, row.range.fingerprint, JSON.stringify(row.range.notes), row.industry?.id ?? null, row.industry?.name ?? null, row.industry?.sha256 ?? null,
           rulesJson,
         )
     const id = Number(result.lastInsertRowid)
@@ -688,6 +698,7 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
   if (!startBar) throw stalePreview(`复核起点 ${plan.startDate} 缺少对应日线`)
 
   await input.beforeCommit?.()
+  const industry = await industrySnapshot(config, parsed.code)
   const id = commitTrainingCreation(database, {
     tier: RANGE_TIER_SENTINEL, code: parsed.code, name: stock.name, market: parsed.market,
     startDate: plan.startDate, plannedEnd: plan.endDate,
@@ -702,6 +713,7 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
       fingerprint: snapshot.fingerprint,
       notes: plan.notes,
     },
+    industry,
   })
   return toMeta(loadTrainingRow(database, id))
 }

@@ -6,7 +6,7 @@
 // 不提供任何编辑写入口，复盘K线止于结算日，不开放之后的行情。
 // 请求版本守卫：A→B 切换后 A 的迟到/失败响应不得覆盖 B，也不得留下永续 loading。
 import { computed, ref, watch } from 'vue'
-import { ApiError, fetchTrainingBars, fetchTrainingReport, type HistoryReportPayload, type TrainingBarsPayload } from '../api'
+import { ApiError, fetchEquityComparison, fetchTrainingBars, fetchTrainingReport, type EquityComparisonPayload, type HistoryReportPayload, type TrainingBarsPayload } from '../api'
 import KlineChart from './KlineChart.vue'
 
 const props = defineProps<{ id: number }>()
@@ -24,6 +24,11 @@ const reviewLoading = ref(false)
 const reviewError = ref('')
 const reviewGuarded = ref(false)
 let reviewVersion = 0
+const comparison = ref<EquityComparisonPayload | null>(null)
+const comparisonLoading = ref(false)
+const comparisonError = ref('')
+const comparisonBenchmarks = ref<string[]>([])
+const comparisonSeries = computed(() => comparison.value?.series ?? [])
 
 async function load(): Promise<void> {
   const requestVersion = ++loadVersion
@@ -48,6 +53,20 @@ watch(() => props.id, () => {
   reviewGuarded.value = false
   void load()
 }, { immediate: true })
+
+async function loadComparison(): Promise<void> {
+  comparisonLoading.value = true
+  comparisonError.value = ''
+  try { comparison.value = await fetchEquityComparison(props.id, comparisonBenchmarks.value) }
+  catch (error) { comparisonError.value = error instanceof Error ? error.message : '无法读取收益率对比曲线' }
+  finally { comparisonLoading.value = false }
+}
+function toggleBenchmark(key: string): void {
+  comparisonBenchmarks.value = comparisonBenchmarks.value.includes(key)
+    ? comparisonBenchmarks.value.filter(value => value !== key)
+    : [...comparisonBenchmarks.value, key]
+  void loadComparison()
+}
 
 async function toggleReview(): Promise<void> {
   if (reviewOpen.value) {
@@ -200,6 +219,24 @@ const curve = computed(() => {
         </figcaption>
       </figure>
       <p v-else class="report-empty">该区间没有可展示的持久权益点。</p>
+
+      <div class="report-comparison-controls">
+        <strong>同期指数</strong>
+        <label><input type="checkbox" :checked="comparisonBenchmarks.includes('sh000001')" @change="toggleBenchmark('sh000001')" />上证指数</label>
+        <label><input type="checkbox" :checked="comparisonBenchmarks.includes('sz399303')" @change="toggleBenchmark('sz399303')" />国证 2000</label>
+      </div>
+      <p v-if="comparisonError" class="history-error" role="alert">{{ comparisonError }}</p>
+      <p v-else-if="comparisonLoading" class="history-loading" role="status">读取同期指数…</p>
+      <figure v-else-if="comparisonSeries.length" class="report-curve report-comparison-curve">
+        <svg viewBox="0 0 640 180" role="img" aria-label="收益率与同期指数对比曲线">
+          <line x1="8" y1="90" x2="632" y2="90" class="curve-zero" />
+          <polyline :points="comparisonSeries.map((point, index) => `${8 + index / Math.max(1, comparisonSeries.length - 1) * 624},${90 - point.user * 370}`).join(' ')" fill="none" stroke="#d34f4f" stroke-width="2" />
+          <polyline v-if="comparisonBenchmarks.includes('sh000001')" :points="comparisonSeries.filter(point => point.sh000001 !== undefined).map((point, index, values) => `${8 + index / Math.max(1, values.length - 1) * 624},${90 - (point.sh000001 ?? 0) * 370}`).join(' ')" fill="none" stroke="#4f7fc4" stroke-width="1.5" />
+          <polyline v-if="comparisonBenchmarks.includes('sz399303')" :points="comparisonSeries.filter(point => point.sz399303 !== undefined).map((point, index, values) => `${8 + index / Math.max(1, values.length - 1) * 624},${90 - (point.sz399303 ?? 0) * 370}`).join(' ')" fill="none" stroke="#d28a3d" stroke-width="1.5" />
+        </svg>
+        <figcaption><span class="legend-user">训练收益率</span><span class="legend-sh">上证指数</span><span class="legend-sz">国证 2000</span></figcaption>
+      </figure>
+      <p v-else class="report-empty">选择指数后显示同期对比曲线；缺失数据会明确提示。</p>
 
       <h2>K线复盘 <button class="ghost-button report-review-toggle" @click="toggleReview">{{ reviewOpen ? '收起复盘' : '展开复盘' }}</button></h2>
       <div v-if="reviewOpen" class="report-review">

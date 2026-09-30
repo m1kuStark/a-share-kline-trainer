@@ -12,8 +12,10 @@
 
 ## 只读事实成绩单
 
-- `GET /api/trainings/:id/report`：非法 ID 400；无此 ID 404；未 settled（含 abandoned）409 `HISTORY_NOT_SETTLED`。
-- 内容：事实元信息（含结算方式、训练区间、复权方式）、冻结规则（含 `origin`/`capturedAt`；`legacy-migration` 如实标注为迁移时点观察）、初始资金、最终权益、收益率（比率，UI 转百分比）、逐笔成交（序号/日期/买卖/价格/股数/金额/费用，seq 升序）、持久权益曲线（date 升序）、画线标注清单。
+- `GET /api/trainings/:id/report`：非法 ID 400；无此 ID 404；未 settled（含 abandoned）409 `HISTORY_NOT_SETTLED`。前端以固定尺寸悬浮窗展示，右上角关闭、背景点击和 Escape 均可退出；历史页与排行页共用同一组件。
+- 内容：事实元信息（含结算方式、训练区间、复权方式）、冻结规则（含 `origin`/`capturedAt`；`legacy-migration` 如实标注为迁移时点观察）、初始资金、最终权益、收益率（比率，UI 转百分比）、逐笔成交（序号/日期/买卖/价格/股数/金额/费用，seq 升序）、持久权益曲线（date 升序）。独立的“画线标注”清单不再展示，画线仍保留在只读 K 线复盘中。
+
+- `DELETE /api/trainings/:id` 与 `DELETE /api/trainings/history`：仅允许用户确认后删除 settled 记录；运行中、放弃或不存在的记录拒绝。批量最多 100 条，先逐项校验再在一个事务中清理 `drawings`、`trades`、`equity_curve`、`position_events` 和 `trainings`，任何一项失败都不部分删除。
 - 范围限定：曲线与成交限定 `start_date..settle_date`，范围外数据不输出。零成交训练如实呈现 0 笔；未卖完持仓按已记账权益展示，不虚构平仓。费用已含在权益里，逐笔费用仅为展示，不重复扣减。
 - 错误契约：坏/缺规则快照 409 `TRAIN_RULES_UNREADABLE`；`legacy-raw-unverified` 409 `LEGACY_RAW_ACCOUNTING_UNVERIFIED`（成绩未经验证，不提供成绩单；不否定合法新 raw）；结算权益缺失 409 `HISTORY_EQUITY_UNAVAILABLE`；均无写入/回填。
 - 画线：无行=未保存（空数组）；行 JSON 不可读 → `drawingsStatus=unavailable`＋中文原因，绝不伪装成空成功，其余账户事实照常呈现。画线以只读标注清单显示类型、窗格、锚点时间/数值，保留原始价格基准；不把价格点画到权益坐标、不提供画线编辑器。只读K线复盘已由 M4-01 在本页提供，边界见[五档排行与只读复盘](rankings.md)。

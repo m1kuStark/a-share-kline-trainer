@@ -530,6 +530,17 @@ export function fetchTrainingReport(id: number): Promise<HistoryReportPayload> {
   return request(`/api/trainings/${id}/report`)
 }
 
+export interface EquityComparisonPayload {
+  trainingId: number
+  series: Array<{ date: string; user: number; sh000001?: number; sz399303?: number }>
+  benchmarks: Record<string, { ok: boolean; reason?: string }>
+}
+
+export function fetchEquityComparison(id: number, benchmarks: string[] = []): Promise<EquityComparisonPayload> {
+  const query = benchmarks.length ? `?benchmarks=${encodeURIComponent(benchmarks.join(','))}` : ''
+  return request(`/api/trainings/${id}/equity-comparison${query}`)
+}
+
 // ===== 五档排行（M4-01）：1M/3M/6M/1Y/2Y 独立分组；放弃与自定义范围不入榜 =====
 
 export type RankingClassification = 'complete' | 'early-settled'

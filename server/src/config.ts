@@ -1,6 +1,6 @@
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
-import { discoverTdxRoot, defaultTdxCandidates } from './tdx/discover.js'
+import { discoverTdxRoot } from './tdx/discover.js'
 import { readSavedTdxChoice, resolveEffectiveTdxRoot, type TdxRootSource } from './setup/saved-choice.js'
 
 export interface AppConfig {
@@ -8,9 +8,11 @@ export interface AppConfig {
   host: string
   databasePath: string
   tdxRoot: string | null
+  /** 可选、显式指定的通达信 56 行业映射文件；未配置时行业排行明确不可用。 */
+  industryMapPath?: string | null
   /**
-   * 生效行情目录的来源标签（SETUP-01 冻结优先级 env → explicit-config → saved-choice →
-   * auto-discovered 的胜出来源）。tdxRoot 为 null 时为 null。只作展示/解释用，绝不
+   * 生效行情目录的来源标签（用户确认优先级 env → explicit-config → saved-choice）。
+   * tdxRoot 为 null 时为 null。只作展示/解释用，绝不
    * 回传完整本机路径。独立运行（无 runId）由本模块按优先级解析；启动器托管运行
    * （有 runId）由启动器解析后经 TRAINER_TDX_SOURCE 传入，服务端只透传校验过的标签。
    */
@@ -32,7 +34,7 @@ export interface AppConfig {
   controlToken: string | null
 }
 
-const TDX_SOURCE_LABELS: readonly TdxRootSource[] = ['env', 'explicit-config', 'saved-choice', 'auto-discovered']
+const TDX_SOURCE_LABELS: readonly TdxRootSource[] = ['env', 'explicit-config', 'saved-choice']
 
 export type PortFallbackReason = 'reserved' | 'occupied'
 
@@ -66,6 +68,7 @@ export async function loadConfig(): Promise<AppConfig> {
     }
   }
   const dataDir = explicitAbsolutePath('TRAINER_DATA_DIR')
+  const industryMapPath = explicitAbsolutePath('TRAINER_INDUSTRY_MAP')
   const databasePath = process.env.TRAINER_DB ?? join(homedir(), '.a-share-kline-trainer', 'trainer.sqlite')
   const configuredRoot = process.env.TDX_ROOT?.trim()
   // 启动器/运行器注入的来源标签只作展示；白名单外的值一律按未标注处理
@@ -83,18 +86,14 @@ export async function loadConfig(): Promise<AppConfig> {
     tdxRoot = discovery?.root ?? null
     tdxSource = tdxRoot ? (injectedLabel ?? 'env') : null
   } else {
-    // 独立运行（npm start / 开发）：按冻结优先级解析，saved-choice 与本机快速发现
-    // 都参与；显式 env 仍最高。dataDir 未显式给定时与默认数据库同目录。
+    // 独立运行（npm start / 开发）：只读取显式 env/config 或用户已保存的选择；
+    // 不扫描默认安装目录、不读取运行中的通达信进程线索。dataDir 未显式给定时与默认数据库同目录。
     const effectiveDataDir = dataDir ?? dirname(resolve(databasePath))
-    const [savedChoice, discovery] = await Promise.all([
-      readSavedTdxChoice(effectiveDataDir),
-      discoverTdxRoot(defaultTdxCandidates()),
-    ])
+    const savedChoice = await readSavedTdxChoice(effectiveDataDir)
     const effective = resolveEffectiveTdxRoot({
       envTdxRoot: configuredRoot || null,
       explicitConfigTdxRoot: null,
       savedChoice,
-      autoDiscoveredTdxRoot: discovery?.root ?? null,
     })
     const validated = effective ? await discoverTdxRoot([effective.root]) : null
     tdxRoot = validated?.root ?? null
@@ -106,6 +105,7 @@ export async function loadConfig(): Promise<AppConfig> {
     host: process.env.HOST ?? '127.0.0.1',
     databasePath,
     tdxRoot,
+    industryMapPath,
     tdxSource,
     portFallback: parsePortFallback(),
     // 独立运行必须能落盘保存选择：未显式给定时与解析时同口径取数据库所在目录；

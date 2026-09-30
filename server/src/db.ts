@@ -83,6 +83,10 @@ export function migrateDatabase(database: DatabaseSync): void {
   addColumnIfMissing(database, 'trainings', 'range_bar_count', 'INTEGER')
   addColumnIfMissing(database, 'trainings', 'range_source_fingerprint', 'TEXT')
   addColumnIfMissing(database, 'trainings', 'range_notes', 'TEXT')
+  // 行业归属在训练创建时冻结；旧训练保持 NULL，行业排行会如实显示未分类。
+  addColumnIfMissing(database, 'trainings', 'industry_id', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'industry_name', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'industry_source_sha256', 'TEXT')
   // Early drawing tables have no save timestamp; keep it unknown until the next write.
   addColumnIfMissing(database, 'drawings', 'updated_at', "TEXT NOT NULL DEFAULT ''")
   // TRAIN-01：新增列与旧训练规则回填在同一个迁移事务中完成（DDL 在 SQLite 内可回滚）；

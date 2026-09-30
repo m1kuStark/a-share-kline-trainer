@@ -28,6 +28,7 @@ import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
 import { deleteSettledTrainings, parseHistoryDeleteIds } from './train/history-delete.js'
 import { industryRankingsPayload, parseRankingsQuery, rangeRankingsPayload, rankingsPayload } from './train/rankings.js'
+import { equityComparison } from './train/equity-comparison.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
 import type { DrainGate } from './setup/drain-controller.js'
@@ -1011,6 +1012,16 @@ export async function registerApi(
     if (!Number.isSafeInteger(trainingId) || trainingId < 1) throw new HttpError(400, 'id 必须是正整数')
     assertNoActiveTraining(database)
     return historyReport(database, trainingId)
+  })
+
+  app.get('/api/trainings/:id/equity-comparison', async request => {
+    const { id } = request.params as { id: string }
+    const trainingId = Number(id)
+    if (!Number.isSafeInteger(trainingId) || trainingId < 1) throw new HttpError(400, 'id 必须是正整数')
+    assertNoActiveTraining(database)
+    const raw = (request.query as { benchmarks?: unknown }).benchmarks
+    const requested = typeof raw === 'string' ? raw.split(',').map(value => value.trim()).filter(Boolean) : []
+    return equityComparison(database, config, trainingId, requested)
   })
 
   // 历史清理：只接受已结算训练；先完成 no-future 守卫和整批状态校验，
