@@ -882,6 +882,13 @@ export async function registerApi(
       status: 'ok',
       // 隐私边界（SETUP-01）：开放端点只返回连接状态与来源标签，不回传完整本机路径
       tdx: { connected: config.tdxRoot !== null, source: config.tdxSource ?? null },
+      // PORT-01（REL-LAUNCH-UX-01 增量）：端口回退说明——只有数字与原因枚举，无路径；
+      // 页面据此常驻提示"实际使用的端口"（默认端口被系统保留/占用时自动改用）
+      launcher: {
+        port: config.port,
+        fallbackFrom: config.portFallback?.from ?? null,
+        fallbackReason: config.portFallback?.reason ?? null,
+      },
       dataCutoff: stocks.map(stock => stock.lastDate).filter(Boolean).sort().at(-1) ?? null,
       stockCount: stocks.length,
       capabilities: { day: true, forwardAdjust: true, benchmark: true, catalogCache: true, training: true },

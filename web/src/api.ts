@@ -174,6 +174,8 @@ export type TdxRootSource = 'env' | 'explicit-config' | 'saved-choice' | 'auto-d
 export interface EnvView {
   status: string
   tdx: { connected: boolean; source: TdxRootSource | null }
+  /** PORT-01：端口回退说明（数字与原因枚举）；fallbackFrom 非空表示默认端口不可用已自动改用 */
+  launcher: { port: number; fallbackFrom: number | null; fallbackReason: 'reserved' | 'occupied' | null }
   dataCutoff: string | null
   stockCount: number
   capabilities: Record<string, boolean>
