@@ -1,6 +1,5 @@
-// 受保护候选诊断只读端点（SETUP-API-01 冻结合同）：GET /api/setup/candidates。
-// guard 先行（Host/Origin/Sec-Fetch-Site/令牌），失败不调用诊断；成功组合
-// defaultTdxCandidates + collectProcessClues + collectTdxCandidateDiagnostics。
+// 兼容候选端点：自动检测已关闭，GET /api/setup/candidates 只返回迁移提示；
+// 用户通过 /api/setup/select-directory 选择单个目录后再 inspect/save。
 // 测试全程注入合成 processQuery/inspect stub，零真实进程/TDX 读取；不打印令牌。
 import Fastify, { type FastifyInstance } from 'fastify'
 import { DatabaseSync } from 'node:sqlite'
@@ -94,20 +93,17 @@ const HELPER_HEADERS = {
 }
 
 describe('GET /api/setup/candidates', () => {
-  it('browser same-origin request succeeds with diagnostics and never echoes the token', async () => {
+  it('browser same-origin request returns disabled status and never calls diagnostics', async () => {
     const calls: RecordedCalls = { queryCalls: 0, inspectInputs: [] }
     const app = await buildApp({}, {}, calls)
     const response = await app.inject({ method: 'GET', url: '/api/setup/candidates', headers: BROWSER_HEADERS })
     expect(response.statusCode).toBe(200)
     const body = response.json()
-    expect(body.processStatus).toBe('ok')
-    // manualRoots 来自真实环境（数量随机），进程线索根必须存在且来源正确
-    const clue = body.candidates.find((c: { check: { root: string } }) =>
-      c.check.root.toLowerCase() === 'd:\\new_tdx')
-    expect(clue).toBeTruthy()
-    expect(clue.sources).toEqual(['running-process'])
+    expect(body.processStatus).toBe('disabled')
+    expect(body.candidates).toEqual([])
+    expect(body.processReason).toContain('自动检测已关闭')
     expect(response.body).not.toContain(TOKEN_NEVER_PRINT)
-    expect(calls.queryCalls).toBe(1)
+    expect(calls.queryCalls).toBe(0)
   })
 
   it('helper request with the configured token succeeds', async () => {
@@ -116,8 +112,8 @@ describe('GET /api/setup/candidates', () => {
     const response = await app.inject({ method: 'GET', url: '/api/setup/candidates', headers: HELPER_HEADERS })
     expect(response.statusCode).toBe(200)
     const body = response.json()
-    expect(body.processStatus).toBe('ok')
-    expect(body.candidates[0].sources).toEqual(['running-process'])
+    expect(body.processStatus).toBe('disabled')
+    expect(body.candidates).toEqual([])
   })
 
   it('helper request with a wrong token is rejected 401 and never calls diagnostics', async () => {
@@ -176,16 +172,16 @@ describe('GET /api/setup/candidates', () => {
     expect(response.json().error).toBe('HOST_MISMATCH')
   })
 
-  it('diagnostics failure returns structured 503 instead of fake empty candidates', async () => {
+  it('diagnostics stubs are ignored because automatic discovery is disabled', async () => {
     const calls: RecordedCalls = { queryCalls: 0, inspectInputs: [] }
     const app = await buildApp({
       inspect: async () => { throw new Error('inspect exploded') },
     }, {}, calls)
     const response = await app.inject({ method: 'GET', url: '/api/setup/candidates', headers: BROWSER_HEADERS })
-    expect(response.statusCode).toBe(503)
+    expect(response.statusCode).toBe(200)
     const body = response.json()
-    expect(body.error).toBe('SETUP_DIAGNOSTICS_UNAVAILABLE')
-    expect(body.candidates).toBeUndefined()
+    expect(body.processStatus).toBe('disabled')
+    expect(body.candidates).toEqual([])
   })
 
   it('process timeout status is passed through with empty candidates', async () => {
@@ -198,7 +194,7 @@ describe('GET /api/setup/candidates', () => {
     })
     expect(response.statusCode).toBe(200)
     const body = response.json()
-    expect(body.processStatus).toBe('timeout')
-    // manual 候选不依赖进程查询，timeout 下仍会列出（进程线索为空）
+    expect(body.processStatus).toBe('disabled')
+    expect(body.candidates).toEqual([])
   })
 })
