@@ -33,7 +33,7 @@
   "verification_refs": [
     "docs/verification/2026-09/LAUNCH-UX-01/report.md"
   ],
-  "integration_ref": "worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（基线 0f430cd＝wt/B-SETUP-01 头）",
+  "integration_ref": "worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（原从 0f430cd 切出；2026-09-30 已并入 wt/B-SETUP-01 头 93ebc6a 并修复 lifecycle 守卫语义冲突 ca6116a，现包含 SETUP-01 全部提交）",
   "acceptance_ref": null
 }
 ```
