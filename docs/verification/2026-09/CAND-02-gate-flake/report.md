@@ -26,3 +26,10 @@
 2. 本槽同日全量复跑（`npm test`）：87 文件 5 failed/82 passed，失败集又不同（docs-tooling、review-profile、runtime-isolation（已知排除）、train-range-preview、worktree-tools，逐项超时类）。
 3. 串行复跑覆盖两轮全部抖动文件（`npx vitest run --config server/vitest.config.ts --no-file-parallelism`：setup-api/docs-tooling/review-profile/train-range-preview/worktree-tools）：**5 passed (5) / 103 passed (103)，exit 0**（462s）。
 4. 连续两次门禁运行、四次全量/串行运行，失败集每轮不同且全部为超时类、串行全绿——进一步坐实根因是并行负载下的预算抖动，分支内容（docs-only）无关。根治仍须集成人对门禁基建裁决（串行执行或上调预算，见上文建议）；在此之前，重跑遇超时按同一口径串行确认即可，不需回退本分支。
+
+## 第三轮门禁复核（2026-09-30，8f40b70 之后）：失败文件不在本分支（归属槽 D）
+
+1. 门禁第 3 次失败仅 1 项：rankings.test.ts「基准文件缺失：整组 benchmark unavailable＋行级 null＋中文原因」（`Test timed out in 5000ms`，rankings.test.ts:374）。同轮 stderr 中 release-package.test.ts 的「Lock … no longer holds this build's reservation; leaving it untouched」系该用例被测的预期行为日志（用例名即 "a rewritten foreign lock is never removed"），非失败。
+2. **归属核实（本轮 git 实测）**：`server/test/rankings.test.ts` 不存在于 wt/A/CAND-02（`git cat-file -e wt/A/CAND-02:server/test/rankings.test.ts` 失败），本分支相对基线 5bf4484 非 docs 文件数为 0；该文件由槽 D 的 wt/D-M4-01 提交 1786783/b62725f（feat(m4-01) rankings skeleton 与 frozen-caliber metrics）经合并 9ab533e 进入集成工作树。按「不合入他人改动」约束，本槽不可能也不应在代码层修它。
+3. 只读串行复核（在集成工作树 trainer-wt/int-v1，运行前后 `git status --porcelain` 均为空、零跟踪文件改动）：`npx vitest run --config server/vitest.config.ts --no-file-parallelism server/test/rankings.test.ts` → **1 passed (1) / 18 passed (18)，exit 0**。该用例与相邻用例同用 `withTdxRoot` 夹具（临时目录物化 TDX 样本树，重负载下 5000ms 预算易超），且门禁同轮其孪生用例（:362，withBenchmark: true，同夹具成本）已通过——失败为并行负载超时抖动，非内容缺陷。
+4. 处置：不需回退任何分支；门禁侧重跑即可（若再遇超时按同一口径串行确认）。rankings.test.ts 所属的 M4-01 内容问题（如存在）归槽 D 处置，本记录已给出归属与串行证据；根治（门禁串行执行或上调 withTdxRoot 类用例预算）仍属集成门禁基建裁决。
