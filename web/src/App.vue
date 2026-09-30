@@ -2,10 +2,10 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import {
   applySetupChoice, cancelLifecycleExit, confirmLifecycleExit, createLifecycleSession, fetchActiveTraining,
-  fetchEnv, fetchLifecycleStatus, fetchRestartStatus, fetchSetupCandidates, heartbeatLifecycle,
+  fetchEnv, fetchLifecycleStatus, fetchRestartStatus, heartbeatLifecycle,
   inspectSetupRoot, requestLifecycleExit, saveSetupChoice, selectSetupDirectory,
 } from './api'
-import type { LifecyclePendingExit, LifecycleSessionView, SetupCandidate, TdxCandidateCheck, TrainingSnapshot } from './api'
+import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
@@ -161,26 +161,14 @@ watch(dataWidgetState, state => {
   if (state === 'attention') shakeTimer = setInterval(() => { shakeTick.value++ }, 12_000)
 }, { immediate: true })
 
-// ===== 首次接入向导（SETUP-01）：未连接时在首页提供"连接你的通达信" =====
-// 自动发现 → 一键确认 / 原生选目录 → 检查确认 → 保存并生效（受控重启）。
-// 浏览器同源可直接调用 /api/setup/*（不需要令牌）；取消、失败都停留在可重试状态。
-const wizardOpen = ref(false)
+// ===== 通达信连接：用户点击顶栏后直接选择目录并连接 =====
+// 不自动发现安装目录、不查询进程线索；选择器结果只做单目录校验，成功后保存并受控重启。
 const wizardBusy = ref(false)
 const wizardError = ref('')
 const wizardNote = ref('')
-const wizardCandidates = ref<SetupCandidate[]>([])
-const wizardProcessHint = ref('')
-const wizardUsable = computed(() => wizardCandidates.value.filter(item => item.check.recognized && item.check.readable))
-const wizardInspect = ref<{ check: TdxCandidateCheck; suggestions: TdxCandidateCheck[] } | null>(null)
 const wizardChosenRoot = ref('')
-const wizardManualRoot = ref('')
 const wizardApplying = ref(false)
 const disconnected = computed(() => env.value?.tdx?.connected === false)
-const connectedSourceLabel = computed(() => {
-  const source = env.value?.tdx?.source
-  if (!source) return ''
-  return { env: '环境变量', 'explicit-config': '配置文件', 'saved-choice': '已保存选择', 'auto-discovered': '自动发现' }[source] ?? source
-})
 // PORT-01（REL-LAUNCH-UX-01 增量）：默认端口被系统保留/占用时启动器自动改用邻近端口；
 // 页面常驻提示实际端口（数字来自 /api/env，无路径）。浏览器录像按访问地址存放，
 // 端口变化后旧录像要回到原地址查看——提示里如实说明，并给出固定端口的方法。
@@ -192,44 +180,13 @@ const portFallbackNote = computed(() => {
     + `训练数据不受影响；浏览器历史录像按访问地址存放，端口变化后需回到原地址查看。`
     + `如需固定端口，请在 trainer.config.json 设置 port。`
 })
-let wizardAutoOpened = false
 async function reloadEnv(): Promise<void> {
   try { env.value = await fetchEnv() } catch { /* 保留旧值；错误由 envError 呈现 */ }
 }
 function openWizard(): void {
-  wizardOpen.value = true
   wizardError.value = ''
   wizardNote.value = ''
-  void loadWizardCandidates()
-}
-function closeWizard(): void {
-  if (wizardApplying.value) return
-  wizardOpen.value = false
-}
-async function loadWizardCandidates(): Promise<void> {
-  wizardBusy.value = true
-  wizardError.value = ''
-  try {
-    const result = await fetchSetupCandidates()
-    wizardCandidates.value = result.candidates
-    wizardProcessHint.value = result.processReason ?? (result.processStatus !== 'ok' ? `运行中的通达信探测：${result.processStatus}` : '')
-  } catch (error) {
-    wizardError.value = error instanceof Error ? error.message : '无法获取候选列表'
-  } finally { wizardBusy.value = false }
-}
-async function inspectWizardRoot(root: string): Promise<void> {
-  const trimmed = root.trim()
-  if (!trimmed || wizardBusy.value) return
-  wizardBusy.value = true
-  wizardError.value = ''
-  try {
-    const result = await inspectSetupRoot(trimmed)
-    wizardInspect.value = result
-    wizardChosenRoot.value = result.check.recognized && result.check.readable ? result.check.root : ''
-    if (wizardChosenRoot.value) wizardNote.value = ''
-  } catch (error) {
-    wizardError.value = error instanceof Error ? error.message : '检查目录失败'
-  } finally { wizardBusy.value = false }
+  void chooseWizardFolder()
 }
 async function chooseWizardFolder(): Promise<void> {
   if (wizardBusy.value) return
@@ -238,8 +195,14 @@ async function chooseWizardFolder(): Promise<void> {
   try {
     const picked = await selectSetupDirectory()
     if (picked.status === 'selected' && picked.path) {
+      const result = await inspectSetupRoot(picked.path)
+      if (!(result.check.recognized && result.check.readable)) {
+        wizardError.value = result.check.problems.join('；') || '所选目录不符合通达信数据目录要求，请重新选择'
+        return
+      }
+      wizardChosenRoot.value = result.check.root
       wizardBusy.value = false
-      await inspectWizardRoot(picked.path)
+      await saveAndApplyWizard()
       return
     }
     if (picked.status !== 'cancelled') {
@@ -274,7 +237,6 @@ async function saveAndApplyWizard(): Promise<void> {
           wizardNote.value = '已切换到新的通达信目录。'
           await reloadEnv()
           await checkDataStatus({ force: true })
-          wizardOpen.value = false
         } else {
           wizardError.value = status.reason ?? `重启未完成（${status.phase}），保存的选择已回滚`
           await reloadEnv()
@@ -292,15 +254,6 @@ async function saveAndApplyWizard(): Promise<void> {
     wizardBusy.value = false
   }
 }
-watch(disconnected, value => {
-  // 首次发现未连接时自动展开向导（每会话一次；用户关闭后不再打扰）
-  if (value && view.value === 'launcher' && !wizardAutoOpened) {
-    wizardAutoOpened = true
-    openWizard()
-  }
-})
-watch(view, value => { if (value !== 'launcher') wizardOpen.value = false })
-
 // ===== 保存并退出训练器（REL-LAUNCH-UX-01） =====
 // 退出不结算、不放弃训练：先冲刷本页画线/录像保存，再经同源受保护协议协调其他
 // 页面确认，最后服务端排空、关闭 Fastify 与 SQLite 后进程自然退出；页面轮询到
@@ -568,7 +521,7 @@ function onTrainingEnded(): void {
             <template v-else>
               <span class="connection-dot" :class="{ offline: !env?.tdx?.connected }"></span>
               <span class="connection-text">{{ env?.tdx?.connected ? `TDX · 截止 ${env.dataCutoff ?? 'N/A'}` : 'TDX 未连接' }}</span>
-              <button v-if="disconnected && !wizardOpen" class="data-reread-btn" title="重新连接数据：自动发现或选择通达信目录" @click="openWizard">连接通达信</button>
+              <button v-if="disconnected" class="data-reread-btn" title="重新连接数据：选择通达信目录" @click="openWizard">连接通达信</button>
             </template>
             <!-- 常驻手动入口：重新读取本地日线（仅扫描本地通达信日线文件，不联网下载） -->
             <button v-if="showManualReread" class="data-reread-btn" title="重新扫描本地通达信日线文件（不联网）" @click="updateData">重新读取</button>
@@ -592,81 +545,8 @@ function onTrainingEnded(): void {
       <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
 
       <template v-if="view === 'launcher'">
-        <!-- 首次接入向导（SETUP-01）：仅在未连接通达信时出现；关闭后可从顶栏"连接通达信"再开 -->
-        <section v-if="wizardOpen && disconnected" class="setup-wizard" aria-label="连接你的通达信">
-          <header class="setup-wizard-head">
-            <div>
-              <h2>连接你的通达信</h2>
-              <p class="setup-wizard-sub">程序只读取本机通达信行情文件，不控制交易、不写入通达信目录、不联网下载行情。</p>
-            </div>
-            <button class="setup-wizard-close" aria-label="关闭连接向导" :disabled="wizardApplying" @click="closeWizard">✕</button>
-          </header>
-
-          <div v-if="wizardError" class="setup-wizard-error" role="alert">{{ wizardError }}</div>
-          <p v-if="wizardNote" class="setup-wizard-note" role="status">{{ wizardNote }}</p>
-
-          <!-- 已确认可用的候选 -->
-          <template v-if="wizardChosenRoot">
-            <div class="setup-wizard-found">
-              <span class="setup-wizard-ok-dot" aria-hidden="true"></span>
-              <div class="setup-wizard-found-text">
-                <strong>已找到可用的通达信目录</strong>
-                <span>日线 {{ wizardInspect?.check.dailyFileCount ?? 0 }} 只 · 行情末日 {{ wizardInspect?.check.latestDate ?? '未知' }}（来源末日，不代表每只股票都最新）{{ wizardInspect?.check.hasAdjustment ? ' · 权息可用' : ' · 缺少权息数据' }}</span>
-                <span class="setup-wizard-path">{{ wizardChosenRoot }}</span>
-              </div>
-              <button class="setup-wizard-primary" :disabled="wizardBusy || wizardApplying" @click="saveAndApplyWizard">{{ wizardApplying ? '正在切换…' : '保存并生效' }}</button>
-            </div>
-            <button class="setup-wizard-link" :disabled="wizardBusy" @click="wizardChosenRoot = ''; wizardInspect = null">换一个目录</button>
-          </template>
-
-          <!-- 候选列表：单个直显"使用这个数据"，多个并列由用户选择，不默认选中 -->
-          <template v-else>
-            <div v-if="wizardUsable.length" class="setup-wizard-candidates">
-              <p v-if="wizardUsable.length === 1" class="setup-wizard-sub">已找到通达信：</p>
-              <p v-else class="setup-wizard-sub">发现多个通达信安装，请选择要使用的一个：</p>
-              <div v-for="item in wizardUsable" :key="item.check.root" class="setup-wizard-candidate">
-                <div class="setup-wizard-candidate-text">
-                  <strong>使用这个数据</strong>
-                  <span>日线 {{ item.check.dailyFileCount }} 只 · 行情末日 {{ item.check.latestDate ?? '未知' }}{{ item.check.hasAdjustment ? ' · 权息可用' : ' · 缺少权息' }}</span>
-                  <span class="setup-wizard-path">{{ item.check.root }}</span>
-                </div>
-                <button class="setup-wizard-primary" :disabled="wizardBusy" @click="inspectWizardRoot(item.check.root)">使用这个数据</button>
-              </div>
-            </div>
-
-            <!-- 未找到/候选不可用：真实原因 + 三条出路 -->
-            <div v-else class="setup-wizard-none">
-              <p class="setup-wizard-sub">没有找到可用的通达信目录。</p>
-              <ul v-if="wizardProcessHint" class="setup-wizard-problems"><li>{{ wizardProcessHint }}</li></ul>
-              <div class="setup-wizard-actions">
-                <button class="setup-wizard-secondary" :disabled="wizardBusy || wizardApplying" @click="loadWizardCandidates">打开通达信后重新检测</button>
-                <button class="setup-wizard-secondary" :disabled="wizardBusy || wizardApplying" @click="chooseWizardFolder">选择通达信文件夹…</button>
-              </div>
-              <div class="setup-wizard-manual">
-                <input v-model="wizardManualRoot" type="text" placeholder="或直接粘贴通达信安装目录（包含 vipdoc 的那层）" aria-label="手动输入通达信目录" :disabled="wizardBusy" @keydown.enter="inspectWizardRoot(wizardManualRoot)" />
-                <button class="setup-wizard-secondary" :disabled="wizardBusy || !wizardManualRoot.trim()" @click="inspectWizardRoot(wizardManualRoot)">检查该目录</button>
-              </div>
-            </div>
-
-            <!-- 检查结果：问题清单 + 附近候选建议（仅供确认，不自动采用） -->
-            <template v-if="wizardInspect && !wizardChosenRoot">
-              <ul v-if="wizardInspect.check.problems.length" class="setup-wizard-problems">
-                <li v-for="problem in wizardInspect.check.problems" :key="problem">{{ problem }}</li>
-              </ul>
-              <div v-if="wizardInspect.suggestions.length" class="setup-wizard-suggestions">
-                <p class="setup-wizard-sub">你选择的目录附近发现这些可能的安装，点击确认：</p>
-                <button v-for="suggestion in wizardInspect.suggestions" :key="suggestion.root" class="setup-wizard-suggestion" :disabled="wizardBusy" @click="inspectWizardRoot(suggestion.root)">
-                  {{ suggestion.root }}（日线 {{ suggestion.dailyFileCount }} 只{{ suggestion.hasAdjustment ? '' : ' · 缺权息' }}）
-                </button>
-              </div>
-            </template>
-          </template>
-
-          <p v-if="wizardBusy && !wizardApplying" class="setup-wizard-note">正在检查…</p>
-          <p class="setup-wizard-sub setup-wizard-offline-hint">
-            暂时没有通达信也可以先导入分享的训练录像回放：左侧"录像" → 导入。
-          </p>
-        </section>
+        <p v-if="wizardError" class="setup-connection-error" role="alert">{{ wizardError }} <button class="data-reread-btn" @click="openWizard">重新选择目录</button></p>
+        <p v-if="wizardNote" class="setup-connection-note" role="status">{{ wizardNote }}</p>
         <Launcher @created="onCreated" />
       </template>
       <section v-else-if="view === 'library'" class="recording-library recording-library-page" aria-label="训练录像库">

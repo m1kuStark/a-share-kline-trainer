@@ -154,20 +154,14 @@ describe('POST /api/setup/select-directory', () => {
 })
 
 describe('POST /api/setup/inspect', () => {
-  it('returns the check plus nearby suggestions only when the root is not recognized', async () => {
-    // 真实临时目录：误选父目录，邻近识别应把子安装列为建议（不自动采用）
-    const base = await tempDataDir()
-    const parent = join(base, '选错的上层')
-    const install = join(parent, 'new_tdx')
-    await mkdir(join(install, 'vipdoc', 'sh', 'lday'), { recursive: true })
+  it('returns only the selected root check without scanning nearby directories', async () => {
+    const parent = 'D:\\选错的上层'
     const inspected: string[] = []
     const app = await buildApp({
       inspectOne: async root => {
         inspected.push(root)
-        // 选中目录本身不识别（误选上层）；可用性由注入的 inspect 判定
         return makeCheck(root, { recognized: false, readable: true, problems: ['未发现通达信结构'] })
       },
-      inspect: async roots => roots.map(root => makeCheck(root, { recognized: root.toLowerCase() === install.toLowerCase() })),
     })
     try {
       const response = await app.inject({
@@ -178,7 +172,7 @@ describe('POST /api/setup/inspect', () => {
       const body = response.json()
       expect(body.check.recognized).toBe(false)
       expect(body.check.problems.length).toBeGreaterThan(0)
-      expect(body.suggestions.map((item: TdxCandidateCheck) => item.root.toLowerCase())).toEqual([install.toLowerCase()])
+      expect(body.suggestions).toEqual([])
       expect(inspected).toEqual([parent])
     } finally { await app.close() }
   })
