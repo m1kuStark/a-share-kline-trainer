@@ -8,10 +8,9 @@
 import { computed, ref, watch } from 'vue'
 import { ApiError, fetchTrainingBars, fetchTrainingReport, type HistoryReportPayload, type TrainingBarsPayload } from '../api'
 import KlineChart from './KlineChart.vue'
-import { DRAW_TOOLS } from '../drawTools'
 
 const props = defineProps<{ id: number }>()
-const emit = defineEmits<{ back: [] }>()
+const emit = defineEmits<{ back: []; close: [] }>()
 
 const report = ref<HistoryReportPayload | null>(null)
 const loading = ref(false)
@@ -88,7 +87,6 @@ function fetchEarlier(before: string, count: number): Promise<{ bars: TrainingBa
 
 const TIER_LABELS: Record<string, string> = { '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }
 const RANGE_MODE_LABELS: Record<string, string> = { preset: '自定义·预设', latest: '自定义·到最新', bars: '自定义·日K根数' }
-const PANE_LABELS: Record<string, string> = { candle_pane: '主图', VOL: '成交量', MACD: 'MACD' }
 const info = computed(() => {
   const training = report.value?.training
   if (!training) return null
@@ -114,12 +112,6 @@ const percent = computed(() => {
 function sideText(side: 'buy' | 'sell'): string {
   return side === 'buy' ? '买入' : '卖出'
 }
-function toolLabel(name: string): string {
-  return DRAW_TOOLS.find(tool => tool.name === name)?.label ?? name
-}
-function anchorDate(timestamp: number): string {
-  return new Date(timestamp).toISOString().slice(0, 10)
-}
 
 // 权益曲线几何：纯 SVG 折线（不引入图表库、不新增行情K线）；单点画圆点。
 const curve = computed(() => {
@@ -142,13 +134,14 @@ const curve = computed(() => {
 </script>
 
 <template>
-  <section class="report-page" aria-label="成绩单">
+  <section class="report-page" role="dialog" aria-modal="true" aria-label="成绩单">
     <header class="report-header">
       <div>
         <h1>训练成绩单</h1>
         <p v-if="report">第 {{ report.training.id }} 局 · {{ report.training.code }} {{ report.training.name }}（{{ info?.tierText }}）</p>
       </div>
-      <button class="ghost-button" @click="emit('back')">返回历史列表</button>
+      <button class="ghost-button report-modal-back" type="button" @click="emit('close')">返回历史列表</button>
+      <button class="report-modal-close" type="button" aria-label="关闭成绩单" title="关闭成绩单" @click="emit('close')">×</button>
     </header>
 
     <div v-if="errorMessage" class="history-error" role="alert">
@@ -238,20 +231,7 @@ const curve = computed(() => {
       </div>
       <p v-else class="report-empty">复盘未展开。展开后只读回看该局K线、逐笔成交标记与已保存画线。</p>
 
-      <h2>画线标注</h2>
-      <p v-if="report.drawingsStatus === 'unavailable'" class="history-error" role="alert">{{ report.drawingsReason }}</p>
-      <p v-else-if="!report.drawings?.length" class="report-empty">未保存画线。</p>
-      <ul v-else class="report-drawings">
-        <li v-for="drawing in report.drawings" :key="drawing.id" class="report-drawing-item">
-          <strong>{{ toolLabel(drawing.name) }}</strong>
-          <span>窗格：{{ PANE_LABELS[drawing.paneId ?? 'candle_pane'] ?? drawing.paneId }}</span>
-          <span>锚点 {{ drawing.points.length }} 个：
-            <template v-for="(point, index) in drawing.points" :key="index">{{ index ? '；' : '' }}{{ anchorDate(point.timestamp) }} @ {{ price(point.value) }}</template>
-          </span>
-          <span v-if="drawing.priceBasis" class="report-drawing-basis">数值为保存时的前复权基准（保留原始价格基准，不做换算）</span>
-        </li>
-      </ul>
-      <p class="report-note">画线标注清单与上方只读复盘共用同一份当日保存记录；复盘不提供画线编辑，历史画线保持结算时原样。</p>
+      <p v-if="report.drawingsStatus === 'unavailable'" class="history-error" role="alert">复盘画线数据不可用：{{ report.drawingsReason }}</p>
     </template>
   </section>
 </template>

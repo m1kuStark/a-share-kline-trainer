@@ -205,10 +205,9 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await expect(report.locator('.report-trade-row').first()).toContainText('买入')
   await expect(report.getByRole('heading', { name: '已保存权益曲线' })).toBeVisible()
   await expect(report.locator('svg.equity-curve-svg')).toBeVisible()
-  await expect(report.getByRole('heading', { name: '画线标注' })).toBeVisible()
-  await expect(report.locator('.report-drawing-item')).toHaveCount(1)
-  await expect(report.locator('.report-drawing-item').first()).toContainText('线段')
-  await expect(report.locator('.report-drawing-item').first()).toContainText('主图')
+  await expect(report).toHaveAttribute('aria-modal', 'true')
+  await expect(report.getByRole('heading', { name: '画线标注' })).toHaveCount(0)
+  await expect(report.locator('.report-drawing-item')).toHaveCount(0)
   // 金额不出现 NaN/undefined
   const reportText = await report.innerText()
   expect(reportText).not.toContain('NaN')

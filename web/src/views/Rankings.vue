@@ -4,7 +4,7 @@
 // 行级不可认证局不入榜，数量如实展示；运行中训练存在时服务端 409（同历史守卫）。
 // 请求版本守卫：切档迟到/失败响应不得覆盖新状态，也不得留下永续 loading（FM-014/FM-015 教训）。
 import { onMounted, ref, watch } from 'vue'
-import { ApiError, fetchRankings, type RankingGroups, type RankingItem } from '../api'
+import { ApiError, fetchIndustryRankings, fetchRangeRankings, fetchRankings, type RankingGroups, type RankingItem } from '../api'
 import HistoryReport from '../components/HistoryReport.vue'
 
 const emit = defineEmits<{ create: [] }>()
@@ -18,6 +18,7 @@ const TIERS: Array<{ value: string; label: string }> = [
 ]
 
 const tier = ref('1M')
+const mode = ref<'tier' | 'range' | 'industry'>('tier')
 const groups = ref<RankingGroups | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
@@ -29,16 +30,17 @@ let loadVersion = 0
 async function load(): Promise<void> {
   const requestVersion = ++loadVersion
   const targetTier = tier.value
+  const targetMode = mode.value
   loading.value = true
   errorMessage.value = ''
   try {
-    const payload = await fetchRankings(targetTier)
-    if (requestVersion !== loadVersion || targetTier !== tier.value) return
+    const payload = targetMode === 'range' ? await fetchRangeRankings() : targetMode === 'industry' ? await fetchIndustryRankings() : await fetchRankings(targetTier)
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value) return
     groups.value = payload
     activeGuard.value = false
     loaded.value = true
   } catch (error) {
-    if (requestVersion !== loadVersion || targetTier !== tier.value) return
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value) return
     if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
       activeGuard.value = true
       groups.value = null
@@ -47,7 +49,7 @@ async function load(): Promise<void> {
       errorMessage.value = error instanceof Error ? error.message : '无法读取排行'
     }
   } finally {
-    if (requestVersion === loadVersion && targetTier === tier.value) loading.value = false
+    if (requestVersion === loadVersion && targetTier === tier.value && targetMode === mode.value) loading.value = false
   }
 }
 onMounted(() => { void load() })
@@ -55,6 +57,7 @@ watch(tier, () => {
   selectedId.value = null
   void load()
 })
+watch(mode, () => { selectedId.value = null; void load() })
 
 function rank(index: number): string {
   return `${index + 1}`
@@ -87,7 +90,12 @@ function daysText(item: RankingItem): string {
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
 
-    <nav class="rankings-tabs" aria-label="训练周期">
+    <nav class="rankings-tabs" aria-label="排行模式">
+      <button class="rankings-tab" :class="{ active: mode === 'tier' }" @click="mode = 'tier'">训练周期</button>
+      <button class="rankings-tab" :class="{ active: mode === 'range' }" @click="mode = 'range'">自定义区间</button>
+      <button class="rankings-tab" :class="{ active: mode === 'industry' }" @click="mode = 'industry'">行业板块</button>
+    </nav>
+    <nav v-if="mode === 'tier'" class="rankings-tabs" aria-label="训练周期">
       <button
         v-for="entry in TIERS" :key="entry.value"
         class="rankings-tab" :class="{ active: tier === entry.value }"
@@ -107,6 +115,25 @@ function daysText(item: RankingItem): string {
 
     <p v-else-if="loading" class="history-loading" role="status">加载中…</p>
 
+    <template v-else-if="groups && mode === 'range'">
+      <p v-if="!groups.rangeGroups?.length" class="history-empty">暂无自定义区间成绩</p>
+      <section v-for="group in groups.rangeGroups" :key="group.key" aria-label="自定义区间排行">
+        <h2>{{ group.startDate }} ~ {{ group.endDate }}</h2>
+        <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
+          <tbody><tr v-for="(item, index) in [...group.complete, ...group.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+        </table>
+      </section>
+    </template>
+    <template v-else-if="groups && mode === 'industry'">
+      <p v-if="groups.industry?.status === 'unavailable'" class="history-error" role="alert">行业排行暂不可用：{{ groups.industry.reason }}</p>
+      <p v-else-if="!groups.industry?.entries?.length" class="history-empty">暂无行业排行数据</p>
+      <section v-for="entry in groups.industry?.entries" :key="entry.id" aria-label="行业排行">
+        <h2>{{ entry.name }}</h2>
+        <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
+          <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+        </table>
+      </section>
+    </template>
     <template v-else-if="groups">
       <p v-if="!groups.complete.length && !groups.earlySettled.length" class="history-empty">该周期暂无入榜成绩</p>
       <template v-else>
@@ -179,6 +206,8 @@ function daysText(item: RankingItem): string {
       </template>
     </template>
 
-    <HistoryReport v-if="selectedId !== null" :id="selectedId" @back="selectedId = null" />
+    <div v-if="selectedId !== null" class="report-modal-mask" role="presentation" @click.self="selectedId = null">
+      <HistoryReport :id="selectedId" @close="selectedId = null" @back="selectedId = null" />
+    </div>
   </section>
 </template>

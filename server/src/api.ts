@@ -26,13 +26,12 @@ import {
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
-import { parseRankingsQuery, rankingsPayload } from './train/rankings.js'
+import { deleteSettledTrainings, parseHistoryDeleteIds } from './train/history-delete.js'
+import { industryRankingsPayload, parseRankingsQuery, rangeRankingsPayload, rankingsPayload } from './train/rankings.js'
 import { validateSetupRequest } from './setup/control-guard.js'
-import { collectTdxCandidateDiagnostics } from './tdx/candidate-diagnostics.js'
-import { collectProcessClues, defaultProcessQuery, appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
+import { appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
 import type { DrainGate } from './setup/drain-controller.js'
-import { collectNearbyCandidateRoots, defaultTdxCandidates, NEARBY_SUGGESTION_LIMIT } from './tdx/discover.js'
-import { inspectTdxCandidate, inspectTdxCandidates, type TdxCandidateCheck } from './tdx/inspect.js'
+import { inspectTdxCandidate, type TdxCandidateCheck } from './tdx/inspect.js'
 import { readSavedTdxChoice, saveTdxChoice, type SavedTdxChoice, type TdxRootSource } from './setup/saved-choice.js'
 import { spawn } from 'node:child_process'
 
@@ -344,31 +343,15 @@ export async function registerApi(
     return trimmed
   }
 
-  // 受保护候选诊断只读端点（SETUP-API-01）：诊断异常结构化 503，
-  // 不把失败伪装成空候选。响应可含本机路径（用户主动请求候选时展示安装位置），
-  // 绝不回显控制令牌。
+  // 兼容旧客户端的候选端点。自动发现已关闭：首次连接必须由用户点击原生目录选择器，
+  // 这里不查询进程、不扫描默认安装目录，只返回可行动的迁移提示。
   app.get('/api/setup/candidates', async (request, reply) => {
     const guardFailure = setupGuardFailure(request)
     if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
-    const processQuery = options.setup?.processQuery ?? defaultProcessQuery
-    const inspect = options.setup?.inspect
-    try {
-      // 注入点替换的是"查询"，clues 提取固定走 collectProcessClues（五态/去重/白名单）
-      const processResult = await collectProcessClues(processQuery)
-      const diagnostics = await collectTdxCandidateDiagnostics(
-        { process: processResult, manualRoots: defaultTdxCandidates() },
-        inspect,
-      )
-      const body: Record<string, unknown> = {
-        processStatus: diagnostics.processStatus,
-        candidates: diagnostics.candidates,
-      }
-      if (diagnostics.processReason !== undefined) {
-        body.processReason = diagnostics.processReason
-      }
-      return body
-    } catch {
-      return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
+    return {
+      processStatus: 'disabled',
+      processReason: '自动检测已关闭，请点击“连接通达信”并在资源管理器中选择安装目录',
+      candidates: [],
     }
   })
 
@@ -386,8 +369,7 @@ export async function registerApi(
     }
   })
 
-  // 检查用户提供的目录（选择框结果或手动输入）：返回完整检查结果；误选上层目录/
-  // vipdoc 时只在附近有限范围识别根目录，识别出的候选仅供用户确认，不自动采用。
+  // 检查用户通过选择器确认的单个目录：返回完整检查结果，不扫描附近目录、不猜测安装位置。
   app.post('/api/setup/inspect', async (request, reply) => {
     const guardFailure = setupGuardFailure(request)
     if (guardFailure) return reply.code(guardFailure.statusCode).send({ error: guardFailure.code })
@@ -396,27 +378,13 @@ export async function registerApi(
       return reply.code(400).send({ error: 'root 必须是 1~500 字符的目录路径' })
     }
     const inspectOne = options.setup?.inspectOne ?? inspectTdxCandidate
-    const inspectMany = options.setup?.inspect ?? inspectTdxCandidates
     let check: TdxCandidateCheck
     try {
       check = await inspectOne(root)
     } catch {
       return reply.code(503).send({ error: 'SETUP_DIAGNOSTICS_UNAVAILABLE' })
     }
-    let suggestions: TdxCandidateCheck[] = []
-    if (!check.recognized) {
-      try {
-        const nearbyRoots = await collectNearbyCandidateRoots(root)
-        const nearbyChecks = nearbyRoots.length > 0 ? await inspectMany(nearbyRoots) : []
-        const selectedKey = check.root.toLowerCase()
-        suggestions = nearbyChecks
-          .filter(item => item.recognized && item.root.toLowerCase() !== selectedKey)
-          .slice(0, NEARBY_SUGGESTION_LIMIT)
-      } catch {
-        suggestions = []
-      }
-    }
-    return { check, suggestions }
+    return { check, suggestions: [] }
   })
 
   // 保存用户确认的目录（SETUP-SAVE-01 冻结模块）：保存前复验，原子写入 dataDir；
@@ -1045,13 +1013,31 @@ export async function registerApi(
     return historyReport(database, trainingId)
   })
 
+  // 历史清理：只接受已结算训练；先完成 no-future 守卫和整批状态校验，
+  // 再由 history-delete 在一个事务中清理全部训练事实。
+  app.delete('/api/trainings/history', async request => {
+    assertNoActiveTraining(database)
+    const ids = parseHistoryDeleteIds(request.body)
+    return { deleted: deleteSettledTrainings(database, ids) }
+  })
+
+  app.delete('/api/trainings/:id', async request => {
+    const { id } = request.params as { id: string }
+    const trainingId = Number(id)
+    if (!Number.isSafeInteger(trainingId) || trainingId < 1) throw new HttpError(400, 'id 必须是正整数')
+    assertNoActiveTraining(database)
+    return { deleted: deleteSettledTrainings(database, [trainingId]) }
+  })
+
   // M4-01 五档排行：按档独立分组（完整/提前结算），放弃与 RANGE 不入榜；
   // 行级不可认证（坏规则/legacy-raw/结算点缺失）不入榜并如实计数。守卫与历史同一口径：
   // 存在 running 训练时 409 拒答（防旧局记录泄漏当前局未来），并在异步基准读取后复守卫。
   app.get('/api/rankings', async request => {
-    const { tier } = parseRankingsQuery(request.query as Record<string, unknown>)
+    const query = parseRankingsQuery(request.query as Record<string, unknown>)
     assertNoActiveTraining(database)
-    return rankingsPayload(database, config, tier)
+    if (query.view === 'range') return rangeRankingsPayload(database, config)
+    if (query.view === 'industry') return industryRankingsPayload(database, config, query.industry)
+    return rankingsPayload(database, config, query.tier)
   })
 
   app.get('/api/trainings/:id', async request => {

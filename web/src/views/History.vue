@@ -3,7 +3,7 @@
 // 请求版本守卫：迟到/失败响应不得覆盖新状态，也不得留下永续 loading（FM-014 教训）。
 // 运行中训练存在时服务端 409 HISTORY_ACTIVE_TRAINING：展示守卫说明，可经侧栏返回当前训练。
 import { computed, onMounted, ref } from 'vue'
-import { ApiError, fetchTrainingHistory, type HistoryItem } from '../api'
+import { ApiError, deleteTrainingHistory, fetchTrainingHistory, type HistoryItem } from '../api'
 import HistoryReport from '../components/HistoryReport.vue'
 
 const emit = defineEmits<{ create: [] }>()
@@ -16,6 +16,7 @@ const loading = ref(false)
 const errorMessage = ref('')
 const activeGuard = ref(false)
 const selectedId = ref<number | null>(null)
+const selectedIds = ref<number[]>([])
 // FM-015/F2 三态归属：仅当"当前请求成功返回"后（loaded=true）才允许渲染空态或列表；
 // 加载期间只显示加载态，不显示空态/列表/分页；失效响应不得回写任何状态。
 const loaded = ref(false)
@@ -76,6 +77,32 @@ function percentText(item: HistoryItem): string {
   const percent = item.returnRate * 100
   return `${percent >= 0 ? '+' : ''}${percent.toFixed(2)}%`
 }
+function toggleSelected(id: number): void {
+  selectedIds.value = selectedIds.value.includes(id)
+    ? selectedIds.value.filter(value => value !== id)
+    : [...selectedIds.value, id]
+}
+function togglePageSelection(): void {
+  const ids = items.value.map(item => item.id)
+  selectedIds.value = ids.every(id => selectedIds.value.includes(id))
+    ? selectedIds.value.filter(id => !ids.includes(id))
+    : [...new Set([...selectedIds.value, ...ids])]
+}
+function isSelected(id: number): boolean { return selectedIds.value.includes(id) }
+async function removeHistory(ids: number | number[]): Promise<void> {
+  const list = typeof ids === 'number' ? [ids] : ids
+  if (!list.length) return
+  const prompt = list.length === 1 ? '确认删除这条训练记录？删除后无法恢复。' : `确认删除选中的 ${list.length} 条训练记录？删除后无法恢复。`
+  if (!window.confirm(prompt)) return
+  try {
+    await deleteTrainingHistory(ids)
+    selectedIds.value = selectedIds.value.filter(id => !list.includes(id))
+    if (offset.value >= total.value - list.length && offset.value > 0) offset.value = Math.max(0, offset.value - limit.value)
+    await load()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '删除历史记录失败'
+  }
+}
 </script>
 
 <template>
@@ -103,8 +130,14 @@ function percentText(item: HistoryItem): string {
 
     <template v-else>
       <p v-if="!total" class="history-empty">暂无已结算训练</p>
-      <div v-else class="history-list">
-        <button v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" @click="selectedId = item.id">
+      <div v-else class="history-content">
+        <div v-if="items.length" class="history-batch-actions">
+          <label class="history-select-all"><input type="checkbox" :checked="items.every(item => isSelected(item.id))" @change="togglePageSelection" />全选本页</label>
+          <button class="danger-button" :disabled="!selectedIds.length" @click="removeHistory(selectedIds)">删除选中（{{ selectedIds.length }}）</button>
+        </div>
+        <div class="history-list">
+        <div v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" role="button" tabindex="0" @click="selectedId = item.id" @keydown.enter="selectedId = item.id">
+          <input class="history-row-check" type="checkbox" :checked="isSelected(item.id)" :aria-label="`选择第 ${item.id} 局`" @click.stop @change="toggleSelected(item.id)" />
           <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small>{{ tierText(item) }}</small></span>
           <span class="history-row-dates">{{ item.startDate }} ~ {{ item.settleDate ?? '未知' }}</span>
           <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}</span>
@@ -112,7 +145,9 @@ function percentText(item: HistoryItem): string {
           <span class="history-row-return" :class="{ up: (item.returnRate ?? 0) > 0, down: (item.returnRate ?? 0) < 0 }">{{ percentText(item) }}</span>
           <span class="history-row-count">{{ item.tradeCount }} 笔</span>
           <span v-if="item.integrity === 'unavailable'" class="history-row-integrity" :title="item.integrityReason">不可认证</span>
-        </button>
+          <button class="history-row-delete" type="button" title="删除训练记录" aria-label="删除训练记录" @click.stop="removeHistory(item.id)">删除</button>
+        </div>
+        </div>
       </div>
 
       <div v-if="total" class="history-pagination">
@@ -123,6 +158,8 @@ function percentText(item: HistoryItem): string {
     </template>
 
     <!-- 详情与列表共存：可在多局间直接切换（A→B 迟到响应由版本守卫丢弃，不留永续 loading） -->
-    <HistoryReport v-if="selectedId !== null" :id="selectedId" @back="selectedId = null" />
+    <div v-if="selectedId !== null" class="report-modal-mask" role="presentation" @click.self="selectedId = null">
+      <HistoryReport :id="selectedId" @close="selectedId = null" @back="selectedId = null" />
+    </div>
   </section>
 </template>

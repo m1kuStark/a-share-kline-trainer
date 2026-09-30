@@ -466,6 +466,17 @@ export function fetchTrainingHistory(params: { limit?: number; offset?: number }
   return request(`/api/trainings/history${query ? `?${query}` : ''}`)
 }
 
+export function deleteTrainingHistory(ids: number | readonly number[]): Promise<{ deleted: number[] }> {
+  if (typeof ids === 'number') {
+    return request(`/api/trainings/${ids}`, { method: 'DELETE' })
+  }
+  return request('/api/trainings/history', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: [...ids] }),
+  })
+}
+
 export interface HistoryReportTraining {
   id: number
   tier: TrainingTier
@@ -548,8 +559,11 @@ export interface RankingItem {
 
 export interface RankingGroups {
   tier: string
+  view?: 'tier' | 'range' | 'industry'
   complete: RankingItem[]
   earlySettled: RankingItem[]
+  rangeGroups?: Array<{ key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>
+  industry?: { status: 'ok' | 'unavailable'; reason?: string; entries?: Array<{ id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }> }
   /** 行级不可认证而不入榜的局数（坏规则/legacy-raw/结算点缺失） */
   excludedUnavailable: number
   /** 基准数据整体状态：文件缺失/无 TDX 时整组超额置 null 并说明 */
@@ -558,6 +572,15 @@ export interface RankingGroups {
 
 export function fetchRankings(tier: string): Promise<RankingGroups> {
   return request(`/api/rankings?tier=${encodeURIComponent(tier)}`)
+}
+
+export function fetchRangeRankings(): Promise<RankingGroups> {
+  return request('/api/rankings?view=range')
+}
+
+export function fetchIndustryRankings(industry?: string): Promise<RankingGroups> {
+  const query = industry ? `&industry=${encodeURIComponent(industry)}` : ''
+  return request(`/api/rankings?view=industry${query}`)
 }
 
 // ===== 日线数据更新（R1：状态检查 + 触发更新） =====

@@ -358,6 +358,58 @@ describe('HISTORY-list GET /api/trainings/history', () => {
       expect(dumpDatabase(database)).toBe(before)
     })
   })
+
+  it('DELETE /api/trainings/:id：仅删除 settled 训练，并清理全部训练事实', async () => {
+    await withApp(async ({ app, database }) => {
+      const id = insertTraining(database, { early_settle: 1 })
+      insertTrade(database, id, 1, '2026-08-05', 'buy', 19.9, 500, 9950, 5, 90_000)
+      insertEquity(database, id, '2026-08-03', 100_000)
+      insertEquity(database, id, '2026-08-28', 110_000)
+      insertDrawings(database, id, JSON.stringify(lineDrawing))
+      database.prepare(`
+        INSERT INTO position_events (training_id, seq, date, kind, shares_delta, cash_delta, cost_delta)
+        VALUES (?, 1, '2026-08-10', 'corporate_action', 0, 1, 0)
+      `).run(id)
+
+      const response = await app.inject({ method: 'DELETE', url: `/api/trainings/${id}` })
+      expect(response.statusCode).toBe(200)
+      expect(response.json()).toEqual({ deleted: [id] })
+      expect(database.prepare('SELECT COUNT(*) AS count FROM trainings WHERE id = ?').get(id)).toEqual({ count: 0 })
+      for (const table of ['trades', 'equity_curve', 'drawings', 'position_events']) {
+        expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE training_id = ?`).get(id)).toEqual({ count: 0 })
+      }
+      expect((await app.inject({ method: 'GET', url: '/api/trainings/history' })).json().total).toBe(0)
+      expect((await app.inject({ method: 'GET', url: `/api/trainings/${id}/report` })).statusCode).toBe(404)
+    })
+  })
+
+  it('DELETE /api/trainings/history：批量删除原子执行，运行中训练存在时拒绝且不写库', async () => {
+    await withApp(async ({ app, database }) => {
+      const first = insertTraining(database, {})
+      const second = insertTraining(database, {})
+      insertEquity(database, first, '2026-08-28', 100_000)
+      insertEquity(database, second, '2026-08-28', 100_000)
+
+      const deleted = await app.inject({ method: 'DELETE', url: '/api/trainings/history', payload: { ids: [first, second] } })
+      expect(deleted.statusCode).toBe(200)
+      expect(deleted.json()).toEqual({ deleted: [first, second] })
+
+      const third = insertTraining(database, {})
+      insertEquity(database, third, '2026-08-28', 100_000)
+      const running = insertTraining(database, { status: 'running', settle_date: null })
+      const before = dumpDatabase(database)
+      const blocked = await app.inject({ method: 'DELETE', url: '/api/trainings/history', payload: { ids: [third] } })
+      expect(blocked.statusCode).toBe(409)
+      expect(blocked.json().code).toBe('HISTORY_ACTIVE_TRAINING')
+      expect(dumpDatabase(database)).toBe(before)
+      database.prepare('UPDATE trainings SET status = \'abandoned\' WHERE id = ?').run(running)
+
+      const invalid = await app.inject({ method: 'DELETE', url: '/api/trainings/history', payload: { ids: [third, 99999] } })
+      expect(invalid.statusCode).toBe(404)
+      expect(invalid.json().code).toBe('HISTORY_NOT_FOUND')
+      expect(database.prepare('SELECT id FROM trainings WHERE id = ?').get(third)).toEqual({ id: third })
+    })
+  })
 })
 
 describe('settledFact 纯函数（非有限结算点口径）', () => {

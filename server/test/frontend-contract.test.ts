@@ -4,6 +4,8 @@ import { exerciseChartZoom } from './helpers/chart-zoom'
 
 const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta.url)
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
+const historyPath = new URL('../../web/src/views/History.vue', import.meta.url)
+const reportPath = new URL('../../web/src/components/HistoryReport.vue', import.meta.url)
 
 describe('M2 chart interaction contract', () => {
   it('registers shared transparent measurement labels without changing the Fibonacci tool name', async () => {
@@ -265,5 +267,27 @@ describe('M2 chart interaction contract', () => {
     expect(trainingSource).toMatch(/async function fetchEarlier\(/)
     expect(trainingSource).toMatch(/:has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"/)
     expect(trainingSource).toMatch(/MAX_VISIBLE_BARS/)
+  })
+})
+
+describe('M4 history/report interaction contract', () => {
+  it('opens the shared report inside a fixed modal and keeps the close action accessible', async () => {
+    const history = await readFile(historyPath, 'utf8')
+    const report = await readFile(reportPath, 'utf8')
+    expect(history).toMatch(/class="report-modal-mask"/)
+    expect(report).toMatch(/aria-modal="true"/)
+    expect(report).toMatch(/class="report-modal-close"/)
+    expect(report).toMatch(/aria-label="关闭成绩单"/)
+  })
+
+  it('exposes single and batch history deletion with confirmation and removes the standalone drawing list', async () => {
+    const history = await readFile(historyPath, 'utf8')
+    const api = await readFile(new URL('../../web/src/api.ts', import.meta.url), 'utf8')
+    const report = await readFile(reportPath, 'utf8')
+    expect(history).toMatch(/selectedIds/)
+    expect(history).toMatch(/deleteTrainingHistory/)
+    expect(history).toMatch(/window\.confirm\(/)
+    expect(api).toMatch(/export function deleteTrainingHistory\(/)
+    expect(report).not.toMatch(/class="report-drawings"/)
   })
 })
