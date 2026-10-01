@@ -7,7 +7,7 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 1.2.2 源码候选已完成阶段线、条件单比例输入、标记详情和右键保护修订；单一 Windows 包待构建，用户验收与公开发布仍未确认。",
+  "summary": "版本 1.2.2 源码候选已完成阶段线、条件单比例输入、标记详情和右键保护修订；单一 Windows 包已构建并核对 SHA256，用户验收与公开发布仍未确认。",
   "next_action": "用户手动验收 output/v1.2.2-20261002；收到反馈后记录验收或创建限定返修任务。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [

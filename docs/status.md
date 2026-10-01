@@ -20,7 +20,7 @@
 | [R2 · 替代来源](<work-items/milestones/R2.md>) | planned | 扫描注册点已有，真实来源未接，训练读取未解耦。 / 先补DATA-03/04。 | 未记录 | 未记录 |
 | [REC · 操作录制与回放](<work-items/milestones/REC.md>) | closed | Stage feedback integrated; all engineering gates passed. / 已获用户验收（2026-09-21），能力随v0.3.1首次发布并随v0.3.2继续交付；无未结工作。 | [证据1](<verification/2026-09/ACCEPT-01-release/report.md>) | [验收记录](<verification/2026-09/M3-user-acceptance/record.json>) |
 | [REL · v0.3.2 open-source distribution](<work-items/milestones/REL.md>) | closed | Package accepted trainer and publish usable open-source release. / v0.3.2公开源码与Windows安装包已交付；用户最终验收尚未记录；M4/M5仍按任务卡推进。 | [证据1](<verification/2026-09/REL-01-release/report.md>)；[证据2](<verification/2026-09/REL-02/report.md>)；[证据3](<verification/2026-09/REL-03/public-release-verification.json>)；[证据4](<verification/2026-09/REL-03/module-acceptance.json>) | 未记录 |
-| [V4 · v0.4 训练时钟、条件单与成交理由](<work-items/milestones/V4.md>) | active | V1.2.1 已修订阶段价位线、条件单提交边界、长按快捷键和退出生命周期；完整录制理由和回放仍待实现。 / 补齐订单触发边界、录制订单事件和完整回放兼容，再执行 V4 全量验收。 | 未记录 | 未记录 |
+| [V4 · v0.4 训练时钟、条件单与成交理由](<work-items/milestones/V4.md>) | active | V1.2.2 已复用阶段线红绿配色、改用条件单比例下单并补齐标记详情与右键保护；完整录制理由和回放仍待实现。 / 补齐订单触发边界、录制订单事件和完整回放兼容，再执行 V4 全量验收。 | 未记录 | 未记录 |
 
 ### 未关闭任务
 
