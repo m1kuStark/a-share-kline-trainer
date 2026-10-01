@@ -10,6 +10,8 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+  await expect(page.locator('.suggestions button').first()).toBeVisible()
+  await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月', exact: true }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
@@ -95,3 +97,7 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   expect(await report.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
   expect(errors).toEqual([])
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()
+
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()

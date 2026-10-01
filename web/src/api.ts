@@ -61,6 +61,11 @@ export interface TrainingMeta {
   plannedEnd: string
   /** 双盲进行中为 null，前端显示"今日" */
   currentDate: string | null
+  currentPhase: 'open' | 'close'
+  clockMode: 'close_only' | 'open_close'
+  currentOpen: number | null
+  currentClose: number | null
+  ordersEnabled: boolean
   status: 'running' | 'settled' | 'abandoned'
   settleDate: string | null
   earlySettle: boolean
@@ -129,12 +134,35 @@ export interface TradeView {
   blindIndex?: number
   /** 双盲进行中：相对日期标签（今日 / T-n）；date 恒为真实值 */
   blindLabel?: string
+  tradePhase?: 'open' | 'close'
+  executionType?: 'market' | 'conditional'
+  reason?: string | null
+  orderId?: number | null
 }
 
 export interface TrainingSnapshot {
   training: TrainingMeta
   account: AccountView
   trades: TradeView[]
+  orders: OrderView[]
+}
+
+export interface OrderView {
+  id: number
+  trainingId: number
+  side: 'buy' | 'sell'
+  orderType: 'limit' | 'stop'
+  triggerPrice: number
+  shares: number
+  status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'rejected'
+  createdDate: string
+  createdPhase: 'open' | 'close'
+  expiresDate: string | null
+  reason: string | null
+  filledDate: string | null
+  filledPhase: 'open' | 'close' | null
+  filledTradeId: number | null
+  statusReason: string | null
 }
 
 export interface Bar {
@@ -367,7 +395,7 @@ export async function previewTrainingRange(input: { code: string; market: string
   return payload.preview
 }
 
-export function createTraining(input: { tier?: Tier; code: string; start_date?: string; initial_cash?: number; blind?: boolean; adjust_mode?: string; range?: TrainingRangeRequest; previewId?: string }): Promise<{ training: TrainingMeta }> {
+export function createTraining(input: { tier?: Tier; code: string; start_date?: string; initial_cash?: number; blind?: boolean; adjust_mode?: string; clock_mode?: 'close_only' | 'open_close'; orders_enabled?: boolean; range?: TrainingRangeRequest; previewId?: string }): Promise<{ training: TrainingMeta }> {
   return request('/api/trainings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -400,7 +428,7 @@ export function advanceTraining(id: number): Promise<{ snapshot: TrainingSnapsho
   return request(`/api/trainings/${id}/next`, { method: 'POST' })
 }
 
-export function tradeTraining(id: number, input: { side: 'buy' | 'sell'; shares?: number; weightPct?: number }): Promise<{ snapshot: TrainingSnapshot; plan: { side: string; shares: number; amount: number; price: number; fee: number } }> {
+export function tradeTraining(id: number, input: { side: 'buy' | 'sell'; shares?: number; weightPct?: number; reason?: string }): Promise<{ snapshot: TrainingSnapshot; plan: { side: string; shares: number; amount: number; price: number; fee: number } }> {
   return request(`/api/trainings/${id}/trade`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -414,6 +442,14 @@ export function settleTraining(id: number): Promise<TrainingSnapshot & { equityC
 
 export function abandonTraining(id: number): Promise<{ training: TrainingMeta }> {
   return request(`/api/trainings/${id}/abandon`, { method: 'POST' })
+}
+
+export function placeTrainingOrder(id: number, input: { side: 'buy' | 'sell'; order_type: 'limit' | 'stop'; trigger_price: number; shares: number; reason?: string }): Promise<{ order: OrderView; snapshot: TrainingSnapshot }> {
+  return request(`/api/trainings/${id}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })
+}
+
+export function cancelTrainingOrder(id: number, orderId: number): Promise<{ order: OrderView; snapshot: TrainingSnapshot }> {
+  return request(`/api/trainings/${id}/orders/${orderId}/cancel`, { method: 'POST' })
 }
 
 export function retrainTraining(id: number): Promise<TrainingSnapshot> {

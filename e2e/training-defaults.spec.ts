@@ -209,6 +209,8 @@ test('设置保存失败反馈/取消不保存/键盘路径；迟到读取不覆
   // 真实用户路径：搜索并选择股票后再点击创建
   // journey 返修：UI-03 后搜索框为双框（代码/名称），旧单框 placeholder 不存在
   await page.getByPlaceholder('股票代码，如 600519').fill('300857')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：协创数据/)).toBeVisible()
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect(page.locator('.training-topbar .workspace-title')).toContainText(SAMPLE.code, { timeout: 15_000 })
@@ -265,6 +267,8 @@ test('返修F5 设置保存使在途预览失效：加载所有权释放可重�
   await expect(page.getByText('创建训练').first()).toBeVisible()
   // journey 返修：UI-03 后搜索框为双框（代码/名称），旧单框 placeholder 不存在
   await page.getByPlaceholder('股票代码，如 600519').fill('300857')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：协创数据/)).toBeVisible()
   // 门闩：先装路由再进自定义范围（UI-03 后预览为 400ms 防抖自动触发，无手动按钮）。
   // 第一个到达的请求＝在途旧预览：释放时以“投毒 endDate”回包——若版本守卫失守，
@@ -352,3 +356,4 @@ test('840浅色与1440深色下设置弹层完整可读；录制不卸载', asyn
   await abandonActive(page)
   expect(errors).toEqual([])
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

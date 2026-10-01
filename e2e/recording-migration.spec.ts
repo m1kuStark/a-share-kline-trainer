@@ -65,6 +65,8 @@ test('复制标签页的续录指针不会产生同会话双写', async ({ page,
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -88,3 +90,4 @@ test('复制标签页的续录指针不会产生同会话双写', async ({ page,
   expect(ids[0]).not.toBe(ids[1])
   await other.close()
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

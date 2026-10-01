@@ -39,7 +39,16 @@ export function migrateDatabase(database: DatabaseSync): void {
       seq INTEGER NOT NULL, trade_date TEXT NOT NULL, side TEXT NOT NULL,
       price REAL NOT NULL, shares INTEGER NOT NULL, amount REAL NOT NULL,
       fee REAL NOT NULL, cash_after REAL NOT NULL, shares_after INTEGER NOT NULL,
-      cost_after REAL NOT NULL
+      cost_after REAL NOT NULL, trade_phase TEXT NOT NULL DEFAULT 'close',
+      execution_type TEXT NOT NULL DEFAULT 'market', reason TEXT, order_id INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, training_id INTEGER NOT NULL,
+      side TEXT NOT NULL, order_type TEXT NOT NULL, trigger_price_raw REAL NOT NULL,
+      shares INTEGER NOT NULL, status TEXT NOT NULL, created_date TEXT NOT NULL,
+      created_phase TEXT NOT NULL, expires_date TEXT, reason TEXT,
+      filled_date TEXT, filled_phase TEXT, filled_trade_id INTEGER,
+      status_reason TEXT, created_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS trade_notes (
       training_id INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
@@ -78,6 +87,14 @@ export function migrateDatabase(database: DatabaseSync): void {
   addColumnIfMissing(database, 'trainings', 'settle_date', 'TEXT')
   addColumnIfMissing(database, 'trainings', 'early_settle', 'INTEGER NOT NULL DEFAULT 0')
   addColumnIfMissing(database, 'trainings', 'note', 'TEXT')
+  addColumnIfMissing(database, 'trainings', 'current_phase', "TEXT NOT NULL DEFAULT 'close'")
+  addColumnIfMissing(database, 'trainings', 'clock_mode', "TEXT NOT NULL DEFAULT 'close_only'")
+  addColumnIfMissing(database, 'trainings', 'current_open', 'REAL')
+  addColumnIfMissing(database, 'trainings', 'orders_enabled', 'INTEGER NOT NULL DEFAULT 0')
+  addColumnIfMissing(database, 'trades', 'trade_phase', "TEXT NOT NULL DEFAULT 'close'")
+  addColumnIfMissing(database, 'trades', 'execution_type', "TEXT NOT NULL DEFAULT 'market'")
+  addColumnIfMissing(database, 'trades', 'reason', 'TEXT')
+  addColumnIfMissing(database, 'trades', 'order_id', 'INTEGER')
   // NULL distinguishes legacy events from an explicitly booked zero acquisition cost.
   addColumnIfMissing(database, 'position_events', 'cost_delta', 'REAL')
   // TRAIN-02 范围元数据冻结列：旧记录保持 range_version=0 / range_mode='tier'，不重建表、不清理旧训练。

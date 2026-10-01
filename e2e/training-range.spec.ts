@@ -1,6 +1,6 @@
 // UI-03 用户反馈后的训练范围表单 e2e：真实路由合同（/api/training-ranges/preview 响应为
 // {preview:{...}} 包装、POST /api/trainings 必须携带 previewId），真实点击走完「选股→自动校验→创建」。
-// 覆盖：股票双框（模糊下拉/精确自动选中/清空联动/未匹配提示）、周期点击从最新数据日回退起始日、
+// 覆盖：股票双框（模糊下拉/点击确认/清空联动/未匹配提示）、周期点击从最新数据日回退起始日、
 // 自定义范围使用起止日期、校验自动生成、输入变化失效后自动重建、
 // 未来/反向日期被拒绝、409 后自动重建校验。
 import { expect, test, type Page } from '@playwright/test'
@@ -71,13 +71,15 @@ async function openLauncher(page: Page): Promise<void> {
   await expect(page.getByText('创建训练').first()).toBeVisible()
 }
 
-/** 精确代码输入自动选中（不再有点击建议步骤），等待已选提示出现 */
+/** 输入代码后点击建议，等待已选提示出现 */
 async function selectMaotaiByCode(page: Page): Promise<void> {
   await page.getByPlaceholder(CODE_INPUT).fill('600519')
+  await expect(page.locator('.suggestions button').first()).toBeVisible()
+  await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：贵州茅台/)).toBeVisible()
 }
 
-test('stock dual inputs: fuzzy dropdown, suggestion fills both, clearing one clears both, exact code auto-selects, unmatched shows hint', async ({ page }) => {
+test('stock dual inputs: fuzzy dropdown, click confirmation fills both, clearing one clears both, unmatched shows hint', async ({ page }) => {
   await openLauncher(page)
   await page.route('**/api/stocks**', route => {
     const q = new URL(route.request().url()).searchParams.get('q') ?? ''
@@ -97,8 +99,10 @@ test('stock dual inputs: fuzzy dropdown, suggestion fills both, clearing one cle
   await expect(page.getByPlaceholder(CODE_INPUT)).toHaveValue('')
   await expect(page.getByText(/已选：/)).toHaveCount(0)
 
-  // 精确代码自动选中并补全名称
+  // 点击精确代码结果并补全名称
   await page.getByPlaceholder(CODE_INPUT).fill('600519')
+  await expect(page.locator('.suggestions button').first()).toBeVisible()
+  await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：贵州茅台/)).toBeVisible()
   await expect(page.getByPlaceholder(NAME_INPUT)).toHaveValue('贵州茅台')
 

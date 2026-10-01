@@ -155,6 +155,8 @@ test('c) 已最新（freshness current）初始态：绿点＋"数据已最新 �
   await expect(page.locator('.data-reread-btn')).toBeVisible()
   // 数据已最新时开始训练零打扰：点击直接创建，不弹确认框
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   let createCalls = 0
   // 返修 I1：与 g 同样的 continue 泄漏（真实创建会写入隔离服务）——fallback 链回创建夹具并等待响应
@@ -208,6 +210,8 @@ test('e) needsUpdate 时点开始训练弹确认框：仍要开始训练照常�
   })
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '开始训练' }).click()
   const dialog = page.locator('.data-confirm-panel')
@@ -278,6 +282,8 @@ test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启
   await expect(okRow).toContainText('数据已最新 · 截止 2026-09-24')
   // Launcher 守卫由 freshness 驱动：current → 直接创建，不弹确认框
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   // I1 零真实副作用 oracle（返修 control-handoff-20260928-48）：
   // 1) 创建响应身份必须是 mock 夹具（id 77）——route.continue() 把请求打进真实隔离服务时，
@@ -297,3 +303,4 @@ test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启
   const activeAfter = await (await page.request.get('/api/trainings/active')).json()
   expect(activeAfter.training?.id ?? null).toBe(activeBefore.training?.id ?? null)
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

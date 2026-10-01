@@ -52,7 +52,7 @@ export function deleteSettledTrainings(database: DatabaseSync, ids: readonly num
   try {
     // These tables predate foreign-key enforcement; explicit cleanup keeps
     // deletion correct for both old and newly created databases.
-    for (const table of ['drawings', 'trades', 'trade_notes', 'equity_curve', 'position_events']) {
+    for (const table of ['drawings', 'trades', 'trade_notes', 'orders', 'equity_curve', 'position_events']) {
       database.prepare(`DELETE FROM ${table} WHERE training_id IN (${transactionMarks})`).run(...unique)
     }
     database.prepare(`DELETE FROM trainings WHERE id IN (${transactionMarks})`).run(...unique)

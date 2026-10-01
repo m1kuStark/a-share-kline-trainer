@@ -181,7 +181,10 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   for (const overlay of chart.getOverlays()) if (!engineMarkNames.has(overlay.name)) chart.removeOverlay({ id: overlay.id })
   for (const item of items) {
     // 只读＝纯展示：lock+ignoreEvent 让保存画线只渲染，不进库的选中/拖动/右键交互链
-    const id = chart.createOverlay({ styles: configuredOverlayStyle(item.name), ...item, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
+    const fixedArrowStyle = item.name === 'bullArrow' || item.name === 'bearArrow'
+      ? { line: { color: item.name === 'bullArrow' ? '#ef4444' : '#16a34a' } }
+      : configuredOverlayStyle(item.name)
+    const id = chart.createOverlay({ ...item, styles: fixedArrowStyle, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
     if (item.name === 'polyline' && id) {
       const overlay = chart.getOverlays({ id: id as string })[0] as unknown as { forceComplete: () => void }
       overlay?.forceComplete()

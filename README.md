@@ -2,7 +2,7 @@
 
 离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的结果。界面为中文，K线红涨绿跌。
 
-本页描述 `wt/integration/v1` 的 V1.1.2 源码候选（2026-10-01 核对），当前仍待最终包检查和用户验收。V1.1 在 V1.0.3 基础上加入用户确认式通达信接入、历史记录管理、成绩单浮窗与指数对比、自定义区间/行业排行和稳定设置面板；V1.1.2 继续修正目录选择与退出互斥、成绩单主题和收益率图表，并加入单股排行、交易笔记和原子重新训练。源码、安装包和用户验收状态分别确认，见[当前开发状态](https://github.com/m1kuStark/kline-trainer/blob/main/docs/status.md)。
+本页描述 `wt/integration/v1` 的 V1.2.0 源码候选（2026-10-01 核对），当前仍待最终包检查和用户验收。V1.2.0 在 V1.1.2 基础上加入行业选择器、快捷键自定义、开盘/收盘训练阶段和单条件单，并继续保留历史、成绩单、录像和设置边界。源码、安装包和用户验收状态分别确认，见[当前开发状态](https://github.com/m1kuStark/kline-trainer/blob/main/docs/status.md)。
 
 源码候选能做什么：
 
@@ -36,7 +36,7 @@
 | 后续设计（原 v0.4 提案，版本待定） | [训练时钟、条件单与成交理由](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/docs/proposals/v0.4-training-clock-orders-notes.md) |
 | GPT/GLM/zcode 协作与自动化门禁 | [协作框架改进提案](https://github.com/m1kuStark/kline-trainer/blob/main/docs/proposals/zcode-orchestration-v2.md) |
 
-## V1.1.2 更新（源码候选，待人工验收）
+## V1.2.0 更新（源码候选，待人工验收）
 
 - 通达信目录选择器绑定浏览器前台窗口，选择期间阻断训练器页面操作；退出先取消活动选择器，失败后可重试，不再一直停在“正在退出”。
 - 成绩单浮窗适配深浅主题，只保留一个关闭出口，标题移除“第 N 局”，本局规则改为简洁标签。

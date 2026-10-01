@@ -17,6 +17,8 @@ test('用户能找到录像入口，往返录像库保持训练，顶部显示�
   await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
   await page.getByRole('button', { name: '返回训练', exact: true }).click()
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -86,6 +88,8 @@ test('放弃可丢弃录像但保留训练与画线，结算默认保存且可�
   await page.goto('/')
   async function start() {
     await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
     await expect(page.getByText(/已选：/)).toBeVisible()
     await page.locator('input[type="date"]').fill('2026-09-01')
     await startTrainingFromForm(page)
@@ -142,3 +146,4 @@ test('结算确认时丢弃立即生效，刷新已结束训练不重新创建�
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

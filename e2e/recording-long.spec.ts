@@ -28,6 +28,8 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   page.on('pageerror', error => pageErrors.push(error.message))
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '2年', exact: true }).click()
   await page.locator('input[type="date"]').fill('2024-09-13')
@@ -127,3 +129,4 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
     restoredCheckpoints: file.checkpoints.length, unexpectedPageErrors: pageErrors,
   }, null, 2))
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

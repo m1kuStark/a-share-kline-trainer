@@ -4,10 +4,16 @@ import { fetchTrainingSettings, putTrainingSettings, selectSetupDirectory, type 
 import { notifySettingsSaved } from '../settingsPanel'
 import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
-  type TdxPathSettingsView, type TdxCandidateCheckInfo,
+  fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
 } from '../appSettings'
 import { DRAW_TOOLS } from '../drawTools'
 import { DEFAULT_FAVORITE_TOOLS, DEFAULT_TOOL_STYLE, loadFavoriteTools, loadToolStylePreferences, saveFavoriteTools, saveToolStylePreferences, type ToolStylePreference, type ToolStylePreferences } from '../toolFavorites'
+import {
+  SHORTCUT_ACTIONS, SHORTCUT_ACTION_LABELS,
+  clonePreferences, formatShortcut, loadKeyboardShortcuts, normalizeShortcut,
+  notifyKeyboardShortcutsChanged, saveKeyboardShortcuts, shortcutConflict, validateKeyboardShortcuts,
+  type KeyboardShortcutPreferences, type ShortcutAction,
+} from '../keyboardShortcuts'
 
 // TRAIN-01/M5-DEFAULTS 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
 // 四字段一起原子保存：费用开关、T+1、默认初始资金（0.01..1,000,000,000 元、至多两位小数）、
@@ -34,6 +40,15 @@ const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
 const selectedToolPreference = ref<ToolStylePreference>({ ...DEFAULT_TOOL_STYLE })
+const fixedArrowTools = new Set(['bullArrow', 'bearArrow'])
+const keyboardShortcuts = ref<KeyboardShortcutPreferences>(loadKeyboardShortcuts(localStorage))
+const shortcutRecording = ref<{ action: ShortcutAction; slot: number } | null>(null)
+const shortcutCaptureKeys = ref<string[]>([])
+const shortcutError = ref('')
+const shortcutSaved = ref('')
+const shortcutSaving = ref(false)
+const shortcutFormDirty = ref(false)
+const shortcutPressedKeys = new Set<string>()
 function loadSelectedToolPreference(): void {
   selectedToolPreference.value = { ...DEFAULT_TOOL_STYLE, ...(toolPreferences.value[selectedTool.value] ?? {}) }
 }
@@ -53,6 +68,105 @@ function toggleFavoriteTool(name: string): void {
   persistToolPreferences()
 }
 function resetToolPreference(): void { selectedToolPreference.value = { ...DEFAULT_TOOL_STYLE }; persistToolPreferences() }
+
+function isFixedArrowTool(name: string): boolean { return fixedArrowTools.has(name) }
+
+function shortcutDisplay(action: ShortcutAction, slot: number): string {
+  return formatShortcut(keyboardShortcuts.value[action]?.[slot] ?? []) || '未设置'
+}
+function hasShortcut(action: ShortcutAction, slot: number): boolean {
+  return Boolean(keyboardShortcuts.value[action]?.[slot])
+}
+function isRecordingShortcut(action: ShortcutAction, slot: number): boolean {
+  return shortcutRecording.value?.action === action && shortcutRecording.value.slot === slot
+}
+function recordingLabel(action: ShortcutAction, slot: number): string {
+  return isRecordingShortcut(action, slot)
+    ? (shortcutCaptureKeys.value.length ? formatShortcut(shortcutCaptureKeys.value) : '请按键')
+    : shortcutDisplay(action, slot)
+}
+
+function stopShortcutCapture(): void {
+  document.removeEventListener('keydown', onShortcutCaptureKeydown, true)
+  document.removeEventListener('keyup', onShortcutCaptureKeyup, true)
+  shortcutRecording.value = null
+  shortcutCaptureKeys.value = []
+  shortcutPressedKeys.clear()
+}
+
+function beginShortcutCapture(action: ShortcutAction, slot: number): void {
+  stopShortcutCapture()
+  shortcutError.value = ''
+  shortcutSaved.value = ''
+  shortcutRecording.value = { action, slot }
+  shortcutFormDirty.value = true
+  document.addEventListener('keydown', onShortcutCaptureKeydown, true)
+  document.addEventListener('keyup', onShortcutCaptureKeyup, true)
+}
+
+function isModifierCode(code: string): boolean { return ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(code) }
+
+function onShortcutCaptureKeydown(event: KeyboardEvent): void {
+  if (!shortcutRecording.value) return
+  event.preventDefault()
+  event.stopPropagation()
+  const code = event.code || event.key
+  if (!code || event.isComposing) return
+  if (!shortcutPressedKeys.has(code)) shortcutPressedKeys.add(code)
+  shortcutCaptureKeys.value = normalizeShortcut([...shortcutPressedKeys])
+  if (shortcutCaptureKeys.value.length > 2) {
+    shortcutError.value = '一个快捷键最多包含两个同时按下的按键'
+    return
+  }
+  if (isModifierCode(code)) return
+  const candidate = shortcutCaptureKeys.value
+  const { action, slot } = shortcutRecording.value
+  const conflict = shortcutConflict(keyboardShortcuts.value, action, candidate, slot)
+  if (conflict) {
+    shortcutError.value = `与“${SHORTCUT_ACTION_LABELS[conflict]}”重复，请换一个组合`
+    return
+  }
+  const next = clonePreferences(keyboardShortcuts.value)
+  const bindings = next[action].filter((_, index) => index !== slot)
+  bindings.splice(Math.min(slot, bindings.length), 0, candidate)
+  next[action] = bindings.slice(0, 2)
+  void persistKeyboardShortcuts(next, keyboardShortcuts.value)
+  stopShortcutCapture()
+}
+
+function onShortcutCaptureKeyup(event: KeyboardEvent): void {
+  shortcutPressedKeys.delete(event.code || event.key)
+}
+
+function clearShortcut(action: ShortcutAction, slot: number): void {
+  const next = clonePreferences(keyboardShortcuts.value)
+  next[action] = next[action].filter((_, index) => index !== slot)
+  shortcutFormDirty.value = true
+  void persistKeyboardShortcuts(next, keyboardShortcuts.value)
+}
+
+async function persistKeyboardShortcuts(next: KeyboardShortcutPreferences, previous: KeyboardShortcutPreferences): Promise<void> {
+  if (!validateKeyboardShortcuts(next)) {
+    shortcutError.value = '快捷键保存失败：存在重复或非法组合'
+    return
+  }
+  shortcutSaving.value = true
+  shortcutError.value = ''
+  shortcutSaved.value = ''
+  try {
+    const saved = await putKeyboardShortcuts(next)
+    keyboardShortcuts.value = saved.shortcuts
+    shortcutFormDirty.value = false
+    saveKeyboardShortcuts(localStorage, saved.shortcuts)
+    notifyKeyboardShortcutsChanged()
+    shortcutSaved.value = '已保存'
+  } catch (error) {
+    keyboardShortcuts.value = previous
+    shortcutError.value = error instanceof Error ? error.message : '快捷键保存失败，服务端未更新'
+  } finally {
+    shortcutSaving.value = false
+  }
+}
 // 返修 F4：读取/编辑/保存的时序与归属——成功保存递增 readVersion 使挂起中的初次 GET 作废；
 // 用户手改过任一字段（formDirty）后迟到的 GET 一律不覆盖表单。
 let readVersion = 0
@@ -110,6 +224,7 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   document.removeEventListener('keydown', onDocumentKeydown)
+  stopShortcutCapture()
 })
 function onDocumentKeydown(event: KeyboardEvent): void {
   if (event.key !== 'Escape') return
@@ -172,6 +287,15 @@ async function loadAppSections(): Promise<void> {
     // 含损坏偏好 409：表单按缺省呈现，重新切换并保存即修复（服务端 message 已含指引）
     appPrefLoadError.value = error instanceof Error ? error.message : '无法读取应用偏好'
     autoDataCheckForm.value = true
+  }
+  try {
+    const view = await fetchKeyboardShortcuts()
+    if (!shortcutFormDirty.value) {
+      keyboardShortcuts.value = view.shortcuts
+      saveKeyboardShortcuts(localStorage, view.shortcuts)
+    }
+  } catch (error) {
+    shortcutError.value = error instanceof Error ? error.message : '无法读取快捷键设置，将使用本机缓存'
   }
   tdxLoadError.value = ''
   try {
@@ -386,7 +510,11 @@ function close(): void {
               <button type="button" :class="{ selected: selectedTool === tool.name }" @click="selectTool(tool.name)">{{ tool.label }}</button>
             </label>
           </div>
-          <div class="tool-style-editor">
+          <div v-if="isFixedArrowTool(selectedTool)" class="tool-style-editor fixed-tool-style">
+            <strong>{{ DRAW_TOOLS.find(tool => tool.name === selectedTool)?.label }}固定样式</strong>
+            <p class="settings-section-note">看涨箭头固定为红色向上箭头，看跌箭头固定为绿色向下箭头，样式不可修改。</p>
+          </div>
+          <div v-else class="tool-style-editor">
             <strong>{{ DRAW_TOOLS.find(tool => tool.name === selectedTool)?.label ?? '线条' }}默认样式</strong>
             <label>线条颜色<input v-model="selectedToolPreference.color" type="color" @change="persistToolPreferences" /></label>
             <label>线条粗细<input v-model.number="selectedToolPreference.size" type="number" min="1" max="5" step="1" @change="persistToolPreferences" /></label>
@@ -395,6 +523,23 @@ function close(): void {
             <label>文本字号<input v-model.number="selectedToolPreference.textSize" type="number" min="10" max="36" step="1" @change="persistToolPreferences" /></label>
             <button type="button" class="ghost-button" @click="resetToolPreference">恢复当前工具默认</button>
           </div>
+        </div>
+        <div class="shortcut-preferences">
+          <h4>训练快捷键</h4>
+          <p class="settings-section-note">每个操作最多设置两个快捷键；组合键表示同时按下，重复组合会被拒绝。点击“设置”后按下一个或两个按键即可保存。</p>
+          <div class="shortcut-list">
+            <div v-for="action in SHORTCUT_ACTIONS" :key="action" class="shortcut-row">
+              <span class="shortcut-label">{{ SHORTCUT_ACTION_LABELS[action] }}</span>
+              <div class="shortcut-bindings">
+                <template v-for="slotIndex in [0, 1]" :key="slotIndex">
+                  <button type="button" class="shortcut-binding" :disabled="shortcutSaving" :class="{ recording: isRecordingShortcut(action, slotIndex) }" :aria-label="`${SHORTCUT_ACTION_LABELS[action]}快捷键${slotIndex + 1}`" @click="beginShortcutCapture(action, slotIndex)">{{ recordingLabel(action, slotIndex) }}</button>
+                  <button v-if="hasShortcut(action, slotIndex)" type="button" class="shortcut-clear" :disabled="shortcutSaving" :aria-label="`清除${SHORTCUT_ACTION_LABELS[action]}快捷键${slotIndex + 1}`" @click="clearShortcut(action, slotIndex)">清除</button>
+                </template>
+              </div>
+            </div>
+          </div>
+          <p v-if="shortcutError" class="error-text" role="alert">{{ shortcutError }}</p>
+          <p v-if="shortcutSaved" class="settings-saved" role="status">{{ shortcutSaved }}</p>
         </div>
       </section>
       <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录（通达信）">
@@ -490,6 +635,19 @@ function close(): void {
 .tool-style-editor label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-secondary, #51637a); font-size: 11px; }
 .tool-style-editor input[type="number"], .tool-style-editor select { width: 88px; min-height: 26px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); padding: 3px 5px; }
 .tool-style-editor input[type="color"] { width: 44px; height: 26px; padding: 1px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--surface-background, #fff); }
+.fixed-tool-style { display: block; }
+.fixed-tool-style .settings-section-note { margin: 7px 0 0; }
+.shortcut-preferences { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--surface-border, #eef2f6); }
+.shortcut-preferences h4 { margin: 0 0 4px; font-size: 13px; }
+.shortcut-list { display: grid; gap: 5px; }
+.shortcut-row { display: grid; grid-template-columns: minmax(132px, 1fr) minmax(230px, 1.5fr); align-items: center; gap: 10px; min-height: 34px; }
+.shortcut-label { color: var(--text-secondary, #51637a); font-size: 12px; }
+.shortcut-bindings { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.shortcut-binding { min-width: 82px; padding: 5px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--control-background, #f7faf9); color: var(--text-primary, #1c2733); font-size: 11px; }
+.shortcut-binding.recording { border-color: #2b8b99; background: rgba(43, 139, 153, 0.15); color: #1f6978; }
+.shortcut-clear { border: 0; padding: 3px 4px; background: transparent; color: var(--text-secondary, #51637a); font-size: 10px; }
+.shortcut-clear:hover { color: #b3413a; }
+:global(body.dark) .shortcut-binding.recording { color: #9bdce3; }
 .settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; line-height: 1.6; }
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
@@ -502,5 +660,6 @@ function close(): void {
   .settings-nav button { text-align: center; padding: 8px 5px; }
   .tool-preference-list, .tool-style-editor { grid-template-columns: 1fr; }
   .tool-style-editor strong, .tool-style-editor button { grid-column: auto; }
+  .shortcut-row { grid-template-columns: 1fr; gap: 4px; }
 }
 </style>

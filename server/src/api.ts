@@ -16,13 +16,14 @@ import { registerTrainingSettingsRoutes } from './settings/training.js'
 // M5-01 集成接线（卡面"注册/App接线待集成"——模块头注明的集成人单写行）：
 // 应用偏好与 TDX 路径设置端点注册进统一 registerApi，自动进入业务 admission 门闩（draining 503）
 import { registerAppSettingsRoutes } from './settings/app.js'
+import { registerShortcutSettingsRoutes } from './settings/shortcuts.js'
 import { registerTdxPathSettingsRoutes } from './settings/tdx-path.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining, retrainTraining,
-  equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
+  cancelOrder, equityCurveOf, ordersOf, placeOrder, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
@@ -272,6 +273,7 @@ export async function registerApi(
   // M5-01 集成接线（模块头指定的注册行）：应用偏好 GET/PUT /api/settings/app 与
   // TDX 路径设置 GET/PUT/validate /api/settings/tdx-path（dataDir 与保存选择文件同目录）
   registerAppSettingsRoutes(app, database)
+  registerShortcutSettingsRoutes(app, database)
   registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
@@ -994,6 +996,7 @@ export async function registerApi(
     const body = request.body as {
       tier?: string; code?: string; start_date?: string
       initial_cash?: number; blind?: boolean; adjust_mode?: string
+      clock_mode?: string; orders_enabled?: boolean
       range?: unknown; previewId?: string
     }
     // 新范围模式：range/previewId 与 tier 互斥，复核失败返回 409 RANGE_PREVIEW_STALE
@@ -1006,6 +1009,8 @@ export async function registerApi(
         initial_cash: body.initial_cash,
         blind: body.blind,
         adjust_mode: body.adjust_mode,
+        clock_mode: body.clock_mode,
+        orders_enabled: body.orders_enabled,
       })
       return reply.code(201).send({ training })
     }
@@ -1022,6 +1027,8 @@ export async function registerApi(
       initial_cash: body.initial_cash,
       blind: body.blind,
       adjust_mode: body.adjust_mode,
+      clock_mode: body.clock_mode,
+      orders_enabled: body.orders_enabled,
     })
     return reply.code(201).send({ training })
   })
@@ -1183,12 +1190,13 @@ export async function registerApi(
     const params = request.params as { id: string }
     const id = Number(params.id)
     if (!Number.isInteger(id)) return reply.code(400).send({ error: 'id 必须是整数' })
-    const body = request.body as { side?: string; shares?: number; weightPct?: number }
+    const body = request.body as { side?: string; shares?: number; weightPct?: number; reason?: string }
     try {
       return await tradeTraining(database, id, {
         side: body.side,
         shares: body.shares === undefined ? undefined : Number(body.shares),
         weightPct: body.weightPct === undefined ? undefined : Number(body.weightPct),
+        reason: body.reason,
       })
     } catch (error) {
       if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message })
@@ -1206,6 +1214,37 @@ export async function registerApi(
       return { ...trainingSnapshot(database, id), equityCurve: equityCurveOf(database, id) }
     } catch (error) {
       if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message })
+      throw error
+    }
+  })
+
+  app.get('/api/trainings/:id/orders', async request => {
+    const id = Number((request.params as { id: string }).id)
+    if (!Number.isSafeInteger(id) || id < 1) throw new HttpError(400, 'id 必须是正整数')
+    return { orders: ordersOf(database, id) }
+  })
+
+  app.post('/api/trainings/:id/orders', async (request, reply) => {
+    const id = Number((request.params as { id: string }).id)
+    if (!Number.isSafeInteger(id) || id < 1) return reply.code(400).send({ error: 'id 必须是正整数' })
+    try {
+      const order = placeOrder(database, id, request.body as { side?: string; order_type?: string; trigger_price?: number; shares?: number; reason?: string })
+      return reply.code(201).send({ order, snapshot: trainingSnapshot(database, id) })
+    } catch (error) {
+      if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message, code: error.code })
+      throw error
+    }
+  })
+
+  app.post('/api/trainings/:id/orders/:orderId/cancel', async (request, reply) => {
+    const params = request.params as { id: string; orderId: string }
+    const id = Number(params.id); const orderId = Number(params.orderId)
+    if (!Number.isSafeInteger(id) || !Number.isSafeInteger(orderId) || id < 1 || orderId < 1) return reply.code(400).send({ error: 'id 与 orderId 必须是正整数' })
+    try {
+      const order = cancelOrder(database, id, orderId)
+      return { order, snapshot: trainingSnapshot(database, id) }
+    } catch (error) {
+      if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message, code: error.code })
       throw error
     }
   })

@@ -6,8 +6,33 @@ const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
 const historyPath = new URL('../../web/src/views/History.vue', import.meta.url)
 const reportPath = new URL('../../web/src/components/HistoryReport.vue', import.meta.url)
+const appPath = new URL('../../web/src/App.vue', import.meta.url)
+const launcherPath = new URL('../../web/src/views/Launcher.vue', import.meta.url)
+const rankingsPath = new URL('../../web/src/views/Rankings.vue', import.meta.url)
 
 describe('M2 chart interaction contract', () => {
+  it('explains that browser recordings and SQLite training history are separate stores', async () => {
+    const source = await readFile(appPath, 'utf8')
+    expect(source).toMatch(/本机录像与已结算训练记录分开保存/)
+    expect(source).toMatch(/settledTrainingCount/)
+  })
+  it('keeps exact stock matches in the clickable suggestion list and exposes search progress', async () => {
+    const source = await readFile(launcherPath, 'utf8')
+    expect(source).toMatch(/正在检索股票/)
+    expect(source).toMatch(/请点击下方检索结果确认股票/)
+    expect(source).not.toMatch(/if \(exact\) \{\s*choose\(exact\)/)
+  })
+  it('renders industry rankings as a picker before opening one industry table', async () => {
+    const source = await readFile(rankingsPath, 'utf8')
+    expect(source).toMatch(/选择行业板块/)
+    expect(source).toMatch(/返回行业列表/)
+    expect(source).toMatch(/fetchIndustryRankings\(targetIndustry \|\| undefined\)/)
+  })
+  it('places the earnings curve before the unbounded trade table in the report', async () => {
+    const source = await readFile(reportPath, 'utf8')
+    expect(source.indexOf('<h2>收益率曲线</h2>')).toBeGreaterThanOrEqual(0)
+    expect(source.indexOf('<h2>收益率曲线</h2>')).toBeLessThan(source.indexOf('<h2>逐笔成交</h2>'))
+  })
   it('registers shared transparent measurement labels without changing the Fibonacci tool name', async () => {
     const overlays = await readFile(new URL('../../web/src/drawingOverlays.ts', import.meta.url), 'utf8')
     expect(overlays).toMatch(/\['fibonacciLine', 3\]/)
@@ -64,7 +89,8 @@ describe('M2 chart interaction contract', () => {
     // 画线模式下 Space/B/S 禁用（防误推进/误交易）、Esc 退出、状态条提示
     expect(trainingSource).toMatch(/if \(drawTool\.value\) \{/)
     expect(trainingSource).toMatch(/event\.key === 'Escape'/)
-    expect(trainingSource).toMatch(/\['b', 'B', 's', 'S'\]\.includes\(event\.key\)/)
+    expect(trainingSource).toMatch(/isShortcut\('buy', event\)/)
+    expect(trainingSource).toMatch(/isShortcut\('sell', event\)/)
     expect(trainingSource).toMatch(/画线模式：/)
     expect(trainingSource).toMatch(/:draw-tool="drawTool"/)
     // 绝对定位文本为已裁剪功能（M3 拍板），不得回潮
@@ -92,7 +118,7 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/function onGlobalPointerDown\(event: PointerEvent\): void/)
     expect(source).toMatch(/function onPanelKeydown\(event: KeyboardEvent\): void/)
     const trainingSource = await readFile(trainingPath, 'utf8')
-    expect(trainingSource).toMatch(/event\.key === 'Delete'/)
+    expect(trainingSource).toMatch(/isShortcut\('deleteDrawing', event\)/)
     expect(trainingSource).toMatch(/deleteSelected\(\)/)
     // 默认样式（用户 D2 验收反馈）：1px 虚线；端点价位回读按价格两位小数取整
     const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
@@ -195,8 +221,8 @@ describe('M2 chart interaction contract', () => {
 
   it('maps ArrowUp to zoom-in and ArrowDown to zoom-out', async () => {
     const source = await readFile(trainingPath, 'utf8')
-    expect(source).toMatch(/ArrowUp[\s\S]{0,120}?zoomBy\(1 \/ 1\.3\)/)
-    expect(source).toMatch(/ArrowDown[\s\S]{0,120}?zoomBy\(1\.3\)/)
+    expect(source).toMatch(/isShortcut\('zoomIn', event\)[\s\S]{0,120}?zoomBy\(1 \/ 1\.3\)/)
+    expect(source).toMatch(/isShortcut\('zoomOut', event\)[\s\S]{0,120}?zoomBy\(1\.3\)/)
   })
 
   it('slims MACD histogram bars to 2/5 of the default width', async () => {

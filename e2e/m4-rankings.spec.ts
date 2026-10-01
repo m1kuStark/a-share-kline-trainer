@@ -25,10 +25,14 @@ async function resetToLauncher(page: Page): Promise<void> {
 async function createTrainingFromForm(page: Page, code: string): Promise<number> {
   await resetToLauncher(page)
   // UI-03 双框选股（Launcher.vue 代码框 placeholder＝『股票代码，如 600519』）：填精确代码，
-  // 250ms 去抖后精确命中自动选中（『已选：』提示），无需点击建议按钮——与 journey.spec.ts 同规范。
+  // 搜索结果必须由用户点击确认，避免精确输入产生隐式选择。
   await page.getByPlaceholder('股票代码，如 600519').fill(code)
+  await expect(page.locator('.suggestions button').first()).toBeVisible()
+  await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
@@ -168,3 +172,4 @@ test('运行中守卫（排行关闭、零行）与放弃不入榜（浅色840�
   await expect(rankings.locator(`.rankings-row[data-training-id="${runningId}"]`)).toHaveCount(0)
   expect(errors).toEqual([])
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

@@ -31,6 +31,8 @@ async function openTraining(page: Page): Promise<void> {
   if (training) await page.request.post(`/api/trainings/${training.id}/abandon`)
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月', exact: true }).click()
   await page.locator('input[type="date"]').fill('2026-09-01')
@@ -398,7 +400,7 @@ test('M3 D23 文本多行样式编辑取消与输入热键隔离', async ({ page
   const text = (await drawings(page))[0]
   expect(text.name).toBe('textAnnotation')
   expect(text.extendData).toMatchObject({ text: '关键区间\n等待确认', color: '#22c55e', size: 20, bold: true, italic: true })
-  expect(JSON.stringify(text)).toContain('关键区间\\n等待确认')
+  expect(JSON.stringify(text)).toContain('关键区间\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()\n等待确认')
   expect(JSON.stringify(text)).toContain('#22c55e')
   const textPane = (await panes(page)).find(item => item.name === 'candle_pane')!
   const textGeometry = await geometry(page, text.id)
@@ -416,7 +418,7 @@ test('M3 D23 文本多行样式编辑取消与输入热键隔离', async ({ page
   await page.locator('.ctx-menu').getByRole('button', { name: /编辑/ }).click()
   await input.fill('已复核\n保留观察')
   await panel.getByRole('button', { name: '确定', exact: true }).click()
-  await expect.poll(async () => JSON.stringify((await drawings(page))[0])).toContain('已复核\\n保留观察')
+  await expect.poll(async () => JSON.stringify((await drawings(page))[0])).toContain('已复核\n保留观察')
   const editedText = (await drawings(page))[0]
   await toolButton(page, '撤销').click()
   await expect.poll(() => drawings(page)).toEqual([text])

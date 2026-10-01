@@ -12,7 +12,7 @@ import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 import { maxDrawdownOf, profitLossRatioOf, realizedSellResults, winRateOf } from '../src/train/metrics.js'
-import { rankingGroups } from '../src/train/rankings.js'
+import { industryRankingsPayload, rankingGroups } from '../src/train/rankings.js'
 
 type Database = InstanceType<typeof DatabaseSync>
 
@@ -290,6 +290,28 @@ describe('GET /api/rankings', () => {
       const response = await app.inject({ method: 'GET', url: '/api/rankings?view=stock&code=602' })
       expect(response.statusCode).toBe(400)
     })
+  })
+})
+
+describe('industryRankingsPayload 行业选择器数据', () => {
+  it('未选择行业时返回完整 56 个行业，选择后只返回该行业排行', async () => {
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const root = await mkdtemp(join(tmpdir(), 'trainer-industry-ranking-'))
+    const mapPath = join(root, 'industry.json')
+    const industries = Array.from({ length: 56 }, (_, index) => ({
+      id: `I${index + 1}`,
+      name: `行业${index + 1}`,
+      codes: index === 0 ? ['600519'] : [],
+    }))
+    await writeFile(mapPath, JSON.stringify({ version: 'test', industries }), 'utf8')
+    const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath: ':memory:', industryMapPath: mapPath }
+    const all = await industryRankingsPayload(database, config)
+    expect(all.industry?.status).toBe('ok')
+    expect(all.industry?.entries).toHaveLength(56)
+    expect(all.industry?.entries?.every(entry => entry.complete.length === 0 && entry.earlySettled.length === 0)).toBe(true)
+    const selected = await industryRankingsPayload(database, config, 'I1')
+    expect(selected.industry?.entries?.map(entry => entry.id)).toEqual(['I1'])
   })
 })
 

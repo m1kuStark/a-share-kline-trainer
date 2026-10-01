@@ -27,10 +27,14 @@ async function createTrainingFromForm(page: Page, code: string): Promise<number>
   const created = page.waitForResponse(response => response.request().method() === 'POST'
     && new URL(response.url()).pathname === '/api/trainings', { timeout: 30_000 })
   // UI-03 双框选股（Launcher.vue 代码框 placeholder＝『股票代码，如 600519』）：填精确代码，
-  // 250ms 去抖后精确命中自动选中（『已选：』提示），无需点击建议按钮——旧单框流程已不存在。
+  // 搜索结果必须由用户点击确认，避免精确输入产生隐式选择。
   await page.getByPlaceholder('股票代码，如 600519').fill(code)
+  await expect(page.locator('.suggestions button').first()).toBeVisible()
+  await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
@@ -321,3 +325,4 @@ test('详情A→B迟到响应不覆盖、不留永续loading；列表按settle_d
   await page.unroute(`**/api/trainings/${idOld}/report`)
   expect(errors).toEqual([])
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

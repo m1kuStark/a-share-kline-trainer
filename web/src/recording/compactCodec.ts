@@ -733,6 +733,7 @@ export class CompactReader {
           training: clone(this.required(this.metaById, compact.training.metaRef, '训练元数据')),
           account: clone(this.required(this.accountById, compact.training.accountRef, '账户视图')),
           trades: compact.training.tradeRefs.map(id => clone(this.required(this.tradeById, id, '成交视图'))),
+          orders: [],
         }
       : null
     const chart = compact.chart

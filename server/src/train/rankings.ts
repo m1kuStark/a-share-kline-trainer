@@ -317,7 +317,14 @@ export async function industryRankingsPayload(database: DatabaseSync, config: Ap
            range_start, range_end, industry_id, industry_name
     FROM trainings WHERE status = 'settled'
   `).all() as unknown as RankingRow[]
-  const entries = new Map<string, { id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }>()
+  // The unfiltered response is also the industry picker data source. Seed every
+  // verified TDX industry, including empty ones, so the UI can show all 56
+  // choices before the user opens a specific board.
+  const entries = new Map<string, { id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }>(
+    result.catalog.entries
+      .filter(entry => !selectedIndustry || entry.id === selectedIndustry)
+      .map(entry => [entry.id, { id: entry.id, name: entry.name, complete: [], earlySettled: [] }]),
+  )
   let excludedUnavailable = 0
   for (const row of rows) {
     const built = itemOf(database, row)

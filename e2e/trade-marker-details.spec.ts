@@ -273,6 +273,8 @@ test('DETAILS-replay-no-future：离线回放可查看，退至成交日前立�
   await page.goto('/')
   await expect(page.getByLabel('记录操作', { exact: true })).toBeChecked()
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -385,3 +387,4 @@ test('DETAILS-visual-regression：深浅主题、840/1440px 面板完整可见�
     }
   }
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

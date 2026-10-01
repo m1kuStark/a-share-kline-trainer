@@ -202,25 +202,6 @@ function sideText(side: 'buy' | 'sell'): string {
         <span class="report-rule-tag">{{ info?.rulesOriginText }}</span>
       </div>
 
-      <h2>逐笔成交</h2>
-      <table v-if="report.trades.length" class="report-trades">
-        <thead>
-          <tr><th>序号</th><th>日期</th><th>买卖</th><th>价格</th><th>股数</th><th>金额</th><th>费用</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="trade in report.trades" :key="trade.seq" class="report-trade-row">
-            <td>{{ trade.seq }}</td>
-            <td>{{ trade.date }}</td>
-            <td :class="trade.side === 'buy' ? 'up' : 'down'">{{ sideText(trade.side) }}</td>
-            <td>{{ price(trade.price) }}</td>
-            <td>{{ trade.shares }}</td>
-            <td>{{ money(trade.amount) }}</td>
-            <td>{{ money(trade.fee) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="report-empty">零成交：初始资金按结算日持久权益原样呈现，未虚构平仓。</p>
-
       <h2>收益率曲线</h2>
       <div class="report-comparison-controls">
         <strong>同期指数</strong>
@@ -262,6 +243,26 @@ function sideText(side: 'buy' | 'sell'): string {
       <p v-if="!chartModel && comparisonLoading" class="history-loading" role="status">读取同期指数…</p>
       <p v-if="!chartModel && !comparisonLoading" class="report-empty">该区间没有可展示的收益率点。</p>
       <span class="report-curve-refresh" :class="{ pending: comparisonLoading && chartModel }" role="status">{{ comparisonLoading && chartModel ? '更新同期指数…' : '' }}</span>
+
+      <h2>逐笔成交</h2>
+      <table v-if="report.trades.length" class="report-trades">
+        <thead>
+          <tr><th>序号</th><th>日期</th><th>买卖</th><th>价格</th><th>股数</th><th>金额</th><th>费用</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="trade in report.trades" :key="trade.seq" class="report-trade-row">
+            <td>{{ trade.seq }}</td>
+            <td>{{ trade.date }}</td>
+            <td :class="trade.side === 'buy' ? 'up' : 'down'">{{ sideText(trade.side) }}</td>
+            <td>{{ price(trade.price) }}</td>
+            <td>{{ trade.shares }}</td>
+            <td>{{ money(trade.amount) }}</td>
+            <td>{{ money(trade.fee) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else class="report-empty">零成交：初始资金按结算日持久权益原样呈现，未虚构平仓。</p>
+
     </template>
   </section>
 </template>

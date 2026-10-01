@@ -15,6 +15,8 @@ async function open(page: Page): Promise<void> {
   if (active.training) await page.request.post(`/api/trainings/${active.training.id}/abandon`)
   await page.goto('/')
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
@@ -133,3 +135,4 @@ test('折叠其他工具扩展账户可视区，双主题多尺寸标签无背�
   await screenshot(page, 'folded-light')
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)
 })
+\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

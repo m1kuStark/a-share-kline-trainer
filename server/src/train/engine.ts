@@ -23,6 +23,8 @@ export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 /** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
 export const RANGE_TIER_SENTINEL = 'RANGE'
 export type TrainingStatus = 'running' | 'settled' | 'abandoned'
+export type ClockMode = 'close_only' | 'open_close'
+export type TrainingPhase = 'open' | 'close'
 
 export const TIERS: Tier[] = ['1M', '3M', '6M', '1Y', '2Y']
 export const TIER_MONTHS: Record<Tier, number> = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, '2Y': 24 }
@@ -52,6 +54,10 @@ interface TrainingRow {
   created_at: string
   current_date: string | null
   current_close: number | null
+  current_open: number | null
+  current_phase: TrainingPhase
+  clock_mode: ClockMode
+  orders_enabled: number
   settle_date: string | null
   early_settle: number | null
   range_version: number | null
@@ -93,6 +99,11 @@ export interface TrainingMeta {
   plannedEnd: string
   /** 双盲进行中为 null，前端显示"今日" */
   currentDate: string | null
+  currentPhase: TrainingPhase
+  clockMode: ClockMode
+  currentOpen: number | null
+  currentClose: number | null
+  ordersEnabled: boolean
   status: TrainingStatus
   settleDate: string | null
   earlySettle: boolean
@@ -129,12 +140,35 @@ export interface TradeView {
   blindIndex?: number
   /** 双盲进行中：相对日期标签（今日 / T-n），展示用；date 恒为真实值供换算 */
   blindLabel?: number | string
+  tradePhase?: TrainingPhase
+  executionType?: 'market' | 'conditional'
+  reason?: string | null
+  orderId?: number | null
+}
+
+export interface OrderView {
+  id: number
+  trainingId: number
+  side: 'buy' | 'sell'
+  orderType: 'limit' | 'stop'
+  triggerPrice: number
+  shares: number
+  status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'rejected'
+  createdDate: string
+  createdPhase: TrainingPhase
+  expiresDate: string | null
+  reason: string | null
+  filledDate: string | null
+  filledPhase: TrainingPhase | null
+  filledTradeId: number | null
+  statusReason: string | null
 }
 
 export interface TrainingSnapshot {
   training: TrainingMeta
   account: AccountView
   trades: TradeView[]
+  orders: OrderView[]
 }
 
 function parseRangeNotes(raw: string | null): string[] {
@@ -172,6 +206,11 @@ function toMeta(row: TrainingRow): TrainingMeta {
     startDate: row.start_date,
     plannedEnd: row.planned_end,
     currentDate: masked ? null : (row.current_date ?? row.start_date),
+    currentPhase: row.current_phase,
+    clockMode: row.clock_mode,
+    currentOpen: masked ? null : row.current_open,
+    currentClose: masked ? null : row.current_close,
+    ordersEnabled: row.orders_enabled === 1,
     status: row.status,
     settleDate: row.settle_date,
     earlySettle: row.early_settle === 1,
@@ -241,6 +280,8 @@ export interface CreateTrainingInput {
   initial_cash?: number
   blind?: boolean
   adjust_mode?: string
+  clock_mode?: string
+  orders_enabled?: boolean
   /** 新范围模式请求（TRAIN-02）；与 tier 互斥，必须携带已复核的 previewId */
   range?: unknown
   previewId?: string
@@ -261,6 +302,9 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   if (!input.code || !input.start_date) {
     throw new HttpError(400, 'code 与 start_date 必填')
   }
+  const clockMode = input.clock_mode === undefined ? 'close_only' : input.clock_mode
+  if (clockMode !== 'close_only' && clockMode !== 'open_close') throw new HttpError(400, 'clock_mode 必须是 close_only 或 open_close')
+  const ordersEnabled = input.orders_enabled === true
   const startDate = input.start_date
   const tier = input.tier as Tier
   // M5-DEFAULTS：缺省仅指 undefined/未给；显式 null/错误类型是非法输入 400，不视为省略。
@@ -304,7 +348,11 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
     tier, code: parsed.code, name: stock.name, market: parsed.market,
     startDate: startBar.date, plannedEnd: addMonths(startBar.date, TIER_MONTHS[tier]),
     blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt,
-    currentDate: startBar.date, currentClose: startBar.close, range: null, industry,
+    currentDate: startBar.date,
+    currentClose: clockMode === 'open_close' ? null : startBar.close,
+    currentOpen: clockMode === 'open_close' ? startBar.open : null,
+    currentPhase: clockMode === 'open_close' ? 'open' : 'close', clockMode, ordersEnabled,
+    range: null, industry,
   })
   return toMeta(loadTrainingRow(database, id))
 }
@@ -325,7 +373,7 @@ interface TrainingCreationRow {
   previewAdjustMode?: 'forward' | 'raw'
   createdAt: string
   currentDate: string
-  currentClose: number
+  currentClose: number | null
   /** null＝旧tier路径；非null＝TRAIN-02范围模式，冻结复核后的元数据 */
   range: {
     mode: string
@@ -336,6 +384,10 @@ interface TrainingCreationRow {
     notes: string[]
   } | null
   industry?: { id: string; name: string; sha256: string } | null
+  currentOpen: number | null
+  currentPhase: TrainingPhase
+  clockMode: ClockMode
+  ordersEnabled: boolean
 }
 
 async function industrySnapshot(config: AppConfig, code: string): Promise<{ id: string; name: string; sha256: string } | null> {
@@ -410,6 +462,9 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
           rulesJson,
         )
     const id = Number(result.lastInsertRowid)
+    database.prepare(`
+      UPDATE trainings SET current_open = ?, current_phase = ?, clock_mode = ?, orders_enabled = ? WHERE id = ?
+    `).run(row.currentOpen, row.currentPhase, row.clockMode, row.ordersEnabled ? 1 : 0, id)
     database.prepare(
       'INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)',
     ).run(id, row.startDate, initialCash)
@@ -717,6 +772,7 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
       notes: plan.notes,
     },
     industry,
+    currentOpen: null, currentPhase: 'close', clockMode: 'close_only', ordersEnabled: false,
   })
   return toMeta(loadTrainingRow(database, id))
 }
@@ -727,7 +783,7 @@ async function buildTrainingSeries(database: DatabaseSync, config: AppConfig, id
   const reader = await marketReader(database, config)
   const daily = await reader.readBars(row.market as TdxMarket, row.code)
   const current = row.current_date ?? row.start_date
-  const upto = daily.filter(bar => bar.date <= current)
+  const upto = daily.filter(bar => row.current_phase === 'open' ? bar.date < current : bar.date <= current)
   let adjusted = upto
   if (row.adjust_mode === 'forward') {
     await reader.ensureCaches()
@@ -803,15 +859,71 @@ function sharesBoughtOn(database: DatabaseSync, id: number, date: string): numbe
   return row.shares
 }
 
+export function ordersOf(database: DatabaseSync, id: number): OrderView[] {
+  const rows = database.prepare(`SELECT id, training_id, side, order_type, trigger_price_raw, shares, status,
+    created_date, created_phase, expires_date, reason, filled_date, filled_phase, filled_trade_id, status_reason
+    FROM orders WHERE training_id = ? ORDER BY id`).all(id) as unknown as Array<Record<string, unknown>>
+  return rows.map(row => ({
+    id: Number(row.id), trainingId: Number(row.training_id), side: row.side as OrderView['side'],
+    orderType: row.order_type as OrderView['orderType'], triggerPrice: Number(row.trigger_price_raw),
+    shares: Number(row.shares), status: row.status as OrderView['status'], createdDate: String(row.created_date),
+    createdPhase: row.created_phase as TrainingPhase, expiresDate: row.expires_date as string | null,
+    reason: row.reason as string | null, filledDate: row.filled_date as string | null,
+    filledPhase: row.filled_phase as TrainingPhase | null,
+    filledTradeId: row.filled_trade_id === null ? null : Number(row.filled_trade_id),
+    statusReason: row.status_reason as string | null,
+  }))
+}
+
+export interface OrderInput {
+  side?: string
+  order_type?: string
+  trigger_price?: number
+  shares?: number
+  reason?: string
+}
+
+export function placeOrder(database: DatabaseSync, id: number, input: OrderInput): OrderView {
+  const row = loadTrainingRow(database, id)
+  if (row.status !== 'running') throw new HttpError(409, '训练已结束，无法挂单')
+  if (row.orders_enabled !== 1) throw new HttpError(409, '本局未开启条件单')
+  if (input.side !== 'buy' && input.side !== 'sell') throw new HttpError(400, 'side 必须是 buy 或 sell')
+  if (input.order_type !== 'limit' && input.order_type !== 'stop') throw new HttpError(400, 'order_type 必须是 limit 或 stop')
+  if (typeof input.trigger_price !== 'number' || !Number.isFinite(input.trigger_price) || input.trigger_price <= 0) throw new HttpError(400, 'trigger_price 必须是正数')
+  if (!Number.isSafeInteger(input.shares) || input.shares! < 1 || input.shares! % 100 !== 0) throw new HttpError(400, 'shares 必须是 100 股的正整数倍')
+  if (input.reason !== undefined && (typeof input.reason !== 'string' || input.reason.length > 500)) throw new HttpError(400, 'reason 必须是 500 字以内文本')
+  if (database.prepare("SELECT id FROM orders WHERE training_id = ? AND status = 'pending'").get(id)) throw new HttpError(409, '本局最多同时保留一个待触发条件单')
+  const date = row.current_date ?? row.start_date
+  const side = input.side as 'buy' | 'sell'
+  const orderType = input.order_type as 'limit' | 'stop'
+  const triggerPrice = input.trigger_price as number
+  const shares = input.shares as number
+  const result = database.prepare(`
+    INSERT INTO orders (training_id, side, order_type, trigger_price_raw, shares, status, created_date, created_phase, reason, created_at)
+    VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+  `).run(id, side, orderType, triggerPrice, shares, date, row.current_phase, input.reason ?? null, new Date().toISOString())
+  return ordersOf(database, id).find(order => order.id === Number(result.lastInsertRowid))!
+}
+
+export function cancelOrder(database: DatabaseSync, id: number, orderId: number): OrderView {
+  loadTrainingRow(database, id)
+  const row = database.prepare('SELECT id, status FROM orders WHERE id = ? AND training_id = ?').get(orderId, id) as { id: number; status: string } | undefined
+  if (!row) throw new HttpError(404, '条件单不存在')
+  if (row.status !== 'pending') throw new HttpError(409, '条件单已结束，不能重复撤单')
+  database.prepare("UPDATE orders SET status = 'cancelled', status_reason = '用户撤单' WHERE id = ?").run(orderId)
+  return ordersOf(database, id).find(order => order.id === orderId)!
+}
+
 export function trainingSnapshot(database: DatabaseSync, id: number): TrainingSnapshot {
   const row = loadTrainingRow(database, id)
   const rules = trainingRulesOf(row)
-  const close = row.current_close ?? row.initial_cash
+  const close = row.current_phase === 'open' && row.current_open !== null
+    ? row.current_open : (row.current_close ?? row.initial_cash)
   const state = replayState(database, row)
   const boughtToday = sharesBoughtOn(database, row.id, row.current_date ?? row.start_date)
   const tradeRows = database.prepare(
-    'SELECT seq, trade_date, side, price, shares, amount, fee FROM trades WHERE training_id = ? ORDER BY seq',
-  ).all(row.id) as unknown as Array<{ seq: number; trade_date: string; side: 'buy' | 'sell'; price: number; shares: number; amount: number; fee: number }>
+    'SELECT seq, trade_date, side, price, shares, amount, fee, trade_phase, execution_type, reason, order_id FROM trades WHERE training_id = ? ORDER BY seq',
+  ).all(row.id) as unknown as Array<{ seq: number; trade_date: string; side: 'buy' | 'sell'; price: number; shares: number; amount: number; fee: number; trade_phase: TrainingPhase; execution_type: 'market' | 'conditional'; reason: string | null; order_id: number | null }>
   // 双盲进行中：成交日期相对化（今日 / T-n），并下发推进序列序号供前端映射相对时间戳
   const masked = row.blind === 1 && row.status === 'running'
   const advancedDates = masked
@@ -827,6 +939,10 @@ export function trainingSnapshot(database: DatabaseSync, id: number): TrainingSn
       shares: trade.shares,
       amount: trade.amount,
       fee: trade.fee,
+      tradePhase: trade.trade_phase,
+      executionType: trade.execution_type,
+      reason: trade.reason,
+      orderId: trade.order_id,
     }
     if (!masked) return base
     const index = advancedDates.indexOf(trade.trade_date)
@@ -848,6 +964,7 @@ export function trainingSnapshot(database: DatabaseSync, id: number): TrainingSn
       equity: equityOf(state, close),
     },
     trades,
+    orders: ordersOf(database, row.id),
   }
 }
 
@@ -955,10 +1072,11 @@ export async function advanceTraining(
   // 规则只读本局快照；legacy raw 历史权息缺失禁止推进（零副作用先决）。
   const rules = trainingRulesOf(row)
   assertTradablePolicy(rules)
-  const observation = { status: row.status, currentDate: row.current_date ?? row.start_date }
+  const observation = { status: row.status, currentDate: row.current_date ?? row.start_date, currentPhase: row.current_phase }
   await options.afterObserve?.()
   const daily = await reader.readBars(row.market as TdxMarket, row.code)
   const current = observation.currentDate
+  const currentBar = daily.find(bar => bar.date === current)
   const next = daily.find(bar => bar.date > current && bar.date <= row.planned_end)
   // 权息缓存刷新是 async 只读扫描：留在短事务之外，事务内只做同步入账与提交。
   if (rules.corporateActionPolicy === 'cash-shares-v1') {
@@ -971,10 +1089,20 @@ export async function advanceTraining(
   let outcome: { settled: boolean; bar: KlineBar | null }
   try {
     const fresh = loadTrainingRow(database, id)
-    if (fresh.status !== 'running' || (fresh.current_date ?? fresh.start_date) !== observation.currentDate) {
+    if (fresh.status !== 'running' || (fresh.current_date ?? fresh.start_date) !== observation.currentDate || fresh.current_phase !== observation.currentPhase) {
       throw new HttpError(409, '训练状态已变化（可能已在其他操作中推进或结束），请刷新后重试', 'TRAIN_STATE_CHANGED')
     }
-    if (!next) {
+    if (fresh.clock_mode === 'open_close' && fresh.current_phase === 'open') {
+      if (!currentBar) throw new HttpError(409, '当前交易日行情缺失，无法进入收盘阶段')
+      const state = replayState(database, fresh)
+      database.prepare('UPDATE trainings SET current_phase = ?, current_open = ?, current_close = ? WHERE id = ?').run('close', currentBar.open, currentBar.close, id)
+      database.prepare(`
+        INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)
+        ON CONFLICT(training_id, date) DO UPDATE SET equity = excluded.equity
+      `).run(id, current, equityOf(state, currentBar.close))
+      await processPendingOrders(database, id, currentBar, 'close')
+      outcome = { settled: false, bar: { ...currentBar } }
+    } else if (!next) {
       // 个股覆盖证明：找不到下一根时，只有两种可证明的完整覆盖允许自然到期——
       // 1) 推进日已到计划结束（待覆盖区间为空）；2) 剩余日期全部是周六/周日（A 股周末从无日线，
       //    isWeekendBridge 逐日核对）。他股或全市场数据尾、结束日之后的零星记录都排除不了
@@ -991,6 +1119,7 @@ export async function advanceTraining(
       database.prepare(
         "UPDATE trainings SET status = 'settled', settle_date = ?, early_settle = 0 WHERE id = ?",
       ).run(current, id)
+      database.prepare("UPDATE orders SET status = 'expired', status_reason = '训练结束' WHERE training_id = ? AND status = 'pending'").run(id)
       outcome = { settled: true, bar: null }
     } else {
       let state = replayState(database, fresh)
@@ -1000,7 +1129,9 @@ export async function advanceTraining(
         const events = await reader.readActions(row.market as TdxMarket, row.code)
         state = applyPositionEvents(database, fresh, state, next.date, events)
       }
-      database.prepare('UPDATE trainings SET current_date = ?, current_close = ? WHERE id = ?').run(next.date, next.close, id)
+      const nextPhase = fresh.clock_mode === 'open_close' ? 'open' : 'close'
+      database.prepare('UPDATE trainings SET current_date = ?, current_phase = ?, current_open = ?, current_close = ? WHERE id = ?').run(next.date, nextPhase, fresh.clock_mode === 'open_close' ? next.open : null, fresh.clock_mode === 'open_close' ? null : next.close, id)
+      await processPendingOrders(database, id, next, nextPhase)
       database.prepare(`
         INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)
         ON CONFLICT(training_id, date) DO UPDATE SET equity = excluded.equity
@@ -1020,14 +1151,20 @@ export interface TradeInput {
   side?: string
   shares?: number
   weightPct?: number
+  reason?: string
+  price?: number
+  executionType?: 'market' | 'conditional'
+  orderId?: number
 }
 
 export async function tradeTraining(database: DatabaseSync, id: number, input: TradeInput): Promise<{ snapshot: TrainingSnapshot; plan: TradePlan }> {
   const row = loadTrainingRow(database, id)
   if (row.status !== 'running') throw new HttpError(409, '训练已结束，无法交易')
   if (input.side !== 'buy' && input.side !== 'sell') throw new HttpError(400, "side 必须是 'buy' 或 'sell'")
-  const close = row.current_close
-  if (close === null || close === undefined) throw new HttpError(500, '训练缺少当前收盘价')
+  const marketPrice = row.current_phase === 'open' ? row.current_open : row.current_close
+  if (marketPrice === null || marketPrice === undefined) throw new HttpError(500, '训练缺少当前阶段成交价')
+  const close = input.price ?? marketPrice
+  if (input.reason !== undefined && (typeof input.reason !== 'string' || input.reason.length > 500)) throw new HttpError(400, 'reason 必须是 500 字以内文本')
   // 费用/T+1/费率/手数只读本局冻结快照（返修 F1：被认可的数值供实际计算），不读全局 settings 或常量
   const rules = trainingRulesOf(row)
   assertTradablePolicy(rules)
@@ -1042,8 +1179,10 @@ export async function tradeTraining(database: DatabaseSync, id: number, input: T
   const boughtToday = sharesBoughtOn(database, id, row.current_date ?? row.start_date)
   const available = rules.tPlusOne ? state.shares - boughtToday : state.shares
 
+  const conditionalBuyWeight = input.executionType === 'conditional' && input.side === 'buy' && input.shares
+    ? (input.shares * close * 100) / equityOf(state, close) : undefined
   const result = input.side === 'buy'
-    ? planBuy(state, close, input.weightPct ?? 0, fees)
+    ? planBuy(state, close, conditionalBuyWeight ?? input.weightPct ?? 0, fees)
     : planSell(state, close, { shares: input.shares, weightPct: input.weightPct }, available, fees)
   if (!result.ok) throw new HttpError(400, result.error)
   const plan = result.plan
@@ -1053,14 +1192,32 @@ export async function tradeTraining(database: DatabaseSync, id: number, input: T
     'SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM trades WHERE training_id = ?',
   ).get(id) as unknown as { seq: number }
   database.prepare(`
-    INSERT INTO trades (training_id, seq, trade_date, side, price, shares, amount, fee, cash_after, shares_after, cost_after)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, seqRow.seq, row.current_date ?? row.start_date, plan.side, plan.price, plan.shares, plan.amount, plan.fee, after.cash, after.shares, after.costTotal)
+    INSERT INTO trades (training_id, seq, trade_date, side, price, shares, amount, fee, cash_after, shares_after, cost_after, trade_phase, execution_type, reason, order_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, seqRow.seq, row.current_date ?? row.start_date, plan.side, plan.price, plan.shares, plan.amount, plan.fee, after.cash, after.shares, after.costTotal, row.current_phase, input.executionType ?? 'market', input.reason ?? null, input.orderId ?? null)
   database.prepare(`
     INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)
     ON CONFLICT(training_id, date) DO UPDATE SET equity = excluded.equity
   `).run(id, row.current_date ?? row.start_date, equityOf(after, close))
   return { snapshot: trainingSnapshot(database, id), plan }
+}
+
+async function processPendingOrders(database: DatabaseSync, id: number, bar: KlineBar, phase: TrainingPhase): Promise<void> {
+  const pending = ordersOf(database, id).filter(order => order.status === 'pending')
+  for (const order of pending) {
+    const trigger = phase === 'open'
+      ? (order.side === 'buy' ? (order.orderType === 'limit' ? bar.open <= order.triggerPrice : bar.open >= order.triggerPrice) : (order.orderType === 'limit' ? bar.open >= order.triggerPrice : bar.open <= order.triggerPrice))
+      : (order.side === 'buy' ? (order.orderType === 'limit' ? bar.low <= order.triggerPrice : bar.high >= order.triggerPrice) : (order.orderType === 'limit' ? bar.high >= order.triggerPrice : bar.low <= order.triggerPrice))
+    if (!trigger) continue
+    const price = phase === 'open' ? bar.open : order.triggerPrice
+    try {
+      await tradeTraining(database, id, { side: order.side, shares: order.shares, price, executionType: 'conditional', orderId: order.id, reason: order.reason ?? undefined })
+      const trade = database.prepare('SELECT id FROM trades WHERE training_id = ? ORDER BY seq DESC LIMIT 1').get(id) as { id: number }
+      database.prepare("UPDATE orders SET status = 'filled', filled_date = ?, filled_phase = ?, filled_trade_id = ?, status_reason = NULL WHERE id = ?").run(bar.date, phase, trade.id, order.id)
+    } catch (error) {
+      database.prepare("UPDATE orders SET status = 'rejected', status_reason = ? WHERE id = ?").run(error instanceof Error ? error.message : '条件单执行失败', order.id)
+    }
+  }
 }
 
 export function settleTraining(database: DatabaseSync, id: number): TrainingMeta {
@@ -1071,6 +1228,7 @@ export function settleTraining(database: DatabaseSync, id: number): TrainingMeta
   database.prepare(
     "UPDATE trainings SET status = 'settled', settle_date = ?, early_settle = 1 WHERE id = ?",
   ).run(row.current_date ?? row.start_date, id)
+  database.prepare("UPDATE orders SET status = 'expired', status_reason = '训练结束' WHERE training_id = ? AND status = 'pending'").run(id)
   return toMeta(loadTrainingRow(database, id))
 }
 
@@ -1116,8 +1274,13 @@ export async function retrainTraining(database: DatabaseSync, config: AppConfig,
       fresh.rules_json,
     )
     const newId = Number(result.lastInsertRowid)
+    database.prepare('UPDATE trainings SET current_open = ?, current_phase = ?, clock_mode = ?, orders_enabled = ?, current_close = ? WHERE id = ?').run(
+      fresh.clock_mode === 'open_close' ? startBar.open : null,
+      fresh.clock_mode === 'open_close' ? 'open' : 'close',
+      fresh.clock_mode, fresh.orders_enabled, fresh.clock_mode === 'open_close' ? null : startBar.close, newId,
+    )
     database.prepare('INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)').run(newId, fresh.start_date, fresh.initial_cash)
-    for (const table of ['drawings', 'trades', 'trade_notes', 'equity_curve', 'position_events']) {
+    for (const table of ['drawings', 'trades', 'trade_notes', 'orders', 'equity_curve', 'position_events']) {
       database.prepare(`DELETE FROM ${table} WHERE training_id = ?`).run(id)
     }
     database.prepare('DELETE FROM trainings WHERE id = ?').run(id)
@@ -1135,6 +1298,7 @@ export function abandonTraining(database: DatabaseSync, id: number): TrainingMet
   database.prepare("UPDATE trainings SET status = 'abandoned', settle_date = ? WHERE id = ?").run(
     row.current_date ?? row.start_date, id,
   )
+  database.prepare("UPDATE orders SET status = 'expired', status_reason = '训练结束' WHERE training_id = ? AND status = 'pending'").run(id)
   return toMeta(loadTrainingRow(database, id))
 }
 

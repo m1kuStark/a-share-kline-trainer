@@ -5,17 +5,20 @@ import { minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { lastSavedSettings, settingsSavedVersion } from '../settingsPanel'
 
-const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | TrainingRangeRequest> }] }>()
+const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | boolean | TrainingRangeRequest> }] }>()
 const recordingEnabled = ref(true)
+const clockMode = ref<'close_only' | 'open_close'>('close_only')
+const ordersEnabled = ref(false)
 
 // ===== 股票选择（UI-03 用户反馈）：代码/名称双框联动 =====
-// 任一框输入即清空另一框与已选股票（重新选择从两框空白开始）；精确命中（六位代码或全名）
-// 自动选中；非精确走下拉（前缀优先，服务端支持拼音首字母）；匹配不到给行内提示。
+// 任一框输入即清空另一框与已选股票（重新选择从两框空白开始）；所有匹配结果
+// 都必须由用户点击确认，前缀与拼音首字母检索统一走下拉；匹配不到给行内提示。
 const codeText = ref('')
 const nameText = ref('')
 const selected = ref<Stock | null>(null)
 const suggestions = ref<Stock[]>([])
 const matchHint = ref('')
+const searching = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 let searchSeq = 0
 
@@ -37,28 +40,24 @@ function onNameInput(): void {
 }
 
 function scheduleSearch(field: 'code' | 'name'): void {
+  const seq = ++searchSeq
   const text = (field === 'code' ? codeText.value : nameText.value).trim()
   if (searchTimer) clearTimeout(searchTimer)
   if (!text) {
     suggestions.value = []
     matchHint.value = ''
+    searching.value = false
     return
   }
-  searchTimer = setTimeout(() => { void runSearch(text) }, 250)
+  searching.value = true
+  searchTimer = setTimeout(() => { void runSearch(text, seq) }, 250)
 }
 
-async function runSearch(text: string): Promise<void> {
-  const seq = ++searchSeq
+async function runSearch(text: string, seq: number): Promise<void> {
   try {
     const result = await searchStocks(text)
     if (seq !== searchSeq) return // 期间又有输入：过期响应丢弃
-    // 精确命中（代码、市场前缀代码或全名一致）直接选中，不再罗列待选项
-    const exact = result.items.find(stock =>
-      stock.code === text || `${stock.market}${stock.code}` === text || stock.name === text)
-    if (exact) {
-      choose(exact)
-      return
-    }
+    // 精确命中也必须由用户点击确认，避免输入过程意外切换标的。
     suggestions.value = result.items.slice(0, 8)
     matchHint.value = result.items.length
       ? ''
@@ -67,6 +66,8 @@ async function runSearch(text: string): Promise<void> {
     if (seq !== searchSeq) return
     suggestions.value = []
     matchHint.value = '股票搜索失败，请重试'
+  } finally {
+    if (seq === searchSeq) searching.value = false
   }
 }
 
@@ -310,7 +311,7 @@ async function performCreate(): Promise<void> {
   if (submitting.value) return
   errorMessage.value = ''
   if (!selected.value) {
-    errorMessage.value = '请先选择一只股票（在代码或名称框输入，从下拉选择或输完整代码/名称自动匹配）'
+    errorMessage.value = '请先在搜索结果中点击选择一只股票'
     return
   }
   const cash = Number(initialCash.value)
@@ -353,6 +354,8 @@ async function performCreate(): Promise<void> {
         code: selected.value.code,
         initial_cash: cash,
         adjust_mode: adjustMode.value,
+        clock_mode: clockMode.value,
+        orders_enabled: ordersEnabled.value,
         range: request,
         previewId: preview.previewId,
       }
@@ -383,6 +386,8 @@ async function performCreate(): Promise<void> {
       start_date: startDate.value,
       initial_cash: cash,
       adjust_mode: adjustMode.value,
+      clock_mode: clockMode.value,
+      orders_enabled: ordersEnabled.value,
     }
     await createTraining(params)
     emit('created', { enabled: recordingEnabled.value, params })
@@ -425,8 +430,10 @@ function confirmStartAnyway(): void {
             </button>
           </div>
         </div>
+        <small v-if="searching" class="form-hint" role="status">正在检索股票…</small>
         <small v-if="matchHint" class="form-hint">{{ matchHint }}</small>
         <small v-if="selected" class="form-hint">已选：{{ selected.name }}（{{ selected.code }}，数据截至 {{ selected.lastDate ?? 'N/A' }}）；重新选择请清空任一框</small>
+        <small v-else-if="suggestions.length" class="form-hint">请点击下方检索结果确认股票</small>
       </div>
 
       <div class="form-field">
@@ -479,6 +486,17 @@ function confirmStartAnyway(): void {
           <button :class="{ selected: adjustMode === 'raw' }" @click="markAdjustMode('raw')">不复权</button>
         </div>
       </div>
+
+      <div class="form-field">
+        <label>训练时钟</label>
+        <div class="tier-grid">
+          <button :class="{ selected: clockMode === 'close_only' }" @click="clockMode = 'close_only'">仅收盘</button>
+          <button :class="{ selected: clockMode === 'open_close' }" @click="clockMode = 'open_close'">开盘 + 收盘</button>
+        </div>
+        <small class="form-hint">开盘 + 收盘会把每个交易日拆成两个阶段；阶段和成交价在创建后锁定。</small>
+      </div>
+      <label class="recording-choice"><input v-model="ordersEnabled" type="checkbox" />启用条件单</label>
+      <small v-if="ordersEnabled" class="form-hint">本局最多一个待触发条件单，支持限价/止损，按日线 OHLC 近似撮合。</small>
 
       <label class="recording-choice"><input v-model="recordingEnabled" type="checkbox" aria-label="记录操作" />记录操作</label>
       <small class="form-hint">建议保持开启，方便复盘、分享操作和排查问题。记录保存在本机浏览器，可随时暂停。</small>

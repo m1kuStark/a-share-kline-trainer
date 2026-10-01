@@ -7,6 +7,7 @@
 - `GET /api/rankings?tier=<1M|3M|6M|1Y|2Y>`：非法/缺档位 400；存在 running 训练时 409 `HISTORY_ACTIVE_TRAINING`（与历史/成绩单同一守卫，异步基准读取后复守卫）；TDX 离线时除超额外照常可用。
 - `GET /api/rankings?view=range`：仅返回 `tier='RANGE'` 且 `range_start`、`range_end` 完全相同的自定义区间组；起止日期不同的训练不会互相比较，也不会混入五档排行。
 - `GET /api/rankings?view=industry[&industry=<id>]`：按明确版本化行业目录分组；未配置或目录不是 56 个有效行业时返回 `industry.status=unavailable`，不扫描本机目录猜测板块归属。
+  未带 `industry` 时返回完整 56 个行业（允许空排行）供前端选择器展示；带行业 id 时只返回该行业，避免把所有板块成绩一次性铺开。
 - `GET /api/rankings?view=stock&code=<六位代码>`：按股票代码精确分组，只比较该股票的已结算训练；没有成绩返回 `stock.status=empty`，非法代码返回 400。
 - 只收五档 settled 训练：RANGE（自定义范围 preset/latest/bars）不入榜，放弃不入榜。行级不可认证（坏规则/legacy-raw/结算点缺失/权益点非有限）不入榜，并以 `excludedUnavailable` 如实计数。
 - 分组：`complete`（到期结算）/`earlySettled`（提前结算）。

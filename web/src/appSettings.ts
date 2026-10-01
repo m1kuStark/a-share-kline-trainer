@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import type { KeyboardShortcutPreferences } from './keyboardShortcuts'
 
 // M5-01：应用偏好（/api/settings/app）与 TDX 数据目录（/api/settings/tdx-path）的客户端。
 // 独立成文件而不并入 web/src/api.ts：本轮该文件与 App.vue 由集成人单写（first-use-batch
@@ -41,6 +42,11 @@ export interface TdxPathSaveResult {
   saved: SavedTdxChoiceInfo
   effectiveRoot: string | null
   restartRequired: true
+}
+
+export interface KeyboardShortcutsSettingsView {
+  version: number
+  shortcuts: KeyboardShortcutPreferences
 }
 
 class SettingsApiError extends Error {
@@ -92,6 +98,18 @@ export async function putAppSettings(autoDataCheck: boolean): Promise<AppSetting
   appAutoDataCheck.value = saved.autoDataCheck
   appSettingsLoaded.value = true
   return saved
+}
+
+export function fetchKeyboardShortcuts(): Promise<KeyboardShortcutsSettingsView> {
+  return request('/api/settings/shortcuts')
+}
+
+export function putKeyboardShortcuts(shortcuts: KeyboardShortcutPreferences): Promise<KeyboardShortcutsSettingsView> {
+  return request('/api/settings/shortcuts', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shortcuts }),
+  })
 }
 
 // ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====

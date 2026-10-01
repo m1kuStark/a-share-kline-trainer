@@ -234,6 +234,31 @@ describe('full acceptance matrix', () => {
     })
   })
 
+  it('open_close training exposes phase prices, trades at the visible price, and fills one close limit order', async () => {
+    await withApp(async ({ app, dates }) => {
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: { tier: '1M', code: '600000', start_date: dates[0], clock_mode: 'open_close', orders_enabled: true },
+      })
+      expect(created.statusCode).toBe(201)
+      const id = created.json().training.id
+      const firstOpen = created.json().training.currentOpen
+      expect(created.json().training).toMatchObject({ clockMode: 'open_close', currentPhase: 'open', currentOpen: firstOpen, currentClose: null, ordersEnabled: true })
+
+      const buy = await app.inject({ method: 'POST', url: `/api/trainings/${id}/trade`, payload: { side: 'buy', weightPct: 10 } })
+      expect(buy.statusCode).toBe(200)
+      expect(buy.json().plan.price).toBe(firstOpen)
+      const order = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'buy', order_type: 'limit', trigger_price: firstOpen + 1, shares: 100 } })
+      expect(order.statusCode).toBe(201)
+
+      const close = await app.inject({ method: 'POST', url: `/api/trainings/${id}/next` })
+      expect(close.statusCode).toBe(200)
+      expect(close.json().snapshot.training).toMatchObject({ currentPhase: 'close', currentOpen: firstOpen, currentClose: expect.any(Number) })
+      expect(close.json().snapshot.orders[0]).toMatchObject({ status: 'filled', filledPhase: 'close' })
+      expect(close.json().snapshot.trades.at(-1)).toMatchObject({ executionType: 'conditional', tradePhase: 'close' })
+    })
+  })
+
   it('delivered M4 rankings respond explicitly while M5 settings stay closed instead of silently pretending to be complete', async () => {
     await withApp(async ({ app }) => {
       // M4 排行已交付（M4-01，拍板 S4 冻结 2026-09-29）：合法档位显式 200（空库=空分组），

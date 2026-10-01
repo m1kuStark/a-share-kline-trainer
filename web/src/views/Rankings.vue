@@ -19,6 +19,7 @@ const TIERS: Array<{ value: string; label: string }> = [
 
 const tier = ref('1M')
 const mode = ref<'tier' | 'range' | 'industry' | 'stock'>('tier')
+const industrySelection = ref<string | null>(null)
 const groups = ref<RankingGroups | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
@@ -29,6 +30,7 @@ const stockQuery = ref('')
 const stock = ref<Stock | null>(null)
 const stockSuggestions = ref<Stock[]>([])
 const stockHint = ref('')
+const stockSearching = ref(false)
 let stockSearchTimer: ReturnType<typeof setTimeout> | null = null
 let stockSearchSeq = 0
 let loadVersion = 0
@@ -38,6 +40,7 @@ async function load(): Promise<void> {
   const targetTier = tier.value
   const targetMode = mode.value
   const targetStock = stock.value?.code ?? ''
+  const targetIndustry = industrySelection.value ?? ''
   if (targetMode === 'stock' && !targetStock) {
     groups.value = null
     loaded.value = false
@@ -48,13 +51,13 @@ async function load(): Promise<void> {
   loading.value = true
   errorMessage.value = ''
   try {
-    const payload = targetMode === 'range' ? await fetchRangeRankings() : targetMode === 'industry' ? await fetchIndustryRankings() : targetMode === 'stock' ? await fetchStockRankings(targetStock) : await fetchRankings(targetTier)
-    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '')) return
+    const payload = targetMode === 'range' ? await fetchRangeRankings() : targetMode === 'industry' ? await fetchIndustryRankings(targetIndustry || undefined) : targetMode === 'stock' ? await fetchStockRankings(targetStock) : await fetchRankings(targetTier)
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '') || targetIndustry !== (industrySelection.value ?? '')) return
     groups.value = payload
     activeGuard.value = false
     loaded.value = true
   } catch (error) {
-    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '')) return
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '') || targetIndustry !== (industrySelection.value ?? '')) return
     if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
       activeGuard.value = true
       groups.value = null
@@ -63,7 +66,7 @@ async function load(): Promise<void> {
       errorMessage.value = error instanceof Error ? error.message : '无法读取排行'
     }
   } finally {
-    if (requestVersion === loadVersion && targetTier === tier.value && targetMode === mode.value && targetStock === (stock.value?.code ?? '')) loading.value = false
+    if (requestVersion === loadVersion && targetTier === tier.value && targetMode === mode.value && targetStock === (stock.value?.code ?? '') && targetIndustry === (industrySelection.value ?? '')) loading.value = false
   }
 }
 onMounted(() => { void load() })
@@ -71,7 +74,19 @@ watch(tier, () => {
   selectedId.value = null
   void load()
 })
-watch(mode, () => { selectedId.value = null; void load() })
+watch(mode, () => { selectedId.value = null; industrySelection.value = null; void load() })
+
+function selectIndustry(id: string): void {
+  industrySelection.value = id
+  selectedId.value = null
+  void load()
+}
+
+function clearIndustrySelection(): void {
+  industrySelection.value = null
+  selectedId.value = null
+  void load()
+}
 
 function searchStock(): void {
   const query = stockQuery.value.trim()
@@ -80,19 +95,19 @@ function searchStock(): void {
   stock.value = null
   stockSuggestions.value = []
   stockHint.value = ''
+  stockSearching.value = false
   if (stockSearchTimer) clearTimeout(stockSearchTimer)
   if (!query) { void load(); return }
   const seq = ++stockSearchSeq
+  stockSearching.value = true
   stockSearchTimer = setTimeout(() => {
     void searchStocks(query).then(result => {
       if (seq !== stockSearchSeq) return
-      const exact = result.items.find(item => item.code === query || item.name === query || `${item.market}${item.code}` === query)
-      if (exact) { chooseStock(exact); return }
       stockSuggestions.value = result.items.slice(0, 8)
       stockHint.value = result.items.length ? '' : '未匹配到股票，请输入六位代码或名称'
     }).catch(() => {
       if (seq === stockSearchSeq) stockHint.value = '股票搜索失败，请重试'
-    })
+    }).finally(() => { if (seq === stockSearchSeq) stockSearching.value = false })
   }, 180)
 }
 
@@ -157,7 +172,9 @@ function daysText(item: RankingItem): string {
           <strong>{{ item.code }}</strong><span>{{ item.name }}</span><small>{{ item.market.toUpperCase() }}</small>
         </button>
       </div>
+      <small v-if="stockSearching" class="form-hint" role="status">正在检索股票…</small>
       <small v-if="stockHint" class="form-hint">{{ stockHint }}</small>
+      <small v-else-if="stockSuggestions.length" class="form-hint">请点击检索结果确认股票</small>
       <small v-if="stock" class="form-hint">已选择：{{ stock.name }}（{{ stock.code }}）</small>
     </section>
 
@@ -185,11 +202,23 @@ function daysText(item: RankingItem): string {
     <template v-else-if="groups && mode === 'industry'">
       <p v-if="groups.industry?.status === 'unavailable'" class="history-error" role="alert">行业排行暂不可用：{{ groups.industry.reason }}</p>
       <p v-else-if="!groups.industry?.entries?.length" class="history-empty">暂无行业排行数据</p>
-      <section v-for="entry in groups.industry?.entries" :key="entry.id" aria-label="行业排行">
-        <h2>{{ entry.name }}</h2>
+      <template v-else-if="!industrySelection">
+        <section class="industry-picker" aria-label="选择行业板块">
+          <h2>选择行业板块 <small>共 {{ groups.industry?.entries?.length ?? 0 }} 个</small></h2>
+          <div class="industry-picker-grid">
+            <button v-for="entry in groups.industry?.entries" :key="entry.id" class="industry-picker-item" type="button" @click="selectIndustry(entry.id)">
+              <strong>{{ entry.name }}</strong>
+              <small>{{ entry.complete.length + entry.earlySettled.length }} 局</small>
+            </button>
+          </div>
+        </section>
+      </template>
+      <section v-else v-for="entry in groups.industry?.entries" :key="entry.id" aria-label="行业排行">
+        <div class="industry-result-heading"><h2>{{ entry.name }}</h2><button class="ghost-button" type="button" @click="clearIndustrySelection">返回行业列表</button></div>
         <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
           <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
+        <p v-if="!entry.complete.length && !entry.earlySettled.length" class="history-empty">该行业暂无已结算训练成绩</p>
       </section>
     </template>
     <template v-else-if="groups && mode === 'stock'">
@@ -285,3 +314,14 @@ function daysText(item: RankingItem): string {
     </div>
   </section>
 </template>
+
+<style scoped>
+.industry-picker { margin-top: 18px; }
+.industry-picker h2 { display: flex; align-items: baseline; gap: 10px; }
+.industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
+.industry-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.industry-picker-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 10px 12px; border: 1px solid var(--surface-border); border-radius: 8px; background: var(--surface-raised); color: var(--text-primary); text-align: left; cursor: pointer; }
+.industry-picker-item:hover, .industry-picker-item:focus-visible { border-color: var(--accent, #2b8b99); background: var(--surface-hover, var(--surface-raised)); }
+.industry-picker-item small { color: var(--text-secondary); white-space: nowrap; }
+.industry-result-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; }
+</style>

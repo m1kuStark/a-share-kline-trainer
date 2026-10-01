@@ -5,15 +5,20 @@ import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
-  abandonTraining, advanceTraining, fetchTrainingBars, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
+  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, placeTrainingOrder, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
   type Bar, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
 import { SerialDrawingSaver, type Drawing } from '../drawingState'
 import { DrawingOutbox } from '../drawingOutbox'
 import type { DrawingPriceBasis } from '../drawingPriceBasis'
-import { cycleDirection, nextTimeframe, MAX_VISIBLE_BARS } from '../chartNavigation'
+import { nextTimeframe, MAX_VISIBLE_BARS } from '../chartNavigation'
 import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavoriteTools } from '../toolFavorites'
+import {
+  KEYBOARD_SHORTCUTS_CHANGED_EVENT, loadKeyboardShortcuts, matchesActionShortcut,
+  saveKeyboardShortcuts, shortcutId, type KeyboardShortcutPreferences, type ShortcutAction,
+} from '../keyboardShortcuts'
+import { fetchKeyboardShortcuts } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
 import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
@@ -38,6 +43,12 @@ const chartViewport = ref<{ visibleDate: string | null; latestDate: string | nul
 const weight = ref(50)
 const customWeight = ref<number | null>(null)
 const sellShares = ref<number | null>(null)
+const orderSide = ref<'buy' | 'sell'>('buy')
+const orderType = ref<'limit' | 'stop'>('limit')
+const orderTrigger = ref<number | null>(null)
+const orderShares = ref<number | null>(100)
+const orderReason = ref('')
+const orderError = ref('')
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
 const settledView = ref<TrainingSnapshot | null>(null)
 const endAction = ref<'settle' | 'abandon' | null>(null)
@@ -55,6 +66,12 @@ const otherTools = computed(() => DRAW_TOOLS.filter(tool => !favoriteToolNames.v
 const favoriteStorageError = ref(false)
 const draggedTool = ref<string | null>(null)
 const toolDropTarget = ref<{ list: 'favorites' | 'other'; index: number } | null>(null)
+const keyboardShortcuts = ref<KeyboardShortcutPreferences>(loadKeyboardShortcuts(localStorage))
+const pressedShortcutKeys = new Set<string>()
+void fetchKeyboardShortcuts().then(view => {
+  keyboardShortcuts.value = view.shortcuts
+  saveKeyboardShortcuts(localStorage, view.shortcuts)
+}).catch(() => { /* 首屏服务端不可用时继续使用本机缓存 */ })
 // 多选模式：框选拖拽变为划线批量选中（与画线取点模式互斥）
 const multiSelectMode = ref(false)
 const magnet = ref<'normal' | 'weak_magnet' | 'strong_magnet'>('weak_magnet')
@@ -273,7 +290,7 @@ async function load(): Promise<void> {
     const canonical = daily ?? payload
     if (canonical.training.currentDate !== payload.training.currentDate) throw new Error('训练日期已改变，请刷新图表后继续录制')
     dailyForRecording.value = { date: canonical.training.currentDate, bars: canonical.bars }
-    snapshot.value = { training: payload.training, account: payload.account, trades: payload.trades }
+    snapshot.value = { training: payload.training, account: payload.account, trades: payload.trades, orders: payload.orders ?? [] }
     drawingPriceBasis.value = payload.drawingPriceBasis ?? null
     bars.value = payload.bars
     chartCostPrice.value = payload.chartCostPrice ?? null
@@ -422,6 +439,26 @@ async function backToLauncher(): Promise<void> {
   } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
   finally { finishingSession.value = false }
 }
+
+async function placeOrder(): Promise<void> {
+  if (!training.value.ordersEnabled || loading.value || orderTrigger.value === null || orderShares.value === null) return
+  loading.value = true; orderError.value = ''
+  try {
+    const result = await placeTrainingOrder(training.value.id, { side: orderSide.value, order_type: orderType.value, trigger_price: orderTrigger.value, shares: orderShares.value, reason: orderReason.value || undefined })
+    snapshot.value = result.snapshot
+    orderTrigger.value = null
+    orderReason.value = ''
+  } catch (error) { orderError.value = error instanceof Error ? error.message : '挂单失败' }
+  finally { loading.value = false }
+}
+
+async function cancelOrder(orderId: number): Promise<void> {
+  if (loading.value) return
+  loading.value = true; orderError.value = ''
+  try { snapshot.value = (await cancelTrainingOrder(training.value.id, orderId)).snapshot }
+  catch (error) { orderError.value = error instanceof Error ? error.message : '撤单失败' }
+  finally { loading.value = false }
+}
 async function retrain(): Promise<void> {
   if (finishingSession.value || !settledView.value) return
   if (!window.confirm('重新训练将删除本轮成绩、交易和画线记录，是否继续？')) return
@@ -451,56 +488,60 @@ function setTrainingUrl(): void {
   history.replaceState(null, '', url)
 }
 
+function isShortcut(action: ShortcutAction, event: KeyboardEvent): boolean {
+  if (matchesActionShortcut(action, event, keyboardShortcuts.value, pressedShortcutKeys)) return true
+  // 保留旧版本的 Ctrl+Shift+Z 重做入口；用户替换默认 Ctrl+Y 后即由自定义映射完全接管。
+  return action === 'redo' && keyboardShortcuts.value.redo.some(binding => shortcutId(binding) === 'Control+KeyY') &&
+    event.code === 'KeyZ' && event.ctrlKey && event.shiftKey && !event.repeat && !event.isComposing
+}
+
 function onKeydown(event: KeyboardEvent): void {
+  if (event.code) pressedShortcutKeys.add(event.code)
   // 设置弹层打开期间完全隔离训练热键：不能从设置触发买卖/推进/画线
   if (trainingSettingsOpen.value) return
   if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
-    if (event.code === 'Space' || ['b', 'B', 's', 'S', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Home'].includes(event.key)) event.preventDefault()
+    if (['advance', 'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'deleteDrawing', 'resetView'].some(action => isShortcut(action as ShortcutAction, event))) event.preventDefault()
     return
   }
-  if (isTyping(event)) return
-  if (textPanelOpen.value) return
-  const direction = cycleDirection(event)
-  if (direction && !drawTool.value) {
-    event.preventDefault()
-    tf.value = nextTimeframe(tf.value, direction)
-    return
+  if (isTyping(event) || textPanelOpen.value) return
+  const direction = isShortcut('timeframeNext', event) ? 1 : isShortcut('timeframePrev', event) ? -1 : 0
+  if (direction && !drawTool.value) { event.preventDefault(); tf.value = nextTimeframe(tf.value, direction); return }
+  if (isShortcut('undo', event) || isShortcut('redo', event)) {
+    if (drawTool.value) { event.preventDefault(); return }
+    event.preventDefault(); if (isShortcut('redo', event)) chartRef.value?.redoDrawing(); else chartRef.value?.undoDrawing(); return
   }
-  if (event.ctrlKey || event.metaKey) {
-    if (drawTool.value) { if (['z', 'y'].includes(event.key.toLowerCase())) event.preventDefault(); return }
-    if (event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? chartRef.value?.redoDrawing() : chartRef.value?.undoDrawing(); return }
-    if (event.key.toLowerCase() === 'y') { event.preventDefault(); chartRef.value?.redoDrawing(); return }
-  }
-  // 多选模式：Esc 退出并清空多选（KlineChart 内部处理面板 Esc）；其余键照常（Delete 走批量删除）
-  if (multiSelectMode.value && event.key === 'Escape') {
-    event.preventDefault()
-    multiSelectMode.value = false
-    chartRef.value?.clearMultiSelection()
-    return
-  }
-  // 画线模式下 Space/B/S 禁用（防误推进/误交易），Esc 退出画线模式；方向键/Home 照常
+  if (multiSelectMode.value && event.key === 'Escape') { event.preventDefault(); multiSelectMode.value = false; chartRef.value?.clearMultiSelection(); return }
   if (drawTool.value) {
     if (event.key === 'Escape') { event.preventDefault(); drawTool.value = null; return }
-    if (event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key)) { event.preventDefault(); return }
+    if (isShortcut('advance', event) || isShortcut('buy', event) || isShortcut('sell', event)) { event.preventDefault(); return }
   }
-  if (event.code === 'Space') { event.preventDefault(); void advance() }
-  // Delete 删除选中的用户画线（引擎标记不可选中、不受影响）
-  if (event.key === 'Delete') { event.preventDefault(); chartRef.value?.deleteSelected() }
-  // 对齐通达信模拟训练习惯：B 买入、S 卖出（与按钮同一撮合路径）
-  if (event.key === 'b' || event.key === 'B') { event.preventDefault(); void trade('buy') }
-  if (event.key === 's' || event.key === 'S') { event.preventDefault(); void trade('sell') }
-  // 对齐直觉方向：↑ 放大（可见 K 线变少变粗），↓ 缩小（可见 K 线变多变细）
-  if (event.key === 'ArrowUp') { event.preventDefault(); chartRef.value?.zoomBy(1 / 1.3) }
-  if (event.key === 'ArrowDown') { event.preventDefault(); chartRef.value?.zoomBy(1.3) }
-  if (event.key === 'ArrowLeft') { event.preventDefault(); chartRef.value?.moveCrosshair(-1) }
-  if (event.key === 'ArrowRight') { event.preventDefault(); chartRef.value?.moveCrosshair(1) }
-  if (event.key === 'Home') { event.preventDefault(); chartRef.value?.resetView() }
+  if (isShortcut('advance', event)) { event.preventDefault(); void advance(); return }
+  if (isShortcut('deleteDrawing', event)) { event.preventDefault(); chartRef.value?.deleteSelected(); return }
+  if (isShortcut('buy', event)) { event.preventDefault(); void trade('buy'); return }
+  if (isShortcut('sell', event)) { event.preventDefault(); void trade('sell'); return }
+  if (isShortcut('zoomIn', event)) { event.preventDefault(); chartRef.value?.zoomBy(1 / 1.3); return }
+  if (isShortcut('zoomOut', event)) { event.preventDefault(); chartRef.value?.zoomBy(1.3); return }
+  if (isShortcut('crosshairLeft', event)) { event.preventDefault(); chartRef.value?.moveCrosshair(-1); return }
+  if (isShortcut('crosshairRight', event)) { event.preventDefault(); chartRef.value?.moveCrosshair(1); return }
+  if (isShortcut('resetView', event)) { event.preventDefault(); chartRef.value?.resetView() }
 }
 
 window.addEventListener('keydown', onKeydown)
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+function onKeyup(event: KeyboardEvent): void { if (event.code) pressedShortcutKeys.delete(event.code) }
+function onWindowBlur(): void { pressedShortcutKeys.clear() }
+function onShortcutPreferencesChanged(): void { keyboardShortcuts.value = loadKeyboardShortcuts(localStorage) }
+window.addEventListener('keyup', onKeyup)
+window.addEventListener('blur', onWindowBlur)
+window.addEventListener(KEYBOARD_SHORTCUTS_CHANGED_EVENT, onShortcutPreferencesChanged)
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('keyup', onKeyup)
+  window.removeEventListener('blur', onWindowBlur)
+  window.removeEventListener(KEYBOARD_SHORTCUTS_CHANGED_EVENT, onShortcutPreferencesChanged)
+})
+const executionPriceLabel = computed(() => training.value.clockMode === 'open_close' && training.value.currentPhase === 'open' ? '按当日开盘价成交' : '按当日收盘价成交')
 
 // ===== 日线数据小更新按钮（紧凑操作栏，固定尺寸不挤图表） =====
 // 更新结果通过全局状态轻提示：终态到达后按钮短暂变绿"✓"（或红"!"），不弹模态
@@ -547,7 +588,7 @@ void load()
         <div class="workspace-title" :title="training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}`">
           {{ training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}` }}
         </div>
-        <div class="training-current-date">当前 <strong>{{ training.currentDate }}</strong></div>
+        <div class="training-current-date">当前 <strong>{{ training.currentDate }}</strong><span v-if="training.clockMode === 'open_close'" class="phase-tag">{{ training.currentPhase === 'open' ? '开盘阶段' : '收盘阶段' }}</span></div>
         <div class="timeframe-tabs" role="tablist" aria-label="K线周期">
           <button v-for="item in (['1D', '1W', '1M'] as Timeframe[])" :key="item" role="tab" :aria-selected="tf === item" :class="{ selected: tf === item }" @click="tf = item">{{ item === '1D' ? '日K' : item === '1W' ? '周K' : '月K' }}</button>
         </div>
@@ -633,7 +674,7 @@ void load()
         </div>
 
         <div class="panel-divider"></div>
-        <div class="order-heading"><span>下单</span><small>按当日收盘价成交</small></div>
+        <div class="order-heading"><span>下单</span><small>{{ executionPriceLabel }}</small></div>
         <div class="weight-grid">
           <button v-for="w in [10, 20, 25, 30, 50, 75, 100]" :key="w" :class="{ selected: weight === w && customWeight === null }" @click="weight = w; customWeight = null">{{ w }}%</button>
           <input v-model.number="customWeight" type="number" min="1" max="100" placeholder="自定义%" />
@@ -645,6 +686,21 @@ void load()
         <div class="trade-actions">
           <button class="trade-action buy" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('buy')">买入</button>
           <button class="trade-action sell" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('sell')">卖出</button>
+        </div>
+
+        <div v-if="training.ordersEnabled" class="order-box">
+          <div class="order-heading"><span>条件单</span><small>{{ training.currentPhase === 'open' ? '阶段开盘价' : '阶段收盘价' }}</small></div>
+          <div v-if="snapshot.orders.some(order => order.status === 'pending')" class="pending-order">
+            <span>{{ snapshot.orders.find(order => order.status === 'pending')?.side === 'buy' ? '买入' : '卖出' }} {{ snapshot.orders.find(order => order.status === 'pending')?.orderType === 'limit' ? '限价' : '止损' }} · {{ snapshot.orders.find(order => order.status === 'pending')?.triggerPrice.toFixed(2) }} · {{ snapshot.orders.find(order => order.status === 'pending')?.shares }} 股</span>
+            <button class="ghost-button" @click="cancelOrder(snapshot.orders.find(order => order.status === 'pending')!.id)">撤单</button>
+          </div>
+          <template v-else>
+            <div class="order-form-row"><select v-model="orderSide" aria-label="条件单方向"><option value="buy">买入</option><option value="sell">卖出</option></select><select v-model="orderType" aria-label="条件单类型"><option value="limit">限价</option><option value="stop">止损</option></select></div>
+            <div class="order-form-row"><input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" /><input v-model.number="orderShares" type="number" min="100" step="100" placeholder="股数" aria-label="条件单股数" /></div>
+            <input v-model="orderReason" maxlength="500" placeholder="挂单理由（可选）" aria-label="挂单理由" />
+            <button class="ghost-button" :disabled="loading || orderTrigger === null || orderShares === null" @click="placeOrder">提交条件单</button>
+          </template>
+          <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
         </div>
 
         </div>
@@ -767,4 +823,9 @@ void load()
 .legacy-raw-banner { margin: 8px 16px 0; padding: 8px 12px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; }
 :global(body.dark) .legacy-raw-banner { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .legacy-drawing-notice { white-space: normal; line-height: 1.5; }
+.phase-tag { display: inline-flex; margin-left: 8px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-secondary, #51637a); font-size: 10px; }
+.order-box { display: grid; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--surface-border, #dfe5eb); }
+.order-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.order-box input, .order-box select { min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px; background: var(--control-background, #fff); color: var(--text-primary, #25364b); font-size: 11px; }
+.pending-order { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-secondary, #51637a); }
 </style>

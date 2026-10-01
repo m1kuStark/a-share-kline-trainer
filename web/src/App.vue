@@ -4,6 +4,7 @@ import {
   applySetupChoice, cancelLifecycleExit, confirmLifecycleExit, createLifecycleSession, fetchActiveTraining,
   fetchEnv, fetchLifecycleStatus, fetchRestartStatus, heartbeatLifecycle,
   inspectSetupRoot, requestLifecycleExit, saveSetupChoice, selectSetupDirectory,
+  fetchTrainingHistory,
 } from './api'
 import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
@@ -32,8 +33,20 @@ const recordingOptions = ref<{ enabled: boolean; params?: Record<string, unknown
 const replay = shallowRef<CompactRecordingFile | null>(null)
 const recentRecordings = ref<RecordingSummary[]>([])
 const recordingError = ref('')
+const settledTrainingCount = ref<number | null>(null)
+const recordingOrigin = location.origin
 async function loadRecordings(): Promise<void> {
-  try { recentRecordings.value = (await recordingStorage.list()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) }
+  try {
+    const [recordings, history] = await Promise.allSettled([
+      recordingStorage.list(),
+      fetchTrainingHistory({ limit: 1 }),
+    ])
+    if (recordings.status === 'rejected') throw recordings.reason
+    recentRecordings.value = recordings.value.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    // Training history lives in SQLite while recordings live in browser IndexedDB.
+    // Keep the diagnostic count visible without making a history guard hide the recordings.
+    settledTrainingCount.value = history.status === 'fulfilled' ? history.value.total : null
+  }
   catch (error) { recordingError.value = error instanceof Error ? error.message : '无法读取本机录制' }
 }
 watch(view, value => { if (value === 'launcher' || value === 'library') void loadRecordings() })
@@ -562,7 +575,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         <Launcher @created="onCreated" />
       </template>
       <section v-else-if="view === 'library'" class="recording-library recording-library-page" aria-label="训练录像库">
-        <header><div><h1>训练录像</h1><p>本机历史保存在当前浏览器。导出录像可以备份，也可以分享给其他用户。</p></div><button class="ghost-button" @click="returnToTraining">返回训练</button></header>
+        <header><div><h1>训练录像</h1><p>本机历史保存在当前浏览器。导出录像可以备份，也可以分享给其他用户。</p><p class="recording-store-note">本机录像与已结算训练记录分开保存：当前 {{ recentRecordings.length }} 条录像<span v-if="settledTrainingCount !== null">，已结算训练 {{ settledTrainingCount }} 局</span>。未保留录像的训练无法从数据库自动还原。当前地址：{{ recordingOrigin }}</p></div><button class="ghost-button" @click="returnToTraining">返回训练</button></header>
         <label class="recording-import">导入分享的录像<input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
         <p v-if="recordingError" class="error-text" role="alert">{{ recordingError }}</p>
         <h2>本机训练历史</h2>
@@ -725,5 +738,6 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .recording-library-page h1 { margin: 0; font-size: 22px; }
 .recording-library-page h2 { margin-top: 24px; font-size: 16px; }
 .recording-history-list { display: grid; gap: 8px; }
+.recording-store-note { margin: 6px 0 0; color: var(--text-secondary, #6b7c8d); font-size: 12px; line-height: 1.5; }
 .recording-history-item { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--surface-border, #dfe5eb); padding: 14px; background: transparent; color: inherit; text-align: left; }
 </style>
