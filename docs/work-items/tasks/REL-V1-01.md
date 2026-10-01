@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 1.2.1 源码候选已完成本轮阶段价位线、条件单边界、长按快捷键、搜索缓存和退出生命周期修订；Windows 干净解压包待生成并校验，用户验收与公开发布仍未确认。",
-  "next_action": "在干净提交上执行发布脚本，核对 Node 24 官方归档、manifest、SHA256、版本与提交；只生成一个新的 v1.2.1 output 目录，再交用户验收。",
+  "summary": "版本 1.2.1 源码候选已完成本轮阶段价位线、条件单边界、长按快捷键、搜索缓存和退出生命周期修订；单一 Windows 包已构建并核对 SHA256，用户验收与公开发布仍未确认。",
+  "next_action": "用户手动验收 output/v1.2.1-20261001；收到反馈后记录验收或创建限定返修任务。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",
