@@ -317,6 +317,19 @@ describe('M4 history/report interaction contract', () => {
     expect(report).not.toMatch(/class="report-drawings"/)
   })
 
+  it('keeps phase price lines on the CN red/green price-line palette and protects order markers', async () => {
+    const chart = await readFile(chartPath, 'utf8')
+    const overlays = await readFile(new URL('../../web/src/overlays.ts', import.meta.url), 'utf8')
+    const training = await readFile(trainingPath, 'utf8')
+    expect(chart).toMatch(/currentPriceColor\(\)/)
+    expect(overlays).toMatch(/phasePriceLine/)
+    expect(overlays).toMatch(/const color = typeof data === 'number' \? '#94a3b8' : data\?\.color/)
+    expect(chart).toMatch(/isNearPendingOrder\(/)
+    expect(chart).toMatch(/showOrderTooltip\(/)
+    expect(training).toMatch(/orderWeight/)
+    expect(training).toMatch(/比例%/)
+  })
+
   it('uses one close exit, compact rule tags, themed report surface, and one shared comparison chart', async () => {
     const report = await readFile(reportPath, 'utf8')
     const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')

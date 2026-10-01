@@ -109,6 +109,7 @@ let restoredDrawings = false
 let disposed = false
 const markerRevision = ref(0)
 const markerWidth = ref(0)
+const orderTooltip = ref<{ x: number; y: number; text: string } | null>(null)
 let markerResizeObserver: ResizeObserver | null = null
 function updateMarkerRail(): void {
   queueMicrotask(() => {
@@ -396,6 +397,14 @@ function applyLastPriceStyle(): void {
   chart.setStyles({ candle: { priceMark: { last: { upColor: color, downColor: color, noChangeColor: color, text: { color: '#ffffff' } } } } })
 }
 
+function currentPriceColor(): string {
+  if (!chart) return '#94a3b8'
+  const last = props.bars.at(-1)
+  const prev = props.bars.at(-2)
+  if (!last || !prev) return '#94a3b8'
+  return last.close > prev.close ? '#ef4444' : last.close < prev.close ? '#16a34a' : '#94a3b8'
+}
+
 function tradeTimestamp(date: string): number {
   if (props.timeframe === '1W') { const day = new Date(`${date}T00:00:00Z`); day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7)); return day.getTime() }
   if (props.timeframe === '1M') return Date.parse(`${date.slice(0, 7)}-01T00:00:00Z`)
@@ -409,12 +418,25 @@ function refreshMarks(): void {
   const cost = props.chartCostPrice ?? props.costPrice
   if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: cost }], extendData: cost })
   if (props.currentPrice !== null && props.currentPrice !== undefined && props.currentPrice > 0) {
-    chart.createOverlay({ name: 'phasePriceLine', points: [{ value: props.currentPrice }], extendData: props.currentPrice })
+    chart.createOverlay({ name: 'phasePriceLine', points: [{ value: props.currentPrice }], extendData: { price: props.currentPrice, color: currentPriceColor() }, lock: true })
   }
   for (const order of props.orders.filter(order => order.status === 'pending')) {
     chart.createOverlay({ name: 'orderTriggerMark', points: [{ value: order.triggerPrice }], extendData: { side: order.side, orderType: order.orderType, triggerPrice: order.triggerPrice, shares: order.shares, status: order.status } })
   }
   updateMarkerRail()
+}
+
+function showOrderTooltip(event: MouseEvent): void {
+  if (!chart || !props.orders.length) return
+  const rect = host.value?.getBoundingClientRect()
+  if (!rect) return
+  const order = props.orders.find(item => item.status === 'pending')
+  if (!order) return
+  orderTooltip.value = {
+    x: Math.max(8, event.clientX - rect.left - 160),
+    y: Math.max(8, event.clientY - rect.top - 72),
+    text: `${order.side === 'buy' ? '买入' : '卖出'} · ${order.orderType === 'limit' ? '限价' : '止损'} · 触发价 ${order.triggerPrice.toFixed(2)} · ${order.shares} 股${order.reason ? `\n理由：${order.reason}` : ''}`,
+  }
 }
 
 // 价格轴手动缩放（拖动/滚轮）会把 klinecharts 纵轴置为手动模式（范围冻结，双击价格轴是库内解除方式）。
@@ -1119,7 +1141,19 @@ function onHostMouseDown(event: MouseEvent): void {
     userOverlays.forEach(overlay => { overlay.lock = props.readOnly })
     return
   }
+  if (event.button === 2 && isNearPendingOrder(event.clientX, event.clientY)) {
+    event.preventDefault()
+    event.stopPropagation()
+    showOrderTooltip(event)
+    return
+  }
   if (event.button !== 0 || !chart) return
+  if (isNearPendingOrder(event.clientX, event.clientY)) {
+    event.preventDefault()
+    event.stopPropagation()
+    showOrderTooltip(event)
+    return
+  }
   if (props.drawTool) return
   if (!isDrawPane(paneIdAt(event.clientY))) return
   hostRect = host.value?.getBoundingClientRect() ?? null
@@ -1131,6 +1165,18 @@ function onHostMouseDown(event: MouseEvent): void {
   }
   event.stopPropagation()
 }
+
+function isNearPendingOrder(clientX: number, clientY: number): boolean {
+  if (!chart || !props.orders.some(order => order.status === 'pending')) return false
+  const rect = host.value?.getBoundingClientRect()
+  if (!rect) return false
+  const order = props.orders.find(item => item.status === 'pending')!
+  const point = chart.convertToPixel({ value: order.triggerPrice }, { paneId: 'candle_pane', absolute: true })
+  const axis = chart.getSize('candle_pane', 'yAxis')
+  const x = rect.left + (axis?.left ?? 0) - 7
+  const y = rect.top + (point.y ?? Number.NaN)
+  return Number.isFinite(y) && Math.abs(clientY - y) <= 12 && clientX >= x - 86 && clientX <= x + 12
+}
 // host 冒泡阶段（库的 mousedown 处理之后）补齐按下与选中状态：
 // ① 压下态补齐：我们 7px 命中比库内 figure 命中（DEVIATION=2）宽，2~7px 环带库未命中会进滚动拖拽（整图平移 bug）；
 // ② 选中态补齐：库 figure 点击分派对部分几何（水平全宽线体，Act2e 实证）不可靠——点击后 click 选中态未切换。
@@ -1140,6 +1186,7 @@ function onHostMouseDownBubble(event: MouseEvent): void {
   // 只读：这里的手动按下/选中补齐会绕过库的 ignoreEvent 强开拖拽与选中链，必须整段拦下
   if (props.readOnly) return
   if (event.button !== 0 || !chart) return
+  if (isNearPendingOrder(event.clientX, event.clientY)) { showOrderTooltip(event); return }
   if (paneResizePointerId !== null || isOverPaneSeparator(event)) return
   if (props.drawTool) return
   if (!isDrawPane(paneIdAt(event.clientY))) return
@@ -1234,6 +1281,7 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
   <div class="chart-frame">
   <div class="chart-wrap">
     <div ref="host" class="chart-host"></div>
+    <div v-if="orderTooltip" class="order-tooltip" :style="{ left: `${orderTooltip.x}px`, top: `${orderTooltip.y}px` }" role="status" @mouseenter="orderTooltip = orderTooltip" @mouseleave="orderTooltip = null">{{ orderTooltip.text }}</div>
     <div class="select-rect"></div>
     <!-- 多选模式橡皮筋矩形：框选划线批量选中（不缩放 K 线） -->
     <div v-if="multiRect" class="multi-rect" :style="{ left: `${multiRect.left}px`, top: `${multiRect.top}px`, width: `${multiRect.width}px`, height: `${multiRect.height}px` }"></div>
@@ -1281,6 +1329,8 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 <style scoped>
 .chart-frame { display: grid; grid-template-rows: minmax(0, 1fr) 40px; height: 100%; min-height: 0; }
 .chart-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; }
+.order-tooltip { position: absolute; z-index: 20; max-width: 220px; white-space: pre-line; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-raised, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: 11px; line-height: 1.5; pointer-events: auto; }
+:global(body.dark) .order-tooltip { background: var(--surface-raised, #17202b); color: var(--text-primary, #e8edf2); }
 .chart-host { width: 100%; height: 100%; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
 .ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }

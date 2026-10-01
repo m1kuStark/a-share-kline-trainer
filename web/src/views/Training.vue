@@ -46,7 +46,7 @@ const sellShares = ref<number | null>(null)
 const orderSide = ref<'buy' | 'sell'>('buy')
 const orderType = ref<'limit' | 'stop'>('limit')
 const orderTrigger = ref<number | null>(null)
-const orderShares = ref<number | null>(100)
+const orderWeight = ref(10)
 const orderReason = ref('')
 const orderError = ref('')
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
@@ -441,10 +441,15 @@ async function backToLauncher(): Promise<void> {
 }
 
 async function placeOrder(): Promise<void> {
-  if (!training.value.ordersEnabled || loading.value || orderTrigger.value === null || orderShares.value === null) return
+  if (!training.value.ordersEnabled || loading.value || orderTrigger.value === null) return
   loading.value = true; orderError.value = ''
   try {
-    const result = await placeTrainingOrder(training.value.id, { side: orderSide.value, order_type: orderType.value, trigger_price: orderTrigger.value, shares: orderShares.value, reason: orderReason.value || undefined })
+    const base = orderSide.value === 'buy' ? account.value.equity : account.value.availableShares
+    const weightPct = Math.min(100, Math.max(1, orderWeight.value))
+    const shares = orderSide.value === 'buy'
+      ? Math.max(100, Math.floor((base * weightPct / 100) / orderTrigger.value / 100) * 100)
+      : Math.max(100, Math.floor((base * weightPct / 100) / 100) * 100)
+    const result = await placeTrainingOrder(training.value.id, { side: orderSide.value, order_type: orderType.value, trigger_price: orderTrigger.value, shares, reason: orderReason.value || undefined })
     snapshot.value = result.snapshot
     orderTrigger.value = null
     orderReason.value = ''
@@ -698,9 +703,9 @@ void load()
           </div>
           <template v-else>
             <div class="order-form-row"><select v-model="orderSide" aria-label="条件单方向"><option value="buy">买入</option><option value="sell">卖出</option></select><select v-model="orderType" aria-label="条件单类型"><option value="limit">限价</option><option value="stop">止损</option></select></div>
-            <div class="order-form-row"><input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" /><input v-model.number="orderShares" type="number" min="100" step="100" placeholder="股数" aria-label="条件单股数" /></div>
+            <div class="order-form-row"><input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" /><input v-model.number="orderWeight" type="number" min="1" max="100" step="1" placeholder="比例%" aria-label="条件单比例" /></div>
             <input v-model="orderReason" maxlength="500" placeholder="挂单理由（可选）" aria-label="挂单理由" />
-            <button class="ghost-button" :disabled="loading || orderTrigger === null || orderShares === null" @click="placeOrder">提交条件单</button>
+            <button class="ghost-button" :disabled="loading || orderTrigger === null || orderWeight < 1 || orderWeight > 100" @click="placeOrder">提交条件单</button>
           </template>
           <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
         </div>
