@@ -349,6 +349,7 @@ describe('HISTORY-list GET /api/trainings/history', () => {
       insertEquity(database, id, '2026-08-03', 100_000)
       insertEquity(database, id, '2026-08-28', 110_000)
       insertDrawings(database, id, JSON.stringify(lineDrawing))
+      database.prepare('INSERT INTO trade_notes (training_id, trade_seq, note, updated_at) VALUES (?, 1, ?, ?)').run(id, '复盘笔记', '2026-08-28T00:00:00.000Z')
       const before = dumpDatabase(database)
 
       const list = await app.inject({ method: 'GET', url: '/api/trainings/history' })
@@ -375,7 +376,7 @@ describe('HISTORY-list GET /api/trainings/history', () => {
       expect(response.statusCode).toBe(200)
       expect(response.json()).toEqual({ deleted: [id] })
       expect(database.prepare('SELECT COUNT(*) AS count FROM trainings WHERE id = ?').get(id)).toEqual({ count: 0 })
-      for (const table of ['trades', 'equity_curve', 'drawings', 'position_events']) {
+      for (const table of ['trades', 'trade_notes', 'equity_curve', 'drawings', 'position_events']) {
         expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE training_id = ?`).get(id)).toEqual({ count: 0 })
       }
       expect((await app.inject({ method: 'GET', url: '/api/trainings/history' })).json().total).toBe(0)

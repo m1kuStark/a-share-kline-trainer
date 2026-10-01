@@ -22,7 +22,7 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   await page.route('**/equity-comparison*', async route => {
     const url = new URL(route.request().url())
     const requested = (url.searchParams.get('benchmarks') ?? '').split(',')
-    if (requested.includes('sh000001') && !requested.includes('sz399303')) await new Promise(resolve => setTimeout(resolve, 350))
+    if (requested.includes('sh000001') || requested.includes('sz399303')) await new Promise(resolve => setTimeout(resolve, 350))
     await route.fulfill({ json: {
       trainingId: Number(url.pathname.split('/')[3]),
       series: ['2026-09-01', '2026-09-02', '2026-09-03'].map((date, index) => ({
@@ -48,7 +48,16 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   const sh = report.getByRole('checkbox', { name: '上证指数', exact: true })
   const sz = report.getByRole('checkbox', { name: '国证 2000', exact: true })
   await sh.check()
+  // Switching a benchmark must keep the existing chart mounted while the
+  // comparison request is in flight; replacing it with a loading message
+  // causes an avoidable flash and shifts the report layout.
+  await expect(chart).toBeVisible()
+  await expect(chart.locator('path')).toHaveCount(1)
+  await expect(report.locator('.report-benchmark-status')).toHaveCount(0)
+  await expect(chart.locator('path')).toHaveCount(2)
   await sz.check()
+  await expect(chart).toBeVisible()
+  await expect(chart.locator('path')).toHaveCount(2)
   await expect(chart.locator('path')).toHaveCount(3)
   expect(await chart.locator('path').evaluateAll(paths => paths.map(path => path.getAttribute('stroke')))).toEqual(['#d24b4b', '#5b72c9', '#d28a3d'])
   expect(await chart.locator('path').evaluateAll(paths => new Set(paths.map(path => path.getAttribute('d'))).size)).toBe(3)

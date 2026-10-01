@@ -264,6 +264,33 @@ describe('GET /api/rankings', () => {
       expect(body.complete[0].benchmarkExcess).toBeNull()
     })
   })
+
+  it('view=stock 按六位代码精确分组，不混入其他股票，并暴露空态', async () => {
+    await withApp(async ({ app, database }) => {
+      const first = insertTraining(database, { tier: '1M' })
+      const other = insertTraining(database, { tier: '1M' })
+      database.prepare("UPDATE trainings SET code = '000602', name = '仪表仪器' WHERE id = ?").run(first)
+      database.prepare("UPDATE trainings SET code = '000606', name = '青海华鼎' WHERE id = ?").run(other)
+      for (const id of [first, other]) {
+        insertEquity(database, id, '2026-08-03', 100_000)
+        insertEquity(database, id, '2026-08-28', id === first ? 110_000 : 120_000)
+      }
+      const selected = await app.inject({ method: 'GET', url: '/api/rankings?view=stock&code=000602' })
+      expect(selected.statusCode).toBe(200)
+      expect(selected.json().stock).toMatchObject({ status: 'ok', code: '000602', name: '仪表仪器' })
+      expect(selected.json().complete.map((item: { code: string }) => item.code)).toEqual(['000602'])
+      const empty = await app.inject({ method: 'GET', url: '/api/rankings?view=stock&code=600519' })
+      expect(empty.statusCode).toBe(200)
+      expect(empty.json().stock).toMatchObject({ status: 'empty', code: '600519' })
+    })
+  })
+
+  it('view=stock 拒绝非六位代码', async () => {
+    await withApp(async ({ app }) => {
+      const response = await app.inject({ method: 'GET', url: '/api/rankings?view=stock&code=602' })
+      expect(response.statusCode).toBe(400)
+    })
+  })
 })
 
 describe('已实现盈亏（拍板 S4 冻结：摊薄成本法，费用含入，持有期分红不进单笔）', () => {

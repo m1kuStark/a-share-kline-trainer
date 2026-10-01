@@ -48,9 +48,10 @@ export interface RankingItem {
 
 export interface RankingGroups {
   tier: Tier | 'RANGE'
-  view?: 'tier' | 'range' | 'industry'
+  view?: 'tier' | 'range' | 'industry' | 'stock'
   rangeGroups?: Array<{ key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>
   industry?: { status: 'ok' | 'unavailable'; reason?: string; entries?: Array<{ id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }> }
+  stock?: { status: 'ok' | 'empty'; code: string; name?: string; complete: RankingItem[]; earlySettled: RankingItem[] }
   /** 到期结算组：收益率↓→最大回撤↑→胜率↓(null 殿后)→id↓ */
   complete: RankingItem[]
   /** 提前结算组：收益率↓→id↓ */
@@ -62,13 +63,19 @@ export interface RankingGroups {
 }
 
 /** 排行查询参数：tier 必填且必须是五档之一；非法一律 400。 */
-export function parseRankingsQuery(raw: unknown): { view: 'tier'; tier: Tier } | { view: 'range' } | { view: 'industry'; industry?: string } {
-  const query = (raw as { tier?: unknown; view?: unknown; industry?: unknown } | undefined) ?? {}
+export function parseRankingsQuery(raw: unknown): { view: 'tier'; tier: Tier } | { view: 'range' } | { view: 'industry'; industry?: string } | { view: 'stock'; code: string } {
+  const query = (raw as { tier?: unknown; view?: unknown; industry?: unknown; code?: unknown } | undefined) ?? {}
   if (query.view === 'range') return { view: 'range' }
   if (query.view === 'industry') return { view: 'industry', industry: typeof query.industry === 'string' ? query.industry : undefined }
+  if (query.view === 'stock') {
+    if (typeof query.code !== 'string' || !/^\d{6}$/.test(query.code)) {
+      throw new HttpError(400, 'stock 视图必须提供六位股票代码（code）')
+    }
+    return { view: 'stock', code: query.code }
+  }
   const tier = query.tier
   if (typeof tier !== 'string' || !TIERS.includes(tier as Tier)) {
-    throw new HttpError(400, `tier 必须是 ${TIERS.join(' / ')} 之一；或使用 view=range / view=industry`)
+    throw new HttpError(400, `tier 必须是 ${TIERS.join(' / ')} 之一；或使用 view=range / view=industry / view=stock&code=六位代码`)
   }
   return { view: 'tier', tier: tier as Tier }
 }
@@ -254,6 +261,48 @@ export async function rangeRankingsPayload(database: DatabaseSync, config: AppCo
   }
   assertNoActiveTraining(database)
   return groups
+}
+
+/** 单只股票排行：只比较代码完全相同的已结算训练，不混入周期/行业分组。 */
+export async function stockRankingsPayload(database: DatabaseSync, config: AppConfig, code: string): Promise<RankingGroups> {
+  const rows = database.prepare(`
+    SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
+           range_start, range_end, industry_id, industry_name
+    FROM trainings WHERE status = 'settled' AND code = ?
+  `).all(code) as unknown as RankingRow[]
+  const complete: RankingItem[] = []
+  const earlySettled: RankingItem[] = []
+  let excludedUnavailable = 0
+  for (const row of rows) {
+    const built = itemOf(database, row)
+    if ('reason' in built) { excludedUnavailable++; continue }
+    ;(built.item.classification === 'early-settled' ? earlySettled : complete).push(built.item)
+  }
+  complete.sort((left, right) => byReturnDesc(left, right) || left.maxDrawdown - right.maxDrawdown || byWinRateDesc(left, right) || byIdDesc(left, right))
+  earlySettled.sort((left, right) => byReturnDesc(left, right) || byIdDesc(left, right))
+  const result: RankingGroups = {
+    tier: 'RANGE', view: 'stock', complete, earlySettled, excludedUnavailable,
+    benchmark: { status: 'ok' },
+    stock: { status: rows.length ? 'ok' : 'empty', code, name: rows[0]?.name, complete, earlySettled },
+  }
+  if (rows.length) {
+    const benchmark = await loadBenchmarkSeries(config)
+    if (!benchmark.ok) {
+      result.benchmark = { status: 'unavailable', reason: benchmark.reason }
+      for (const item of [...complete, ...earlySettled]) {
+        item.benchmarkExcess = null
+        item.benchmarkExcessReason = benchmark.reason
+      }
+    } else {
+      for (const item of [...complete, ...earlySettled]) {
+        const outcome = benchmarkReturnOf(benchmark.bars, item.startDate, item.settleDate ?? item.startDate)
+        if (outcome.ok) item.benchmarkExcess = item.returnRate - outcome.value
+        else { item.benchmarkExcess = null; item.benchmarkExcessReason = outcome.reason }
+      }
+    }
+  }
+  assertNoActiveTraining(database)
+  return result
 }
 
 /** 行业排行只使用训练创建时冻结的 industry_id/name；无目录时整视图不可用。 */

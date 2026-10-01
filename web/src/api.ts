@@ -416,6 +416,10 @@ export function abandonTraining(id: number): Promise<{ training: TrainingMeta }>
   return request(`/api/trainings/${id}/abandon`, { method: 'POST' })
 }
 
+export function retrainTraining(id: number): Promise<TrainingSnapshot> {
+  return request(`/api/trainings/${id}/retrain`, { method: 'POST' })
+}
+
 export function fetchDrawings(id: number): Promise<{ drawings: Drawing[] }> {
   return request(`/api/trainings/${id}/drawings`)
 }
@@ -423,6 +427,16 @@ export function fetchDrawings(id: number): Promise<{ drawings: Drawing[] }> {
 export async function saveDrawings(id: number, drawings: Drawing[], keepalive = false): Promise<void> {
   await request(`/api/trainings/${id}/drawings`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(drawings), keepalive,
+  })
+}
+
+export function fetchTradeNote(trainingId: number, seq: number): Promise<{ note: string; updatedAt: string | null }> {
+  return request(`/api/trainings/${trainingId}/trades/${seq}/note`)
+}
+
+export function saveTradeNote(trainingId: number, seq: number, note: string): Promise<{ note: string; updatedAt: string }> {
+  return request(`/api/trainings/${trainingId}/trades/${seq}/note`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note }),
   })
 }
 
@@ -570,11 +584,12 @@ export interface RankingItem {
 
 export interface RankingGroups {
   tier: string
-  view?: 'tier' | 'range' | 'industry'
+  view?: 'tier' | 'range' | 'industry' | 'stock'
   complete: RankingItem[]
   earlySettled: RankingItem[]
   rangeGroups?: Array<{ key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>
   industry?: { status: 'ok' | 'unavailable'; reason?: string; entries?: Array<{ id: string; name: string; complete: RankingItem[]; earlySettled: RankingItem[] }> }
+  stock?: { status: 'ok' | 'empty'; code: string; name?: string; complete: RankingItem[]; earlySettled: RankingItem[] }
   /** 行级不可认证而不入榜的局数（坏规则/legacy-raw/结算点缺失） */
   excludedUnavailable: number
   /** 基准数据整体状态：文件缺失/无 TDX 时整组超额置 null 并说明 */
@@ -592,6 +607,10 @@ export function fetchRangeRankings(): Promise<RankingGroups> {
 export function fetchIndustryRankings(industry?: string): Promise<RankingGroups> {
   const query = industry ? `&industry=${encodeURIComponent(industry)}` : ''
   return request(`/api/rankings?view=industry${query}`)
+}
+
+export function fetchStockRankings(code: string): Promise<RankingGroups> {
+  return request(`/api/rankings?view=stock&code=${encodeURIComponent(code)}`)
 }
 
 // ===== 日线数据更新（R1：状态检查 + 触发更新） =====

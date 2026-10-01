@@ -4,7 +4,7 @@
 |---|---|
 | [训练与账户](training/rules.md) | 创建、推进、交易、权息、结算 |
 | [结算历史与成绩单](training/history.md) | 历史列表、只读事实成绩单与防未来守卫；已交付 |
-| [五档排行与只读复盘](training/rankings.md) | 排行分组、冻结指标口径与只读复盘边界；已交付 |
+| [五档排行与成绩单入口](training/rankings.md) | 排行分组、冻结指标口径与成绩单入口；K 线复盘展示暂缓 |
 | [图表与工具](chart/interaction.md) | 显示、周期、手势、画线与保存 |
 | [行情与更新](market-data/requirements.md) | 来源、覆盖、历史修订和更新入口 |
 | [后续范围](roadmap.md) | M4/M5/R2与V2 |

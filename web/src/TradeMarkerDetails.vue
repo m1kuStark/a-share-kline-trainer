@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { TradeView } from './api'
+import { computed, ref, watch } from 'vue'
+import { fetchTradeNote, saveTradeNote as persistTradeNote, type TradeView } from './api'
 import { buildListRow, buildTradeFacts } from './tradeMarkerDetails'
 
 const props = defineProps<{
@@ -10,21 +10,54 @@ const props = defineProps<{
   pinned: boolean
   /** fixed 定位样式（由标记条按徽标位置换算，钳制在视口内） */
   position: Record<string, string>
+  trainingId?: number
 }>()
 
 const emit = defineEmits<{
   select: [seq: number]
   togglePin: []
+  pin: []
   close: []
   pointerEnter: []
   pointerLeave: []
   /** Teleport 根不透传 attrs：焦点事件必须在真实 div 上绑定后显式转发（FM-011/F2） */
   focusIn: []
   focusOut: [event: FocusEvent]
+  saveNote: [value: string]
 }>()
 
 // 必须随 props.selected 响应：setup 期 const 会把首次方向固定（F1：B→S 标题不更新）
 const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '卖出'))
+const activeTab = ref<'trade' | 'note'>('trade')
+const noteText = ref('')
+const noteError = ref('')
+const noteStorageKey = computed(() => `trainer.trade-note.${props.trainingId ?? 'current'}.${props.selected.date}.${props.selected.seq}`)
+let noteRequest = 0
+async function loadNote(): Promise<void> {
+  const request = ++noteRequest
+  if (props.trainingId !== undefined) {
+    try {
+      const result = await fetchTradeNote(props.trainingId, props.selected.seq)
+      if (request === noteRequest) noteText.value = result.note
+      return
+    } catch { /* fallback keeps the panel usable when the server is unavailable */ }
+  }
+  try { if (request === noteRequest) noteText.value = localStorage.getItem(noteStorageKey.value) ?? '' } catch { noteText.value = '' }
+}
+watch([noteStorageKey, () => props.trainingId], () => { void loadNote() }, { immediate: true })
+function showNote(): void {
+  activeTab.value = 'note'
+  emit('pin')
+}
+async function saveNote(): Promise<void> {
+  noteError.value = ''
+  if (props.trainingId !== undefined) {
+    try { await persistTradeNote(props.trainingId, props.selected.seq, noteText.value) }
+    catch { noteError.value = '笔记保存失败，请检查连接后重试'; return }
+  }
+  try { localStorage.setItem(noteStorageKey.value, noteText.value) } catch { /* storage unavailable */ }
+  emit('saveNote', noteText.value)
+}
 </script>
 
 <template>
@@ -55,6 +88,10 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
           <button type="button" class="details-close" aria-label="关闭" title="关闭" @click="emit('close')">✕</button>
         </span>
       </div>
+      <div class="details-tabs" role="tablist" aria-label="成交信息与笔记">
+        <button type="button" role="tab" :aria-selected="activeTab === 'trade'" :class="{ active: activeTab === 'trade' }" @click="activeTab = 'trade'">买卖数据</button>
+        <button type="button" role="tab" :aria-selected="activeTab === 'note'" :class="{ active: activeTab === 'note' }" @click="showNote">笔记</button>
+      </div>
       <ol v-if="props.trades.length > 1" class="details-list">
         <li v-for="item in props.trades" :key="item.seq">
           <button
@@ -65,12 +102,18 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
           >{{ buildListRow(item) }}</button>
         </li>
       </ol>
-      <dl class="details-facts">
+      <dl v-if="activeTab === 'trade'" class="details-facts">
         <div v-for="fact in buildTradeFacts(props.selected)" :key="fact.label">
           <dt>{{ fact.label }}</dt>
           <dd>{{ fact.value }}</dd>
         </div>
       </dl>
+      <div v-else class="details-note">
+        <label for="trade-marker-note">本次交易笔记</label>
+        <textarea id="trade-marker-note" v-model="noteText" rows="5" placeholder="记录买卖理由、盘面观察或复盘要点" />
+        <p v-if="noteError" class="details-note-error" role="alert">{{ noteError }}</p>
+        <button type="button" class="note-save" @click="saveNote">保存笔记</button>
+      </div>
     </div>
   </Teleport>
 </template>
@@ -87,11 +130,11 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
   padding: 10px;
   overflow-y: auto;
   box-sizing: border-box;
-  background: #ffffff;
-  border: 1px solid #dfe5eb;
+  background: var(--surface-background, #ffffff);
+  border: 1px solid var(--surface-border, #dfe5eb);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, .14);
-  color: #334155;
+  color: var(--text-primary, #334155);
   font-size: 12px;
 }
 
@@ -108,9 +151,9 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
 }
 
 .details-actions button {
-  border: 1px solid #dfe5eb;
-  background: #ffffff;
-  color: #334155;
+  border: 1px solid var(--surface-border, #dfe5eb);
+  background: var(--control-background, #ffffff);
+  color: inherit;
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 12px;
@@ -118,11 +161,20 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
 }
 
 .details-actions button:hover {
-  background: #eef2f7;
+  background: var(--surface-hover, #eef2f7);
 }
 
+.details-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
+.details-tabs button { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-secondary, #64748b); padding: 5px 8px; font: inherit; cursor: pointer; }
+.details-tabs button.active { color: var(--text-primary, #334155); border-bottom-color: #2b8b99; font-weight: 650; }
+.details-note { display: grid; gap: 6px; }
+.details-note-error { margin: 0; color: #b3413a; font-size: 11px; }
+.details-note label { color: var(--text-secondary, #64748b); }
+.details-note textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 88px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 7px; background: var(--control-background, #fff); color: var(--text-primary, #334155); font: inherit; }
+.note-save { justify-self: end; border: 1px solid #2b8b99; border-radius: 4px; padding: 5px 10px; background: var(--surface-selected, #eaf5f6); color: var(--text-primary, #1c6076); cursor: pointer; }
+
 .details-pin[aria-pressed="true"] {
-  background: #eef2f7;
+  background: var(--surface-selected, #eef2f7);
   font-weight: 650;
 }
 
@@ -141,7 +193,7 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
   text-align: left;
   padding: 4px 6px;
   border-radius: 4px;
-  color: #334155;
+  color: inherit;
   font: inherit;
   cursor: pointer;
   white-space: nowrap;
@@ -150,11 +202,11 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
 }
 
 .details-list button:hover {
-  background: #eef2f7;
+  background: var(--surface-hover, #eef2f7);
 }
 
 .details-list button.selected {
-  background: #e8f1fb;
+  background: var(--surface-selected, #e8f1fb);
   font-weight: 650;
 }
 
@@ -171,7 +223,7 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
 }
 
 .details-facts dt {
-  color: #64748b;
+  color: var(--text-secondary, #64748b);
 }
 
 .details-facts dd {
@@ -208,4 +260,6 @@ const sideLabel = computed(() => (props.selected.side === 'buy' ? '买入' : '�
 :global(body.dark .details-facts dt) {
   color: var(--text-secondary, #9ca3af);
 }
+
+:global(body.dark .details-note-error) { color: #e08a80; }
 </style>

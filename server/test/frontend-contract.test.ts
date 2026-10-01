@@ -304,6 +304,18 @@ describe('M4 history/report interaction contract', () => {
     expect(styles).not.toMatch(/body\.dark \.report-curve \{ color: #52b394/)
   })
 
+  it('keeps the comparison chart mounted while a benchmark request is pending and pauses report K-line replay', async () => {
+    const report = await readFile(reportPath, 'utf8')
+    expect(report).toMatch(/v-if="chartModel" class="report-curve"/)
+    expect(report).not.toMatch(/v-else-if="comparisonLoading"/)
+    expect(report).toMatch(/comparisonLoading/)
+    expect(report).toContain('更新同期指数')
+    expect(report).not.toContain('K线复盘')
+    expect(report).not.toContain('report-review')
+    expect(report).not.toContain('fetchTrainingBars')
+    expect(report).not.toContain('KlineChart')
+  })
+
   it('blocks exit while the native directory picker is pending', async () => {
     const app = await readFile(new URL('../../web/src/App.vue', import.meta.url), 'utf8')
     expect(app).toMatch(/wizardBusy \|\| wizardApplying \|\| exitFlow !== 'closed'/)

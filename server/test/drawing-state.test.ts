@@ -180,6 +180,18 @@ describe('drawing state lifecycle', () => {
     ], id => id === 'random-pane' ? 'MACD' : id)
     expect(result).toEqual([{ ...line, paneId: 'MACD', points: [{ timestamp: 1000, value: 10 }] }])
   })
+
+  it('serializes the active timeframe so drawings can be isolated by period', () => {
+    const overlay = {
+      id: 'daily-line', name: 'segment', paneId: 'candle_pane',
+      points: [{ timestamp: 1, value: 10 }, { timestamp: 2, value: 11 }],
+      isDrawing: () => false,
+    }
+    expect(serializeDrawings([overlay], () => 'candle_pane', undefined, '1W')).toEqual([{
+      id: 'daily-line', name: 'segment', paneId: 'candle_pane',
+      points: [{ timestamp: 1, value: 10 }, { timestamp: 2, value: 11 }], timeframe: '1W',
+    }])
+  })
   it('does not record hover-induced library stacking order as a drawing edit', () => {
     const a = { ...line, id: 'a' }, b = { ...line, id: 'b' }
     expect(serializeDrawings([b, a], id => id)).toEqual(serializeDrawings([a, b], id => id))

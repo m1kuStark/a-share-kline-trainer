@@ -41,6 +41,13 @@ export function migrateDatabase(database: DatabaseSync): void {
       fee REAL NOT NULL, cash_after REAL NOT NULL, shares_after INTEGER NOT NULL,
       cost_after REAL NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS trade_notes (
+      training_id INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+      trade_seq INTEGER NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (training_id, trade_seq)
+    );
     CREATE TABLE IF NOT EXISTS equity_curve (
       training_id INTEGER NOT NULL, date TEXT NOT NULL, equity REAL NOT NULL,
       PRIMARY KEY (training_id, date)

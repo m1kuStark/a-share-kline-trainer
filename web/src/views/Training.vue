@@ -5,7 +5,7 @@ import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
-  abandonTraining, advanceTraining, fetchTrainingBars, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
+  abandonTraining, advanceTraining, fetchTrainingBars, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
   type Bar, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
@@ -19,7 +19,7 @@ import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDa
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
-const emit = defineEmits<{ ended: []; 'open-history': [] }>()
+const emit = defineEmits<{ ended: []; 'open-history': []; retrained: [TrainingSnapshot] }>()
 
 const snapshot = ref<TrainingSnapshot>(props.snapshot)
 const bars = ref<Bar[]>([])
@@ -58,6 +58,7 @@ const toolDropTarget = ref<{ list: 'favorites' | 'other'; index: number } | null
 // 多选模式：框选拖拽变为划线批量选中（与画线取点模式互斥）
 const multiSelectMode = ref(false)
 const magnet = ref<'normal' | 'weak_magnet' | 'strong_magnet'>('weak_magnet')
+const allDrawings = ref<Drawing[] | null>(null)
 const initialDrawings = ref<Drawing[] | null>(null)
 const historyState = ref({ undo: false, redo: false })
 const textPanelOpen = ref(false)
@@ -108,7 +109,9 @@ async function loadDrawings(): Promise<void> {
   try {
     const remote = (await fetchDrawings(drawingTrainingId)).drawings
     const recovered = outbox.read()
-    initialDrawings.value = recovered ?? remote
+    const normalized = (recovered ?? remote).map(item => ({ ...item, timeframe: item.timeframe ?? '1D' as const }))
+    allDrawings.value = normalized
+    initialDrawings.value = normalized.filter(item => item.timeframe === tf.value)
     legacyDrawingNotice.value = initialDrawings.value.some(item => item.paneId === 'candle_pane' && !item.priceBasis)
       ? '旧画线缺少创建时的复权基准，已保留原价；历史偏移未自动修正。' : ''
     drawingSaveStatus.value = '已保存'
@@ -121,10 +124,15 @@ async function loadDrawings(): Promise<void> {
   }
 }
 function onDrawingsChange(items: Drawing[]): void {
-  pendingDrawings = items
+  const next = items.map(item => ({ ...item, timeframe: item.timeframe ?? tf.value }))
+  const existing = allDrawings.value ?? []
+  const otherPeriods = existing.filter(item => (item.timeframe ?? '1D') !== tf.value)
+  allDrawings.value = [...otherPeriods, ...next]
+  initialDrawings.value = next
+  pendingDrawings = allDrawings.value
   drawingRevision++
   drawingSaveStatus.value = '待保存'
-  try { outbox.write(items) } catch { drawingSaveStatus.value = '本地备份失败' }
+  try { outbox.write(allDrawings.value) } catch { drawingSaveStatus.value = '本地备份失败' }
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => { void flushDrawings() }, 1200)
 }
@@ -414,6 +422,22 @@ async function backToLauncher(): Promise<void> {
   } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
   finally { finishingSession.value = false }
 }
+async function retrain(): Promise<void> {
+  if (finishingSession.value || !settledView.value) return
+  if (!window.confirm('重新训练将删除本轮成绩、交易和画线记录，是否继续？')) return
+  finishingSession.value = true
+  endError.value = ''
+  try {
+    if (!await flushDrawings()) throw new Error(drawingSaveError.value || '请先重试保存画线')
+    await recording.finishSession(false)
+    const result = await retrainTraining(settledView.value.training.id)
+    const url = new URL(location.href)
+    url.searchParams.set('training', String(result.training.id))
+    history.replaceState(null, '', url)
+    emit('retrained', result)
+  } catch (error) { endError.value = error instanceof Error ? error.message : '重新训练失败，原记录仍保留' }
+  finally { finishingSession.value = false }
+}
 async function prepareForLibrary(): Promise<boolean> {
   if (loading.value || preparingRecording.value || drawTool.value || textPanelOpen.value) return false
   if (!await flushDrawings()) return false
@@ -509,6 +533,7 @@ watch(tf, (value, previous) => {
   const op = recording.begin('chart.timeframe', { from: previous, to: value })
   // Chart data will be captured only after the matching load finishes.
   loading.value = true
+  if (allDrawings.value) initialDrawings.value = allDrawings.value.filter(item => (item.timeframe ?? '1D') === value)
   recording.finish(op, 'accepted')
   void load()
 })
@@ -574,7 +599,7 @@ void load()
           :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"
-          :magnet="magnet" :saved-drawings="initialDrawings"
+          :magnet="magnet" :saved-drawings="initialDrawings" :training-id="training.id"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
@@ -622,16 +647,6 @@ void load()
           <button class="trade-action sell" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('sell')">卖出</button>
         </div>
 
-        <div class="panel-divider"></div>
-        <div class="order-heading"><span>成交记录</span><small>{{ snapshot.trades.length }} 笔</small></div>
-        <div class="trade-log">
-          <div v-for="item in [...snapshot.trades].reverse()" :key="item.seq" class="trade-row">
-            <span :class="item.side === 'buy' ? 'up' : 'down'">{{ item.side === 'buy' ? 'B' : 'S' }}{{ item.seq }}</span>
-            <span>{{ item.date }}</span>
-            <span>{{ item.shares }}股 @ {{ item.price.toFixed(2) }}</span>
-          </div>
-          <div v-if="!snapshot.trades.length" class="trade-empty">暂无成交</div>
-        </div>
         </div>
         <div class="draw-toolbar" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools }" @keydown="onToolbarKeydown">
           <div class="drawing-toolbar-heading">
@@ -730,11 +745,13 @@ void load()
         </div>
         <label class="keep-recording"><input v-model="keepRecording" type="checkbox" :disabled="finishingSession || recording.finalized.value" />保留到本机训练历史</label>
         <p v-if="endError" class="error-text" role="alert">{{ endError }}</p>
-        <button class="trade-action buy" :disabled="finishingSession" @click="backToLauncher">完成，返回首页</button>
-        <!-- M4-HISTORY-01 最小入口：结算完成后可直接进入历史训练成绩单（不改账户/录制行为） -->
-        <button class="ghost-button" :disabled="finishingSession" @click="emit('open-history')">查看历史成绩单</button>
-        <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出本场录制</button>
-        <button class="ghost-button" @click="settledView = null">继续查看图表</button>
+        <div class="settle-actions">
+          <button class="trade-action buy" :disabled="finishingSession" @click="backToLauncher">完成，返回首页</button>
+          <button class="ghost-button" :disabled="finishingSession" @click="emit('open-history')">查看历史成绩单</button>
+          <button class="ghost-button" :disabled="finishingSession" @click="retrain">重新训练</button>
+          <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出本场录制</button>
+          <button class="ghost-button" @click="settledView = null">留在当前界面</button>
+        </div>
       </div>
     </div>
   </div>

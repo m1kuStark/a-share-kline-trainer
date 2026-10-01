@@ -1,6 +1,17 @@
 :root { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6f9; font-synthesis: none; --topbar-h: 28px; --chart-background: #ffffff; }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 720px; background: #f4f6f9; }
+:root {
+  --surface-background: #f3f6f4;
+  --control-background: #edf2f0;
+  --surface-border: #d5dfdc;
+  --surface-hover: #e8efec;
+  --surface-selected: #deebe8;
+  --text-primary: #26373b;
+  --text-secondary: #5c6d70;
+  --text-muted: #7c8b8b;
+  --chart-background: #fbfcfb;
+}
+body { margin: 0; min-width: 720px; background: #edf2f0; color: var(--text-primary); }
 button, input { font: inherit; }
 button { cursor: pointer; }
 .app-shell { display: flex; min-height: 100dvh; }
@@ -214,6 +225,7 @@ body.dark .suggestions small { color: var(--text-muted); }
 body.dark .form-field label, body.dark .settle-grid span { color: var(--text-secondary); }
 body.dark .trade-row { color: var(--text-secondary); }
 body.dark .settle-mask { background: #000000cc; }
+body.dark .settle-panel { background: var(--surface-background); border-color: var(--surface-border); color: var(--text-primary); box-shadow: 0 18px 48px rgba(0, 0, 0, .42); }
 body.dark .env-error { background: #33221c; border-color: #6b4230; color: #e0a18a; }
 body.dark .up { color: #e08a80; }
 body.dark .down { color: #52b394; }
@@ -225,12 +237,30 @@ body.dark .chart-empty span, body.dark .empty-icon { color: var(--text-muted); }
 body.dark .chart-footer { background: var(--chart-background); border-color: #383838; color: var(--text-secondary); }
 body.dark .volume-legend { color: var(--text-secondary) !important; }
 body.dark .tool-list.accepting-drop { outline-color: #b8b8b8; }
-.settle-mask { position: fixed; inset: 0; background: #16202ecc; display: grid; place-items: center; z-index: 20; }
-.settle-panel { width: 480px; background: #fff; border-radius: 6px; padding: 30px 34px; }
+
+/* 浅色主题使用低对比灰绿底，长时间看盘时减少纯白大面积刺激。 */
+body:not(.dark) .topbar,
+body:not(.dark) .status-strip,
+body:not(.dark) .training-topbar { background: #f3f6f4; border-color: #d9e2df; }
+body:not(.dark) .toolbar,
+body:not(.dark) .training-toolbar { background: #edf2f0; border-color: #d9e2df; }
+body:not(.dark) .launcher-form,
+body:not(.dark) .chart-panel,
+body:not(.dark) .trade-panel { background: #f7f9f8; border-color: #d5dfdc; }
+body:not(.dark) .content-grid,
+body:not(.dark) .training-grid { background: #edf2f0; }
+body:not(.dark) .stock-search input,
+body:not(.dark) .form-field input,
+body:not(.dark) .weight-grid input,
+body:not(.dark) .shares-row input { background: #f8faf9; border-color: #d1dcda; }
+.settle-mask { position: fixed; inset: 0; background: rgba(41, 56, 57, .34); display: grid; place-items: center; z-index: 20; }
+.settle-panel { width: min(480px, calc(100vw - 32px)); background: var(--surface-background); color: var(--text-primary); border: 1px solid var(--surface-border); border-radius: 8px; padding: 28px 32px; box-shadow: 0 18px 48px rgba(38, 55, 59, .16); }
 .settle-panel h2 { margin: 0 0 20px; font-size: 19px; }
 .settle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; margin-bottom: 24px; }
-.settle-grid span { display: block; color: #8a98a9; font-size: 11px; margin-bottom: 4px; }
+.settle-grid span { display: block; color: var(--text-secondary); font-size: 11px; margin-bottom: 4px; }
 .settle-grid strong { font-size: 15px; }
+.settle-actions { display: grid; gap: 9px; margin-top: 16px; }
+.settle-actions .trade-action, .settle-actions .ghost-button { margin-top: 0; min-height: 36px; }
 .up { color: #c95752; }
 .down { color: #31937b; }
 
@@ -386,23 +416,20 @@ body.dark .history-error { border-color: #8a6d1d; background: #2e2612; color: #d
 .report-curve svg { display: block; width: 100%; height: 300px; overflow: visible; }
 .report-curve figcaption { margin-top: 8px; font-size: 12px; color: var(--text-secondary, #51637a); }
 .report-curve-tooltip { position: absolute; top: 8px; right: 8px; display: grid; gap: 3px; min-width: 150px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); font-size: 11px; pointer-events: none; }
+.report-curve-refresh { display: block; min-height: 16px; margin: 0 0 8px; visibility: hidden; color: var(--text-secondary, #51637a); font-size: 11px; }
+.report-curve-refresh.pending { visibility: visible; }
 .curve-grid { stroke: var(--surface-border, #dfe5eb); stroke-width: .7; stroke-dasharray: 3 4; }
 .curve-hover-line { stroke: var(--text-secondary, #51637a); stroke-width: .8; stroke-dasharray: 3 3; }
 .curve-axis-label { fill: var(--text-secondary, #51637a); font-size: 10px; }
-.report-benchmark-statuses { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; color: var(--text-secondary, #51637a); font-size: 11px; }
+.report-benchmark-statuses { display: flex; flex-wrap: wrap; gap: 8px; min-height: 16px; margin: 4px 0 8px; color: var(--text-secondary, #51637a); font-size: 11px; }
 .report-benchmark-status.unavailable { color: #a05248; }
 .report-comparison-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin: 12px 0 6px; color: var(--text-secondary, #51637a); }
 .report-comparison-controls label { display: inline-flex; align-items: center; gap: 6px; }
 .report-comparison-curve figcaption { display: flex; gap: 14px; }
 .legend-user { color: #d24b4b; }.legend-sh { color: #5b72c9; }.legend-sz { color: #d28a3d; }
 body.dark .report-benchmark-status.unavailable { color: #e0a196; }
-.report-drawings { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.report-drawing-item { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; }
-.report-drawing-item span { color: var(--text-secondary, #51637a); }
-.report-drawing-basis { font-size: 11px; }
 .report-empty { margin: 8px 0; color: var(--text-secondary, #51637a); }
-.report-note { margin-top: 16px; font-size: 11px; color: var(--text-secondary, #51637a); }
-/* ===== M4-01：五档排行 + 只读K线复盘 ===== */
+/* ===== M4-01：五档排行 ===== */
 .rankings-page { margin: 10px 14px 0; padding: 14px; overflow-y: auto; }
 .rankings-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .rankings-header h1 { margin: 0 0 4px; font-size: 18px; }
@@ -412,6 +439,10 @@ body.dark .report-benchmark-status.unavailable { color: #e0a196; }
 .rankings-tab:hover { border-color: #94bec5; }
 .rankings-tab.active { border-color: #2b8b99; color: #22758a; font-weight: 700; background: var(--surface-hover, #f4f8fa); }
 body.dark .rankings-tab.active { color: #52b394; border-color: #2e7d6b; }
+.stock-ranking-picker { position: relative; max-width: 620px; margin: 8px 0 14px; display: grid; gap: 6px; }
+.stock-ranking-picker label { font-size: 12px; color: var(--text-secondary, #51637a); }
+.stock-ranking-picker input { width: 100%; max-width: 620px; box-sizing: border-box; }
+.ranking-stock-suggestions { position: absolute; z-index: 5; top: 54px; left: 0; right: 0; max-width: 620px; }
 .rankings-page h2 { margin: 18px 0 8px; font-size: 14px; }
 .rankings-page h2 small { margin-left: 8px; font-weight: 400; font-size: 11px; color: var(--text-secondary, #51637a); }
 .rankings-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12px; }
@@ -421,10 +452,6 @@ body.dark .rankings-tab.active { color: #52b394; border-color: #2e7d6b; }
 .rankings-row { cursor: pointer; }
 .rankings-row:hover { background: var(--surface-hover, #f4f8fa); }
 .rankings-excluded { margin: 14px 0 0; font-size: 11px; color: var(--text-secondary, #51637a); }
-.report-review-toggle { margin-left: 10px; }
-.report-review { margin: 4px 0 8px; }
-.report-review-chart { position: relative; height: 480px; border: 1px solid var(--surface-border, #dfe5eb); background: var(--chart-background, #ffffff); }
-body.dark .report-review-chart { border-color: #383838; }
 @media (max-width: 960px) {
   .rankings-page { margin: 10px 14px 0; padding: 14px; }
   .rankings-tabs { flex-wrap: wrap; }

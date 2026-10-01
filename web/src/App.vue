@@ -479,6 +479,10 @@ function onTrainingEnded(): void {
   history.replaceState(null, '', location.pathname)
   void refresh()
 }
+function onTrainingRetrained(next: TrainingSnapshot): void {
+  snapshot.value = next
+  view.value = 'training'
+}
 </script>
 
 <template>
@@ -570,7 +574,7 @@ function onTrainingEnded(): void {
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
       <History v-else-if="view === 'history'" @create="returnToTraining" />
       <Rankings v-else-if="view === 'rankings'" @create="returnToTraining" />
-      <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" @open-history="showHistory" />
+      <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" @open-history="showHistory" @retrained="onTrainingRetrained" />
       <div v-else class="boot-loading">正在连接本地服务…</div>
     </main>
 

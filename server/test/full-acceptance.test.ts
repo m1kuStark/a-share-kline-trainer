@@ -216,6 +216,24 @@ describe('full acceptance matrix', () => {
     })
   })
 
+  it('retrain atomically replaces a settled run with a fresh run using the same parameters', async () => {
+    await withApp(async ({ app }) => {
+      const created = await app.inject({ method: 'POST', url: '/api/trainings', payload: { tier: '1M', code: '600000', start_date: '2026-07-01', initial_cash: 250_000, blind: false } })
+      expect(created.statusCode).toBe(201)
+      const oldId = created.json().training.id
+      const settled = await app.inject({ method: 'POST', url: `/api/trainings/${oldId}/settle` })
+      expect(settled.statusCode).toBe(200)
+
+      const retrained = await app.inject({ method: 'POST', url: `/api/trainings/${oldId}/retrain` })
+      expect(retrained.statusCode).toBe(201)
+      const fresh = retrained.json()
+      expect(fresh.training).toMatchObject({ status: 'running', code: '600000', tier: '1M', initialCash: 250_000, startDate: '2026-07-01' })
+      expect(fresh.training.id).not.toBe(oldId)
+      expect((await app.inject({ method: 'GET', url: `/api/trainings/${oldId}` })).statusCode).toBe(404)
+      expect((await app.inject({ method: 'GET', url: '/api/trainings/active' })).json().training.id).toBe(fresh.training.id)
+    })
+  })
+
   it('delivered M4 rankings respond explicitly while M5 settings stay closed instead of silently pretending to be complete', async () => {
     await withApp(async ({ app }) => {
       // M4 排行已交付（M4-01，拍板 S4 冻结 2026-09-29）：合法档位显式 200（空库=空分组），

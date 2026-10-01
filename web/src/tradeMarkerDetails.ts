@@ -27,6 +27,7 @@ export type DetailsEvent =
   | { type: 'select'; marker: TradeMarkerCluster; seq: number }
   | { type: 'pin' }
   | { type: 'unpin' }
+  | { type: 'note-saved' }
   | { type: 'pointer-leave' }
   | { type: 'outside-pointerdown' }
   | { type: 'escape' }
@@ -59,6 +60,9 @@ export function reduceDetails(state: DetailsPanelState | null, event: DetailsEve
       return state ? { ...state, pinned: true } : state
     case 'unpin':
       return state ? { ...state, pinned: false, source: 'open' } : state
+    case 'note-saved':
+      // 保存笔记释放临时固定；离开徽标/面板后按悬停行为自动收起。
+      return state ? { ...state, pinned: false, source: 'hover' } : state
     case 'pointer-leave':
       return state && !state.pinned && state.source === 'hover' ? null : state
     case 'outside-pointerdown':

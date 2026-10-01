@@ -64,6 +64,9 @@ interface TrainingRow {
   range_source_fingerprint: string | null
   range_notes: string | null
   rules_json: string | null
+  industry_id: string | null
+  industry_name: string | null
+  industry_source_sha256: string | null
 }
 
 /** 训练查询响应的可选 range 对象：version/mode/requested/actual/指纹与notes（TRAIN-02 冻结合同）。 */
@@ -1069,6 +1072,61 @@ export function settleTraining(database: DatabaseSync, id: number): TrainingMeta
     "UPDATE trainings SET status = 'settled', settle_date = ?, early_settle = 1 WHERE id = ?",
   ).run(row.current_date ?? row.start_date, id)
   return toMeta(loadTrainingRow(database, id))
+}
+
+/**
+ * Replace a settled run with a fresh run using the exact frozen creation
+ * parameters. Market I/O completes before the transaction; the old facts are
+ * deleted only after the new start bar has been verified, so a read failure
+ * cannot destroy the user's result.
+ */
+export async function retrainTraining(database: DatabaseSync, config: AppConfig, id: number): Promise<TrainingSnapshot> {
+  const row = loadTrainingRow(database, id)
+  if (row.status !== 'settled') throw new HttpError(409, '只有已结算训练可以重新训练', 'TRAINING_NOT_SETTLED')
+  const reader = await marketReader(database, config)
+  await reader.ensureCaches()
+  const bars = await reader.readBars(row.market as TdxMarket, row.code)
+  const startBar = bars.find(bar => bar.date === row.start_date) ?? [...bars].reverse().find(bar => bar.date <= row.start_date)
+  if (!startBar) throw new HttpError(409, `无法重新训练：找不到 ${row.start_date} 的起始行情`, 'RETRAIN_START_BAR_MISSING')
+
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    const fresh = loadTrainingRow(database, id)
+    if (fresh.status !== 'settled') throw new HttpError(409, '训练状态已变化，请刷新后重试', 'TRAIN_STATE_CHANGED')
+    if (database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()) {
+      throw new HttpError(409, '已有进行中的训练，请先结束后再重新训练', 'TRAINING_ACTIVE')
+    }
+    const createdAt = new Date().toISOString()
+    const result = database.prepare(`
+      INSERT INTO trainings (
+        tier, code, name, market, start_date, planned_end, status, blind,
+        adjust_mode, initial_cash, created_at, current_date, current_close,
+        range_version, range_mode, requested_start, requested_end, range_start, range_end,
+        range_bar_count, range_source_fingerprint, range_notes,
+        industry_id, industry_name, industry_source_sha256, rules_json
+      ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      fresh.tier, fresh.code, fresh.name, fresh.market, fresh.start_date, fresh.planned_end,
+      fresh.blind, fresh.adjust_mode, fresh.initial_cash, createdAt, fresh.start_date, startBar.close,
+      fresh.range_version ?? 0, fresh.range_mode ?? 'tier', fresh.requested_start, fresh.requested_end,
+      fresh.range_start, fresh.range_end, fresh.range_bar_count, fresh.range_source_fingerprint, fresh.range_notes,
+      fresh.industry_id,
+      fresh.industry_name,
+      fresh.industry_source_sha256,
+      fresh.rules_json,
+    )
+    const newId = Number(result.lastInsertRowid)
+    database.prepare('INSERT INTO equity_curve (training_id, date, equity) VALUES (?, ?, ?)').run(newId, fresh.start_date, fresh.initial_cash)
+    for (const table of ['drawings', 'trades', 'trade_notes', 'equity_curve', 'position_events']) {
+      database.prepare(`DELETE FROM ${table} WHERE training_id = ?`).run(id)
+    }
+    database.prepare('DELETE FROM trainings WHERE id = ?').run(id)
+    database.exec('COMMIT')
+    return trainingSnapshot(database, newId)
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
 }
 
 export function abandonTraining(database: DatabaseSync, id: number): TrainingMeta {

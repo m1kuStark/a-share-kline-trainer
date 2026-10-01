@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import {
   DEFAULT_FAVORITE_TOOLS, FAVORITE_TOOLS_STORAGE_KEY, loadFavoriteTools,
-  moveFavoriteTool, reconcileFavoriteTools, saveFavoriteTools,
+  moveFavoriteTool, reconcileFavoriteTools, saveFavoriteTools, loadToolStylePreferences, saveToolStylePreferences, TOOL_PREFERENCES_STORAGE_KEY,
 } from '../../web/src/toolFavorites'
 
 describe('custom drawing favorites', () => {
@@ -45,6 +45,15 @@ describe('custom drawing favorites', () => {
   it('keeps toolbar usable when browser storage is unavailable', () => {
     expect(loadFavoriteTools({ getItem: () => { throw new Error('storage disabled') } })).toEqual(DEFAULT_FAVORITE_TOOLS)
     expect(saveFavoriteTools({ setItem: () => { throw new Error('quota exceeded') } }, ['segment'])).toBe(false)
+  })
+
+  it('round trips bounded per-tool style preferences and drops unknown tools', () => {
+    const store = new Map<string, string>()
+    const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value) } }
+    expect(saveToolStylePreferences(storage, { segment: { color: '#112233', size: 3, style: 'dotted', textColor: '#445566', textSize: 18 } })).toBe(true)
+    expect([...store.keys()]).toEqual([TOOL_PREFERENCES_STORAGE_KEY])
+    expect(loadToolStylePreferences(storage).segment).toEqual({ color: '#112233', size: 3, style: 'dotted', textColor: '#445566', textSize: 18 })
+    expect(loadToolStylePreferences({ getItem: () => '{"removedTool":{"color":"#000000"},"segment":{"size":99}}' }).segment?.size).toBe(5)
   })
 
   it('isolates customization hotkeys and pins save feedback outside the scrolling tool list', async () => {

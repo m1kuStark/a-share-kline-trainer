@@ -1,12 +1,8 @@
 <script setup lang="ts">
 // M4-HISTORY-01 只读事实成绩单：事实元信息、冻结规则、逐笔成交与收益率比较图。
-// M4-01 增量：K线复盘只读回看——按需加载 /api/trainings/:id/bars（服务端守卫：运行中
-// 训练存在时仅放行其自身，其他训练 409 同历史口径），只读渲染K线＋B/S标记＋已保存画线；
-// 不提供任何编辑写入口，复盘K线止于结算日，不开放之后的行情。
 // 请求版本守卫：A→B 切换后 A 的迟到/失败响应不得覆盖 B，也不得留下永续 loading。
 import { computed, ref, watch } from 'vue'
-import { ApiError, fetchEquityComparison, fetchTrainingBars, fetchTrainingReport, type EquityComparisonPayload, type HistoryReportPayload, type TrainingBarsPayload } from '../api'
-import KlineChart from './KlineChart.vue'
+import { fetchEquityComparison, fetchTrainingReport, type EquityComparisonPayload, type HistoryReportPayload } from '../api'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{ back: []; close: [] }>()
@@ -16,18 +12,12 @@ const loading = ref(false)
 const errorMessage = ref('')
 let loadVersion = 0
 
-// K线复盘（只读）：按需加载，失败/守卫三态分明；A→B 切换时整体复位。
-const reviewOpen = ref(false)
-const review = ref<TrainingBarsPayload | null>(null)
-const reviewLoading = ref(false)
-const reviewError = ref('')
-const reviewGuarded = ref(false)
-let reviewVersion = 0
 const comparison = ref<EquityComparisonPayload | null>(null)
 const comparisonLoading = ref(false)
 const comparisonError = ref('')
 const comparisonBenchmarks = ref<string[]>([])
 const comparisonSeries = computed(() => comparison.value?.series ?? [])
+const comparisonStatuses = computed(() => comparisonBenchmarks.value.filter(key => Boolean(comparison.value?.benchmarks[key])))
 const comparisonRequestVersion = ref(0)
 const hoverIndex = ref<number | null>(null)
 const CHART_WIDTH = 760
@@ -53,10 +43,6 @@ async function load(): Promise<void> {
   }
 }
 watch(() => props.id, () => {
-  reviewOpen.value = false
-  review.value = null
-  reviewError.value = ''
-  reviewGuarded.value = false
   comparison.value = null
   comparisonError.value = ''
   comparisonBenchmarks.value = []
@@ -108,7 +94,14 @@ function linePath(key: keyof typeof SERIES_COLORS, x: (index: number) => number,
 const chartModel = computed(() => {
   const points = comparisonSeries.value
   if (!points.length) return null
-  const keys: Array<keyof typeof SERIES_COLORS> = ['user', ...comparisonBenchmarks.value.filter(key => key in SERIES_COLORS) as Array<'sh000001' | 'sz399303'>]
+  // Keep a just-selected benchmark out of the current model until its
+  // response has arrived. This preserves the existing SVG and avoids a
+  // transient empty path during the request.
+  const loadedBenchmarks = comparisonBenchmarks.value.filter(key => {
+    if (!(key in SERIES_COLORS) || !comparison.value?.benchmarks[key]?.ok) return false
+    return points.some((_, index) => chartValue(key as keyof typeof SERIES_COLORS, index) !== null)
+  }) as Array<'sh000001' | 'sz399303'>
+  const keys: Array<keyof typeof SERIES_COLORS> = ['user', ...loadedBenchmarks]
   const values = keys.flatMap(key => points.map((_, index) => chartValue(key, index))).filter((value): value is number => value !== null)
   if (!values.length) return null
   let min = Math.min(...values, 0)
@@ -139,42 +132,6 @@ function setHover(event: MouseEvent | PointerEvent): void {
   hoverIndex.value = Math.round(ratio * (model.points.length - 1))
 }
 function clearHover(): void { hoverIndex.value = null }
-
-async function toggleReview(): Promise<void> {
-  if (reviewOpen.value) {
-    reviewOpen.value = false
-    return
-  }
-  reviewOpen.value = true
-  if (review.value) return
-  await loadReview()
-}
-
-async function loadReview(): Promise<void> {
-  const requestVersion = ++reviewVersion
-  const targetId = props.id
-  reviewLoading.value = true
-  reviewError.value = ''
-  reviewGuarded.value = false
-  try {
-    const payload = await fetchTrainingBars(targetId, '1D')
-    if (requestVersion !== reviewVersion || targetId !== props.id) return
-    review.value = payload
-  } catch (error) {
-    if (requestVersion !== reviewVersion || targetId !== props.id) return
-    if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
-      reviewGuarded.value = true
-    } else {
-      reviewError.value = error instanceof Error ? error.message : '无法读取复盘K线'
-    }
-  } finally {
-    if (requestVersion === reviewVersion && targetId === props.id) reviewLoading.value = false
-  }
-}
-
-function fetchEarlier(before: string, count: number): Promise<{ bars: TrainingBarsPayload['bars']; hasMore: boolean }> {
-  return fetchTrainingBars(props.id, '1D', { before, count }).then(payload => ({ bars: payload.bars, hasMore: payload.hasMore }))
-}
 
 const TIER_LABELS: Record<string, string> = { '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }
 const RANGE_MODE_LABELS: Record<string, string> = { preset: '自定义·预设', latest: '自定义·到最新', bars: '自定义·日K根数' }
@@ -270,14 +227,13 @@ function sideText(side: 'buy' | 'sell'): string {
         <label><input type="checkbox" :checked="comparisonBenchmarks.includes('sh000001')" @change="toggleBenchmark('sh000001')" />上证指数</label>
         <label><input type="checkbox" :checked="comparisonBenchmarks.includes('sz399303')" @change="toggleBenchmark('sz399303')" />国证 2000</label>
       </div>
-      <div v-if="comparison && comparisonBenchmarks.length" class="report-benchmark-statuses">
-        <span v-for="key in comparisonBenchmarks" :key="key" class="report-benchmark-status" :class="{ unavailable: !comparison.benchmarks[key]?.ok }">
-          {{ key === 'sh000001' ? '上证指数' : '国证 2000' }}：{{ comparison.benchmarks[key]?.ok ? '已加载' : (comparison.benchmarks[key]?.reason ?? '不可用') }}
+      <div v-if="comparisonBenchmarks.length" class="report-benchmark-statuses">
+        <span v-for="key in comparisonStatuses" :key="key" class="report-benchmark-status" :class="{ unavailable: !comparison?.benchmarks[key]?.ok }">
+          {{ key === 'sh000001' ? '上证指数' : '国证 2000' }}：{{ comparison?.benchmarks[key]?.ok ? '已加载' : (comparison?.benchmarks[key]?.reason ?? '不可用') }}
         </span>
       </div>
       <p v-if="comparisonError" class="history-error" role="alert">{{ comparisonError }}</p>
-      <p v-else-if="comparisonLoading" class="history-loading" role="status">读取同期指数…</p>
-      <figure v-else-if="chartModel" class="report-curve">
+      <figure v-if="chartModel" class="report-curve">
         <div class="report-curve-stage">
           <svg class="equity-curve-svg" :viewBox="`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`" role="img" aria-label="训练收益率与同期指数比较曲线">
             <line :x1="PLOT.left" :y1="chartModel.zeroY" :x2="CHART_WIDTH - PLOT.right" :y2="chartModel.zeroY" class="curve-zero" />
@@ -303,39 +259,9 @@ function sideText(side: 'buy' | 'sell'): string {
           <span v-if="chartModel.keys.includes('sz399303')" class="legend-sz">国证 2000</span>
         </figcaption>
       </figure>
-      <p v-else class="report-empty">该区间没有可展示的收益率点。</p>
-
-      <h2>K线复盘 <button class="ghost-button report-review-toggle" @click="toggleReview">{{ reviewOpen ? '收起复盘' : '展开复盘' }}</button></h2>
-      <div v-if="reviewOpen" class="report-review">
-        <p v-if="reviewGuarded" class="history-guard" role="status">
-          <strong>结束当前训练后可复盘历史</strong>
-          <span>当前有进行中的训练；为避免旧局K线泄漏当前局的未来行情，复盘在训练进行期间关闭。</span>
-        </p>
-        <p v-else-if="reviewError" class="history-error" role="alert">
-          <span>{{ reviewError }}</span>
-          <button class="ghost-button" @click="loadReview()">重试</button>
-        </p>
-        <p v-else-if="reviewLoading || !review" class="history-loading" role="status">加载复盘K线…</p>
-        <template v-else>
-          <div class="report-review-chart">
-            <KlineChart
-              :bars="review.bars"
-              :trades="review.trades"
-              :cost-price="review.account.costPrice"
-              :chart-cost-price="review.chartCostPrice"
-              :drawing-price-basis="review.drawingPriceBasis ?? null"
-              :has-more-bars="review.hasMore"
-              :fetch-earlier="fetchEarlier"
-              :saved-drawings="report.drawings"
-              :read-only="true"
-            />
-          </div>
-          <p class="report-note">复盘为只读回看：K线止于结算日 {{ report.training.settleDate }}，展示逐笔成交标记与当日保存的画线（不可编辑），权益曲线见上方；不开放结算日之后的行情。</p>
-        </template>
-      </div>
-      <p v-else class="report-empty">复盘未展开。展开后只读回看该局K线、逐笔成交标记与已保存画线。</p>
-
-      <p v-if="report.drawingsStatus === 'unavailable'" class="history-error" role="alert">复盘画线数据不可用：{{ report.drawingsReason }}</p>
+      <p v-if="!chartModel && comparisonLoading" class="history-loading" role="status">读取同期指数…</p>
+      <p v-if="!chartModel && !comparisonLoading" class="report-empty">该区间没有可展示的收益率点。</p>
+      <span class="report-curve-refresh" :class="{ pending: comparisonLoading && chartModel }" role="status">{{ comparisonLoading && chartModel ? '更新同期指数…' : '' }}</span>
     </template>
   </section>
 </template>

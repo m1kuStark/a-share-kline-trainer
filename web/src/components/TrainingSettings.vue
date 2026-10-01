@@ -6,11 +6,13 @@ import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
   type TdxPathSettingsView, type TdxCandidateCheckInfo,
 } from '../appSettings'
+import { DRAW_TOOLS } from '../drawTools'
+import { DEFAULT_FAVORITE_TOOLS, DEFAULT_TOOL_STYLE, loadFavoriteTools, loadToolStylePreferences, saveFavoriteTools, saveToolStylePreferences, type ToolStylePreference, type ToolStylePreferences } from '../toolFavorites'
 
 // TRAIN-01/M5-DEFAULTS 训练默认设置面板：局部弹层（不卸载正在录制的训练）。
 // 四字段一起原子保存：费用开关、T+1、默认初始资金（0.01..1,000,000,000 元、至多两位小数）、
 // 默认复权（forward/raw）。保存成功给明确反馈；取消/失败不假称保存，也不改变任何进行中的训练。
-// 默认只影响之后新建的训练；本局规则在创建时冻结。
+// 默认只影响之后新建的训练；本局规则在创建时冻结。弹层只保留标题栏关闭出口。
 // 损坏默认（409 TRAINING_DEFAULTS_UNREADABLE）不是死局：面板即修复入口，完整保存即可修复。
 // M5-01 新增两个区块：应用偏好（自动检查日线数据，即时保存即时生效）与
 // 数据目录（通达信）（查看/校验/保存，保存后需重启应用生效；失败保留原选择）。
@@ -28,6 +30,29 @@ const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
 const activeSection = ref<'defaults' | 'preferences' | 'data'>('defaults')
+const favoriteToolNames = ref(loadFavoriteTools(localStorage))
+const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
+const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
+const selectedToolPreference = ref<ToolStylePreference>({ ...DEFAULT_TOOL_STYLE })
+function loadSelectedToolPreference(): void {
+  selectedToolPreference.value = { ...DEFAULT_TOOL_STYLE, ...(toolPreferences.value[selectedTool.value] ?? {}) }
+}
+loadSelectedToolPreference()
+function persistToolPreferences(): void {
+  toolPreferences.value = { ...toolPreferences.value, [selectedTool.value]: { ...selectedToolPreference.value } }
+  saveFavoriteTools(localStorage, favoriteToolNames.value)
+  saveToolStylePreferences(localStorage, toolPreferences.value)
+}
+function selectTool(name: string): void { selectedTool.value = name; loadSelectedToolPreference() }
+function toggleFavoriteTool(name: string): void {
+  favoriteToolNames.value = favoriteToolNames.value.includes(name)
+    ? favoriteToolNames.value.filter(item => item !== name)
+    : [...favoriteToolNames.value, name]
+  if (!favoriteToolNames.value.length) favoriteToolNames.value = [name]
+  if (!favoriteToolNames.value.includes(selectedTool.value)) selectedTool.value = favoriteToolNames.value[0]!
+  persistToolPreferences()
+}
+function resetToolPreference(): void { selectedToolPreference.value = { ...DEFAULT_TOOL_STYLE }; persistToolPreferences() }
 // 返修 F4：读取/编辑/保存的时序与归属——成功保存递增 readVersion 使挂起中的初次 GET 作废；
 // 用户手改过任一字段（formDirty）后迟到的 GET 一律不覆盖表单。
 let readVersion = 0
@@ -337,7 +362,7 @@ function close(): void {
         <span>固定口径（不可修改）：一手 {{ settings?.lotSize ?? 100 }} 股 · 买入仓位按总权益 · 按当日原始收盘价成交</span>
       </div>
         </section>
-        <section v-if="activeSection === 'preferences'" class="settings-section" aria-label="应用偏好">
+      <section v-if="activeSection === 'preferences'" class="settings-section" aria-label="应用偏好">
         <h3>应用偏好</h3>
         <label class="settings-row">
           <input
@@ -352,6 +377,25 @@ function close(): void {
         <p v-if="appPrefLoadError" class="error-text" role="alert">{{ appPrefLoadError }}</p>
         <p v-if="appPrefError" class="error-text" role="alert">{{ appPrefError }}</p>
         <p v-if="appPrefSaved" class="settings-saved" role="status">{{ appPrefSaved }}</p>
+        <div class="tool-preferences">
+          <h4>常用画线工具</h4>
+          <p class="settings-section-note">勾选会显示在训练工具条；选中工具后可设置默认颜色、线宽、线型和文本字号，下一局训练生效。</p>
+          <div class="tool-preference-list">
+            <label v-for="tool in DRAW_TOOLS" :key="tool.name" class="tool-preference-item">
+              <input type="checkbox" :checked="favoriteToolNames.includes(tool.name)" @change="toggleFavoriteTool(tool.name)" />
+              <button type="button" :class="{ selected: selectedTool === tool.name }" @click="selectTool(tool.name)">{{ tool.label }}</button>
+            </label>
+          </div>
+          <div class="tool-style-editor">
+            <strong>{{ DRAW_TOOLS.find(tool => tool.name === selectedTool)?.label ?? '线条' }}默认样式</strong>
+            <label>线条颜色<input v-model="selectedToolPreference.color" type="color" @change="persistToolPreferences" /></label>
+            <label>线条粗细<input v-model.number="selectedToolPreference.size" type="number" min="1" max="5" step="1" @change="persistToolPreferences" /></label>
+            <label>线型<select v-model="selectedToolPreference.style" @change="persistToolPreferences"><option value="solid">实线</option><option value="dashed">虚线</option><option value="dotted">点线</option></select></label>
+            <label>文本颜色<input v-model="selectedToolPreference.textColor" type="color" @change="persistToolPreferences" /></label>
+            <label>文本字号<input v-model.number="selectedToolPreference.textSize" type="number" min="10" max="36" step="1" @change="persistToolPreferences" /></label>
+            <button type="button" class="ghost-button" @click="resetToolPreference">恢复当前工具默认</button>
+          </div>
+        </div>
       </section>
       <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录（通达信）">
         <h3>数据目录（通达信）</h3>
@@ -395,10 +439,8 @@ function close(): void {
         <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
         <div class="settings-actions">
           <button class="trade-action buy" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
-          <button class="ghost-button" :disabled="saving" @click="close">取消</button>
         </div>
       </template>
-      <button v-else class="settings-cancel-link" type="button" @click="close">关闭设置</button>
         </div>
       </div>
     </div>
@@ -437,6 +479,17 @@ function close(): void {
 .settings-section-note { margin: 0 0 8px; font-size: 11px; color: var(--text-secondary, #51637a); line-height: 1.6; overflow-wrap: anywhere; }
 .settings-section-note code { font-size: 11px; overflow-wrap: anywhere; }
 .settings-section .settings-actions { margin-top: 10px; }
+.tool-preferences { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--surface-border, #eef2f6); }
+.tool-preferences h4 { margin: 0 0 4px; font-size: 13px; }
+.tool-preference-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; max-height: 180px; overflow-y: auto; padding: 5px 0; }
+.tool-preference-item { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tool-preference-item button { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid transparent; border-radius: 4px; padding: 5px 7px; text-align: left; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; font-size: 12px; }
+.tool-preference-item button.selected { border-color: var(--surface-border, #cdd7df); background: var(--surface-selected, #eaf5f6); color: var(--text-primary, #1c6076); font-weight: 650; }
+.tool-style-editor { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; padding: 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; background: var(--control-background, #f7faf9); }
+.tool-style-editor strong, .tool-style-editor button { grid-column: 1 / -1; }
+.tool-style-editor label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-secondary, #51637a); font-size: 11px; }
+.tool-style-editor input[type="number"], .tool-style-editor select { width: 88px; min-height: 26px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); padding: 3px 5px; }
+.tool-style-editor input[type="color"] { width: 44px; height: 26px; padding: 1px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--surface-background, #fff); }
 .settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; line-height: 1.6; }
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
@@ -447,5 +500,7 @@ function close(): void {
   .settings-layout { grid-template-columns: 1fr; gap: 10px; }
   .settings-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); position: static; }
   .settings-nav button { text-align: center; padding: 8px 5px; }
+  .tool-preference-list, .tool-style-editor { grid-template-columns: 1fr; }
+  .tool-style-editor strong, .tool-style-editor button { grid-column: auto; }
 }
 </style>

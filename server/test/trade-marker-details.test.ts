@@ -88,6 +88,15 @@ describe('trade marker details state machine', () => {
     expect(reduceDetails(state, { type: 'outside-pointerdown' })).toBeNull()
   })
 
+  it('saving a note releases temporary pin and returns to hover dismissal', () => {
+    let state = reduceDetails(null, { type: 'preview', marker: single })
+    state = reduceDetails(state, { type: 'pin' })
+    expect(state).toMatchObject({ source: 'hover', pinned: true })
+    state = reduceDetails(state, { type: 'note-saved' })
+    expect(state).toMatchObject({ source: 'hover', pinned: false })
+    expect(reduceDetails(state, { type: 'pointer-leave' })).toBeNull()
+  })
+
   it('Esc and the close action close even a pinned panel', () => {
     let state: DetailsPanelState | null = reduceDetails(null, { type: 'activate', marker: cluster })
     state = reduceDetails(state, { type: 'pin' })

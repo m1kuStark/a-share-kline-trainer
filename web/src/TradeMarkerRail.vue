@@ -16,6 +16,7 @@ const props = defineProps<{
   project: (timestamp: number) => number | null
   width: number
   revision: number
+  trainingId?: number
 }>()
 
 const markers = computed(() => {
@@ -238,8 +239,11 @@ onBeforeUnmount(() => {
     :selected="panelSelected"
     :pinned="panel.pinned"
     :position="panelStyle"
+    :training-id="props.trainingId"
     @select="onSelect"
     @toggle-pin="dispatch(panel.pinned ? { type: 'unpin' } : { type: 'pin' })"
+    @pin="dispatch({ type: 'pin' })"
+    @save-note="dispatch({ type: 'note-saved' })"
     @close="closePanel(true)"
     @pointer-enter="onPanelPointerEnter"
     @pointer-leave="onPanelPointerLeave"

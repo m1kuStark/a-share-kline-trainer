@@ -2,7 +2,7 @@
 // 覆盖（真实用户动作，不用 API 替代关键用户路径）：
 // 真实买入/卖出/结算两局 → 侧栏排行 → 切 3个月档 → 按本局 id 定位两行（提前结算组＋实际天数、
 // 指标列呈现：零卖出胜率/盈亏比 '--' 不冒充 0、已平仓胜率 100%）→ 点行打开成绩单 →
-// K线复盘只读展开（止于结算日，无编辑入口）→ 返回；
+// 排行行点击打开成绩单事实浮窗 → 关闭；成绩单暂不承载 K 线复盘。
 // 运行中守卫（排行 409 说明、零行）与放弃不入榜；深/浅 1440/840 截图与 pageerror 0。
 // 共库约定（FM-015/F1）：排行断言一律按本局创建的 training id 定位（data-training-id），
 // 不作绝对行数假设；基准超额取决于样本 TDX 是否含 sh000300 日线，不硬编码数值，只禁 NaN/undefined。
@@ -77,7 +77,7 @@ async function openRankings(page: Page): Promise<void> {
   await expect(page.getByRole('region', { name: '五档排行' })).toBeVisible()
 }
 
-test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘只读展开（深色1440）', async ({ page }) => {
+test('结算两局→排行定位本局行→指标呈现→打开事实成绩单（深色1440）', async ({ page }) => {
   test.setTimeout(240_000)
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -128,14 +128,12 @@ test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘�
   await expect(plrCell(buyOnlyRow)).toContainText('--')
   await page.screenshot({ path: evidencePath('m4-rankings-tier3m-dark-1440.png'), fullPage: true })
 
-  // 点行打开成绩单，展开只读K线复盘
+  // 点行打开成绩单；K线复盘暂不在成绩单中展示，等待新的产品方案。
   await tradedRow.click()
   const report = page.getByRole('dialog', { name: '成绩单', exact: true })
   await expect(report).toBeVisible()
   await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
-  await report.getByRole('button', { name: '展开复盘' }).click()
-  await expect(report.locator('.report-review-chart .chart-frame')).toBeVisible({ timeout: 20_000 })
-  await expect(report.getByText('复盘为只读回看')).toBeVisible()
+  await expect(report.getByText('K线复盘')).toHaveCount(0)
   const reportText = await report.innerText()
   expect(reportText).not.toContain('NaN')
   expect(reportText).not.toContain('undefined')

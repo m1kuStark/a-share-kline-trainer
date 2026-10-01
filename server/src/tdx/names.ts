@@ -74,20 +74,49 @@ export async function parseBaseDbf(filePath: string): Promise<StockName[]> {
   return results
 }
 
+/** pttab.dat 是通达信对停牌/退市等非当前证券的代码名称兜底表（GBK 文本：市场,代码,简称）。 */
+export async function parsePttabFile(filePath: string): Promise<StockName[]> {
+  const bytes = await readFile(filePath)
+  const text = new TextDecoder('gb18030').decode(bytes)
+  const result: StockName[] = []
+  for (const line of text.split(/\r?\n/)) {
+    const parts = line.trim().split(',')
+    if (parts.length < 3 || !/^\d{6}$/.test(parts[1])) continue
+    const name = cleanName(parts.slice(2).join(',')).trim()
+    if (!name) continue
+    result.push({ code: parts[1], market: marketFromCode(parts[1]), name })
+  }
+  return result
+}
+
 export async function loadStockNames(tdxRoot: string, market: TdxMarket): Promise<StockName[]> {
   const file = join(tdxRoot, 'T0002', 'hq_cache', `${market}s.tnf`)
+  let parsed: StockName[] = []
   try {
-    const parsed = await parseTnfFile(file, market)
-    if (parsed.length) return parsed
+    parsed = await parseTnfFile(file, market)
   } catch {
-    // Fall through to the DBF fallback.
+    // Keep the DBF fallback below; a missing or damaged TNF must not erase names.
   }
+  let fallback: StockName[] = []
   try {
-    const fallback = await parseBaseDbf(join(tdxRoot, 'T0002', 'hq_cache', 'base.dbf'))
-    return fallback.filter(item => item.market === market)
+    fallback = (await parseBaseDbf(join(tdxRoot, 'T0002', 'hq_cache', 'base.dbf'))).filter(item => item.market === market)
   } catch {
-    return []
+    // A valid TNF is still useful when base.dbf is absent.
   }
+  let legacy: StockName[] = []
+  try {
+    legacy = (await parsePttabFile(join(tdxRoot, 'T0002', 'hq_cache', 'pttab.dat'))).filter(item => item.market === market)
+  } catch {
+    // pttab.dat is optional and usually only fills delisted/suspended names.
+  }
+  // Precedence: TNF, then base.dbf, then pttab for symbols missing from both.
+  const merged = new Map(legacy.map(item => [item.code, item]))
+  for (const item of fallback) merged.set(item.code, item)
+  for (const item of parsed) {
+    const existing = merged.get(item.code)
+    if (!existing || item.name !== item.code) merged.set(item.code, item)
+  }
+  return [...merged.values()].sort((left, right) => left.code.localeCompare(right.code))
 }
 
 export function codeFromDayFile(fileName: string): string | null {

@@ -4,7 +4,7 @@
 // 行级不可认证局不入榜，数量如实展示；运行中训练存在时服务端 409（同历史守卫）。
 // 请求版本守卫：切档迟到/失败响应不得覆盖新状态，也不得留下永续 loading（FM-014/FM-015 教训）。
 import { onMounted, ref, watch } from 'vue'
-import { ApiError, fetchIndustryRankings, fetchRangeRankings, fetchRankings, type RankingGroups, type RankingItem } from '../api'
+import { ApiError, fetchIndustryRankings, fetchRangeRankings, fetchRankings, fetchStockRankings, searchStocks, type RankingGroups, type RankingItem, type Stock } from '../api'
 import HistoryReport from '../components/HistoryReport.vue'
 
 const emit = defineEmits<{ create: [] }>()
@@ -18,29 +18,43 @@ const TIERS: Array<{ value: string; label: string }> = [
 ]
 
 const tier = ref('1M')
-const mode = ref<'tier' | 'range' | 'industry'>('tier')
+const mode = ref<'tier' | 'range' | 'industry' | 'stock'>('tier')
 const groups = ref<RankingGroups | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const activeGuard = ref(false)
 const loaded = ref(false)
 const selectedId = ref<number | null>(null)
+const stockQuery = ref('')
+const stock = ref<Stock | null>(null)
+const stockSuggestions = ref<Stock[]>([])
+const stockHint = ref('')
+let stockSearchTimer: ReturnType<typeof setTimeout> | null = null
+let stockSearchSeq = 0
 let loadVersion = 0
 
 async function load(): Promise<void> {
   const requestVersion = ++loadVersion
   const targetTier = tier.value
   const targetMode = mode.value
+  const targetStock = stock.value?.code ?? ''
+  if (targetMode === 'stock' && !targetStock) {
+    groups.value = null
+    loaded.value = false
+    loading.value = false
+    errorMessage.value = ''
+    return
+  }
   loading.value = true
   errorMessage.value = ''
   try {
-    const payload = targetMode === 'range' ? await fetchRangeRankings() : targetMode === 'industry' ? await fetchIndustryRankings() : await fetchRankings(targetTier)
-    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value) return
+    const payload = targetMode === 'range' ? await fetchRangeRankings() : targetMode === 'industry' ? await fetchIndustryRankings() : targetMode === 'stock' ? await fetchStockRankings(targetStock) : await fetchRankings(targetTier)
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '')) return
     groups.value = payload
     activeGuard.value = false
     loaded.value = true
   } catch (error) {
-    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value) return
+    if (requestVersion !== loadVersion || targetTier !== tier.value || targetMode !== mode.value || targetStock !== (stock.value?.code ?? '')) return
     if (error instanceof ApiError && error.code === 'HISTORY_ACTIVE_TRAINING') {
       activeGuard.value = true
       groups.value = null
@@ -49,7 +63,7 @@ async function load(): Promise<void> {
       errorMessage.value = error instanceof Error ? error.message : '无法读取排行'
     }
   } finally {
-    if (requestVersion === loadVersion && targetTier === tier.value && targetMode === mode.value) loading.value = false
+    if (requestVersion === loadVersion && targetTier === tier.value && targetMode === mode.value && targetStock === (stock.value?.code ?? '')) loading.value = false
   }
 }
 onMounted(() => { void load() })
@@ -58,6 +72,37 @@ watch(tier, () => {
   void load()
 })
 watch(mode, () => { selectedId.value = null; void load() })
+
+function searchStock(): void {
+  const query = stockQuery.value.trim()
+  loadVersion += 1
+  loading.value = false
+  stock.value = null
+  stockSuggestions.value = []
+  stockHint.value = ''
+  if (stockSearchTimer) clearTimeout(stockSearchTimer)
+  if (!query) { void load(); return }
+  const seq = ++stockSearchSeq
+  stockSearchTimer = setTimeout(() => {
+    void searchStocks(query).then(result => {
+      if (seq !== stockSearchSeq) return
+      const exact = result.items.find(item => item.code === query || item.name === query || `${item.market}${item.code}` === query)
+      if (exact) { chooseStock(exact); return }
+      stockSuggestions.value = result.items.slice(0, 8)
+      stockHint.value = result.items.length ? '' : '未匹配到股票，请输入六位代码或名称'
+    }).catch(() => {
+      if (seq === stockSearchSeq) stockHint.value = '股票搜索失败，请重试'
+    })
+  }, 180)
+}
+
+function chooseStock(item: Stock): void {
+  stock.value = item
+  stockQuery.value = `${item.code} ${item.name}`
+  stockSuggestions.value = []
+  stockHint.value = ''
+  void load()
+}
 
 function rank(index: number): string {
   return `${index + 1}`
@@ -94,6 +139,7 @@ function daysText(item: RankingItem): string {
       <button class="rankings-tab" :class="{ active: mode === 'tier' }" @click="mode = 'tier'">训练周期</button>
       <button class="rankings-tab" :class="{ active: mode === 'range' }" @click="mode = 'range'">自定义区间</button>
       <button class="rankings-tab" :class="{ active: mode === 'industry' }" @click="mode = 'industry'">行业板块</button>
+      <button class="rankings-tab" :class="{ active: mode === 'stock' }" @click="mode = 'stock'">单只股票</button>
     </nav>
     <nav v-if="mode === 'tier'" class="rankings-tabs" aria-label="训练周期">
       <button
@@ -102,6 +148,18 @@ function daysText(item: RankingItem): string {
         @click="tier = entry.value"
       >{{ entry.label }}</button>
     </nav>
+
+    <section v-if="mode === 'stock'" class="stock-ranking-picker" aria-label="单只股票排行">
+      <label for="ranking-stock-search">选择股票</label>
+      <input id="ranking-stock-search" v-model="stockQuery" placeholder="输入代码或名称，例如 000602" @input="searchStock" />
+      <div v-if="stockSuggestions.length" class="suggestions ranking-stock-suggestions">
+        <button v-for="item in stockSuggestions" :key="`${item.market}:${item.code}`" @click="chooseStock(item)">
+          <strong>{{ item.code }}</strong><span>{{ item.name }}</span><small>{{ item.market.toUpperCase() }}</small>
+        </button>
+      </div>
+      <small v-if="stockHint" class="form-hint">{{ stockHint }}</small>
+      <small v-if="stock" class="form-hint">已选择：{{ stock.name }}（{{ stock.code }}）</small>
+    </section>
 
     <div v-if="activeGuard" class="history-guard" role="status">
       <strong>结束当前训练后可查看排行</strong>
@@ -133,6 +191,22 @@ function daysText(item: RankingItem): string {
           <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
       </section>
+    </template>
+    <template v-else-if="groups && mode === 'stock'">
+      <p v-if="groups.stock?.status === 'empty'" class="history-empty">{{ groups.stock.code }} 暂无已结算训练成绩</p>
+      <template v-else>
+        <h2>{{ groups.stock?.name || groups.stock?.code }} <small>同一股票的已结算训练</small></h2>
+        <table v-if="groups.stock?.complete.length || groups.stock?.earlySettled.length" class="rankings-table">
+          <thead><tr><th>名次</th><th>周期</th><th>区间</th><th>收益率</th><th>最大回撤</th><th>交易笔数</th><th>结算日</th></tr></thead>
+          <tbody>
+            <tr v-for="(item, index) in [...(groups.stock?.complete || []), ...(groups.stock?.earlySettled || [])]" :key="item.id" class="rankings-row" :data-training-id="item.id" @click="selectedId = item.id">
+              <td>{{ rank(index) }}</td><td>{{ item.tier }}</td><td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
+              <td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ ratioPercent(item.maxDrawdown) }}</td><td>{{ item.tradeCount }}</td><td>{{ item.settleDate ?? '--' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="history-empty">暂无可认证成绩</p>
+      </template>
     </template>
     <template v-else-if="groups">
       <p v-if="!groups.complete.length && !groups.earlySettled.length" class="history-empty">该周期暂无入榜成绩</p>

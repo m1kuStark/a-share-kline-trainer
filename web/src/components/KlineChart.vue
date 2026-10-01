@@ -12,6 +12,7 @@ import type { ChartCapture, ChartCaptureView } from '../recording/types'
 import type { Action, JsonValue } from '../recording/types'
 import { drawingOperationParams, hasUnreportedMove, markDrawingReported, syncReportedDrawings, type ReportedDrawings } from '../recording/drawingOperations'
 import { DRAW_TOOLS } from '../drawTools'
+import { loadToolStylePreferences } from '../toolFavorites'
 import { MAX_VISIBLE_BARS } from '../chartNavigation'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
 import { registerDrawingOverlays } from '../drawingOverlays'
@@ -43,6 +44,8 @@ const props = withDefaults(defineProps<{
   replayView?: ChartCaptureView
   /** 画线前复权基准（已发生权息累计仿射变换，随 bars 同源到达）：缺省＝不启用基准投影（旧行为） */
   drawingPriceBasis?: DrawingPriceBasis | null
+  /** 交易标记笔记的本轮训练隔离键 */
+  trainingId?: number
 }>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
@@ -86,6 +89,17 @@ let renderedBasis: DrawingPriceBasis | null = null
 function currentDrawingPriceBasis(): DrawingPriceBasis | null {
   return props.readOnly || !isDrawingPriceBasis(props.drawingPriceBasis) ? null : { ...props.drawingPriceBasis }
 }
+function configuredOverlayStyle(name: string): OverlayCreate['styles'] | undefined {
+  if (typeof localStorage === 'undefined') return undefined
+  const preference = loadToolStylePreferences(localStorage)[name]
+  if (!preference) return undefined
+  return { line: { color: preference.color, size: preference.size, style: preference.style === 'solid' ? 'solid' : 'dashed', dashedValue: preference.style === 'dotted' ? [2, 4] : [4, 4] } }
+}
+function configuredOverlayText(name: string): Record<string, unknown> | undefined {
+  if (typeof localStorage === 'undefined' || name !== 'textAnnotation') return undefined
+  const preference = loadToolStylePreferences(localStorage)[name]
+  return preference ? { color: preference.textColor, size: preference.textSize } : undefined
+}
 let restoringDrawings = false
 let restoredDrawings = false
 let disposed = false
@@ -120,7 +134,7 @@ function actualPaneId(name: string): string {
   return ['VOL', 'MACD'].includes(name) ? chart?.getIndicators({ name })[0]?.paneId ?? 'candle_pane' : 'candle_pane'
 }
 function drawings(): Drawing[] {
-  return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined) : []
+  return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined, props.timeframe) : []
 }
 function notifyHistory(): void { emit('historyChange', { undo: drawingHistory.canUndo, redo: drawingHistory.canRedo }) }
 function recordDrawings(): void {
@@ -167,7 +181,7 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   for (const overlay of chart.getOverlays()) if (!engineMarkNames.has(overlay.name)) chart.removeOverlay({ id: overlay.id })
   for (const item of items) {
     // 只读＝纯展示：lock+ignoreEvent 让保存画线只渲染，不进库的选中/拖动/右键交互链
-    const id = chart.createOverlay({ ...item, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
+    const id = chart.createOverlay({ styles: configuredOverlayStyle(item.name), ...item, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
     if (item.name === 'polyline' && id) {
       const overlay = chart.getOverlays({ id: id as string })[0] as unknown as { forceComplete: () => void }
       overlay?.forceComplete()
@@ -231,6 +245,12 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
 
 function feedData(): void {
   if (!chart) return
+  // A timeframe change rebuilds the chart surface. Restore only drawings that
+  // belong to the new period; the parent supplies the filtered snapshot.
+  restoredDrawings = false
+  drawingHistory.reset([])
+  clearMultiSelection()
+  closePanels()
   dataVersion++
   // 新数据版本＝视窗布局重建：同 view 也必须重放（appliedReplayView 去重只作用于同一数据版本内）
   appliedReplayView = null
@@ -733,6 +753,8 @@ watch(() => props.drawTool, tool => {
     chart.createOverlay({
       name: tool,
       mode: props.magnet ?? 'weak_magnet',
+      styles: configuredOverlayStyle(tool),
+      extendData: configuredOverlayText(tool),
       ...(tool === 'bullArrow' || tool === 'bearArrow' ? { styles: { line: { color: tool === 'bullArrow' ? '#ef4444' : '#16a34a' } } } : {}),
       ...drawingEvents(),
     })
@@ -744,7 +766,7 @@ watch(() => props.drawTool, tool => {
 watch(() => props.multiSelect, on => { if (!on) clearMultiSelection() })
 watch(() => props.magnet, mode => { for (const overlay of chart?.getOverlays() ?? []) if (!engineMarkNames.has(overlay.name)) chart?.overrideOverlay({ id: overlay.id, mode }) })
 watch(() => [props.savedDrawings, props.bars] as const, () => {
-  if (chart && props.savedDrawings && props.bars.length && !restoredDrawings) restoreDrawings(props.savedDrawings, true)
+  if (chart && props.savedDrawings && props.bars.length && !restoredDrawings) restoreDrawings(props.savedDrawings.filter(item => (item.timeframe ?? '1D') === props.timeframe), true)
 }, { flush: 'post' })
 
 // D2 右键菜单与编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七）。
@@ -1153,7 +1175,7 @@ onMounted(() => {
   markerResizeObserver = new ResizeObserver(() => { enforceVisibleLimit(); updateMarkerRail() })
   if (host.value) markerResizeObserver.observe(host.value)
   updateMarkerRail()
-  if (props.savedDrawings && props.bars.length) restoreDrawings(props.savedDrawings, true)
+  if (props.savedDrawings && props.bars.length) restoreDrawings(props.savedDrawings.filter(item => (item.timeframe ?? '1D') === props.timeframe), true)
   if (import.meta.env.MODE === 'journey') Object.assign((window as any).__trainerChart, {
     drawings,
     geometry: () => (chart?.getOverlays() ?? []).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing()).map(overlay => ({ id: overlay.id, name: overlay.name, ...overlayHitGeometry(overlay as unknown as OverlayLike) })),
@@ -1239,7 +1261,7 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
       <div class="panel-actions"><button :disabled="!textPanel.text.trim()" @click="confirmTextPanel">确定</button><button @click="cancelTextPanel">取消</button></div>
     </div>
   </div>
-  <TradeMarkerRail :trades="trades" :timeframe="timeframe" :project="projectTradeTime" :width="markerWidth" :revision="markerRevision" />
+  <TradeMarkerRail :trades="trades" :timeframe="timeframe" :project="projectTradeTime" :width="markerWidth" :revision="markerRevision" :training-id="props.trainingId" />
   </div>
 </template>
 

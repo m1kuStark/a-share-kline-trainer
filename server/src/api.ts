@@ -21,14 +21,15 @@ import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
 import {
-  HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining,
+  HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining, retrainTraining,
   equityCurveOf, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
 import { deleteSettledTrainings, parseHistoryDeleteIds } from './train/history-delete.js'
-import { industryRankingsPayload, parseRankingsQuery, rangeRankingsPayload, rankingsPayload } from './train/rankings.js'
+import { industryRankingsPayload, parseRankingsQuery, rangeRankingsPayload, rankingsPayload, stockRankingsPayload } from './train/rankings.js'
 import { equityComparison } from './train/equity-comparison.js'
+import { readTradeNote, writeTradeNote } from './train/trade-notes.js'
 import { validateSetupRequest } from './setup/control-guard.js'
 import { appendBounded, appendBoundedChunk, flushBoundedChunk, type BoundedOutput } from './tdx/process-clues.js'
 import type { DrainGate } from './setup/drain-controller.js'
@@ -1081,6 +1082,7 @@ export async function registerApi(
     assertNoActiveTraining(database)
     if (query.view === 'range') return rangeRankingsPayload(database, config)
     if (query.view === 'industry') return industryRankingsPayload(database, config, query.industry)
+    if (query.view === 'stock') return stockRankingsPayload(database, config, query.code)
     return rankingsPayload(database, config, query.tier)
   })
 
@@ -1094,6 +1096,17 @@ export async function registerApi(
   app.get('/api/trainings/:id/drawings', async request => {
     const { id } = request.params as { id: string }
     return { drawings: readDrawings(database, Number(id)) }
+  })
+
+  app.get('/api/trainings/:id/trades/:seq/note', async request => {
+    const params = request.params as { id: string; seq: string }
+    return readTradeNote(database, Number(params.id), Number(params.seq))
+  })
+
+  app.put('/api/trainings/:id/trades/:seq/note', async request => {
+    const params = request.params as { id: string; seq: string }
+    const body = request.body as { note?: unknown } | null
+    return writeTradeNote(database, Number(params.id), Number(params.seq), body?.note)
   })
 
   app.put('/api/trainings/:id/drawings', { bodyLimit: DRAWINGS_BODY_LIMIT }, async request => {
@@ -1193,6 +1206,18 @@ export async function registerApi(
       return { ...trainingSnapshot(database, id), equityCurve: equityCurveOf(database, id) }
     } catch (error) {
       if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message })
+      throw error
+    }
+  })
+
+  app.post('/api/trainings/:id/retrain', async (request, reply) => {
+    const id = Number((request.params as { id: string }).id)
+    if (!Number.isSafeInteger(id) || id < 1) return reply.code(400).send({ error: 'id 必须是正整数' })
+    try {
+      const snapshot = await retrainTraining(database, config, id)
+      return reply.code(201).send(snapshot)
+    } catch (error) {
+      if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message, code: error.code })
       throw error
     }
   })
