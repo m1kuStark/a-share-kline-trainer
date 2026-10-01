@@ -46,12 +46,18 @@ const RESTART_STATUS_FILE = 'setup-restart-status.json'
 const SETUP_ROOT_MAX_LENGTH = 500
 /** 原生目录选择框的有界等待：超时结束子进程并按 timeout 上报，不无限等待 */
 const DIRECTORY_PICKER_TIMEOUT_MS = 300_000
+let activeDirectoryPickerCancel: (() => void) | null = null
 
 export interface DirectoryPickerResult {
   status: 'selected' | 'cancelled' | 'timeout' | 'denied' | 'unavailable' | 'not_applicable'
   /** 仅在 selected 时返回用户自己选择的目录；其余状态绝不携带路径 */
   path?: string
   reason?: string
+}
+
+/** Cancel a native picker before lifecycle drain so its request lease can release. */
+export function cancelActiveDirectoryPicker(): void {
+  activeDirectoryPickerCancel?.()
 }
 
 /** 受控本机桥：固定字面 PowerShell 脚本弹出 Windows 原生目录选择框。
@@ -61,12 +67,26 @@ export function defaultDirectoryPicker(): Promise<DirectoryPickerResult> {
     return Promise.resolve({ status: 'not_applicable' })
   }
   const script = [
-    "Add-Type -AssemblyName System.Windows.Forms | Out-Null",
+    '$owner = [Win32]::GetForegroundWindow()',
     '$dialog = New-Object System.Windows.Forms.FolderBrowserDialog',
     "$dialog.Description = '请选择通达信安装根目录（包含 vipdoc 与 T0002 文件夹的目录）'",
     '$dialog.ShowNewFolderButton = $false',
-    'if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.SelectedPath }',
+    'if ($owner -ne [IntPtr]::Zero) { [Win32]::SetForegroundWindow($owner) | Out-Null }',
+    'if ($dialog.ShowDialog([HwndOwner]::new($owner)) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $dialog.SelectedPath }',
   ].join('\n')
+  const ownerTypes = [
+    "$ErrorActionPreference = 'Stop'",
+    '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8',
+    '$formsAssembly = (Add-Type -AssemblyName System.Windows.Forms -PassThru)[0].Assembly.Location',
+    "Add-Type @'",
+    'using System;',
+    'using System.Windows.Forms;',
+    'using System.Runtime.InteropServices;',
+    'public sealed class HwndOwner : IWin32Window { private readonly IntPtr handle; public IntPtr Handle { get { return handle; } } public HwndOwner(IntPtr handle) { this.handle = handle; } }',
+    'public static class Win32 { [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow(); [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); }',
+    "'@ -ReferencedAssemblies $formsAssembly",
+  ].join('\n')
+  const fullScript = `${ownerTypes}\n${script}`
   return new Promise(resolve => {
     let settled = false
     let timedOut = false
@@ -79,9 +99,17 @@ export function defaultDirectoryPicker(): Promise<DirectoryPickerResult> {
       if (settled) return
       settled = true
       clearTimeout(deadline)
+      if (activeDirectoryPickerCancel === cancel) activeDirectoryPickerCancel = null
       resolve(result)
     }
-    const child = spawn('powershell', ['-NoProfile', '-STA', '-Command', script], { windowsHide: true })
+    const child = spawn('powershell', ['-NoProfile', '-STA', '-Command', fullScript], { windowsHide: true })
+    const cancel = (): void => {
+      if (settled) return
+      timedOut = false
+      child.kill('SIGTERM')
+      settle({ status: 'cancelled', reason: '目录选择已因退出请求取消' })
+    }
+    activeDirectoryPickerCancel = cancel
     const boundedAppend = (target: 'stdout' | 'stderr', chunk: Buffer | string): void => {
       if (typeof chunk === 'string') appendBounded(output, target, chunk)
       else appendBoundedChunk(output, target, chunk)
@@ -140,6 +168,7 @@ export interface RegisterApiOptions {
     inspectOne?: (root: string) => Promise<import('./tdx/inspect.js').TdxCandidateCheck>
     /** 原生目录选择桥；默认 defaultDirectoryPicker */
     directoryPicker?: () => Promise<DirectoryPickerResult>
+    cancelDirectoryPicker?: () => void
     /** apply 的可注入实现（测试用）；默认走启动器监管进程 */
     applyRestart?: (attempt: SetupRestartAttempt) => Promise<{ started: boolean }>
   }
@@ -610,7 +639,7 @@ export async function registerApi(
     | { phase: 'failed' | 'cancelled'; request: LifecycleExitRequest | null; reason: string }
   const lifecycleSessions = new Map<string, LifecycleSession>()
   let lifecycleExit: LifecycleExitState = { phase: 'idle' }
-  let lifecycleShutdownInvoked = false
+  let lifecycleShutdownInvokedAttempt: string | null = null
 
   function lifecycleGcSessions(now: number): void {
     for (const [id, session] of lifecycleSessions) {
@@ -671,12 +700,16 @@ export async function registerApi(
   }
 
   function lifecycleInvokeShutdownOnce(attemptId: string): void {
-    if (lifecycleShutdownInvoked) return
-    lifecycleShutdownInvoked = true
+    if (lifecycleShutdownInvokedAttempt === attemptId) return
+    lifecycleShutdownInvokedAttempt = attemptId
     const controller = options.lifecycle!.controller
     const shutdown = options.lifecycle!.shutdown
     Promise.resolve()
-      .then(() => controller.prepare(attemptId))
+      .then(() => {
+        options.setup?.cancelDirectoryPicker?.()
+        cancelActiveDirectoryPicker()
+        return controller.prepare(attemptId)
+      })
       .then(outcome => {
         if (outcome.kind !== 'prepared') {
           const reason = outcome.kind === 'active-training'

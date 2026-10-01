@@ -1,8 +1,8 @@
 # 当前数据流
 
-本页按 `wt/integration/v1@eb385c8` 的 V1.0.3 源码候选说明（2026-10-01），不代表 main 或旧安装包已包含相同能力。跨工作树核对记录在主仓库的 `docs/verification/2026-09/DOC-03-state-audit/report.md`。
+本页按 `wt/integration/v1` 的 V1.1.1 源码候选说明（2026-10-01），不代表 main、公开包或用户验收已包含相同能力；最终提交、包哈希和验收记录由[统一状态](../status.md)回填。
 
-TDX只读文件→tdx解析与目录/权息缓存→train账户/训练→Fastify API→Launcher/Training→KlineChart交互。data扫描协调器管理状态，仍未统一所有读取/更新入口。
+TDX只读文件→tdx解析与目录/权息缓存→train账户/训练→Fastify API→Launcher/Training→KlineChart交互。接入目录由用户通过 Windows 原生选择器确认，服务端只检查该目录并在保存后受控重启；不检测进程、不扫描默认或附近目录。data扫描协调器管理状态，仍未统一所有读取/更新入口。
 
 训练行情先截断→以推进日为基准前复权→聚合，首批最多1040根。[DATA-04](../work-items/tasks/DATA-04.md) 已让训练/结算通过 `MarketDataReader` 读取 bars/actions/coverage/version；TDX 读取器仍读取现势文件与当前权息缓存。普通 `/api/kline` 直读、路由级 TDX 根目录守卫与 env/stocks 独立刷新尚未统一；真实替代来源未接入。
 

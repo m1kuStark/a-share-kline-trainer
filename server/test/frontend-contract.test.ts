@@ -290,4 +290,31 @@ describe('M4 history/report interaction contract', () => {
     expect(api).toMatch(/export function deleteTrainingHistory\(/)
     expect(report).not.toMatch(/class="report-drawings"/)
   })
+
+  it('uses one close exit, compact rule tags, themed report surface, and one shared comparison chart', async () => {
+    const report = await readFile(reportPath, 'utf8')
+    const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
+    expect(report).not.toContain('report-modal-back')
+    expect(report).not.toMatch(/第 \{\{ report\.training\.id \}\} 局/)
+    expect(report).toMatch(/report-rule-tags/)
+    expect(report).toMatch(/report-curve-tooltip/)
+    expect(report).toMatch(/curve-axis-label/)
+    expect(report).toMatch(/comparisonBenchmarks\.length/)
+    expect(styles).toMatch(/\.report-modal-mask > \.report-page[^}]*var\(--surface-background/)
+    expect(styles).not.toMatch(/body\.dark \.report-curve \{ color: #52b394/)
+  })
+
+  it('blocks exit while the native directory picker is pending', async () => {
+    const app = await readFile(new URL('../../web/src/App.vue', import.meta.url), 'utf8')
+    expect(app).toMatch(/wizardBusy \|\| wizardApplying \|\| exitFlow !== 'closed'/)
+    expect(app).toMatch(/class="picker-blocker"/)
+  })
+
+  it('gives the native directory picker the captured foreground window as its owner', async () => {
+    const api = await readFile(new URL('../src/api.ts', import.meta.url), 'utf8')
+    expect(api).toMatch(/class HwndOwner : IWin32Window/)
+    expect(api).toMatch(/-ReferencedAssemblies \$formsAssembly/)
+    expect(api).toMatch(/ShowDialog\(\[HwndOwner\]::new\(\$owner\)\)/)
+    expect(api).toMatch(/cancelActiveDirectoryPicker/)
+  })
 })

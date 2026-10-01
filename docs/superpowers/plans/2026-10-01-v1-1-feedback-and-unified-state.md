@@ -190,3 +190,14 @@
 - **Visual gate:** settings and report modal have stable dimensions across tabs, desktop/mobile and light/dark themes; no text/input contrast regression.
 - **Release gate:** one final output directory, one manifest, one SHA256 record, clean worktree, package verify passes, and user acceptance remains separate from engineering verification.
 
+## 本轮执行记录（2026-10-01）
+
+| 批次 | 状态 | 已完成事实 | 尚未完成 |
+|---|---|---|---|
+| 统一状态 | 已落地基础层 | `.control/trainer-state.json`、锁、版本递增、事件幂等、CLI、status overlay 已可读写；任务卡、看板、worktree 和 zcode 报告改为视图/证据边界。 | GLM/DWF 全部适配器仍需按 ORCH-STATE-01 单独收口，不能把现有状态文件存在误写成全自动同步。 |
+| TDX 接入 | 已修订 | 顶栏与设置入口直接调用用户确认的 Windows 原生目录选择；取消自动发现/默认目录扫描；选择期间页面阻断，失败保留状态。 | 真机用户仍需验收目录选择器置顶、路径有效性和重启后连接。 |
+| 成绩单 | 已修订 | 浮窗单出口、深浅主题、规则 Tag、统一收益率/指数 SVG、日期/百分比轴、悬停提示、独立复选框和日期对齐回归已完成。 | 用户验收；基准数据覆盖仍受本机 TDX 文件完整性限制。 |
+| 排行/设置 | 已在候选 | 自定义起止日期、行业不可用态、历史删除、设置标签和稳定布局沿用候选实现，文档已同步当前口径。 | 本轮未扩展排行/设置业务范围；需要用户对完整 V1.1.1 包验收。 |
+| 交付 | 待执行 | 版本已提升到 1.1.1；发布脚本拒绝复用旧输出目录，计划只生成 `output/v1.1.1-20261001`。 | 干净提交后的 Windows 包、manifest、SHA256、包内启动/停止和最终状态回填。 |
+
+执行顺序固定为：先完成代码与定向回归，再运行 docs/status 生成器和完整门禁；门禁通过后只构建一个最终输出目录，最后把用户验收保留为 `unknown` 交给人工验收，不自动 push、tag 或发布。

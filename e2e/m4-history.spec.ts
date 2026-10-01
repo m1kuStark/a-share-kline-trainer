@@ -195,7 +195,7 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
 
   // 详情：只读事实成绩单（按本局 id 进入）
   await row.click()
-  const report = page.getByRole('region', { name: '成绩单' })
+  const report = page.getByRole('dialog', { name: '成绩单', exact: true })
   await expect(report).toBeVisible()
   await expect(report.getByText('600519').first()).toBeVisible()
   await expect(report.getByText('提前结算').first()).toBeVisible()
@@ -203,7 +203,7 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await expect(report.locator('.report-trade-row')).toHaveCount(1)
   await expect(report.locator('.report-trade-row').first()).toContainText('买入')
-  await expect(report.getByRole('heading', { name: '已保存权益曲线' })).toBeVisible()
+  await expect(report.getByRole('heading', { name: '收益率曲线' })).toBeVisible()
   await expect(report.locator('svg.equity-curve-svg')).toBeVisible()
   await expect(report).toHaveAttribute('aria-modal', 'true')
   await expect(report.getByRole('heading', { name: '画线标注' })).toHaveCount(0)
@@ -221,7 +221,7 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await page.screenshot({ path: evidencePath('m4-history-report-drawings-dark-1440.png'), fullPage: true })
 
   // 返回列表 → 录像库 → 训练入口仍可用（结算时 URL 带 ?training=N，训练入口回到该局只读视图）
-  await report.getByRole('button', { name: '返回历史列表' }).click()
+  await report.getByRole('button', { name: '关闭成绩单' }).click()
   await expect(history).toBeVisible()
   await page.getByRole('button', { name: '训练录像' }).click()
   await expect(page.getByRole('heading', { name: '训练录像' })).toBeVisible()
@@ -259,7 +259,7 @@ test('运行中守卫与放弃不入列表（浅色840）', async ({ page }) => 
   expect(items.length).toBeGreaterThan(0)
   const latestId = items[0].id
   await history.locator(`.history-row[data-training-id="${latestId}"]`).click()
-  const report = page.getByRole('region', { name: '成绩单' })
+  const report = page.getByRole('dialog', { name: '成绩单', exact: true })
   await expect(report).toBeVisible()
   await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await page.screenshot({ path: evidencePath('m4-history-report-light-840.png'), fullPage: true })
@@ -306,8 +306,9 @@ test('详情A→B迟到响应不覆盖、不留永续loading；列表按settle_d
     await route.continue()
   })
   await oldRow.click()
+  await page.getByRole('button', { name: '关闭成绩单' }).click()
   await newRow.click()
-  const report = page.getByRole('region', { name: '成绩单' })
+  const report = page.getByRole('dialog', { name: '成绩单', exact: true })
   await expect(report.getByText('300857').first()).toBeVisible({ timeout: 10_000 })
   // 释放 A 的迟到响应：界面仍是 B，且不留下永续 loading
   await page.waitForTimeout(2500)

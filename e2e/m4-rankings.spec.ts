@@ -130,7 +130,7 @@ test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘�
 
   // 点行打开成绩单，展开只读K线复盘
   await tradedRow.click()
-  const report = page.getByRole('region', { name: '成绩单' })
+  const report = page.getByRole('dialog', { name: '成绩单', exact: true })
   await expect(report).toBeVisible()
   await expect(report.getByRole('heading', { name: '逐笔成交' })).toBeVisible()
   await report.getByRole('button', { name: '展开复盘' }).click()
@@ -140,7 +140,7 @@ test('结算两局→排行定位本局行→指标呈现→成绩单K线复盘�
   expect(reportText).not.toContain('NaN')
   expect(reportText).not.toContain('undefined')
   await page.screenshot({ path: evidencePath('m4-review-readonly-dark-1440.png'), fullPage: true })
-  await report.getByRole('button', { name: '返回历史列表' }).click()
+  await report.getByRole('button', { name: '关闭成绩单' }).click()
   await expect(page.getByRole('region', { name: '五档排行' })).toBeVisible()
   expect(errors).toEqual([])
 })

@@ -435,6 +435,23 @@ describe('lifecycle exit protocol (REL-LAUNCH-UX-01)', () => {
     }
   })
 
+  it('allows a fresh exit attempt after a failed drain attempt', async () => {
+    const spy = makeControllerSpy({ prepareOutcome: { kind: 'drain-timeout' } as PrepareOutcome })
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const session = await createSession()
+      await app.inject({ method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST, payload: session })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect((await app.inject({ method: 'GET', url: '/api/lifecycle/status', headers: EXIT_HOST })).json().phase).toBe('failed')
+      spy.prepareOutcome = { kind: 'prepared', leaseExpiresAtMs: Date.now() + 30_000 }
+      const retry = await app.inject({ method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST, payload: session })
+      expect(retry.json().phase).toBe('draining')
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.prepareCalls).toHaveLength(2)
+      expect(spy.shutdownCalls).toBe(1)
+    } finally { await app.close() }
+  })
+
   it('multi-tab: every live tab must explicitly confirm before draining; refusal cancels', async () => {
     const spy = makeControllerSpy()
     const { app, createSession } = await createLifecycleApp(spy)

@@ -56,6 +56,8 @@ node --import tsx scripts/release/build.mjs --node-archive PATH --node-checksums
 
 ## 产物
 
+- 每个候选版本使用一个专属的新 `--out` 目录。`SHA256SUMS` 使用固定文件名，脚本会拒绝与已有 ZIP 或校验文件共用输出目录；不要为不同版本复用同一目录，也不要删除旧包来腾位置。
+- 重跑打包前先核对已有 ZIP 内的 `release.json` / `release-manifest.json` 的 `version`、`gitCommit` 及外部 `SHA256SUMS`。三者对应当前待验收提交且包已通过所需检查时复用该包；源码或版本改变则使用新的版本号和输出目录，并重新验证。目录名和构建成功本身都不能代替提交绑定的测试及人工验收。
 - `--out` 下：`kline-trainer-v<version>-windows-x64.zip` 与 `SHA256SUMS`（单行 `<zip sha256>  <zip 名>`），外加构建期间的 `.<artifact>.build.lock`（正常结束后释放）。两者均以独占硬链接发布：同名并行构建只有一方成功，既有发布物永不被覆盖或删除；失败残留唯一命名的 `.partial` 可直接定位归属。
 - 包内 `release-manifest.json`：`schemaVersion`、appId、version、gitCommit、nodeVersion、platform/arch、createdAt 与逐文件 `{path, sha256, bytes}`，可用于解包后完整性审计。
 - 每次构建在 `.runs/run-<uuid>` 留存运行证据（构建日志、staging、node-archive）；验证通过后可手工删除。`.runs/` 已被 gitignore，不污染工作树。

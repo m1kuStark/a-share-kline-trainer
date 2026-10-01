@@ -50,22 +50,6 @@ function samePath(a, b) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
 }
 
-// Probe a small set of generic Windows locations. User-specific paths must
-// come from TDX_ROOT, trainer.config.json, or the guided setup flow.
-function defaultTdxCandidates(environment = process.env) {
-  const roots = [
-    environment.ProgramFiles,
-    environment['ProgramFiles(x86)'],
-    environment.ProgramData,
-    environment.LOCALAPPDATA,
-    environment.APPDATA,
-    environment.SystemDrive,
-    homedir(),
-  ].filter(value => typeof value === 'string' && value.trim())
-  const names = ['TongDaXin', 'TDX']
-  return [...new Set(roots.flatMap(root => names.map(name => join(root, name))))]
-}
-
 function usage() {
   return [
     '用法 / Usage: node launcher.cjs [--root PATH] [--config PATH] [--no-open] [--stop]',
@@ -212,14 +196,6 @@ async function isTdxRootPath(root) {
   return hasDaily && await pathExists(join(root, 'T0002', 'hq_cache'))
 }
 
-async function discoverTdxRoot(candidates) {
-  for (const candidate of candidates) {
-    const root = resolve(candidate)
-    if (await isTdxRootPath(root)) return root
-  }
-  return null
-}
-
 /**
  * Read the saved TDX choice written by the in-app setup flow
  * (server/src/setup/saved-choice.ts, SETUP-SAVE-01). Returns null for a
@@ -247,12 +223,13 @@ async function readSavedChoice(dataDir) {
 
 /**
  * Resolve the effective TDX root plus a source label with the frozen priority
- * (SETUP-01): explicit env → explicit config → saved choice → auto discovery.
+ * explicit env → explicit config → saved choice. An unconfigured or unavailable
+ * saved directory leaves setup pending; the launcher never scans for a replacement.
  * The label is display/contract metadata only (TRAINER_TDX_SOURCE); it never
  * carries the path itself. config.tdxRoot already folds env + config file
  * together (env wins), so `envSet` distinguishes the top two tiers.
  */
-async function resolveTdxWithSource({ config, dataDir, env, tdxCandidates }) {
+async function resolveTdxWithSource({ config, dataDir, env }) {
   const envSet = typeof env.TDX_ROOT === 'string' && env.TDX_ROOT.trim() !== ''
   if (config.tdxRoot) {
     if (!(await isTdxRootPath(config.tdxRoot))) return { error: config.tdxRoot }
@@ -262,8 +239,6 @@ async function resolveTdxWithSource({ config, dataDir, env, tdxCandidates }) {
   if (saved && await isTdxRootPath(saved.root)) {
     return { root: resolve(saved.root), source: 'saved-choice' }
   }
-  const discovered = await discoverTdxRoot(tdxCandidates)
-  if (discovered) return { root: discovered, source: 'auto-discovered' }
   return { root: null, source: null }
 }
 
@@ -709,7 +684,7 @@ function assertReuseCompatible(state, { config, layout, tdxRoot }) {
 /**
  * Launch (or reuse) the trainer server. Returns a result summary; throws
  * actionable errors. Options: root, configPath, openBrowser, env,
- * tdxCandidates, startTimeoutMs, lockWaitMs.
+ * startTimeoutMs, lockWaitMs.
  */
 async function launch(options = {}) {
   const root = resolve(options.root ?? __dirname)
@@ -726,13 +701,12 @@ async function launch(options = {}) {
       throw new Error(`数据目录不可写 / data directory is not writable: ${dataDir} (${error && error.message})`)
     }
 
-    // SETUP-01：目录与来源一起解析（env → 显式配置 → 已保存选择 → 有限系统候选）。
+    // 仅使用用户确认过的来源（env → 显式配置 → 已保存选择），缺失时进入接入流程。
     // 来源标签只说明"这个目录是怎么来的"，随 TRAINER_TDX_SOURCE 下发；绝不回传路径。
     const resolved = await resolveTdxWithSource({
       config,
       dataDir,
       env,
-      tdxCandidates: options.tdxCandidates ?? defaultTdxCandidates(env),
     })
     if (resolved.error) {
       throw new Error(`配置的 tdxRoot 不是有效的通达信目录（需要 vipdoc\\<市场>\\lday 下有 .day 文件且存在 T0002\\hq_cache）：${resolved.error} / `
@@ -1537,7 +1511,6 @@ module.exports = {
   READY_FILE,
   SERVER_LOG,
   STATE_FILE,
-  TDX_CANDIDATES: defaultTdxCandidates(),
   acquireLaunchLock,
   bindCheckPort,
   findFallbackPort,
@@ -1545,8 +1518,6 @@ module.exports = {
   clearState,
   confirmOwnedServer,
   decideRecordedServer,
-  defaultTdxCandidates,
-  discoverTdxRoot,
   inspectPackage,
   isTdxRootPath,
   launch,

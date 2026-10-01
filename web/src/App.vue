@@ -491,7 +491,7 @@ function onTrainingEnded(): void {
         <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory">▤<span>历史</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
       </nav>
-      <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" @click="openExitFlow">⏻<span>退出</span></button>
+      <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" :disabled="wizardBusy || wizardApplying || exitFlow !== 'closed'" @click="openExitFlow">⏻<span>退出</span></button>
       <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
     </aside>
 
@@ -543,6 +543,14 @@ function onTrainingEnded(): void {
       <div v-if="portFallbackNote" class="port-fallback-note" role="status">{{ portFallbackNote }}</div>
 
       <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
+
+      <div v-if="wizardBusy" class="picker-blocker" role="dialog" aria-modal="true" aria-label="通达信目录选择">
+        <div class="picker-blocker-panel">
+          <h2>{{ wizardApplying ? '正在切换通达信目录' : '正在打开通达信目录选择器' }}</h2>
+          <p>{{ wizardApplying ? '正在校验并应用目录，请稍候。' : '请在前置的 Windows 目录选择器中选择通达信根目录；取消选择后可继续使用训练器。' }}</p>
+          <span class="picker-blocker-hint">训练器当前页面已锁定，避免在目录选择期间误触退出。</span>
+        </div>
+      </div>
 
       <template v-if="view === 'launcher'">
         <p v-if="wizardError" class="setup-connection-error" role="alert">{{ wizardError }} <button class="data-reread-btn" @click="openWizard">重新选择目录</button></p>
@@ -652,6 +660,12 @@ function onTrainingEnded(): void {
 :global(body.dark) .exit-exited-screen { background: #0b1220; }
 :global(body.dark) .exit-exited-panel h2 { color: #e2e8f0; }
 :global(body.dark) .exit-exited-panel p { color: #94a3b8; }
+.picker-blocker { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; background: rgba(15, 23, 42, .48); }
+.picker-blocker-panel { width: min(440px, calc(100vw - 40px)); padding: 22px 24px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(0, 0, 0, .25); }
+.picker-blocker-panel h2 { margin: 0 0 10px; font-size: 17px; }
+.picker-blocker-panel p { margin: 6px 0; line-height: 1.6; color: var(--text-secondary, #51637a); }
+.picker-blocker-hint { display: block; margin-top: 12px; color: var(--text-muted, #7b8794); font-size: 12px; }
+:global(body.dark) .picker-blocker { background: rgba(0, 0, 0, .68); }
 
 /* SETUP-01 首次接入向导：跟随训练器面板风格（双主题，不引外部样式） */
 .setup-wizard { margin: 10px 28px 0; padding: 14px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }

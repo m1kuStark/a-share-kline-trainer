@@ -58,7 +58,6 @@ interface LaunchOptions {
   configPath?: string
   openBrowser?: boolean
   env?: Record<string, string | undefined>
-  tdxCandidates?: string[]
   startTimeoutMs?: number
   lockWaitMs?: number
   /** PORT-01：端口 bind 探测注入点（测试模拟 WinNAT 保留段等不可 bind 场景） */
@@ -69,7 +68,6 @@ interface LauncherModule {
   APP_ID: string
   DATA_DIR_NAME: string
   DEFAULT_PORT: number
-  TDX_CANDIDATES: string[]
   parseArgs(argv: string[]): { root?: string, configPath?: string, openBrowser: boolean, stop?: boolean, help?: boolean, restartAttemptPath?: string }
   resolveConfig(root: string, raw: unknown, env?: Record<string, string | undefined>): {
     port: number
@@ -98,7 +96,6 @@ interface LauncherModule {
     config: { tdxRoot: string | null }
     dataDir: string
     env: Record<string, string | undefined>
-    tdxCandidates: string[]
   }): Promise<{ root?: string | null, source?: string | null, error?: string }>
   runSetupRestartAttempt(options: Record<string, unknown>): Promise<{ ready: boolean, phase: string, stage: string, reason: string }>
 }
@@ -276,7 +273,6 @@ async function launchFixture(root: string, overrides: Record<string, string | un
     root,
     openBrowser: false,
     env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_DB: '', ...overrides },
-    tdxCandidates: [],
     startTimeoutMs: 10_000,
     lockWaitMs: 2_000,
     ...options,
@@ -417,7 +413,7 @@ describe('release launcher package checks', () => {
     await writeFile(join(root, 'release.json'), JSON.stringify({ appId: launcher.APP_ID }))
     await writeFile(join(root, 'server', 'dist', 'index.js'), 'export {}\n')
     await writeFile(join(root, 'web', 'dist', 'index.html'), '<!doctype html>')
-    await expect(launcher.launch({ root, openBrowser: false, tdxCandidates: [] })).rejects.toThrow(/runtime|安装不完整/)
+    await expect(launcher.launch({ root, openBrowser: false })).rejects.toThrow(/runtime|安装不完整/)
     await expect(readFile(join(root, 'server', 'dist', 'index.js'), 'utf8')).resolves.toContain('export')
   })
 
@@ -432,10 +428,10 @@ describe('release launcher package checks', () => {
     await writeFile(join(root, 'server', 'dist', 'index.js'), 'export {}\n')
     await writeFile(join(root, 'web', 'dist', 'index.html'), '<!doctype html>')
     await writeFile(join(root, 'runtime', NODE_BINARY), 'placeholder')
-    await expect(launcher.launch({ root, openBrowser: false, tdxCandidates: [] })).rejects.toThrow(/appId/)
+    await expect(launcher.launch({ root, openBrowser: false })).rejects.toThrow(/appId/)
   })
 
-  it('recognizes the TDX root layout used for discovery', async () => {
+  it('recognizes the TDX root layout used to validate a selected directory', async () => {
     const base = await mkdtemp(join(tmpdir(), 'rel-launch-'))
     activeRoots.add(base)
     const tdx = join(base, 'tdx')
@@ -1221,40 +1217,56 @@ function supervisorTimeouts() {
 }
 
 describe('SETUP-01 saved choice in launcher resolution', () => {
-  it('resolveTdxWithSource follows env, config, saved choice, then discovery', async () => {
+  it('resolveTdxWithSource uses only env, config, or saved choice', async () => {
     const envTdx = await makeTdxDir('env')
     const savedTdx = await makeTdxDir('saved')
-    const discoveredTdx = await makeTdxDir('disc')
     const dataDir = await mkdtemp(join(tmpdir(), 'resolve-data-'))
     activeRoots.add(dataDir)
     await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(savedTdx))
 
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: envTdx }, dataDir, env: { TDX_ROOT: envTdx }, tdxCandidates: [],
+      config: { tdxRoot: envTdx }, dataDir, env: { TDX_ROOT: envTdx },
     })).toMatchObject({ root: resolve(envTdx), source: 'env' })
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: envTdx }, dataDir, env: {}, tdxCandidates: [],
+      config: { tdxRoot: envTdx }, dataDir, env: {},
     })).toMatchObject({ root: resolve(envTdx), source: 'explicit-config' })
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [],
+      config: { tdxRoot: null }, dataDir, env: {},
     })).toMatchObject({ root: resolve(savedTdx), source: 'saved-choice' })
     await rm(join(dataDir, 'saved-tdx-choice.json'))
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [discoveredTdx],
-    })).toMatchObject({ root: resolve(discoveredTdx), source: 'auto-discovered' })
+      config: { tdxRoot: null }, dataDir, env: {},
+    })).toMatchObject({ root: null, source: null })
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [],
+      config: { tdxRoot: null }, dataDir, env: {},
     })).toMatchObject({ root: null, source: null })
   })
 
-  it('ignores a saved choice that is not a valid TDX root', async () => {
-    const discoveredTdx = await makeTdxDir('fallback')
+  it('ignores an invalid saved choice without falling back to a detected directory', async () => {
     const dataDir = await mkdtemp(join(tmpdir(), 'resolve-invalid-'))
     activeRoots.add(dataDir)
     await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(join(dataDir, 'not-a-tdx')))
     expect(await launcher.resolveTdxWithSource({
-      config: { tdxRoot: null }, dataDir, env: {}, tdxCandidates: [discoveredTdx],
-    })).toMatchObject({ root: resolve(discoveredTdx), source: 'auto-discovered' })
+      config: { tdxRoot: null }, dataDir, env: {},
+    })).toMatchObject({ root: null, source: null })
+  })
+
+  it('launch leaves TDX unset when a default system candidate exists but was not selected', async () => {
+    const root = await makeFixture()
+    const programFiles = join(root, 'system')
+    const candidate = join(programFiles, 'TongDaXin')
+    await mkdir(join(candidate, 'vipdoc', 'sh', 'lday'), { recursive: true })
+    await mkdir(join(candidate, 'T0002', 'hq_cache'), { recursive: true })
+    await writeFile(join(candidate, 'vipdoc', 'sh', 'lday', 'sh600000.day'), 'fixture')
+    const dataDir = join(root, 'data')
+    const envFile = join(root, 'env-dump.json')
+    await writeConfig(root, { port: await freePort(), dataDir })
+
+    const result = await launchFixture(root, { FIXTURE_ENV_FILE: envFile, ProgramFiles: programFiles })
+    expect(result.tdxRoot).toBeNull()
+    const injected = JSON.parse(await readFile(envFile, 'utf8')) as { TDX_ROOT: string | null, TRAINER_TDX_SOURCE: string | null }
+    expect(injected.TDX_ROOT).toBe('')
+    expect(injected.TRAINER_TDX_SOURCE).toBe('')
   })
 
   it('launch adopts the saved choice, injects session env, and never leaks the control token', async () => {
@@ -1347,7 +1359,6 @@ describe('SETUP-01 controlled restart supervisor', () => {
       root,
       openBrowser: false,
       env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_DB: '' },
-      tdxCandidates: [],
       startTimeoutMs: 10_000,
       lockWaitMs: 4_000,
     })
