@@ -1,14 +1,14 @@
-# REL-V1-01 V1.2.2 发布收尾
+# REL-V1-01 V1.2.x 发布收尾
 
 ```json
 {
   "id": "REL-V1-01",
-  "title": "V1.2.2 发布收尾：版本 bump、候选包验收与发布说明",
+  "title": "V1.2.x 发布收尾：版本 bump、候选包验收与发布说明",
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 1.2.2 源码候选已完成阶段线、条件单比例输入、标记详情和右键保护修订；单一 Windows 包已构建并核对 SHA256，用户验收与公开发布仍未确认。",
-  "next_action": "用户手动验收 output/v1.2.2-20261002；收到反馈后记录验收或创建限定返修任务。",
+  "summary": "版本 1.2.3 源码候选已完成用户验收反馈三项修订（开盘阶段唯一活动价位线、条件单悬浮信息悬停化与主题令牌修复、统一下单面板＋多条件单挂单）；单一 Windows 包已构建并核对 SHA256（f92f1844…，源码提交 1e965e5），用户验收与公开发布仍未确认。",
+  "next_action": "用户手动验收 output/v1.2.3-20261002；收到反馈后记录验收或创建限定返修任务；接续会话先读 docs/verification/2026-10/V1.2.3-feedback/README.md 与 E2E-BASELINE-01。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",
@@ -25,7 +25,9 @@
     "reason": "版本号与发布线是产品口径变化：CHANGELOG、roadmap、安装包 manifest 与状态页必须指向同一候选提交；发布证据在本次包构建后回填。",
     "update": []
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-10/V1.2.3-feedback/README.md"
+  ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
   "acceptance_ref": null
 }
