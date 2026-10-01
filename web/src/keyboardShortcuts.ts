@@ -192,8 +192,9 @@ export function matchesShortcut(
   event: Pick<KeyboardEvent, 'code' | 'key' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey' | 'repeat' | 'isComposing'>,
   binding: ShortcutBinding,
   pressed: ReadonlySet<string> = new Set(),
+  allowRepeat = false,
 ): boolean {
-  if (event.repeat || event.isComposing) return false
+  if ((!allowRepeat && event.repeat) || event.isComposing) return false
   const current = shortcutId([...eventKeyCodes(event, pressed)])
   return binding.some(shortcut => shortcutId(shortcut) === current)
 }
@@ -203,8 +204,9 @@ export function matchesActionShortcut(
   event: Parameters<typeof matchesShortcut>[0],
   preferences: KeyboardShortcutPreferences,
   pressed: ReadonlySet<string> = new Set(),
+  allowRepeat = false,
 ): boolean {
-  return matchesShortcut(event, preferences[action] ?? [], pressed)
+  return matchesShortcut(event, preferences[action] ?? [], pressed, allowRepeat)
 }
 
 export function notifyKeyboardShortcutsChanged(): void {

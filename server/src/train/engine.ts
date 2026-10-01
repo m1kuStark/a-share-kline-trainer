@@ -12,7 +12,7 @@ import type { TdxMarket } from '../tdx/stocks.js'
 import { MarketReaderUnavailableError, resolveMarketReader, type MarketDataReader } from '../data/reader.js'
 import { planTrainingRange, type TrainingRangeRequest, type TrainingRangeResult } from './range.js'
 import {
-  applyTrade, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
+  applyTrade, buyCommission, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
@@ -893,11 +893,32 @@ export function placeOrder(database: DatabaseSync, id: number, input: OrderInput
   if (!Number.isSafeInteger(input.shares) || input.shares! < 1 || input.shares! % 100 !== 0) throw new HttpError(400, 'shares 必须是 100 股的正整数倍')
   if (input.reason !== undefined && (typeof input.reason !== 'string' || input.reason.length > 500)) throw new HttpError(400, 'reason 必须是 500 字以内文本')
   if (database.prepare("SELECT id FROM orders WHERE training_id = ? AND status = 'pending'").get(id)) throw new HttpError(409, '本局最多同时保留一个待触发条件单')
-  const date = row.current_date ?? row.start_date
   const side = input.side as 'buy' | 'sell'
   const orderType = input.order_type as 'limit' | 'stop'
   const triggerPrice = input.trigger_price as number
   const shares = input.shares as number
+  // 条件单在提交时就要能被当前账户执行。否则错误股数会一直进入 pending，
+  // 到触发时才静默变成 rejected，用户无法及时发现输入错误。
+  const rules = trainingRulesOf(row)
+  assertTradablePolicy(rules)
+  const fees: FeeConfig = {
+    enabled: rules.feesEnabled,
+    commissionRate: rules.commissionRate,
+    minimumCommission: rules.minimumCommission,
+    stampDutyRate: rules.stampDutyRate,
+    lotSize: rules.lotSize,
+  }
+  const state = replayState(database, row)
+  const boughtToday = sharesBoughtOn(database, id, row.current_date ?? row.start_date)
+  const availableShares = rules.tPlusOne ? state.shares - boughtToday : state.shares
+  if (side === 'sell') {
+    if (shares > availableShares) throw new HttpError(400, `条件单卖出数量超过可卖持仓（当前可卖 ${availableShares} 股）`)
+  } else {
+    const amount = shares * triggerPrice
+    const fee = buyCommission(amount, fees)
+    if (amount + fee > state.cash + 1e-6) throw new HttpError(400, `条件单买入金额超过可用资金（需要 ¥${(amount + fee).toFixed(2)}，可用 ¥${state.cash.toFixed(2)}）`)
+  }
+  const date = row.current_date ?? row.start_date
   const result = database.prepare(`
     INSERT INTO orders (training_id, side, order_type, trigger_price_raw, shares, status, created_date, created_phase, reason, created_at)
     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)

@@ -488,11 +488,12 @@ function setTrainingUrl(): void {
   history.replaceState(null, '', url)
 }
 
-function isShortcut(action: ShortcutAction, event: KeyboardEvent): boolean {
-  if (matchesActionShortcut(action, event, keyboardShortcuts.value, pressedShortcutKeys)) return true
+function isShortcut(action: ShortcutAction, event: KeyboardEvent, allowRepeat = false): boolean {
+  const repeatable = allowRepeat || action === 'advance' || action === 'zoomIn' || action === 'zoomOut' || action === 'crosshairLeft' || action === 'crosshairRight'
+  if (matchesActionShortcut(action, event, keyboardShortcuts.value, pressedShortcutKeys, repeatable)) return true
   // 保留旧版本的 Ctrl+Shift+Z 重做入口；用户替换默认 Ctrl+Y 后即由自定义映射完全接管。
   return action === 'redo' && keyboardShortcuts.value.redo.some(binding => shortcutId(binding) === 'Control+KeyY') &&
-    event.code === 'KeyZ' && event.ctrlKey && event.shiftKey && !event.repeat && !event.isComposing
+    event.code === 'KeyZ' && event.ctrlKey && event.shiftKey && !event.isComposing
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -635,8 +636,9 @@ void load()
     <section class="training-grid" :inert="preparingRecording">
       <div class="chart-panel">
         <KlineChart
-          ref="chartRef" :bars="bars" :trades="snapshot.trades"
+          ref="chartRef" :bars="bars" :trades="snapshot.trades" :orders="snapshot.orders"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
+          :current-price="training.currentPhase === 'open' ? training.currentOpen : training.currentClose"
           :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"

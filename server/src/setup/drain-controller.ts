@@ -49,7 +49,8 @@ export interface DrainGate {
 
 export interface DrainController {
   readonly gate: DrainGate
-  prepare(attemptId: string): Promise<PrepareOutcome>
+  /** Lifecycle exit may preserve an active training; the helper/control path keeps its old guard. */
+  prepare(attemptId: string, options?: { allowActiveTraining?: boolean }): Promise<PrepareOutcome>
   cancel(attemptId: string): CancelOutcome
   /** 仅状态迁移到 closing；真实 shutdown 由 control-api 在 202 回包后调用注入的函数 */
   beginShutdown(attemptId: string): ShutdownOutcome
@@ -147,7 +148,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
     },
   }
 
-  function settleDrain(record: AttemptRecord, deadlineHit: boolean): void {
+  function settleDrain(record: AttemptRecord, deadlineHit: boolean, allowActiveTraining = false): void {
     if (current !== record || record.state !== 'draining') return
     // 双保险：定时器未先触发时，排空完成晚于预算同样按超时收敛（保守有限出口）
     if (deadlineHit || now() >= record.drainDeadlineMs) {
@@ -155,7 +156,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
       return
     }
     // 排空完成后无 await 同步复查活动训练：在途创建刚提交则撤销接纳，绝不能 prepared 后出现新 running
-    if (getActiveTraining() !== null) {
+    if (!allowActiveTraining && getActiveTraining() !== null) {
       finish(record, { kind: 'active-training' })
       return
     }
@@ -174,7 +175,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
     for (const waiter of record.waiters.splice(0)) waiter({ ...outcome })
   }
 
-  function runDrain(record: AttemptRecord): void {
+  function runDrain(record: AttemptRecord, allowActiveTraining = false): void {
     let deadlineHit = false
     const timer = armTimer(drainBudgetMs, () => {
       deadlineHit = true
@@ -195,7 +196,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
         await Promise.allSettled(outstanding)
       }
       disarmTimer(timer)
-      settleDrain(record, deadlineHit)
+      settleDrain(record, deadlineHit, allowActiveTraining)
     })()
   }
 
@@ -226,7 +227,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
 
   return {
     gate,
-    prepare(attemptId: string): Promise<PrepareOutcome> {
+    prepare(attemptId: string, options: { allowActiveTraining?: boolean } = {}): Promise<PrepareOutcome> {
       if (!isNonEmptyString(attemptId)) return Promise.resolve({ kind: 'busy' })
       if (closed || closingStarted) return Promise.resolve({ kind: 'closing' })
       if (finished.has(attemptId)) return Promise.resolve(finished.get(attemptId)!)
@@ -239,7 +240,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
       }
       if (current) return Promise.resolve({ kind: 'busy' })
       // 同步检查活动训练：存在则 409 且 gate 保持 open（该次尝试未启动动作，不记入结果）
-      if (getActiveTraining() !== null) return Promise.resolve({ kind: 'active-training' })
+      if (!options.allowActiveTraining && getActiveTraining() !== null) return Promise.resolve({ kind: 'active-training' })
       gateOpen = false
       const record: AttemptRecord = {
         id: attemptId,
@@ -250,7 +251,7 @@ export function createDrainController(options: DrainControllerOptions = {}): Dra
       }
       current = record
       const promise = new Promise<PrepareOutcome>(resolve => { record.settle = resolve })
-      runDrain(record)
+      runDrain(record, options.allowActiveTraining === true)
       return promise
     },
     cancel(attemptId: string): CancelOutcome {

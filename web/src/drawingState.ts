@@ -26,7 +26,7 @@ export function applyDrawingPrices<T extends { value?: number }>(points: T[], va
 export function serializeDrawings(overlays: unknown[], paneName: (id: string) => string, priceBasis?: DrawingPriceBasis, timeframe?: Timeframe): Drawing[] {
   return overlays.flatMap(value => {
     const overlay = value as Drawing & { isDrawing?: () => boolean }
-    if (['bsMark', 'costLine'].includes(overlay.name) || overlay.isDrawing?.()) return []
+    if (['bsMark', 'costLine', 'phasePriceLine', 'orderTriggerMark'].includes(overlay.name) || overlay.isDrawing?.()) return []
     const points = overlay.points.map(({ timestamp, value }) => ({ timestamp, value }))
     if (!points.length || points.some(point => !Number.isFinite(point.timestamp) || !Number.isFinite(point.value))) return []
     const drawing: Drawing = { id: overlay.id, name: overlay.name, paneId: paneName(overlay.paneId), points }

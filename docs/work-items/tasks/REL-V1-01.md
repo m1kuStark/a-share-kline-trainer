@@ -1,14 +1,14 @@
-# REL-V1-01 V1.1.1 发布收尾
+# REL-V1-01 V1.2.1 发布收尾
 
 ```json
 {
   "id": "REL-V1-01",
-  "title": "V1.1.1 发布收尾：版本 bump、CHANGELOG、全量门禁、干净解压包验收与发布说明",
+  "title": "V1.2.1 发布收尾：版本 bump、候选包验收与发布说明",
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 1.1.1 源码候选已完成用户反馈修订、定向验证、主题/移动浏览器回归和生产构建；Windows 干净解压包待由本卡生成并校验，用户验收与公开发布仍未确认。",
-  "next_action": "在干净提交上执行发布脚本，核对 Node 24 官方归档、manifest、SHA256、版本与提交；只生成 output/v1.1.1-20261001，再交用户验收和 GitHub 发布确认。",
+  "summary": "版本 1.2.1 源码候选已完成本轮阶段价位线、条件单边界、长按快捷键、搜索缓存和退出生命周期修订；Windows 干净解压包待生成并校验，用户验收与公开发布仍未确认。",
+  "next_action": "在干净提交上执行发布脚本，核对 Node 24 官方归档、manifest、SHA256、版本与提交；只生成一个新的 v1.2.1 output 目录，再交用户验收。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",

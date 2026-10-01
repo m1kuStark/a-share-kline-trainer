@@ -104,6 +104,15 @@ describe('drain controller: gate 与 prepare', () => {
     if (probe.ok) probe.release()
   })
 
+  it('应用内退出可保留活动训练；控制助手默认仍拒绝', async () => {
+    const controller = make({ getActiveTraining: () => ({ id: 9 }) })
+    expect((await controller.prepare('control')).kind).toBe('active-training')
+    const outcome = await controller.prepare('lifecycle', { allowActiveTraining: true })
+    expect(outcome.kind).toBe('prepared')
+    expect(controller.gate.isOpen()).toBe(false)
+    controller.gate.close()
+  })
+
   it('排空期间出现活动训练 → 撤销接纳并 active-training；同 id 重放该结果', async () => {
     let active: { id: number } | null = null
     const controller = make({ getActiveTraining: () => active })

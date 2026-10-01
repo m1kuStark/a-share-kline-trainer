@@ -344,6 +344,17 @@ function closeExitFlow(): void {
   if (exitFlow.value === 'exiting' || exitFlow.value === 'exited') return
   exitFlow.value = 'closed'
 }
+async function cancelExitCoordination(): Promise<void> {
+  const session = lifecycle.value
+  const requestId = exitRequestId.value
+  if (session && requestId && exitFlow.value === 'coordinating') {
+    try { await cancelLifecycleExit(session.sessionId, session.exitToken, requestId) } catch { /* 服务已不可达时由下一次心跳恢复 */ }
+  }
+  pendingExitRequest.value = null
+  exitRequestId.value = null
+  exitRemaining.value = 0
+  exitFlow.value = 'closed'
+}
 /** 冲刷本页待保存内容：训练页复用 prepareForLibrary（画线冲刷＋录像冲刷）。 */
 async function flushLocalSaves(): Promise<void> {
   if (view.value === 'training' && trainingRef.value) {
@@ -614,7 +625,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
           <h2>等待其他页面确认…</h2>
           <p>检测到还有 {{ exitRemaining }} 个页面打开。请在其他训练器页面上确认"保存并退出"；若有页面拒绝或未响应，本次退出会自动取消，服务不会停止。</p>
           <div class="exit-actions">
-            <button class="exit-secondary" @click="closeExitFlow">后台等待</button>
+            <button class="exit-secondary" @click="cancelExitCoordination">后台等待</button>
           </div>
         </template>
         <template v-else-if="exitFlow === 'exiting'">

@@ -248,6 +248,12 @@ describe('full acceptance matrix', () => {
       const buy = await app.inject({ method: 'POST', url: `/api/trainings/${id}/trade`, payload: { side: 'buy', weightPct: 10 } })
       expect(buy.statusCode).toBe(200)
       expect(buy.json().plan.price).toBe(firstOpen)
+      const overBudget = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'buy', order_type: 'limit', trigger_price: firstOpen, shares: 10_000_000 } })
+      expect(overBudget.statusCode).toBe(400)
+      expect(overBudget.json().error).toContain('可用资金')
+      const overPosition = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'sell', order_type: 'limit', trigger_price: firstOpen, shares: 10_000_000 } })
+      expect(overPosition.statusCode).toBe(400)
+      expect(overPosition.json().error).toContain('可卖持仓')
       const order = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'buy', order_type: 'limit', trigger_price: firstOpen + 1, shares: 100 } })
       expect(order.statusCode).toBe(201)
 

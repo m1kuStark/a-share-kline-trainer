@@ -20,7 +20,7 @@
 | [R2 · 替代来源](<work-items/milestones/R2.md>) | planned | 扫描注册点已有，真实来源未接，训练读取未解耦。 / 先补DATA-03/04。 | 未记录 | 未记录 |
 | [REC · 操作录制与回放](<work-items/milestones/REC.md>) | closed | Stage feedback integrated; all engineering gates passed. / 已获用户验收（2026-09-21），能力随v0.3.1首次发布并随v0.3.2继续交付；无未结工作。 | [证据1](<verification/2026-09/ACCEPT-01-release/report.md>) | [验收记录](<verification/2026-09/M3-user-acceptance/record.json>) |
 | [REL · v0.3.2 open-source distribution](<work-items/milestones/REL.md>) | closed | Package accepted trainer and publish usable open-source release. / v0.3.2公开源码与Windows安装包已交付；用户最终验收尚未记录；M4/M5仍按任务卡推进。 | [证据1](<verification/2026-09/REL-01-release/report.md>)；[证据2](<verification/2026-09/REL-02/report.md>)；[证据3](<verification/2026-09/REL-03/public-release-verification.json>)；[证据4](<verification/2026-09/REL-03/module-acceptance.json>) | 未记录 |
-| [V4 · v0.4 训练时钟、条件单与成交理由](<work-items/milestones/V4.md>) | active | V1.2 已接入 open_close 阶段、开盘/收盘手动成交和单条件单最小闭环；完整录制理由和回放仍待实现。 / 补齐订单触发边界、录制订单事件和完整回放兼容，再执行 V4 全量验收。 | 未记录 | 未记录 |
+| [V4 · v0.4 训练时钟、条件单与成交理由](<work-items/milestones/V4.md>) | active | V1.2.1 已修订阶段价位线、条件单提交边界、长按快捷键和退出生命周期；完整录制理由和回放仍待实现。 / 补齐订单触发边界、录制订单事件和完整回放兼容，再执行 V4 全量验收。 | 未记录 | 未记录 |
 
 ### 未关闭任务
 
@@ -44,13 +44,13 @@
 | [M5-01](<work-items/tasks/M5-01.md>) | active / integrator | 训练规则快照、应用偏好与 TDX 路由已接入 V1 候选；设置面板现按默认/偏好/数据目录分栏，数据目录支持原生 Windows 选择器。 | [证据1](<verification/architecture-audit-2026-09-17.json>)；[证据2](<verification/2026-09/M5-01/report.md>) | wt/integration/v1（V1.1.1 候选；最终提交 SHA 待集成包完成后回填） | 未记录 |
 | [M5-DEFAULTS-01](<work-items/tasks/M5-DEFAULTS-01.md>) | review / GLM-5.3-Flash | 实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；基于已接受V1候选888778c | 未记录 | not integrated; codex/m5-training-defaults base 888778cfc7a4b69e4446012a26618b93a8b05b20 | 未记录 |
 | [NOTE-01](<work-items/tasks/NOTE-01.md>) | planned / integrator | 在图表下方 B/S 标记上提供交易理由入口，并支持悬停详情和固定浮层。 | 未记录 | 未记录 | 未记录 |
-| [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | 统一状态文件已回填 V1.2.0 候选、包校验和与用户验收边界 | 未记录 | 未记录 | 未记录 |
+| [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | 统一状态文件继续绑定 V1.2.1 候选、包校验和与用户验收边界 | 未记录 | 未记录 | 未记录 |
 | [ORDER-00](<work-items/tasks/ORDER-00.md>) | planned / integrator | 核查 GitHub 开源条件单实现的许可证、撮合假设和数据模型，只提取适合日线训练器的可验证做法。 | 未记录 | 未记录 | 未记录 |
 | [ORDER-01](<work-items/tasks/ORDER-01.md>) | planned / integrator | 实现单有效订单、限价/止损四种价格行为、跳空成交、取消过期和拒单记录。 | 未记录 | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REC-04](<work-items/tasks/REC-04.md>) | planned / integrator | 为手动成交和条件单增加可选理由，并在录制、导入和回放中保留阶段、模式与订单事件顺序。 | 未记录 | 未记录 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 保存并退出入口与服务端生命周期协议已在 wt/B-REL-LAUNCH-UX-01 实现（复用SETUP-01冻结排空控制器；Stop.cmd保持应急强制语义并已在文档/帮助文案中明确）；最后标签延迟回收经评估暂不启用，结论记录于卡面。2026-09-30 增量并入 PORT-01 人工验收整改（用户拍板'自动换可用端口'）：未配置端口遇系统保留/占用自动回退＋页面常驻提示；显式端口失败明确报因（netsh 指引）。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（原从 0f430cd 切出；2026-09-30 已并入 wt/B-SETUP-01 头 93ebc6a 并修复 lifecycle 守卫语义冲突 ca6116a，现包含 SETUP-01 全部提交） | 未记录 |
-| [REL-V1-01](<work-items/tasks/REL-V1-01.md>) | active / integrator | V1.2.0 包已构建并校验，等待用户验收；未公开发布 | 未记录 | main@5bf4484a37a5a233ff12524cafd0166390cb274b | 未记录 |
+| [REL-V1-01](<work-items/tasks/REL-V1-01.md>) | active / integrator | V1.2.1 源码候选已验证，单一 Windows 包待构建；等待用户验收，未公开发布 | 未记录 | wt/integration/v1 | 未记录 |
 | [SETUP-01](<work-items/tasks/SETUP-01.md>) | active / integrator | V1 候选已接入用户确认式 Windows 原生目录选择、单目录检查、原子保存和受控重启；2026-10-01 反馈关闭自动发现与扫描，目录选择与页面退出互斥，最终 Windows 包及用户验收仍待记录。 | 未记录 | wt/integration/v1（V1.1.1 候选；最终提交 SHA 待集成包完成后回填） | [验收记录](<verification/2026-09/SETUP-design-acceptance/record.json>) |
 | [SETUP-CLUES-01](<work-items/tasks/SETUP-CLUES-01.md>) | review / integrator | process-clues.ts 提取运行中通达信安装根目录线索，保留五态结果、固定 PowerShell 白名单、-First 8、UTF-8 字节上限和跨块中文路径安全；52 项定向测试通过。 | [证据1](<../server/test/process-clues.test.ts>)；[证据2](<../server/test/discover.test.ts>)；[证据3](<../server/test/tdx-inspect.test.ts>) | integration/product-integration-20260926@42378805f2302bafe3e951a7c89fd4cde9f1eba2 | 未记录 |
 | [TRAIN-03](<work-items/tasks/TRAIN-03.md>) | planned / integrator | 保留默认 close_only 收盘模式，并为显式开启的训练增加 open/close 阶段、形成中 K 线和旧训练迁移。 | 未记录 | 未记录 | 未记录 |
@@ -58,5 +58,5 @@
 | [UI-03](<work-items/tasks/UI-03.md>) | review / integrator | 周期点击自动回退起始日、双框拼音选股已进入 main；V1 后续体验收敛为自定义起止日期、可见范围校验和设置分类标签。 | 未记录 | wt/integration/v1（V1.1.1 候选；最终提交 SHA 待集成包完成后回填） | 未记录 |
 | [V1-ACCEPT-01](<work-items/tasks/V1-ACCEPT-01.md>) | active / integrator | 组织用户验收并回填记录：①UI-03 已定并入基线（用户 2026-09-29 拍板），8899 测试包复验组织就绪（清单与 record 骨架见 docs/verification/2026-09/UI-03-8899-recheck/，UI-03 卡明示用户验收通过前不提升发布；不通过返工归槽B、插 order 17、REL-V1-01 顺延 18）；②UI-02（c8f8836 实测在基线）③DATA-05 ④TRAIN-02 验收记录均未记录、待用户；⑤REL v0.3.2 用户最终验收未记录，待补记或用户明确豁免；v0.3.3 验收结论待复验后一并记录（供 S11 发布确认拍板）。本槽自主运行无用户在线，本轮不产生任何验收记录、不补造。 | [证据1](<verification/2026-09/UI-03-8899-recheck/README.md>) | main@5bf4484a37a5a233ff12524cafd0166390cb274b | 未记录 |
 | [V1-INTEGRATE-01](<work-items/tasks/V1-INTEGRATE-01.md>) | review / GLM-5.3-Flash | 已接受NOTE和TRAIN相同代码在独立V1组合候选快进整合与完整门禁；不含停止的SETUP，不授权实现返修。 | 未记录 | 未记录 | 未记录 |
-| [V4-01](<work-items/tasks/V4-01.md>) | active / integrator | V1.2.0 已接入 open_close 阶段、开盘/收盘手动成交和单条件单最小闭环；录制订单事件与完整回放仍待实现 | 未记录 | 未记录 | 未记录 |
+| [V4-01](<work-items/tasks/V4-01.md>) | active / integrator | V1.2.1 已修订阶段价位线、条件单提交边界、长按快捷键和退出生命周期；录制订单事件与完整回放仍待实现 | 未记录 | 未记录 | 未记录 |
 <!-- generated:status:end -->

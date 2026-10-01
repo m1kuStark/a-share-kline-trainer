@@ -290,6 +290,11 @@ export async function registerApi(
 
   async function getStocks(): Promise<Awaited<ReturnType<typeof refreshStockCatalog>>['stocks']> {
     if (!config.tdxRoot) return []
+    // Catalog refresh scans every market file and is only needed on the first
+    // request (or after an explicit process restart). Reusing the immutable
+    // snapshot keeps successive typeahead requests in memory and lets the
+    // already-built pinyin index serve them without disk I/O.
+    if (stockCache) return stockCache
     if (!stockRefresh) {
       stockRefresh = refreshStockCatalog(database, config.tdxRoot)
         .then(result => {
@@ -711,7 +716,9 @@ export async function registerApi(
       .then(() => {
         options.setup?.cancelDirectoryPicker?.()
         cancelActiveDirectoryPicker()
-        return controller.prepare(attemptId)
+        // The in-app exit preserves an unfinished training in SQLite. The
+        // emergency/control helper keeps the stricter active-training guard.
+        return controller.prepare(attemptId, { allowActiveTraining: true })
       })
       .then(outcome => {
         if (outcome.kind !== 'prepared') {
@@ -904,6 +911,11 @@ export async function registerApi(
   })
 
   app.get('/api/env', async () => {
+    // /api/env is the explicit freshness boundary used by the UI after a
+    // local data refresh. Invalidate the catalog there, while keeping every
+    // /api/stocks keystroke on the in-memory snapshot.
+    stockCache = null
+    searchIndexCache = null
     const [stocks] = await Promise.all([getStocks(), ensureAdjustmentCache()])
     const active = getActiveTraining(database)
     return {

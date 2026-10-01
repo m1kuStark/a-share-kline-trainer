@@ -4,7 +4,7 @@ import { init, dispose, type Chart, type DataLoadMore, type KLineData, type Over
 import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
-import type { Bar, Timeframe, TradeView } from '../api'
+import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
@@ -26,6 +26,10 @@ const props = withDefaults(defineProps<{
   trades: TradeView[]
   costPrice: number | null
   chartCostPrice?: number | null
+  /** 当前训练阶段的成交价。开盘阶段只显示价位线，不把当日完整 OHLC 注入图表。 */
+  currentPrice?: number | null
+  /** 当前训练中的条件单，仅在价格轴绘制触发点。 */
+  orders?: OrderView[]
   timeframe?: Timeframe
   defaultCount?: number
   /** 是否还有更早历史可动态加载（初始窗口） */
@@ -46,7 +50,7 @@ const props = withDefaults(defineProps<{
   drawingPriceBasis?: DrawingPriceBasis | null
   /** 交易标记笔记的本轮训练隔离键 */
   trainingId?: number
-}>(), { chartCostPrice: null, timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
+}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
 const host = ref<HTMLElement | null>(null)
@@ -400,10 +404,16 @@ function tradeTimestamp(date: string): number {
 
 function refreshMarks(): void {
   if (!chart) return
-  chart.removeOverlay({ name: 'bsMark' }); chart.removeOverlay({ name: 'costLine' })
+  chart.removeOverlay({ name: 'bsMark' }); chart.removeOverlay({ name: 'costLine' }); chart.removeOverlay({ name: 'phasePriceLine' }); chart.removeOverlay({ name: 'orderTriggerMark' })
   for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', points: [{ timestamp: tradeTimestamp(trade.date), value: trade.chartPrice ?? trade.price }], extendData: { side: trade.side, shares: trade.shares, price: trade.chartPrice ?? trade.price } })
   const cost = props.chartCostPrice ?? props.costPrice
   if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: cost }], extendData: cost })
+  if (props.currentPrice !== null && props.currentPrice !== undefined && props.currentPrice > 0) {
+    chart.createOverlay({ name: 'phasePriceLine', points: [{ value: props.currentPrice }], extendData: props.currentPrice })
+  }
+  for (const order of props.orders.filter(order => order.status === 'pending')) {
+    chart.createOverlay({ name: 'orderTriggerMark', points: [{ value: order.triggerPrice }], extendData: { side: order.side, orderType: order.orderType, triggerPrice: order.triggerPrice, shares: order.shares, status: order.status } })
+  }
   updateMarkerRail()
 }
 
@@ -970,7 +980,7 @@ type OverlayLike = {
   points: Array<{ timestamp?: number; value?: number }>
   extendData?: unknown
 }
-const engineMarkNames = new Set(['bsMark', 'costLine'])
+const engineMarkNames = new Set(['bsMark', 'costLine', 'phasePriceLine', 'orderTriggerMark'])
 const cnNums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
 function typeLabel(name: string): string {
   return DRAW_TOOLS.find(tool => tool.name === name)?.label ?? name
@@ -1100,7 +1110,7 @@ function onHostMouseDown(event: MouseEvent): void {
     // 否则自动模式下（Space/Home 之后）中键拖拽只有横向生效（用户 D3 验收反馈）
     ;(chart.getYAxes({ paneId: 'candle_pane' }) as unknown as Array<{ setAutoCalcTickFlag: (flag: boolean) => void }>).forEach(axis => axis.setAutoCalcTickFlag(false))
     // 中键只做画面平移：临时锁定用户画线，让合成按下不命中画线拖拽（用户 D3 验收反馈：功能重叠）
-    const userOverlays = (chart.getOverlays() as unknown as Array<{ name: string; lock: boolean; isDrawing: () => boolean }>).filter(overlay => overlay.name !== 'bsMark' && overlay.name !== 'costLine')
+    const userOverlays = (chart.getOverlays() as unknown as Array<{ name: string; lock: boolean; isDrawing: () => boolean }>).filter(overlay => !engineMarkNames.has(overlay.name))
     userOverlays.forEach(overlay => { overlay.lock = true })
     const container = host.value?.firstElementChild as HTMLElement | null
     const synthetic = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, clientX: event.clientX, clientY: event.clientY })
@@ -1216,7 +1226,7 @@ watch(() => props.bars, () => {
     emit('drawingsChange', drawings())
   }
 })
-watch(() => [props.trades, props.costPrice, props.chartCostPrice], refreshMarks); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 
