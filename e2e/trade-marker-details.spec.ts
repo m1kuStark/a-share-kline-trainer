@@ -387,4 +387,3 @@ test('DETAILS-visual-regression：深浅主题、840/1440px 面板完整可见�
     }
   }
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

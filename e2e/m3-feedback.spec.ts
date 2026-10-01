@@ -135,4 +135,3 @@ test('折叠其他工具扩展账户可视区，双主题多尺寸标签无背�
   await screenshot(page, 'folded-light')
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

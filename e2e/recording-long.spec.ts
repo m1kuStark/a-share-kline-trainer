@@ -129,4 +129,3 @@ await page.locator(".suggestions button").first().click()
     restoredCheckpoints: file.checkpoints.length, unexpectedPageErrors: pageErrors,
   }, null, 2))
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

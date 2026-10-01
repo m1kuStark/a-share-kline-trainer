@@ -400,7 +400,6 @@ test('M3 D23 文本多行样式编辑取消与输入热键隔离', async ({ page
   const text = (await drawings(page))[0]
   expect(text.name).toBe('textAnnotation')
   expect(text.extendData).toMatchObject({ text: '关键区间\n等待确认', color: '#22c55e', size: 20, bold: true, italic: true })
-  expect(JSON.stringify(text)).toContain('关键区间\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()\n等待确认')
   expect(JSON.stringify(text)).toContain('#22c55e')
   const textPane = (await panes(page)).find(item => item.name === 'candle_pane')!
   const textGeometry = await geometry(page, text.id)

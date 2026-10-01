@@ -146,4 +146,3 @@ test('结算确认时丢弃立即生效，刷新已结束训练不重新创建�
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

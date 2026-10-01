@@ -91,6 +91,29 @@ export function planBuy(
   }
 }
 
+// 按股数买入：用户显式给定股数（统一面板共享的按股数输入框、条件单买入按挂单股数成交）。
+// 与按比例买入不同：股数必须整手、金额不得悄悄降档——资金不足直接拒绝，
+// 条件单路径上表现为挂单被拒（原因回填 status_reason），绝不静默缩量。
+export function planBuyShares(
+  state: AccountState,
+  price: number,
+  shares: number,
+  fees: FeeConfig = DEFAULT_FEES,
+): TradePlanResult {
+  if (!(price > 0) || !Number.isFinite(price)) return { ok: false, error: '无效的成交价格' }
+  if (!Number.isInteger(shares) || shares <= 0) return { ok: false, error: '买入股数必须是正整数' }
+  if (shares % fees.lotSize !== 0) return { ok: false, error: '买入数量必须是一手的整数倍' }
+  const amount = shares * price
+  const fee = buyCommission(amount, fees)
+  if (amount + fee > state.cash + CASH_EPSILON) {
+    return { ok: false, error: `可用资金不足（需要 ¥${(amount + fee).toFixed(2)}，可用 ¥${state.cash.toFixed(2)}）` }
+  }
+  return {
+    ok: true,
+    plan: { side: 'buy', price, shares, amount, fee, tax: 0 },
+  }
+}
+
 export interface SellRequest {
   shares?: number
   weightPct?: number

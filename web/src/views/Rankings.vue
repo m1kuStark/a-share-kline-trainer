@@ -320,8 +320,8 @@ function daysText(item: RankingItem): string {
 .industry-picker h2 { display: flex; align-items: baseline; gap: 10px; }
 .industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
 .industry-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.industry-picker-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 10px 12px; border: 1px solid var(--surface-border); border-radius: 8px; background: var(--surface-raised); color: var(--text-primary); text-align: left; cursor: pointer; }
-.industry-picker-item:hover, .industry-picker-item:focus-visible { border-color: var(--accent, #2b8b99); background: var(--surface-hover, var(--surface-raised)); }
+.industry-picker-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 10px 12px; border: 1px solid var(--surface-border); border-radius: 8px; background: var(--surface-background); color: var(--text-primary); text-align: left; cursor: pointer; }
+.industry-picker-item:hover, .industry-picker-item:focus-visible { border-color: #2b8b99; background: var(--surface-hover); }
 .industry-picker-item small { color: var(--text-secondary); white-space: nowrap; }
 .industry-result-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; }
 </style>

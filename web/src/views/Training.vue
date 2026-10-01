@@ -6,7 +6,7 @@ import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
   abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, placeTrainingOrder, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
-  type Bar, type Tier, type Timeframe, type TrainingSnapshot,
+  type Bar, type OrderView, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
 import { SerialDrawingSaver, type Drawing } from '../drawingState'
@@ -42,11 +42,11 @@ const visibleCount = ref(150)
 const chartViewport = ref<{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }>({ visibleDate: null, latestDate: null, atLatest: true })
 const weight = ref(50)
 const customWeight = ref<number | null>(null)
-const sellShares = ref<number | null>(null)
+const customShares = ref<number | null>(null)
+const orderTab = ref<'normal' | 'conditional'>('normal')
 const orderSide = ref<'buy' | 'sell'>('buy')
 const orderType = ref<'limit' | 'stop'>('limit')
 const orderTrigger = ref<number | null>(null)
-const orderWeight = ref(10)
 const orderReason = ref('')
 const orderError = ref('')
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
@@ -331,7 +331,10 @@ async function advance(): Promise<void> {
       setTrainingUrl()
       message.value = `已到期结算：结算日 ${snapshot.value.training.settleDate}`
     } else {
-      message.value = `推进至 ${snapshot.value.training.currentDate ?? '今日'}，收盘 ${result.bar ? result.bar.close.toFixed(2) : '--'}`
+      // 消息只报当前阶段的成交价：开盘阶段报开盘价——当日收盘价尚未发生，报出来是未来数据泄露
+      const openPhase = snapshot.value.training.clockMode === 'open_close' && snapshot.value.training.currentPhase === 'open'
+      const priceText = result.bar ? (openPhase ? `开盘 ${result.bar.open.toFixed(2)}` : `收盘 ${result.bar.close.toFixed(2)}`) : '--'
+      message.value = `推进至 ${snapshot.value.training.currentDate ?? '今日'}，${priceText}`
     }
     await load()
   } catch (error) {
@@ -346,8 +349,9 @@ async function trade(side: 'buy' | 'sell'): Promise<void> {
   if (loading.value || preparingRecording.value || training.value.status !== 'running') return
   loading.value = true
   errorMessage.value = ''
-  const payload = side === 'sell' && sellShares.value
-    ? { side, shares: sellShares.value }
+  // 按股数买卖为买卖共用：显式股数优先，留空按比例（买入比例按总权益、卖出按可卖持仓）
+  const payload = customShares.value
+    ? { side, shares: customShares.value }
     : { side, weightPct: customWeight.value ?? weight.value }
   const recordingOp = recording.begin('training.trade', payload)
   try {
@@ -356,7 +360,7 @@ async function trade(side: 'buy' | 'sell'): Promise<void> {
     chartCostPrice.value = result.snapshot.account.costPrice
     recording.finish(recordingOp, 'accepted', { plan: result.plan })
     message.value = `${side === 'buy' ? '买入' : '卖出'}成交：${result.plan.shares} 股 @ ${result.plan.price.toFixed(2)}`
-    sellShares.value = null
+    customShares.value = null
     customWeight.value = null
     await load()
   } catch (error) {
@@ -444,15 +448,18 @@ async function placeOrder(): Promise<void> {
   if (!training.value.ordersEnabled || loading.value || orderTrigger.value === null) return
   loading.value = true; orderError.value = ''
   try {
-    const base = orderSide.value === 'buy' ? account.value.equity : account.value.availableShares
-    const weightPct = Math.min(100, Math.max(1, orderWeight.value))
-    const shares = orderSide.value === 'buy'
-      ? Math.max(100, Math.floor((base * weightPct / 100) / orderTrigger.value / 100) * 100)
-      : Math.max(100, Math.floor((base * weightPct / 100) / 100) * 100)
+    // 仓位控件与普通下单共享：显式股数优先；否则按比例折算——买入按触发价折算总权益，
+    // 卖出按可卖持仓折算（折算不足一手时按一手下限提交，由服务端校验兜底拒绝）
+    const weightPct = Math.min(100, Math.max(1, customWeight.value ?? weight.value))
+    const shares = customShares.value ?? (orderSide.value === 'buy'
+      ? Math.max(100, Math.floor((account.value.equity * weightPct / 100) / orderTrigger.value / 100) * 100)
+      : Math.max(100, Math.floor((account.value.availableShares * weightPct / 100) / 100) * 100))
     const result = await placeTrainingOrder(training.value.id, { side: orderSide.value, order_type: orderType.value, trigger_price: orderTrigger.value, shares, reason: orderReason.value || undefined })
     snapshot.value = result.snapshot
     orderTrigger.value = null
     orderReason.value = ''
+    customShares.value = null
+    customWeight.value = null
   } catch (error) { orderError.value = error instanceof Error ? error.message : '挂单失败' }
   finally { loading.value = false }
 }
@@ -548,6 +555,13 @@ onUnmounted(() => {
   window.removeEventListener(KEYBOARD_SHORTCUTS_CHANGED_EVENT, onShortcutPreferencesChanged)
 })
 const executionPriceLabel = computed(() => training.value.clockMode === 'open_close' && training.value.currentPhase === 'open' ? '按当日开盘价成交' : '按当日收盘价成交')
+// 统一下单面板的条件单列表：挂单全部列出（多挂单支持），已终结单只保留最近 6 条供回看
+const pendingOrders = computed(() => snapshot.value.orders.filter(order => order.status === 'pending'))
+const recentFinishedOrders = computed(() => snapshot.value.orders.filter(order => order.status !== 'pending').slice(-6).reverse())
+const orderStatusLabel: Record<OrderView['status'], string> = { pending: '待触发', filled: '已成交', cancelled: '已撤单', expired: '已过期', rejected: '已拒绝' }
+function orderTitle(order: OrderView): string {
+  return `${order.side === 'buy' ? '买入' : '卖出'} ${order.orderType === 'limit' ? '限价' : '止损'}`
+}
 
 // ===== 日线数据小更新按钮（紧凑操作栏，固定尺寸不挤图表） =====
 // 更新结果通过全局状态轻提示：终态到达后按钮短暂变绿"✓"（或红"!"），不弹模态
@@ -681,34 +695,58 @@ void load()
         </div>
 
         <div class="panel-divider"></div>
-        <div class="order-heading"><span>下单</span><small>{{ executionPriceLabel }}</small></div>
+        <!-- 统一下单面板：普通下单/条件单标签页共享仓位控件（百分比＋按股数买卖） -->
+        <div class="order-heading">
+          <div class="order-tabs" role="tablist" aria-label="下单方式">
+            <button role="tab" :aria-selected="orderTab === 'normal'" :class="{ selected: orderTab === 'normal' }" @click="orderTab = 'normal'">普通下单</button>
+            <button v-if="training.ordersEnabled" role="tab" :aria-selected="orderTab === 'conditional'" :class="{ selected: orderTab === 'conditional' }" @click="orderTab = 'conditional'">条件单</button>
+          </div>
+          <small>{{ executionPriceLabel }}</small>
+        </div>
         <div class="weight-grid">
           <button v-for="w in [10, 20, 25, 30, 50, 75, 100]" :key="w" :class="{ selected: weight === w && customWeight === null }" @click="weight = w; customWeight = null">{{ w }}%</button>
           <input v-model.number="customWeight" type="number" min="1" max="100" placeholder="自定义%" />
         </div>
         <div class="shares-row">
-          <input v-model.number="sellShares" type="number" min="1" placeholder="按股数卖出（选填）" />
-          <small>留空则按左侧比例卖出</small>
+          <input v-model.number="customShares" type="number" min="1" step="100" placeholder="按股数买卖（选填）" aria-label="按股数买卖" />
+          <small>留空则按左侧比例</small>
         </div>
-        <div class="trade-actions">
-          <button class="trade-action buy" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('buy')">买入</button>
-          <button class="trade-action sell" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('sell')">卖出</button>
+        <template v-if="orderTab !== 'conditional' || !training.ordersEnabled">
+          <div class="trade-actions">
+            <button class="trade-action buy" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('buy')">买入</button>
+            <button class="trade-action sell" :disabled="legacyRawLocked || training.status !== 'running'" @click="trade('sell')">卖出</button>
+          </div>
+        </template>
+        <div v-else class="order-form">
+          <div class="order-form-row">
+            <select v-model="orderSide" aria-label="条件单方向"><option value="buy">买入</option><option value="sell">卖出</option></select>
+            <select v-model="orderType" aria-label="条件单类型"><option value="limit">限价</option><option value="stop">止损</option></select>
+          </div>
+          <div class="order-form-row">
+            <input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" />
+          </div>
+          <input v-model="orderReason" maxlength="500" placeholder="挂单理由（可选）" aria-label="挂单理由" />
+          <button class="ghost-button order-submit" :disabled="loading || orderTrigger === null || legacyRawLocked || training.status !== 'running'" @click="placeOrder">提交条件单</button>
         </div>
 
-        <div v-if="training.ordersEnabled" class="order-box">
-          <div class="order-heading"><span>条件单</span><small>{{ training.currentPhase === 'open' ? '阶段开盘价' : '阶段收盘价' }}</small></div>
-          <div v-if="snapshot.orders.some(order => order.status === 'pending')" class="pending-order">
-            <span>{{ snapshot.orders.find(order => order.status === 'pending')?.side === 'buy' ? '买入' : '卖出' }} {{ snapshot.orders.find(order => order.status === 'pending')?.orderType === 'limit' ? '限价' : '止损' }} · {{ snapshot.orders.find(order => order.status === 'pending')?.triggerPrice.toFixed(2) }} · {{ snapshot.orders.find(order => order.status === 'pending')?.shares }} 股</span>
-            <button class="ghost-button" @click="cancelOrder(snapshot.orders.find(order => order.status === 'pending')!.id)">撤单</button>
+        <div v-if="training.ordersEnabled" class="order-list">
+          <div v-for="order in pendingOrders" :key="order.id" class="order-item">
+            <span class="order-item-side" :class="order.side">{{ orderTitle(order) }}</span>
+            <span class="order-item-detail">触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
+            <button class="ghost-button order-cancel" :disabled="loading" @click="cancelOrder(order.id)">撤单</button>
+            <span v-if="order.reason" class="order-item-note" :title="order.reason">理由：{{ order.reason }}</span>
           </div>
-          <template v-else>
-            <div class="order-form-row"><select v-model="orderSide" aria-label="条件单方向"><option value="buy">买入</option><option value="sell">卖出</option></select><select v-model="orderType" aria-label="条件单类型"><option value="limit">限价</option><option value="stop">止损</option></select></div>
-            <div class="order-form-row"><input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" /><input v-model.number="orderWeight" type="number" min="1" max="100" step="1" placeholder="比例%" aria-label="条件单比例" /></div>
-            <input v-model="orderReason" maxlength="500" placeholder="挂单理由（可选）" aria-label="挂单理由" />
-            <button class="ghost-button" :disabled="loading || orderTrigger === null || orderWeight < 1 || orderWeight > 100" @click="placeOrder">提交条件单</button>
-          </template>
-          <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
+          <p v-if="!pendingOrders.length && orderTab === 'conditional'" class="order-list-empty">暂无待触发条件单</p>
+          <details v-if="recentFinishedOrders.length" class="order-history">
+            <summary>最近条件单记录（{{ recentFinishedOrders.length }}）</summary>
+            <div v-for="order in recentFinishedOrders" :key="order.id" class="order-item finished">
+              <span class="order-item-status" :class="order.status">{{ orderStatusLabel[order.status] }}</span>
+              <span class="order-item-detail">{{ orderTitle(order) }} · 触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
+              <span v-if="order.statusReason" class="order-item-note" :title="order.statusReason">{{ order.statusReason }}</span>
+            </div>
+          </details>
         </div>
+        <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
 
         </div>
         <div class="draw-toolbar" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools }" @keydown="onToolbarKeydown">
@@ -831,8 +869,32 @@ void load()
 :global(body.dark) .legacy-raw-banner { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .legacy-drawing-notice { white-space: normal; line-height: 1.5; }
 .phase-tag { display: inline-flex; margin-left: 8px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-secondary, #51637a); font-size: 10px; }
-.order-box { display: grid; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--surface-border, #dfe5eb); }
+/* 统一下单面板：普通下单/条件单标签页（样式对齐 time-frame 标签），仓位控件两页共享 */
+.order-tabs { display: flex; gap: 2px; }
+.order-tabs button { border: 0; background: transparent; padding: 3px 9px; font-size: 13px; color: var(--text-secondary, #77869a); border-bottom: 2px solid transparent; }
+.order-tabs button.selected { color: #245a72; border-bottom-color: #2e8191; font-weight: 600; }
+:global(body.dark) .order-tabs button.selected { color: #ffffff; border-bottom-color: #c4c4c4; }
+.order-form { display: grid; gap: 7px; margin-top: 2px; }
 .order-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.order-box input, .order-box select { min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px; background: var(--control-background, #fff); color: var(--text-primary, #25364b); font-size: 11px; }
-.pending-order { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-secondary, #51637a); }
+.order-form input, .order-form select { min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px; background: var(--control-background, #fff); color: var(--text-primary, #25364b); font-size: 11px; }
+.order-submit { justify-content: center; }
+/* 条件单列表：挂单全部列出，已终结单折叠在"最近记录"里；颜色沿用红买绿卖口径 */
+.order-list { display: grid; gap: 6px; margin-top: 12px; }
+.order-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 8px; font-size: 11px; color: var(--text-secondary, #51637a); }
+.order-item-side { font-weight: 650; }
+.order-item-side.buy { color: #c95752; }
+.order-item-side.sell { color: #31937b; }
+:global(body.dark) .order-item-side.buy { color: #e08a80; }
+:global(body.dark) .order-item-side.sell { color: #52b394; }
+.order-item-detail { font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-item-note { grid-column: 1 / -1; color: var(--text-muted, #a1adba); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-item .order-cancel { padding: 2px 8px; font-size: 11px; }
+.order-list-empty { margin: 0; font-size: 11px; color: var(--text-muted, #a1adba); }
+.order-history summary { cursor: pointer; font-size: 11px; color: var(--text-muted, #a1adba); user-select: none; }
+.order-history .order-item { padding: 3px 0; }
+.order-item-status { font-weight: 600; }
+.order-item-status.filled { color: #2e9e78; }
+.order-item-status.rejected { color: #b3413a; }
+:global(body.dark) .order-item-status.filled { color: #52b394; }
+:global(body.dark) .order-item-status.rejected { color: #e08a80; }
 </style>

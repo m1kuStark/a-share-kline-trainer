@@ -172,4 +172,3 @@ test('运行中守卫（排行关闭、零行）与放弃不入榜（浅色840�
   await expect(rankings.locator(`.rankings-row[data-training-id="${runningId}"]`)).toHaveCount(0)
   expect(errors).toEqual([])
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

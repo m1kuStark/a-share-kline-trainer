@@ -317,17 +317,51 @@ describe('M4 history/report interaction contract', () => {
     expect(report).not.toMatch(/class="report-drawings"/)
   })
 
-  it('keeps phase price lines on the CN red/green price-line palette and protects order markers', async () => {
+  it('keeps phase price lines on the CN red/green palette, shows one active price line, and protects order markers', async () => {
     const chart = await readFile(chartPath, 'utf8')
     const overlays = await readFile(new URL('../../web/src/overlays.ts', import.meta.url), 'utf8')
     const training = await readFile(trainingPath, 'utf8')
     expect(chart).toMatch(/currentPriceColor\(\)/)
     expect(overlays).toMatch(/phasePriceLine/)
     expect(overlays).toMatch(/const color = typeof data === 'number' \? '#94a3b8' : data\?\.color/)
-    expect(chart).toMatch(/isNearPendingOrder\(/)
+    // 1.2.3 用户反馈回归：开盘阶段隐藏内置最新价线（与阶段价位线并存＝双价位线），
+    // 阶段执行价位线是唯一活动价位线；两线重合（收盘阶段）时保留内置线提供轴标签
+    expect(chart).toMatch(/showLastMark/)
+    expect(chart).toMatch(/Math\.abs\(props\.currentPrice - last\.close\) < 0\.005/)
+    expect(chart).toMatch(/applyLastPriceStyle\(\)\s*\n\s*updateMarkerRail\(\)/)
+    // 条件单标记悬浮信息：悬停驱动（无按键移动命中显示、离开隐藏），纯信息层不拦截指针
+    expect(chart).toMatch(/hitPendingOrders\(/)
     expect(chart).toMatch(/showOrderTooltip\(/)
-    expect(training).toMatch(/orderWeight/)
-    expect(training).toMatch(/比例%/)
+    expect(chart).toMatch(/event\.buttons === 0[\s\S]{0,200}hitPendingOrders\(/)
+    expect(chart).toMatch(/\.order-tooltip \{[^}]*pointer-events: none/)
+    expect(training).toMatch(/推进至 \$\{snapshot\.value\.training\.currentDate \?\? '今日'\}，\$\{priceText\}/)
+  })
+
+  it('unifies order entry in a tabbed panel with shared sizing and a multi pending-order list', async () => {
+    const training = await readFile(trainingPath, 'utf8')
+    const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
+    // 标签页结构：普通下单/条件单两个 tab，共享百分比仓位与按股数买卖输入
+    expect(training).toMatch(/role="tablist" aria-label="下单方式"/)
+    expect(training).toMatch(/普通下单/)
+    expect(training).toMatch(/条件单/)
+    expect(training).toMatch(/orderTab = ref<'normal' \| 'conditional'>/)
+    expect(training).toMatch(/customShares/)
+    expect(training).toMatch(/placeholder="按股数买卖（选填）"/)
+    expect(training).not.toMatch(/orderWeight/)
+    // 条件单表单：买卖/限价止损下拉＋触发价＋理由＋提交；多挂单列表＋撤单
+    expect(training).toMatch(/aria-label="条件单方向"/)
+    expect(training).toMatch(/aria-label="条件单类型"/)
+    expect(training).toMatch(/aria-label="条件单触发价"/)
+    expect(training).toMatch(/aria-label="挂单理由"/)
+    expect(training).toMatch(/提交条件单/)
+    expect(training).toMatch(/pendingOrders/)
+    expect(training).toMatch(/recentFinishedOrders/)
+    expect(training).toMatch(/orderStatusLabel/)
+    // 面板样式只引用已定义的设计令牌（幽灵令牌审计：--surface-raised/--accent 全项目未定义，
+    // var() 引用它们会在深色主题回落浅色——1.2.3 悬浮框主题错配的根因；审计只认实际引用）
+    for (const source of await Promise.all([training, styles, await readFile(chartPath, 'utf8'), await readFile(rankingsPath, 'utf8')])) {
+      expect(source).not.toMatch(/var\(--surface-raised|var\(--accent/)
+    }
   })
 
   it('uses one close exit, compact rule tags, themed report surface, and one shared comparison chart', async () => {

@@ -97,7 +97,3 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   expect(await report.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
   expect(errors).toEqual([])
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()
-
-await expect(page.locator(".suggestions button").first()).toBeVisible()
-await page.locator(".suggestions button").first().click()

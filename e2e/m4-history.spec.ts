@@ -325,4 +325,3 @@ test('详情A→B迟到响应不覆盖、不留永续loading；列表按settle_d
   await page.unroute(`**/api/trainings/${idOld}/report`)
   expect(errors).toEqual([])
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

@@ -356,4 +356,3 @@ test('840浅色与1440深色下设置弹层完整可读；录制不卸载', asyn
   await abandonActive(page)
   expect(errors).toEqual([])
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()

@@ -12,7 +12,7 @@ import type { TdxMarket } from '../tdx/stocks.js'
 import { MarketReaderUnavailableError, resolveMarketReader, type MarketDataReader } from '../data/reader.js'
 import { planTrainingRange, type TrainingRangeRequest, type TrainingRangeResult } from './range.js'
 import {
-  applyTrade, buyCommission, dilutedCostPrice, equityOf, initialAccountState, planBuy, planSell,
+  applyTrade, buyCommission, dilutedCostPrice, equityOf, initialAccountState, planBuy, planBuyShares, planSell,
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
@@ -892,7 +892,6 @@ export function placeOrder(database: DatabaseSync, id: number, input: OrderInput
   if (typeof input.trigger_price !== 'number' || !Number.isFinite(input.trigger_price) || input.trigger_price <= 0) throw new HttpError(400, 'trigger_price 必须是正数')
   if (!Number.isSafeInteger(input.shares) || input.shares! < 1 || input.shares! % 100 !== 0) throw new HttpError(400, 'shares 必须是 100 股的正整数倍')
   if (input.reason !== undefined && (typeof input.reason !== 'string' || input.reason.length > 500)) throw new HttpError(400, 'reason 必须是 500 字以内文本')
-  if (database.prepare("SELECT id FROM orders WHERE training_id = ? AND status = 'pending'").get(id)) throw new HttpError(409, '本局最多同时保留一个待触发条件单')
   const side = input.side as 'buy' | 'sell'
   const orderType = input.order_type as 'limit' | 'stop'
   const triggerPrice = input.trigger_price as number
@@ -911,12 +910,23 @@ export function placeOrder(database: DatabaseSync, id: number, input: OrderInput
   const state = replayState(database, row)
   const boughtToday = sharesBoughtOn(database, id, row.current_date ?? row.start_date)
   const availableShares = rules.tPlusOne ? state.shares - boughtToday : state.shares
+  // 多挂单占用校验：新单必须放进"扣除全部在途挂单后"的余量里——
+  // 买单按 triggerPrice 估算金额＋佣金计入资金占用（不预估在途卖单回款，保守口径）；
+  // 卖单累计股数不得超过当前可卖。触发时资金/持仓已变化则按拒绝入账（status_reason 可见）。
+  const pendingOrders = ordersOf(database, id).filter(order => order.status === 'pending')
   if (side === 'sell') {
-    if (shares > availableShares) throw new HttpError(400, `条件单卖出数量超过可卖持仓（当前可卖 ${availableShares} 股）`)
+    const reservedSellShares = pendingOrders.filter(order => order.side === 'sell').reduce((sum, order) => sum + order.shares, 0)
+    if (shares + reservedSellShares > availableShares) {
+      throw new HttpError(400, `条件单卖出数量超过可卖持仓（已挂卖出 ${reservedSellShares} 股，当前可卖 ${availableShares} 股）`)
+    }
   } else {
+    const reservedCash = pendingOrders.filter(order => order.side === 'buy')
+      .reduce((sum, order) => sum + order.shares * order.triggerPrice + buyCommission(order.shares * order.triggerPrice, fees), 0)
     const amount = shares * triggerPrice
     const fee = buyCommission(amount, fees)
-    if (amount + fee > state.cash + 1e-6) throw new HttpError(400, `条件单买入金额超过可用资金（需要 ¥${(amount + fee).toFixed(2)}，可用 ¥${state.cash.toFixed(2)}）`)
+    if (amount + fee > state.cash - reservedCash + 1e-6) {
+      throw new HttpError(400, `条件单买入金额超过剩余可用资金（本单需 ¥${(amount + fee).toFixed(2)}，扣除已挂买单占用后可用 ¥${Math.max(0, state.cash - reservedCash).toFixed(2)}）`)
+    }
   }
   const date = row.current_date ?? row.start_date
   const result = database.prepare(`
@@ -1200,10 +1210,12 @@ export async function tradeTraining(database: DatabaseSync, id: number, input: T
   const boughtToday = sharesBoughtOn(database, id, row.current_date ?? row.start_date)
   const available = rules.tPlusOne ? state.shares - boughtToday : state.shares
 
-  const conditionalBuyWeight = input.executionType === 'conditional' && input.side === 'buy' && input.shares
-    ? (input.shares * close * 100) / equityOf(state, close) : undefined
+  // 买入两条路径：显式股数（统一面板按股数输入、条件单按挂单股数成交）整手直算，资金不足即拒；
+  // 比例仓位（weightPct）保留按总权益折算并逐手降档的旧行为。显式股数优先于比例。
   const result = input.side === 'buy'
-    ? planBuy(state, close, conditionalBuyWeight ?? input.weightPct ?? 0, fees)
+    ? input.shares !== undefined
+      ? planBuyShares(state, close, input.shares, fees)
+      : planBuy(state, close, input.weightPct ?? 0, fees)
     : planSell(state, close, { shares: input.shares, weightPct: input.weightPct }, available, fees)
   if (!result.ok) throw new HttpError(400, result.error)
   const plan = result.plan

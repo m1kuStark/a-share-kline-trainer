@@ -440,4 +440,3 @@ test('Act6 主题切换持久化', async ({ page }) => {
   await page.getByRole('button', { name: /深色/ }).click()
   expect(await page.evaluate(() => document.body.classList.contains('dark'))).toBe(true)
 })
-\nawait expect(page.locator(".suggestions button").first()).toBeVisible()\nawait page.locator(".suggestions button").first().click()
