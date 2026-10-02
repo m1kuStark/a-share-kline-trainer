@@ -5,10 +5,10 @@
   "id": "ORDER-TRIGGER-01",
   "title": "条件单触发语义修订：到价才触发（V1.2.5）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "V4",
   "summary": "用户验收 v1.2.4 发现市价上方挂买入限价会在推进时立即成交（经典限价矩阵的立即可成交语义）。V1.2.5 修订为：触发方向挂单时按触发价与阶段价相对位置冻结（up/down），到价才触发；限价按触发价成交（跳空不可成交保持挂单），止损按收盘价成交；旧行 NULL 按经典矩阵兼容。",
-  "next_action": "等待用户对 v1.2.5 包的人工验收；通过后随 V1.2.5 发布推送 GitHub。",
+  "next_action": "用户验收通过（随 V1.2.6 包，2026-10-02）；无后续动作。",
   "allowed_paths": [
     "server/src/**",
     "server/test/**",

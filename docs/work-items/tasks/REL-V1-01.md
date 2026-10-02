@@ -5,10 +5,10 @@
   "id": "REL-V1-01",
   "title": "V1.2.x 发布收尾：版本 bump、候选包验收与发布说明",
   "owner": "integrator",
-  "state": "active",
+  "state": "closed",
   "milestone": "M5",
   "summary": "版本 1.2.4 源码候选已完成 v1.2.3 后续反馈修订（统一阶段价位线、训练页更新反馈、排行层级）；Windows 包待本次清洁提交构建，用户验收与公开发布仍未确认。",
-  "next_action": "验收 output/v1.2.4-20261002；收到反馈后记录验收或创建限定返修任务；接续会话先读 docs/verification/2026-10/UI-FEEDBACK-04/report.md。",
+  "next_action": "无后续动作；后续版本按新候选另立发布卡。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",

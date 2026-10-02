@@ -5,10 +5,10 @@
   "id": "DATA-DIR-01",
   "title": "训练数据目录设置：可自定义、默认安装目录（版本独立）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "M5",
   "summary": "设置面板新增训练数据目录区块（查看当前生效目录/数据库文件、原生选目录、保存写回 trainer.config.json 的 dataDir，重启生效）；launcher 默认 dataDir 从用户主目录改为包根 data，便携包各版本训练数据相互独立；排行/历史/回放复盘读该目录数据库，自动跟随。",
-  "next_action": "等待用户对 v1.2.6 包的人工验收（含 1.2.5 条件单语义一并验收）。",
+  "next_action": "用户验收通过（随 V1.2.6 包，2026-10-02）；无后续动作。",
   "allowed_paths": [
     "server/src/**",
     "server/test/**",
