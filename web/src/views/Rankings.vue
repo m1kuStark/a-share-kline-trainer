@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// M4-01 五档排行：1M/3M/6M/1Y/2Y 独立分组（完整周期/提前结算），放弃与自定义范围不入榜。
+// M4-01 五档排行：训练周期下包含 1M/3M/6M/1Y/2Y 与自定义区间子列表。
 // 排序为服务端冻结链（roadmap §2.7）：完整组 收益率↓→最大回撤↑→胜率↓→稳定键；提前组 收益率↓＋实际天数。
 // 行级不可认证局不入榜，数量如实展示；运行中训练存在时服务端 409（同历史守卫）。
 // 请求版本守卫：切档迟到/失败响应不得覆盖新状态，也不得留下永续 loading（FM-014/FM-015 教训）。
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ApiError, fetchIndustryRankings, fetchRangeRankings, fetchRankings, fetchStockRankings, searchStocks, type RankingGroups, type RankingItem, type Stock } from '../api'
 import HistoryReport from '../components/HistoryReport.vue'
 
@@ -19,6 +19,8 @@ const TIERS: Array<{ value: string; label: string }> = [
 
 const tier = ref('1M')
 const mode = ref<'tier' | 'range' | 'industry' | 'stock'>('tier')
+const cycleMode = ref<'tier' | 'range'>('tier')
+const isCycleMode = computed(() => mode.value === 'tier' || mode.value === 'range')
 const industrySelection = ref<string | null>(null)
 const groups = ref<RankingGroups | null>(null)
 const loading = ref(false)
@@ -74,7 +76,12 @@ watch(tier, () => {
   selectedId.value = null
   void load()
 })
-watch(mode, () => { selectedId.value = null; industrySelection.value = null; void load() })
+watch(mode, () => {
+  if (mode.value === 'tier' || mode.value === 'range') cycleMode.value = mode.value
+  selectedId.value = null
+  industrySelection.value = null
+  void load()
+})
 
 function selectIndustry(id: string): void {
   industrySelection.value = id
@@ -145,22 +152,25 @@ function daysText(item: RankingItem): string {
     <header class="rankings-header">
       <div>
         <h1>五档排行</h1>
-        <p>已结算训练按档独立排行；放弃与自定义范围不入榜，行级不可认证局不计名次并如实计数。</p>
+        <p>已结算训练按周期独立排行；固定周期与自定义区间分列，放弃局不入榜，行级不可认证局不计名次并如实计数。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
 
     <nav class="rankings-tabs" aria-label="排行模式">
-      <button class="rankings-tab" :class="{ active: mode === 'tier' }" @click="mode = 'tier'">训练周期</button>
-      <button class="rankings-tab" :class="{ active: mode === 'range' }" @click="mode = 'range'">自定义区间</button>
-      <button class="rankings-tab" :class="{ active: mode === 'industry' }" @click="mode = 'industry'">行业板块</button>
-      <button class="rankings-tab" :class="{ active: mode === 'stock' }" @click="mode = 'stock'">单只股票</button>
+      <button class="rankings-tab" :class="{ active: isCycleMode }" :aria-pressed="isCycleMode" @click="mode = cycleMode">训练周期</button>
+      <button class="rankings-tab" :class="{ active: mode === 'industry' }" :aria-pressed="mode === 'industry'" @click="mode = 'industry'">行业板块</button>
+      <button class="rankings-tab" :class="{ active: mode === 'stock' }" :aria-pressed="mode === 'stock'" @click="mode = 'stock'">单只股票</button>
     </nav>
-    <nav v-if="mode === 'tier'" class="rankings-tabs" aria-label="训练周期">
+    <nav v-if="isCycleMode" class="rankings-tabs" aria-label="训练周期类型">
+      <button class="rankings-tab" :class="{ active: mode === 'tier' }" :aria-pressed="mode === 'tier'" @click="mode = 'tier'">固定周期</button>
+      <button class="rankings-tab" :class="{ active: mode === 'range' }" :aria-pressed="mode === 'range'" @click="mode = 'range'">自定义区间</button>
+    </nav>
+    <nav v-if="mode === 'tier'" class="rankings-tabs" aria-label="固定训练周期">
       <button
         v-for="entry in TIERS" :key="entry.value"
-        class="rankings-tab" :class="{ active: tier === entry.value }"
-        @click="tier = entry.value"
+        class="rankings-tab" :class="{ active: tier === entry.value }" :aria-pressed="tier === entry.value"
+        @click="tier = entry.value; mode = 'tier'"
       >{{ entry.label }}</button>
     </nav>
 

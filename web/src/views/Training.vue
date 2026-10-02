@@ -20,7 +20,8 @@ import {
 } from '../keyboardShortcuts'
 import { fetchKeyboardShortcuts } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
-import { dataOutcomeSeq, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
+import { previousDailyClose } from '../phasePrice'
+import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
@@ -249,6 +250,8 @@ function onToolbarKeydown(event: KeyboardEvent): void {
 }
 
 const training = computed(() => snapshot.value.training)
+// 周/月观察也使用本轮已截断的日线前收，避免聚合周期改变阶段线涨跌颜色。
+const previousClose = computed(() => previousDailyClose(dailyForRecording.value?.bars ?? [], training.value.currentPhase ?? 'close'))
 const account = computed(() => snapshot.value.account)
 const returnPct = computed(() => ((account.value.equity - training.value.initialCash) / training.value.initialCash) * 100)
 // TRAIN-01：legacy raw 训练成绩未经验证，运行中禁止交易/推进/结算（服务端同样 409 兜底）
@@ -566,27 +569,36 @@ function orderTitle(order: OrderView): string {
 // ===== 日线数据小更新按钮（紧凑操作栏，固定尺寸不挤图表） =====
 // 更新结果通过全局状态轻提示：终态到达后按钮短暂变绿"✓"（或红"!"），不弹模态
 const miniFlash = ref<'ok' | 'fail' | null>(null)
+const miniFeedbackVisible = ref(true)
 let miniFlashTimer: ReturnType<typeof setTimeout> | undefined
 watch(dataOutcomeSeq, () => {
   const outcome = dataRefreshOutcome.value
-  miniFlash.value = outcome === 'updated' ? 'ok' : outcome === 'failed' ? 'fail' : null
+  miniFlash.value = outcome === 'updated' || outcome === 'unchanged' ? 'ok' : outcome === 'failed' ? 'fail' : null
   clearTimeout(miniFlashTimer)
   if (miniFlash.value) miniFlashTimer = setTimeout(() => { miniFlash.value = null }, 2600)
 })
 onUnmounted(() => clearTimeout(miniFlashTimer))
 const miniLabel = computed(() => {
   if (dataUpdating.value) return '更新中'
+  if (dataRefreshError.value) return '!'
   if (miniFlash.value === 'ok') return '✓'
   if (miniFlash.value === 'fail') return '!'
   return '更新'
 })
 const miniTitle = computed(() => {
   if (dataUpdating.value) return '日线数据更新中'
-  if (miniFlash.value === 'fail') return dataStatus.value?.lastResult?.message ?? '更新失败，点击重试'
-  if (dataStatus.value?.needsUpdate) return `日线数据待更新（截止 ${dataStatus.value.sourceMaxDate ?? '未知'}），点击更新`
-  return '检查并更新日线数据'
+  if (dataRefreshError.value) return `${dataRefreshError.value}，点击重试`
+  if (dataRefreshMessage.value) return dataRefreshMessage.value
+  if (dataStatus.value?.freshness?.state === 'stale') return `日线数据待更新（截止 ${dataStatus.value.sourceMaxDate ?? '未知'}），请先在通达信完成盘后数据下载，再重新读取`
+  if (dataStatus.value?.freshness?.state === 'unknown') return '最新交易日待确认，点击重新读取本地日线'
+  return '重新读取本地日线（不联网）'
 })
+const miniFeedback = computed(() => !miniFeedbackVisible.value ? '' : dataUpdating.value ? '正在重新读取本地日线…' : dataRefreshError.value || dataRefreshMessage.value)
+// 扫描结果保留在按钮提示里；推进、成交或工具动作产生新状态时，状态栏归还给训练。
+watch(statusText, () => { miniFeedbackVisible.value = false })
+watch([dataUpdating, dataOutcomeSeq, dataRefreshError], () => { miniFeedbackVisible.value = true })
 function onMiniRefresh(): void {
+  miniFeedbackVisible.value = true
   void refreshDataNow()
 }
 
@@ -627,7 +639,7 @@ void load()
         </details>
       </div>
       <div class="training-actions">
-        <button class="ghost-button data-refresh-btn" :class="{ 'is-updating': dataUpdating, attention: dataStatus?.needsUpdate && !dataUpdating, 'flash-ok': miniFlash === 'ok', 'flash-fail': miniFlash === 'fail' }" :disabled="dataUpdating" :title="miniTitle" :aria-label="`日线数据更新：${miniTitle}`" @click="onMiniRefresh">{{ miniLabel }}</button>
+        <button class="ghost-button data-refresh-btn" :class="{ 'is-updating': dataUpdating, attention: dataStatus?.freshness?.state === 'stale' && !dataUpdating, 'flash-ok': miniFlash === 'ok', 'flash-fail': miniFlash === 'fail' || !!dataRefreshError }" :disabled="dataUpdating" :title="miniTitle" :aria-label="`日线数据更新：${miniTitle}`" @click="onMiniRefresh">{{ miniLabel }}</button>
         <button class="ghost-button compact-icon-button" title="刷新图表" aria-label="刷新图表" :disabled="loading" @click="load"><RefreshCw :size="14" /></button>
         <button class="ghost-button compact-icon-button" title="回到最新K线" aria-label="回到最新K线" :disabled="loading" @click="chartRef?.resetView()"><SkipForward :size="14" /></button>
         <button class="advance-button" :disabled="loading || legacyRawLocked || training.status !== 'running'" title="推进下一日（空格）" @click="advance"><StepForward :size="14" />推进下一日</button>
@@ -642,8 +654,9 @@ void load()
     </div>
 
     <section class="status-strip" aria-live="polite">
-      <span class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
-      <span class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
+      <span v-if="miniFeedback && !errorMessage" class="status-message mini-update-feedback" :class="{ 'error-text': !!dataRefreshError }" :title="miniFeedback" :role="dataRefreshError ? 'alert' : 'status'">{{ miniFeedback }}</span>
+      <span v-else class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
+      <span v-if="!miniFeedback" class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
       <span v-if="loading" class="loading-dot">处理中</span>
       <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ chartViewport.visibleDate }}</span>
       <span v-if="chartViewport.latestDate && chartViewport.latestDate !== chartViewport.visibleDate" class="viewport-date latest-date">{{ tf === '1D' ? '末根' : tf === '1W' ? '最新周K' : '最新月K' }} {{ chartViewport.latestDate }}</span>
@@ -658,6 +671,7 @@ void load()
           ref="chartRef" :bars="bars" :trades="snapshot.trades" :orders="snapshot.orders"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
           :current-price="training.currentPhase === 'open' ? training.currentOpen : training.currentClose"
+          :previous-close="previousClose"
           :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"

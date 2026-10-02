@@ -8,6 +8,8 @@ v0.3.2执行入口：[REL-03](tasks/REL-03.md)，首批[FRESH-01](tasks/FRESH-01
 
 当前活动清单见[status](../status.md)，由工作空间 `.control/trainer-state.json` 的统一当前状态与任务卡生成。卡片保留静态契约和证据索引，不独立维护另一套结论；单任务路径稳定，状态变化不搬文件。先按 ID 查卡片，再读相关规格和证据。
 
+- [UI-FEEDBACK-04](tasks/UI-FEEDBACK-04.md)：v1.2.3 后续用户反馈，统一阶段价位线、训练页更新结果和排行层级。
+
 - [DOC-01](tasks/DOC-01.md)：本轮文档治理及基线冻结。
 - [DOC-02](tasks/DOC-02.md)：GLM文档清理复核与Mimosa基线诊断。
 - [DIAG-01](tasks/DIAG-01.md)：诊断工具原件收录、使用边界及启动生命周期分析；朋友具体故障仍待实际报告。

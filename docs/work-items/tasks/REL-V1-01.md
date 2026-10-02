@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M5",
-  "summary": "版本 1.2.3 源码候选已完成用户验收反馈三项修订（开盘阶段唯一活动价位线、条件单悬浮信息悬停化与主题令牌修复、统一下单面板＋多条件单挂单）；单一 Windows 包已构建并核对 SHA256（f92f1844…，源码提交 1e965e5），用户验收与公开发布仍未确认。",
-  "next_action": "用户手动验收 output/v1.2.3-20261002；收到反馈后记录验收或创建限定返修任务；接续会话先读 docs/verification/2026-10/V1.2.3-feedback/README.md 与 E2E-BASELINE-01。",
+  "summary": "版本 1.2.4 源码候选已完成 v1.2.3 后续反馈修订（统一阶段价位线、训练页更新反馈、排行层级）；Windows 包待本次清洁提交构建，用户验收与公开发布仍未确认。",
+  "next_action": "验收 output/v1.2.4-20261002；收到反馈后记录验收或创建限定返修任务；接续会话先读 docs/verification/2026-10/UI-FEEDBACK-04/report.md。",
   "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
   "allowed_paths": [
     "package.json",
@@ -26,7 +26,8 @@
     "update": []
   },
   "verification_refs": [
-    "docs/verification/2026-10/V1.2.3-feedback/README.md"
+    "docs/verification/2026-10/V1.2.3-feedback/README.md",
+    "docs/verification/2026-10/UI-FEEDBACK-04/report.md"
   ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
   "acceptance_ref": null

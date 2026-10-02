@@ -15,7 +15,7 @@ Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装
 | 改颜色、蜡烛、日期、成交标记或显示根数 | [显示规格](../docs/specs/chart/display.md)，再定位 [theme.ts](./src/theme.ts)、[indicators.ts](./src/indicators.ts)、[TradeMarkerRail.vue](./src/TradeMarkerRail.vue) |
 | 加界面回归或执行浏览器验收 | [E2E 入口](../e2e/README.md) 与 [测试协议](../docs/engineering/testing.md) |
 
-[App.vue](./src/App.vue) 负责启动、首页/训练切换、按训练 id 重建视图以及数据更新状态控件；[dataStatus.ts](./src/dataStatus.ts) 是数据状态响应式单例。启动检查、回前台检查和轮询共享该 store；`needsUpdate` 仅是更新建议，不可替代训练数据完整性判断。
+[App.vue](./src/App.vue) 负责启动、首页/训练切换、按训练 id 重建视图以及数据更新状态控件；[dataStatus.ts](./src/dataStatus.ts) 是数据状态响应式单例。启动检查、回前台检查和轮询共享该 store；首页和训练页都以 `freshness` 判断新鲜度，兼容位 `needsUpdate` 不驱动黄色提醒或已最新结论。手动扫描的终态结果（包括没有新数据）和错误在训练页固定反馈区显示。
 
 图表相关纯函数目前仍在 `src/`：几何、overlay 注册、画线快照、工具偏好、周期导航和成交聚合各自独立。`components/` 当前只有图表组件，尚无独立 chart adapter 目录。
 

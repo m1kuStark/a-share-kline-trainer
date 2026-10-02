@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { init, dispose, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
+import { init, dispose, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
 import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
@@ -18,6 +18,7 @@ import TradeMarkerRail from '../TradeMarkerRail.vue'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
 import { builtInGeometry, pointInPolygon, segmentInRect } from '../builtInGeometry'
+import { hasPhasePrice, includePhasePriceRange, phasePriceColor } from '../phasePrice'
 
 registerDrawingOverlays()
 
@@ -28,6 +29,8 @@ const props = withDefaults(defineProps<{
   chartCostPrice?: number | null
   /** 当前训练阶段的成交价。开盘阶段只显示价位线，不把当日完整 OHLC 注入图表。 */
   currentPrice?: number | null
+  /** 阶段成交价相对的实际前收；由训练页使用独立日线序列计算。 */
+  previousClose?: number | null
   /** 当前训练中的条件单，仅在价格轴绘制触发点。 */
   orders?: OrderView[]
   timeframe?: Timeframe
@@ -391,22 +394,22 @@ watch(() => props.replayView, view => { if (view) applyReplayView(view) })
 function applyLastPriceStyle(): void {
   if (!chart) return
   const last = props.bars.at(-1)
-  if (!last) return
   const prev = props.bars.at(-2)
-  const color = prev ? (last.close > prev.close ? '#ef4444' : last.close < prev.close ? '#16a34a' : '#94a3b8') : '#94a3b8'
-  // 阶段价位线与内置最新价线并存会显示双价位线（用户 1.2.3 反馈）：两线数值不同＝开盘阶段
-  // （阶段线在当日开盘价、内置线在上一根收盘价），隐藏内置最新价线，让阶段执行价位线成为唯一活动价位线；
-  // 收盘阶段两线重合，保留内置线提供价格轴标签。
-  const showLastMark = props.currentPrice === null || props.currentPrice === undefined || Math.abs(props.currentPrice - last.close) < 0.005
+  const color = hasPhasePrice(props.currentPrice) ? currentPriceColor() : phasePriceColor(last?.close, prev?.close)
+  // 有阶段执行价时，阶段线负责唯一的线体和轴标签；内置最新价只在没有阶段价时使用。
+  const showLastMark = !hasPhasePrice(props.currentPrice)
   chart.setStyles({ candle: { priceMark: { last: { show: showLastMark, upColor: color, downColor: color, noChangeColor: color, text: { color: '#ffffff' } } } } })
 }
 
+function configurePhasePriceRange(): void {
+  if (!chart) return
+  // 正常纵轴在最新视窗纳入阶段执行价；浏览历史、手动纵轴缩放及副图保持原有范围规则。
+  // overrideYAxis 会重设自动范围标志，故只在挂载时注册一次，不随主题/订单刷新调用。
+  chart.overrideYAxis({ paneId: 'candle_pane', createRange: ({ defaultRange, chart: source }) => includePhasePriceRange(defaultRange, source.getVisibleRange().to >= source.getDataList().length ? props.currentPrice : null) })
+}
+
 function currentPriceColor(): string {
-  if (!chart) return '#94a3b8'
-  const last = props.bars.at(-1)
-  const prev = props.bars.at(-2)
-  if (!last || !prev) return '#94a3b8'
-  return last.close > prev.close ? '#ef4444' : last.close < prev.close ? '#16a34a' : '#94a3b8'
+  return phasePriceColor(props.currentPrice, props.previousClose)
 }
 
 function tradeTimestamp(date: string): number {
@@ -422,7 +425,7 @@ function refreshMarks(): void {
   for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', points: [{ timestamp: tradeTimestamp(trade.date), value: trade.chartPrice ?? trade.price }], extendData: { side: trade.side, shares: trade.shares, price: trade.chartPrice ?? trade.price } })
   const cost = props.chartCostPrice ?? props.costPrice
   if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: cost }], extendData: cost })
-  if (props.currentPrice !== null && props.currentPrice !== undefined && props.currentPrice > 0) {
+  if (hasPhasePrice(props.currentPrice)) {
     chart.createOverlay({ name: 'phasePriceLine', points: [{ value: props.currentPrice }], extendData: { price: props.currentPrice, color: currentPriceColor() }, lock: true })
   }
   for (const order of props.orders.filter(order => order.status === 'pending')) {
@@ -1267,6 +1270,7 @@ function resetLibraryClick(): void {
 }
 function completePointerAction(): void { queueMicrotask(() => { updateAnchorDots(); recordDrawings() }) }
 onMounted(() => {
+  configurePhasePriceRange()
   window.addEventListener('pointerup', completePointerAction)
   window.addEventListener('pointercancel', onPaneResizeCancel)
   chart?.subscribeAction('onVisibleRangeChange', updateMarkerRail)
@@ -1288,6 +1292,18 @@ onMounted(() => {
     bars: () => chart?.getDataList(),
     pointToPixel: (timestamp: number, value: number, pane = 'candle_pane') => chart?.convertToPixel({ timestamp, value }, { paneId: actualPaneId(pane), absolute: true }),
     lastPriceMarkShow: () => chart?.getStyles().candle.priceMark.last.show ?? null,
+    lastPriceMarkColor: () => chart?.getStyles().candle.priceMark.last.upColor ?? null,
+    phasePriceMark: () => {
+      const overlays = chart?.getOverlays({ name: 'phasePriceLine' }) ?? []
+      return {
+        count: overlays.length, previousClose: props.previousClose ?? null,
+        markers: overlays.map(overlay => {
+          const coordinates = chart!.convertToPixel(overlay.points, { paneId: 'candle_pane' }) as Coordinate[]
+          const params = { chart: chart!, overlay, coordinates, bounding: chart!.getSize('candle_pane', 'main')!, xAxis: null, yAxis: chart!.getYAxes({ paneId: 'candle_pane' })[0] ?? null } as OverlayCreateFiguresCallbackParams<unknown>
+          return { price: overlay.points[0]?.value ?? null, y: coordinates[0]?.y ?? null, height: params.bounding.height, lineFigures: overlay.createPointFigures?.(params) ?? [], axisFigures: overlay.createYAxisFigures?.({ ...params, bounding: chart!.getSize('candle_pane', 'yAxis')! }) ?? [] }
+        }),
+      }
+    },
     orderMarkerPoints: () => props.orders.filter(order => order.status === 'pending').map(order => ({ id: order.id, side: order.side, trigger: order.triggerPrice, x: chart?.getSize('candle_pane', 'yAxis')?.left ?? 0, y: chart?.convertToPixel({ value: order.triggerPrice }, { paneId: 'candle_pane', absolute: true }).y ?? null })),
   })
 })
@@ -1313,7 +1329,7 @@ watch(() => props.bars, () => {
     emit('drawingsChange', drawings())
   }
 })
-watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.previousClose, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 

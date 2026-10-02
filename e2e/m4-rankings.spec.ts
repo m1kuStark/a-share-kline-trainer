@@ -31,8 +31,8 @@ async function createTrainingFromForm(page: Page, code: string): Promise<number>
   await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
-await expect(page.locator(".suggestions button").first()).toBeVisible()
-await page.locator(".suggestions button").first().click()
+  // 股票已由用户明确选中；切周期不会重新打开建议列表。
+  await expect(page.getByText(/已选：/)).toBeVisible()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')

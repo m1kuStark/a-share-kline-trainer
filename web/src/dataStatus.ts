@@ -33,6 +33,8 @@ export const dataRefreshing = ref(false)
 export const dataPolling = ref(false)
 /** 手动刷新失败时透出的中文原因（如 409 无可用来源） */
 export const dataRefreshError = ref('')
+/** 最近一次更新任务的扫描结果与下一步提示，保留到下一次手动更新 */
+export const dataRefreshMessage = ref('')
 /** 最近一次到达的终态结果（供训练页小按钮做"✓"轻提示） */
 export const dataRefreshOutcome = ref<Extract<DataRefreshResult['outcome'], 'updated' | 'unchanged' | 'failed'> | null>(null)
 /** 每次终态到达自增，训练页 watch 它触发闪烁 */
@@ -51,6 +53,8 @@ let statusTicker: ReturnType<typeof setInterval> | undefined
 let checksInFlight = 0
 // 区分"单次轮询请求在途"与"隐藏暂停"：两者 pollTimer 都为空，只有暂停态允许 startPolling 重新调度
 let pollInFlight = false
+// POST 直接返回终态时，随后的状态同步也必须发布反馈；普通廉价状态检查不触发完成提示。
+let directFeedbackPending = false
 
 function isHidden(): boolean {
   return typeof document !== 'undefined' && document.visibilityState === 'hidden'
@@ -89,6 +93,7 @@ export function cancelDataWatchers(): void {
   stopStatusTicker()
   dataPolling.value = false
   dataChecking.value = false
+  directFeedbackPending = false
 }
 
 /**
@@ -105,7 +110,10 @@ function applyStatus(result: DataStatus): void {
   if (dataPolling.value) {
     dataPolling.value = false
     onDataFinished(result)
+  } else if (directFeedbackPending) {
+    onDataFinished(result)
   }
+  directFeedbackPending = false
 }
 
 /**
@@ -127,8 +135,12 @@ export async function checkDataStatus(options?: { force?: boolean; manual?: bool
   try {
     const result = await fetchDataStatus()
     if (seq === checkSeq) applyStatus(result)
-  } catch {
-    // 状态检查失败保持静默（不打扰训练），下次前台激活按节流重试
+  } catch (error) {
+    if (options?.manual && directFeedbackPending) {
+      directFeedbackPending = false
+      dataRefreshError.value = `读取更新结果失败：${error instanceof Error ? error.message : '无法连接本地服务'}`
+    }
+    // 自动状态检查失败保持静默（不打扰训练），下次前台激活按节流重试
   } finally {
     checksInFlight -= 1
     if (seq === checkSeq) dataChecking.value = false
@@ -140,7 +152,10 @@ export async function checkDataStatus(options?: { force?: boolean; manual?: bool
 export function onDataActive(): void {
   if (isHidden()) return
   startStatusTicker()
-  if (dataStatus.value?.state === 'running') { startPolling(); return }
+  if (dataPolling.value || dataStatus.value?.state === 'running') { startPolling(); return }
+  // POST may have returned a terminal state while the page became hidden before
+  // its manual GET. Resume that pending manual read even when auto checks are off.
+  if (directFeedbackPending) { void checkDataStatus({ force: true, manual: true }); return }
   void checkDataStatus()
 }
 
@@ -198,6 +213,17 @@ function onDataFinished(result: DataStatus): void {
   const outcome = result.lastResult?.outcome ?? (result.state === 'failed' ? 'failed' : null)
   if (outcome !== 'updated' && outcome !== 'unchanged' && outcome !== 'failed') return
   dataRefreshOutcome.value = outcome
+  const scanMessage = result.lastResult?.message
+    ?? (outcome === 'failed' ? result.reason : '检查完成')
+  dataRefreshError.value = outcome === 'failed' ? scanMessage : ''
+  const freshness = result.freshness
+  const freshnessNote = outcome === 'failed' ? ''
+    : freshness?.state === 'stale'
+      ? '请先在通达信完成盘后数据下载，再重新读取本地日线（不联网）'
+      : freshness?.state === 'unknown'
+        ? `最新交易日待确认：${freshness.reason}`
+        : freshness?.reason ?? ''
+  dataRefreshMessage.value = freshnessNote ? `${scanMessage}；${freshnessNote}` : scanMessage
   dataOutcomeSeq.value++
 }
 
@@ -206,6 +232,7 @@ export async function refreshDataNow(): Promise<void> {
   if (dataRefreshing.value || dataPolling.value) return
   dataRefreshing.value = true
   dataRefreshError.value = ''
+  dataRefreshMessage.value = ''
   lastCheckStartedAt = Date.now()
   try {
     const started = await postDataRefresh()
@@ -213,9 +240,11 @@ export async function refreshDataNow(): Promise<void> {
       startPolling()
     } else {
       // 服务端直接返回终态（罕见）：补一次状态检查同步 UI（manual：绕过自动检查偏好门闩）
-      void checkDataStatus({ force: true, manual: true })
+      directFeedbackPending = true
+      await checkDataStatus({ force: true, manual: true })
     }
   } catch (error) {
+    directFeedbackPending = false
     // 409 等：把服务端中文 message 行内展示（Launcher 小字区，不用 alert）
     dataRefreshError.value = error instanceof Error ? error.message : '更新失败：无法连接本地服务'
   } finally {

@@ -20,6 +20,9 @@
 | [pane-resize](pane-resize.spec.ts) | 原生分隔条所有权、对角拖动、组合模式 |
 | [data-update](data-update.spec.ts) | 更新入口、建议弹窗双路径、失败/409状态 |
 | [order-panel](order-panel.spec.ts) | 统一下单面板标签页、多条件单挂单/撤单、悬停信息主题一致、开盘阶段唯一价位线 |
+| [phase-price-line](phase-price-line.spec.ts) | 开盘/收盘一致虚线与唯一价格轴标签、实际日线前收配色、跳空价格范围 |
+| [data-update-feedback](data-update-feedback.spec.ts) | 训练页休市误报隔离、扫描未变时完成与下一步提示、失败/409可见反馈 |
+| [rankings-navigation](rankings-navigation.spec.ts) | 训练周期下固定周期/自定义区间子列表、五档切换、迟到请求隔离 |
 
 同run保持单worker与单活动训练；每例清理活动训练，不依赖前例选中状态。不同run的数据库、端口、构建和报告独立，允许不同工作副本并行。证据路径统一由[runtime helper](runtime.ts)提供；新测试不得硬编码端口或写docs截图目录。
 

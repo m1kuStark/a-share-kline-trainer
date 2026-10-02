@@ -62,8 +62,10 @@ describe('M2 chart interaction contract', () => {
   it('colors the last price line by change vs previous close in CN convention and re-applies it after theme switches', async () => {
     const source = await readFile(chartPath, 'utf8')
     expect(source).toMatch(/function applyLastPriceStyle\(\): void/)
-    expect(source).toMatch(/last\.close > prev\.close/)
-    expect(source).toMatch(/last\.close < prev\.close/)
+    // Numeric palette/reference behavior is covered by phase-price.test.ts;
+    // these assertions retain integration and theme-switch protection.
+    expect(source).toMatch(/phasePriceColor\(props\.currentPrice, props\.previousClose\)/)
+    expect(source).toMatch(/phasePriceColor\(last\?\.close, prev\?\.close\)/)
     expect(source).toMatch(/watch\(theme, value => \{ chart\?\.setStyles\(chartStyles\(value\)\); applyLastPriceStyle\(\) \}\)/)
     const themeSource = await readFile(new URL('../../web/src/theme.ts', import.meta.url), 'utf8')
     expect(themeSource).toMatch(/last: \{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8'/)
@@ -324,10 +326,10 @@ describe('M4 history/report interaction contract', () => {
     expect(chart).toMatch(/currentPriceColor\(\)/)
     expect(overlays).toMatch(/phasePriceLine/)
     expect(overlays).toMatch(/const color = typeof data === 'number' \? '#94a3b8' : data\?\.color/)
-    // 1.2.3 用户反馈回归：开盘阶段隐藏内置最新价线（与阶段价位线并存＝双价位线），
-    // 阶段执行价位线是唯一活动价位线；两线重合（收盘阶段）时保留内置线提供轴标签
+    // 有效阶段价在开盘/收盘都走唯一 overlay；轴标签交给公开回调，plot 内不重复写价格。
     expect(chart).toMatch(/showLastMark/)
-    expect(chart).toMatch(/Math\.abs\(props\.currentPrice - last\.close\) < 0\.005/)
+    expect(chart).toMatch(/const showLastMark = !hasPhasePrice\(props\.currentPrice\)/)
+    expect(overlays).toMatch(/createYAxisFigures:/)
     expect(chart).toMatch(/applyLastPriceStyle\(\)\s*\n\s*updateMarkerRail\(\)/)
     // 条件单标记悬浮信息：悬停驱动（无按键移动命中显示、离开隐藏），纯信息层不拦截指针
     expect(chart).toMatch(/hitPendingOrders\(/)

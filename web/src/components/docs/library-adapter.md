@@ -19,6 +19,8 @@
 | overlay `forceComplete()`、store `progressOverlayComplete()` | 折线右键结束时移除预览点并转入完成集合；恢复折线走相同完成路径。 |
 | figure `checkEventOn` 的 `DEVIATION=2` | 线/矩形等库命中容差小于本项目 7px，需检查 bubble 选中补齐是否仍必要。 |
 | overlay `createPointFigures` | 注册钩子名不可写成 `createFigures`，否则静默不渲染；检查 [overlays.ts](../../overlays.ts) 与 [drawingOverlays.ts](../../drawingOverlays.ts)。 |
+| overlay `createYAxisFigures` | 阶段价位线用公开回调单独绘制轴标签；线体和标签样式读取 `candle.priceMark.last.line/text`，不在绘图区重复写价格。有有效 `currentPrice` 时隐藏内置 last mark，避免收盘阶段重合绘制。核查 10.0.3 的 OverlayYAxisView、CandleLastPriceView 和默认 latest 样式（1px、dash[4,4]）；主轴位置由 `yAxis.isFromZero()` 决定标签方向。 |
+| `overrideYAxis({createRange})` | 正常主图轴的公开范围回调仅在可视范围包含末根时纳入有效阶段价，随后仍由库添加 gap padding；保证跳空开盘价可见，不伪造 K 线或注入未来 OHLC。10.0.3 的 overrideYAxis 重设自动范围标志，故回调仅在挂载时注册一次，以闭包读取阶段价，主题/订单刷新不重复注册。历史视窗返回原默认范围，手动纵轴和副图范围规则不变；当前仅 normal 单右轴，切换对数轴前须重新评估映射。 |
 | figure `attrs.width` | [indicators.ts](../../indicators.ts) 用它覆盖 MACD 柱宽为 2/5；覆盖主题前核对实际绘制键。 |
 | 数据 forward 前插自锚定 | `loadEarlierBars` 不作额外滚动补偿；验证补历史后时间锚点不漂移。 |
 | `drawText` 强制左上对齐 | 历史 bsMark 绘制自行补字母偏移；对象保留但当前不出图，成交显示由独立标记条负责。 |
@@ -34,4 +36,4 @@
 
 `window.__trainerChart` 仅在 `import.meta.env.MODE === 'journey'` 时注入；`DEV` 不能代替这个条件，因为 build 时恒为 false。生产构建必须无钩子。
 
-接口包括数量/模式/轴范围、hitTest/overlayInfo、单选与多选、drawings/geometry/panes、visibleRange/viewportMetrics/bars、costLine 和 pointToPixel。测试先用真实鼠标/键盘操作，再读结果或投影下一步坐标；禁止借 hook 创建、移动、删除图形。临时矩形、菜单和面板仍须检查 DOM 可见性，状态值不能证明已渲染。运行与产物恢复见 [E2E](../../../../e2e/README.md)。
+接口包括数量/模式/轴范围、hitTest/overlayInfo、单选与多选、drawings/geometry/panes、visibleRange/viewportMetrics/bars、costLine 和 pointToPixel。phasePriceMark 只读返回阶段线数量、价格、前收和公开回调生成的线体/轴标签图元，用于检查唯一标记与价位坐标；图元不能代替主代理的实际 Canvas 视觉核查。测试先用真实鼠标/键盘操作，再读结果或投影下一步坐标；禁止借 hook 创建、移动、删除图形。临时矩形、菜单和面板仍须检查 DOM 可见性，状态值不能证明已渲染。运行与产物恢复见 [E2E](../../../../e2e/README.md)。

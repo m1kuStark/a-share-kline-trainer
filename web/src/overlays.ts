@@ -27,16 +27,27 @@ registerOverlay({
 registerOverlay({
   name: 'phasePriceLine',
   totalStep: 1,
-  createPointFigures: ({ overlay, coordinates, bounding }) => {
+  createPointFigures: ({ chart, overlay, coordinates, bounding }) => {
     const data = overlay.extendData as { price?: number; color?: string } | number | undefined
     const price = typeof data === 'number' ? data : data?.price
     const color = typeof data === 'number' ? '#94a3b8' : data?.color ?? '#94a3b8'
     const y = coordinates[0]?.y
     if (typeof price !== 'number' || !Number.isFinite(price) || y === undefined || y < 0 || y > bounding.height) return []
     return [
-      { type: 'line', attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] }, styles: { style: 'dashed', color, size: 1.5 }, ignoreEvent: true },
-      { type: 'text', attrs: { x: Math.max(4, bounding.width - 82), y: y - 5, text: `${price.toFixed(2)}` }, styles: { color, size: 10, backgroundColor: 'transparent', borderSize: 0, paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: 0 }, ignoreEvent: true },
+      { type: 'line', attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] }, styles: { ...chart.getStyles().candle.priceMark.last.line, color }, ignoreEvent: true },
     ]
+  },
+  createYAxisFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
+    const data = overlay.extendData as { price?: number; color?: string } | number | undefined
+    const price = typeof data === 'number' ? data : data?.price
+    const color = typeof data === 'number' ? '#94a3b8' : data?.color ?? '#94a3b8'
+    const y = coordinates[0]?.y
+    if (typeof price !== 'number' || !Number.isFinite(price) || y === undefined || y < 0 || y > bounding.height) return []
+    const fromZero = yAxis?.isFromZero() ?? true
+    return [{
+      type: 'text', attrs: { x: fromZero ? 0 : bounding.width, y, text: price.toFixed(2), align: fromZero ? 'left' : 'right', baseline: 'middle' },
+      styles: { ...chart.getStyles().candle.priceMark.last.text, backgroundColor: color }, ignoreEvent: true,
+    }]
   },
 })
 

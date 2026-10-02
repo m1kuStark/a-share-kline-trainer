@@ -125,10 +125,10 @@ test('统一下单面板＋多条件单＋悬停信息＋唯一活动价位线',
   await expect(panel.locator('.order-item:not(.finished)')).toHaveCount(0)
   await expect(panel.locator('.order-list-empty')).toBeVisible()
 
-  // 推进到收盘阶段：当日 K 线可见，阶段价位线与内置最新价线重合 → 内置线恢复（提供轴标签）
+  // 收盘也保留唯一阶段线和轴标签，内置最新价继续隐藏。
   await page.getByRole('button', { name: '推进下一日' }).click()
   await expect(page.locator('.phase-tag')).toContainText('收盘阶段')
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __trainerChart: { lastPriceMarkShow: () => boolean | null } }).__trainerChart.lastPriceMarkShow())).toBe(true)
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __trainerChart: { lastPriceMarkShow: () => boolean | null } }).__trainerChart.lastPriceMarkShow())).toBe(false)
 
   // 收盘阶段再挂一笔（触发价在当日收盘价附近、visible 区间内），悬停信息在深浅主题下都与面板同底色
   const atClose = await snapshotJson(page, id)
