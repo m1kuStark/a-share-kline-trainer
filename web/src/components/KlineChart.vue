@@ -5,6 +5,7 @@ import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import type { Bar, OrderView, Timeframe, TradeView } from '../api'
+import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
@@ -471,7 +472,8 @@ function showOrderTooltip(orders: OrderView[]): void {
 }
 
 function orderTooltipText(order: OrderView): string {
-  return `${order.side === 'buy' ? '买入' : '卖出'} · ${order.orderType === 'limit' ? '限价' : '止损'} · 触发价 ${order.triggerPrice.toFixed(2)} · ${order.shares} 股${order.reason ? `\n理由：${order.reason}` : ''}`
+  const direction = orderTriggerDirection(order) === 'up' ? '上触' : '下触'
+  return `${order.side === 'buy' ? '买入' : '卖出'} · ${order.orderType === 'limit' ? '限价' : '止损'} · ${direction}触发价 ${order.triggerPrice.toFixed(2)} · ${order.shares} 股${order.reason ? `\n理由：${order.reason}` : ''}`
 }
 
 // 价格轴手动缩放（拖动/滚轮）会把 klinecharts 纵轴置为手动模式（范围冻结，双击价格轴是库内解除方式）。

@@ -5,7 +5,7 @@ import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
-  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, placeTrainingOrder, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
+  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
   type Bar, type OrderView, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
@@ -565,6 +565,18 @@ const orderStatusLabel: Record<OrderView['status'], string> = { pending: '待触
 function orderTitle(order: OrderView): string {
   return `${order.side === 'buy' ? '买入' : '卖出'} ${order.orderType === 'limit' ? '限价' : '止损'}`
 }
+function orderDirectionLabel(order: OrderView): string {
+  return orderTriggerDirection(order) === 'up' ? '上触' : '下触'
+}
+// 触发方向实时提示（V1.2.5 语义：到价才触发，方向按触发价与当前阶段价的相对位置推断）——
+// 挂单前就告诉用户这笔单在等哪个方向，避免"还没到价就成交"的意外
+const phasePriceNow = computed<number | null>(() => training.value.currentPhase === 'open' ? training.value.currentOpen : training.value.currentClose)
+const orderTriggerHint = computed(() => {
+  if (orderTrigger.value === null || !Number.isFinite(orderTrigger.value) || phasePriceNow.value === null || phasePriceNow.value === undefined) return ''
+  const up = orderTrigger.value > phasePriceNow.value
+  const fillStyle = orderType.value === 'limit' ? '限价按触发价成交' : '止损按当日收盘价成交'
+  return `到价触发：等待价格${up ? '上触' : '下触'} ${orderTrigger.value.toFixed(2)}（当前 ${phasePriceNow.value.toFixed(2)}），${fillStyle}`
+})
 
 // ===== 日线数据小更新按钮（紧凑操作栏，固定尺寸不挤图表） =====
 // 更新结果通过全局状态轻提示：终态到达后按钮短暂变绿"✓"（或红"!"），不弹模态
@@ -739,6 +751,7 @@ void load()
           <div class="order-form-row">
             <input v-model.number="orderTrigger" type="number" min="0.01" step="0.01" placeholder="触发价" aria-label="条件单触发价" />
           </div>
+          <p v-if="orderTriggerHint" class="order-hint" role="status">{{ orderTriggerHint }}</p>
           <input v-model="orderReason" maxlength="500" placeholder="挂单理由（可选）" aria-label="挂单理由" />
           <button class="ghost-button order-submit" :disabled="loading || orderTrigger === null || legacyRawLocked || training.status !== 'running'" @click="placeOrder">提交条件单</button>
         </div>
@@ -746,7 +759,7 @@ void load()
         <div v-if="training.ordersEnabled" class="order-list">
           <div v-for="order in pendingOrders" :key="order.id" class="order-item">
             <span class="order-item-side" :class="order.side">{{ orderTitle(order) }}</span>
-            <span class="order-item-detail">触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
+            <span class="order-item-detail">{{ orderDirectionLabel(order) }}触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
             <button class="ghost-button order-cancel" :disabled="loading" @click="cancelOrder(order.id)">撤单</button>
             <span v-if="order.reason" class="order-item-note" :title="order.reason">理由：{{ order.reason }}</span>
           </div>
@@ -755,7 +768,7 @@ void load()
             <summary>最近条件单记录（{{ recentFinishedOrders.length }}）</summary>
             <div v-for="order in recentFinishedOrders" :key="order.id" class="order-item finished">
               <span class="order-item-status" :class="order.status">{{ orderStatusLabel[order.status] }}</span>
-              <span class="order-item-detail">{{ orderTitle(order) }} · 触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
+              <span class="order-item-detail">{{ orderTitle(order) }} · {{ orderDirectionLabel(order) }}触发 {{ order.triggerPrice.toFixed(2) }} · {{ order.shares }} 股</span>
               <span v-if="order.statusReason" class="order-item-note" :title="order.statusReason">{{ order.statusReason }}</span>
             </div>
           </details>
@@ -891,6 +904,7 @@ void load()
 .order-form { display: grid; gap: 7px; margin-top: 2px; }
 .order-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .order-form input, .order-form select { min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px; background: var(--control-background, #fff); color: var(--text-primary, #25364b); font-size: 11px; }
+.order-hint { margin: 0; font-size: 10px; line-height: 1.5; color: var(--text-secondary, #51637a); }
 .order-submit { justify-content: center; }
 /* 条件单列表：挂单全部列出，已终结单折叠在"最近记录"里；颜色沿用红买绿卖口径 */
 .order-list { display: grid; gap: 6px; margin-top: 12px; }

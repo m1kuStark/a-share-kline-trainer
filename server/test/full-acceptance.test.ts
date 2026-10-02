@@ -254,14 +254,16 @@ describe('full acceptance matrix', () => {
       const overPosition = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'sell', order_type: 'limit', trigger_price: firstOpen, shares: 10_000_000 } })
       expect(overPosition.statusCode).toBe(400)
       expect(overPosition.json().error).toContain('可卖持仓')
-      const order = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'buy', order_type: 'limit', trigger_price: firstOpen + 1, shares: 100 } })
+      // V1.2.5 到价触发语义：低于市价的买入限价等待回落（'down'），当日 low 9.9 ≤ 9.93 → 收盘阶段按触发价成交
+      const order = await app.inject({ method: 'POST', url: `/api/trainings/${id}/orders`, payload: { side: 'buy', order_type: 'limit', trigger_price: firstOpen - 0.02, shares: 100 } })
       expect(order.statusCode).toBe(201)
+      expect(order.json().order).toMatchObject({ triggerDirection: 'down' })
 
       const close = await app.inject({ method: 'POST', url: `/api/trainings/${id}/next` })
       expect(close.statusCode).toBe(200)
       expect(close.json().snapshot.training).toMatchObject({ currentPhase: 'close', currentOpen: firstOpen, currentClose: expect.any(Number) })
       expect(close.json().snapshot.orders[0]).toMatchObject({ status: 'filled', filledPhase: 'close' })
-      expect(close.json().snapshot.trades.at(-1)).toMatchObject({ executionType: 'conditional', tradePhase: 'close' })
+      expect(close.json().snapshot.trades.at(-1)).toMatchObject({ executionType: 'conditional', tradePhase: 'close', price: firstOpen - 0.02 })
     })
   })
 

@@ -152,6 +152,8 @@ export interface OrderView {
   side: 'buy' | 'sell'
   orderType: 'limit' | 'stop'
   triggerPrice: number
+  /** 触发方向：'up'＝等待价格上触触发价，'down'＝下触。挂单时按触发价与阶段价的相对位置冻结；旧行 NULL＝按经典矩阵推导。 */
+  triggerDirection: 'up' | 'down' | null
   shares: number
   status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'rejected'
   createdDate: string
@@ -860,12 +862,13 @@ function sharesBoughtOn(database: DatabaseSync, id: number, date: string): numbe
 }
 
 export function ordersOf(database: DatabaseSync, id: number): OrderView[] {
-  const rows = database.prepare(`SELECT id, training_id, side, order_type, trigger_price_raw, shares, status,
+  const rows = database.prepare(`SELECT id, training_id, side, order_type, trigger_price_raw, trigger_direction, shares, status,
     created_date, created_phase, expires_date, reason, filled_date, filled_phase, filled_trade_id, status_reason
     FROM orders WHERE training_id = ? ORDER BY id`).all(id) as unknown as Array<Record<string, unknown>>
   return rows.map(row => ({
     id: Number(row.id), trainingId: Number(row.training_id), side: row.side as OrderView['side'],
     orderType: row.order_type as OrderView['orderType'], triggerPrice: Number(row.trigger_price_raw),
+    triggerDirection: (row.trigger_direction === 'up' || row.trigger_direction === 'down') ? row.trigger_direction as OrderView['triggerDirection'] : null,
     shares: Number(row.shares), status: row.status as OrderView['status'], createdDate: String(row.created_date),
     createdPhase: row.created_phase as TrainingPhase, expiresDate: row.expires_date as string | null,
     reason: row.reason as string | null, filledDate: row.filled_date as string | null,
@@ -929,10 +932,16 @@ export function placeOrder(database: DatabaseSync, id: number, input: OrderInput
     }
   }
   const date = row.current_date ?? row.start_date
+  // V1.2.5 语义修订（用户反馈：挂单价未到就成交）：触发方向按挂单时触发价与当前阶段价的相对位置
+  // 冻结——触发价高于阶段价＝'up'（等待上触），否则＝'down'（等待下触）。到价才触发，
+  // 不再按 side×order_type 的经典矩阵把"立即可成交"的挂单当成限价单立即吃掉。
+  const phasePrice = row.current_phase === 'open' ? row.current_open : row.current_close
+  if (phasePrice === null || phasePrice === undefined) throw new HttpError(500, '训练缺少当前阶段成交价，无法确定触发方向')
+  const triggerDirection: 'up' | 'down' = triggerPrice > phasePrice ? 'up' : 'down'
   const result = database.prepare(`
-    INSERT INTO orders (training_id, side, order_type, trigger_price_raw, shares, status, created_date, created_phase, reason, created_at)
-    VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
-  `).run(id, side, orderType, triggerPrice, shares, date, row.current_phase, input.reason ?? null, new Date().toISOString())
+    INSERT INTO orders (training_id, side, order_type, trigger_price_raw, trigger_direction, shares, status, created_date, created_phase, reason, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+  `).run(id, side, orderType, triggerPrice, triggerDirection, shares, date, row.current_phase, input.reason ?? null, new Date().toISOString())
   return ordersOf(database, id).find(order => order.id === Number(result.lastInsertRowid))!
 }
 
@@ -1235,14 +1244,37 @@ export async function tradeTraining(database: DatabaseSync, id: number, input: T
   return { snapshot: trainingSnapshot(database, id), plan }
 }
 
+// 旧库迁移前的订单行没有 trigger_direction：按经典矩阵推导（限价挂 favorable 侧、止损挂不利侧），
+// 保证旧训练的在途挂单行为不变。
+function legacyTriggerDirection(order: Pick<OrderView, 'side' | 'orderType'>): 'up' | 'down' {
+  if (order.side === 'buy') return order.orderType === 'limit' ? 'down' : 'up'
+  return order.orderType === 'limit' ? 'up' : 'down'
+}
+
 async function processPendingOrders(database: DatabaseSync, id: number, bar: KlineBar, phase: TrainingPhase): Promise<void> {
   const pending = ordersOf(database, id).filter(order => order.status === 'pending')
   for (const order of pending) {
-    const trigger = phase === 'open'
-      ? (order.side === 'buy' ? (order.orderType === 'limit' ? bar.open <= order.triggerPrice : bar.open >= order.triggerPrice) : (order.orderType === 'limit' ? bar.open >= order.triggerPrice : bar.open <= order.triggerPrice))
-      : (order.side === 'buy' ? (order.orderType === 'limit' ? bar.low <= order.triggerPrice : bar.high >= order.triggerPrice) : (order.orderType === 'limit' ? bar.high >= order.triggerPrice : bar.low <= order.triggerPrice))
-    if (!trigger) continue
-    const price = phase === 'open' ? bar.open : order.triggerPrice
+    // V1.2.5 触发语义（用户反馈：挂单价未到就成交）：方向由挂单时冻结的 trigger_direction 决定——
+    // 'up'＝等待价格到达触发价及以上（open 阶段看开盘价、close 阶段看最高价），'down'＝下触（开盘价/最低价）。
+    // 到价才触发；跳空越过触发价同样算到价（开盘即触发）。
+    const direction = order.triggerDirection ?? legacyTriggerDirection(order)
+    const reached = phase === 'open'
+      ? (direction === 'up' ? bar.open >= order.triggerPrice : bar.open <= order.triggerPrice)
+      : (direction === 'up' ? bar.high >= order.triggerPrice : bar.low <= order.triggerPrice)
+    if (!reached) continue
+    // 成交价：open 阶段（跳空越过触发价）＝开盘价，但限价委托只在开盘价位于可成交侧时成交
+    // （买：open<=trigger；卖：open>=trigger），否则当日不成交保持挂单——限价不被动吃；
+    // close 阶段（盘中到价）＝限价按触发价成交（需当日真实触及限价位：买 low<=trigger、卖 high>=trigger），
+    // 止损按当日收盘价成交（触发后市价口径，含自然滑点）。
+    let price: number
+    if (phase === 'open') {
+      const favorable = order.side === 'buy' ? bar.open <= order.triggerPrice : bar.open >= order.triggerPrice
+      if (order.orderType === 'limit' && !favorable) continue
+      price = bar.open
+    } else {
+      if (order.orderType === 'limit' && (order.side === 'buy' ? bar.low > order.triggerPrice : bar.high < order.triggerPrice)) continue
+      price = order.orderType === 'limit' ? order.triggerPrice : bar.close
+    }
     try {
       await tradeTraining(database, id, { side: order.side, shares: order.shares, price, executionType: 'conditional', orderId: order.id, reason: order.reason ?? undefined })
       const trade = database.prepare('SELECT id FROM trades WHERE training_id = ? ORDER BY seq DESC LIMIT 1').get(id) as { id: number }

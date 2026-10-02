@@ -48,6 +48,7 @@
 | [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | 统一状态文件已回填 V1.2.0 候选、包校验和与用户验收边界 | 未记录 | 未记录 | 未记录 |
 | [ORDER-00](<work-items/tasks/ORDER-00.md>) | planned / integrator | 核查 GitHub 开源条件单实现的许可证、撮合假设和数据模型，只提取适合日线训练器的可验证做法。 | 未记录 | 未记录 | 未记录 |
 | [ORDER-01](<work-items/tasks/ORDER-01.md>) | planned / integrator | 实现单有效订单、限价/止损四种价格行为、跳空成交、取消过期和拒单记录。 | 未记录 | 未记录 | 未记录 |
+| [ORDER-TRIGGER-01](<work-items/tasks/ORDER-TRIGGER-01.md>) | review / integrator | 用户验收 v1.2.4 发现市价上方挂买入限价会在推进时立即成交（经典限价矩阵的立即可成交语义）。V1.2.5 修订为：触发方向挂单时按触发价与阶段价相对位置冻结（up/down），到价才触发；限价按触发价成交（跳空不可成交保持挂单），止损按收盘价成交；旧行 NULL 按经典矩阵兼容。 | [证据1](<verification/2026-10/V1.2.5-order-semantics/README.md>) | 未记录 | 未记录 |
 | [R2-01](<work-items/tasks/R2-01.md>) | planned / unassigned | 尚未选定和接入真实在线行情来源。 | [证据1](<verification/architecture-audit-2026-09-17.json>) | 未记录 | 未记录 |
 | [REC-04](<work-items/tasks/REC-04.md>) | planned / integrator | 为手动成交和条件单增加可选理由，并在录制、导入和回放中保留阶段、模式与订单事件顺序。 | 未记录 | 未记录 | 未记录 |
 | [REL-LAUNCH-UX-01](<work-items/tasks/REL-LAUNCH-UX-01.md>) | active / integrator | 保存并退出入口与服务端生命周期协议已在 wt/B-REL-LAUNCH-UX-01 实现（复用SETUP-01冻结排空控制器；Stop.cmd保持应急强制语义并已在文档/帮助文案中明确）；最后标签延迟回收经评估暂不启用，结论记录于卡面。2026-09-30 增量并入 PORT-01 人工验收整改（用户拍板'自动换可用端口'）：未配置端口遇系统保留/占用自动回退＋页面常驻提示；显式端口失败明确报因（netsh 指引）。 | [证据1](<verification/2026-09/LAUNCH-UX-01/report.md>) | worktree trainer-wt/wt-B，分支 wt/B-REL-LAUNCH-UX-01（原从 0f430cd 切出；2026-09-30 已并入 wt/B-SETUP-01 头 93ebc6a 并修复 lifecycle 守卫语义冲突 ca6116a，现包含 SETUP-01 全部提交） | 未记录 |

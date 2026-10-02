@@ -92,6 +92,8 @@ test('统一下单面板＋多条件单＋悬停信息＋唯一活动价位线',
   const prevLow = before.bars.at(-1)!.low
   await panel.getByRole('button', { name: '10%', exact: true }).click()
   await panel.getByLabel('条件单触发价').fill((prevLow * 0.98).toFixed(2))
+  // V1.2.5 触发方向提示：低于市价的触发价＝等待下触，提交前明示到价触发语义
+  await expect(panel.locator('.order-hint')).toContainText('下触')
   await panel.getByLabel('挂单理由').fill('回踩支撑')
   await panel.getByRole('button', { name: '提交条件单' }).click()
   await expect(panel.locator('.order-item:not(.finished)')).toHaveCount(1)

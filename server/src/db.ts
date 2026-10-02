@@ -113,6 +113,9 @@ export function migrateDatabase(database: DatabaseSync): void {
   addColumnIfMissing(database, 'trainings', 'industry_source_sha256', 'TEXT')
   // Early drawing tables have no save timestamp; keep it unknown until the next write.
   addColumnIfMissing(database, 'drawings', 'updated_at', "TEXT NOT NULL DEFAULT ''")
+  // V1.2.5 条件单触发方向（'up'＝等待价格上触触发价、'down'＝下触）：按挂单时触发价与阶段价的
+  // 相对位置冻结。旧行保持 NULL＝按旧经典矩阵（side×order_type）推导，行为不变。
+  addColumnIfMissing(database, 'orders', 'trigger_direction', 'TEXT')
   // TRAIN-01：新增列与旧训练规则回填在同一个迁移事务中完成（DDL 在 SQLite 内可回滚）；
   // journal_mode 等 PRAGMA 留在事务之外。
   migrateTrainingRules(database)

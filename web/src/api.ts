@@ -153,6 +153,8 @@ export interface OrderView {
   side: 'buy' | 'sell'
   orderType: 'limit' | 'stop'
   triggerPrice: number
+  /** 触发方向：'up'＝等待价格上触触发价，'down'＝下触；旧行 null＝按经典矩阵推导。 */
+  triggerDirection: 'up' | 'down' | null
   shares: number
   status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'rejected'
   createdDate: string
@@ -163,6 +165,13 @@ export interface OrderView {
   filledPhase: 'open' | 'close' | null
   filledTradeId: number | null
   statusReason: string | null
+}
+
+/** 条件单触发方向显示推导：新单读冻结的 triggerDirection；旧行（null）按经典矩阵（限价 favorable 侧、止损不利侧）。 */
+export function orderTriggerDirection(order: Pick<OrderView, 'side' | 'orderType' | 'triggerDirection'>): 'up' | 'down' {
+  if (order.triggerDirection) return order.triggerDirection
+  if (order.side === 'buy') return order.orderType === 'limit' ? 'down' : 'up'
+  return order.orderType === 'limit' ? 'up' : 'down'
 }
 
 export interface Bar {
