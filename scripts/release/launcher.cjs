@@ -72,7 +72,7 @@ function usage() {
     'Note: --stop is an emergency force stop (SIGKILL) that does not wait for the',
     'in-app save flow; use the in-app exit button for a normal saved shutdown.',
     '',
-    '配置字段 / config fields: tdxRoot, port (default 8787), dataDir, databasePath (absolute).',
+    '配置字段 / config fields: tdxRoot, port (default 8787), dataDir (default <root>/data), databasePath (absolute).',
     '端口规则 / port rule: 未写 port 时，默认端口被系统保留(WinNAT 排除段)或被占用会自动改用邻近',
     '可用端口并在控制台与页面提示实际端口；显式写了 port 则必须可用，失败时报明确原因。/ without',
     'an explicit "port", a reserved/occupied default port auto-moves to a nearby free port (noted on',
@@ -153,8 +153,11 @@ function resolveConfig(root, raw, env = {}) {
   const text = key => (typeof fields[key] === 'string' ? fields[key].trim() : '')
   const portExplicit = isExplicitPortField(fields.port)
   const config = { port: requireSanePort(portExplicit ? fields.port : DEFAULT_PORT), portExplicit }
+  // V1.2.6：默认数据目录从用户主目录改为包根 data——便携包按版本解压在不同文件夹，
+  // 各版本训练数据（SQLite 库：历史训练/排行/回放复盘）天然相互独立。旧版本数据仍留在
+  // 主目录 DATA_DIR_NAME，可在应用内"训练数据目录"设置中指回该路径继续使用。
   const dataDir = text('dataDir')
-  config.dataDir = dataDir ? resolve(root, dataDir) : join(homedir(), DATA_DIR_NAME)
+  config.dataDir = dataDir ? resolve(root, dataDir) : join(root, 'data')
   const databasePath = text('databasePath')
   if (databasePath) {
     if (!isAbsolute(databasePath)) {
@@ -825,6 +828,8 @@ async function launch(options = {}) {
               // 不写入状态文件/日志/任何 HTTP 响应。
               TRAINER_CONTROL_TOKEN: env.TRAINER_CONTROL_TOKEN?.trim() || `ctr-${randomUUID()}`,
               TRAINER_DATA_DIR: dataDir,
+              // V1.2.6：训练数据目录设置写回启动器配置所需；服务端据此判定"启动器托管运行"
+              TRAINER_CONFIG_PATH: configPath,
               TRAINER_LAUNCHER_CJS: resolve(__filename),
               TRAINER_TDX_SOURCE: tdxSource ?? '',
               // PORT-01：自动换端口标记（页面常驻提示用）。空串＝未发生回退；
@@ -1291,6 +1296,8 @@ async function superviseLocked(context) {
           TDX_ROOT: attempt.planned.tdxRoot,
           TRAINER_TDX_SOURCE: 'saved-choice',
           TRAINER_DATA_DIR: dataDir,
+          // V1.2.6：训练数据目录设置写回启动器配置所需；supervisor 自身未解析配置时按默认路径
+          TRAINER_CONFIG_PATH: context.configPath ?? join(root, 'trainer.config.json'),
           TRAINER_LAUNCHER_CJS: resolve(__filename),
           HOST: '127.0.0.1',
           PORT: String(attempt.planned.port),

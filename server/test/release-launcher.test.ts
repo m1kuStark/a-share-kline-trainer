@@ -350,7 +350,8 @@ describe('release launcher config resolution', () => {
   it('falls back to documented defaults without a config file', () => {
     const config = launcher.resolveConfig('D:\\pkg', null, {})
     expect(config.port).toBe(8787)
-    expect(config.dataDir).toBe(join(homedir(), '.a-share-kline-trainer'))
+    // V1.2.6：默认数据目录从用户主目录改为包根 data（便携包各版本训练数据相互独立）
+    expect(config.dataDir).toBe(join('D:\\pkg', 'data'))
     expect(config.databasePath).toBe(join(config.dataDir, 'trainer.sqlite'))
     expect(config.tdxRoot).toBeNull()
   })

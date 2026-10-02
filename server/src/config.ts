@@ -32,6 +32,10 @@ export interface AppConfig {
   readyFile?: string
   /** 受保护 setup 端点的控制令牌（只读环境透传；不生成、不持久化、不回显） */
   controlToken: string | null
+  /** 启动器配置文件路径（launcher 经 TRAINER_CONFIG_PATH 注入；独立运行为 null）。
+   *  训练数据目录设置（/api/settings/data-dir）写回该文件的 dataDir 字段，重启生效。
+   *  可选字段：测试直接构造 AppConfig 时省略＝独立运行。 */
+  launcherConfigPath?: string | null
 }
 
 const TDX_SOURCE_LABELS: readonly TdxRootSource[] = ['env', 'explicit-config', 'saved-choice']
@@ -115,5 +119,7 @@ export async function loadConfig(): Promise<AppConfig> {
     staticDirectory: process.env.TRAINER_STATIC_DIR,
     readyFile: process.env.TRAINER_READY_FILE,
     controlToken: process.env.TRAINER_CONTROL_TOKEN?.trim() || null,
+    // 启动器托管运行注入其配置文件路径（绝对）；独立运行为 null，数据目录设置端点据此 409
+    launcherConfigPath: explicitAbsolutePath('TRAINER_CONFIG_PATH'),
   }
 }

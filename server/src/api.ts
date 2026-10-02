@@ -18,6 +18,7 @@ import { registerTrainingSettingsRoutes } from './settings/training.js'
 import { registerAppSettingsRoutes } from './settings/app.js'
 import { registerShortcutSettingsRoutes } from './settings/shortcuts.js'
 import { registerTdxPathSettingsRoutes } from './settings/tdx-path.js'
+import { registerDataDirSettingsRoutes } from './settings/data-dir.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
@@ -275,6 +276,8 @@ export async function registerApi(
   registerAppSettingsRoutes(app, database)
   registerShortcutSettingsRoutes(app, database)
   registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
+  // V1.2.6：训练数据目录设置（写回启动器配置 dataDir，重启生效；独立运行 409）
+  registerDataDirSettingsRoutes(app, config)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null

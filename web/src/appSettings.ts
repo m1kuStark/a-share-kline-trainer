@@ -133,3 +133,36 @@ export function putTdxPath(root: string): Promise<TdxPathSaveResult> {
     body: JSON.stringify({ root }),
   })
 }
+
+// ===== V1.2.6 训练数据目录：查看 / 保存（写回启动器配置，重启生效；独立运行 409） =====
+
+export interface DataDirSettingsView {
+  /** 当前生效数据目录（SQLite 训练库所在目录） */
+  effectiveDir: string
+  /** 数据库文件名（历史训练/排行/回放复盘的数据文件） */
+  databaseFile: string
+  /** 启动器配置中显式保存的 dataDir（null＝未自定义，使用默认安装目录下 data） */
+  configuredDir: string | null
+  /** 默认数据目录（安装目录下 data；独立运行为 null） */
+  defaultDir: string | null
+  /** 旧版本默认数据目录（用户主目录）；仅供迁移提示 */
+  legacyDefaultDir: string | null
+}
+
+export interface DataDirSaveResult {
+  savedDir: string
+  effectiveDir: string
+  restartRequired: true
+}
+
+export function fetchDataDirSettings(): Promise<DataDirSettingsView> {
+  return request('/api/settings/data-dir')
+}
+
+export function putDataDir(dataDir: string): Promise<DataDirSaveResult> {
+  return request('/api/settings/data-dir', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataDir }),
+  })
+}

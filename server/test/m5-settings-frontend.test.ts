@@ -50,7 +50,13 @@ describe('M5-01 应用偏好接线', () => {
     // 失败还原开关，不假称保存
     expect(source).toMatch(/autoDataCheckForm\.value = previous/)
     // 数据目录：当前生效/已保存展示、校验、保存、离线提示与重启语义
-    expect(source).toMatch(/aria-label="数据目录（通达信）"/)
+    // V1.2.6：标签页改含两个子区块——训练数据目录（自定义历史数据保存位置）＋ 通达信目录
+    expect(source).toMatch(/aria-label="数据目录"/)
+    expect(source).toMatch(/<h4 class="settings-subsection">训练数据目录<\/h4>/)
+    expect(source).toMatch(/aria-label="历史训练数据保存目录"/)
+    expect(source).toMatch(/saveDataDir/)
+    expect(source).toMatch(/重启训练器后生效/)
+    expect(source).toMatch(/各版本安装目录相互独立/)
     expect(source).toMatch(/离线导入回放仍可用/)
     expect(source).toMatch(/检查此路径/)
     expect(source).toMatch(/保存数据目录/)

@@ -5,6 +5,7 @@ import { notifySettingsSaved } from '../settingsPanel'
 import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
   fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
+  fetchDataDirSettings, putDataDir, type DataDirSettingsView,
 } from '../appSettings'
 import { DRAW_TOOLS } from '../drawTools'
 import { DEFAULT_FAVORITE_TOOLS, DEFAULT_TOOL_STYLE, loadFavoriteTools, loadToolStylePreferences, saveFavoriteTools, saveToolStylePreferences, type ToolStylePreference, type ToolStylePreferences } from '../toolFavorites'
@@ -305,6 +306,14 @@ async function loadAppSections(): Promise<void> {
   } catch (error) {
     tdxLoadError.value = error instanceof Error ? error.message : '无法读取数据目录设置'
   }
+  dataDirLoadError.value = ''
+  try {
+    const view = await fetchDataDirSettings()
+    dataDirView.value = view
+    if (!dataDirTouched.value) dataDirInput.value = view.configuredDir ?? view.effectiveDir
+  } catch (error) {
+    dataDirLoadError.value = error instanceof Error ? error.message : '无法读取训练数据目录设置'
+  }
 }
 
 async function onAutoDataCheckChange(): Promise<void> {
@@ -338,6 +347,46 @@ const tdxCheckError = ref('')
 const tdxSaving = ref(false)
 const tdxError = ref('')
 const tdxSavedMessage = ref('')
+
+// ===== V1.2.6 训练数据目录：查看 / 选择 / 保存（写回启动器配置，重启生效） =====
+const dataDirView = ref<DataDirSettingsView | null>(null)
+const dataDirLoadError = ref('')
+const dataDirInput = ref('')
+const dataDirTouched = ref(false)
+const dataDirSaving = ref(false)
+const dataDirError = ref('')
+const dataDirSavedMessage = ref('')
+
+async function chooseDataDirDirectory(): Promise<void> {
+  if (dataDirSaving.value) return
+  dataDirError.value = ''
+  dataDirSavedMessage.value = ''
+  try {
+    const picked = await selectSetupDirectory()
+    if (picked.status !== 'selected' || !picked.path) return
+    dataDirInput.value = picked.path
+    dataDirTouched.value = true
+  } catch (error) {
+    dataDirError.value = error instanceof Error ? error.message : '目录选择失败，可重试'
+  }
+}
+
+async function saveDataDir(): Promise<void> {
+  const candidate = dataDirInput.value.trim()
+  if (dataDirSaving.value || candidate === '') return
+  dataDirSaving.value = true
+  dataDirError.value = ''
+  dataDirSavedMessage.value = ''
+  try {
+    await putDataDir(candidate)
+    dataDirSavedMessage.value = '已保存，重启训练器后生效；切换目录后仅能看到新目录中的历史训练与排行'
+    dataDirTouched.value = false
+  } catch (error) {
+    dataDirError.value = error instanceof Error ? error.message : '保存失败，未更改已保存目录'
+  } finally {
+    dataDirSaving.value = false
+  }
+}
 
 async function checkTdxPath(): Promise<void> {
   if (tdxChecking.value || tdxSaving.value) return
@@ -542,8 +591,31 @@ function close(): void {
           <p v-if="shortcutSaved" class="settings-saved" role="status">{{ shortcutSaved }}</p>
         </div>
       </section>
-      <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录（通达信）">
-        <h3>数据目录（通达信）</h3>
+      <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录">
+        <h4 class="settings-subsection">训练数据目录</h4>
+        <p class="settings-section-note">
+          <span>当前生效：<code>{{ dataDirView ? `${dataDirView.effectiveDir}（${dataDirView.databaseFile}）` : '读取中…' }}</code></span>
+          <span v-if="dataDirView?.configuredDir === null && dataDirView?.defaultDir">；未自定义（默认 {{ dataDirView.defaultDir }}，各版本安装目录相互独立）</span>
+          <span v-else-if="dataDirView?.configuredDir">；已自定义：{{ dataDirView.configuredDir }}</span>
+        </p>
+        <div class="settings-row settings-column">
+          <label class="settings-field-label" for="data-dir-input">历史训练数据保存目录</label>
+          <input
+            id="data-dir-input" v-model="dataDirInput" type="text" spellcheck="false"
+            aria-label="历史训练数据保存目录" placeholder="可点击下方按钮选择目录"
+            @input="dataDirTouched = true; dataDirSavedMessage = ''"
+          />
+          <small>历史模拟训练数据（含排行与成绩单复盘用的数据库文件）保存在此目录；保存后需重启训练器生效。旧版本曾默认保存于用户主目录 {{ dataDirView?.legacyDefaultDir ?? '' }}，需要沿用旧数据可填入该路径。</small>
+        </div>
+        <div class="settings-actions">
+          <button class="ghost-button" :disabled="dataDirSaving" @click="chooseDataDirDirectory">选择文件夹…</button>
+          <button class="trade-action buy" :disabled="dataDirSaving || dataDirInput.trim() === ''" @click="saveDataDir">{{ dataDirSaving ? '保存中…' : '保存训练数据目录' }}</button>
+        </div>
+        <p v-if="dataDirLoadError" class="error-text" role="alert">{{ dataDirLoadError }}</p>
+        <p v-if="dataDirError" class="error-text" role="alert">{{ dataDirError }}</p>
+        <p v-if="dataDirSavedMessage" class="settings-saved" role="status">{{ dataDirSavedMessage }}</p>
+
+        <h4 class="settings-subsection">数据目录（通达信）</h4>
         <p class="settings-section-note">
           <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code></span>
           <span v-if="tdxView?.savedChoice">；已保存：<code>{{ tdxView.savedChoice.root }}</code><template v-if="tdxView.savedChoice.root !== tdxView.effectiveRoot">（与当前不同，重启后生效）</template></span>
@@ -621,6 +693,8 @@ function close(): void {
 .settings-fixed { margin-top: 10px; font-size: 11px; color: var(--text-secondary, #51637a); }
 .settings-section { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--surface-border, #eef2f6); }
 .settings-section h3 { margin: 0 0 4px; font-size: 14px; }
+.settings-subsection { margin: 10px 0 6px; font-size: 13px; color: var(--text-primary, #25364b); }
+.settings-subsection + .settings-section-note { margin-top: 0; }
 .settings-section-note { margin: 0 0 8px; font-size: 11px; color: var(--text-secondary, #51637a); line-height: 1.6; overflow-wrap: anywhere; }
 .settings-section-note code { font-size: 11px; overflow-wrap: anywhere; }
 .settings-section .settings-actions { margin-top: 10px; }
