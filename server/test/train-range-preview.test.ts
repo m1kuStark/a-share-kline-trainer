@@ -305,6 +305,28 @@ describe('POST /api/trainings 范围创建复核', () => {
     })
   })
 
+  it('自定义范围创建保留显式开盘阶段与条件单开关', async () => {
+    await withFixture(async ({ app }) => {
+      const preview = await previewPreset(app)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: {
+          code: '600519', range: { mode: 'preset', startDate: '2026-07-01', months: 1 },
+          previewId: preview.previewId, adjust_mode: 'forward', initial_cash: 500_000,
+          clock_mode: 'open_close', orders_enabled: true,
+        },
+      })
+      expect(created.statusCode).toBe(201)
+      expect(created.json().training).toMatchObject({
+        clockMode: 'open_close',
+        ordersEnabled: true,
+        currentPhase: 'open',
+        currentOpen: 9.95,
+        currentClose: null,
+      })
+    })
+  })
+
   it('日线字节变化导致指纹不匹配返回409 RANGE_PREVIEW_STALE', async () => {
     await withFixture(async ({ app, root }) => {
       const preview = await previewPreset(app)

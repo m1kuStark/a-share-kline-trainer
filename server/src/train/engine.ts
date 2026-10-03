@@ -727,6 +727,12 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
     initialCash = input.initial_cash
   }
 
+  const clockMode = input.clock_mode === undefined ? 'close_only' : input.clock_mode
+  if (clockMode !== 'close_only' && clockMode !== 'open_close') {
+    throw new HttpError(400, 'clock_mode 必须是 close_only 或 open_close')
+  }
+  const ordersEnabled = input.orders_enabled === true
+
   const now = input.now ?? new Date()
   const stored = rangePreviews.get(input.previewId)
   if (!stored) throw stalePreview('预览不存在或已过期')
@@ -764,7 +770,8 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
     startDate: plan.startDate, plannedEnd: plan.endDate,
     blind: input.blind ? 1 : 0, adjustMode, initialCash, createdAt: now.toISOString(),
     previewAdjustMode: stored.adjustMode,
-    currentDate: plan.startDate, currentClose: startBar.close,
+    currentDate: plan.startDate,
+    currentClose: clockMode === 'open_close' ? null : startBar.close,
     range: {
       mode: plan.mode,
       requestedStart: plan.requestedStart,
@@ -774,7 +781,9 @@ async function createRangeTraining(database: DatabaseSync, config: AppConfig, in
       notes: plan.notes,
     },
     industry,
-    currentOpen: null, currentPhase: 'close', clockMode: 'close_only', ordersEnabled: false,
+    currentOpen: clockMode === 'open_close' ? startBar.open : null,
+    currentPhase: clockMode === 'open_close' ? 'open' : 'close',
+    clockMode, ordersEnabled,
   })
   return toMeta(loadTrainingRow(database, id))
 }
