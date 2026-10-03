@@ -726,7 +726,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
     </div>
 
     <!-- 已退出：服务已停止、端口已释放；此页只剩本地内容，可安全关闭 -->
-    <div v-if="exitFlow === 'exited'" class="exit-exited-screen">
+    <div v-if="exitFlow === 'exited'" class="exit-exited-screen" :class="{ 'dark-exited': theme === 'dark' }">
       <div class="exit-exited-panel">
         <h2>训练器已退出</h2>
         <p>服务已正常关闭，端口已释放；训练进度、数据库与本机录像都已保留。</p>
@@ -752,6 +752,9 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .exit-exited-panel { text-align: center; max-width: 560px; padding: 24px; }
 .exit-exited-panel h2 { margin: 0 0 12px; font-size: 20px; color: var(--text-primary, #1e293b); }
 .exit-exited-panel p { margin: 6px 0; font-size: 13px; line-height: 1.7; color: var(--text-secondary, #475569); }
+.exit-exited-screen.dark-exited { background: #151515; color: #e4e4e4; }
+.exit-exited-screen.dark-exited .exit-exited-panel h2 { color: #e4e4e4; }
+.exit-exited-screen.dark-exited .exit-exited-panel p { color: #b8b8b8; }
 .picker-blocker { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; background: rgba(15, 23, 42, .48); }
 .picker-blocker-panel { width: min(440px, calc(100vw - 40px)); padding: 22px 24px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(0, 0, 0, .25); }
 .picker-blocker-panel h2 { margin: 0 0 10px; font-size: 17px; }
