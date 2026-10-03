@@ -19,6 +19,7 @@ import { registerAppSettingsRoutes } from './settings/app.js'
 import { registerShortcutSettingsRoutes } from './settings/shortcuts.js'
 import { registerTdxPathSettingsRoutes } from './settings/tdx-path.js'
 import { registerDataDirSettingsRoutes } from './settings/data-dir.js'
+import { ensureRecordingNamespace } from './db.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
@@ -923,6 +924,7 @@ export async function registerApi(
     const active = getActiveTraining(database)
     return {
       status: 'ok',
+      recordingNamespace: ensureRecordingNamespace(database),
       // 隐私边界（SETUP-01）：开放端点只返回连接状态与来源标签，不回传完整本机路径
       tdx: { connected: config.tdxRoot !== null, source: config.tdxSource ?? null },
       // PORT-01（REL-LAUNCH-UX-01 增量）：端口回退说明——只有数字与原因枚举，无路径；

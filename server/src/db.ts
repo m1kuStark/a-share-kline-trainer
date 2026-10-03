@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { randomUUID } from 'node:crypto'
 import { legacyMigrationRules, serializeTrainingRules } from './train/rules.js'
 
 export function openDatabase(filePath: string): DatabaseSync {
@@ -119,6 +120,15 @@ export function migrateDatabase(database: DatabaseSync): void {
   // TRAIN-01：新增列与旧训练规则回填在同一个迁移事务中完成（DDL 在 SQLite 内可回滚）；
   // journal_mode 等 PRAGMA 留在事务之外。
   migrateTrainingRules(database)
+}
+
+/** Stable per-database browser recording namespace; contains no local path. */
+export function ensureRecordingNamespace(database: DatabaseSync): string {
+  const row = database.prepare("SELECT value FROM cache_meta WHERE key = 'recording_namespace'").get() as unknown as { value?: string } | undefined
+  if (row?.value && /^[a-f0-9-]{36}$/i.test(row.value)) return row.value
+  const namespace = randomUUID()
+  database.prepare("INSERT INTO cache_meta (key, value) VALUES ('recording_namespace', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(namespace)
+  return namespace
 }
 
 /** TRAIN-01 规则快照迁移：trainings.rules_json（版本化不可变 JSON）。

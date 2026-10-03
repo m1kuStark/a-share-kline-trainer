@@ -212,6 +212,8 @@ export type TdxRootSource = 'env' | 'explicit-config' | 'saved-choice' | 'auto-d
 /** /api/env 隐私边界（SETUP-01）：只含连接状态与来源标签，不含本机路径 */
 export interface EnvView {
   status: string
+  /** Opaque per-installation namespace for browser recordings; never a local path. */
+  recordingNamespace: string
   tdx: { connected: boolean; source: TdxRootSource | null }
   /** PORT-01：端口回退说明（数字与原因枚举）；fallbackFrom 非空表示默认端口不可用已自动改用 */
   launcher: { port: number; fallbackFrom: number | null; fallbackReason: 'reserved' | 'occupied' | null }

@@ -4,7 +4,6 @@ import {
   applySetupChoice, cancelLifecycleExit, confirmLifecycleExit, createLifecycleSession, fetchActiveTraining,
   fetchEnv, fetchLifecycleStatus, fetchRestartStatus, heartbeatLifecycle,
   inspectSetupRoot, requestLifecycleExit, saveSetupChoice, selectSetupDirectory,
-  fetchTrainingHistory,
 } from './api'
 import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
@@ -17,9 +16,10 @@ import SessionReplay from './views/SessionReplay.vue'
 import History from './views/History.vue'
 import Rankings from './views/Rankings.vue'
 import TrainingSettings from './components/TrainingSettings.vue'
-import { recordingStorage, loadLocalRecording } from './recording/recordingRepository'
+import RecordingLibrary from './components/RecordingLibrary.vue'
+import { configureRecordingNamespace, listRecordingLibrary, importRecording as saveImportedRecording, loadLibraryRecording, removeLibraryRecordings, clearRecordingSource } from './recording/recordingRepository'
+import type { RecordingLibraryItem, RecordingRemovalResult, RecordingSource } from './recording/recordingRepository'
 import { readRecordingFile } from './recording/recordingFile'
-import type { RecordingSummary } from './recording/types'
 import type { CompactRecordingFile } from './recording/compactTypes'
 
 type View = 'loading' | 'launcher' | 'training' | 'library' | 'replay' | 'history' | 'rankings'
@@ -31,23 +31,23 @@ const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
 const recordingOptions = ref<{ enabled: boolean; params?: Record<string, unknown> }>({ enabled: true })
 const replay = shallowRef<CompactRecordingFile | null>(null)
-const recentRecordings = ref<RecordingSummary[]>([])
+const recentRecordings = ref<RecordingLibraryItem[]>([])
 const recordingError = ref('')
-const settledTrainingCount = ref<number | null>(null)
-const recordingOrigin = location.origin
+const recordingBusy = ref(false)
+const recordingNamespaceReady = ref(false)
+let recordingLoadVersion = 0
+const activeTrainingKey = computed(() => snapshot.value?.training.status === 'running'
+  ? `${snapshot.value.training.id}.${snapshot.value.training.createdAt}` : null)
+const activeRecordingIds = computed(() => recentRecordings.value
+  .filter(item => item.source === 'local' && item.trainingKey === activeTrainingKey.value)
+  .map(item => item.sessionId))
 async function loadRecordings(): Promise<void> {
+  const version = ++recordingLoadVersion
   try {
-    const [recordings, history] = await Promise.allSettled([
-      recordingStorage.list(),
-      fetchTrainingHistory({ limit: 1 }),
-    ])
-    if (recordings.status === 'rejected') throw recordings.reason
-    recentRecordings.value = recordings.value.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    // Training history lives in SQLite while recordings live in browser IndexedDB.
-    // Keep the diagnostic count visible without making a history guard hide the recordings.
-    settledTrainingCount.value = history.status === 'fulfilled' ? history.value.total : null
+    const items = await listRecordingLibrary()
+    if (version === recordingLoadVersion) recentRecordings.value = items
   }
-  catch (error) { recordingError.value = error instanceof Error ? error.message : '无法读取本机录制' }
+  catch (error) { if (version === recordingLoadVersion) recordingError.value = error instanceof Error ? error.message : '无法读取录像库' }
 }
 watch(view, value => { if (value === 'launcher' || value === 'library') void loadRecordings() })
 async function showLibrary(): Promise<void> {
@@ -85,29 +85,53 @@ async function onCreated(options: { enabled: boolean; params: Record<string, unk
   recordingOptions.value = options
   await refresh()
 }
-async function importRecording(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
+async function importRecording(file: File): Promise<void> {
+  if (recordingBusy.value) return
+  recordingBusy.value = true
   recordingError.value = ''
   try {
-    replay.value = await readRecordingFile(file)
-    view.value = 'replay'
+    const item = await saveImportedRecording(await readRecordingFile(file), file.name)
+    await loadRecordings()
+    await openRecording(item.sessionId)
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法导入录制文件' }
+  finally { recordingBusy.value = false }
 }
 async function openRecording(id: string): Promise<void> {
   recordingError.value = ''
   try {
-    replay.value = await loadLocalRecording(id)
-    if (!replay.value) throw new Error('找不到这份本机录制')
+    const item = recentRecordings.value.find(row => row.sessionId === id)
+    if (!item) throw new Error('找不到这份录像')
+    replay.value = await loadLibraryRecording(item)
+    if (!replay.value) throw new Error('找不到这份录像')
     view.value = 'replay'
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法打开录制' }
+}
+async function removeRecordings(action: () => Promise<RecordingRemovalResult>): Promise<void> {
+  if (recordingBusy.value) return
+  recordingBusy.value = true
+  recordingError.value = ''
+  try {
+    const result = await action()
+    await loadRecordings()
+    if (result.failed.length) recordingError.value = [...new Set(result.failed.map(failure => failure.reason))].join('；')
+  } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法删除录像' }
+  finally { recordingBusy.value = false }
+}
+async function removeRecording(id: string): Promise<void> {
+  const item = recentRecordings.value.find(row => row.sessionId === id)
+  if (item) await removeRecordings(() => removeLibraryRecordings([item], activeTrainingKey.value))
+}
+async function clearRecordings(source: RecordingSource): Promise<void> {
+  await removeRecordings(() => clearRecordingSource(source, activeTrainingKey.value))
 }
 
 watchEffect(() => applyThemeClass())
 
 async function refresh(): Promise<void> {
+  if (!recordingNamespaceReady.value) {
+    await reloadEnv()
+    if (!recordingNamespaceReady.value) return
+  }
   try {
     const requested = new URL(location.href).searchParams.get('training')
     const result = requested && /^[1-9]\d*$/.test(requested)
@@ -194,7 +218,13 @@ const portFallbackNote = computed(() => {
     + `如需固定端口，请在 trainer.config.json 设置 port。`
 })
 async function reloadEnv(): Promise<void> {
-  try { env.value = await fetchEnv() } catch { /* 保留旧值；错误由 envError 呈现 */ }
+  try {
+    const next = await fetchEnv()
+    configureRecordingNamespace(next.recordingNamespace)
+    recordingNamespaceReady.value = true
+    env.value = next
+    envError.value = ''
+  } catch (error) { envError.value = error instanceof Error ? error.message : '无法连接本地服务' }
 }
 function openWizard(): void {
   wizardError.value = ''
@@ -461,11 +491,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', onDataVisibilityChange)
   void checkDataStatus({ force: true })
   startStatusTicker()
-  try {
-    env.value = await fetchEnv()
-  } catch (error) {
-    envError.value = error instanceof Error ? error.message : '无法连接本地服务'
-  }
+  await reloadEnv()
   // 退出协调会话：env 可达后注册并开始心跳（不可达时在退出流程内降级提示）
   void ensureLifecycleSession()
   await refresh()
@@ -570,7 +596,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
       <!-- PORT-01：默认端口不可用自动改用邻近端口时的常驻提示（所有视图可见） -->
       <div v-if="portFallbackNote" class="port-fallback-note" role="status">{{ portFallbackNote }}</div>
 
-      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }}：请先运行 npm run dev 或 npm start 启动后端</div>
+      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }} <button class="data-reread-btn" @click="refresh">重新连接</button></div>
 
       <div v-if="wizardBusy" class="picker-blocker" role="dialog" aria-modal="true" aria-label="通达信目录选择">
         <div class="picker-blocker-panel">
@@ -585,16 +611,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         <p v-if="wizardNote" class="setup-connection-note" role="status">{{ wizardNote }}</p>
         <Launcher @created="onCreated" />
       </template>
-      <section v-else-if="view === 'library'" class="recording-library recording-library-page" aria-label="训练录像库">
-        <header><div><h1>训练录像</h1><p>本机历史保存在当前浏览器。导出录像可以备份，也可以分享给其他用户。</p><p class="recording-store-note">本机录像与已结算训练记录分开保存：当前 {{ recentRecordings.length }} 条录像<span v-if="settledTrainingCount !== null">，已结算训练 {{ settledTrainingCount }} 局</span>。未保留录像的训练无法从数据库自动还原。当前地址：{{ recordingOrigin }}</p></div><button class="ghost-button" @click="returnToTraining">返回训练</button></header>
-        <label class="recording-import">导入分享的录像<input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" @change="importRecording" /></label>
-        <p v-if="recordingError" class="error-text" role="alert">{{ recordingError }}</p>
-        <h2>本机训练历史</h2>
-        <p v-if="!recentRecordings.length">还没有保存的训练录像</p>
-        <div class="recording-history-list">
-          <button v-for="item in recentRecordings" :key="item.sessionId" class="recording-history-item" @click="openRecording(item.sessionId)"><strong>{{ new Date(item.createdAt).toLocaleString() }}</strong><span>查看回放 →</span></button>
-        </div>
-      </section>
+      <RecordingLibrary v-else-if="view === 'library'" :items="recentRecordings" :busy="recordingBusy" :error="recordingError" :active-session-ids="activeRecordingIds" @replay="openRecording" @import="importRecording" @remove="removeRecording" @clear="clearRecordings" @close="returnToTraining" />
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
       <History v-else-if="view === 'history'" @create="returnToTraining" />
       <Rankings v-else-if="view === 'rankings'" @create="returnToTraining" />
@@ -670,24 +687,19 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 <style scoped>
 /* REL-LAUNCH-UX-01 保存并退出：遮罩/面板/已退出页（双主题） */
 .exit-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; z-index: 90; }
-.exit-panel { background: #fff; color: #1e293b; border-radius: 10px; padding: 22px 24px; width: min(440px, calc(100vw - 40px)); box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25); }
+.exit-panel { background: var(--surface-background, #fff); color: var(--text-primary, #1e293b); border-radius: 10px; padding: 22px 24px; width: min(440px, calc(100vw - 40px)); box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25); }
 .exit-panel h2 { margin: 0 0 10px; font-size: 17px; }
-.exit-panel p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: #475569; }
-:global(body.dark) .exit-panel { background: #10192a; color: #e2e8f0; }
-:global(body.dark) .exit-panel p { color: #94a3b8; }
-.exit-error { color: #a03030; font-weight: 600; }
-:global(body.dark) .exit-error { color: #e0a0a0; }
+.exit-panel p { margin: 6px 0; font-size: 13px; line-height: 1.6; color: var(--text-secondary, #475569); }
+.exit-panel .exit-error { color: #a03030; font-weight: 600; }
+:global(body.dark .exit-panel .exit-error) { color: #e0a0a0; }
 .exit-actions { display: flex; gap: 10px; margin-top: 16px; }
 .exit-primary { border: 1px solid #1f7a93; background: #1f7a93; color: #fff; border-radius: 4px; padding: 7px 16px; cursor: pointer; }
 .exit-primary:hover { filter: brightness(1.08); }
 .exit-secondary { border: 1px solid var(--surface-border, #dfe5eb); background: transparent; color: inherit; border-radius: 4px; padding: 7px 16px; cursor: pointer; }
-.exit-exited-screen { position: fixed; inset: 0; background: #f6f8fa; display: flex; align-items: center; justify-content: center; z-index: 100; }
-.exit-exited-panel { text-align: center; max-width: 460px; padding: 24px; }
-.exit-exited-panel h2 { margin: 0 0 12px; font-size: 20px; color: #1e293b; }
-.exit-exited-panel p { margin: 6px 0; font-size: 13px; line-height: 1.7; color: #475569; }
-:global(body.dark) .exit-exited-screen { background: #0b1220; }
-:global(body.dark) .exit-exited-panel h2 { color: #e2e8f0; }
-:global(body.dark) .exit-exited-panel p { color: #94a3b8; }
+.exit-exited-screen { position: fixed; inset: 0; background: var(--surface-background, #f6f8fa); color: var(--text-primary, #1e293b); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.exit-exited-panel { text-align: center; max-width: 560px; padding: 24px; }
+.exit-exited-panel h2 { margin: 0 0 12px; font-size: 20px; color: var(--text-primary, #1e293b); }
+.exit-exited-panel p { margin: 6px 0; font-size: 13px; line-height: 1.7; color: var(--text-secondary, #475569); }
 .picker-blocker { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; background: rgba(15, 23, 42, .48); }
 .picker-blocker-panel { width: min(440px, calc(100vw - 40px)); padding: 22px 24px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; background: var(--surface-background, #fff); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(0, 0, 0, .25); }
 .picker-blocker-panel h2 { margin: 0 0 10px; font-size: 17px; }

@@ -10,7 +10,7 @@ import { join } from 'node:path'
 // 一个数量级，vitest 默认 5s 会随机击中不同用例（门禁两次分别击中 setup-api 与
 // 本文件）。统一显式 20s 只是等待预算；所有断言语义不变。
 import { registerApi } from '../src/api.js'
-import { migrateDatabase } from '../src/db.js'
+import { ensureRecordingNamespace, migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 
 const encryptedGbbqRecord = Buffer.from('9a7f1ae8eafde7194156de939ea709c237a8c90d0924e4d63f00000000', 'hex')
@@ -137,6 +137,48 @@ describe('market-data API', () => {
       await rm(root, { recursive: true, force: true })
     }
   }, 20_000)
+
+  it('returns a stable private recording namespace for each database instance', async () => {
+    const root = await createFixture()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const app = Fastify()
+    const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: root }
+    await registerApi(app, config, database)
+    try {
+      const first = await app.inject({ method: 'GET', url: '/api/env' })
+      const second = await app.inject({ method: 'GET', url: '/api/env' })
+      expect(first.statusCode).toBe(200)
+      expect(first.json().recordingNamespace).toMatch(/^[a-f0-9-]{36}$/)
+      expect(second.json().recordingNamespace).toBe(first.json().recordingNamespace)
+    } finally {
+      await app.close()
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 20_000)
+
+  it('preserves recording identity on restart and separates fresh databases', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'recording-identity-'))
+    const path = join(root, 'trainer.sqlite')
+    let database = new DatabaseSync(path)
+    try {
+      migrateDatabase(database)
+      const namespace = ensureRecordingNamespace(database)
+      database.close()
+      database = new DatabaseSync(path)
+      migrateDatabase(database)
+      expect(ensureRecordingNamespace(database)).toBe(namespace)
+      const fresh = new DatabaseSync(':memory:')
+      try {
+        migrateDatabase(fresh)
+        expect(ensureRecordingNamespace(fresh)).not.toBe(namespace)
+      } finally { fresh.close() }
+    } finally {
+      database.close()
+      await rm(root, { recursive: true, force: true })
+    }
+  })
 
   it('surfaces the PORT-01 fallback note fields when the launcher moved the default port', async () => {
     const root = await createFixture()

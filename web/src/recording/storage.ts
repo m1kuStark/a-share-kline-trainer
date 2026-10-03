@@ -39,8 +39,21 @@ export class MemoryRecordingStorage implements RecordingStorage {
   }
 }
 
+/** Base name retained for compatibility; production app appends the opaque install namespace. */
 export const RECORDING_DB_NAME = 'trainer-recordings'
+let recordingDbName = RECORDING_DB_NAME
 export const RECORDING_STORE_NAME = 'sessions'
+
+export function configureRecordingDbNamespace(namespace: string): void {
+  const value = namespace.trim()
+  if (!value) throw new Error('录像库命名空间为空，拒绝访问未隔离的本机录像')
+  // IndexedDB names are opaque browser-local identifiers; keep the server value out of
+  // all user-facing UI and only use a conservative character subset in the DB name.
+  const safe = value.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 96)
+  recordingDbName = `${RECORDING_DB_NAME}.${safe}`
+}
+
+export function getRecordingDbName(): string { return recordingDbName }
 
 function describeDbError(error: DOMException | null): string {
   return error?.message ?? '未知错误'
@@ -53,7 +66,7 @@ function openRecordingDb(onVersionChange: (db: IDBDatabase) => void): Promise<ID
       return
     }
     let settled = false
-    const request = indexedDB.open(RECORDING_DB_NAME, 1)
+    const request = indexedDB.open(recordingDbName, 1)
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(RECORDING_STORE_NAME)) {

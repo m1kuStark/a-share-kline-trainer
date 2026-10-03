@@ -20,8 +20,13 @@ test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导�
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.route('**/legacy-storage-setup', route => route.fulfill({ contentType: 'text/html', body: '<title>Storage fixture setup</title>' }))
   await page.goto('/legacy-storage-setup')
-  await page.evaluate(file => new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open('trainer-recordings', 1)
+  const recordingDbName = await page.evaluate(async () => {
+    const response = await fetch('/api/env')
+    const { recordingNamespace } = await response.json() as { recordingNamespace: string }
+    return `trainer-recordings.${recordingNamespace.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 96)}`
+  })
+  await page.evaluate(({ file, databaseName }) => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open(databaseName, 1)
     request.onupgradeneeded = () => request.result.createObjectStore('sessions', { keyPath: 'sessionId' })
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
@@ -30,15 +35,15 @@ test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导�
       tx.oncomplete = () => { db.close(); resolve() }
       tx.onerror = () => reject(tx.error)
     }
-  }), legacy)
+  }), { file: legacy, databaseName: recordingDbName })
   await page.goto('/')
   // 训练录像库合并展示旧 v1 记录；打开时按需迁移为 v2，原始行保留
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
-  await page.locator('.recording-history-item').click()
+  await page.locator('[data-recording-source="local"] .recording-history-open').click()
   await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
-  const saved = await page.evaluate(() => new Promise<any>((resolve, reject) => {
-    const request = indexedDB.open('trainer-recordings', 2)
+  const saved = await page.evaluate((databaseName) => new Promise<any>((resolve, reject) => {
+    const request = indexedDB.open(databaseName, 2)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
       const db = request.result, tx = db.transaction(['sessions', 'compactSessions'], 'readonly')
@@ -46,7 +51,7 @@ test('旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导�
       const current = tx.objectStore('compactSessions').get('legacy-migration-fixture')
       tx.oncomplete = () => { resolve({ old: old.result, current: current.result }); db.close() }
     }
-  }))
+  }), recordingDbName)
   expect(saved.old).toEqual(legacy)
   expect(saved.current.schemaVersion).toBe(2)
   await page.getByRole('button', { name: '关闭回放', exact: true }).click()

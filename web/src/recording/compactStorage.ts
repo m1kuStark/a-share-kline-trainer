@@ -5,7 +5,7 @@
 // 一次 save 只 put 新增条目 + header，单事务原子提交，事务 complete 后才推进本地游标/revision；
 // 输入条目按调用者不可变契约处理，只做浅数组切片，不深复制全部历史。
 // 本单元不导入 codec/validation：结构校验与 v1→v2 迁移转换属后续独立任务。
-import { RECORDING_DB_NAME, RECORDING_STORE_NAME } from './storage'
+import { RECORDING_STORE_NAME, configureRecordingDbNamespace, getRecordingDbName } from './storage'
 import type {
   CompactCheckpoint,
   CompactRecordingFile,
@@ -30,11 +30,15 @@ export interface CompactRecordingStorage {
   load(id: string): Promise<CompactRecordingFile | null>
   list(): Promise<RecordingSummary[]>
   remove?(id: string): Promise<void>
+  /** Optional v1 reader used to migrate local recordings on first replay. */
+  loadLegacy?(id: string): Promise<RecordingFile | null>
 }
 
 export const RECORDING_DB_VERSION = 2
 export const COMPACT_SESSIONS_STORE = 'compactSessions'
 export const COMPACT_RECORDS_STORE = 'compactRecords'
+
+export { configureRecordingDbNamespace }
 
 const RESOURCE_KINDS = ['series', 'drawings', 'trainingMeta', 'accounts', 'trades', 'contexts'] as const
 type ResourceKind = (typeof RESOURCE_KINDS)[number]
@@ -526,14 +530,14 @@ function sessionRange(id: string): IDBKeyRange {
   return IDBKeyRange.bound([id, ''], [id, '\uffff'])
 }
 
-function openCompactDb(onVersionChange: (db: IDBDatabase) => void): Promise<IDBDatabase> {
+function openCompactDb(databaseName: string, onVersionChange: (db: IDBDatabase) => void): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       reject(new Error('当前环境不支持 IndexedDB，无法持久化录制会话。'))
       return
     }
     let settled = false
-    const request = indexedDB.open(RECORDING_DB_NAME, RECORDING_DB_VERSION)
+    const request = indexedDB.open(databaseName, RECORDING_DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
       // 保留旧 v1 sessions；全新库也建出以支持 loadLegacy/list
@@ -735,6 +739,8 @@ export class IndexedDbCompactStorage implements CompactRecordingStorage {
   private readonly sessions = new Map<string, CommittedSession>()
   private saveQueue: Promise<unknown> = Promise.resolve()
 
+  constructor(private readonly databaseName: string | (() => string) = getRecordingDbName()) {}
+
   static get supported(): boolean {
     return typeof indexedDB !== 'undefined'
   }
@@ -745,7 +751,7 @@ export class IndexedDbCompactStorage implements CompactRecordingStorage {
   }
 
   private startOpen(): Promise<IDBDatabase> {
-    const opening = openCompactDb(() => {
+    const opening = openCompactDb(typeof this.databaseName === 'function' ? this.databaseName() : this.databaseName, () => {
       // versionchange 关闭连接后缓存同步失效，下次访问重新打开
       if (this.dbPromise === opening) this.dbPromise = null
     })

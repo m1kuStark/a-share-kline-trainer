@@ -4,7 +4,7 @@
 
 ## 库与 store 布局
 
-- 沿用 `storage.ts` 的 `RECORDING_DB_NAME='trainer-recordings'`，版本升到 2（`RECORDING_DB_VERSION`）。升级保留旧 `sessions`（v1，keyPath `sessionId`）；全新库也建出该 store 以支持 `loadLegacy`/`list`。
+- `storage.ts` 的 `RECORDING_DB_NAME='trainer-recordings'` 保留为库名前缀，生产库名由 `recordingRepository.configureRecordingNamespace()` 追加 `/api/env` 返回的标识，版本仍为 2（`RECORDING_DB_VERSION`）。`IndexedDbCompactStorage` 实例固定绑定一个库名，切换 namespace 会创建新实例，旧 recorder 不会写入新库。升级保留该库中的旧 `sessions`（v1，keyPath `sessionId`）；全新库也建出该 store 以支持 `loadLegacy`/`list`。未隔离的旧公共库保留，但不自动迁入新实例。
 - `compactSessions`（keyPath `sessionId`）：header，含会话元信息（sessionId/createdAt/app/environment/trainingKey）、`gaps`/`complete`、`counts`（events/checkpoints 与六张资源表长度）、`revision`、`batchId`（最后提交批次身份）。
 - `compactRecords`（keyPath `[sessionId, kind, index]`）：不可变追加行，`kind ∈ event|checkpoint|series|drawings|trainingMeta|accounts|trades|contexts`，`value` 为对应表内原始条目。行按 kind+index 连续，`load` 按序重组为 `CompactRecordingFile`，不展开行情（还原留给 CompactReader）。
 

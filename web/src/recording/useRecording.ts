@@ -2,7 +2,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { ApiError, fetchRecordingContext, type RecordingContext, type TrainingSnapshot } from '../api'
 import { businessEvents, isBusinessAction } from './businessEvents'
 import { CompactRecorder } from './compactRecorder'
-import { recordingStorage, loadLocalRecording } from './recordingRepository'
+import { recordingStorage, loadLocalRecording, recordingNamespaceKey } from './recordingRepository'
 import { acquireRecordingLease } from './recordingLease'
 import { writeRecordingFile } from './recordingFile'
 import type { CompactRecordingFile } from './compactTypes'
@@ -73,7 +73,7 @@ export function useRecording(options: {
     const training = options.snapshot().training
     return `${training.id}.${training.createdAt}`
   }
-  const storageKeyFor = (): string => `trainer.recording.${trainingKeyOf()}`
+  const storageKeyFor = (): string => recordingNamespaceKey(`trainer.recording.${trainingKeyOf()}`)
   const chartForCheckpoint = (): ChartCapture | null => {
     if (options.canonicalChart) return options.canonicalChart()
     return options.ready() ? options.readChart() ?? chart : null
