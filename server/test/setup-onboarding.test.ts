@@ -470,6 +470,14 @@ describe('GET /api/setup/restart-status', () => {
       const ready = await app.inject({ method: 'GET', url: '/api/setup/restart-status', headers: BROWSER_HEADERS })
       expect(ready.statusCode).toBe(200)
       expect(ready.json()).toMatchObject({ attemptId: 'attempt-9', phase: 'ready', done: true })
+
+      const chromiumGet = await app.inject({
+        method: 'GET',
+        url: '/api/setup/restart-status',
+        headers: { host: '127.0.0.1:8787', 'sec-fetch-site': 'same-origin' },
+      })
+      expect(chromiumGet.statusCode).toBe(200)
+      expect(chromiumGet.json()).toMatchObject({ attemptId: 'attempt-9', phase: 'ready', done: true })
     } finally { await app.close() }
   })
 

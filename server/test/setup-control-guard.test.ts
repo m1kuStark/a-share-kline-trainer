@@ -47,6 +47,16 @@ describe('validateSetupRequest: browser path', () => {
     expect(result).toEqual({ ok: true, principal: 'browser' })
   })
 
+  it('accepts Chromium same-origin requests whose GET omits Origin', () => {
+    const result = validateSetupRequest(withOverrides({ origin: undefined }))
+    expect(result).toEqual({ ok: true, principal: 'browser' })
+  })
+
+  it('rejects a no-Origin cross-site request instead of treating it as a helper', () => {
+    const result = validateSetupRequest(withOverrides({ origin: undefined, secFetchSite: 'cross-site' }))
+    expect(result).toEqual({ ok: false, statusCode: 403, code: 'FETCH_METADATA_MISMATCH' })
+  })
+
   it('origin comparison is case-sensitive (literal match)', () => {
     const result = validateSetupRequest(
       withOverrides({ origin: 'HTTP://127.0.0.1:8787' }),

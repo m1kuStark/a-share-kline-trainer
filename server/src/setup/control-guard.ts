@@ -1,9 +1,11 @@
 // 受保护 setup 请求判定（SETUP-AUTH-01 冻结合同）：纯函数，不读环境、
 // 不生成令牌、不记录路径或密钥、不做网络/文件操作。
-// 规则：Host 逐字匹配；有 Origin 走浏览器路径（Origin 逐字 + Fetch Metadata
-// same-origin，且不要求暴露控制令牌）；无 Origin 走本机助手路径（非空
-// expectedToken + controlToken 逐字相等）；混合身份（Origin+令牌）时令牌
-// 也必须匹配。大小写敏感逐字比较。
+// 规则：Host 逐字匹配；有 Origin 或 Fetch Metadata 走浏览器路径（Origin
+// 存在时逐字匹配，Fetch Metadata 存在时必须 same-origin，且不要求暴露控制
+// 令牌）；两者都没有才走本机助手路径（非空 expectedToken + controlToken
+// 逐字相等）。Chromium 的同源 GET 通常不发送 Origin，但会发送
+// Sec-Fetch-Site: same-origin，不能把这种浏览器请求误判成助手请求。
+// 混合身份（浏览器请求带令牌）时令牌也必须匹配。大小写敏感逐字比较。
 
 export interface SetupGuardInput {
   host: string | undefined
@@ -37,10 +39,11 @@ export function validateSetupRequest(input: SetupGuardInput): SetupGuardResult {
   }
 
   const hasOrigin = input.origin !== undefined && input.origin !== ''
+  const hasFetchMetadata = input.secFetchSite !== undefined
 
-  if (hasOrigin) {
-    // 2) 浏览器路径：Origin 逐字匹配
-    if (input.origin !== input.expectedOrigin) {
+  if (hasOrigin || hasFetchMetadata) {
+    // 2) 浏览器路径：Origin 存在时逐字匹配；同源 GET 可只带 Fetch Metadata
+    if (hasOrigin && input.origin !== input.expectedOrigin) {
       return { ok: false, statusCode: 403, code: 'ORIGIN_MISMATCH' }
     }
     // 3) Fetch Metadata 存在时必须是 same-origin
