@@ -81,18 +81,17 @@ const has = (result, code, path) => result.errors.some(error => error.code === c
 const codes = result => result.errors.map(error => error.code)
 
 describe('release package integrity inspector', () => {
-  it('rejects falsy JSON metadata instead of skipping integrity validation', async () => {
-    for (const path of ['release-manifest.json', 'release.json', 'package.json']) {
-      for (const value of [null, false, 0, '']) {
-        const root = await freshPackage()
-        if (path === 'release-manifest.json') {
-          await writeFile(join(root, path), JSON.stringify(value))
-          await writeFile(join(root, 'server/dist/index.js'), 'tampered')
-        } else await rewriteSigned(root, path, JSON.stringify(value))
-        const result = await withRoot(root)
-        expect(result.ok, `${path}=${JSON.stringify(value)}`).toBe(false)
-      }
-    }
+  it.each(
+    ['release-manifest.json', 'release.json', 'package.json'].flatMap(path =>
+      [null, false, 0, ''].map(value => [path, value] as const)),
+  )('rejects falsy JSON metadata instead of skipping integrity validation (%s=%j)', async (path, value) => {
+    const root = await freshPackage()
+    if (path === 'release-manifest.json') {
+      await writeFile(join(root, path), JSON.stringify(value))
+      await writeFile(join(root, 'server/dist/index.js'), 'tampered')
+    } else await rewriteSigned(root, path, JSON.stringify(value))
+    const result = await withRoot(root)
+    expect(result.ok, `${path}=${JSON.stringify(value)}`).toBe(false)
   })
   it('accepts a consistent synthetic package and reports its identity', async () => {
     const result = await withRoot(await freshPackage())

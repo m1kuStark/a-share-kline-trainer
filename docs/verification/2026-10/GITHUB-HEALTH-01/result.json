@@ -18,11 +18,27 @@
     { "command": "npm test (second full run)", "exitCode": 1, "passed": 1411, "failed": 1, "total": 1412, "evidence": ".runs/github-health-unit-final.json", "note": "Runtime cancellation reported incomplete Windows tree cleanup. Original assertion retained; focused file rerun passed. Added failure diagnostics." },
     { "command": "npm test (third full run)", "exitCode": 1, "passed": 1411, "failed": 1, "total": 1412, "evidence": ".runs/github-health-unit-confirmed.json", "note": "A control-path rename test exceeded its original 30s budget under concurrent host load (38.427s). The same unchanged file passed all 16 tests when run alone; the affected case took 3.690s. No assertion or timeout was relaxed." },
     { "command": "review-profile.test.ts focused confirmation", "exitCode": 0, "passed": 16, "failed": 0, "evidence": ".runs/review-profile-confirmed.json" },
+    { "command": "release-integrity.test.ts (original grouped falsy cases)", "exitCode": 0, "evidence": ".runs/release-integrity-falsy-before.json", "note": "The failing CI case passed alone locally in 1316ms, supporting the cumulative disk-I/O budget diagnosis." },
+    { "command": "release-integrity.test.ts (parameterized disk cases)", "exitCode": 0, "passed": 31, "failed": 0, "evidence": ".runs/release-integrity-final.json", "note": "All twelve scenarios and original assertions retained; each still uses the default 5s test budget." },
+    { "command": "review-profile.test.ts dependency ignore regression RED", "exitCode": 1, "evidence": "Tool transcript chunk 0104f5; no log file recorded", "note": "The original node_modules/ rule failed the new file-style check-ignore assertion." },
+    { "command": "review-profile.test.ts after dependency ignore fix", "exitCode": 0, "passed": 16, "failed": 0, "durationSeconds": 53.69, "evidence": "Tool transcript chunk d46e63; no log file recorded", "note": "Original 120s CLI-case budget and all proof assertions retained." },
     { "command": "npm test -- --maxWorkers=2 (final local full run)", "exitCode": 0, "passed": 1412, "failed": 0, "total": 1412, "filesPassed": 110, "durationSeconds": 415.25, "evidence": ".runs/github-health-unit-low-load.json", "note": "CLI-only concurrency reduction to test the host-load hypothesis; default configuration still uses 4 workers." },
     { "command": "npm run journey -- --retries=0", "exitCode": 1, "passed": 93, "failed": 29, "notRun": 3, "total": 125, "evidence": ".runs/run-c0343c4f-208b-4265-a036-e3cb3fd42f58/artifacts/browser-results.json", "comparison": ".runs/run-3bdacb45-80d1-4d6d-a01c-64d41c2d0d85/artifacts/browser-results.json", "statusChanges": 0, "newFailures": 0, "note": "Existing failures remain; not a passing product gate." },
     { "command": "npm audit --registry=https://registry.npmjs.org --json", "exitCode": 0, "vulnerabilities": 0, "evidence": ".runs/github-npm-audit-final.json" }
   ],
   "visual": { "reviewer": "integrator", "viewport": "1280x720", "themes": ["dark", "light"], "consoleErrors": 0, "consoleWarnings": 0, "evidence": [".runs/github-health-recordings-dark.png", ".runs/github-health-recordings-light.png"], "runId": "run-af1256a0-ed0d-43f7-b144-341930a31444", "stopped": true },
-  "github": { "sourceChecks": "pending push", "dependabotAlertsAfterPush": "pending verification", "profile": "https://github.com/m1kuStark", "accountFields": "Not changed: PATCH /user returned 404." },
+  "github": {
+    "sourceChecks": "First remote confirmation exposed two fixture problems; follow-up verification pending.",
+    "runs": [{ "runId": 37142539463, "commit": "b783633983880fe14310b06984451a7eeb9233fe", "conclusion": "failure", "url": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/37142539463", "jobs": [
+      { "platform": "ubuntu-latest", "jobId": 111259779491, "passed": 1405, "failed": 1, "skipped": 6, "log": ".runs/github-ubuntu-first.log", "reason": "The fixture ignored node_modules/ but Git does not treat a POSIX symlink as a directory; impact rejected the untracked symlink." },
+      { "platform": "windows-latest", "jobId": 111259779609, "passed": 1411, "failed": 1, "skipped": 0, "log": ".runs/github-windows-first.log", "reason": "Twelve disk-backed metadata cases shared one default 5s test budget; the test timed out at 5017ms without an integrity assertion failure." }
+    ] }],
+    "dependabotAlertsAfterPush": { "a-share-kline-trainer": 0, "KandleLine_Tech": 0, "evidence": [".runs/github-dependabot-after.json", ".runs/github-kandle-dependabot-after.json"], "scope": "Open-alert API snapshot after dependency update, not a claim that all possible vulnerabilities are absent." },
+    "profile": "https://github.com/m1kuStark",
+    "profileImageHttpStatus": 200,
+    "profileScreenshot": ".runs/github-profile-after.png",
+    "issueTemplatesPublished": true,
+    "accountFields": "Not changed: PATCH /user returned 404."
+  },
   "releasePreserved": { "tag": "v1.2.7", "commit": "bbd368b09a463183364861678db83a9ae86b1472", "releaseId": 402384887, "zipAssetId": 608131607, "zipSha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5", "checksumAssetId": 608141422 }
 }

@@ -266,7 +266,7 @@ describe('actual producer CLI coverage', () => {
     const fixtureRoot = join(sandbox, 'cli-repo')
     await mkdir(join(fixtureRoot, 'docs/work-items/tasks'), { recursive: true })
     await mkdir(join(fixtureRoot, 'docs/work-items/milestones'), { recursive: true })
-    await writeFile(join(fixtureRoot, '.gitignore'), '.runs/\nnode_modules/\nscripts/\n', 'utf8')
+    await writeFile(join(fixtureRoot, '.gitignore'), '.runs/\nnode_modules\nscripts/\n', 'utf8')
     await writeFile(join(fixtureRoot, 'package.json'), '{"private":true,"type":"module"}\n', 'utf8')
     const gitLocal = (...args: string[]) => gitAt(fixtureRoot, ...args)
     gitLocal('init', '--quiet', '--initial-branch=main')
@@ -288,15 +288,31 @@ describe('actual producer CLI coverage', () => {
     gitLocal('add', '.')
     gitLocal('commit', '--quiet', '-m', 'fixture docs-only change')
     const head = gitLocal('rev-parse', 'HEAD')
+    // Linux Git treats the dependency symlink as a file, so a directory-only
+    // ignore rule is insufficient. Check the rule before the path exists.
+    expect(gitLocal('check-ignore', '--no-index', 'node_modules')).toBe('node_modules')
     await symlink(join(repoRoot, 'node_modules'), join(fixtureRoot, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
     await mkdir(join(fixtureRoot, 'scripts/workflow'), { recursive: true })
     await cp(join(repoRoot, 'scripts/docs.ts'), join(fixtureRoot, 'scripts/docs.ts'))
     await cp(join(repoRoot, 'scripts/docs'), join(fixtureRoot, 'scripts/docs'), { recursive: true })
     await cp(join(repoRoot, 'scripts/workflow/bridge.ts'), join(fixtureRoot, 'scripts/workflow/bridge.ts'))
     await cp(join(repoRoot, 'scripts/workflow/state.ts'), join(fixtureRoot, 'scripts/workflow/state.ts'))
+    expect(gitLocal('status', '--porcelain', '--untracked-files=all')).toBe('')
     const executed = await runCli(process.execPath,
       [join(repoRoot, 'node_modules/tsx/dist/cli.mjs'), join(repoRoot, 'scripts/verify-candidate.ts'), '--base', base, '--task', 'DOCS-90'],
-      { cwd: fixtureRoot, encoding: 'utf8', windowsHide: true })
+      { cwd: fixtureRoot, encoding: 'utf8', windowsHide: true }).catch(async error => {
+        const runsRoot = join(fixtureRoot, '.runs')
+        for (const entry of await readdir(runsRoot).catch(() => [])) {
+          if (!entry.startsWith('run-')) continue
+          const artifacts = join(runsRoot, entry, 'artifacts')
+          for (const name of await readdir(artifacts).catch(() => [])) {
+            if (!name.endsWith('.log')) continue
+            const path = join(artifacts, name)
+            console.error(`CLI fixture diagnostics (${path}):\n${await readFile(path, 'utf8')}`)
+          }
+        }
+        throw error
+      })
     expect(executed.stdout).toContain('Review profile: docs-only')
     expect(executed.stdout).toContain('Candidate proof:')
     const proof = JSON.parse(await readFile(join(fixtureRoot, '.runs/candidate-proof.json'), 'utf8'))
