@@ -752,7 +752,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .exit-exited-panel { text-align: center; max-width: 560px; padding: 24px; }
 .exit-exited-panel h2 { margin: 0 0 12px; font-size: 20px; color: var(--text-primary, #1e293b); }
 .exit-exited-panel p { margin: 6px 0; font-size: 13px; line-height: 1.7; color: var(--text-secondary, #475569); }
-.exit-exited-screen.dark-exited { background: #151515; color: #e4e4e4; }
+.exit-exited-screen.dark-exited { background: #202020; color: #e4e4e4; }
 .exit-exited-screen.dark-exited .exit-exited-panel h2 { color: #e4e4e4; }
 .exit-exited-screen.dark-exited .exit-exited-panel p { color: #b8b8b8; }
 .picker-blocker { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; background: rgba(15, 23, 42, .48); }
