@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { homedir, tmpdir } from 'node:os'
+import { isAbsolute, join, resolve } from 'node:path'
 import {
   collectNearbyCandidateRoots,
   defaultTdxCandidates,
@@ -11,22 +11,25 @@ import {
 
 describe('TDX path discovery', () => {
   it('derives only generic system candidates and never embeds a developer path', () => {
-    const candidates = defaultTdxCandidates({
-      ProgramFiles: 'C:\\Program Files',
-      'ProgramFiles(x86)': 'C:\\Program Files (x86)',
-      ProgramData: 'C:\\ProgramData',
-      LOCALAPPDATA: 'C:\\Users\\tester\\AppData\\Local',
-      APPDATA: 'C:\\Users\\tester\\AppData\\Roaming',
-      SystemDrive: 'C:',
-    })
+    const systemRoot = join(tmpdir(), 'candidate-system')
+    const environment = {
+      ProgramFiles: join(systemRoot, 'Program Files'),
+      'ProgramFiles(x86)': join(systemRoot, 'Program Files (x86)'),
+      ProgramData: join(systemRoot, 'ProgramData'),
+      LOCALAPPDATA: join(systemRoot, 'Users', 'tester', 'AppData', 'Local'),
+      APPDATA: join(systemRoot, 'Users', 'tester', 'AppData', 'Roaming'),
+      SystemDrive: systemRoot,
+    }
+    const candidates = defaultTdxCandidates(environment)
 
-    expect(candidates.every(candidate => /^[A-Z]:\\/i.test(candidate))).toBe(true)
-    expect(candidates.every(candidate => candidate.startsWith('C:\\'))).toBe(true)
+    expect(candidates.every(candidate => isAbsolute(candidate))).toBe(true)
+    expect(candidates).toEqual([...new Set([...Object.values(environment), homedir()]
+      .flatMap(root => ['TongDaXin', 'TDX'].map(name => join(root, name))))])
     expect(candidates).toEqual(expect.arrayContaining([
-      'C:\\Program Files\\TongDaXin',
-      'C:\\Program Files\\TDX',
-      'C:\\ProgramData\\TongDaXin',
-      'C:\\ProgramData\\TDX',
+      join(systemRoot, 'Program Files', 'TongDaXin'),
+      join(systemRoot, 'Program Files', 'TDX'),
+      join(systemRoot, 'ProgramData', 'TongDaXin'),
+      join(systemRoot, 'ProgramData', 'TDX'),
     ]))
   })
 

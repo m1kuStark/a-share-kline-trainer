@@ -458,7 +458,7 @@ describe('data refresh service', () => {
       // PORT-01（REL-LAUNCH-UX-01 增量）新增 launcher:{port,fallbackFrom,fallbackReason}——
       // 只有数字与原因枚举，无路径。
       expect(Object.keys(body).sort()).toEqual([
-        'activeTrainingId', 'capabilities', 'dataCutoff', 'launcher', 'status', 'stockCount', 'tdx',
+        'activeTrainingId', 'capabilities', 'dataCutoff', 'launcher', 'recordingNamespace', 'status', 'stockCount', 'tdx',
       ].sort())
       expect(body).toMatchObject({
         status: 'ok',
@@ -470,6 +470,10 @@ describe('data refresh service', () => {
       expect(Object.keys(body.tdx).sort()).toEqual(['connected', 'source'])
       // PORT-01：launcher 块同样只有固定键（数字/枚举），不回传路径
       expect(Object.keys(body.launcher).sort()).toEqual(['fallbackFrom', 'fallbackReason', 'port'])
+      expect(body.recordingNamespace).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i)
+      const next = await app.inject({ method: 'GET', url: '/api/env' })
+      expect(next.json().recordingNamespace).toBe(body.recordingNamespace)
+      expect(database.prepare("SELECT value FROM cache_meta WHERE key = 'recording_namespace'").get()).toEqual({ value: body.recordingNamespace })
       expect(response.body).not.toContain(root)
       expect(Object.keys(body.capabilities).sort()).toEqual([
         'benchmark', 'catalogCache', 'day', 'forwardAdjust', 'training',

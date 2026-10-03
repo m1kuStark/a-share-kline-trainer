@@ -1,0 +1,28 @@
+{
+  "taskId": "GITHUB-HEALTH-01",
+  "date": "2026-10-04",
+  "baseCommit": "1a79853b69b8c910db514c0c02d97e8a75c0e0c9",
+  "testedObject": "Pre-commit working tree; final immutable source commit is verified by GitHub Actions.",
+  "environment": { "platform": "win32", "node": "24.15.0", "vitest": "4.1.11" },
+  "dataScope": "Isolated databases, temporary process fixtures and frozen TDX sample. Personal training data is excluded; source TDX files are read-only.",
+  "checks": [
+    { "command": "npm run build", "exitCode": 0, "log": ".runs/github-health-build.log" },
+    { "command": "npm run build (final)", "exitCode": 0, "log": ".runs/github-health-build-final.log" },
+    { "command": "npm run docs:check", "exitCode": 0, "errors": 0, "warnings": 33, "log": ".runs/github-health-docs-check.log" },
+    { "command": "npm run docs:impact -- --base 1a79853b69b8c910db514c0c02d97e8a75c0e0c9 --task GITHUB-HEALTH-01", "exitCode": 0, "errors": 0, "warnings": 0, "log": ".runs/github-health-docs-impact.log" },
+    { "command": "npm run docs:status -- --check", "exitCode": 0, "errors": 0, "warnings": 0 },
+    { "command": "npx --no-install tsx scripts/verify-m2.ts", "exitCode": 0, "passed": 24, "failed": 0, "evidence": ".runs/github-health-m2/M2-e2e-report.md" },
+    { "command": "npm test (first full run)", "exitCode": 1, "passed": 1409, "failed": 2, "total": 1411, "evidence": ".runs/github-health-unit.json", "note": "Launcher fixture cleanup failures, subsequently fixed." },
+    { "command": "release-launcher.test.ts regression RED", "exitCode": 1, "evidence": ".runs/launcher-cleanup-red.json" },
+    { "command": "release-launcher.test.ts final focused run", "exitCode": 0, "passed": 52, "failed": 0, "evidence": ".runs/launcher-cleanup-final.json" },
+    { "command": "npm test (second full run)", "exitCode": 1, "passed": 1411, "failed": 1, "total": 1412, "evidence": ".runs/github-health-unit-final.json", "note": "Runtime cancellation reported incomplete Windows tree cleanup. Original assertion retained; focused file rerun passed. Added failure diagnostics." },
+    { "command": "npm test (third full run)", "exitCode": 1, "passed": 1411, "failed": 1, "total": 1412, "evidence": ".runs/github-health-unit-confirmed.json", "note": "A control-path rename test exceeded its original 30s budget under concurrent host load (38.427s). The same unchanged file passed all 16 tests when run alone; the affected case took 3.690s. No assertion or timeout was relaxed." },
+    { "command": "review-profile.test.ts focused confirmation", "exitCode": 0, "passed": 16, "failed": 0, "evidence": ".runs/review-profile-confirmed.json" },
+    { "command": "npm test -- --maxWorkers=2 (final local full run)", "exitCode": 0, "passed": 1412, "failed": 0, "total": 1412, "filesPassed": 110, "durationSeconds": 415.25, "evidence": ".runs/github-health-unit-low-load.json", "note": "CLI-only concurrency reduction to test the host-load hypothesis; default configuration still uses 4 workers." },
+    { "command": "npm run journey -- --retries=0", "exitCode": 1, "passed": 93, "failed": 29, "notRun": 3, "total": 125, "evidence": ".runs/run-c0343c4f-208b-4265-a036-e3cb3fd42f58/artifacts/browser-results.json", "comparison": ".runs/run-3bdacb45-80d1-4d6d-a01c-64d41c2d0d85/artifacts/browser-results.json", "statusChanges": 0, "newFailures": 0, "note": "Existing failures remain; not a passing product gate." },
+    { "command": "npm audit --registry=https://registry.npmjs.org --json", "exitCode": 0, "vulnerabilities": 0, "evidence": ".runs/github-npm-audit-final.json" }
+  ],
+  "visual": { "reviewer": "integrator", "viewport": "1280x720", "themes": ["dark", "light"], "consoleErrors": 0, "consoleWarnings": 0, "evidence": [".runs/github-health-recordings-dark.png", ".runs/github-health-recordings-light.png"], "runId": "run-af1256a0-ed0d-43f7-b144-341930a31444", "stopped": true },
+  "github": { "sourceChecks": "pending push", "dependabotAlertsAfterPush": "pending verification", "profile": "https://github.com/m1kuStark", "accountFields": "Not changed: PATCH /user returned 404." },
+  "releasePreserved": { "tag": "v1.2.7", "commit": "bbd368b09a463183364861678db83a9ae86b1472", "releaseId": 402384887, "zipAssetId": 608131607, "zipSha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5", "checksumAssetId": 608141422 }
+}

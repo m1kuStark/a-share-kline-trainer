@@ -171,6 +171,13 @@ describe('runtime processes', () => {
       controller.abort(new Error('abort requested'))
       await expect(running).rejects.toThrow(/abort/i)
       expect(await readFile(logPath, 'utf8')).toContain('child alive')
+    } catch (error) {
+      if (!controller.signal.aborted) controller.abort(new Error('test cleanup'))
+      const failure = await running.catch(reason => reason)
+      const cleanupError = failure instanceof Error && 'cleanupError' in failure ? failure.cleanupError : undefined
+      const log = await readFile(logPath, 'utf8').catch(() => '')
+      console.error('Owned command cancellation diagnostics:', { failure, cleanupError, log })
+      throw error
     } finally {
       if (!controller.signal.aborted) controller.abort(new Error('test cleanup'))
       await running.catch(() => {})

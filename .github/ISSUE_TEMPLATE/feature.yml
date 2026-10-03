@@ -1,0 +1,18 @@
+name: 功能建议
+description: 描述你希望改善的训练场景。
+title: "[Feature] "
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 使用场景与问题
+      description: 当前操作中遇到了什么不便？
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 希望的改善
+      description: 描述期望的操作和结果。
+    validations:
+      required: true

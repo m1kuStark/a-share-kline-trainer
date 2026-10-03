@@ -11,10 +11,15 @@ const launcherPath = new URL('../../web/src/views/Launcher.vue', import.meta.url
 const rankingsPath = new URL('../../web/src/views/Rankings.vue', import.meta.url)
 
 describe('M2 chart interaction contract', () => {
-  it('explains that browser recordings and SQLite training history are separate stores', async () => {
+  it('routes recordings separately from settled training history and displays each recording source', async () => {
     const source = await readFile(appPath, 'utf8')
-    expect(source).toMatch(/本机录像与已结算训练记录分开保存/)
-    expect(source).toMatch(/settledTrainingCount/)
+    expect(source).toMatch(/<RecordingLibrary v-else-if="view === 'library'"/)
+    expect(source).toMatch(/<History v-else-if="view === 'history'"/)
+    const library = await readFile(new URL('../../web/src/components/RecordingLibrary.vue', import.meta.url), 'utf8')
+    expect(library).toMatch(/data-recording-source="local"/)
+    expect(library).toMatch(/data-recording-source="imported"/)
+    expect(library).toMatch(/props\.items\.filter\(item => item\.source === 'local'\)/)
+    expect(library).toMatch(/props\.items\.filter\(item => item\.source === 'imported'\)/)
   })
   it('keeps exact stock matches in the clickable suggestion list and exposes search progress', async () => {
     const source = await readFile(launcherPath, 'utf8')

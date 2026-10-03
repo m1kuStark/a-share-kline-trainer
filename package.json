@@ -35,7 +35,7 @@
   "dependencies": {
     "@fastify/cors": "^11.1.0",
     "@fastify/static": "^10.1.3",
-    "fastify": "^5.6.0",
+    "fastify": "^5.12.5",
     "klinecharts": "10.0.3",
     "lucide-vue-next": "^0.577.0",
     "pinia": "^3.0.3",
@@ -50,12 +50,12 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vite": "^7.1.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.3.11"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/m1kuStark/kline-trainer.git"
+    "url": "https://github.com/m1kuStark/a-share-kline-trainer.git"
   }
 }

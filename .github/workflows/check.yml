@@ -13,6 +13,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,5 +21,14 @@ jobs:
           node-version: 24.15.0
           cache: npm
       - run: npm ci
-      - run: npm test
       - run: npm run build
+      - name: Test source and compiled launcher
+        run: npm test -- --reporter=default --reporter=json --outputFile=test-results.json
+      - name: Retain test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results.json
+          if-no-files-found: ignore
+          retention-days: 14

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { decodedLegacyCheckpoint } from './helpers/legacy-recording'
 import { CompactReader, compactRecording } from '../../web/src/recording/compactCodec'
 import { validateCompactRecording } from '../../web/src/recording/compactValidation'
 import type { ReplayEventWindow } from '../../web/src/recording/compactReplay'
@@ -147,7 +148,7 @@ describe('紧凑检查点选择（二分索引）', () => {
       const v1 = checkpointForSeq(file.checkpoints, seq)
       const v2 = selectedId(seq)
       expect(v2).toBe(v1?.id ?? null)
-      if (v1) expect(reader.checkpointAt(compactCheckpointIndexForSeq(compact.checkpoints, seq)!)).toEqual(v1)
+      if (v1) expect(reader.checkpointAt(compactCheckpointIndexForSeq(compact.checkpoints, seq)!)).toEqual(decodedLegacyCheckpoint(v1))
     }
   })
 

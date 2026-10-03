@@ -69,7 +69,11 @@ function legacyRows(database: DatabaseSync): unknown {
         settle_date, early_settle, note
       FROM trainings ORDER BY id
     `).all(),
-    trades: database.prepare('SELECT * FROM trades ORDER BY id').all(),
+    trades: database.prepare(`
+      SELECT id, training_id, seq, trade_date, side, price, shares, amount,
+        fee, cash_after, shares_after, cost_after
+      FROM trades ORDER BY id
+    `).all(),
     position_events: database.prepare('SELECT * FROM position_events ORDER BY training_id, seq').all(),
     settings: database.prepare('SELECT * FROM settings ORDER BY key').all(),
   }
@@ -108,6 +112,9 @@ describe('TRAINING-RULES：旧库迁移', () => {
 
       // 旧流水逐字段不变
       expect(legacyRows(database)).toEqual(before)
+      expect(database.prepare('SELECT trade_phase, execution_type, reason, order_id FROM trades').all()).toEqual([
+        { trade_phase: 'close', execution_type: 'market', reason: null, order_id: null },
+      ])
     } finally {
       database.close()
     }

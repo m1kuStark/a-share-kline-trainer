@@ -181,15 +181,15 @@ describe('git index safety', () => {
 })
 
 describe('live worktree link safety', () => {
-  it('refuses docs-only while a changed directory resolves through a junction and recovers once the real directory returns', async (t) => {
+  it('refuses docs-only while a changed directory resolves through a junction and recovers once the real directory returns', async () => {
     await put('docs/guide.md', '# guide\n')
     commit('docs change')
     const outside = join(sandbox, 'outside-docs')
     await rename(join(root, 'docs'), outside)
-    try { await symlink(outside, join(root, 'docs'), process.platform === 'win32' ? 'junction' : 'dir') }
-    catch { t.skip(); return }
+    await symlink(outside, join(root, 'docs'), process.platform === 'win32' ? 'junction' : 'dir')
     try {
-      expect(git('status', '--porcelain')).toBe('')
+      if (process.platform === 'win32') expect(git('status', '--porcelain')).toBe('')
+      else expect(git('status', '--porcelain')).toContain('?? docs')
       const review = classify({ worktreePath: root })
       expect(review.profile).toBe('full')
       expect(review.reason).toMatch(/symlink|junction/i)
@@ -202,7 +202,7 @@ describe('live worktree link safety', () => {
     expect(classify({ worktreePath: root }).profile).toBe('docs-only')
   })
 
-  it('keeps validating deletions from the committed tree and tolerates their missing file under a junctioned parent', async (t) => {
+  it('keeps validating deletions from the committed tree and tolerates their missing file under a junctioned parent', async () => {
     await put('docs/guide.md', '# guide\n')
     commit('second docs file')
     git('rm', '--quiet', 'docs/keep.md')
@@ -210,9 +210,9 @@ describe('live worktree link safety', () => {
     expect(classify({ worktreePath: root }).profile).toBe('docs-only')
     const outside = join(sandbox, 'outside-docs')
     await rename(join(root, 'docs'), outside)
-    try { await symlink(outside, join(root, 'docs'), process.platform === 'win32' ? 'junction' : 'dir') }
-    catch { t.skip(); return }
-    expect(git('status', '--porcelain')).toBe('')
+    await symlink(outside, join(root, 'docs'), process.platform === 'win32' ? 'junction' : 'dir')
+    if (process.platform === 'win32') expect(git('status', '--porcelain')).toBe('')
+    else expect(git('status', '--porcelain')).toContain('?? docs')
     const review = classify({ worktreePath: root })
     expect(review.profile).toBe('full')
     expect(review.reason).toMatch(/symlink|junction/i)
@@ -261,12 +261,13 @@ describe('actual producer CLI coverage', () => {
   // docs, impact and status checks — never a product build, TDX snapshot, server,
   // M2 or Journey step. The docs tool source is copied verbatim into the fixture
   // because the plan invokes `scripts/docs.ts` relative to the fixture root.
-  it('executes the real verify-candidate CLI on a docs-only fixture and runs only docs, impact and status', async (t) => {
+  it('executes the real verify-candidate CLI on a docs-only fixture and runs only docs, impact and status', async () => {
     const repoRoot = fileURLToPath(new URL('../..', import.meta.url))
     const fixtureRoot = join(sandbox, 'cli-repo')
     await mkdir(join(fixtureRoot, 'docs/work-items/tasks'), { recursive: true })
     await mkdir(join(fixtureRoot, 'docs/work-items/milestones'), { recursive: true })
     await writeFile(join(fixtureRoot, '.gitignore'), '.runs/\nnode_modules/\nscripts/\n', 'utf8')
+    await writeFile(join(fixtureRoot, 'package.json'), '{"private":true,"type":"module"}\n', 'utf8')
     const gitLocal = (...args: string[]) => gitAt(fixtureRoot, ...args)
     gitLocal('init', '--quiet', '--initial-branch=main')
     gitLocal('config', 'user.name', 'Verify Candidate CLI Test')
@@ -287,12 +288,12 @@ describe('actual producer CLI coverage', () => {
     gitLocal('add', '.')
     gitLocal('commit', '--quiet', '-m', 'fixture docs-only change')
     const head = gitLocal('rev-parse', 'HEAD')
-    try {
-      await symlink(join(repoRoot, 'node_modules'), join(fixtureRoot, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
-      await mkdir(join(fixtureRoot, 'scripts'), { recursive: true })
-      await cp(join(repoRoot, 'scripts/docs.ts'), join(fixtureRoot, 'scripts/docs.ts'))
-      await cp(join(repoRoot, 'scripts/docs'), join(fixtureRoot, 'scripts/docs'), { recursive: true })
-    } catch { t.skip(); return }
+    await symlink(join(repoRoot, 'node_modules'), join(fixtureRoot, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
+    await mkdir(join(fixtureRoot, 'scripts/workflow'), { recursive: true })
+    await cp(join(repoRoot, 'scripts/docs.ts'), join(fixtureRoot, 'scripts/docs.ts'))
+    await cp(join(repoRoot, 'scripts/docs'), join(fixtureRoot, 'scripts/docs'), { recursive: true })
+    await cp(join(repoRoot, 'scripts/workflow/bridge.ts'), join(fixtureRoot, 'scripts/workflow/bridge.ts'))
+    await cp(join(repoRoot, 'scripts/workflow/state.ts'), join(fixtureRoot, 'scripts/workflow/state.ts'))
     const executed = await runCli(process.execPath,
       [join(repoRoot, 'node_modules/tsx/dist/cli.mjs'), join(repoRoot, 'scripts/verify-candidate.ts'), '--base', base, '--task', 'DOCS-90'],
       { cwd: fixtureRoot, encoding: 'utf8', windowsHide: true })

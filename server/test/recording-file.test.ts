@@ -2,6 +2,7 @@
 // 读：magic识别gzip、流式计数解压、fatal UTF-8、v1迁移/v2校验；写：先校验再默认gzip。
 // 预算测试通过内部stream helper注入更小阈值，不构造真实大文件。
 import { describe, expect, it } from 'vitest'
+import { decodedLegacyCheckpoint } from './helpers/legacy-recording'
 import { randomBytes } from 'node:crypto'
 import {
   INFLATE_COALESCE_BYTES,
@@ -266,7 +267,7 @@ describe('writeRecordingFile/readRecordingFile 往返', () => {
 
     const reader = new CompactReader(read)
     for (let i = 0; i < checkpoints.length; i += 1) {
-      expect(reader.checkpointAt(i)).toEqual(checkpoints[i])
+      expect(reader.checkpointAt(i)).toEqual(decodedLegacyCheckpoint(checkpoints[i]))
     }
   })
 
@@ -294,7 +295,7 @@ describe('writeRecordingFile/readRecordingFile 往返', () => {
     expect(read.resources).toEqual(file.resources)
     const reader = new CompactReader(read)
     for (let i = 0; i < checkpoints.length; i += 1) {
-      expect(reader.checkpointAt(i)).toEqual(checkpoints[i])
+      expect(reader.checkpointAt(i)).toEqual(decodedLegacyCheckpoint(checkpoints[i]))
     }
   })
 
@@ -310,7 +311,7 @@ describe('writeRecordingFile/readRecordingFile 往返', () => {
     expect(read.complete).toBe(v1.complete)
     const reader = new CompactReader(read)
     for (let i = 0; i < v1.checkpoints.length; i += 1) {
-      expect(reader.checkpointAt(i)).toEqual(v1.checkpoints[i])
+      expect(reader.checkpointAt(i)).toEqual(decodedLegacyCheckpoint(v1.checkpoints[i]))
     }
   })
 })

@@ -17,6 +17,8 @@
 
 Vitest使用threads池、最多4个worker。Windows CI曾在fork池发生ERR_IPC_CHANNEL_CLOSED，日志未提供worker原始退出原因，不能称作业务断言失败。保留完整用例和断言，以线程池避开该IPC路径；需要独立cwd的用例启动真实子进程验证，不在测试worker里chdir。单独GLM定向测试可用maxWorkers=2；Journey每run仍1worker。
 
+GitHub Source checks 在 Windows 与 Ubuntu 上先执行 `npm ci` 和 `npm run build`，再执行完整 `npm test`。启动器装配测试需要 `server/dist` 中的真实重启模块，不能依赖开发机残留构建产物。每个平台保留 JSON 测试报告供失败排查。Windows 路径解析使用 `path.win32`；操作真实临时文件的测试使用宿主绝对路径，平台专用查询通过明确的平台夹具验证。
+
 ## UI-VISUAL-ACCEPTANCE
 
 新schemaVersion=2证明只有被控制层重算为docs-only时允许visual=not_applicable：非空变更全是普通非执行Markdown，限docs下或根README/CONTRIBUTING，排除AGENTS/CLAUDE及docs/engineering、specs、architecture；代码、配置、UI、混合及未知范围均为full。文件模式、索引隐藏标志与工作区联接也参与保守判定。

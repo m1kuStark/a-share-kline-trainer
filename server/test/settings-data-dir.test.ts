@@ -44,7 +44,7 @@ afterEach(async () => {
 
 describe('parseDataDirPut 严格校验', () => {
   it('只接受恰好 { dataDir: 绝对路径 }（同步 throw HttpError）', () => {
-    expect(parseDataDirPut({ dataDir: 'C:\\train-data' })).toBeTruthy()
+    expect(parseDataDirPut({ dataDir: join(tmpdir(), 'train-data') })).toBe(join(tmpdir(), 'train-data'))
     expect(() => parseDataDirPut({ dataDir: 'relative/path' })).toThrow('绝对路径')
     expect(() => parseDataDirPut({ dataDir: '  ' })).toThrow()
     expect(() => parseDataDirPut({ dataDir: 'x', extra: 1 })).toThrow()
@@ -120,7 +120,7 @@ describe('PUT /api/settings/data-dir', () => {
 
   it('独立运行返回 409 结构化错误，不落任何盘', async () => {
     const { app, database } = await createApp({ launcherConfigPath: null })
-    const response = await app.inject({ method: 'PUT', url: '/api/settings/data-dir', payload: { dataDir: 'C:/somewhere' } })
+    const response = await app.inject({ method: 'PUT', url: '/api/settings/data-dir', payload: { dataDir: join(tmpdir(), 'somewhere') } })
     // 独立实例无全局 HttpError 处理器（中文正文由 registerApi 层包装），此处断言状态码语义
     expect(response.statusCode).toBe(409)
     await app.close()

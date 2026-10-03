@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { decodedLegacyCheckpoint } from './helpers/legacy-recording'
 import {
   CompactBuilder,
   CompactReader,
@@ -465,7 +466,7 @@ describe('CompactBuilder 空checkpoint', () => {
     expect(r0.chart).toBeNull()
     expect(r0.context).toBeNull()
     const r1 = reader.checkpointAt(1)
-    expect(r1.training).toEqual(c1.training)
+    expect(r1.training).toEqual(decodedLegacyCheckpoint(c1).training)
     expect(r1.chart?.bars).toEqual(c1.chart?.bars)
     expect(r1.context).toEqual({ k: 'v' })
   })
@@ -509,7 +510,7 @@ describe('compactRecording v1迁移', () => {
     expect(compact.checkpoints.map(cp => cp.id)).toEqual(captured.map(cp => cp.id))
     const reader = new CompactReader(compact)
     for (let i = 0; i < 3; i += 1) {
-      expect(reader.checkpointAt(i)).toEqual(file.checkpoints[i])
+      expect(reader.checkpointAt(i)).toEqual(decodedLegacyCheckpoint(file.checkpoints[i]))
     }
   })
 })

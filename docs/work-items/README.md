@@ -8,6 +8,8 @@ v0.3.2执行入口：[REL-03](tasks/REL-03.md)，首批[FRESH-01](tasks/FRESH-01
 
 当前活动清单见[status](../status.md)，由工作空间 `.control/trainer-state.json` 的统一当前状态与任务卡生成。卡片保留静态契约和证据索引，不独立维护另一套结论；单任务路径稳定，状态变化不搬文件。先按 ID 查卡片，再读相关规格和证据。
 
+- [GITHUB-HEALTH-01](tasks/GITHUB-HEALTH-01.md)：自动检查双平台失败修复与 GitHub 个人主页、仓库展示整理。
+
 - [UI-FEEDBACK-04](tasks/UI-FEEDBACK-04.md)：v1.2.3 后续用户反馈，统一阶段价位线、训练页更新结果和排行层级。
 
 - [DOC-01](tasks/DOC-01.md)：本轮文档治理及基线冻结。

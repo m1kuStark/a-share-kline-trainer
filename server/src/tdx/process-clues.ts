@@ -3,7 +3,7 @@
 // 失败、超时、拒绝与"确实没有进程"分别可区分。生产查询使用固定程序与参数数组，
 // 限定进程名/数量/超时，不拼接 shell、不读取命令行或账号、不记录完整本机路径。
 import { spawn } from 'node:child_process'
-import { basename as win32Basename, dirname as win32Dirname } from 'node:path'
+import { win32 } from 'node:path'
 import { StringDecoder } from 'node:string_decoder'
 
 export interface ProcessQueryResult {
@@ -95,12 +95,12 @@ export function parseProcessQueryStdout(stdout: string): string[] {
     const exePath = rawLine.trim()
     if (!exePath) continue
     // structured win32 path APIs handle drive roots correctly
-    const basename = win32Basename(exePath)
+    const basename = win32.basename(exePath)
     if (!isKnownTdxExecutable(basename)) continue
-    const exeDirectory = win32Dirname(exePath)
-    const parentName = win32Basename(exeDirectory)
+    const exeDirectory = win32.dirname(exePath)
+    const parentName = win32.basename(exeDirectory)
     const root = parentName.toLowerCase() === 'bin'
-      ? win32Dirname(exeDirectory)
+      ? win32.dirname(exeDirectory)
       : exeDirectory
     const dedupKey = root.toLowerCase()
     if (seen.has(dedupKey)) continue

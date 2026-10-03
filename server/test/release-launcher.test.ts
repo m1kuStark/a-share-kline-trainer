@@ -113,11 +113,13 @@ const launcher = launcherModule as unknown as LauncherModule
 const FIXTURE_SERVER = `
 import { appendFile, rename, writeFile } from 'node:fs/promises'
 import http from 'node:http'
+import { setTimeout as delay } from 'node:timers/promises'
 
 const counterFile = process.env.FIXTURE_SPAWN_COUNTER
 if (counterFile) await appendFile(counterFile, process.pid + '\\n')
 const pidFile = process.env.FIXTURE_PID_FILE
 if (pidFile) await writeFile(pidFile, String(process.pid))
+await delay(Number(process.env.FIXTURE_START_DELAY_MS ?? 0))
 // SETUP-01：把注入的会话环境变量原样落盘，供测试断言启动器注入与令牌不落盘
 const envFile = process.env.FIXTURE_ENV_FILE
 if (envFile) {
@@ -177,10 +179,14 @@ const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 interface OwnedServer { pid: number, port: number, runId: string, healthDelayMs: number }
 const activeServers: OwnedServer[] = []
 const activeChildren: ChildProcess[] = []
+const pendingLaunches = new Set<Promise<LaunchResult>>()
 const activeRoots = new Set<string>()
 const activeClosers: Array<() => Promise<void>> = []
 
-afterEach(async () => {
+async function cleanupFixtures() {
+  // A test timeout does not cancel launcher.launch(); settle it before taking
+  // the server snapshot so detached children cannot arrive after cleanup.
+  await Promise.allSettled([...pendingLaunches])
   for (const closer of activeClosers.splice(0)) await closer().catch(() => {})
   // 直接 spawn 的子进程用句柄结束：句柄本身就是所有权证据，不存在 PID
   // 复用误伤问题。
@@ -206,7 +212,9 @@ afterEach(async () => {
   }
   for (const root of activeRoots) await removeTree(root)
   activeRoots.clear()
-})
+}
+
+afterEach(cleanupFixtures, 30_000)
 
 async function waitForExit(pid: number) {
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -280,21 +288,28 @@ function writeConfig(root: string, fields: Record<string, unknown>) {
 // sanitize process.env so developer shells (TDX_ROOT, NODE_OPTIONS, ...) cannot
 // steer the fixtures; launcher overrides are applied on top inside launch().
 async function launchFixture(root: string, overrides: Record<string, string | undefined> = {}, options: Partial<LaunchOptions> = {}) {
-  const result = await launcher.launch({
+  const launching = launcher.launch({
     root,
     openBrowser: false,
     env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_DB: '', ...overrides },
     startTimeoutMs: 10_000,
     lockWaitMs: 2_000,
     ...options,
+  }).then(result => {
+    activeServers.push({
+      pid: result.pid,
+      port: result.port,
+      runId: result.runId,
+      healthDelayMs: Number(overrides.FIXTURE_HEALTH_DELAY_MS ?? 0) || 0,
+    })
+    return result
   })
-  activeServers.push({
-    pid: result.pid,
-    port: result.port,
-    runId: result.runId,
-    healthDelayMs: Number(overrides.FIXTURE_HEALTH_DELAY_MS ?? 0) || 0,
-  })
-  return result
+  pendingLaunches.add(launching)
+  try {
+    return await launching
+  } finally {
+    pendingLaunches.delete(launching)
+  }
 }
 
 // 测试自身对已启动服务的健康访问：URL 用 new URL 显式构造，
@@ -342,6 +357,27 @@ async function stopFixture(root: string, overrides: Record<string, string | unde
 function stateFile(dataDir: string) {
   return join(dataDir, 'trainer-state.json')
 }
+
+describe('release launcher fixture cleanup', () => {
+  it('waits for pending launches before removing their fixture roots', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, 'data')
+    await writeConfig(root, { port: await freePort(), dataDir })
+    const pidFile = join(dataDir, 'fixture.pid')
+    const launching = launchFixture(root, { FIXTURE_PID_FILE: pidFile, FIXTURE_START_DELAY_MS: '1500' })
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (await access(pidFile).then(() => true, () => false)) break
+      await delay(50)
+    }
+    const pid = Number(await readFile(pidFile, 'utf8'))
+    expect(launcher.pidAlive(pid)).toBe(true)
+    const cleanupFailure = await cleanupFixtures().catch(error => error)
+    await launching
+    expect(cleanupFailure).toBeUndefined()
+    expect(launcher.pidAlive(pid)).toBe(false)
+    await expect(access(root)).rejects.toMatchObject({ code: 'ENOENT' })
+  }, 30_000)
+})
 
 // 停止/启动拒绝场景要求"状态文件原样保留"，按原始字节比较而不是重新序列化。
 async function writeRawState(dataDir: string, value: unknown) {
@@ -1279,7 +1315,7 @@ describe('SETUP-01 saved choice in launcher resolution', () => {
     const injected = JSON.parse(await readFile(envFile, 'utf8')) as { TDX_ROOT: string | null, TRAINER_TDX_SOURCE: string | null }
     expect(injected.TDX_ROOT).toBe('')
     expect(injected.TRAINER_TDX_SOURCE).toBe('')
-  })
+  }, 30_000)
 
   it('launch adopts the saved choice, injects session env, and never leaks the control token', async () => {
     const root = await makeFixture()

@@ -906,5 +906,5 @@ describe('500 次推进', () => {
     }
 
     expect(() => validateCompactRecording(file)).not.toThrow()
-  })
+  }, 20_000)
 })

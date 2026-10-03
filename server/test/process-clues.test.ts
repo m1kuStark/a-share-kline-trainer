@@ -1,7 +1,7 @@
 // 进程线索提取（SETUP-CLUES-01 冻结合同）：从注入的进程查询结果提取安装根目录线索。
 // 线索只表示"值得检查"，不等于可训练或自动生效；失败与"确实没有进程"必须可区分；
 // 生产查询固定程序与参数数组，不拼 shell；测试全程使用合成路径，不读取真实 TDX。
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   appendBounded,
   appendBoundedChunk,
@@ -18,6 +18,10 @@ import {
 function ok(stdout: string, exitCode = 0): ProcessQueryResult {
   return { exitCode, stdout, stderr: '', timedOut: false }
 }
+
+const hostPlatform = process.platform
+beforeEach(() => Object.defineProperty(process, 'platform', { value: 'win32' }))
+afterEach(() => Object.defineProperty(process, 'platform', { value: hostPlatform }))
 
 describe('parseProcessQueryStdout', () => {
   it('extracts install roots from standard bin layout, keeping order', () => {
@@ -99,15 +103,12 @@ describe('collectProcessClues', () => {
   })
 
   it('marks the platform not applicable off windows', async () => {
-    const original = process.platform
     Object.defineProperty(process, 'platform', { value: 'linux' })
-    try {
-      const result = await collectProcessClues(async () => ok('D:\\x\\bin\\TdxW.exe'))
-      expect(result.status).toBe('not_applicable')
-      expect(result.clues).toEqual([])
-    } finally {
-      Object.defineProperty(process, 'platform', { value: original })
-    }
+    const query = vi.fn(async () => ok('D:\\x\\bin\\TdxW.exe'))
+    const result = await collectProcessClues(query)
+    expect(result.status).toBe('not_applicable')
+    expect(result.clues).toEqual([])
+    expect(query).not.toHaveBeenCalled()
   })
 
   it('caps the number of clues at the contract limit', async () => {
