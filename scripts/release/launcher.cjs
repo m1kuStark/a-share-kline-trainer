@@ -1457,7 +1457,11 @@ async function main(argv) {
     if (parsed.restartAttemptPath) {
       // SETUP-01 受控重启监管模式：由服务端 detached 拉起，无交互输出；结果经
       // dataDir/setup-restart-status.json 呈现，退出码 0=ready、1=未就绪/失败。
-      const result = await runSetupRestartAttempt({ ...parsed, env: process.env })
+      // V1.2.7 修复：main() 此前透传的是 parseArgs 的 restartAttemptPath 键，而
+      // runSetupRestartAttempt 读 options.attemptPath——字段名不匹配导致 resolve(undefined)
+      // 启动即崩、状态永远停在 preflight（真实包首配"重启确认超时"的根因；测试直调
+      // 函数绕过了 CLI 装配层，故 49 例全绿未拦截）。
+      const result = await runSetupRestartAttempt({ ...parsed, attemptPath: parsed.restartAttemptPath, env: process.env })
       if (result.ready) {
         console.log('受控重启完成，新服务已就绪 / controlled restart ready')
       } else {
@@ -1502,6 +1506,21 @@ async function main(argv) {
     const dataDir = error && typeof error === 'object' ? error.dataDir : null
     if (typeof dataDir === 'string') {
       await appendFile(join(dataDir, LAUNCHER_LOG), `[${new Date().toISOString()}] ${message}\n`).catch(() => {})
+    }
+    // V1.2.7：受控重启监管进程在早期（读交接文件/加载状态机/抢锁之前）崩溃时，
+    // 磁盘上的重启状态永远停在 preflight，页面只能等满轮询窗口后报"重启确认超时"。
+    // 这里尽力把状态写成明确终态：已保存的目录未自动生效，重新打开训练器即可使用。
+    if (parsed.restartAttemptPath) {
+      try {
+        const raw = JSON.parse(await readFile(parsed.restartAttemptPath, 'utf8'))
+        if (raw && typeof raw === 'object' && typeof raw.old?.dataDir === 'string') {
+          await writeStatusBestEffort(raw.old.dataDir, raw, {
+            phase: 'failed', stage: 'failed',
+            reason: `重启监管进程异常退出（${message.slice(0, 120)}）；保存的目录未自动生效，重新打开训练器即可使用新目录`,
+            done: true,
+          })
+        }
+      } catch { /* 兜底失败不掩盖原始错误 */ }
     }
   }
 }

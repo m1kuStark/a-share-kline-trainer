@@ -7,7 +7,12 @@ import { access, copyFile, link, mkdir, mkdtemp, readFile, rm, writeFile } from 
 import { homedir, tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import launcherModule from '../../scripts/release/launcher.cjs'
+
+// V1.2.7：CLI 装配层用例经真实命令行入口（main）运行 supervisor——此前用例全部直调
+// 函数，绕过了参数装配，放走了 restartAttemptPath/attemptPath 字段名断链。
+const launcherCliPath = fileURLToPath(new URL('../../scripts/release/launcher.cjs', import.meta.url))
 
 interface LaunchResult {
   reused: boolean
@@ -239,6 +244,12 @@ async function makeFixture() {
     writeFile(join(root, 'server', 'dist', 'index.js'), FIXTURE_SERVER),
     writeFile(join(root, 'web', 'dist', 'index.html'), '<!doctype html><title>fixture</title>'),
   ])
+  // V1.2.7 CLI 装配层用例：CLI 无法像直调用例那样注入 planModule，supervisor 会经
+  // loadRestartPlan 动态 import 包内 server/dist/setup/restart-plan.js——把仓库构建产物
+  // 拷进 fixture（需要先 npm run build:server；真实发布包含同文件）。
+  const builtSetupDir = fileURLToPath(new URL('../dist/setup', import.meta.url))
+  await mkdir(join(root, 'server', 'dist', 'setup'), { recursive: true })
+  await copyFile(join(builtSetupDir, 'restart-plan.js'), join(root, 'server', 'dist', 'setup', 'restart-plan.js'))
   return root
 }
 
@@ -1366,6 +1377,80 @@ describe('SETUP-01 controlled restart supervisor', () => {
     expect(relaunch.reused).toBe(true)
     expect(relaunch.runId).toBe(SETUP_NEW_RUN)
     activeServers.push({ pid: relaunch.pid, port: relaunch.port, runId: relaunch.runId, healthDelayMs: 0 })
+  }, 60_000)
+
+  // V1.2.7 回归：真实链路（服务端 spawn → CLI 参数 → main → runSetupRestartAttempt）此前从未被
+  // 测试覆盖——main() 传 restartAttemptPath 而函数读 attemptPath 的字段名断链导致 supervisor
+  // 启动即崩、状态永远停在 preflight（真实包首配"重启确认超时"根因）。以下两例走真实 CLI 装配层。
+  it('CLI assembly: --setup-restart-attempt reaches ready through main()', async () => {
+    const root = await makeFixture()
+    const tdx = await makeTdxDir('supervisor-cli')
+    const dataDir = join(root, 'restart data cli')
+    await mkdir(dataDir, { recursive: true })
+    await writeFile(join(dataDir, 'saved-tdx-choice.json'), savedChoicePayload(tdx))
+    const oldPort = await freePort()
+    const oldServerPath = join(root, 'old-server.mjs')
+    await writeFile(oldServerPath, OLD_SERVER_FIXTURE)
+    const oldChild = spawn(process.execPath, [oldServerPath], {
+      env: { ...process.env, NODE_OPTIONS: '', OLD_RUN_ID: SETUP_OLD_RUN, OLD_PORT: String(oldPort) },
+      stdio: 'ignore',
+    })
+    activeChildren.push(oldChild)
+    for (let probe = 0; probe < 100; probe++) {
+      const health = await launcher.probeHealth(oldPort, { timeoutMs: 400 })
+      if (launcher.probeMatchesState(health, { runId: SETUP_OLD_RUN, pid: oldChild.pid ?? 0 })) break
+      await delay(60)
+    }
+    const attempt = buildSupervisorAttempt({
+      dataDir, databasePath: join(dataDir, 'trainer.sqlite'), port: oldPort,
+      oldPid: oldChild.pid ?? 0, tdxRoot: tdx, previousSavedChoice: null,
+    })
+    const attemptPath = join(dataDir, 'setup-restart-attempt.json')
+    await writeFile(attemptPath, JSON.stringify({ version: 1, appId: launcher.APP_ID, createdAt: '2026-10-03T10:00:00.000Z', ...attempt }))
+
+    const cli = spawn(process.execPath, [launcherCliPath, '--root', root, '--setup-restart-attempt', attemptPath], {
+      env: { ...process.env, NODE_OPTIONS: '' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    activeChildren.push(cli)
+    let stdout = ''
+    cli.stdout.on('data', chunk => { stdout += String(chunk) })
+    cli.stderr.on('data', chunk => { stdout += String(chunk) })
+    const exitCode = await new Promise<number>(resolve => cli.once('exit', code => resolve(code ?? -1)))
+    expect(exitCode).toBe(0)
+    expect(stdout).toContain('受控重启完成')
+
+    const recorded = JSON.parse(await readFile(stateFile(dataDir), 'utf8')) as { runId: string, pid: number, port: number }
+    expect(recorded.runId).toBe(SETUP_NEW_RUN)
+    expect(recorded.port).toBe(oldPort)
+    activeServers.push({ pid: recorded.pid, port: recorded.port, runId: recorded.runId, healthDelayMs: 0 })
+    const status = JSON.parse(await readFile(join(dataDir, 'setup-restart-status.json'), 'utf8')) as { done: boolean, phase: string }
+    expect(status.done).toBe(true)
+    expect(status.phase).toBe('ready')
+  }, 120_000)
+
+  it('CLI assembly: early supervisor failure writes a terminal status instead of leaving preflight forever', async () => {
+    const root = await makeFixture()
+    const dataDir = join(root, 'restart data cli-fail')
+    await mkdir(dataDir, { recursive: true })
+    // 缺 planned 段：readAttemptFile 校验失败在抢锁/触碰任何服务之前抛出
+    await writeFile(join(dataDir, 'setup-restart-attempt.json'), JSON.stringify({
+      version: 1, appId: launcher.APP_ID, attemptId: 'attempt-cli-fail-1',
+      createdAt: '2026-10-03T10:00:00.000Z',
+      old: { runId: SETUP_OLD_RUN, pid: 1, port: 8787, databasePath: join(dataDir, 'trainer.sqlite'), origin: 'http://127.0.0.1:8787', dataDir },
+    }))
+    const cli = spawn(process.execPath, [launcherCliPath, '--root', root, '--setup-restart-attempt', join(dataDir, 'setup-restart-attempt.json')], {
+      env: { ...process.env, NODE_OPTIONS: '' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    activeChildren.push(cli)
+    const exitCode = await new Promise<number>(resolve => cli.once('exit', code => resolve(code ?? -1)))
+    expect(exitCode).toBe(1)
+    // main 兜底把磁盘状态写成终态：页面拿到明确失败原因，不再无限等待 preflight
+    const status = JSON.parse(await readFile(join(dataDir, 'setup-restart-status.json'), 'utf8')) as { done: boolean, phase: string, reason: string }
+    expect(status.done).toBe(true)
+    expect(status.phase).toBe('failed')
+    expect(status.reason).toContain('重新打开训练器')
   }, 60_000)
 
   it('restores the previous saved choice and rolls back when the new run never becomes healthy', async () => {
