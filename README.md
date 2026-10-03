@@ -31,10 +31,10 @@
 | 日常使用、快捷键、数据备份与升级 | [用户指南](docs/user/README.md) |
 | 下载安装、通达信目录配置、源码运行 | [安装与配置](docs/user/install.md) |
 | 录制、回放与分享 | [录制说明](docs/user/recording.md) |
-| 条件单撮合与训练时钟设计 | [设计文档](docs/proposals/v0.4-training-clock-orders-notes.md) |
+| 条件单撮合与训练时钟设计 | [设计文档](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/docs/proposals/v0.4-training-clock-orders-notes.md) |
 | 启动失败、找不到数据、端口占用等 | [常见问题](docs/user/troubleshooting.md) |
 
-版本演进与各版本变更见 [CHANGELOG.md](CHANGELOG.md)。
+版本演进与各版本变更见 [CHANGELOG.md](https://github.com/m1kuStark/a-share-kline-trainer/blob/main/CHANGELOG.md)。
 
 ## 从源码运行
 
