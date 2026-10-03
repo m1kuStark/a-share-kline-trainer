@@ -2,7 +2,7 @@
   "taskId": "GITHUB-HEALTH-01",
   "date": "2026-10-04",
   "baseCommit": "1a79853b69b8c910db514c0c02d97e8a75c0e0c9",
-  "testedObject": "Pre-commit working tree; final immutable source commit is verified by GitHub Actions.",
+  "testedObject": "Local working-tree checks and GitHub Actions verification of source commit 0715a0a5e5e5f1bf754e9e947c4de30dbcfaaf5d; published v1.2.7 assets are unchanged.",
   "environment": { "platform": "win32", "node": "24.15.0", "vitest": "4.1.11" },
   "dataScope": "Isolated databases, temporary process fixtures and frozen TDX sample. Personal training data is excluded; source TDX files are read-only.",
   "checks": [
@@ -28,10 +28,13 @@
   ],
   "visual": { "reviewer": "integrator", "viewport": "1280x720", "themes": ["dark", "light"], "consoleErrors": 0, "consoleWarnings": 0, "evidence": [".runs/github-health-recordings-dark.png", ".runs/github-health-recordings-light.png"], "runId": "run-af1256a0-ed0d-43f7-b144-341930a31444", "stopped": true },
   "github": {
-    "sourceChecks": "First remote confirmation exposed two fixture problems; follow-up verification pending.",
+    "sourceChecks": "Passed on Windows and Ubuntu for source commit 0715a0a5e5e5f1bf754e9e947c4de30dbcfaaf5d; the first failed remote confirmation is retained below.",
     "runs": [{ "runId": 37142539463, "commit": "b783633983880fe14310b06984451a7eeb9233fe", "conclusion": "failure", "url": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/37142539463", "jobs": [
       { "platform": "ubuntu-latest", "jobId": 111259779491, "passed": 1405, "failed": 1, "skipped": 6, "log": ".runs/github-ubuntu-first.log", "reason": "The fixture ignored node_modules/ but Git does not treat a POSIX symlink as a directory; impact rejected the untracked symlink." },
       { "platform": "windows-latest", "jobId": 111259779609, "passed": 1411, "failed": 1, "skipped": 0, "log": ".runs/github-windows-first.log", "reason": "Twelve disk-backed metadata cases shared one default 5s test budget; the test timed out at 5017ms without an integrity assertion failure." }
+    ] }, { "runId": 37143145799, "commit": "0715a0a5e5e5f1bf754e9e947c4de30dbcfaaf5d", "conclusion": "success", "url": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/37143145799", "evidence": [".runs/github-ci-second-final.json", ".runs/github-ci-second-jobs.json"], "jobs": [
+      { "platform": "ubuntu-latest", "jobId": 111261560208, "conclusion": "success", "passed": 1417, "failed": 0, "skipped": 6, "filesPassed": 109, "filesSkipped": 1, "log": ".runs/github-ubuntu-second.log", "note": "The six skipped tests belong to an existing platform-specific file; no new skips were added." },
+      { "platform": "windows-latest", "jobId": 111261560301, "conclusion": "success", "passed": 1423, "failed": 0, "skipped": 0, "filesPassed": 110, "filesSkipped": 0, "log": ".runs/github-windows-second.log" }
     ] }],
     "dependabotAlertsAfterPush": { "a-share-kline-trainer": 0, "KandleLine_Tech": 0, "evidence": [".runs/github-dependabot-after.json", ".runs/github-kandle-dependabot-after.json"], "scope": "Open-alert API snapshot after dependency update, not a claim that all possible vulnerabilities are absent." },
     "profile": "https://github.com/m1kuStark",

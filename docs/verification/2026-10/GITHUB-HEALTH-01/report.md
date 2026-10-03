@@ -24,6 +24,8 @@ Fastify、fast-uri、brace-expansion 与 Vitest 已更新至修复版本，官�
 
 后续夹具明确忽略 `node_modules` 并在真实 CLI 启动前断言 Git 状态干净，失败时输出各步骤日志；原 CLI 超时保持。完整性用例拆成 12 个独立参数化场景，原构造、篡改分支和校验断言均保留，各场景仍使用默认 5 秒预算，定向文件 31/31 通过。测试总数因此增加 11，不代表新增了 11 种产品行为。
 
+最终远端复验为 `0715a0a5e5e5f1bf754e9e947c4de30dbcfaaf5d` / [Actions 37143145799](https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/37143145799)，工作流及双平台任务均为 `completed / success`。Windows 110 个文件、1423 项全部通过；Ubuntu 109 个文件、1417 项通过，1 个既有平台专用文件的 6 项测试跳过。本轮未增加跳过，远端使用默认完整单测配置。原始状态、任务结果和两平台日志的路径见 result.json。
+
 全量 Journey 两次均为 125 项：93 通过、29 失败、3 未运行。逐项状态、失败类型、定位器和报错位置一致，没有新增失败。旧页面定位器、缺少录像 namespace 的 mock、画线恢复等问题继续由 [E2E-BASELINE-01](../../../work-items/tasks/E2E-BASELINE-01.md) 和相关业务任务跟进，不能将本次 CI 修复称为完整产品门禁通过。紧凑录像的非空条件单事件缺口仍见 [REC-04](../../../work-items/tasks/REC-04.md)。
 
 主代理在独立数据库与冻结样本的生产预览中检查录像双来源空态、深浅主题和页面错误；1280×720 下布局正常，控制台无 error/warn。测试服务已结束，个人训练数据库及通达信文件未作为写入目标。
@@ -34,6 +36,6 @@ Fastify、fast-uri、brace-expansion 与 Vitest 已更新至修复版本，官�
 
 推送后个人主页、图片、源码、下载和指南链接均返回 HTTP 200，主代理确认主页实际渲染且图片可见；Issue 配置已发布。两公开仓库开放 Dependabot 告警 API 均返回空数组，该结论仅限当前查询快照。
 
-账号 name/bio/blog 的 API 写入返回 404，当前凭据不支持账号资料写入，因此这些字段未修改。私有仓库未作更改。
+账号 name/bio/blog 的 API 写入返回 404，本次资料写入未成功，因此这些字段未修改。私有仓库未作更改。
 
 v1.2.7 Release ID `402384887`，ZIP asset `608131607`，SHA256 `704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5`；本轮不移动标签或替换下载文件。
