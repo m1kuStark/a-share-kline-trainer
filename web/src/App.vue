@@ -36,6 +36,9 @@ const recordingError = ref('')
 const recordingBusy = ref(false)
 const recordingNamespaceReady = ref(false)
 let recordingLoadVersion = 0
+// Startup refresh is asynchronous. A user can navigate before it finishes;
+// keep the late response from overwriting that explicit navigation.
+let navigationVersion = 0
 const activeTrainingKey = computed(() => snapshot.value?.training.status === 'running'
   ? `${snapshot.value.training.id}.${snapshot.value.training.createdAt}` : null)
 const activeRecordingIds = computed(() => recentRecordings.value
@@ -44,17 +47,44 @@ const activeRecordingIds = computed(() => recentRecordings.value
 async function loadRecordings(): Promise<void> {
   const version = ++recordingLoadVersion
   try {
+    if (!recordingNamespaceReady.value) {
+      await reloadEnv()
+      if (!recordingNamespaceReady.value) return
+    }
     const items = await listRecordingLibrary()
-    if (version === recordingLoadVersion) recentRecordings.value = items
+    if (version === recordingLoadVersion) {
+      recentRecordings.value = items
+      recordingError.value = ''
+    }
   }
   catch (error) { if (version === recordingLoadVersion) recordingError.value = error instanceof Error ? error.message : '无法读取录像库' }
 }
-watch(view, value => { if (value === 'launcher' || value === 'library') void loadRecordings() })
+watch(view, value => {
+  if (recordingNamespaceReady.value && (value === 'launcher' || value === 'library')) void loadRecordings()
+})
+watch(recordingNamespaceReady, ready => {
+  if (ready && (view.value === 'launcher' || view.value === 'library')) void loadRecordings()
+})
 async function showLibrary(): Promise<void> {
   if (libraryBusy.value) return
+  const previousView = view.value
+  navigationVersion++
   libraryBusy.value = true
+  // Commit navigation immediately when Training is not mounted. This keeps
+  // the library responsive during startup/IndexedDB migration.
+  if (previousView !== 'training') view.value = 'library'
   try {
-    if (view.value === 'training') {
+    if (!recordingNamespaceReady.value) {
+      await reloadEnv()
+      if (!recordingNamespaceReady.value) return
+    }
+    // The view watcher may have attempted the list before reloadEnv finished;
+    // retry after namespace installation so the first library view is useful.
+    await loadRecordings()
+    // Keep Training mounted until its pending drawing/recording writes are
+    // flushed. Setting the view before this check would unmount it and make
+    // prepareForLibrary unavailable.
+    if (previousView === 'training') {
       if (!await trainingRef.value?.prepareForLibrary()) return
     }
     replay.value = null
@@ -64,6 +94,7 @@ async function showLibrary(): Promise<void> {
 // 历史训练（M4-HISTORY-01）：与录像库同一条离开协议（prepareForLibrary 先落盘画线与录制），
 // 不新增停录或卸载当前 Training 的旁路；运行中进入历史由服务端 409 守卫并给出说明。
 async function showHistory(): Promise<void> {
+  navigationVersion++
   if (view.value === 'training') {
     if (!await trainingRef.value?.prepareForLibrary()) return
   }
@@ -71,6 +102,7 @@ async function showHistory(): Promise<void> {
 }
 // 五档排行（M4-01）：同一条离开协议；运行中训练存在时由服务端 409 守卫并说明。
 async function showRankings(): Promise<void> {
+  navigationVersion++
   if (view.value === 'training') {
     if (!await trainingRef.value?.prepareForLibrary()) return
   }
@@ -78,7 +110,9 @@ async function showRankings(): Promise<void> {
 }
 async function returnToTraining(): Promise<void> {
   if (view.value === 'training') return
+  navigationVersion++
   replay.value = null
+  view.value = 'loading'
   await refresh()
 }
 async function onCreated(options: { enabled: boolean; params: Record<string, unknown> }): Promise<void> {
@@ -90,19 +124,26 @@ async function importRecording(file: File): Promise<void> {
   recordingBusy.value = true
   recordingError.value = ''
   try {
+    // The library shell can render before the initial env request completes;
+    // finish namespace setup before accepting an import from that first view.
+    if (!recordingNamespaceReady.value) {
+      await reloadEnv()
+      if (!recordingNamespaceReady.value) throw new Error('录像库尚未完成初始化，请稍后重试')
+    }
     const item = await saveImportedRecording(await readRecordingFile(file), file.name)
-    await loadRecordings()
-    await openRecording(item.sessionId)
+    recentRecordings.value = [item, ...recentRecordings.value.filter(row => row.sessionId !== item.sessionId)]
+    await openRecording(item.sessionId, item)
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法导入录制文件' }
   finally { recordingBusy.value = false }
 }
-async function openRecording(id: string): Promise<void> {
+async function openRecording(id: string, knownItem?: RecordingLibraryItem): Promise<void> {
   recordingError.value = ''
   try {
-    const item = recentRecordings.value.find(row => row.sessionId === id)
+    const item = knownItem ?? recentRecordings.value.find(row => row.sessionId === id)
     if (!item) throw new Error('找不到这份录像')
     replay.value = await loadLibraryRecording(item)
     if (!replay.value) throw new Error('找不到这份录像')
+    navigationVersion++
     view.value = 'replay'
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法打开录制' }
 }
@@ -127,7 +168,8 @@ async function clearRecordings(source: RecordingSource): Promise<void> {
 
 watchEffect(() => applyThemeClass())
 
-async function refresh(): Promise<void> {
+async function refresh(options: { preserveNavigation?: boolean } = {}): Promise<void> {
+  const requestedNavigationVersion = navigationVersion
   if (!recordingNamespaceReady.value) {
     await reloadEnv()
     if (!recordingNamespaceReady.value) return
@@ -137,6 +179,10 @@ async function refresh(): Promise<void> {
     const result = requested && /^[1-9]\d*$/.test(requested)
       ? await fetch(`/api/trainings/${requested}`).then(async response => { if (!response.ok) throw new Error('训练不存在'); return await response.json() as TrainingSnapshot })
       : await fetchActiveTraining()
+    if (requestedNavigationVersion !== navigationVersion) return
+    // The first refresh runs while the shell is already interactive. Preserve
+    // a rail navigation made before the async request completed.
+    if (options.preserveNavigation && view.value !== 'loading') return
     if ('training' in result && result.training === null) {
       snapshot.value = null
       view.value = 'launcher'
@@ -145,6 +191,10 @@ async function refresh(): Promise<void> {
       view.value = 'training'
     }
   } catch (error) {
+    // A failed late refresh must obey the same navigation guard as a
+    // successful response; otherwise a transient startup/network error can
+    // still replace an explicitly opened library or replay view.
+    if (requestedNavigationVersion !== navigationVersion) return
     envError.value = error instanceof Error ? error.message : '无法连接本地服务'
     view.value = 'launcher'
   }
@@ -487,14 +537,16 @@ async function refusePendingExit(): Promise<void> {
 }
 
 onMounted(async () => {
+  const startupNavigationVersion = navigationVersion
   window.addEventListener('focus', onDataFocus)
   document.addEventListener('visibilitychange', onDataVisibilityChange)
   void checkDataStatus({ force: true })
   startStatusTicker()
   await reloadEnv()
+  if (navigationVersion !== startupNavigationVersion) return
   // 退出协调会话：env 可达后注册并开始心跳（不可达时在退出流程内降级提示）
   void ensureLifecycleSession()
-  await refresh()
+  await refresh({ preserveNavigation: true })
 })
 onUnmounted(() => {
   window.removeEventListener('focus', onDataFocus)
@@ -596,7 +648,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
       <!-- PORT-01：默认端口不可用自动改用邻近端口时的常驻提示（所有视图可见） -->
       <div v-if="portFallbackNote" class="port-fallback-note" role="status">{{ portFallbackNote }}</div>
 
-      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }} <button class="data-reread-btn" @click="refresh">重新连接</button></div>
+      <div v-if="envError && view !== 'replay'" class="env-error">{{ envError }} <button class="data-reread-btn" @click="() => refresh()">重新连接</button></div>
 
       <div v-if="wizardBusy" class="picker-blocker" role="dialog" aria-modal="true" aria-label="通达信目录选择">
         <div class="picker-blocker-panel">
