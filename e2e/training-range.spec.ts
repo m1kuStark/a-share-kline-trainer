@@ -127,7 +127,7 @@ test('tier click regenerates start date back from latest data date', async ({ pa
   await expect(page.locator('input[type="date"]')).toHaveValue('2026-06-24')
 })
 
-test('range form: auto validation appears and create carries previewId', async ({ page }) => {
+test('range form: auto validation appears and create carries previewId and conditional-order settings', async ({ page }) => {
   await openLauncher(page)
   await page.route('**/api/stocks**', route => route.fulfill({ json: { items: [MAOTAI], total: 1 } }))
   const preview = makePreviewRoute(page)
@@ -151,11 +151,16 @@ test('range form: auto validation appears and create carries previewId', async (
   await expect(page.getByText(/共 61 根日线/)).toBeVisible()
   await expect(page.getByText(/合成范围备注/)).toBeVisible()
 
+  await page.getByRole('button', { name: '开盘 + 收盘', exact: true }).click()
+  await page.getByLabel('启用条件单').check()
+
   // 预览已匹配当前输入 → 直接创建，payload 必须带 previewId
   await page.getByRole('button', { name: '开始训练' }).click()
   await expect.poll(() => createCalls).toBe(1)
   expect((createBody as Record<string, unknown> | null)!.previewId).toBe('prev-e2e-1')
   expect((createBody as Record<string, unknown> | null)!.range).toBeTruthy()
+  expect((createBody as Record<string, unknown> | null)!.clock_mode).toBe('open_close')
+  expect((createBody as Record<string, unknown> | null)!.orders_enabled).toBe(true)
   expect(preview.getCalls()).toBeGreaterThanOrEqual(1)
 })
 
