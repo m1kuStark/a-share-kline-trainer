@@ -1,0 +1,75 @@
+{
+  "verifiedAt": "2026-10-03T16:33:43.410Z",
+  "baselineCommit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+  "packageCommit": "bbd368b09a463183364861678db83a9ae86b1472",
+  "remoteTagCommit": "bbd368b09a463183364861678db83a9ae86b1472",
+  "zipSha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5",
+  "checksumSha256": "d12edaeacc256d1cc48797ce5f00bda49d94d9d4554896659a7d85c0ec011c35",
+  "release": {
+    "id": 402384887,
+    "tag": "v1.2.7",
+    "target": "bbd368b09a463183364861678db83a9ae86b1472",
+    "name": "V1.2.7 首次配置、录像库与训练范围修复",
+    "url": "https://github.com/m1kuStark/a-share-kline-trainer/releases/tag/v1.2.7",
+    "draft": false,
+    "prerelease": false,
+    "bodyMatches": true,
+    "assets": [
+      {
+        "id": 608131607,
+        "name": "kline-trainer-v1.2.7-windows-x64.zip",
+        "size": 54709594,
+        "digest": "sha256:704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5",
+        "state": "uploaded",
+        "url": "https://github.com/m1kuStark/a-share-kline-trainer/releases/download/v1.2.7/kline-trainer-v1.2.7-windows-x64.zip"
+      },
+      {
+        "id": 608141422,
+        "name": "SHA256SUMS",
+        "size": 103,
+        "digest": "sha256:d12edaeacc256d1cc48797ce5f00bda49d94d9d4554896659a7d85c0ec011c35",
+        "state": "uploaded",
+        "url": "https://github.com/m1kuStark/a-share-kline-trainer/releases/download/v1.2.7/SHA256SUMS"
+      }
+    ]
+  },
+  "acceptedPackageComparison": {
+    "acceptedCommit": "3199674a80ec00d881534c1c49a32319ac3ef3d8",
+    "publishedCommit": "bbd368b09a463183364861678db83a9ae86b1472",
+    "acceptedFiles": 7181,
+    "publishedFiles": 7181,
+    "unchangedFiles": 7170,
+    "differences": [
+      "CONTRIBUTING.md",
+      "docs/user/install.md",
+      "docs/user/README.md",
+      "docs/user/recording.md",
+      "docs/user/training-history.md",
+      "docs/user/training-rules.md",
+      "docs/user/troubleshooting.md",
+      "README.md",
+      "release.json",
+      "SECURITY.md",
+      "trainer.config.example.json"
+    ],
+    "unexpected": [],
+    "applicationFilesMatch": true
+  },
+  "packageVerification": {
+    "tool": "scripts/release/verify.mjs",
+    "checkedAt": "2026-10-03T16:25:53.376Z",
+    "package": ".runs/release-v1.2.7-verified-20261004/kline-trainer-v1.2.7-windows-x64",
+    "ok": true,
+    "release": {
+      "appId": "a-share-kline-trainer",
+      "version": "1.2.7",
+      "gitCommit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "nodeVersion": "24.15.0",
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "fileCount": 7182,
+    "errors": []
+  },
+  "workflowRevision": 37
+}

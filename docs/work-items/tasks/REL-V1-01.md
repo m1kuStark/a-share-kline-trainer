@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "closed",
   "milestone": "M5",
-  "summary": "v1.2.7 首配、录像库、退出主题和自定义范围条件单已通过用户验收，用户已授权替换 GitHub 同版本发布；文档收尾后重建最终包，公开资产上传与校验结果待回填。",
-  "next_action": "完成最终 Windows 包上传与远端 SHA256 核验；发布后回填证据并整理本地包目录。",
+  "summary": "v1.2.7 已按用户验收授权替换发布；最终包应用文件与验收包一致，GitHub ZIP 与 SHA256SUMS 均核验通过，MySoftWares 仅保留 fix 验收目录。",
+  "next_action": "本次发布已完成；保持该版本回归，后续产品变更另立任务。",
   "base_commit": "de51fee9b3b1a1c95347993f3ab62c95790eae16",
   "allowed_paths": [
     "package.json",
@@ -24,7 +24,10 @@
     "scripts/release/trainer.config.example.json",
     "docs/status.md",
     "docs/specs/roadmap.md",
-    "docs/work-items/tasks/REL-V1-01.md"
+    "docs/work-items/tasks/REL-V1-01.md",
+    "docs/work-items/tasks/SETUP-RESTART-FIX-01.md",
+    "docs/work-items/tasks/REC-LIBRARY-FIX-01.md",
+    "docs/work-items/tasks/V4-01.md"
   ],
   "depends_on": [
     "V1-ACCEPT-01"
@@ -41,9 +44,10 @@
   "verification_refs": [
     "docs/verification/2026-10/V1.2.3-feedback/README.md",
     "docs/verification/2026-10/UI-FEEDBACK-04/report.md",
-    "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
+    "docs/verification/2026-10/V1.2.7-user-acceptance/README.md",
+    "docs/verification/2026-10/V1.2.7-published/README.md"
   ],
-  "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
+  "integration_ref": "main@bbd368b09a463183364861678db83a9ae86b1472; tag v1.2.7; GitHub Release 402384887",
   "acceptance_ref": "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
 }
 ```

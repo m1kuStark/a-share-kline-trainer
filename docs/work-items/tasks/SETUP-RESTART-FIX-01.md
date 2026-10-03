@@ -8,7 +8,7 @@
   "state": "closed",
   "milestone": "M5",
   "summary": "用户从 GitHub 下载 v1.2.7 包后首配通达信目录，重启实际已完成但页面确认超时。首个根因是 main() 透传 restartAttemptPath 而监管函数读 attemptPath，字段名断链致 supervisor 启动即崩；修复后又定位到 Chromium 同源 GET 通常不带 Origin，控制守卫误把轮询当助手请求而连续返回 401。现已修复 CLI 字段映射、早期失败终态兜底和无 Origin 同源浏览器轮询，并补齐两层回归。",
-  "next_action": "已完成用户验收；随 v1.2.7 最终 Windows 包发布。后续若有回归，另立修复任务。",
+  "next_action": "已完成用户验收并随 v1.2.7 最终 Windows 包发布。后续若有回归，另立修复任务。",
   "allowed_paths": [
     "scripts/release/launcher.cjs",
     "server/test/release-launcher.test.ts",
@@ -31,9 +31,10 @@
     "reason": "首配流程是所有新用户的入口路径；根因、兜底语义与回归补盲必须可追溯。"
   },
   "verification_refs": [
-    "docs/verification/2026-10/V1.2.7-setup-restart-fix/README.md"
+    "docs/verification/2026-10/V1.2.7-setup-restart-fix/README.md",
+    "docs/verification/2026-10/V1.2.7-published/README.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "main@bbd368b09a463183364861678db83a9ae86b1472; tag v1.2.7",
   "acceptance_ref": "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
 }
 ```

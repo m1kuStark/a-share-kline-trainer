@@ -4,12 +4,12 @@
 
 上一会话（zcode）完成了 V1.2.5~V1.2.7 三轮修订、v1.2.6 发布与清理归档、v1.2.7 修复再发布。本文档面向 Codex 新会话，给出当时的基线、关键实现事实、工程约定变化与待办。当前验收结论见 [v1.2.7 用户验收记录](../V1.2.7-user-acceptance/README.md)。
 
-## 当前基线（唯一事实源）
+## 交接时基线
 
 - **发布前基线**：`main = origin/main = 81be8ef = tag v1.2.7`（Release 402384887，zip sha256 `67781f8d…`）；最终公开提交和资产以当前发布记录为准。
 - **v1.2.6 的 Release 已删除（tag 保留）**：该包首次配置必触发受控重启缺陷（见 V1.2.7 修复记录）。Release 页已注明。
 - 开发基线＝**主检出 `a-share-kline-trainer` 的 main 分支**。int-v1 集成树与其余 42 个 worktree、62 个旧分支已清理；历史验收包归档在 `trainer-releases/archive-20261002/`（工作区级，不入库）。
-- 统一状态文件 `.control/trainer-state.json`（工作区级）当前 revision 33，接续以它的 `next_action` 为准。
+- 统一状态文件 `.control/trainer-state.json`（工作区级）在交接时为 revision 33；当前接续以最新状态文件的 `next_action` 为准。
 - 用户已完成 v1.2.7 验收并授权发布；验收包与范围见[记录](../V1.2.7-user-acceptance/README.md)。
 
 ## 本会话三轮修订速览
@@ -50,7 +50,7 @@
 
 ## 待办（按优先级）
 
-1. **发布 v1.2.7**：用户验收已通过；重新构建最终文档包、推送 main、更新 tag 和 Release 资产。
+1. **发布 v1.2.7（已完成）**：最终文档包、main、tag 和 Release 资产已更新，见[最终发布证据](../V1.2.7-published/README.md)。
 2. **E2E-BASELINE-01**（planned）：19 项存量浏览器回归失败清偿（清单在卡内；全套自 v1.2.3 起可运行，19 项经 stash 基线证实非新回归）。vitest 另有约 10 项存量环境抖动（db-migration/recording/data-refresh 域）。
 3. **V4-01 剩余**：条件单订单事件的录制与完整回放（REC-04 关联）。
 4. **V1-RECONCILE-01**：主检出/集成树协作文档双仓对账；素材已冻结在分支 `docs/archive-pre-v126-merge-20261002`（43 项未提交文档的归档提交）。
