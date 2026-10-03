@@ -36,7 +36,7 @@
 
 ```json
 {
-  "tdxRoot": "D:\path\to\tdx"
+  "tdxRoot": "D:\\path\\to\\tdx"
 }
 ```
 

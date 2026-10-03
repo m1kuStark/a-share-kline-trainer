@@ -13,9 +13,9 @@ v0.3.2执行入口：[REL-03](tasks/REL-03.md)，首批[FRESH-01](tasks/FRESH-01
 - [DOC-01](tasks/DOC-01.md)：本轮文档治理及基线冻结。
 - [DOC-02](tasks/DOC-02.md)：GLM文档清理复核与Mimosa基线诊断。
 - [DIAG-01](tasks/DIAG-01.md)：诊断工具原件收录、使用边界及启动生命周期分析；朋友具体故障仍待实际报告。
-- [SETUP-01](tasks/SETUP-01.md)：用户确认式原生目录选择、校验、保存和受控重启已进入 V1 候选；自动发现与扫描关闭，Windows 真实体验及最终包仍待验收。
+- [SETUP-01](tasks/SETUP-01.md)：用户确认式原生目录选择、校验、保存和受控重启已进入 V1 候选；自动发现与扫描关闭，v1.2.7 首配流程已完成用户验收。
 - [REC-01](tasks/REC-01.md)／[REC阶段](milestones/REC.md)：默认紧凑录制、可暂停、压缩分享和离线回放，验收状态以卡片为准。
-- [REC-LIBRARY-FIX-01](tasks/REC-LIBRARY-FIX-01.md)：按安装实例隔离录像库、本机/导入分栏、删除保护与退出页深色主题修复；首配修复已确认，新候选仍待人工复验。
+- [REC-LIBRARY-FIX-01](tasks/REC-LIBRARY-FIX-01.md)：按安装实例隔离录像库、本机/导入分栏、删除保护与退出页深色主题修复；已随 v1.2.7 完成用户验收。
 - [START-01](tasks/START-01.md)：历史诊断规划已完成；[原批次计划](../proposals/first-use-batch.md)的纯模块与运行接线均已有候选实现，接续以当前任务、源码提交和对应证据为准，不重复派发旧清单。
 - 数据保护：[DATA-01](tasks/DATA-01.md)、[DATA-02](tasks/DATA-02.md)、[DATA-03](tasks/DATA-03.md)、[DATA-04](tasks/DATA-04.md)。
 - 后续：[TRAIN-01](tasks/TRAIN-01.md)、[DEV-01](tasks/DEV-01.md)、[UI-01](tasks/UI-01.md)、[REL-LAUNCH-UX-01](tasks/REL-LAUNCH-UX-01.md)、[M4-01](tasks/M4-01.md)、[M5-01](tasks/M5-01.md)、[R2-01](tasks/R2-01.md)。

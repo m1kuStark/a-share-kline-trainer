@@ -26,7 +26,7 @@
 ## 提示找不到通达信目录 / 页面没有行情数据
 
 1. 点击右上角“连接通达信”，在 Windows 目录选择器里确认**通达信安装根目录**，不是 `vipdoc` 子目录。也可以在解压目录的 `trainer.config.json` 中设置 `tdxRoot`。发布包保存成功后会自动重启并刷新连接状态。
-2. JSON 里的路径要用双反斜杠：`"tdxRoot": "D:\path\to\tdx"`。
+2. JSON 里的路径要用双反斜杠：`"tdxRoot": "D:\\path\\to\\tdx"`。
 3. 确认目录里有所需文件：`vipdoc\sh\lday\*.day`、`vipdoc\sz\lday\*.day`、`T0002\hq_cache\gbbq` 和证券名称文件。清单见[安装说明](install.md)。
 4. 目录对但没数据：先用你自己的通达信客户端下载盘后日线，再回到训练器点"更新日线"。训练器不会联网下载行情。
 
