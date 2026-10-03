@@ -35,6 +35,17 @@
 
 完整 `npm test`（2026-10-03，退出码 1）为 103 个测试文件通过、11 项失败。失败均为本次改动之外的既有基线或运行环境干扰：训练规则迁移旧字段断言 2 项、录制 compact/replay/file 旧兼容断言 6 项、当前人工验收服务占用 8787 导致启动器端口回退测试 2 项、文档 review-profile 临时夹具 1 项。守卫与首配接口定向回归仍全部通过；该结果不作为用户验收结论。
 
+## 修复候选包（待用户验收）
+
+- 包目录：`D:\MySoftWares\kline-trainer-v1.2.7-windows-x64-fix`
+- ZIP：`kline-trainer-v1.2.7-windows-x64.zip`
+- 源码提交：`21808875cffd9abba6d398cf252f42516e739885`
+- ZIP SHA256：`28d1a0ec7f076d838d80ab694e15510d1673eb196ba833469641776255cb4442`
+- `scripts/release/verify.mjs`：7,182 个文件检查通过，manifest 一致。
+- 包内运行时探针：Node v24.15.0；独立端口 8799；无 `Origin` + `Sec-Fetch-Site: same-origin` 的 `/api/setup/restart-status` 返回 200，`phase=ready`、`done=true`。
+
+以上是供人工验收的候选包，不代表 GitHub Release 已更新；用户确认通过后再更新现有 v1.2.7 Release 资产和发布记录。
+
 ## bug 回流反思
 
 - 用户发现而非测试覆盖的原因：CLI 装配层（main 参数转换）零覆盖——受控重启测试从函数层写起，恰好绕过了真实入口；且 spawn `stdio:'ignore'` 吞掉崩溃输出，现场也没有 supervisor 日志。教训：进程边界（spawn/CLI）必须有至少一条穿透装配层的端到端测试；后台进程的早期崩溃要落盘可见。
