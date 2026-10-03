@@ -9,7 +9,7 @@
 | [useRecording](useRecording.ts) | Vue页面接线、DTO复制、同场恢复和导出 |
 | [replay](replay.ts) | 检查点选择、真实暂停时间缺口和播放时距；[回放页](../views/recording-replay.md) |
 | [chartCapture](chartCapture.ts) / [drawingOperations](drawingOperations.ts) | 图表与画线语义捕获，实际价格/日期与手势结果 |
-| [compactTypes](compactTypes.ts) / [compactCodec](compactCodec.ts) | 已验收的v2纯编解码、行情/图形版本和轻量引用；[实现](compact-codec.md)，尚未替换页面v1接线 |
+| [compactTypes](compactTypes.ts) / [compactCodec](compactCodec.ts) | 现行页面使用v2紧凑记录，保留v1导入兼容；行情/图形版本和轻量引用见[实现](compact-codec.md) |
 | [compactValidation](compactValidation.ts) | v2引用/历史截止/还原集合预算；[校验说明](compact-validation.md) |
 | [compactStorage](compactStorage.ts) | v2增量事务、revision冲突和旧sessions保留；[存储说明](compact-storage.md) |
 | [recordingFile](recordingFile.ts) | JSON/gzip读写、旧版迁移、流式解压取消；[文件说明](recording-file.md) |
@@ -26,4 +26,4 @@
 
 同标签页按安装命名空间隔离的 `sessionStorage` 保留本场 sessionId，IndexedDB 保存录制正文。JSON 分享不带浏览器存储标识之外的本地路径，不自动上传。录制只含语义状态，未记录的区间始终显示缺口。
 
-页面已接v2紧凑记录，正式验收状态与证据见REC-01任务。默认gzip导出，更多菜单可读JSON；App用shallowRef承载已校验文件，回放按需还原单检查点、每窗最多100条事件。旧sessions按需转换成功后另存v2，原条目不删；数据错误和revision冲突都显式提示。
+页面已接v2紧凑记录，正式验收状态与证据见REC-01任务。页面默认gzip导出，底层文件API支持可读JSON；App用shallowRef承载已校验文件，回放按需还原单检查点、每窗最多100条事件。旧sessions按需转换成功后另存v2，原条目不删；数据错误和revision冲突都显式提示。

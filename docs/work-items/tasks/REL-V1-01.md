@@ -3,17 +3,25 @@
 ```json
 {
   "id": "REL-V1-01",
-  "title": "V1.2.x 发布收尾：版本 bump、候选包验收与发布说明",
+  "title": "V1.2.7 发布收尾：用户文档、最终包与 GitHub Release",
   "owner": "integrator",
   "state": "closed",
   "milestone": "M5",
-  "summary": "版本 1.2.4 源码候选已完成 v1.2.3 后续反馈修订（统一阶段价位线、训练页更新反馈、排行层级）；Windows 包待本次清洁提交构建，用户验收与公开发布仍未确认。",
-  "next_action": "无后续动作；后续版本按新候选另立发布卡。",
-  "base_commit": "80c67ce2ca26ebd522ebc0cefaf77ca5a7966c64",
+  "summary": "v1.2.7 首配、录像库、退出主题和自定义范围条件单已通过用户验收，用户已授权替换 GitHub 同版本发布；文档收尾后重建最终包，公开资产上传与校验结果待回填。",
+  "next_action": "完成最终 Windows 包上传与远端 SHA256 核验；发布后回填证据并整理本地包目录。",
+  "base_commit": "de51fee9b3b1a1c95347993f3ab62c95790eae16",
   "allowed_paths": [
     "package.json",
     "package-lock.json",
     "CHANGELOG.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "web/src/recording/README.md",
+    "docs/user/**",
+    "docs/verification/2026-10/V1.2.7-*/**",
+    "docs/verification/2026-10/handover-20261003-codex/README.md",
+    "scripts/release/trainer.config.example.json",
     "docs/status.md",
     "docs/specs/roadmap.md",
     "docs/work-items/tasks/REL-V1-01.md"
@@ -23,16 +31,26 @@
   ],
   "docs_impact": {
     "reason": "版本号与发布线是产品口径变化：CHANGELOG、roadmap、安装包 manifest 与状态页必须指向同一候选提交；发布证据在本次包构建后回填。",
-    "update": []
+    "update": [
+      "README.md",
+      "docs/user/install.md",
+      "docs/user/README.md",
+      "docs/user/troubleshooting.md"
+    ]
   },
   "verification_refs": [
     "docs/verification/2026-10/V1.2.3-feedback/README.md",
-    "docs/verification/2026-10/UI-FEEDBACK-04/report.md"
+    "docs/verification/2026-10/UI-FEEDBACK-04/report.md",
+    "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
   ],
   "integration_ref": "main@5bf4484a37a5a233ff12524cafd0166390cb274b",
-  "acceptance_ref": null
+  "acceptance_ref": "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
 }
 ```
+
+## 历史执行记录
+
+下文保留此前版本的执行快照；其中待验收、待发布和阻断项仅描述当时状态。v1.2.7 以卡面和[用户验收记录](../../verification/2026-10/V1.2.7-user-acceptance/README.md)为准。
 
 ## 槽内已完成（2026-09-29）
 

@@ -8,7 +8,7 @@
 
 ### 1. 下载
 
-到 [Releases 页面](https://github.com/m1kuStark/kline-trainer/releases) 下载当前公开的 `kline-trainer-v1.2.7-windows-x64.zip`。发布包内已自带 Node 运行时，**无需安装 Node、npm 或 Python，无需订阅、账号或管理员权限**。
+到 [Releases 页面](https://github.com/m1kuStark/a-share-kline-trainer/releases) 下载当前公开的 `kline-trainer-v1.2.7-windows-x64.zip`。发布包内已自带 Node 运行时，**无需安装 Node、npm 或 Python，无需订阅、账号或管理员权限**。
 
 ### 2. 解压
 
@@ -66,7 +66,7 @@
 
 - 浏览器没有自动打开时，手动访问 `http://127.0.0.1:8787` 即可。建议使用较新的 Microsoft Edge 或 Chrome。
 - **端口规则**：没写 `port` 配置时，若默认端口 8787 被系统保留（Windows WinNAT 排除段会随机覆盖一段端口且每次开机漂移）或被其他程序占用，启动器会**自动改用邻近可用端口**，控制台和页面顶部的常驻提示都会写明实际端口，训练数据不受影响（浏览器历史录像按访问地址存放，端口变化后回到原地址查看）。显式写了 `port` 的，端口必须可用，失败会明确报错并给出 `netsh int ipv4 show excludedportrange` 排查指引，**不会自动换端口，也不会替你结束占用端口的进程**。
-- 重复双击 `Start.cmd` 会复用同一数据目录记录、身份匹配且健康的服务（端口自动回退后也照常复用）。版本、数据库、行情目录或**显式配置的端口**有变化时，请先运行 `Stop.cmd` 再启动。
+- 重复双击 `Start.cmd` 会复用同一数据目录记录、身份匹配且健康的服务（端口自动回退后也照常复用）。更换版本或手动修改配置前，请先在页面“保存并退出”，确认停止后再启动；页面无法使用时才用 `Stop.cmd`。
 - 启动失败时，先到数据目录（发布包默认为解压目录下的 `data`）里查看日志再排查。
 
 ### 6. 创建桌面图标
@@ -75,12 +75,12 @@
 
 ### 升级版本
 
-1. 先在旧版本目录双击 `Stop.cmd`，确认服务已停止。关闭浏览器页面不会停止服务。
+1. 先在旧版本页面“保存并退出”，确认服务已停止；页面无法使用时才用旧目录的 `Stop.cmd`。关闭浏览器页面不会停止服务。
 2. 下载并解压新版本的 ZIP 到一个新文件夹。
 3. 把旧目录中的 `trainer.config.json` 和 `data` 目录复制到新目录（如有）；这样可以沿用已保存的通达信选择和训练数据。
 4. 用新目录重新创建桌面快捷方式（如目录名变了）。
 
-发布包默认使用当前解压目录下的 `data`，不同解压目录的训练数据相互独立；升级时请复制旧目录中的 `data` 和 `trainer.config.json`（如有）。训练录像存在浏览器里，保持访问地址和浏览器不变即可继续使用；升级前如担心，可先导出重要录像。
+发布包默认使用当前解压目录下的 `data`，新解压目录使用空数据库时，训练数据与录像库均独立；升级时请复制旧目录中的 `data` 和 `trainer.config.json`（如有）。录像库的隔离标识随数据库保留，使用同一浏览器和访问地址可继续查看该标识下的录像；更早版本的共享录像请先在旧版本导出，再到新版本导入。
 
 ### 日常退出
 
@@ -93,8 +93,8 @@
 适合开发者。需要 Node.js 24 与 npm 10 以上版本。
 
 ```powershell
-git clone https://github.com/m1kuStark/kline-trainer.git
-cd kline-trainer
+git clone https://github.com/m1kuStark/a-share-kline-trainer.git
+cd a-share-kline-trainer
 npm ci
 npm run build
 npm start
