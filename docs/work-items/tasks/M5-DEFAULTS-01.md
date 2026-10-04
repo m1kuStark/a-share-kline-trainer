@@ -7,8 +7,8 @@
   "owner": "GLM-5.3-Flash",
   "state": "review",
   "milestone": "M5",
-  "summary": "实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；基于已接受V1候选888778c",
-  "next_action": "M5-DEFAULTS-01 五scope实现与完整门禁完成后待GPT集中检查（control-handoff-20260928-50）；有效预算4/5，余初审/必要返修/末审。",
+  "summary": "实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；代码经 0ed7d54（TRAIN-01）合入 main 并随 v1.2.7 发布，用户验收记录待回填。",
+  "next_action": "旧 GPT 集中检查流程已终止；剩余＝用户验收记录回填，training-defaults 相关 e2e 存量失败随 E2E-BASELINE-01 清偿。",
   "base_commit": "888778cfc7a4b69e4446012a26618b93a8b05b20",
   "allowed_paths": [
     "server/src/settings/training.ts",
@@ -52,7 +52,7 @@
     "reason": "本控制提交冻结M5可执行子行为及候选；实现阶段按合同同步rules与用户说明，不冒称M5整体完成"
   },
   "verification_refs": [],
-  "integration_ref": "not integrated; codex/m5-training-defaults base 888778cfc7a4b69e4446012a26618b93a8b05b20",
+  "integration_ref": "main@0ed7d54（TRAIN-01 合入）；原开发分支 codex/m5-training-defaults 已随 2026-10-02 分支清理删除",
   "acceptance_ref": null
 }
 ```
