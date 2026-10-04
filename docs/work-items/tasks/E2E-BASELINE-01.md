@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "planned",
   "milestone": "M5",
-  "summary": "全套 journey 自 v1.2.0 起因 13 处 spec 文件损坏从未完整运行（V1.2.3 已修复损坏使全套可解析）；2026-10-02 首次完整运行 89/108，19 项失败经 stash 基线复跑证实全部为 v1.2.2 树上已存在的存量失败，与本轮改动无关，尚未归因。",
-  "next_action": "逐项归因 19 项失败（真缺陷 / 测试断言过期 / 环境与夹具问题），真缺陷按域拆返修，过期断言更新并登记原因；vitest 存量环境抖动（录像编解码、库迁移、docs 工具、worktree 工具域约 12 项）一并复核。",
+  "summary": "全套 journey 自 v1.2.0 起因 13 处 spec 文件损坏从未完整运行（V1.2.3 已修复损坏使全套可解析）；2026-10-02 首次完整运行 89/108，19 项失败经 stash 基线复跑证实全部为 v1.2.2 树上已存在的存量失败，尚未归因；2026-10-04 GITHUB-HEALTH-01 CI 双轮全量（各 125 项）均为 93 通过/29 失败/3 未运行且两轮逐项一致，为当前清偿基线。",
+  "next_action": "以 GITHUB-HEALTH-01 双轮 125 项（93/29/3）为当前基线，对照 2026-10-02 旧清单逐项归因 29 项失败（真缺陷 / 断言过期 / mock 缺录像 namespace / 夹具环境），真缺陷按域拆返修，过期断言更新并登记原因；vitest 存量环境抖动（db-migration/recording/data-refresh 域约 10 项）一并复核。",
   "allowed_paths": [
     "e2e/**",
     "server/test/**",
@@ -20,17 +20,24 @@
     "update": [
       "docs/work-items/tasks/E2E-BASELINE-01.md"
     ],
-    "reason": "全套回归是发布门禁的一部分：19 项存量失败若不归因，后续候选的门禁结论都无法区分新回归与旧欠账。"
+    "reason": "全套回归是发布门禁的一部分：存量失败若不归因，后续候选的门禁结论都无法区分新回归与旧欠账。"
   },
   "verification_refs": [
-    "docs/verification/2026-10/V1.2.3-feedback/README.md"
+    "docs/verification/2026-10/V1.2.3-feedback/README.md",
+    "docs/verification/2026-10/GITHUB-HEALTH-01/report.md"
   ],
   "integration_ref": null,
   "acceptance_ref": null
 }
 ```
 
-## 失败清单（2026-10-02 全套运行，run-5522d19a；stash 基线复跑同清单复现）
+## 当前基线（2026-10-04，GITHUB-HEALTH-01）
+
+[GITHUB-HEALTH-01 报告](../../verification/2026-10/GITHUB-HEALTH-01/report.md)在 CI 提交 `0715a0a` 上完成两轮全量 Journey：每轮 125 项，均为 **93 通过、29 失败、3 未运行**，两轮逐项状态与报错一致（无轮间漂移）。套件项数较 2026-10-02 的 108 项增加，源于其间新增 spec（条件单创建回归、退出双主题断言、录像库隔离等）；29 项与旧清单 19 项的交集与差异需对照归因，不能把两份数字互相替代。
+
+初步分类方向（引自报告）：旧页面定位器、缺少录像 namespace 的 mock、夹具/环境问题、真实画线恢复等产品缺陷。
+
+## 失败清单（2026-10-02 全套运行，run-5522d19a；stash 基线复跑同清单复现；历史事实保留）
 
 | 域 | 用例 |
 |---|---|

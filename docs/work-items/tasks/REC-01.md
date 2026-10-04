@@ -8,7 +8,7 @@
   "state": "closed",
   "milestone": "REC",
   "summary": "紧凑录制已集成，用户返修见ACCEPT-01。",
-  "next_action": "Accepted by user 2026-09-21; current work is REL-01 packaging and public release.",
+  "next_action": "用户已于 2026-09-21 验收，公开发布由 REL-03 及后续 v1.2.x 版本线完成；后续录像工作见 REC-04（订单事件录制回放）与 REC-LIBRARY-FIX-01（本机/导入分栏与清理）。",
   "allowed_paths": [
     "web/src/**",
     "web/README.md",

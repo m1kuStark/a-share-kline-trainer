@@ -5,10 +5,10 @@
   "id": "SETUP-01",
   "title": "用户确认式通达信接入",
   "owner": "integrator",
-  "state": "active",
+  "state": "closed",
   "milestone": "M5",
-  "summary": "V1 候选已接入用户确认式 Windows 原生目录选择、单目录检查、原子保存和受控重启；2026-10-01 反馈关闭自动发现与扫描，目录选择与页面退出互斥，最终 Windows 包及用户验收仍待记录。",
-  "next_action": "按最终候选复核原生选择器前台与模态行为、取消后恢复页面、选择期间退出受阻、失败后重试退出、校验失败保留旧选择、保存重启与旧配置兼容；完成安装→接入→训练→退出→再启动 Windows 全流程，再交用户验收。",
+  "summary": "用户确认式通达信接入（Windows 原生目录选择、单目录检查、原子保存、受控重启）已随 v1.2.7 最终包（bbd368b）完成用户验收；首配受控重启缺陷由 SETUP-RESTART-FIX-01 修复并同包发布。",
+  "next_action": "无未结工作；保持已验收能力的回归，后续首配问题按新任务立项。",
   "allowed_paths": [
     "server/src/config.ts",
     "server/src/tdx/discover.ts",
@@ -38,9 +38,11 @@
     ],
     "reason": "原接入设计已获用户接受，2026-10-01 用户反馈替代自动发现与向导；当前以用户确认路径、只读校验和保存生效为准，具体写范围仍按派发合同冻结。"
   },
-  "verification_refs": [],
-  "integration_ref": "wt/integration/v1（V1.1.1 候选；最终提交 SHA 待集成包完成后回填）",
-  "acceptance_ref": "docs/verification/2026-09/SETUP-design-acceptance/record.json"
+  "verification_refs": [
+    "docs/verification/2026-10/V1.2.7-setup-restart-fix/README.md"
+  ],
+  "integration_ref": "v1.2.7-20261004-published@bbd368b09a463183364861678db83a9ae86b1472",
+  "acceptance_ref": "docs/verification/2026-10/V1.2.7-user-acceptance/README.md"
 }
 ```
 
@@ -48,5 +50,10 @@
 
 - 顶栏与设置中的连接入口使用 Windows 原生目录选择器；不另弹配置向导，不自动检测进程、默认安装目录或附近目录。
 - 用户确认根目录后单目录检查，通过后自动复验、保存并受控重启；取消不写入，失败保留旧选择，活动训练不切换数据源。
-- 原自动发现设计与 wt/B 接线记录仅供追溯，见[历史方案](../../proposals/tdx-onboarding.md)；`acceptance_ref` 指向 2026-09-22 设计接受，不代表最终功能验收。
-- 当前运行状态、候选提交与产物以统一工作状态文件为准；本卡不依据旧 worktree 引用重新派发已合入代码。
+- 原自动发现设计与 wt/B 接线记录仅供追溯，见[历史方案](../../proposals/tdx-onboarding.md)。
+
+## 关闭对账（2026-10-04）
+
+- 依据 [v1.2.7 用户验收记录](../../verification/2026-10/V1.2.7-user-acceptance/README.md)：用户从 Windows 发布包执行首次使用流程，确认通达信数据可正常连接且不卡死，随包验收通过并授权发布；本卡随之关闭。
+- 2026-09-22 的 [设计接受记录](../../verification/2026-09/SETUP-design-acceptance/record.json) 保留为历史设计接受，不代表最终功能验收；旧 `wt/integration/v1`（V1.1.1 候选）集成引用已被正式包 `v1.2.7-20261004-published` 取代。
+- 首配受控重启缺陷（CLI 装配层断链、Chromium 无 Origin 轮询 401）的修复与回归证据见 [SETUP-RESTART-FIX-01](SETUP-RESTART-FIX-01.md) 与[修复记录](../../verification/2026-10/V1.2.7-setup-restart-fix/README.md)。
