@@ -481,15 +481,19 @@ body.dark .rankings-tab.active { color: #52b394; border-color: #2e7d6b; }
    数字位样式全部继承宿主 strong/em（字号/颜色/粗细/前缀＝现状不动），深浅主题同源。
    注意：.equity-block span（含 body.dark 变体）会命中数字 span，必须在此显式重置；
    本块置于文件末尾＋dark 变体特异性 (0,3,1)，保证压过任何 span 级污染。 */
-.equity-block span.odo-text, .equity-block span.odo-char { display: inline; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
-body.dark .equity-block span.odo-text, body.dark .equity-block span.odo-char { color: inherit; }
+/* M6-06：两层数字位统一等宽数字（tabular-nums）——动画层每位是 0-9 竖排条带（列宽＝条带内最宽
+   数字），若字体数字为比例字宽，播完后切回真实文本层时按比例重排、产生衔接错位（用户 2026-10-05
+   验收反馈"动画中数字位等宽、播完后比例字宽重排"）；tabular-nums 强制两层每个数字同宽，任意帧与
+   收尾后宽度一致。沿用 M6-05 双档重置写法（dark 变体同步声明，压过 .equity-block span 污染）。 */
+.equity-block span.odo-text, .equity-block span.odo-char { display: inline; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; font-variant-numeric: tabular-nums; }
+body.dark .equity-block span.odo-text, body.dark .equity-block span.odo-char { color: inherit; font-variant-numeric: tabular-nums; }
 .equity-block span.odo-wrap { position: relative; display: inline-block; color: inherit; font-size: inherit; }
 body.dark .equity-block span.odo-wrap { color: inherit; }
 .equity-block .odo-host.rolling .odo-text { opacity: 0; }
-.equity-block span.odo-roll { position: absolute; left: 0; top: 0; display: block; white-space: nowrap; pointer-events: none; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
-body.dark .equity-block span.odo-roll { color: inherit; }
-.equity-block span.odo-digit { display: inline-block; overflow: hidden; height: 1lh; vertical-align: top; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
-body.dark .equity-block span.odo-digit { color: inherit; }
+.equity-block span.odo-roll { position: absolute; left: 0; top: 0; display: block; white-space: nowrap; pointer-events: none; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; font-variant-numeric: tabular-nums; }
+body.dark .equity-block span.odo-roll { color: inherit; font-variant-numeric: tabular-nums; }
+.equity-block span.odo-digit { display: inline-block; overflow: hidden; height: 1lh; vertical-align: top; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; font-variant-numeric: tabular-nums; }
+body.dark .equity-block span.odo-digit { color: inherit; font-variant-numeric: tabular-nums; }
 .equity-block span.odo-strip { display: block; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; transition: transform 80ms linear; will-change: transform; }
 body.dark .equity-block span.odo-strip { color: inherit; }
 .equity-block .odo-strip i { display: block; font-style: normal; height: 1lh; }

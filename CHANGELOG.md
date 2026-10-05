@@ -1,5 +1,12 @@
 # 更新记录
 
+## 未发布（M6-06/07 Odometer 打磨＋动画设置分栏，待人工验收）
+
+- 消除权益滚动"幻影小数"（用户 2026-10-05 验收反馈：中间值 ¥1,000,872.45 而终值 ¥1,000,872）：滚动层权益帧统一先取整再格式化（`odometer.ts` 新增纯函数 `rollDisplayEquity＝formatEquity(Math.round(v))`，pumpRoll 逐帧＋beginRoll 初帧接线）；终值路径 `formatEquity` 不动（账面终值即整数；未来真实小数须随规格变更同步）；settle 帧 displayed 已＝账面终值，保持终值格式与真实文本层逐字一致零跳变；收益率中间帧保持两位小数不变。
+- 消除动画收尾字宽重排（衔接错位）：两层数字位（真实文本层 `.odo-text/.odo-char`＋动画层 `.odo-roll/.odo-digit`，含 dark 档）统一 `font-variant-numeric: tabular-nums`——动画层每位是 0-9 竖排条带（列宽＝最宽数字），比例字宽下播完切回真实文本层必重排；tabular 强制两层逐字等宽（沿用 M6-05 双档重置写法压过 `.equity-block span` 污染）。
+- 动画开关迁入设置面板（用户拍板：训练中可调、未来动画统一管理）：设置弹层新增"动画效果"分栏（activeSection 增 `animation` 档，nav 平铺追加、移动端栅格 3→4 列，结构可扩展）；首项"数字滚动动效"开关即改即生效（label＋说明文案），持久化键沿用 `trainer_odo_motion` 不换键；顶栏"滚动"胶囊按钮移除（其余顶栏元素不动，`appOdoMotion` 仍为动效门）。
+- 工程证据（RED 先行）：幻影小数 RED 收据＝单测 `¥1,000,291.25` 逐字复现＋e2e 真浏览器滚动层 `¥99,999,696.03`（run `6ef03998`）；设置分栏 RED＝契约 motion-toggle 残留红＋e2e run `93812640`。GREEN：定向 vitest 五件套 53/53（odometer＋frontend-contract＋training-defaults＋training-rules＋percent-hover，设置弹层 M5 键盘/焦点语义回归含内）、`npm run build` 通过、journey 三 spec 8/8（odometer 4/4 含新帧采样用例：逐帧整数元＋宿主宽度差 ≤1px＋settle 帧两层同串宽度差 ≤1px＋computed tabular-nums；animation-settings 1/1；percent-hover 3/3）（run `95ed7785`）；行为矩阵 account-odometer 8 行全 covered（ODO-NO-PHANTOM-DECIMALS/ODO-WIDTH-STABLE planned→covered；ODO-MOTION-PREF test_ids 重绑设置面板入口，ears/oracle 不变），check-binding --strict exit 0。详见 docs/verification/2026-10/M6-06/README.md 与 M6-07/README.md。
+
 ## 未发布（M6-05R 数字滚动动效门修复，待人工验收）
 
 - 修复用户环境数字滚动动画全程不可见的缺陷：用户机器浏览器 `prefers-reduced-motion: reduce` 恒为 true，旧实现"组件判定＋CSS 媒体查询"双重一票否决导致 `.odo-roll` 视觉层零出现；动效门改为**应用偏好**后 OS 信号不再参与判定（其余通用 reduce 规则：数据更新抖动/省略号动画不受影响）。

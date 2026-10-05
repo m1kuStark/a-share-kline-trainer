@@ -367,7 +367,8 @@ describe('M2 chart interaction contract', () => {
     const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
     const odometer = await readFile(new URL('../../web/src/odometer.ts', import.meta.url), 'utf8')
     // 核心逻辑在纯模块（数值/口径由 odometer.test.ts 的独立 oracle 锁定），组件按导入接线
-    expect(training).toMatch(/import \{ createRollCounter, formatEquity, formatReturnPct \} from '\.\.\/odometer'/)
+    // M6-06：滚动层权益帧改经 rollDisplayEquity（取整后格式化，无幻影小数），终值路径不动
+    expect(training).toMatch(/import \{ createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity \} from '\.\.\/odometer'/)
     expect(odometer).toMatch(/export const MIN_ROLL_MS = 300/)
     expect(odometer).toMatch(/export const MAX_ROLL_MS = 600/)
     // 作用域（ODO-SCOPE-ONLY-TWO）：只有 equity-block 的两个数字挂 odo 结构；
@@ -399,9 +400,39 @@ describe('M2 chart interaction contract', () => {
     // 样式不变（ODO-STYLE-UNCHANGED 的结构/样式层）：数字位样式只继承宿主（禁新字号/颜色声明），
     // 并显式重置 .equity-block span（含 dark 变体）对数字 span 的污染
     expect(styles).toMatch(/\.equity-block \.odo-host\.rolling \.odo-text \{ opacity: 0; \}/)
-    expect(styles).toMatch(/body\.dark \.equity-block span\.odo-roll \{ color: inherit; \}/)
+    // M6-06 起 dark 重置行追加 tabular-nums 声明（字宽稳定授权扩展；color 重置仍入锁）
+    expect(styles).toMatch(/body\.dark \.equity-block span\.odo-roll \{ color: inherit; font-variant-numeric: tabular-nums; \}/)
     const odoStyleBlock = styles.slice(styles.indexOf('===== M6-05'))
     expect(odoStyleBlock).not.toMatch(/font-size: \d|color: #/)
+  })
+
+  it('keeps equity roll frames integer-only and digit widths tabular across both odometer layers (M6-06)', async () => {
+    // ODO-NO-PHANTOM-DECIMALS＋ODO-WIDTH-STABLE（用户 2026-10-05 验收反馈：
+    // ①中间值 ¥1,000,872.45 而终值 ¥1,000,872——幻影小数；②动画中数字位等宽、播完后比例
+    // 字宽重排——衔接错位）。数值口径由 odometer.test.ts 独立 oracle 锁定，本用例锁接线与样式契约。
+    const training = await readFile(trainingPath, 'utf8')
+    const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
+    const odometer = await readFile(new URL('../../web/src/odometer.ts', import.meta.url), 'utf8')
+    // ①滚动层权益帧全部先取整再格式化（纯函数在 odometer.ts 供单测；字面量锁定实现形态）
+    expect(odometer).toMatch(/export function rollDisplayEquity\(value: number\): string \{\r?\n\s*return formatEquity\(Math\.round\(value\)\)\r?\n\}/)
+    const rollingBranch = training.slice(training.indexOf('function pumpRoll'), training.indexOf('interface RollBinding'))
+    expect(rollingBranch).toMatch(/equityRoll\.value = odoColumns\(rollDisplayEquity\(equityCounter\.displayed\(now\)\)\)/)
+    // 初帧（beginRoll 经 equityBinding.format）同走取整口径；收益率滚动帧保持 formatReturnPct（两位小数）
+    expect(training).toMatch(/counter: equityCounter, roll: equityRoll, format: rollDisplayEquity,/)
+    expect(rollingBranch).toMatch(/returnRoll\.value = odoColumns\(formatReturnPct\(returnCounter\.displayed\(now\)\)\)/)
+    // settle 帧走终值格式（displayed 已＝账面终值 ⇒ 与真实文本层逐字一致，切换零跳变）
+    expect(training).toMatch(/equityRoll\.value = odoColumns\(formatEquity\(equityCounter\.displayed\(now\)\)\)/)
+    // 终值文本层不动（模板仍直读 formatEquity(account.equity)，由 M6-05 用例锁定）
+    // ②两层数字位统一 tabular-nums（真实文本层 odo-text/odo-char＋动画层 odo-roll/odo-digit，
+    //   各含 dark 档——沿用 M6-05 双档重置写法，压过 .equity-block span 污染）
+    const odoStyleBlock = styles.slice(styles.indexOf('===== M6-05'))
+    expect(odoStyleBlock).toMatch(/\.equity-block span\.odo-text, \.equity-block span\.odo-char \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    expect(odoStyleBlock).toMatch(/body\.dark \.equity-block span\.odo-text, body\.dark \.equity-block span\.odo-char \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    expect(odoStyleBlock).toMatch(/\.equity-block span\.odo-roll \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    expect(odoStyleBlock).toMatch(/body\.dark \.equity-block span\.odo-roll \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    expect(odoStyleBlock).toMatch(/\.equity-block span\.odo-digit \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    expect(odoStyleBlock).toMatch(/body\.dark \.equity-block span\.odo-digit \{[^}]*font-variant-numeric: tabular-nums;[^}]*\}/)
+    // computed 层（含 dark 主题实际生效）由 e2e odometer.spec 的宽度采样用例锁定
   })
 
   it('gates the odometer roll on the app motion preference, not the OS reduced-motion query (ODO-MOTION-PREF, M6-05R)', async () => {
@@ -433,16 +464,32 @@ describe('M2 chart interaction contract', () => {
     // 组件门＝应用偏好：beginRoll 不再读媒体查询；关闭＝卸视觉层直显终值
     const training = await readFile(trainingPath, 'utf8')
     expect(training).not.toMatch(/matchMedia\(|prefers-reduced-motion:\s*reduce/)
-    expect(training).toMatch(/import \{[^}]*appOdoMotion, setOdoMotion[^}]*\} from '\.\.\/appSettings'/)
+    expect(training).toMatch(/import \{[^}]*appOdoMotion[^}]*\} from '\.\.\/appSettings'/)
     expect(training).toMatch(/if \(!appOdoMotion\.value\) \{ binding\.roll\.value = null; return \}/)
-    // 逃生阀有真实 UI 入口：与 VOL/MACD/KDJ 副图开关同款（aria-pressed 语义＋点击切换＋off 态）
-    expect(training).toMatch(/aria-label="动效开关"/)
-    expect(training).toMatch(/class="indicator-toggle motion-toggle"/)
-    expect(training).toMatch(/:aria-pressed="appOdoMotion \? 'true' : 'false'"/)
-    expect(training).toMatch(/@click="setOdoMotion\(!appOdoMotion\)"/)
+    // 逃生阀 UI 入口：M6-07 起收纳进设置面板"动画效果"分栏（顶栏胶囊按钮已移除），
+    // 入口契约由下方 M6-07 用例锁定，此处不再断言顶栏按钮。
     // styles.css：odo-roll 的 reduce 抑制移除（其余通用 reduce 规则不动，由字面量反向断言锁死）
     const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
     expect(styles).not.toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.equity-block \.odo-roll/)
+  })
+
+  it('moves the odometer motion switch into an animation-effects settings section and removes the topbar capsule (M6-07)', async () => {
+    // 用户 2026-10-05 验收拍板：动画开关应进设置（训练中可调），单独"动画效果"分栏，
+    // 未来其它动画统一在此管理；顶栏"滚动"胶囊按钮移除，其余顶栏元素不动。
+    // 持久化键沿用 trainer_odo_motion（不换键，由 ODO-MOTION-PREF 用例锁定）。
+    const training = await readFile(trainingPath, 'utf8')
+    const settings = await readFile(new URL('../../web/src/components/TrainingSettings.vue', import.meta.url), 'utf8')
+    // 顶栏负向断言：胶囊按钮与其分组容器不复存在（注释亦不留关键词——源码注释也是契约文本）
+    expect(training).not.toMatch(/motion-toggle|动效开关/)
+    // 设置面板：分栏结构可扩展（activeSection 增 'animation' 档；nav 按钮平铺追加）
+    expect(settings).toMatch(/'defaults' \| 'preferences' \| 'animation' \| 'data'/)
+    expect(settings).toMatch(/activeSection = 'animation'">动画效果<\/button>/)
+    expect(settings).toMatch(/aria-label="动画效果"/)
+    // 首项"数字滚动动效"开关：读 appOdoMotion、切换 setOdoMotion（即改即生效，localStorage）
+    expect(settings).toMatch(/import \{[^}]*appOdoMotion[^}]*setOdoMotion[^}]*\} from '\.\.\/appSettings'/)
+    expect(settings).toMatch(/aria-label="数字滚动动效"/)
+    expect(settings).toMatch(/:checked="appOdoMotion"/)
+    expect(settings).toMatch(/setOdoMotion\(\(event\.target as HTMLInputElement\)\.checked\)/)
   })
 
   it('adds zero npm dependencies for the odometer (self-built CSS+JS, M6-05)', async () => {

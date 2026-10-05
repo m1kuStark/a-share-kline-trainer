@@ -35,6 +35,8 @@ interface OdometerModule {
   MIN_ROLL_MS: number
   MAX_ROLL_MS: number
   formatEquity: FormatNumber
+  /** M6-06：权益滚动层帧格式化（中间采样先取整）。缺失（RED/被移除）时用例回退 formatEquity 复现缺陷 */
+  rollDisplayEquity?: FormatNumber
   formatReturnPct: FormatNumber
   rollDurationMs: RollDurationMs
   sampleRoll: SampleRoll
@@ -177,5 +179,37 @@ describe('M6-05 odometer pure logic (account-odometer matrix)', () => {
     // 中断重定向实现则只播"当前显示值→最新目标"这一段（≤封顶时长）。
     expect(counter.rolling(240 + MAX_ROLL_MS)).toBe(false)
     expect(counter.displayed(240 + MAX_ROLL_MS)).toBe(1002345)
+  })
+
+  it('renders integer-only equity roll frames while return pct frames keep two decimals (ODO-NO-PHANTOM-DECIMALS)', async () => {
+    const { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } = await loadOdometerModule()
+    // M6-06 冻结 oracle（用户 2026-10-05 验收反馈：中间值 ¥1,000,872.45 而终值 ¥1,000,872）：
+    //   权益滚动层每一帧＝整数元（无小数点与小数位），与终值格式一致；
+    //   收益率中间帧保持两位小数（与终值一致，不变项）；
+    //   终值路径 formatEquity 不动（账面终值即整数；未来真实小数出现须随规格变更同步，非默默显示）。
+    // RED 口径：rollDisplayEquity 未实现/被移除时回退终值格式——缓动中间帧是浮点、
+    // maximumFractionDigits:2 必渲染出小数位，恰复现用户截图的幻影小数缺陷。
+    const rollEquityText = typeof rollDisplayEquity === 'function' ? rollDisplayEquity : formatEquity
+    const counter = createRollCounter(1000000)
+    counter.setTarget(1002345, 0, 10023.45)
+    const plan = counter.plan!
+    let phantomOnFinalFormat = false
+    for (let now = plan.startMs; now < plan.startMs + plan.durationMs; now += 16) {
+      const value = counter.displayed(now)
+      // 前提成立性（缺陷确非空转断言）：本轨道的缓动中间帧确有浮点，终值格式会渲染出小数
+      if (formatEquity(value).includes('.')) phantomOnFinalFormat = true
+      // 滚动层帧文本：¥＋千分位整数元，逐帧无小数点
+      expect(rollEquityText(value), `equity roll frame at t=${now}ms`).toMatch(/^¥\d{1,3}(,\d{3})*$/)
+    }
+    expect(phantomOnFinalFormat).toBe(true)
+    // 终值路径不动：账面整数目标经 formatEquity 与现状逐字一致（滚动末帧与真实文本衔接无跳变）
+    expect(formatEquity(1002345)).toBe('¥1,002,345')
+    // 收益率中间帧：恒两位小数（"+0.1x%" 形态，符号随值）
+    const returns = createRollCounter(0.1)
+    returns.setTarget(1.5, 0, 5)
+    const returnPlan = returns.plan!
+    for (let now = returnPlan.startMs; now < returnPlan.startMs + returnPlan.durationMs; now += 16) {
+      expect(formatReturnPct(returns.displayed(now)), `return roll frame at t=${now}ms`).toMatch(/^[+-]\d+\.\d{2}%$/)
+    }
   })
 })

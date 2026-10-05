@@ -18,10 +18,10 @@ import {
   KEYBOARD_SHORTCUTS_CHANGED_EVENT, loadKeyboardShortcuts, matchesActionShortcut,
   saveKeyboardShortcuts, shortcutId, type KeyboardShortcutPreferences, type ShortcutAction,
 } from '../keyboardShortcuts'
-import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart, appOdoMotion, setOdoMotion } from '../appSettings'
+import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart, appOdoMotion } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
-import { createRollCounter, formatEquity, formatReturnPct } from '../odometer'
+import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
@@ -294,7 +294,9 @@ function pumpRoll(): void {
     rollFrame = 0
     const now = performance.now()
     let active = false
-    if (equityCounter.rolling(now)) { equityRoll.value = odoColumns(formatEquity(equityCounter.displayed(now))); active = true }
+    // M6-06 权益滚动帧先取整（rollDisplayEquity）：中间浮点直接走终值格式会带幻影小数；
+    // 收益率帧保持 formatReturnPct（两位小数，与终值一致）
+    if (equityCounter.rolling(now)) { equityRoll.value = odoColumns(rollDisplayEquity(equityCounter.displayed(now))); active = true }
     else if (equityRoll.value && !equitySettleTimer) settleEquityRoll(now)
     if (returnCounter.rolling(now)) { returnRoll.value = odoColumns(formatReturnPct(returnCounter.displayed(now))); active = true }
     else if (returnRoll.value && !returnSettleTimer) settleReturnRoll(now)
@@ -310,7 +312,8 @@ interface RollBinding {
   cancelSettle(): void
 }
 const equityBinding: RollBinding = {
-  counter: equityCounter, roll: equityRoll, format: formatEquity,
+  // M6-06：初帧（打断时刻显示值＝中间值）同走取整口径，与逐帧滚动层一致（无幻影小数）
+  counter: equityCounter, roll: equityRoll, format: rollDisplayEquity,
   reference: (value, previous) => Math.max(Math.abs(previous), Math.abs(value), 1) * EQUITY_ROLL_REFERENCE_RATIO,
   cancelSettle: () => { clearTimeout(equitySettleTimer); equitySettleTimer = 0 },
 }
@@ -730,11 +733,7 @@ void load()
         <div class="indicator-toggles" role="group" aria-label="副图指标开关">
           <button v-for="item in indicatorToggles" :key="item.name" class="indicator-toggle" :class="{ off: !item.enabled.value }" :aria-pressed="item.enabled.value ? 'true' : 'false'" :title="item.enabled.value ? `${item.label}副图：显示中（点击隐藏）` : `${item.label}副图：已隐藏（点击显示）`" @click="item.toggle(!item.enabled.value)">{{ item.name }}</button>
         </div>
-        <!-- M6-05R 数字滚动动效开关：与副图开关同区同款的应用偏好入口（localStorage trainer_odo_motion，
-             默认开）；OS prefers-reduced-motion 不再一票否决（用户环境恒 reduce=true 曾致动画全程不可见） -->
-        <div class="indicator-toggles" role="group" aria-label="动效开关">
-          <button class="indicator-toggle motion-toggle" :class="{ off: !appOdoMotion }" :aria-pressed="appOdoMotion ? 'true' : 'false'" :title="appOdoMotion ? '数字滚动动效：开启中（点击关闭，关闭后数字直接跳变）' : '数字滚动动效：已关闭（点击开启）'" @click="setOdoMotion(!appOdoMotion)">滚动</button>
-        </div>
+        <!-- M6-07：数字滚动动效入口已移入设置面板「动画效果」分栏（顶栏胶囊按钮移除，用户 2026-10-05 拍板） -->
         <details class="training-details" @keydown.esc.prevent.stop="($event.currentTarget as HTMLDetailsElement).open = false">
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>
           <div class="training-meta">

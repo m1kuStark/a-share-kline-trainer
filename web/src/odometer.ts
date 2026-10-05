@@ -18,6 +18,16 @@ export function formatEquity(value: number): string {
   return `¥${value.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}`
 }
 
+/**
+ * 权益滚动层帧文本（M6-06 冻结，用户 2026-10-05 验收拍板）：中间采样先取整再格式化——
+ * 缓动中间帧是浮点，直接走终值格式会带出幻影小数（实测 ¥1,000,872.45 而终值 ¥1,000,872）。
+ * 终值路径 formatEquity 不动：账面终值即整数；若未来权益出现真实小数（如费用拆分），
+ * 须随规格变更同步本函数与终值格式，不得默默显示小数。收益率中间帧保持两位小数（不经此函数）。
+ */
+export function rollDisplayEquity(value: number): string {
+  return formatEquity(Math.round(value))
+}
+
 /** 收益率终值文本：与面板现状逐字一致（≥0 补 '+'；toFixed(2) 两位小数；负号由 toFixed 自带） */
 export function formatReturnPct(value: number): string {
   if (!Number.isFinite(value)) return '--%'

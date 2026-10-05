@@ -8,8 +8,8 @@ import { expect, test, type Page } from '@playwright/test'
 //    且视觉层已卸下（无残留错位）；
 // ② 作用域（ODO-SCOPE-ONLY-TWO）：可用资金/持仓市值等 .account-stats 与结算弹窗全程不出现 odo 结构；
 // ③ 动效门＝应用偏好（ODO-MOTION-PREF，M6-05R）：OS prefers-reduced-motion 不再一票否决——
-//    reduce 模拟下默认开偏好仍须播出动画（用户环境该信号恒 true 曾致动画全程不可见）；
-//    应用开关关闭（真实 UI 点击）则零动画直显终值（a11y 逃生阀）。
+//    reduce 模拟下默认开偏好仍须播出动画（用户环境该信号恒 true 曾致动画不可见）；
+//    应用开关关闭（M6-07 起走设置面板"动画效果"分栏）则零动画直显终值（a11y 逃生阀）。
 // 中断重定向的纯逻辑断言（无排队、时长封顶）由 server/test/odometer.test.ts 锁定；
 // 终值格式口径（¥/千分位/±/两位小数%）与既有文本断言共存策略（真实文本恒终值）也由该套件＋契约锁定。
 
@@ -114,20 +114,98 @@ test('rapid five-bar advance rolls the two numbers and settles on exact book val
   await page.screenshot({ path: evidencePath('odometer-settled.png') })
 })
 
-// ODO-MOTION-PREF 关闭路径（a11y 逃生阀）：真实 UI 点击关闭应用开关（localStorage trainer_odo_motion），
-// 即便 OS 同时报 reduce 也零动画——直显终值且推进完成即可读到（无动画中间态）。
-test('motion preference off skips the roll entirely and still shows exact final text (ODO-MOTION-PREF off e2e)', async ({ page }) => {
+// M6-06（用户 2026-10-05 验收反馈）：
+// ①幻影小数——权益滚动层任意帧文本必须整数元（无小数点），终值无小数时中间值也不得带出 .45；
+// ②字宽稳定——两层数字位 tabular-nums：动画任意帧与收尾后 .odo-host 宽度差 ≤1px，
+// 同帧内视觉层与真实文本层宽度差 ≤1px（等宽数字下二者逐字同宽；比例字宽必重排被此断言杀死），
+// 两层数字元素 computed font-variant-numeric 均含 tabular-nums。
+// 帧重构口径：视觉层每位是 0-9 竖排条带（textContent 全污染），当前数字位读自
+// .odo-strip 内联 style transform translateY(-Nlh) 的 N；字符位（¥/千分位逗号）直接读文本。
+test('rolling frames stay integer-only and width-stable across the two layers (ODO-NO-PHANTOM-DECIMALS, ODO-WIDTH-STABLE e2e)', async ({ page }) => {
+  test.setTimeout(180_000)
+  const id = await openTraining(page)
+  await buyHalfPosition(page)
+  // rAF 帧采样器：视觉层存在期间逐帧记录（重构文本/两层宽度/宿主宽度/computed font-variant-numeric）
+  await page.evaluate(() => {
+    interface OdoFrame { text: string; rollWidth: number; textWidth: number; hostWidth: number; fvnText: string; fvnRoll: string; fvnDigit: string }
+    const frames: OdoFrame[] = []
+    ;(window as unknown as { __odoFrameSamples: OdoFrame[] }).__odoFrameSamples = frames
+    const stripDigit = (el: Element | null): string => {
+      const m = /translateY\(-?(\d+)lh\)/.exec((el as HTMLElement | null)?.style.transform ?? '')
+      return m ? m[1]! : '?'
+    }
+    const tick = (): void => {
+      const roll = document.querySelector('.equity-block strong .odo-roll')
+      if (roll) {
+        const text = Array.from(roll.children).map(col =>
+          col.classList.contains('odo-char') ? col.textContent ?? '' : stripDigit(col.firstElementChild)).join('')
+        const textEl = document.querySelector('.equity-block strong .odo-text') as HTMLElement
+        const host = document.querySelector('.equity-block strong.odo-host') as HTMLElement
+        frames.push({
+          text,
+          rollWidth: roll.getBoundingClientRect().width,
+          textWidth: textEl.getBoundingClientRect().width,
+          hostWidth: host.getBoundingClientRect().width,
+          fvnText: getComputedStyle(textEl).fontVariantNumeric,
+          fvnRoll: getComputedStyle(roll).fontVariantNumeric,
+          fvnDigit: getComputedStyle((roll.querySelector('.odo-digit') ?? roll) as Element).fontVariantNumeric,
+        })
+      }
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+  await advanceOnce(page)          // 权益变化触发滚动（≤600ms）＋卸层（120ms）
+  await page.waitForTimeout(900)   // 等收口（settle 后视觉层已卸下）
+  const equity = await bookEquity(page, id)
+  await expectSettledNumbers(page, equity)
+  const frames = await page.evaluate(() => (window as unknown as { __odoFrameSamples: Array<{ text: string; rollWidth: number; textWidth: number; hostWidth: number; fvnText: string; fvnRoll: string; fvnDigit: string }> }).__odoFrameSamples)
+  expect(frames.length, '采样到滚动帧（动画确实播放）').toBeGreaterThan(0)
+  const settledHost = await page.evaluate(() => (document.querySelector('.equity-block strong.odo-host') as HTMLElement).getBoundingClientRect().width)
+  for (const [index, frame] of frames.entries()) {
+    // ①权益滚动帧：¥＋千分位整数元，无小数点（幻影小数在此杀死）
+    expect(frame.text, `frame[${index}] text=${frame.text}`).toMatch(/^¥[\d,]+$/)
+    // ②字宽稳定：任意帧宿主宽度 vs 收尾后 ≤1px（容器不因动画/收尾重排）
+    expect(Math.abs(frame.hostWidth - settledHost), `frame[${index}] host width diff`).toBeLessThanOrEqual(1)
+    // 两层数字位 computed tabular-nums（契约 CSS 断言锁源码，此处锁真实生效；删 tabular-nums 声明在此被杀）
+    expect(frame.fvnText, 'odo-text computed').toContain('tabular-nums')
+    expect(frame.fvnRoll, 'odo-roll computed').toContain('tabular-nums')
+    expect(frame.fvnDigit, 'odo-digit computed').toContain('tabular-nums')
+  }
+  // 层宽奇偶校验（口径说明）：滚动中两层合法显示不同字符串（视觉层从旧值滚向新值、文本层恒为
+  // 新终值），逐帧比宽无意义；取 settle 帧（视觉层文本已＝终值，两层同串）——tabular 等宽下
+  // 两层逐字符同 advance、宽度差 ≤1px；若数字位按比例字宽渲染（条带列宽＝最宽数字）必超差。
+  const finalText = await page.evaluate(() => document.querySelector('.equity-block strong .odo-text')?.textContent ?? '')
+  const settleFrames = frames.filter(frame => frame.text === finalText)
+  expect(settleFrames.length, 'settle 帧被采样到（视觉层文本已到终值）').toBeGreaterThan(0)
+  for (const [index, frame] of settleFrames.entries()) {
+    expect(Math.abs(frame.rollWidth - frame.textWidth), `settle frame[${index}] layer width diff (roll=${frame.rollWidth} text=${frame.textWidth})`).toBeLessThanOrEqual(1)
+  }
+})
+
+// ODO-MOTION-PREF 关闭路径（a11y 逃生阀，M6-07 起走设置面板"动画效果"分栏）：
+// 打开设置→动画效果分栏→关闭"数字滚动动效"→关设置→推进验证直显终值（无动画中间态），
+// 即便 OS 同时报 reduce 也零动画。持久化键沿用 trainer_odo_motion（M6-05R 起，不换键）。
+test('motion preference off via the settings panel skips the roll entirely and still shows exact final text (ODO-MOTION-PREF off e2e)', async ({ page }) => {
   test.setTimeout(180_000)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   const id = await openTraining(page)
-  // 应用开关默认开（aria-pressed=true）；点击关闭后翻转为 false（UI 入口与存储键由契约测试另锁）。
-  // 点击后显式 blur：按钮持焦时按 Space 会再触发按钮 click 而非推进快捷键（与既有工具栏按钮一致行为）
-  const toggle = page.locator('.motion-toggle')
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-  await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  // 设置面板：rail ⚙（"训练默认设置"）→"动画效果"分栏→关闭"数字滚动动效"开关
+  await page.getByRole('button', { name: '训练默认设置' }).click()
+  const dialog = page.getByRole('dialog', { name: '训练默认设置' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '动画效果' }).click()
+  const odoSwitch = dialog.getByLabel('数字滚动动效')
+  // 应用开关默认开；关闭后持久化 trainer_odo_motion='0'（UI 入口与存储键由契约测试另锁）
+  await expect(odoSwitch).toBeChecked()
+  await odoSwitch.uncheck()
+  await expect(odoSwitch).not.toBeChecked()
+  expect(await page.evaluate(() => localStorage.getItem('trainer_odo_motion'))).toBe('0')
+  await dialog.getByRole('button', { name: '关闭' }).click()
+  await expect(dialog).not.toBeVisible()
+  // 关闭弹层后焦点还至设置入口——按钮持焦时按 Space 会再开设置而非推进，显式 blur（既有行为）
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
   await expect(page.locator('.equity-block .odo-roll')).toHaveCount(0)
-  await toggle.evaluate(el => (el as HTMLElement).blur())
   await installOdometerProbe(page)
   await buyHalfPosition(page)
   for (let i = 0; i < 3; i++) await advanceOnce(page)

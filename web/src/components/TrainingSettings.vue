@@ -6,6 +6,7 @@ import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
   fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
   fetchDataDirSettings, putDataDir, type DataDirSettingsView,
+  appOdoMotion, setOdoMotion,
 } from '../appSettings'
 import { DRAW_TOOLS } from '../drawTools'
 import { DEFAULT_FAVORITE_TOOLS, DEFAULT_TOOL_STYLE, loadFavoriteTools, loadToolStylePreferences, saveFavoriteTools, saveToolStylePreferences, type ToolStylePreference, type ToolStylePreferences } from '../toolFavorites'
@@ -36,7 +37,7 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
-const activeSection = ref<'defaults' | 'preferences' | 'data'>('defaults')
+const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data'>('defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
@@ -336,6 +337,14 @@ async function onAutoDataCheckChange(): Promise<void> {
   }
 }
 
+// ===== M6-07 动画效果分栏：数字滚动动效开关 =====
+// 用户 2026-10-05 验收拍板：动画开关进设置（训练中可调），单独"动画效果"分栏，未来其它动画
+// 统一在此平铺追加。首项开关即改即生效（无需保存按钮）：写 appOdoMotion 响应式引用＋
+// localStorage 持久化（键沿用 trainer_odo_motion，不换键；Training.vue 的 beginRoll 据此放行/跳过）。
+function onOdoMotionChange(event: Event): void {
+  setOdoMotion((event.target as HTMLInputElement).checked)
+}
+
 // ===== M5-01 数据目录（通达信）：查看 / 校验 / 保存（重启生效） =====
 const tdxView = ref<TdxPathSettingsView | null>(null)
 const tdxLoadError = ref('')
@@ -491,6 +500,7 @@ function close(): void {
         <nav class="settings-nav" aria-label="设置类别">
           <button type="button" :class="{ selected: activeSection === 'defaults' }" @click="activeSection = 'defaults'">默认设置</button>
           <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
+          <button type="button" :class="{ selected: activeSection === 'animation' }" @click="activeSection = 'animation'">动画效果</button>
           <button type="button" :class="{ selected: activeSection === 'data' }" @click="activeSection = 'data'">数据目录</button>
         </nav>
         <div class="settings-content">
@@ -590,6 +600,17 @@ function close(): void {
           <p v-if="shortcutError" class="error-text" role="alert">{{ shortcutError }}</p>
           <p v-if="shortcutSaved" class="settings-saved" role="status">{{ shortcutSaved }}</p>
         </div>
+      </section>
+      <section v-if="activeSection === 'animation'" class="settings-section settings-default-section" aria-label="动画效果">
+        <h3>动画效果</h3>
+        <p class="settings-section-note">控制训练界面中的动画呈现，切换后立即生效并自动记住；未来其它动画设置也将收纳在此分栏。</p>
+        <label class="settings-row">
+          <input type="checkbox" :checked="appOdoMotion" aria-label="数字滚动动效" @change="onOdoMotionChange" />
+          <span class="settings-row-text">
+            <strong>数字滚动动效</strong>
+            <small>开启时，训练中账户权益与收益率数值变化会以约 0.3–0.6 秒的滚动动画过渡；关闭后数值直接跳变。默认开启。</small>
+          </span>
+        </label>
       </section>
       <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录">
         <h4 class="settings-subsection">训练数据目录</h4>
@@ -730,7 +751,7 @@ function close(): void {
 @media (max-width: 640px) {
   .settings-panel { width: calc(100vw - 24px); height: min(680px, calc(100dvh - 24px)); min-height: min(520px, calc(100dvh - 24px)); padding: 14px; }
   .settings-layout { grid-template-columns: 1fr; gap: 10px; }
-  .settings-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); position: static; }
+  .settings-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: static; }
   .settings-nav button { text-align: center; padding: 8px 5px; }
   .tool-preference-list, .tool-style-editor { grid-template-columns: 1fr; }
   .tool-style-editor strong, .tool-style-editor button { grid-column: auto; }
