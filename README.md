@@ -8,7 +8,7 @@
 
 这是个人训练工具，不是券商交易软件，没有自动交易，也不提供投资建议。
 
-![训练界面，使用独立测试数据](docs/verification/2026-10/GITHUB-HEALTH-01/training-example.png)
+![训练界面，使用独立测试数据](docs/user/images/training-example.png)
 
 训练界面（独立测试数据示例）。
 
