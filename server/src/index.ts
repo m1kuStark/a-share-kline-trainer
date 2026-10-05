@@ -7,6 +7,8 @@ import { createDrainController } from './setup/drain-controller.js'
 import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
+import { registerUpdateApi } from './update/api.js'
+import { serverVersion } from './update/version.js'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
@@ -22,13 +24,17 @@ const app = Fastify({ logger: true })
 const drainController = createDrainController({
   getActiveTraining: () => getActiveTraining(database),
 })
-app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid }))
+// UPD-01（UPD-VERSION-EXPOSE）：currentVersion 来自包根 package.json（构建时写入），
+// 不改 status/runId/pid 三身份字段（launcher isTrainerHealth 只认这三者）。
+app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid, currentVersion: serverVersion() }))
 await app.register(cors, { origin: true })
 await registerApi(app, config, database, {
   drain: drainController.gate,
   // REL-LAUNCH-UX-01：页面"保存并退出"与控制桥共用同一冻结排空实现与真实关闭函数
   lifecycle: { controller: drainController, shutdown: () => shutdown() },
 })
+// UPD-01 在线更新端点（check/apply/status）；活跃训练查询复用业务口径
+await registerUpdateApi(app, config, { getActiveTraining: () => getActiveTraining(database) })
 await registerSetupControlApi(app, {
   controller: drainController,
   config,
