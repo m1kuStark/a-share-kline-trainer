@@ -48,6 +48,8 @@
 | [M5-01](<work-items/tasks/M5-01.md>) | active / integrator | 训练规则快照、应用偏好与 TDX 路由已接入 V1 候选；设置面板现按默认/偏好/数据目录分栏，数据目录支持原生 Windows 选择器。 | [证据1](<verification/architecture-audit-2026-09-17.json>)；[证据2](<verification/2026-09/M5-01/report.md>) | wt/integration/v1（V1.1.1 候选；最终提交 SHA 待集成包完成后回填） | 未记录 |
 | [M5-DEFAULTS-01](<work-items/tasks/M5-DEFAULTS-01.md>) | review / GLM-5.3-Flash | 实现默认初始资金/复权的持久设置、创建显式覆盖及当前训练/录像不漂移；代码经 0ed7d54（TRAIN-01）合入 main 并随 v1.2.7 发布，用户验收记录待回填。 | 未记录 | main@0ed7d54（TRAIN-01 合入）；原开发分支 codex/m5-training-defaults 已随 2026-10-02 分支清理删除 | 未记录 |
 | [M6-05](<work-items/tasks/M6-05.md>) | review / integrator | 账户权益/收益率 Odometer 数字滚动：纯模块 web/src/odometer.ts（时长成比例封顶[300,600]ms、中断重定向不排队、终值精确）＋Training.vue 双层接线（真实文本恒终值＋aria-hidden 视觉层滚动）。M6-05R 修复轮（2026-10-05，用户环境 reduce=true 曾致动画全程不可见）：动效门改为应用偏好 trainer_odo_motion（默认开，顶栏'滚动'开关），OS prefers-reduced-motion 不再一票否决；矩阵 ODO-REDUCED-MOTION 改写为 ODO-MOTION-PREF，6 行 covered（strict exit 0）；RED run 7f76ccbe→GREEN odometer 3/3（c4d38a16）＋percent-hover 3/3＋定向 vitest 40/40＋kdj 5/5＋build 全绿 | [证据1](<verification/2026-10/M6-05/README.md>) | 未记录 | 未记录 |
+| [M6-06](<work-items/tasks/M6-06.md>) | active / integrator | Odometer 打磨：权益滚动中间值无幻影小数＋两层数字 tabular-nums 字宽稳定 | 未记录 | 未记录 | 未记录 |
+| [M6-07](<work-items/tasks/M6-07.md>) | active / integrator | 设置面板新增动画效果分栏收纳动效开关，顶栏滚动按钮移除 | 未记录 | 未记录 | 未记录 |
 | [NOTE-01](<work-items/tasks/NOTE-01.md>) | planned / integrator | 在图表下方 B/S 标记上提供交易理由入口，并支持悬停详情和固定浮层。 | 未记录 | 未记录 | 未记录 |
 | [ORCH-STATE-01](<work-items/tasks/ORCH-STATE-01.md>) | active / integrator | 统一状态文件已回填 V1.2.0 候选、包校验和与用户验收边界 | 未记录 | 未记录 | 未记录 |
 | [ORDER-00](<work-items/tasks/ORDER-00.md>) | planned / integrator | 核查 GitHub 开源条件单实现的许可证、撮合假设和数据模型，只提取适合日线训练器的可验证做法。 | 未记录 | 未记录 | 未记录 |
