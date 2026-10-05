@@ -18,7 +18,7 @@ import {
   KEYBOARD_SHORTCUTS_CHANGED_EVENT, loadKeyboardShortcuts, matchesActionShortcut,
   saveKeyboardShortcuts, shortcutId, type KeyboardShortcutPreferences, type ShortcutAction,
 } from '../keyboardShortcuts'
-import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart } from '../appSettings'
+import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart, appOdoMotion, setOdoMotion } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct } from '../odometer'
@@ -262,7 +262,9 @@ const returnPct = computed(() => ((account.value.equity - training.value.initial
 // 逐帧渲染，每位数字是 0-9 竖排条带的 translateY（CSS 过渡衔接帧间步进＝竖直滚动观感）。
 // 连续快速推进＝中断重定向（counter 只持一条计划，从当前显示值续滚最新目标，不排队不重放）；
 // 终帧后延迟 ODO_SETTLE_MS（> 条带过渡 80ms）再卸视觉层，条带滚到位才切回真实文本，无错位闪烁。
-// prefers-reduced-motion＝不播动画直显终值（组件判定 + styles.css 媒体查询兜底两道）。
+// 应用动效偏好关闭（trainer_odo_motion='0'）＝不播动画直显终值。M6-05R：OS prefers-reduced-motion
+// 不再一票否决——用户唯一真实环境该信号恒为 true，一票否决＝用户明确要求的核心反馈全程不可见
+// （2026-10-05 验收反馈"完整训练从未见过数字滚动"）；a11y 逃生阀改为应用开关（默认开，幅度 ≤600ms）。
 interface OdoColumn { char: string; digit: number | null }
 const equityRoll = ref<Array<OdoColumn> | null>(null)
 const returnRoll = ref<Array<OdoColumn> | null>(null)
@@ -274,9 +276,6 @@ const RETURN_ROLL_REFERENCE_PP = 5
 const ODO_SETTLE_MS = 120
 function odoColumns(text: string): Array<OdoColumn> {
   return [...text].map(char => ({ char, digit: char >= '0' && char <= '9' ? Number(char) : null }))
-}
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 let rollFrame = 0
 let equitySettleTimer = 0
@@ -321,7 +320,7 @@ const returnBinding: RollBinding = {
   cancelSettle: () => { clearTimeout(returnSettleTimer); returnSettleTimer = 0 },
 }
 function beginRoll(binding: RollBinding, value: number, previous: number): void {
-  if (prefersReducedMotion()) { binding.roll.value = null; return }
+  if (!appOdoMotion.value) { binding.roll.value = null; return }
   binding.cancelSettle()
   binding.counter.setTarget(value, performance.now(), binding.reference(value, previous))
   // 初始视觉层＝打断时刻的显示值（与真实文本同帧切换，不闪终值）
@@ -730,6 +729,11 @@ void load()
         <!-- M6-04 副图指标开关：与周期按钮同区（股票信息行），aria-pressed 语义保留；off＝虚线灰 -->
         <div class="indicator-toggles" role="group" aria-label="副图指标开关">
           <button v-for="item in indicatorToggles" :key="item.name" class="indicator-toggle" :class="{ off: !item.enabled.value }" :aria-pressed="item.enabled.value ? 'true' : 'false'" :title="item.enabled.value ? `${item.label}副图：显示中（点击隐藏）` : `${item.label}副图：已隐藏（点击显示）`" @click="item.toggle(!item.enabled.value)">{{ item.name }}</button>
+        </div>
+        <!-- M6-05R 数字滚动动效开关：与副图开关同区同款的应用偏好入口（localStorage trainer_odo_motion，
+             默认开）；OS prefers-reduced-motion 不再一票否决（用户环境恒 reduce=true 曾致动画全程不可见） -->
+        <div class="indicator-toggles" role="group" aria-label="动效开关">
+          <button class="indicator-toggle motion-toggle" :class="{ off: !appOdoMotion }" :aria-pressed="appOdoMotion ? 'true' : 'false'" :title="appOdoMotion ? '数字滚动动效：开启中（点击关闭，关闭后数字直接跳变）' : '数字滚动动效：已关闭（点击开启）'" @click="setOdoMotion(!appOdoMotion)">滚动</button>
         </div>
         <details class="training-details" @keydown.esc.prevent.stop="($event.currentTarget as HTMLDetailsElement).open = false">
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>

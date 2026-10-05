@@ -70,3 +70,59 @@
 - 快速推进的"中断"在 e2e 中未逐帧验证（推进往返 > 单次动画时长时中断未必发生）——中断语义由单测五连发场景锁定，e2e 只锁"动画播过＋终值正确＋越界无动画"。
 - 收益率正负翻转瞬间（up/down 类同帧切换）颜色立即变、数字继续滚——与"颜色随账面值即时变"的现状一致，未做颜色过渡（规约未要求）。
 - 动画时长量纲（权益 1% 相对幅度到封顶、收益率 5 个百分点到封顶）＝呈现类默认，已按 300~600ms 冻结区间实现，具体节奏待用户验收拍板。
+
+## M6-05R 修复轮（2026-10-05，bug-loop：用户环境动画全程不可见）
+
+### 缺陷与根因（架构师实机定位，证据在案）
+
+- 现象：用户完整训练全程从未见过账户权益/收益率数字滚动。
+- 根因：用户机器浏览器 `matchMedia('(prefers-reduced-motion: reduce)').matches === true`（已实测）；`Training.vue` 的 `beginRoll` 以该信号一票否决（提前 return 不建滚动层），`styles.css` 另有 `@media (prefers-reduced-motion: reduce){ .odo-roll{display:none!important} }` 双重抑制。架构师浏览器采样：推进后权益 ¥1,000,000→¥1,000,636 变化、模板重渲染正常，但 `.odo-roll` 层 50 帧零出现。
+- e2e 为何绿：Playwright 默认 no-preference 环境，从未在 reduce 环境断言过"用户要求的效果可见"；ODO-REDUCED-MOTION 行按无障碍惯例冻结为"reduce＝跳过"，恰好把用户唯一真实环境判为"应该不可见"。
+
+### 环境调查（为何该环境 reduce=true；未改系统，供追溯）
+
+- 实测事实：用户浏览器（Chromium/Edge 系内核）`prefers-reduced-motion` 报 reduce。
+- 已知映射（Chromium/Edge/WebView2 公开行为，未在用户机器上逐项验证）：Windows 设置"动画效果"关闭（设置→辅助功能→视觉效果，旧版入口"轻松使用→不显示 Windows 动画"）⇒ 浏览器报告 reduce；RDP/远程桌面会话与部分省电策略亦会触发。具体属哪一项是用户机器侧配置，留待用户按需自查——修复后动效门已不依赖该信号（逃生阀＝应用开关）。
+
+### 修复设计（架构师拍板，用户 2026-10-05 授权"需要修复"）
+
+- 动效门从 OS 媒体查询改为**应用偏好**：`trainer_odo_motion`（localStorage，'0'＝关，未设置/异常＝默认开＝现状；键名沿用 trainer_* 既有风格）；UI＝训练页顶栏与副图开关同款的"滚动"胶囊按钮（`.indicator-toggle.motion-toggle`，aria-pressed 语义，off＝虚线灰），点击立即生效并持久化。
+- `Training.vue`：`beginRoll` 门改读 `appOdoMotion.value`；`prefersReducedMotion()` 删除；`styles.css` 的 odo-roll reduce 抑制移除（其余通用 reduce 规则 shake/ellipsis 不动）。
+- **a11y 取舍（写明供追溯）**：功能为用户明确要求的核心反馈、幅度小（≤600ms、纯视觉层 aria-hidden）；OS reduce 在用户唯一真实环境恒为 true，一票否决＝功能不可见；逃生阀＝应用开关（用户拍板 2026-10-05"需要修复"）。
+
+### RED → GREEN（独立 oracle：测试内嵌）
+
+- **RED**：新增 e2e `OS prefers-reduced-motion no longer suppresses the roll while the app motion preference is on (ODO-MOTION-PREF e2e)`——`page.emulateMedia({ reducedMotion: 'reduce' })` 下买入＋推进 3 根，MutationObserver 全程见证 `.odo-roll` 至少挂载 1 帧。修复前复现失败（journey run `7f76ccbe`：`expect(probe.equity, 'OS reduce 下权益滚动层出现过').toBe(true)` 收到 false，1 failed；既有 2 用例同跑仍绿——失败即缺陷本身，非测试问题）。
+- **开关关闭路径**：e2e `motion preference off skips the roll entirely and still shows exact final text (ODO-MOTION-PREF off e2e)`——真实 UI 点击"滚动"开关（aria-pressed true→false），买入＋推进后零视觉层、推进完成即读＝账面终值（无动画中间态）。
+- **契约**：`gates the odometer roll on the app motion preference, not the OS reduced-motion query (ODO-MOTION-PREF, M6-05R)`——ts.transpile 提取执行 `readOdoMotionPref/writeOdoMotionPref`（独立 oracle：'0'＝关；'1'/未设置/异常＝默认开；写 '1'/'0'；键名 `trainer_odo_motion`），并锁 beginRoll 门字面量、组件/CSS 无 reduce 残留、UI 入口（aria-pressed＋setOdoMotion 点击）。
+- 既有 ODO 行为不回归：默认开＋no-preference 下原"快速推进 5 根"用例保持绿。
+
+### R 轮收据
+
+| 项 | 命令 | 结果 |
+|---|---|---|
+| RED 复现 | `TDX_ROOT=D:\MySoftWares\TDX npm run journey -- e2e/odometer.spec.ts --retries=0`（追加新用例后、修复前） | run `7f76ccbe`：1 failed（probe.equity=false）＋2 passed |
+| 定向 vitest | `npx vitest run --config server/vitest.config.ts server/test/frontend-contract.test.ts server/test/odometer.test.ts` | 2 文件 40/40 通过（exit 0） |
+| appSettings 共改回归 | 同上跑 `server/test/kdj-indicator.test.ts`（VOL/MACD/KDJ 偏好切片） | 5/5 通过 |
+| build | `npm run build` | 通过（typecheck:web＋server＋web；chunk 体积告警为存量） |
+| e2e GREEN | 同 RED 命令（修复后） | run `c4d38a16`：odometer 3/3（23.6s） |
+| e2e 关联回归 | `npm run journey -- e2e/percent-hover.spec.ts --retries=0` | run `a72c1599`：3/3（26.8s） |
+| 绑定检查 | `check-binding.mjs --matrix account-odometer.yaml --strict --include-untracked` | covered=6 open=0 RED=0（exit 0） |
+| 全矩阵核对 | 同上跑 matrix/ 全部 5 个矩阵 | account-odometer、chart-toggles exit 0；candle-percent-hover/conditional-orders/kdj-subchart exit 3＝存量 proposed_default/uncovered 开放行（RED=0，与本轮无关，矩阵文件本轮未触碰） |
+
+### R 轮定向变异抽检（paper_only）
+
+1. 门回退为 `prefersReducedMotion()`：e2e ODO-MOTION-PREF（probe.equity=false）＋契约 `/matchMedia\(|prefers-reduced-motion:\s*reduce/` 负向断言分别被杀。
+2. 忽略偏好恒播放：e2e off 用例（probe.equity=true）＋契约 `if (!appOdoMotion.value)` 门字面量分别被杀。
+3. 仅重加 CSS 抑制（JS 门保留正确）：契约 styles 负向断言被杀。**如实登记 oracle 边界**：e2e 探针杀不死此变异——`display:none` 不移除 DOM 存在性，querySelector 仍命中；CSS 可见性只能锁到契约源码层（L1）。
+4. 默认翻转（未设置＝关）：契约 `read({getItem:()=>null})===true` 被杀。
+
+### R 轮踩坑沉淀
+
+- Playwright `page.evaluate` 传函数字符串会被当表达式求值返回空对象——须用 IIFE `(() => …)()`（本套件既有写法为函数体形式，本轮未踩；架构师在 IAB 环境踩坑记录在案，供后续移植参考）。
+- 点击工具栏胶囊开关后按钮持焦，随后的 `Space` 会再触发按钮 click 而非推进快捷键（与 VOL/MACD/KDJ 开关一致的既有行为，非本轮引入）——e2e 中点击后显式 `el.blur()` 再推进；用户侧同样表现为"点完开关第一次空格没反应"，属既有交互特性，如需改进另立任务。
+
+### R 轮未覆盖边界（如实登记）
+
+- 真实用户环境的滚动观感（节奏、与 OS reduce 的实际共存）留待用户验收——e2e 的 `emulateMedia` 只模拟信号，不等价用户机器全环境。
+- Windows 侧"动画效果"具体配置项未在用户机器实测确认（见环境调查节），属用户侧自查项。

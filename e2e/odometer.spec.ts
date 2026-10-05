@@ -7,7 +7,9 @@ import { expect, test, type Page } from '@playwright/test'
 //    停稳后终值精确＝服务端账面值（终文本用冻结公式在测试侧独立计算，不读页面实现），
 //    且视觉层已卸下（无残留错位）；
 // ② 作用域（ODO-SCOPE-ONLY-TWO）：可用资金/持仓市值等 .account-stats 与结算弹窗全程不出现 odo 结构；
-// ③ prefers-reduced-motion（ODO-REDUCED-MOTION）：reduce 模式下数值变化不播动画（视觉层零挂载）、直显终值。
+// ③ 动效门＝应用偏好（ODO-MOTION-PREF，M6-05R）：OS prefers-reduced-motion 不再一票否决——
+//    reduce 模拟下默认开偏好仍须播出动画（用户环境该信号恒 true 曾致动画全程不可见）；
+//    应用开关关闭（真实 UI 点击）则零动画直显终值（a11y 逃生阀）。
 // 中断重定向的纯逻辑断言（无排队、时长封顶）由 server/test/odometer.test.ts 锁定；
 // 终值格式口径（¥/千分位/±/两位小数%）与既有文本断言共存策略（真实文本恒终值）也由该套件＋契约锁定。
 
@@ -112,19 +114,50 @@ test('rapid five-bar advance rolls the two numbers and settles on exact book val
   await page.screenshot({ path: evidencePath('odometer-settled.png') })
 })
 
-test('prefers-reduced-motion skips the animation entirely and still shows exact final text (ODO-REDUCED-MOTION)', async ({ page }) => {
+// ODO-MOTION-PREF 关闭路径（a11y 逃生阀）：真实 UI 点击关闭应用开关（localStorage trainer_odo_motion），
+// 即便 OS 同时报 reduce 也零动画——直显终值且推进完成即可读到（无动画中间态）。
+test('motion preference off skips the roll entirely and still shows exact final text (ODO-MOTION-PREF off e2e)', async ({ page }) => {
+  test.setTimeout(180_000)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const id = await openTraining(page)
+  // 应用开关默认开（aria-pressed=true）；点击关闭后翻转为 false（UI 入口与存储键由契约测试另锁）。
+  // 点击后显式 blur：按钮持焦时按 Space 会再触发按钮 click 而非推进快捷键（与既有工具栏按钮一致行为）
+  const toggle = page.locator('.motion-toggle')
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('.equity-block .odo-roll')).toHaveCount(0)
+  await toggle.evaluate(el => (el as HTMLElement).blur())
+  await installOdometerProbe(page)
+  await buyHalfPosition(page)
+  for (let i = 0; i < 3; i++) await advanceOnce(page)
+  // 关闭＝无动画中间态：推进完成（loading 结束）立即读取就是终值，无需等动画收口
+  const equity = await bookEquity(page, id)
+  await expectSettledNumbers(page, equity)
+  // 偏好关闭＋OS reduce：全程零动画视觉层（直显终值）
+  const probe = await page.evaluate(() => (window as unknown as { __odoProbe: { equity: boolean; returnPct: boolean; others: boolean } }).__odoProbe)
+  expect(probe.equity).toBe(false)
+  expect(probe.returnPct).toBe(false)
+  expect(probe.others).toBe(false)
+})
+
+// M6-05R RED（用户验收缺陷复现，2026-10-05）：用户完整训练全程从未见过数字滚动。
+// 根因＝用户机器浏览器 prefers-reduced-motion: reduce 恒为 true，beginRoll 一票否决＋CSS 媒体查询
+// 双重抑制 ⇒ .odo-roll 层零出现。修复后动效门改为应用偏好（默认开），OS reduce 不再一票否决：
+// 本用例在 reduce 模拟下推进 K 线（有持仓使权益变化），采样窗口内滚动层必须出现过至少 1 帧。
+test('OS prefers-reduced-motion no longer suppresses the roll while the app motion preference is on (ODO-MOTION-PREF e2e)', async ({ page }) => {
   test.setTimeout(180_000)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   const id = await openTraining(page)
   await installOdometerProbe(page)
   await buyHalfPosition(page)
   for (let i = 0; i < 3; i++) await advanceOnce(page)
-  await page.waitForTimeout(400)
+  await page.waitForTimeout(900)
   const equity = await bookEquity(page, id)
   await expectSettledNumbers(page, equity)
-  // reduce 模式全程零动画视觉层（直显终值）
+  // OS reduce 不再一票否决：应用动效偏好默认开 ⇒ 两个数字的滚动层都出现过；越界处仍无动画
   const probe = await page.evaluate(() => (window as unknown as { __odoProbe: { equity: boolean; returnPct: boolean; others: boolean } }).__odoProbe)
-  expect(probe.equity).toBe(false)
-  expect(probe.returnPct).toBe(false)
+  expect(probe.equity, 'OS reduce 下权益滚动层出现过').toBe(true)
+  expect(probe.returnPct, 'OS reduce 下收益率滚动层出现过').toBe(true)
   expect(probe.others).toBe(false)
 })

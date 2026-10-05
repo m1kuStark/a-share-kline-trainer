@@ -493,4 +493,6 @@ body.dark .equity-block span.odo-digit { color: inherit; }
 .equity-block span.odo-strip { display: block; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; transition: transform 80ms linear; will-change: transform; }
 body.dark .equity-block span.odo-strip { color: inherit; }
 .equity-block .odo-strip i { display: block; font-style: normal; height: 1lh; }
-@media (prefers-reduced-motion: reduce) { .equity-block .odo-roll { display: none !important; } }
+/* M6-05R：odo-roll 不再受 prefers-reduced-motion 抑制（动效门＝应用偏好 trainer_odo_motion，见
+   appSettings.ts 与 Training.vue beginRoll）；用户唯一真实环境该媒体查询恒为 true，一票否决＝核心
+   反馈不可见。上方其余通用 reduce 规则（shake/ellipsis）与本块无关，保持不动。 */

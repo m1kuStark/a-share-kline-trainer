@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
+import ts from 'typescript'
 import { exerciseChartZoom } from './helpers/chart-zoom'
 
 const chartPath = new URL('../../web/src/components/KlineChart.vue', import.meta.url)
@@ -391,15 +392,57 @@ describe('M2 chart interaction contract', () => {
     expect(training).toMatch(/const returnCounter = createRollCounter\(returnPct\.value\)/)
     expect(training).toMatch(/function pumpRoll\(\): void/)
     expect(training).toMatch(/ODO_SETTLE_MS = 120/)
-    // reduced-motion 双道防线：组件判定不播动画 + CSS 媒体查询兜底隐藏视觉层
-    expect(training).toMatch(/matchMedia\('\(prefers-reduced-motion: reduce\)'\)/)
-    expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.equity-block \.odo-roll \{ display: none !important; \} \}/)
+    // M6-05R 语义反转：动效门＝应用偏好（ODO-MOTION-PREF，由下一条用例独立锁定）；
+    // 旧"reduced-motion 双道防线"（组件 matchMedia 判定＋CSS 媒体查询兜底隐藏）已随缺陷修复移除
+    expect(training).not.toMatch(/matchMedia\(|prefers-reduced-motion:\s*reduce/)
+    expect(styles).not.toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.equity-block \.odo-roll/)
     // 样式不变（ODO-STYLE-UNCHANGED 的结构/样式层）：数字位样式只继承宿主（禁新字号/颜色声明），
     // 并显式重置 .equity-block span（含 dark 变体）对数字 span 的污染
     expect(styles).toMatch(/\.equity-block \.odo-host\.rolling \.odo-text \{ opacity: 0; \}/)
     expect(styles).toMatch(/body\.dark \.equity-block span\.odo-roll \{ color: inherit; \}/)
     const odoStyleBlock = styles.slice(styles.indexOf('===== M6-05'))
     expect(odoStyleBlock).not.toMatch(/font-size: \d|color: #/)
+  })
+
+  it('gates the odometer roll on the app motion preference, not the OS reduced-motion query (ODO-MOTION-PREF, M6-05R)', async () => {
+    // 用户环境 prefers-reduced-motion 恒 true 导致滚动全程不可见（2026-10-05 验收反馈）：
+    // 动效门从 OS 媒体查询改为应用偏好（默认开），逃生阀＝应用开关。独立 oracle（内嵌冻结）：
+    // '0'＝关；未设置/异常值＝默认开（＝现状）；写入 '1'/'0'；键名沿用 trainer_* 风格。
+    const appSettings = await readFile(new URL('../../web/src/appSettings.ts', import.meta.url), 'utf8')
+    const start = appSettings.indexOf('const ODO_MOTION_STORAGE_KEY')
+    const end = appSettings.indexOf('export const appOdoMotion')
+    expect(start).toBeGreaterThanOrEqual(0)
+    expect(end).toBeGreaterThan(start)
+    const exports_: Record<string, unknown> = {}
+    new Function('exports', ts.transpile(appSettings.slice(start, end), { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS }))(exports_)
+    const read = exports_.readOdoMotionPref as (storage: Pick<Storage, 'getItem'>) => boolean
+    const write = exports_.writeOdoMotionPref as (storage: Pick<Storage, 'setItem'>, enabled: boolean) => void
+    expect(read).toBeTypeOf('function')
+    expect(write).toBeTypeOf('function')
+    expect(read({ getItem: () => '0' }), "显式 '0'＝关").toBe(false)
+    expect(read({ getItem: () => '1' }), "显式 '1'＝开").toBe(true)
+    expect(read({ getItem: () => null }), '未设置＝默认开').toBe(true)
+    expect(read({ getItem: () => 'garbage' }), '异常值不翻转为关').toBe(true)
+    const written: Record<string, string> = {}
+    const store = { setItem: (key: string, value: string): void => { written[key] = value } } as Pick<Storage, 'setItem'>
+    write(store, false)
+    expect(written).toEqual({ trainer_odo_motion: '0' })
+    write(store, true)
+    expect(written).toEqual({ trainer_odo_motion: '1' })
+    expect(appSettings).toMatch(/const ODO_MOTION_STORAGE_KEY = 'trainer_odo_motion'/)
+    // 组件门＝应用偏好：beginRoll 不再读媒体查询；关闭＝卸视觉层直显终值
+    const training = await readFile(trainingPath, 'utf8')
+    expect(training).not.toMatch(/matchMedia\(|prefers-reduced-motion:\s*reduce/)
+    expect(training).toMatch(/import \{[^}]*appOdoMotion, setOdoMotion[^}]*\} from '\.\.\/appSettings'/)
+    expect(training).toMatch(/if \(!appOdoMotion\.value\) \{ binding\.roll\.value = null; return \}/)
+    // 逃生阀有真实 UI 入口：与 VOL/MACD/KDJ 副图开关同款（aria-pressed 语义＋点击切换＋off 态）
+    expect(training).toMatch(/aria-label="动效开关"/)
+    expect(training).toMatch(/class="indicator-toggle motion-toggle"/)
+    expect(training).toMatch(/:aria-pressed="appOdoMotion \? 'true' : 'false'"/)
+    expect(training).toMatch(/@click="setOdoMotion\(!appOdoMotion\)"/)
+    // styles.css：odo-roll 的 reduce 抑制移除（其余通用 reduce 规则不动，由字面量反向断言锁死）
+    const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
+    expect(styles).not.toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.equity-block \.odo-roll/)
   })
 
   it('adds zero npm dependencies for the odometer (self-built CSS+JS, M6-05)', async () => {

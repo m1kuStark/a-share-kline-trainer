@@ -1,5 +1,12 @@
 # 更新记录
 
+## 未发布（M6-05R 数字滚动动效门修复，待人工验收）
+
+- 修复用户环境数字滚动动画全程不可见的缺陷：用户机器浏览器 `prefers-reduced-motion: reduce` 恒为 true，旧实现"组件判定＋CSS 媒体查询"双重一票否决导致 `.odo-roll` 视觉层零出现；动效门改为**应用偏好**后 OS 信号不再参与判定（其余通用 reduce 规则：数据更新抖动/省略号动画不受影响）。
+- 新增"数字滚动动效"应用开关：训练页顶栏与副图指标开关同款的"滚动"胶囊按钮（aria-pressed 语义、off＝虚线灰），localStorage 键 `trainer_odo_motion`（'0'＝关，未设置＝默认开＝现状，键名沿用 trainer_* 风格）；点击立即生效并跨重启保持；关闭＝数字直接跳变、开启＝播放滚动。
+- a11y 取舍（用户 2026-10-05 拍板"需要修复"）：功能为用户明确要求的核心反馈、幅度小（≤600ms、纯视觉层 aria-hidden）；OS reduce 在用户唯一真实环境恒为 true，一票否决＝功能不可见，逃生阀＝应用开关。
+- 工程证据（bug-loop RED 先行）：RED e2e 在 `emulateMedia({reducedMotion:'reduce'})` 下断言滚动层出现，修复前失败（run `7f76ccbe`：probe.equity=false）→修复后 odometer 3/3（run `c4d38a16`）；新增"偏好关闭零动画直显终值"e2e（真实 UI 点击开关）与 ODO-MOTION-PREF 契约用例（transpile 执行 readOdoMotionPref/writeOdoMotionPref 独立 oracle＋门/入口/CSS 负向断言）；定向 vitest 40/40（契约＋odometer）＋kdj-indicator 5/5＋build 通过＋percent-hover 3/3；行为矩阵 ODO-REDUCED-MOTION 行改写为 ODO-MOTION-PREF（covered，strict exit 0）。详见 docs/verification/2026-10/M6-05/README.md 的 M6-05R 节。
+
 ## 未发布（M6-05 账户数字滚动动画候选，待人工验收）
 
 - 训练账户面板"账户权益"与"收益率"两处数字在数值变化时播放 Odometer 风格数字滚动动画（每位数字 0-9 竖直滚动，自研 CSS+JS、零新增依赖）；可用资金/持仓市值/持仓/摊薄成本与结算弹窗数字不动画、直接更新；两数字的字号/颜色/粗细/前缀与布局不变（深浅主题均正常）。

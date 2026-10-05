@@ -201,6 +201,37 @@ export function setMacdSubchart(enabled: boolean): void {
   } catch { /* 持久化失败不阻断会话内切换 */ }
 }
 
+// ===== 应用偏好：账户数字滚动动效（M6-05R，用户 2026-10-05 验收反馈拍板"需要修复"） =====
+// 与 KDJ/VOL/MACD 同层同机制（localStorage，默认开＝现状）。a11y 取舍（M6-05R 冻结）：
+// OS prefers-reduced-motion 在用户唯一真实环境恒为 true（旧实现一票否决导致滚动全程不可见），
+// 动效改为应用开关控制、OS 信号不再一票否决；功能为用户明确要求的核心反馈、幅度小
+// （≤600ms、纯视觉层 aria-hidden），逃生阀＝本开关（关闭＝直显终值）。
+// 读写拆成纯函数便于服务端契约测试提取执行（server/test/frontend-contract.test.ts 的 M6-05R 用例）。
+
+const ODO_MOTION_STORAGE_KEY = 'trainer_odo_motion'
+
+/** 读取数字滚动动效偏好：'0'＝关，其余（未设置/异常值）＝默认开 */
+export function readOdoMotionPref(storage: Pick<Storage, 'getItem'>): boolean {
+  return storage.getItem(ODO_MOTION_STORAGE_KEY) !== '0'
+}
+
+/** 写入数字滚动动效偏好（'1'/'0'） */
+export function writeOdoMotionPref(storage: Pick<Storage, 'setItem'>, enabled: boolean): void {
+  storage.setItem(ODO_MOTION_STORAGE_KEY, enabled ? '1' : '0')
+}
+
+/** 数字滚动动效开关（应用偏好，默认 true）；Training.vue 的 beginRoll 据此放行/跳过动画 */
+export const appOdoMotion = ref(readOdoMotionPref(safeStorage() ?? { getItem: () => null }))
+
+/** 切换数字滚动动效：立即生效并持久化（localStorage 不可用时保持会话内生效） */
+export function setOdoMotion(enabled: boolean): void {
+  appOdoMotion.value = enabled
+  try {
+    const storage = safeStorage()
+    if (storage) writeOdoMotionPref(storage, enabled)
+  } catch { /* 持久化失败不阻断会话内切换 */ }
+}
+
 // ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====
 
 export function fetchTdxPathSettings(): Promise<TdxPathSettingsView> {
