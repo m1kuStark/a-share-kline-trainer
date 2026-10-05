@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
 import { theme } from '../theme'
 import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
@@ -21,6 +21,7 @@ import {
 import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
+import { createRollCounter, formatEquity, formatReturnPct } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
 
@@ -254,6 +255,88 @@ const training = computed(() => snapshot.value.training)
 const previousClose = computed(() => previousDailyClose(dailyForRecording.value?.bars ?? [], training.value.currentPhase ?? 'close'))
 const account = computed(() => snapshot.value.account)
 const returnPct = computed(() => ((account.value.equity - training.value.initialCash) / training.value.initialCash) * 100)
+
+// ===== M6-05 账户权益/收益率 Odometer 数字滚动 =====
+// 架构：真实文本节点（.odo-text）始终写终值——任何时刻读取＝精确账面值，既有/未来文本断言
+// 不被动画破坏；动画是纯视觉层（.odo-roll，aria-hidden）：rAF 采样纯模块 odometer.ts 的缓动值
+// 逐帧渲染，每位数字是 0-9 竖排条带的 translateY（CSS 过渡衔接帧间步进＝竖直滚动观感）。
+// 连续快速推进＝中断重定向（counter 只持一条计划，从当前显示值续滚最新目标，不排队不重放）；
+// 终帧后延迟 ODO_SETTLE_MS（> 条带过渡 80ms）再卸视觉层，条带滚到位才切回真实文本，无错位闪烁。
+// prefers-reduced-motion＝不播动画直显终值（组件判定 + styles.css 媒体查询兜底两道）。
+interface OdoColumn { char: string; digit: number | null }
+const equityRoll = ref<Array<OdoColumn> | null>(null)
+const returnRoll = ref<Array<OdoColumn> | null>(null)
+const equityCounter = createRollCounter(account.value.equity)
+const returnCounter = createRollCounter(returnPct.value)
+// 滚动量纲（时长与幅度成比例且封顶）：权益按 1% 相对幅度到封顶；收益率按 5 个百分点到封顶
+const EQUITY_ROLL_REFERENCE_RATIO = 0.01
+const RETURN_ROLL_REFERENCE_PP = 5
+const ODO_SETTLE_MS = 120
+function odoColumns(text: string): Array<OdoColumn> {
+  return [...text].map(char => ({ char, digit: char >= '0' && char <= '9' ? Number(char) : null }))
+}
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+let rollFrame = 0
+let equitySettleTimer = 0
+let returnSettleTimer = 0
+function settleEquityRoll(now: number): void {
+  equityRoll.value = odoColumns(formatEquity(equityCounter.displayed(now)))
+  equitySettleTimer = window.setTimeout(() => { equitySettleTimer = 0; equityRoll.value = null }, ODO_SETTLE_MS)
+}
+function settleReturnRoll(now: number): void {
+  returnRoll.value = odoColumns(formatReturnPct(returnCounter.displayed(now)))
+  returnSettleTimer = window.setTimeout(() => { returnSettleTimer = 0; returnRoll.value = null }, ODO_SETTLE_MS)
+}
+function pumpRoll(): void {
+  if (rollFrame) return
+  const step = (): void => {
+    rollFrame = 0
+    const now = performance.now()
+    let active = false
+    if (equityCounter.rolling(now)) { equityRoll.value = odoColumns(formatEquity(equityCounter.displayed(now))); active = true }
+    else if (equityRoll.value && !equitySettleTimer) settleEquityRoll(now)
+    if (returnCounter.rolling(now)) { returnRoll.value = odoColumns(formatReturnPct(returnCounter.displayed(now))); active = true }
+    else if (returnRoll.value && !returnSettleTimer) settleReturnRoll(now)
+    if (active) rollFrame = requestAnimationFrame(step)
+  }
+  rollFrame = requestAnimationFrame(step)
+}
+interface RollBinding {
+  counter: ReturnType<typeof createRollCounter>
+  roll: Ref<Array<OdoColumn> | null>
+  format(value: number): string
+  reference(value: number, previous: number): number
+  cancelSettle(): void
+}
+const equityBinding: RollBinding = {
+  counter: equityCounter, roll: equityRoll, format: formatEquity,
+  reference: (value, previous) => Math.max(Math.abs(previous), Math.abs(value), 1) * EQUITY_ROLL_REFERENCE_RATIO,
+  cancelSettle: () => { clearTimeout(equitySettleTimer); equitySettleTimer = 0 },
+}
+const returnBinding: RollBinding = {
+  counter: returnCounter, roll: returnRoll, format: formatReturnPct,
+  reference: () => RETURN_ROLL_REFERENCE_PP,
+  cancelSettle: () => { clearTimeout(returnSettleTimer); returnSettleTimer = 0 },
+}
+function beginRoll(binding: RollBinding, value: number, previous: number): void {
+  if (prefersReducedMotion()) { binding.roll.value = null; return }
+  binding.cancelSettle()
+  binding.counter.setTarget(value, performance.now(), binding.reference(value, previous))
+  // 初始视觉层＝打断时刻的显示值（与真实文本同帧切换，不闪终值）
+  binding.roll.value = odoColumns(binding.format(binding.counter.displayed(performance.now())))
+  pumpRoll()
+}
+watch(() => account.value.equity, (value, previous) => {
+  if (value === previous) return
+  beginRoll(equityBinding, value, previous)
+})
+watch(returnPct, (value, previous) => {
+  if (value === previous) return
+  beginRoll(returnBinding, value, previous)
+})
+onUnmounted(() => { cancelAnimationFrame(rollFrame); rollFrame = 0; clearTimeout(equitySettleTimer); clearTimeout(returnSettleTimer) })
 // TRAIN-01：legacy raw 训练成绩未经验证，运行中禁止交易/推进/结算（服务端同样 409 兜底）
 const legacyRawLocked = computed(() =>
   training.value.rules?.corporateActionPolicy === 'legacy-raw-unverified' && training.value.status === 'running')
@@ -722,8 +805,9 @@ void load()
         <div class="panel-heading"><span>训练账户</span><span class="live-mark">● {{ training.status === 'running' ? '进行中' : '已结束' }}</span></div>
         <div class="equity-block">
           <span>账户权益</span>
-          <strong>¥{{ account.equity.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) }}</strong>
-          <em :class="returnPct >= 0 ? 'up' : 'down'">{{ returnPct >= 0 ? '+' : '' }}{{ returnPct.toFixed(2) }}%</em>
+          <!-- M6-05 Odometer：.odo-text 恒为账面终值（断言读取口径）；.odo-roll 是动画视觉层 -->
+          <strong class="odo-host" :class="{ rolling: equityRoll !== null }"><span class="odo-wrap"><span class="odo-text">{{ formatEquity(account.equity) }}</span><span v-if="equityRoll" class="odo-roll" aria-hidden="true"><template v-for="(col, i) in equityRoll" :key="i"><span v-if="col.digit === null" class="odo-char">{{ col.char }}</span><span v-else class="odo-digit"><span class="odo-strip" :style="{ transform: `translateY(${-col.digit}lh)` }"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span></template></span></span></strong>
+          <em class="odo-host" :class="[returnPct >= 0 ? 'up' : 'down', { rolling: returnRoll !== null }]"><span class="odo-wrap"><span class="odo-text">{{ formatReturnPct(returnPct) }}</span><span v-if="returnRoll" class="odo-roll" aria-hidden="true"><template v-for="(col, i) in returnRoll" :key="i"><span v-if="col.digit === null" class="odo-char">{{ col.char }}</span><span v-else class="odo-digit"><span class="odo-strip" :style="{ transform: `translateY(${-col.digit}lh)` }"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span></template></span></span></em>
         </div>
         <div class="account-stats">
           <div><span>可用资金</span><strong>¥{{ account.cash.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) }}</strong></div>

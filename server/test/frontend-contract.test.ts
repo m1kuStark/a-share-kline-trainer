@@ -361,6 +361,54 @@ describe('M2 chart interaction contract', () => {
     expect(chart).toMatch(/hoverCard: \(\) => \(\{ visible: hoverCard\.value !== null/)
   })
 
+  it('animates only equity and return-pct as odometers with a final-exact text layer (M6-05)', async () => {
+    const training = await readFile(trainingPath, 'utf8')
+    const styles = await readFile(new URL('../../web/src/styles.css', import.meta.url), 'utf8')
+    const odometer = await readFile(new URL('../../web/src/odometer.ts', import.meta.url), 'utf8')
+    // 核心逻辑在纯模块（数值/口径由 odometer.test.ts 的独立 oracle 锁定），组件按导入接线
+    expect(training).toMatch(/import \{ createRollCounter, formatEquity, formatReturnPct \} from '\.\.\/odometer'/)
+    expect(odometer).toMatch(/export const MIN_ROLL_MS = 300/)
+    expect(odometer).toMatch(/export const MAX_ROLL_MS = 600/)
+    // 作用域（ODO-SCOPE-ONLY-TWO）：只有 equity-block 的两个数字挂 odo 结构；
+    // 可用资金/持仓市值/持仓/摊薄成本（account-stats）与结算弹窗两个数字不得接入
+    const equityBlock = training.slice(training.indexOf('class="equity-block"'), training.indexOf('class="account-stats"'))
+    expect(equityBlock).toMatch(/<strong class="odo-host"/)
+    expect(equityBlock).toMatch(/<em class="odo-host"/)
+    expect(equityBlock).toMatch(/class="odo-text">\{\{ formatEquity\(account\.equity\) \}\}/)
+    expect(equityBlock).toMatch(/class="odo-text">\{\{ formatReturnPct\(returnPct\) \}\}/)
+    // 前缀/涨跌配色绑定保持现状（¥ 前缀在 formatEquity 内；em 的 up/down 类不动）
+    expect(odometer).toMatch(/return `¥\$\{value\.toLocaleString\('zh-CN', \{ maximumFractionDigits: 2 \}\)\}`/)
+    expect(equityBlock).toMatch(/:class="\[returnPct >= 0 \? 'up' : 'down', \{ rolling: returnRoll !== null \}\]"/)
+    const accountStats = training.slice(training.indexOf('class="account-stats"'), training.indexOf('class="panel-divider"'))
+    expect(accountStats).not.toMatch(/odo-/)
+    const settleGrid = training.slice(training.indexOf('class="settle-grid"'), training.indexOf('class="settle-actions"'))
+    expect(settleGrid).not.toMatch(/odo-/)
+    // 真实文本恒终值＋动画视觉层（终值精确与既有文本断言共存策略）
+    expect(equityBlock).toMatch(/aria-hidden="true"/)
+    expect(equityBlock).toMatch(/translateY\(\$\{-col\.digit\}lh\)/)
+    // 中断重定向与收尾：单一 rAF 泵＋条带过渡收尾后卸视觉层；挂载即静止（不播首屏动画）
+    expect(training).toMatch(/const equityCounter = createRollCounter\(account\.value\.equity\)/)
+    expect(training).toMatch(/const returnCounter = createRollCounter\(returnPct\.value\)/)
+    expect(training).toMatch(/function pumpRoll\(\): void/)
+    expect(training).toMatch(/ODO_SETTLE_MS = 120/)
+    // reduced-motion 双道防线：组件判定不播动画 + CSS 媒体查询兜底隐藏视觉层
+    expect(training).toMatch(/matchMedia\('\(prefers-reduced-motion: reduce\)'\)/)
+    expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.equity-block \.odo-roll \{ display: none !important; \} \}/)
+    // 样式不变（ODO-STYLE-UNCHANGED 的结构/样式层）：数字位样式只继承宿主（禁新字号/颜色声明），
+    // 并显式重置 .equity-block span（含 dark 变体）对数字 span 的污染
+    expect(styles).toMatch(/\.equity-block \.odo-host\.rolling \.odo-text \{ opacity: 0; \}/)
+    expect(styles).toMatch(/body\.dark \.equity-block span\.odo-roll \{ color: inherit; \}/)
+    const odoStyleBlock = styles.slice(styles.indexOf('===== M6-05'))
+    expect(odoStyleBlock).not.toMatch(/font-size: \d|color: #/)
+  })
+
+  it('adds zero npm dependencies for the odometer (self-built CSS+JS, M6-05)', async () => {
+    // ODO-NO-DEPS：依赖清单与 M6-04 基线完全一致（冻结清单，新增依赖即红）
+    const raw = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> }
+    expect(Object.keys(raw.dependencies).sort()).toEqual(['@fastify/cors', '@fastify/static', 'fastify', 'klinecharts', 'lucide-vue-next', 'pinia', 'pinyin-pro', 'vue'])
+    expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
+  })
+
   it('keeps the blind toggle out of the creation form (V1 shows stock info openly)', async () => {
     const source = await readFile(new URL('../../web/src/views/Launcher.vue', import.meta.url), 'utf8')
     expect(source).not.toMatch(/const blind|blind: blind\.value|双盲模式/)

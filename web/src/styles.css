@@ -474,3 +474,23 @@ body.dark .rankings-tab.active { color: #52b394; border-color: #2e7d6b; }
   .history-row-dates { white-space: normal; overflow-wrap: anywhere; }
   .report-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
 }
+
+/* ===== M6-05 账户权益/收益率 Odometer 数字滚动（仅这两个数字；可用资金等其余数字不接） ===== */
+/* 架构：.odo-text 恒为账面终值（任何时刻读取＝精确值）；.odo-roll 是 aria-hidden 视觉层，
+   每位数字＝0-9 竖排条带 translateY（帧间 80ms 线性过渡＝竖直滚动观感）。
+   数字位样式全部继承宿主 strong/em（字号/颜色/粗细/前缀＝现状不动），深浅主题同源。
+   注意：.equity-block span（含 body.dark 变体）会命中数字 span，必须在此显式重置；
+   本块置于文件末尾＋dark 变体特异性 (0,3,1)，保证压过任何 span 级污染。 */
+.equity-block span.odo-text, .equity-block span.odo-char { display: inline; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+body.dark .equity-block span.odo-text, body.dark .equity-block span.odo-char { color: inherit; }
+.equity-block span.odo-wrap { position: relative; display: inline-block; color: inherit; font-size: inherit; }
+body.dark .equity-block span.odo-wrap { color: inherit; }
+.equity-block .odo-host.rolling .odo-text { opacity: 0; }
+.equity-block span.odo-roll { position: absolute; left: 0; top: 0; display: block; white-space: nowrap; pointer-events: none; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+body.dark .equity-block span.odo-roll { color: inherit; }
+.equity-block span.odo-digit { display: inline-block; overflow: hidden; height: 1lh; vertical-align: top; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+body.dark .equity-block span.odo-digit { color: inherit; }
+.equity-block span.odo-strip { display: block; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; transition: transform 80ms linear; will-change: transform; }
+body.dark .equity-block span.odo-strip { color: inherit; }
+.equity-block .odo-strip i { display: block; font-style: normal; height: 1lh; }
+@media (prefers-reduced-motion: reduce) { .equity-block .odo-roll { display: none !important; } }
