@@ -237,6 +237,39 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/barSpace\.halfGapBar \* 2 \* 0\.4/)
   })
 
+  it('mounts the KDJ subchart pane with an app-preference toggle and equal pane semantics (M6-01)', async () => {
+    const indicators = await readFile(new URL('../../web/src/indicators.ts', import.meta.url), 'utf8')
+    const chart = await readFile(chartPath, 'utf8')
+    const appSettings = await readFile(new URL('../../web/src/appSettings.ts', import.meta.url), 'utf8')
+    const app = await readFile(appPath, 'utf8')
+    // 注册口径：通达信 9,3,3 与 K/D/J 三线（数值口径由 kdj-indicator.test.ts 的独立 oracle 锁定）
+    expect(indicators).toMatch(/name: 'KDJ',\s*\n\s*shortName: 'KDJ',\s*\n\s*calcParams: \[9, 3, 3\],/)
+    expect(indicators).toMatch(/key: 'k', title: 'K: ', type: 'line'/)
+    expect(indicators).toMatch(/key: 'd', title: 'D: ', type: 'line'/)
+    expect(indicators).toMatch(/key: 'j', title: 'J: ', type: 'line'/)
+    expect(indicators).toMatch(/calc: \(dataList, indicator\) => computeKdj\(dataList, indicator\.calcParams as number\[\]\)/)
+    // 挂载：MACD 创建后按偏好挂 KDJ 副图（默认随 appKdjSubchart；配色为 proposed_default 待验收）
+    expect(chart).toMatch(/createIndicator\(\{ name: 'MACD'[^;]*\}, false\); applyKdjPane\(\);/)
+    expect(chart).toMatch(/function applyKdjPane\(\): void/)
+    expect(chart).toMatch(/chart\.removeIndicator\(\{ name: 'KDJ' \}\)/)
+    expect(chart).toMatch(/styles: \{ lines: \[\{ color: '#f2f2f2' \}, \{ color: '#f5c343' \}, \{ color: '#d446d6' \}\] \}/)
+    // 开关：偏好切换立即生效（watch），并且不发 chart.viewport（非用户导航）
+    expect(chart).toMatch(/watch\(appKdjSubchart, \(\) => \{ applyKdjPane\(\); scheduleChartCapture\(\) \}\)/)
+    // 副图同等语义：paneName/actualPaneId 两处判定都纳入 KDJ（画线持久化与录像 paneHeights 的语义名）
+    expect(chart.match(/\['VOL', 'MACD', 'KDJ'\]/g)?.length).toBeGreaterThanOrEqual(2)
+    // 录像回放边界：目标副图当前不存在时跳过该项，不得把副图高度写回主图
+    expect(chart).toMatch(/if \(name !== 'candle_pane' && actualPaneId\(name\) === 'candle_pane'\) continue/)
+    // 应用偏好层：localStorage 持久化、默认开（'0' 才是关）
+    expect(appSettings).toMatch(/const KDJ_SUBCHART_STORAGE_KEY = 'trainer_kdj_subchart'/)
+    expect(appSettings).toMatch(/storage\.getItem\(KDJ_SUBCHART_STORAGE_KEY\) !== '0'/)
+    expect(appSettings).toMatch(/storage\.setItem\(KDJ_SUBCHART_STORAGE_KEY, enabled \? '1' : '0'\)/)
+    // 设置入口：顶栏开关按钮，aria-pressed 反映状态并走 setKdjSubchart
+    expect(app).toMatch(/class="kdj-toggle"[^>]*:aria-pressed="appKdjSubchart \? 'true' : 'false'"/)
+    expect(app).toMatch(/@click="setKdjSubchart\(!appKdjSubchart\)"/)
+    // journey 只读探针：indicatorPanes 暴露语义窗格名（测试专用，不影响生产行为）
+    expect(chart).toMatch(/indicatorPanes: \(\) => \(chart\?\.getPaneOptions\(\) as Array<\{ id: string \}> \?\? \[\]\)/)
+  })
+
   it('keeps the blind toggle out of the creation form (V1 shows stock info openly)', async () => {
     const source = await readFile(new URL('../../web/src/views/Launcher.vue', import.meta.url), 'utf8')
     expect(source).not.toMatch(/const blind|blind: blind\.value|双盲模式/)

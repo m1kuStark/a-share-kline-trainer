@@ -14,7 +14,7 @@ export const MAX_DRAWING_POINTS = 256
 
 const ACTION_SET: ReadonlySet<string> = new Set(ACTIONS)
 const DRAWING_NAMES: ReadonlySet<string> = new Set(DRAW_TOOLS.map(tool => tool.name))
-const DRAWING_PANES: ReadonlySet<string> = new Set(['candle_pane', 'VOL', 'MACD'])
+const DRAWING_PANES: ReadonlySet<string> = new Set(['candle_pane', 'VOL', 'MACD', 'KDJ'])
 const PHASES: ReadonlySet<string> = new Set(['started', 'finished'])
 const SOURCES: ReadonlySet<string> = new Set(['ui', 'keyboard', 'chart', 'system'])
 const OUTCOMES: ReadonlySet<string> = new Set(['accepted', 'rejected', 'failed', 'cancelled', 'interrupted', 'unknown'])
@@ -242,7 +242,7 @@ export function assertDrawing(raw: unknown, field: string, drawingIds: Set<strin
   }
   const paneId = assertString(drawing.paneId, `${field}.paneId`)
   if (!DRAWING_PANES.has(paneId)) {
-    fail(`${field}.paneId`, `仅允许 candle_pane/VOL/MACD（收到 ${paneId}）`)
+    fail(`${field}.paneId`, `仅允许 candle_pane/VOL/MACD/KDJ（收到 ${paneId}）`)
   }
   const points = assertArray(drawing.points, `${field}.points`)
   if (points.length > MAX_DRAWING_POINTS) {

@@ -9,6 +9,7 @@ import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } fro
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
+import { appKdjSubchart, setKdjSubchart } from './appSettings'
 import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
@@ -609,6 +610,8 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         </div>
         <div class="top-actions">
           <div id="training-recording-controls"></div>
+          <!-- M6-01 KDJ 副图显示开关：应用偏好（localStorage 持久化，默认开；不属于录像布局） -->
+          <button class="kdj-toggle" :class="{ off: !appKdjSubchart }" :aria-pressed="appKdjSubchart ? 'true' : 'false'" :title="appKdjSubchart ? 'KDJ 副图：显示中（点击隐藏）' : 'KDJ 副图：已隐藏（点击显示）'" @click="setKdjSubchart(!appKdjSubchart)">KDJ</button>
           <button class="theme-toggle" :title="theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'" :aria-label="theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'" @click="toggleTheme">
             <Sun v-if="theme === 'dark'" :size="14" /><Moon v-else :size="14" />
           </button>
@@ -737,6 +740,12 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 </template>
 
 <style scoped>
+/* M6-01 KDJ 副图显示开关（顶栏，与主题按钮同排；双主题走设计令牌+显式深色覆盖） */
+.kdj-toggle { border: 1px solid #1f7a93; background: #eaf5f6; color: #245a72; font-size: 10px; font-weight: 700; letter-spacing: .3px; line-height: 1; height: 24px; padding: 0 8px; border-radius: 3px; cursor: pointer; flex: 0 0 auto; }
+.kdj-toggle:hover { filter: brightness(.97); }
+.kdj-toggle.off { border: 1px dashed var(--surface-border, #cbd5e1); background: transparent; color: var(--text-muted, #8a98aa); }
+:global(body.dark .kdj-toggle) { border-color: #2e8191; background: #1d3238; color: #9fd4de; }
+:global(body.dark .kdj-toggle.off) { border-color: var(--surface-border); background: transparent; color: var(--text-muted); }
 /* REL-LAUNCH-UX-01 保存并退出：遮罩/面板/已退出页（双主题） */
 .exit-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; z-index: 90; }
 .exit-panel { background: var(--surface-background, #fff); color: var(--text-primary, #1e293b); border-radius: 10px; padding: 22px 24px; width: min(440px, calc(100vw - 40px)); box-shadow: 0 18px 48px rgba(15, 23, 42, 0.25); }

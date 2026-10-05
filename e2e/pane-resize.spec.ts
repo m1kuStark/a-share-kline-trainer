@@ -24,7 +24,8 @@ async function openChart(page: Page): Promise<void> {
   await expect(page.locator('.training-current-date')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   await expect(page.locator('.loading-dot')).not.toBeVisible()
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(3)
+  // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)
   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')
 }
 

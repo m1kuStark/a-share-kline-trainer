@@ -112,6 +112,43 @@ export function putKeyboardShortcuts(shortcuts: KeyboardShortcutPreferences): Pr
   })
 }
 
+// ===== 应用偏好：KDJ 副图显示（M6-01） =====
+// 客户端偏好（localStorage，与 trainer_theme 同层；服务端 /api/settings/app 不感知该字段）：
+// 默认开启；该偏好不属于录像布局——旧录像回放按当前开关渲染，无迁移。
+// 读写拆成纯函数便于服务端单测提取执行（server/test/kdj-indicator.test.ts）。
+
+const KDJ_SUBCHART_STORAGE_KEY = 'trainer_kdj_subchart'
+
+/** 读取 KDJ 副图偏好：'0'＝关，其余（未设置/异常值）＝默认开 */
+export function readKdjSubchartPref(storage: Pick<Storage, 'getItem'>): boolean {
+  return storage.getItem(KDJ_SUBCHART_STORAGE_KEY) !== '0'
+}
+
+/** 写入 KDJ 副图偏好（'1'/'0'） */
+export function writeKdjSubchartPref(storage: Pick<Storage, 'setItem'>, enabled: boolean): void {
+  storage.setItem(KDJ_SUBCHART_STORAGE_KEY, enabled ? '1' : '0')
+}
+
+function safeStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage
+  } catch {
+    return null
+  }
+}
+
+/** KDJ 副图显示开关（应用偏好，默认 true）；KlineChart 据此增删副图窗格 */
+export const appKdjSubchart = ref(readKdjSubchartPref(safeStorage() ?? { getItem: () => null }))
+
+/** 切换 KDJ 副图显示：立即生效并持久化（localStorage 不可用时保持会话内生效） */
+export function setKdjSubchart(enabled: boolean): void {
+  appKdjSubchart.value = enabled
+  try {
+    const storage = safeStorage()
+    if (storage) writeKdjSubchartPref(storage, enabled)
+  } catch { /* 持久化失败不阻断会话内切换 */ }
+}
+
 // ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====
 
 export function fetchTdxPathSettings(): Promise<TdxPathSettingsView> {

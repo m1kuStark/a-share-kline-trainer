@@ -10,7 +10,7 @@ const DRAWING_NAMES = new Set([
   'rectangle', 'circle', 'arc', 'arrowLine', 'bullArrow', 'bearArrow', 'percentageLine', 'curseLine', 'textAnnotation', 'polyline',
 ])
 const DRAWING_FIELDS = new Set(['id', 'name', 'paneId', 'points', 'styles', 'extendData', 'groupId', 'lock', 'visible', 'priceBasis', 'timeframe'])
-const PANE_IDS = new Set(['candle_pane', 'VOL', 'MACD'])
+const PANE_IDS = new Set(['candle_pane', 'VOL', 'MACD', 'KDJ'])
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
 export type DrawingJson = null | boolean | number | string | DrawingJson[] | { [key: string]: DrawingJson }
@@ -57,7 +57,7 @@ function validateDrawings(payload: unknown): Drawing[] {
     if (!isIdentifier(drawing.id) || ids.has(drawing.id)) invalid('drawing ids must be unique nonempty strings of at most 128 characters')
     ids.add(drawing.id)
     if (typeof drawing.name !== 'string' || !DRAWING_NAMES.has(drawing.name)) invalid('unsupported drawing name')
-    if (drawing.paneId !== undefined && (typeof drawing.paneId !== 'string' || !PANE_IDS.has(drawing.paneId))) invalid('paneId must be candle_pane, VOL or MACD')
+    if (drawing.paneId !== undefined && (typeof drawing.paneId !== 'string' || !PANE_IDS.has(drawing.paneId))) invalid('paneId must be candle_pane, VOL, MACD or KDJ')
     if (drawing.timeframe !== undefined && !['1D', '1W', '1M'].includes(drawing.timeframe as string)) invalid('timeframe must be 1D, 1W or 1M')
     if (!Array.isArray(drawing.points) || drawing.points.length < 1 || drawing.points.length > 256) invalid('drawing points must contain 1 to 256 anchors')
     for (const point of drawing.points) {

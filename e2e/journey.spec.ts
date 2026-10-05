@@ -108,7 +108,8 @@ await page.locator(".suggestions button").first().click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(3)
+  // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)
   await expect(page.locator('.loading-dot')).not.toBeVisible()
   // 控制台滚动到底，露出完整工具条
   await page.locator('.console-scroll').evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })

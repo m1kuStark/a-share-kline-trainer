@@ -4,6 +4,7 @@ import { init, dispose, type Chart, type DataLoadMore, type KLineData, type Over
 import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
+import { appKdjSubchart } from '../appSettings'
 import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
@@ -136,11 +137,26 @@ function projectTradeTime(timestamp: number): number | null {
   return Number.isFinite(point.x) ? point.x! : null
 }
 
+// 副图语义名映射（M6-01 起含 KDJ）：画线持久化/录像 paneHeights 用语义名（'VOL'/'MACD'/'KDJ'），
+// 其余 pane 一律归入 'candle_pane'；KDJ 属应用偏好可关，关时其窗格不存在，映射自然回落主图。
 function paneName(id: string): string {
-  return chart?.getIndicators({ paneId: id }).find(indicator => ['VOL', 'MACD'].includes(indicator.name))?.name ?? 'candle_pane'
+  return chart?.getIndicators({ paneId: id }).find(indicator => ['VOL', 'MACD', 'KDJ'].includes(indicator.name))?.name ?? 'candle_pane'
 }
 function actualPaneId(name: string): string {
-  return ['VOL', 'MACD'].includes(name) ? chart?.getIndicators({ name })[0]?.paneId ?? 'candle_pane' : 'candle_pane'
+  return ['VOL', 'MACD', 'KDJ'].includes(name) ? chart?.getIndicators({ name })[0]?.paneId ?? 'candle_pane' : 'candle_pane'
+}
+// M6-01 KDJ 副图开关：应用偏好（appSettings 层 localStorage 持久化，默认开；不属于录像布局，
+// 旧录像回放按当前开关渲染）。开＝追加 KDJ 副图窗格（与 VOL/MACD 同等的绘图 pane），
+// 关＝移除窗格；开关只影响窗格增删，框选/右键/锚点/yRange 语义按 pane 存在与否自动适用。
+function applyKdjPane(): void {
+  if (!chart) return
+  const existing = chart.getIndicators({ name: 'KDJ' })
+  if (appKdjSubchart.value && !existing.length) {
+    // 配色 proposed_default（K 白/D 黄/J 紫洋红，通达信习惯；M6-01 待用户验收确认），经 styles.lines 传入
+    chart.createIndicator({ name: 'KDJ', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }, { color: '#d446d6' }] } }, false)
+  } else if (!appKdjSubchart.value && existing.length) {
+    chart.removeIndicator({ name: 'KDJ' })
+  }
 }
 function drawings(): Drawing[] {
   return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined, props.timeframe) : []
@@ -363,6 +379,9 @@ function applyReplayView(view: ChartCaptureView | undefined): void {
   try {
     for (const [name, height] of Object.entries(view.paneHeights)) {
       if (!Number.isFinite(height) || height <= 0) continue
+      // 语义副图当前不存在（如录像带 KDJ 高度但 KDJ 偏好已关）：跳过该项，
+      // 不得把副图高度写回 fallback 的 candle_pane（回放按当前开关渲染，M6-01 边界）
+      if (name !== 'candle_pane' && actualPaneId(name) === 'candle_pane') continue
       chart.setPaneOptions({ id: actualPaneId(name), height })
     }
     if (Number.isFinite(view.barSpace) && view.barSpace > 0) chart.setBarSpace(view.barSpace)
@@ -535,7 +554,7 @@ function paneIdAt(clientY: number): string | null {
   return null
 }
 // 图层约定：框选缩放只属于主图背景层，仅在 candle_pane 区域按下左键时启动；
-// VOL/MACD 副图与坐标轴区域不触发框选。B/S 标记与成本线是 ignoreEvent 的纯渲染层，
+// VOL/MACD/KDJ 副图与坐标轴区域不触发框选。B/S 标记与成本线是 ignoreEvent 的纯渲染层，
 // 不拦截指针事件，因此不会与框选互相干扰。
 // 价格轴（主图 y 轴）区域判定：klinecharts 原生在轴上滚轮缩放纵轴比例。
 // 平移、框选都必须避开该区域，避免与纵轴缩放互相干扰（用户口径：两种滚轮逻辑分离）。
@@ -765,7 +784,7 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   scheduleViewportOperation()
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); applyKdjPane(); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
 onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
@@ -1284,6 +1303,9 @@ onMounted(() => {
     drawings,
     geometry: () => (chart?.getOverlays() ?? []).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing()).map(overlay => ({ id: overlay.id, name: overlay.name, ...overlayHitGeometry(overlay as unknown as OverlayLike) })),
     panes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => ({ id: pane.id, name: paneName(pane.id), ...chart!.getSize(pane.id) })),
+    // M6-01 KDJ e2e 只读探针：各绘图窗格的语义指标名（['candle_pane','VOL','MACD','KDJ']，
+    // KDJ 偏好关时不含 'KDJ'）——测试专用，不影响生产行为
+    indicatorPanes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => paneName(pane.id)),
     visibleRange: () => chart?.getVisibleRange(),
     costLine: () => {
       const overlay = chart?.getOverlays({ name: 'costLine' })[0]
@@ -1332,6 +1354,9 @@ watch(() => props.bars, () => {
   }
 })
 watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.previousClose, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+// KDJ 偏好切换：立即增/删副图窗格（paneHeights 变化属布局结果，刷新捕获供后续检查点；
+// 非用户导航，不发 chart.viewport 操作）
+watch(appKdjSubchart, () => { applyKdjPane(); scheduleChartCapture() })
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 
