@@ -1,5 +1,13 @@
 # 更新记录
 
+## 未发布（M6-02 涨幅百分比随指针候选，待人工验收）
+
+- 新增每根 K 线涨幅百分比徽标：鼠标悬停或键盘十字线（←/→）所在 K 线相对前一根收盘的涨跌幅在指针附近显示，两位小数带符号（如 "+5.00%" "-2.00%" "0.00%"）；红涨 #ef4444/绿跌 #16a34a/零与无变化灰 #94a3b8（全工程配色约定）；首根（无前收）占位 "--"（灰），前收为 0/非有限同占位（除零保护）。
+- 徽标为纯信息层 DOM（pointer-events:none，不干扰框选/拖拽/画线/键盘十字线），钳制在绘图区内不遮价格轴/时间轴；指针离开图表或十字线清除即隐藏（含库清除十字线不派发事件的价格轴/时间轴/分隔条区域，onPointerMove 兜底维持"徽标可见 ⇔ 十字线存在"）。
+- 训练页与录像回放页共用 KlineChart 一处实现，徽标数据源＝chart.getDataList()（回放按回放数据序列计算，不受只读门控）；徽标状态为组件内瞬态 ref，不写入录像/布局/画线等任何持久层。
+- 数值与显示口径由架构师独立 oracle 表锁定（server/test/percent-hover.test.ts 内嵌常量断言，非实现反推；e2e 用同一冻结公式对实时数据独立计算期望）；journey 探针新增只读 pctBadge()（测试专用，不影响生产行为）。
+- 工程证据：vitest 定向四件套 51/51、`npm run build` 通过、journey 浏览器回归 percent-hover 3/3（含导出→导入录制的真实回放视图）与 pane-resize 6/6；行为矩阵 candle-percent-hover 六行全部 covered（check-binding --strict exit 0）。详见 docs/verification/2026-10/M6-02/README.md。
+
 ## 未发布（M6-01 KDJ 指标副图候选，待人工验收）
 
 - 新增 KDJ 指标副图（通达信口径）：RSV=(C−LLV9)/(HHV9−LLV9)×100（九日窗口含当前根，不足按实际根数，HHV=LLV 时取 100）、K=SMA(RSV,3,1) 与 D=SMA(K,3,1) 均以 50 为种子、J=3K−2D；数值口径由架构师独立 oracle 表锁定（server/test/kdj-indicator.test.ts 内嵌常量断言，非实现反推）。

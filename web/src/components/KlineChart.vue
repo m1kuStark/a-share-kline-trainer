@@ -20,7 +20,7 @@ import TradeMarkerRail from '../TradeMarkerRail.vue'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
 import { builtInGeometry, pointInPolygon, segmentInRect } from '../builtInGeometry'
-import { hasPhasePrice, includePhasePriceRange, phasePriceColor } from '../phasePrice'
+import { formatPercentBadge, hasPhasePrice, includePhasePriceRange, phasePriceColor } from '../phasePrice'
 
 registerDrawingOverlays()
 
@@ -115,6 +115,42 @@ let disposed = false
 const markerRevision = ref(0)
 const markerWidth = ref(0)
 const orderTooltip = ref<{ x: number; y: number; text: string } | null>(null)
+// M6-02 涨幅徽标（candle-percent-hover 矩阵）：十字线所在 K 线相对前收的涨跌幅随指针显示。
+// 纯展示层：pctBadge 只进 DOM，不 emit、不写 localStorage/录像/布局/画线等任何持久层；
+// pointer-events:none 不拦截框选/拖拽/画线/键盘十字线。
+const pctBadge = ref<{ x: number; y: number; text: string; cls: string } | null>(null)
+const PCT_BADGE_WIDTH = 56
+const PCT_BADGE_HEIGHT = 18
+function hidePctBadge(): void { pctBadge.value = null }
+// 徽标数据源＝chart.getDataList()（训练与只读回放同一路径：回放按回放数据序列计算）；
+// 锚点＝十字线指针（或键盘十字线锚点），徽标钳制在绘图区内，不遮价格轴/时间轴。
+function updatePctBadge(anchorX: number, anchorY: number): void {
+  if (!chart) { hidePctBadge(); return }
+  const pane = chart.getSize('candle_pane')
+  const xAxis = chart.getSize('x_axis_pane')
+  if (!pane || !xAxis) { hidePctBadge(); return }
+  const rawIndex = chart.convertFromPixel([{ x: anchorX }], { paneId: 'candle_pane' })[0]?.dataIndex
+  const list = chart.getDataList()
+  if (rawIndex === undefined || !Number.isFinite(rawIndex)) { hidePctBadge(); return }
+  // 与库内十字线同口径钳制（setCrosshair 对越界锚点取首/末根）：徽标与十字线永不指向不同的 K 线
+  const dataIndex = Math.max(0, Math.min(Math.floor(rawIndex), list.length - 1))
+  if (dataIndex >= list.length) { hidePctBadge(); return }
+  const close = list[dataIndex]?.close
+  const previousClose = dataIndex > 0 ? list[dataIndex - 1]?.close : null
+  const { text, cls } = formatPercentBadge(close, previousClose)
+  const plotRight = chart.getSize('candle_pane', 'yAxis')?.left ?? pane.width
+  const x = Math.max(4, Math.min(anchorX + 12, Math.max(4, plotRight - PCT_BADGE_WIDTH - 6)))
+  const y = Math.max(pane.top + 2, Math.min(anchorY + 16, xAxis.top - PCT_BADGE_HEIGHT - 4))
+  pctBadge.value = { x, y, text, cls }
+}
+// klinecharts v10 onCrosshairChange 订阅：payload＝{ x, y, paneId }（宿主坐标系，仅真实十字线
+// 更新时派发）。库在指针离开图表/移到坐标轴与分隔条时清除十字线但不派发本事件，隐藏由
+// mouseleave＋onPointerMove 兜底（不变式：徽标可见 ⇔ 十字线存在）。
+function onCrosshairAction(data: unknown): void {
+  const crosshair = data as { x?: unknown; y?: unknown } | null | undefined
+  if (!crosshair || typeof crosshair.x !== 'number' || typeof crosshair.y !== 'number') { hidePctBadge(); return }
+  updatePctBadge(crosshair.x, crosshair.y)
+}
 let markerResizeObserver: ResizeObserver | null = null
 function updateMarkerRail(): void {
   queueMicrotask(() => {
@@ -273,6 +309,8 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
 
 function feedData(): void {
   if (!chart) return
+  // 数据替换即作废徽标锚点（旧文本对应旧序列，等待下一次十字线更新重建）
+  hidePctBadge()
   // A timeframe change rebuilds the chart surface. Restore only drawings that
   // belong to the new period; the parent supplies the filtered snapshot.
   restoredDrawings = false
@@ -519,10 +557,10 @@ function zoomBy(factor: number): void {
   emit('visibleCount', visibleCount())
   scheduleViewportOperation()
 }
-function moveCrosshair(delta: number): void { if (!chart) return; const range = chart.getVisibleRange(); if (crossIndex < range.from || crossIndex >= range.to) crossIndex = range.to - 1; crossIndex = Math.min(range.to - 1, Math.max(range.from, crossIndex + delta)); const bar = chart.getDataList()[crossIndex]; if (!bar) return; const pixel = chart.convertToPixel({ dataIndex: crossIndex, value: bar.close }, { paneId: 'candle_pane' }); const pane = chart.getSize('candle_pane'); chart.executeAction('onCrosshairChange', { x: pixel?.x ?? 0, y: pane ? pane.height / 2 : 100, paneId: 'candle_pane' }) }
+function moveCrosshair(delta: number): void { if (!chart) return; const range = chart.getVisibleRange(); if (crossIndex < range.from || crossIndex >= range.to) crossIndex = range.to - 1; crossIndex = Math.min(range.to - 1, Math.max(range.from, crossIndex + delta)); const bar = chart.getDataList()[crossIndex]; if (!bar) return; const pixel = chart.convertToPixel({ dataIndex: crossIndex, value: bar.close }, { paneId: 'candle_pane' }); const pane = chart.getSize('candle_pane'); const anchorY = pane ? pane.height / 2 : 100; chart.executeAction('onCrosshairChange', { x: pixel?.x ?? 0, y: anchorY, paneId: 'candle_pane' }); updatePctBadge(pixel?.x ?? 0, anchorY) }
 // 复位视窗：只有 userInitiated 复位（回到最新按钮、Home 键）算用户导航并上报 chart.viewport。
 // 挂载初始化与父层的程序化复位（timeframe/数据加载）必须传 resetView(false)，绝不冒充用户操作
-function resetView(userInitiated = true): void { if (!chart) return; crossIndex = -1; chart.executeAction('onCrosshairChange', {}); restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(Math.max(2, (width - RIGHT_MARGIN) / props.defaultCount)); chart.scrollToRealTime(0); emit('visibleCount', props.defaultCount); if (userInitiated) scheduleViewportOperation() }
+function resetView(userInitiated = true): void { if (!chart) return; crossIndex = -1; chart.executeAction('onCrosshairChange', {}); hidePctBadge(); restoreYAxisAutoFit(); const width = chart.getSize('candle_pane')?.width ?? 800; chart.setBarSpace(Math.max(2, (width - RIGHT_MARGIN) / props.defaultCount)); chart.scrollToRealTime(0); emit('visibleCount', props.defaultCount); if (userInitiated) scheduleViewportOperation() }
 function selectionRect(): HTMLElement | null { return host.value?.parentElement?.querySelector('.select-rect') ?? null }
 // 计算框选绘图区边界：右缘＝主图价格轴 bounding.left（getSize 的 right/bottom 恒 0，只能用 left+width），
 // 底缘＝时间轴 pane（x_axis_pane）的 top，顶缘＝主图 pane 的 top。
@@ -649,6 +687,13 @@ function onPointerDown(event: PointerEvent): void {
 }
 function onPointerMove(event: PointerEvent): void {
   if (paneResizePointerId !== null) return
+  // M6-02 徽标可见性跟随十字线：库在指针移到价格轴/时间轴/分隔条时不派发 onCrosshairChange
+  // 但已清除十字线，这里兜底隐藏（指针在图表外或轴区都不该有徽标）
+  if (pctBadge.value && host.value) {
+    hostRect = host.value.getBoundingClientRect()
+    const outside = event.clientX < hostRect.left || event.clientX > hostRect.right || event.clientY < hostRect.top || event.clientY > hostRect.bottom
+    if (outside || isOverPriceAxis(event.clientX, event.clientY) || !isDrawPane(paneIdAt(event.clientY))) hidePctBadge()
+  }
   // 挂单标记悬停信息：无按键移动时命中即显示、离开标记区即隐藏（拖拽与框选期间不打扰）
   if (event.buttons === 0 && !selecting && !multiDragStart && !props.drawTool) {
     const hits = hitPendingOrders(event.clientX, event.clientY)
@@ -784,8 +829,8 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
   scheduleViewportOperation()
 }
 
-onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); applyKdjPane(); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
-onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
+onMounted(() => { if (!host.value) return; chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value) }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); chart.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false); chart.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false); applyKdjPane(); chart.subscribeAction('onVisibleRangeChange', () => { emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hidePctBadge); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('mouseleave', hidePctBadge); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
@@ -1306,6 +1351,8 @@ onMounted(() => {
     // M6-01 KDJ e2e 只读探针：各绘图窗格的语义指标名（['candle_pane','VOL','MACD','KDJ']，
     // KDJ 偏好关时不含 'KDJ'）——测试专用，不影响生产行为
     indicatorPanes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => paneName(pane.id)),
+    // M6-02 涨幅徽标 e2e 只读探针：徽标当前文本/配色档/位置（测试专用，不影响生产行为）
+    pctBadge: () => ({ visible: pctBadge.value !== null, text: pctBadge.value?.text ?? null, cls: pctBadge.value?.cls ?? null, x: pctBadge.value?.x ?? null, y: pctBadge.value?.y ?? null }),
     visibleRange: () => chart?.getVisibleRange(),
     costLine: () => {
       const overlay = chart?.getOverlays({ name: 'costLine' })[0]
@@ -1365,6 +1412,8 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
   <div class="chart-wrap">
     <div ref="host" class="chart-host"></div>
     <div v-if="orderTooltip" class="order-tooltip" :style="{ left: `${orderTooltip.x}px`, top: `${orderTooltip.y}px` }" role="status">{{ orderTooltip.text }}</div>
+    <!-- M6-02 涨幅徽标：十字线所在 K 线相对前收的涨跌幅（红涨/绿跌/零灰）；纯信息层不拦截指针 -->
+    <div v-if="pctBadge" :class="['pct-badge', pctBadge.cls]" data-testid="pct-badge" :style="{ left: `${pctBadge.x}px`, top: `${pctBadge.y}px` }">{{ pctBadge.text }}</div>
     <div class="select-rect"></div>
     <!-- 多选模式橡皮筋矩形：框选划线批量选中（不缩放 K 线） -->
     <div v-if="multiRect" class="multi-rect" :style="{ left: `${multiRect.left}px`, top: `${multiRect.top}px`, width: `${multiRect.width}px`, height: `${multiRect.height}px` }"></div>
@@ -1416,6 +1465,12 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
    此前引用未定义的 --surface-raised 导致深色主题下回落到浅色（用户 1.2.3 反馈）；纯信息层不拦截指针。 */
 .order-tooltip { position: absolute; z-index: 20; max-width: 230px; white-space: pre-line; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: 11px; line-height: 1.5; pointer-events: none; }
 .chart-host { width: 100%; height: 100%; }
+/* M6-02 涨幅徽标：红涨/绿跌/零灰（与 phasePriceColor 同一约定，配色为冻结 oracle）；
+   背景随主题令牌（--surface-*），深浅主题均可见；纯信息层不拦截指针 */
+.pct-badge { position: absolute; z-index: 7; padding: 2px 6px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; background: var(--surface-background, #fff); font-size: 11px; font-weight: 600; line-height: 14px; white-space: nowrap; pointer-events: none; }
+.pct-badge.pct-up { color: #ef4444; }
+.pct-badge.pct-down { color: #16a34a; }
+.pct-badge.pct-flat { color: #94a3b8; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
 .ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }
 .ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: 12px; color: #334155; border-radius: 4px; }

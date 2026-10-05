@@ -270,6 +270,47 @@ describe('M2 chart interaction contract', () => {
     expect(chart).toMatch(/indicatorPanes: \(\) => \(chart\?\.getPaneOptions\(\) as Array<\{ id: string \}> \?\? \[\]\)/)
   })
 
+  it('shows a pointer-following percent badge shared by training and replay without touching persistence (M6-02)', async () => {
+    const chart = await readFile(chartPath, 'utf8')
+    const training = await readFile(trainingPath, 'utf8')
+    const replay = await readFile(new URL('../../web/src/views/SessionReplay.vue', import.meta.url), 'utf8')
+    const phasePrice = await readFile(new URL('../../web/src/phasePrice.ts', import.meta.url), 'utf8')
+    // 纯函数在 phasePrice.ts（数值口径由 percent-hover.test.ts 的独立 oracle 锁定），组件按导入接线
+    expect(phasePrice).toMatch(/export function formatPercentBadge\(/)
+    expect(chart).toMatch(/import \{ formatPercentBadge, hasPhasePrice, includePhasePriceRange, phasePriceColor \} from '\.\.\/phasePrice'/)
+    // 十字线订阅（klinecharts v10 onCrosshairChange）＋指针离开图表即隐藏（mouseleave）＋卸载解绑
+    expect(chart).toMatch(/chart\.subscribeAction\('onCrosshairChange', onCrosshairAction\)/)
+    expect(chart).toMatch(/host\.value\.addEventListener\('mouseleave', hidePctBadge\)/)
+    expect(chart).toMatch(/host\.value\?\.removeEventListener\('mouseleave', hidePctBadge\)/)
+    // 库清除十字线不派发事件（坐标轴/时间轴/图表外），兜底隐藏维持"徽标可见 ⇔ 十字线存在"
+    expect(chart).toMatch(/if \(outside \|\| isOverPriceAxis\(event\.clientX, event\.clientY\) \|\| !isDrawPane\(paneIdAt\(event\.clientY\)\)\) hidePctBadge\(\)/)
+    // 键盘十字线与复位联动：moveCrosshair 刷新徽标，resetView 清除
+    expect(chart).toMatch(/executeAction\('onCrosshairChange', \{ x: pixel\?\.x \?\? 0, y: anchorY, paneId: 'candle_pane' \}\); updatePctBadge\(pixel\?\.x \?\? 0, anchorY\)/)
+    expect(chart).toMatch(/chart\.executeAction\('onCrosshairChange', \{\}\); hidePctBadge\(\)/)
+    // 徽标 DOM：v-if 挂载、data-testid 可寻址、纯信息层不拦截指针（框选/拖拽/画线/键盘十字线不受影响）
+    expect(chart).toMatch(/<div v-if="pctBadge" :class="\['pct-badge', pctBadge\.cls\]" data-testid="pct-badge"/)
+    expect(chart).toMatch(/\.pct-badge \{[^}]*pointer-events: none/)
+    // 冻结配色：红涨 #ef4444 / 绿跌 #16a34a / 零灰 #94a3b8（与 phasePriceColor 同约定），背景随主题令牌
+    expect(chart).toMatch(/\.pct-badge\.pct-up \{ color: #ef4444; \}/)
+    expect(chart).toMatch(/\.pct-badge\.pct-down \{ color: #16a34a; \}/)
+    expect(chart).toMatch(/\.pct-badge\.pct-flat \{ color: #94a3b8; \}/)
+    expect(chart).toMatch(/\.pct-badge \{[^}]*background: var\(--surface-background, #fff\)/)
+    // 回放一致（PCT-REPLAY-PARITY）：徽标数据源＝chart.getDataList()（回放数据同路径喂入），
+    // 徽标计算路径不受 readOnly 门控（只读回放十字线照常可用）
+    expect(chart).toMatch(/function updatePctBadge\(anchorX: number, anchorY: number\): void \{[\s\S]*?chart\.getDataList\(\)/)
+    const badgeSection = chart.slice(chart.indexOf('const pctBadge = ref'), chart.indexOf('function onCrosshairAction'))
+    expect(badgeSection).not.toMatch(/readOnly/)
+    // 两视图共用 KlineChart：训练页与录像回放页都挂载同一组件（徽标一处实现两处生效）
+    expect(training).toMatch(/<KlineChart/)
+    expect(replay).toMatch(/<KlineChart/)
+    expect(replay).toMatch(/:bars="observation\.bars"/)
+    // 无持久化：徽标状态不外发、不进 defineExpose（录像/布局/画线持久层拿不到它）
+    expect(chart).not.toMatch(/defineExpose\(\{[^)]*pctBadge/)
+    expect(chart).not.toMatch(/emit[^\n]{0,80}pctBadge|pctBadge[^\n]{0,80}emit\(/)
+    // journey 只读探针：pctBadge 暴露徽标文本/配色档（测试专用，不影响生产行为）
+    expect(chart).toMatch(/pctBadge: \(\) => \(\{ visible: pctBadge\.value !== null, text: pctBadge\.value\?\.text \?\? null/)
+  })
+
   it('keeps the blind toggle out of the creation form (V1 shows stock info openly)', async () => {
     const source = await readFile(new URL('../../web/src/views/Launcher.vue', import.meta.url), 'utf8')
     expect(source).not.toMatch(/const blind|blind: blind\.value|双盲模式/)
