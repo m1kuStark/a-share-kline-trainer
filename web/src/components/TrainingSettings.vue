@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, selectSetupDirectory, type TrainingSettingsView } from '../api'
 import { notifySettingsSaved } from '../settingsPanel'
+import {
+  RECONNECT_MAX_ATTEMPTS, UPDATE_STATE_TEXT, decidePollStep, isBusyUpdatePhase, updateGuardText, versionLabel,
+  type UpdateFlowState,
+} from '../updateFlow'
 import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
   fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
@@ -37,7 +41,7 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
-const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data'>('defaults')
+const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>('defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
@@ -227,6 +231,7 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('keydown', onDocumentKeydown)
   stopShortcutCapture()
+  stopUpdatePolling()
 })
 function onDocumentKeydown(event: KeyboardEvent): void {
   if (event.key !== 'Escape') return
@@ -366,6 +371,195 @@ const dataDirSaving = ref(false)
 const dataDirError = ref('')
 const dataDirSavedMessage = ref('')
 
+// ===== UPD-02 关于与更新分栏：在线版本更新（契约=docs/verification/2026-10/UPD-01/design.md §2） =====
+// 检查三态＋apply 守卫人话＋状态机轮询；决策核心在 ../updateFlow.ts（纯函数，单测锁定），
+// 本组件只做薄执行：fetch→decidePollStep→渲染/排程。真实换装全流程留用户真机验收。
+const updateVersion = ref<string | null>(null)
+const checkPhase = ref<'idle' | 'checking' | 'available' | 'latest' | 'error'>('idle')
+const checkErrorText = ref('')
+const updateAvailableInfo = ref<{ latestVersion: string, releaseNotes: string | null } | null>(null)
+const applyStarting = ref(false)
+/** 当前呈现的状态机态（''＝未在呈现）；'reconnecting' 仅为呈现哨兵，非契约态 */
+const applyPollState = ref('')
+const applyPollProgress = ref<number | null>(null)
+/** 断线重连尝试次数（1 起；0＝未在重连窗口） */
+const applyReconnectAttempt = ref(0)
+const applyGuardMessage = ref('')
+const applyFailedReason = ref('')
+const applyCompletedVersion = ref<string | null>(null)
+let updatePollTimer: ReturnType<typeof setTimeout> | undefined
+let updateFailedReconnects = 0
+/** 更新流程占线（POST 受理中或状态机轮询中）：禁用「下载并更新」防重复提交 */
+const updateInProgress = computed(() =>
+  applyStarting.value || (applyPollState.value !== '' && !applyFailedReason.value && applyCompletedVersion.value === null))
+
+interface UpdateCheckView {
+  currentVersion: string | null
+  latestVersion: string | null
+  updateAvailable: boolean
+  releaseNotes: string | null
+  error: string | null
+}
+
+interface UpdateStatusView {
+  state: string
+  progress: number | null
+  error: string | null
+}
+
+function stopUpdatePolling(): void {
+  if (updatePollTimer !== undefined) {
+    clearTimeout(updatePollTimer)
+    updatePollTimer = undefined
+  }
+}
+
+function resetUpdatePresentation(): void {
+  stopUpdatePolling()
+  updateFailedReconnects = 0
+  applyPollState.value = ''
+  applyPollProgress.value = null
+  applyReconnectAttempt.value = 0
+  applyGuardMessage.value = ''
+  applyFailedReason.value = ''
+  applyCompletedVersion.value = null
+}
+
+async function loadUpdateVersion(): Promise<void> {
+  try {
+    const response = await fetch('/api/health')
+    const health = await response.json() as { currentVersion?: string | null }
+    updateVersion.value = typeof health.currentVersion === 'string' && health.currentVersion !== '' ? health.currentVersion : null
+  } catch {
+    updateVersion.value = null
+  }
+}
+
+async function runCheckUpdate(): Promise<void> {
+  if (checkPhase.value === 'checking') return
+  resetUpdatePresentation()
+  checkPhase.value = 'checking'
+  checkErrorText.value = ''
+  try {
+    const response = await fetch('/api/update/check')
+    const view = await response.json() as UpdateCheckView
+    updateVersion.value = typeof view.currentVersion === 'string' && view.currentVersion !== '' ? view.currentVersion : updateVersion.value
+    if (view.updateAvailable && view.latestVersion) {
+      updateAvailableInfo.value = { latestVersion: view.latestVersion, releaseNotes: view.releaseNotes }
+      checkPhase.value = 'available'
+    } else if (view.error) {
+      checkErrorText.value = view.error
+      checkPhase.value = 'error'
+    } else {
+      updateAvailableInfo.value = null
+      checkPhase.value = 'latest'
+    }
+  } catch (error) {
+    checkErrorText.value = `无法检查更新：${error instanceof Error ? error.message : String(error)}`
+    checkPhase.value = 'error'
+  }
+}
+
+/** completed 终态：以 /api/health 的 currentVersion 为准呈现（非 targetVersion 回显） */
+async function onApplyCompleted(): Promise<void> {
+  await loadUpdateVersion()
+  applyCompletedVersion.value = updateVersion.value
+}
+
+async function pollUpdateStatus(): Promise<void> {
+  let fetched: { ok: true, view: UpdateStatusView } | { ok: false }
+  try {
+    const response = await fetch('/api/update/status')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    fetched = { ok: true, view: await response.json() as UpdateStatusView }
+  } catch {
+    fetched = { ok: false }
+  }
+  const decision = decidePollStep(updateFailedReconnects, fetched)
+  if (decision.kind === 'render-state') {
+    updateFailedReconnects = 0
+    applyReconnectAttempt.value = 0
+    applyPollState.value = decision.state
+    applyPollProgress.value = decision.progressPercent
+    if (decision.state === 'completed') {
+      await onApplyCompleted()
+      return
+    }
+    if (decision.state === 'failed') {
+      applyFailedReason.value = fetched.ok ? (fetched.view.error ?? '未知原因') : '未知原因'
+      return
+    }
+    if (decision.continueDelayMs !== null) {
+      updatePollTimer = setTimeout(() => { void pollUpdateStatus() }, decision.continueDelayMs)
+    } else {
+      // idle：无更新在途（防御呈现；正常流程不会走到）
+      applyPollState.value = ''
+    }
+    return
+  }
+  if (decision.kind === 'reconnect') {
+    updateFailedReconnects = decision.attempt
+    applyReconnectAttempt.value = decision.attempt
+    updatePollTimer = setTimeout(() => { void pollUpdateStatus() }, decision.delayMs)
+    return
+  }
+  // give-up：15 次重连用尽（约 30s），包已换新但服务未恢复——指引手动启动
+  applyFailedReason.value = '等待训练器恢复超时：若页面长期无响应，请手动运行 Start.cmd 启动'
+}
+
+async function startUpdateApply(): Promise<void> {
+  if (updateInProgress.value) return
+  if (!window.confirm('将下载新版本并自动重启训练器，更新过程中请勿关闭窗口。确定继续？')) return
+  applyStarting.value = true
+  applyGuardMessage.value = ''
+  applyFailedReason.value = ''
+  applyCompletedVersion.value = null
+  try {
+    const response = await fetch('/api/update/apply', { method: 'POST' })
+    if (response.status !== 202) {
+      // 守卫拒绝（503/409/502）：人话呈现，不进入轮询，留在可重试态
+      const payload = await response.json().catch(() => ({})) as { error?: string, message?: string }
+      applyGuardMessage.value = updateGuardText(payload.error ?? null, payload.message ?? null)
+      return
+    }
+    updateFailedReconnects = 0
+    applyPollState.value = 'downloading'
+    applyPollProgress.value = 0
+    await pollUpdateStatus()
+  } catch (error) {
+    applyGuardMessage.value = `更新失败：${error instanceof Error ? error.message : String(error)}`
+  } finally {
+    applyStarting.value = false
+  }
+}
+
+/** 分栏激活：拉当前版本＋若服务端有进行中/终态更新则恢复呈现（更新跨重启窗口，用户可能关开面板） */
+async function enterAboutSection(): Promise<void> {
+  await loadUpdateVersion()
+  try {
+    const response = await fetch('/api/update/status')
+    if (!response.ok) return
+    const view = await response.json() as UpdateStatusView
+    if (isBusyUpdatePhase(view.state)) {
+      applyPollState.value = view.state
+      updateFailedReconnects = 0
+      void pollUpdateStatus()
+    } else if (view.state === 'completed') {
+      applyPollState.value = 'completed'
+      await onApplyCompleted()
+    } else if (view.state === 'failed') {
+      applyPollState.value = 'failed'
+      applyFailedReason.value = view.error ?? '未知原因'
+    }
+  } catch {
+    // 服务不可达＝无进行中的更新可恢复（正常启动态），静默
+  }
+}
+
+watch(activeSection, section => {
+  if (section === 'about') void enterAboutSection()
+})
+
 async function chooseDataDirDirectory(): Promise<void> {
   if (dataDirSaving.value) return
   dataDirError.value = ''
@@ -502,6 +696,7 @@ function close(): void {
           <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
           <button type="button" :class="{ selected: activeSection === 'animation' }" @click="activeSection = 'animation'">动画效果</button>
           <button type="button" :class="{ selected: activeSection === 'data' }" @click="activeSection = 'data'">数据目录</button>
+          <button type="button" :class="{ selected: activeSection === 'about' }" @click="activeSection = 'about'">关于与更新</button>
         </nav>
         <div class="settings-content">
         <section v-if="activeSection === 'defaults'" class="settings-section settings-default-section" aria-label="默认设置">
@@ -671,6 +866,40 @@ function close(): void {
         <p v-if="tdxError" class="error-text" role="alert">{{ tdxError }}</p>
         <p v-if="tdxSavedMessage" class="settings-saved" role="status">{{ tdxSavedMessage }}</p>
       </section>
+      <section v-if="activeSection === 'about'" class="settings-section" aria-label="关于与更新">
+        <h3>关于与更新</h3>
+        <p class="settings-section-note">检查并安装训练器新版本；更新前会自动备份，历史训练数据保留在本地，更新完成后自动重启。</p>
+        <p class="update-current-version">当前版本：{{ versionLabel(updateVersion) }}</p>
+        <div class="settings-actions">
+          <button class="ghost-button" :disabled="checkPhase === 'checking'" @click="runCheckUpdate">
+            {{ checkPhase === 'checking' ? '检查中…' : '检查更新' }}
+          </button>
+          <button
+            v-if="checkPhase === 'available'" class="trade-action buy" :disabled="updateInProgress"
+            @click="startUpdateApply"
+          >{{ applyStarting ? '正在准备更新…' : '下载并更新' }}</button>
+          <button v-if="checkPhase === 'error'" class="ghost-button" @click="runCheckUpdate">重试</button>
+        </div>
+        <div v-if="checkPhase === 'available' && updateAvailableInfo" class="update-check-result" role="status">
+          <p>发现新版本 {{ versionLabel(updateAvailableInfo.latestVersion) }}</p>
+          <details v-if="updateAvailableInfo.releaseNotes" class="update-release-notes" open>
+            <summary>更新内容</summary>
+            <pre>{{ updateAvailableInfo.releaseNotes }}</pre>
+          </details>
+        </div>
+        <p v-else-if="checkPhase === 'latest'" class="update-check-result" role="status">已是最新版本</p>
+        <p v-if="checkPhase === 'error'" class="error-text update-check-error" role="alert">检查失败：{{ checkErrorText }}</p>
+        <p v-if="applyGuardMessage" class="error-text update-apply-error" role="alert">{{ applyGuardMessage }}</p>
+        <div
+          v-if="applyPollState && applyPollState !== 'idle' && !applyFailedReason && applyCompletedVersion === null"
+          class="update-progress" role="status"
+        >
+          <template v-if="applyReconnectAttempt > 0">正在重启，等待服务回来…（重连尝试 {{ applyReconnectAttempt }}/{{ RECONNECT_MAX_ATTEMPTS }}）</template>
+          <template v-else>{{ UPDATE_STATE_TEXT[applyPollState as UpdateFlowState] }}<template v-if="applyPollProgress !== null">（{{ applyPollProgress }}%）</template></template>
+        </div>
+        <p v-if="applyCompletedVersion !== null" class="settings-saved" role="status">已更新到 {{ versionLabel(applyCompletedVersion) }}</p>
+        <p v-if="applyFailedReason" class="error-text" role="alert">更新失败：{{ applyFailedReason }}</p>
+      </section>
       <template v-if="activeSection === 'defaults'">
         <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
         <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
@@ -745,6 +974,14 @@ function close(): void {
 :global(body.dark) .shortcut-binding.recording { color: #9bdce3; }
 .settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; line-height: 1.6; }
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
+/* UPD-02 关于与更新分栏 */
+.update-current-version { margin: 0 0 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.update-check-result p { margin: 0 0 6px; font-size: 13px; }
+.update-release-notes { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; }
+.update-release-notes summary { cursor: pointer; color: var(--text-secondary, #51637a); }
+.update-release-notes pre { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; line-height: 1.6; }
+.update-progress { margin-top: 10px; font-size: 13px; color: #1f6978; }
+:global(body.dark) .update-progress { color: #8fd9e3; }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
 :global(body.dark) .settings-saved { color: #57bd7c; }
 .settings-actions { display: flex; gap: 10px; margin-top: 14px; }
