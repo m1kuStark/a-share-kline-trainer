@@ -426,6 +426,11 @@ test('START-KILL-RESTART-DECLINED (CLI): main asks and restarts after killing th
   assert.ok(state, 'a fresh server must be recorded after the restart answer')
   assert.notEqual(state.pid, orphanPid)
   assert.equal(await counterLines(counter), 2)
+  // main() 在进程内拉起的 detached 新服务必须登记清理台账（本轮曾因此泄漏，
+  // 临时目录因日志句柄未释放而残留——按 state 身份登记后由 after() 定点回收）
+  if (state && Number.isInteger(state.pid)) {
+    activeServers.push({ pid: state.pid, port: state.port, runId: state.runId })
+  }
 })
 
 // ============================ START 非训练器占用（语义不变） ============================
