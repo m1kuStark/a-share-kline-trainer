@@ -13,9 +13,9 @@ const { spawn } = require('node:child_process')
 const { randomUUID } = require('node:crypto')
 const net = require('node:net')
 const {
-  access, appendFile, mkdir, open, readFile, readdir, rename, rm, writeFile,
+  access, appendFile, mkdir, mkdtemp, open, readFile, readdir, rename, rm, writeFile,
 } = require('node:fs/promises')
-const { homedir } = require('node:os')
+const { homedir, tmpdir } = require('node:os')
 const { dirname, isAbsolute, join, resolve } = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { setTimeout: delay } = require('node:timers/promises')
@@ -58,19 +58,32 @@ function usage() {
     '  --root PATH    包根目录 / package root (default: the directory holding launcher.cjs)',
     '  --config PATH  配置文件 / config file (default: <root>/trainer.config.json, optional)',
     '  --no-open      不自动打开浏览器 / do not open a browser window',
-    '  --stop         停止已记录的训练服务后退出 / stop the recorded trainer, then exit',
+    '  --stop         停止全部已验证训练器进程后退出 / stop all verified trainers, then exit',
+    '  --conflict-answer=reuse|restart  预答端口冲突询问（自动化用；正常使用由弹框询问）',
+    '                                / pre-answered conflict prompt (automation only)',
     '  --setup-restart-attempt PATH  受控重启监管模式（由应用内"保存并生效"自动调用，',
     '                                不手动运行 / controlled-restart supervisor, invoked by the app)',
     '',
-    '停止只针对本启动器记录的服务：先核对状态与 127.0.0.1 健康身份，只结束',
-    '验证过的那个 PID；无法验证时拒绝并保留状态文件。数据库与日志始终保留。',
-    '注意：--stop 是应急强制结束（SIGKILL），不等待页面保存完成；正常的"保存并',
-    '退出"请在训练器页面使用"退出训练器"按钮，Stop.cmd 只作应急兜底。',
-    'Stop only targets the service this launcher recorded (state + health identity',
-    'on the recorded 127.0.0.1 port, exact verified PID only); it refuses and keeps',
-    'the state file when identity cannot be proven. Database and logs are kept.',
-    'Note: --stop is an emergency force stop (SIGKILL) that does not wait for the',
-    'in-app save flow; use the in-app exit button for a normal saved shutdown.',
+    '停止语义（PORT-02，用户 2026-10-06）：--stop 关闭全部能通过健康身份验证（/api/health',
+    '返回 200 且 status/runId/pid 匹配训练器口径）的训练器进程——本包 state 记录者，加系统',
+    '扫描发现的命令行含 launcher.cjs 或以 server\\dist\\index.js 结尾的 node 进程（含非本包',
+    '记录的孤儿）；身份验证不过的不明进程绝不杀；杀后确认进程退出与端口释放，未确认退出',
+    '的如实报错、非零退出码。注意：--stop 仍是应急强制结束（SIGKILL），不等待页面保存完成；',
+    '正常的"保存并退出"请在训练器页面使用"退出训练器"按钮，Stop.cmd 只作应急兜底。',
+    'Stop semantics (PORT-02): --stop closes every trainer process it can verify by health',
+    'identity — the recorded one plus a system-wide sweep of node processes running',
+    'launcher.cjs or server\\dist\\index.js (state-less orphans included); unknown or',
+    'unverifiable processes are never signaled, and unconfirmed kills are reported honestly',
+    'with a non-zero exit. Note: --stop remains an emergency force stop (SIGKILL) that does',
+    'not wait for the in-app save flow; use the in-app exit for a normal saved shutdown.',
+    '',
+    '端口冲突规则 / port conflict rule (PORT-02，用户 2026-10-06)：目标端口被验证为训练器',
+    '占用时弹框询问"是否从已有进程启动训练器？"——[是]＝打开已有服务（不新开进程）；',
+    '[否]＝关闭该训练器后从新进程启动；PowerShell 不可用时回退控制台输入提示，双通道',
+    '皆不可用则中止启动且不杀任何进程。非训练器占用维持原语义（显式端口报明确原因，',
+    '默认端口自动换邻近可用端口）。/ when the target port is held by a verified trainer,',
+    'a dialog asks "reuse or restart" (console fallback; abort without killing anything if',
+    'both channels fail); non-trainer occupants keep the PORT-01 semantics.',
     '',
     '配置字段 / config fields: tdxRoot, port (default 8787), dataDir (default <root>/data), databasePath (absolute).',
     '端口规则 / port rule: 未写 port 时，默认端口被系统保留(WinNAT 排除段)或被占用会自动改用邻近',
@@ -99,6 +112,14 @@ function parseArgs(argv) {
     if (config !== undefined) { parsed.configPath = config; continue }
     const restartAttempt = value('setup-restart-attempt')
     if (restartAttempt !== undefined) { parsed.restartAttemptPath = restartAttempt; continue }
+    const conflictAnswer = value('conflict-answer')
+    if (conflictAnswer !== undefined) {
+      if (conflictAnswer !== 'reuse' && conflictAnswer !== 'restart') {
+        throw new Error(`--conflict-answer 只接受 reuse 或 restart / --conflict-answer accepts reuse or restart, got: ${conflictAnswer}`)
+      }
+      parsed.conflictAnswer = conflictAnswer
+      continue
+    }
     if (arg === '--no-open') { parsed.openBrowser = false; continue }
     if (arg === '--stop') { parsed.stop = true; continue }
     if (arg === '--help' || arg === '-h') { parsed.help = true; continue }
@@ -401,6 +422,280 @@ function portFallbackNote(fallback) {
     + ` / default port ${fallback.from} is ${fallback.reason === 'reserved' ? 'reserved by the system' : 'occupied'}; `
     + `automatically using port ${fallback.to} instead (database unaffected; browser recordings live per-origin — `
     + `pin "port" in trainer.config.json to keep one address)`
+}
+
+// ===== PORT-02 训练器启动/关闭进程治理（用户 2026-10-06 指令） =====
+//
+// 用户拍板取代两条旧语义：
+//  1) Start：目标端口的占用者经 isTrainerHealth 验证为训练器时，不再一律拒绝启动，
+//     改为弹框询问"是否从已有进程启动训练器？"——确认＝打开已有服务（不新开进程，
+//     无双写风险）；不同意＝清理该进程后从新进程启动。非训练器占用不进入此分支，
+//     维持 PORT-01 语义（显式端口报因 / 默认端口自动回退）。
+//  2) Stop：不再判断训练器进程是否从当前安装包启动，直接关闭全部经验证的训练器
+//     进程（state 记录者＋系统扫描发现的孤儿）；身份验证不过的不明进程依旧不杀。
+//
+// 分层：库层 launch() 在"训练器占用且未提供应答"时抛 TRAINER_CONFLICT_ASK 决策请求
+// 错误（携带占用者身份）；main()（CLI 边界）捕获后弹框/控制台取得应答，带
+// conflictAnswer 重入。这样自动化调用（测试/脚本）永不阻塞在 GUI 上。
+
+const CONFLICT_ASK_CODE = 'TRAINER_CONFLICT_ASK'
+
+function conflictAskError(occupant) {
+  const error = new Error(
+    `端口 ${occupant.port} 上有训练器服务（PID ${occupant.pid}）但没有对应的启动状态，可能来自旧版本或手动启动；`
+    + `需要用户决定：从已有进程打开，还是清理后重新启动（CLI 层会弹框询问）`
+    + ` / port ${occupant.port} is served by a trainer process without launcher state (PID ${occupant.pid}); `
+    + `a user decision (reuse or clean-and-restart) is required before launch can proceed`)
+  error.code = CONFLICT_ASK_CODE
+  error.occupant = occupant
+  return error
+}
+
+/** 真实 PowerShell 运行器：args 为完整参数数组（不含 powershell.exe 本身）。 */
+function defaultPowershellRunner(args) {
+  return new Promise(resolveRun => {
+    let child
+    try {
+      child = spawn('powershell.exe', args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
+    } catch (error) {
+      resolveRun({ ok: false, code: null, stdout: '', error: `${(error && error.message) || error}` })
+      return
+    }
+    let stdout = ''
+    let settled = false
+    child.stdout.on('data', chunk => { stdout += chunk })
+    child.once('error', error => {
+      if (settled) return
+      settled = true
+      resolveRun({ ok: false, code: null, stdout: '', error: `${(error && error.message) || error}` })
+    })
+    child.once('close', code => {
+      if (settled) return
+      settled = true
+      resolveRun({ ok: code === 0, code, stdout })
+    })
+  })
+}
+
+/** PowerShell 命令运行（发现/端口列举用，-Command 形态）。 */
+function runPowerShellCommand(command) {
+  return defaultPowershellRunner(['-NoProfile', '-NonInteractive', '-Command', command])
+}
+
+/** 询问用 MessageBox 脚本：中文经 .ps1 文件（UTF-8 BOM）传递，规避命令行内联编码坑。 */
+function conflictAskScript(occupant) {
+  return [
+    'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
+    '$answer = [System.Windows.Forms.MessageBox]::Show(',
+    `  "检测到端口 ${occupant.port} 上已有训练器服务（PID ${occupant.pid}）。是否从已有进程启动训练器？\\n\\n[是] = 复用已有服务（不新开进程）\\n[否] = 关闭该训练器后重新启动",`,
+    '  "K线训练器启动",',
+    '  [System.Windows.Forms.MessageBoxButtons]::YesNo,',
+    '  [System.Windows.Forms.MessageBoxIcon]::Question)',
+    'Write-Output ([int]$answer)',
+    '',
+  ].join('\n')
+}
+
+function conflictAskMessage(occupant) {
+  return `检测到端口 ${occupant.port} 上已有训练器服务（PID ${occupant.pid}）。是否从已有进程启动训练器？`
+    + `（是/y＝复用已有服务不新开进程；否/n＝关闭该训练器后重新启动）`
+}
+
+/** 控制台回退询问（PowerShell 不可用时）。读不到答案返回 null，绝不替用户猜。 */
+async function consoleAskDefault(message) {
+  const readline = require('node:readline/promises')
+  const session = readline.createInterface({ input: process.stdin, output: process.stdout })
+  try {
+    const answer = String(await session.question(`${message} [y/n]: `)).trim().toLowerCase()
+    if (answer === 'y' || answer === 'yes' || answer === '是') return 'reuse'
+    if (answer === 'n' || answer === 'no' || answer === '否') return 'restart'
+    return null
+  } catch {
+    return null
+  } finally {
+    session.close()
+  }
+}
+
+/**
+ * PORT-02 冲突询问：优先 PowerShell MessageBox（Yes=6→reuse / No=7→restart），
+ * 不可用或返回垃圾时回退控制台输入；两通道都拿不到答案则抛错中止启动（不杀、
+ * 不启新进程）。powershellRunner/consoleAsk 均可注入（自动化测试不依赖真实 GUI）。
+ */
+async function askConflictReuseOrRestart(occupant, options = {}) {
+  const powershellRunner = options.powershellRunner ?? defaultPowershellRunner
+  const consoleAsk = options.consoleAsk ?? consoleAskDefault
+  const directory = await mkdtemp(join(tmpdir(), 'trainer-ask-'))
+  const scriptPath = join(directory, 'ask.ps1')
+  try {
+    await writeFile(scriptPath, `\uFEFF${conflictAskScript(occupant)}`, 'utf8')
+    const result = await powershellRunner(['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath])
+    if (result && result.ok) {
+      const answer = String(result.stdout ?? '').trim()
+      if (answer === '6') return 'reuse'
+      if (answer === '7') return 'restart'
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true }).catch(() => {})
+  }
+  const fallback = await consoleAsk(conflictAskMessage(occupant))
+  if (fallback === 'reuse' || fallback === 'restart') return fallback
+  throw new Error(
+    `无法获得用户选择（PowerShell 对话框与控制台输入均不可用），已中止启动；未关闭任何进程，也未启动新服务 `
+    + `/ could not obtain an answer to the reuse-or-restart question (dialog and console both unavailable); `
+    + `start aborted without killing or starting anything`)
+}
+
+/**
+ * PORT-02 停止扫描的候选口径：命令行含 launcher.cjs，或以 server\dist\index.js
+ * （含正斜杠变体）作为完整参数出现。发布包解压目录名不含仓库名，不能按目录名匹配。
+ */
+function isTrainerCandidateCommandLine(commandLine) {
+  if (typeof commandLine !== 'string' || commandLine.trim() === '') return false
+  const normalized = commandLine.replace(/["']/g, ' ')
+  if (/(?:^|\s)[^\s]*launcher\.cjs(?=\s|$)/i.test(normalized)) return true
+  return /(?:^|\s)[^\s]*server[\\/]dist[\\/]index\.js(?=\s|$)/i.test(normalized)
+}
+
+/** 枚举系统 node.exe 进程（Get-CimInstance）。PowerShell 不可用时如实报告 available=false。 */
+async function enumerateNodeProcessesPS() {
+  const command = `Get-CimInstance Win32_Process -Filter "Name='node.exe'"`
+    + ` | Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress`
+  const result = await runPowerShellCommand(command)
+  if (!result.ok) return { available: false, reason: result.error ?? `powershell exit ${result.code}` }
+  try {
+    const text = result.stdout.trim()
+    const parsed = text === '' ? null : JSON.parse(text)
+    const list = parsed === null ? [] : Array.isArray(parsed) ? parsed : [parsed]
+    const processes = list
+      .filter(entry => entry && typeof entry === 'object' && Number.isInteger(entry.ProcessId))
+      .map(entry => ({ pid: entry.ProcessId, commandLine: typeof entry.CommandLine === 'string' ? entry.CommandLine : '' }))
+    return { available: true, processes }
+  } catch (error) {
+    return { available: false, reason: `parse failed: ${(error && error.message) || error}` }
+  }
+}
+
+/** 某 PID 的监听端口列表（Get-NetTCPConnection，只读）。失败/无监听返回 []。 */
+async function listListenPortsPS(pid) {
+  const command = `Get-NetTCPConnection -OwningProcess ${pid} -State Listen -ErrorAction SilentlyContinue`
+    + ` | Select-Object -ExpandProperty LocalPort | ConvertTo-Json -Compress`
+  const result = await runPowerShellCommand(command)
+  if (!result.ok) return []
+  const text = result.stdout.trim()
+  if (text === '') return []
+  try {
+    const parsed = JSON.parse(text)
+    const list = Array.isArray(parsed) ? parsed : [parsed]
+    return [...new Set(list.map(Number).filter(port => Number.isInteger(port) && port > 0))]
+  } catch {
+    return []
+  }
+}
+
+/** 有界等待进程退出；pidAliveImpl 可注入（测试模拟杀不死的进程）。 */
+async function waitPidExit(pid, timeoutMs, pidAliveImpl = pidAlive) {
+  const deadline = Date.now() + timeoutMs
+  while (pidAliveImpl(pid)) {
+    if (Date.now() >= deadline) return false
+    await delay(100)
+  }
+  return true
+}
+
+/** 有界等待端口重新拒绝连接（释放）。 */
+async function waitPortRefused(port, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if ((await probeHealth(port, { timeoutMs: 500 })).refused) return true
+    await delay(100)
+  }
+  return false
+}
+
+/**
+ * 结束一个已通过身份验证的训练器进程并确认退出/端口释放。结果如实呈现：
+ * signaled/exited/portDrained 分别报告，不假报成功。
+ */
+async function killVerifiedTrainer(pid, port, options = {}) {
+  const entry = {
+    pid,
+    port,
+    runId: typeof options.runId === 'string' ? options.runId : undefined,
+    signaled: true,
+    exited: false,
+    portDrained: false,
+  }
+  try {
+    process.kill(pid, 'SIGKILL')
+  } catch (error) {
+    entry.signaled = false
+    entry.error = `${(error && error.message) || error}`
+    return entry
+  }
+  entry.exited = await waitPidExit(pid, options.exitTimeoutMs ?? STOP_EXIT_TIMEOUT_MS, options.pidAliveImpl)
+  entry.portDrained = entry.exited
+    ? await waitPortRefused(port, options.portDrainTimeoutMs ?? 3_000)
+    : false
+  return entry
+}
+
+/**
+ * PORT-02 全量清剿：枚举候选（注入枚举器或真实 PowerShell）→ 逐个按其监听端口做
+ * isTrainerHealth＋pid 一致验证 → 验证通过才杀。不明候选进 spared 报告且不发信号。
+ * excludePids 用于跳过已被记录路径处理的 PID；自身进程永不匹配。
+ */
+async function sweepTrainers(options = {}) {
+  const kills = []
+  const spared = []
+  const excludePids = options.excludePids instanceof Set ? options.excludePids : new Set(options.excludePids ?? [])
+  let listing
+  try {
+    listing = options.processEnumerator ? await options.processEnumerator() : await enumerateNodeProcessesPS()
+  } catch (error) {
+    return { kills, spared, available: false, reason: `enumeration threw: ${(error && error.message) || error}` }
+  }
+  if (!listing || listing.available !== true) {
+    return { kills, spared, available: false, reason: (listing && listing.reason) || 'enumerator returned no listing' }
+  }
+  const candidates = (Array.isArray(listing.processes) ? listing.processes : []).filter(entry =>
+    entry && Number.isInteger(entry.pid) && entry.pid > 0
+    && entry.pid !== process.pid
+    && !excludePids.has(entry.pid)
+    && isTrainerCandidateCommandLine(entry.commandLine))
+  for (const candidate of candidates) {
+    let ports = []
+    try {
+      const listed = options.portLister ? await options.portLister(candidate.pid) : await listListenPortsPS(candidate.pid)
+      ports = [...new Set((Array.isArray(listed) ? listed : [listed])
+        .map(Number)
+        .filter(port => Number.isInteger(port) && port > 0 && port < 65536))]
+    } catch { ports = [] }
+    if (!ports.length) {
+      spared.push({ pid: candidate.pid, reason: 'no-listening-port' })
+      continue
+    }
+    let verified = null
+    for (const port of ports) {
+      const probe = await probeHealth(port, { timeoutMs: 1_200 })
+      if (probe.responded && probe.status === 200 && isTrainerHealth(probe.json)
+        && probe.json.pid === candidate.pid) {
+        verified = { port, runId: probe.json.runId }
+        break
+      }
+    }
+    if (!verified) {
+      spared.push({ pid: candidate.pid, reason: 'health-unverified' })
+      continue
+    }
+    kills.push(await killVerifiedTrainer(candidate.pid, verified.port, {
+      runId: verified.runId,
+      exitTimeoutMs: options.exitTimeoutMs,
+      portDrainTimeoutMs: options.portDrainTimeoutMs,
+      pidAliveImpl: options.pidAliveImpl,
+    }))
+  }
+  return { kills, spared, available: true }
 }
 
 function statePath(dataDir) { return join(dataDir, STATE_FILE) }
@@ -769,17 +1064,68 @@ async function launch(options = {}) {
         }
         if (existing.action === 'clean') await clearState(dataDir)
 
-        // 3) Port availability (PORT-01): a trainer-shaped occupant is always
-        //    refused regardless of configuration — adopting or port-hopping past
-        //    it could put two writers on one database. For everything else the
-        //    bind probe decides: an explicitly configured port must be honored
-        //    (fail with an actionable reason, never silently move), while the
-        //    unconfigured default port may move to a nearby free port so the
-        //    zero-config one-click start survives WinNAT reserved ranges.
+        // 3) Port availability (PORT-01 + PORT-02): a VERIFIED trainer occupant is a
+        //    user decision (PORT-02, 2026-10-06): reuse it (open its URL, no second
+        //    process) or clean it and start fresh. Without an injected/recorded answer
+        //    launch() throws a TRAINER_CONFLICT_ASK decision request — the CLI layer
+        //    asks via dialog/console and re-enters with conflictAnswer. Non-trainer
+        //    occupants never reach this branch and keep the PORT-01 semantics: the
+        //    bind probe decides (explicit port must be honored with an actionable
+        //    reason; the unconfigured default may move to a nearby free port).
         const occupancy = await probeHealth(config.port, { timeoutMs: 1_200 })
-        if (occupancy.responded && isTrainerHealth(occupancy.json)) {
-          throw new Error(`端口 ${config.port} 上有训练器服务（PID ${occupancy.json.pid}）但没有对应的启动状态，可能来自旧版本或手动启动；`
-            + `请先关闭该进程或更换端口 / port ${config.port} is served by a trainer process without launcher state (PID ${occupancy.json.pid}); close it or choose another port`)
+        if (occupancy.responded && isTrainerHealth(occupancy.json)
+          && Number.isInteger(occupancy.json.pid) && occupancy.json.pid > 0) {
+          const occupant = {
+            pid: occupancy.json.pid,
+            port: config.port,
+            runId: occupancy.json.runId,
+            baseURL: `http://127.0.0.1:${config.port}`,
+          }
+          const answer = options.conflictAnswer
+          if (answer !== 'reuse' && answer !== 'restart') throw conflictAskError(occupant)
+          if (answer === 'reuse') {
+            // 应答期间占用者可能已退出：复核失败则落入下方正常启动流程
+            const recheck = await probeHealth(config.port, { timeoutMs: 1_200 })
+            if (recheck.responded && recheck.status === 200 && isTrainerHealth(recheck.json)) {
+              // 确认＝从已有进程启动：打开已有服务 URL，不产生第二个服务进程（无双写风险）
+              const urlOpener = options.urlOpener ?? openURL
+              let openedBrowser = false
+              if (options.openBrowser ?? true) openedBrowser = await urlOpener(occupant.baseURL)
+              return {
+                reused: true,
+                reusedConflictTrainer: true,
+                url: occupant.baseURL,
+                port: occupant.port,
+                pid: recheck.json.pid,
+                runId: recheck.json.runId,
+                dataDir,
+                logPath: join(dataDir, SERVER_LOG),
+                tdxRoot,
+                openedBrowser,
+                portFallback: null,
+              }
+            }
+          } else {
+            // 拒绝＝清理后重启：复核身份一致才杀，杀后等退出与端口释放，再正常启动
+            const recheck = await probeHealth(config.port, { timeoutMs: 1_200 })
+            if (recheck.responded && recheck.status === 200 && isTrainerHealth(recheck.json)
+              && recheck.json.pid === occupant.pid) {
+              const cleaned = await killVerifiedTrainer(occupant.pid, occupant.port, {
+                runId: occupant.runId,
+                exitTimeoutMs: options.conflictExitTimeoutMs ?? 5_000,
+                portDrainTimeoutMs: options.conflictPortDrainTimeoutMs ?? 3_000,
+              })
+              if (!cleaned.signaled) {
+                throw new Error(`无法结束端口 ${occupant.port} 上的训练器进程（PID ${occupant.pid}）：${cleaned.error ?? 'signal failed'}；已中止启动，未改动数据库 `
+                  + `/ failed to signal the conflicting trainer on port ${occupant.port} (PID ${occupant.pid}); start aborted`)
+              }
+              if (!cleaned.exited) {
+                throw new Error(`已向端口 ${occupant.port} 上的训练器进程（PID ${occupant.pid}）发送结束信号，但它未在限时内退出；已中止启动 `
+                  + `/ signaled the conflicting trainer (PID ${occupant.pid}) but it did not exit in time; start aborted`)
+              }
+            }
+            // 占用者已消失或身份变化：落入下方正常启动流程（bind 探测重新裁决）
+          }
         }
         const checkPort = options.portProbe ?? bindCheckPort
         let effectivePort = config.port
@@ -899,18 +1245,21 @@ async function launch(options = {}) {
 }
 
 /**
- * Stop the trainer recorded in the configured dataDir. Same config resolution
- * as launch, but targeting is always the RECORDED port, so editing the config
- * port cannot hide a running service. Serialized with launch through the same
- * launch lock. Signals only the exact recorded PID after proving identity
- * (state appId/runId/pid plus a live HTTP 200 /api/health match on
- * 127.0.0.1); never kills a process tree, never kills by port. No state is a
- * clear no-op; a dead recorded PID is cleaned without signaling; invalid or
- * live-but-unverifiable state is an actionable refusal that preserves the
- * file. Database, WAL sidecar files and logs are always kept. Success also
- * waits (bounded) for the recorded port to refuse connections again, so an
- * immediately following Start.cmd does not hit a lingering listener.
- * Options: root, configPath, env, lockWaitMs, exitTimeoutMs, portDrainTimeoutMs.
+ * Stop the trainer. Same config resolution as launch, but targeting is always the
+ * RECORDED port, so editing the config port cannot hide a running service.
+ * Serialized with launch through the same launch lock. Identity is proven before
+ * any signal (state appId/runId/pid plus a live HTTP 200 /api/health match on
+ * 127.0.0.1); unknown or unverifiable processes are never killed.
+ *
+ * PORT-02（用户 2026-10-06）: with options.allTrainers === true (the --stop CLI
+ * semantic) the recorded server is stopped first — keeping all of its refusal
+ * protections — and then a system-wide sweep closes every OTHER trainer process
+ * it can verify (node processes whose command line contains launcher.cjs or ends
+ * with server\dist\index.js, state-less orphans included). Unverified candidates
+ * are reported as spared and never signaled; unconfirmed kills are reported
+ * honestly. Database, WAL sidecar files and logs are always kept.
+ * Options: root, configPath, env, allTrainers, processEnumerator, portLister,
+ * pidAliveImpl, lockWaitMs, exitTimeoutMs, portDrainTimeoutMs.
  */
 async function stop(options = {}) {
   const root = resolve(options.root ?? __dirname)
@@ -918,9 +1267,15 @@ async function stop(options = {}) {
   const configPath = options.configPath ? resolve(options.configPath) : join(root, 'trainer.config.json')
   const config = resolveConfig(root, await readConfigFile(configPath), env)
   const dataDir = config.dataDir
+  const allTrainers = options.allTrainers === true
   try {
-    // No dataDir means launch never got as far as creating one: nothing to stop.
-    if (!(await pathExists(dataDir))) return { stopped: false, noop: 'no-state', dataDir }
+    // No dataDir means launch never got as far as creating one: nothing recorded
+    // to stop — but the PORT-02 sweep still hunts state-less orphans, so create
+    // the directory (the launch lock lives there) and proceed.
+    if (!(await pathExists(dataDir))) {
+      if (!allTrainers) return { stopped: false, noop: 'no-state', dataDir }
+      await mkdir(dataDir, { recursive: true })
+    }
 
     // Serialize against launch and other stops; bounded wait, then refuse.
     const lockDeadline = Date.now() + (options.lockWaitMs ?? LOCK_WAIT_MS)
@@ -928,6 +1283,7 @@ async function stop(options = {}) {
       const lock = await acquireLaunchLock(dataDir)
       if (lock.owned) {
         try {
+          if (allTrainers) return await stopRecordedAndSweep(dataDir, options)
           return await stopRecorded(dataDir, options)
         } finally {
           await rm(lock.path, { force: true }).catch(() => {})
@@ -946,6 +1302,38 @@ async function stop(options = {}) {
   } catch (error) {
     if (error && typeof error === 'object') error.dataDir = error.dataDir ?? dataDir
     throw error
+  }
+}
+
+/**
+ * PORT-02 全量停止：先走原记录路径（保留其全部保护——stale/异主状态拒绝与文件保留、
+ * 活跃但不可验证者拒绝、已死者清理不杀），再系统级清剿其他已验证训练器进程。
+ */
+async function stopRecordedAndSweep(dataDir, options) {
+  const recorded = await stopRecorded(dataDir, options)
+  const killedPids = new Set()
+  if (recorded.stopped) killedPids.add(recorded.pid)
+  const sweep = await sweepTrainers({ ...options, excludePids: killedPids })
+  const kills = []
+  if (recorded.stopped) {
+    kills.push({
+      pid: recorded.pid,
+      port: recorded.port,
+      runId: recorded.runId,
+      signaled: true,
+      exited: true,
+      portDrained: recorded.portDrained === true,
+      recorded: true,
+    })
+  }
+  kills.push(...sweep.kills)
+  return {
+    ...recorded,
+    kills,
+    spared: sweep.spared,
+    sweep: sweep.available === true
+      ? { available: true }
+      : { available: false, reason: sweep.reason ?? 'unknown' },
   }
 }
 
@@ -1440,7 +1828,12 @@ async function superviseLocked(context) {
   return { ready: false, phase: 'drain-timeout', stage: 'old-exit-unconfirmed', reason }
 }
 
-async function main(argv) {
+/**
+ * CLI 装配层。io 为可选注入通道（自动化测试用）：env、askConflict（冲突询问）、
+ * urlOpener（复用时打开 URL）、processEnumerator / portLister / pidAliveImpl（停止
+ * 扫描注入）。缺省全部走真实实现（弹框/PowerShell/真实进程发现）。
+ */
+async function main(argv, io = {}) {
   let parsed
   try {
     parsed = parseArgs(argv)
@@ -1471,22 +1864,77 @@ async function main(argv) {
       return
     }
     if (parsed.stop) {
-      const result = await stop(parsed)
+      // PORT-02（用户 2026-10-06）：Stop.cmd 关闭全部已验证训练器进程（记录者＋孤儿），
+      // 不明进程不杀；未确认退出的杀如实报错并以非零退出码呈现。
+      const result = await stop({
+        ...parsed,
+        allTrainers: true,
+        env: io.env ?? process.env,
+        ...(io.processEnumerator ? { processEnumerator: io.processEnumerator } : {}),
+        ...(io.portLister ? { portLister: io.portLister } : {}),
+        ...(io.pidAliveImpl ? { pidAliveImpl: io.pidAliveImpl } : {}),
+      })
       if (result.stopped) {
         console.log(`训练服务已停止（PID ${result.pid}，端口 ${result.port}）。数据库与日志保留在 ${result.dataDir} / server stopped; database and logs kept`)
         console.log('本次为应急强制结束；正常保存退出请使用页面里的"退出训练器" / this was an emergency force stop; use the in-app exit for a normal saved shutdown')
       } else if (result.noop === 'already-dead') {
         console.log(`记录的服务进程（PID ${result.pid}）已不存在，已清理过期状态 / the recorded process is gone; stale state cleaned`)
       } else {
-        console.log('没有已记录的训练服务，无需停止 / no recorded trainer to stop')
-        console.log('若你手动删除过状态文件而训练窗口仍在运行，请在任务管理器中结束对应的 node 进程 / if a trainer runs without its state file, end its node process via Task Manager')
+        console.log('没有已记录的训练服务 / no recorded trainer to stop')
+      }
+      const kills = Array.isArray(result.kills) ? result.kills : []
+      const extraKills = kills.filter(entry => !entry.recorded)
+      if (extraKills.length) {
+        console.log(`另外发现并关闭 ${extraKills.length} 个训练器进程：${extraKills.map(entry => `PID ${entry.pid}（端口 ${entry.port}）`).join('、')} / additional trainer processes closed`)
+      }
+      const unconfirmed = kills.filter(entry => entry.exited !== true || entry.signaled !== true)
+      if (unconfirmed.length) {
+        console.error(`以下训练器进程未能确认退出，未假报成功：${unconfirmed.map(entry => `PID ${entry.pid}${entry.signaled !== true ? '（结束信号失败）' : ''}`).join('、')}；请稍后重试 Stop.cmd 或在任务管理器确认 `
+          + `/ could not confirm exit for: ${unconfirmed.map(entry => `PID ${entry.pid}`).join(', ')}; retry Stop.cmd later or check Task Manager`)
+        process.exitCode = 1
+      } else if (result.sweep && result.sweep.available === false) {
+        console.log(`警告：无法枚举系统训练器进程（${result.sweep.reason}）；已按记录处理，未做全量清理 / warning: system-wide trainer enumeration unavailable; only the recorded service was handled`)
+      }
+      const spared = Array.isArray(result.spared) ? result.spared : []
+      if (spared.length) {
+        console.log(`发现 ${spared.length} 个未能验证为训练器的候选进程，已保留不动：${spared.map(entry => `PID ${entry.pid}（${entry.reason}）`).join('、')} / unverified candidates left untouched`)
       }
       return
     }
-    const result = await launch(parsed)
+    // PORT-02：训练器占用目标端口时先取得用户应答（--conflict-answer 优先，否则弹框/
+    // 控制台），再带应答重入 launch；一次重入后仍冲突则按失败上报，不无限循环。
+    let result
+    let launchOptions = {
+      ...parsed,
+      env: io.env ?? process.env,
+      ...(io.urlOpener ? { urlOpener: io.urlOpener } : {}),
+    }
+    for (let attempt = 0; ; attempt++) {
+      try {
+        result = await launch(launchOptions)
+        break
+      } catch (error) {
+        if (attempt === 0 && error && error.code === CONFLICT_ASK_CODE) {
+          let answer = parsed.conflictAnswer
+          if (answer !== 'reuse' && answer !== 'restart') {
+            answer = await (io.askConflict ?? askConflictReuseOrRestart)(error.occupant)
+          }
+          if (answer !== 'reuse' && answer !== 'restart') {
+            throw new Error(`冲突询问返回了未知应答（${JSON.stringify(answer)}），已中止启动；未改动任何进程 / unexpected conflict answer; start aborted without touching any process`)
+          }
+          launchOptions = { ...launchOptions, conflictAnswer: answer }
+          continue
+        }
+        throw error
+      }
+    }
     if (result.reused) {
       console.log(`训练服务已在运行，直接复用 / reusing the running server: ${result.url}`)
-      console.log('如修改过 trainer.config.json 或更换了新版本包，请先运行 Stop.cmd 停止旧服务再启动。/ Config or package changes apply after running Stop.cmd first.')
+      if (result.reusedConflictTrainer) {
+        console.log('已按你的选择从已有进程打开训练器（未新开服务进程）/ opened the existing trainer per your choice (no second server process)')
+      } else {
+        console.log('如修改过 trainer.config.json 或更换了新版本包，请先运行 Stop.cmd 停止旧服务再启动。/ Config or package changes apply after running Stop.cmd first.')
+      }
       if (result.portFallback) console.log(`端口提示 / port note: ${portFallbackNote(result.portFallback)}`)
     } else {
       console.log(`训练服务已启动 / server started: ${result.url}`)
@@ -1531,6 +1979,7 @@ if (require.main === module) {
 
 module.exports = {
   APP_ID,
+  CONFLICT_ASK_CODE,
   DATA_DIR_NAME,
   DEFAULT_PORT,
   LOCK_FILE,
@@ -1538,15 +1987,20 @@ module.exports = {
   SERVER_LOG,
   STATE_FILE,
   acquireLaunchLock,
+  askConflictReuseOrRestart,
   bindCheckPort,
+  enumerateNodeProcessesPS,
   findFallbackPort,
   assertStateIdentity,
   clearState,
   confirmOwnedServer,
   decideRecordedServer,
   inspectPackage,
+  isTrainerCandidateCommandLine,
   isTdxRootPath,
+  killVerifiedTrainer,
   launch,
+  listListenPortsPS,
   loadRestartPlan,
   lockPath,
   main,
@@ -1564,7 +2018,10 @@ module.exports = {
   runSetupRestartAttempt,
   statePath,
   stop,
+  sweepTrainers,
   usage,
+  waitPidExit,
+  waitPortRefused,
   writeStateFile,
   writeRestartStatus,
 }
