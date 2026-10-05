@@ -149,6 +149,58 @@ export function setKdjSubchart(enabled: boolean): void {
   } catch { /* 持久化失败不阻断会话内切换 */ }
 }
 
+// ===== 应用偏好：VOL/MACD 副图显示（M6-04，用户 2026-10-05 验收拍板） =====
+// 与 KDJ 同层同机制（localStorage，默认全开＝现状；三键独立互不影响；不属于录像布局——
+// 旧录像回放按当前开关渲染，无迁移）。读写拆成纯函数便于服务端单测提取执行
+// （server/test/kdj-indicator.test.ts 的 VOL/MACD 用例）。
+
+const VOL_SUBCHART_STORAGE_KEY = 'trainer_vol_subchart'
+const MACD_SUBCHART_STORAGE_KEY = 'trainer_macd_subchart'
+
+/** 读取 VOL 副图偏好：'0'＝关，其余（未设置/异常值）＝默认开 */
+export function readVolSubchartPref(storage: Pick<Storage, 'getItem'>): boolean {
+  return storage.getItem(VOL_SUBCHART_STORAGE_KEY) !== '0'
+}
+
+/** 写入 VOL 副图偏好（'1'/'0'） */
+export function writeVolSubchartPref(storage: Pick<Storage, 'setItem'>, enabled: boolean): void {
+  storage.setItem(VOL_SUBCHART_STORAGE_KEY, enabled ? '1' : '0')
+}
+
+/** 读取 MACD 副图偏好：'0'＝关，其余＝默认开 */
+export function readMacdSubchartPref(storage: Pick<Storage, 'getItem'>): boolean {
+  return storage.getItem(MACD_SUBCHART_STORAGE_KEY) !== '0'
+}
+
+/** 写入 MACD 副图偏好（'1'/'0'） */
+export function writeMacdSubchartPref(storage: Pick<Storage, 'setItem'>, enabled: boolean): void {
+  storage.setItem(MACD_SUBCHART_STORAGE_KEY, enabled ? '1' : '0')
+}
+
+/** VOL 副图显示开关（应用偏好，默认 true）；KlineChart 据此增删副图窗格 */
+export const appVolSubchart = ref(readVolSubchartPref(safeStorage() ?? { getItem: () => null }))
+
+/** MACD 副图显示开关（应用偏好，默认 true）；KlineChart 据此增删副图窗格 */
+export const appMacdSubchart = ref(readMacdSubchartPref(safeStorage() ?? { getItem: () => null }))
+
+/** 切换 VOL 副图显示：立即生效并持久化（localStorage 不可用时保持会话内生效） */
+export function setVolSubchart(enabled: boolean): void {
+  appVolSubchart.value = enabled
+  try {
+    const storage = safeStorage()
+    if (storage) writeVolSubchartPref(storage, enabled)
+  } catch { /* 持久化失败不阻断会话内切换 */ }
+}
+
+/** 切换 MACD 副图显示：立即生效并持久化（localStorage 不可用时保持会话内生效） */
+export function setMacdSubchart(enabled: boolean): void {
+  appMacdSubchart.value = enabled
+  try {
+    const storage = safeStorage()
+    if (storage) writeMacdSubchartPref(storage, enabled)
+  } catch { /* 持久化失败不阻断会话内切换 */ }
+}
+
 // ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====
 
 export function fetchTdxPathSettings(): Promise<TdxPathSettingsView> {

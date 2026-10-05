@@ -1,5 +1,20 @@
 # 更新记录
 
+## 未发布（M6-04 指标开关迁移候选，待人工验收）
+
+- KDJ/VOL/MACD 三个副图指标开关迁至训练页周期按钮行（"日K/周K/月K"所在股票信息行，小号胶囊样式、可区分、aria-pressed 语义保留）；顶栏原 KDJ 按钮删除，其余顶栏元素不动。
+- 新增 VOL、MACD 副图开关并与 KDJ 同机制：三偏好独立 localStorage 持久化（trainer_kdj/vol/macd_subchart，'0' 才是关），默认全开（＝现状）；切换立即挂载/移除对应副图窗格并跨重启保持；重开后副图按追加序排列（规约未钉顺序）。
+- 副图增删统一走 applySubchartPanes（VOL/MACD/KDJ 同入口）；回放 paneHeights 守卫沿用 KDJ 机制：目标窗格不存在（偏好已关）即跳过该项，不把高度写回主图；该偏好不属于录像布局，旧录像回放按当前开关渲染。
+- 工程证据：vitest 全量 112 文件 1441 用例通过（含 kdj-indicator 新增 VOL/MACD 独立键持久化用例）、`npm run build` 通过、journey 浏览器回归 chart-toggles 3/3（同行同区/三开关独立持久化/部分关闭时框选·双击最大化·画线保存恢复不变）＋kdj-indicator 3/3＋pane-resize 6/6（默认全开仍四窗格）；行为矩阵 chart-toggles 三行全部 covered（check-binding --strict exit 0），kdj-subchart KDJ-TOGGLE-PERSIST 补绑新用例。详见 docs/verification/2026-10/M6-04/README.md。
+
+## 未发布（M6-03 悬浮信息卡候选，待人工验收）
+
+- 悬浮信息卡取代 M6-02 涨幅徽标（pct-badge 及其样式/探针移除）：指针停留在同一根 K 线 ≥1000ms（通达信参照）后，在十字线交点右下方显示信息卡；移到另一根 K 线立即隐藏并重新计时（同一根内指针微动不重置计时）；离开图表立即隐藏；键盘十字线（←/→）立即显示（无延时）。
+- 卡内含 日期、开/高/低/收（两位小数）与涨幅（红涨 #ef4444/绿跌 #16a34a/零灰 #94a3b8，两位小数带符号，首根无前收占位"--"灰）六项中文键值行；卡为纯信息层（pointer-events:none，不干扰框选/拖拽/画线/键盘），位置钳制绘图区内不遮价格轴/时间轴、右侧空间不足翻左侧、与指针热点区不相交；星期/量能字段＝呈现类待拍板，默认不加。
+- 主图左上角不再显示开/高/低/收，仅保留 MA(25,60,144) 数值（klinecharts candle legend 模板置空，MA 走库内 indicator legend 不受影响）；训练页与录像回放页共用同一实现（回放按回放数据序列计算，不受只读门控）；卡状态为组件内瞬态 ref，零持久化。
+- 数值与卡内容口径由架构师独立 oracle 锁定（server/test/percent-hover.test.ts 保留 v1 涨幅序列 oracle 并新增卡内容夹具断言，非实现反推；e2e 用同一冻结公式对实时数据独立计算期望）；journey 探针 pctBadge() 移除、新增只读 hoverCard()（测试专用）。
+- 工程证据：vitest 全量 112 文件 1441 用例通过、`npm run build` 通过、journey 浏览器回归 percent-hover 3/3（真实时钟停留 800ms 不可见/≥1200ms 可见、移根重计时、键盘 600ms 内即时、bbox 不遮轴不压指针热点、导出→导入录制的真实回放视图含回放首根"--"）；行为矩阵 candle-percent-hover v2 十行行为全部 covered（strict exit 3 仅剩 CARD-EXTRA-FIELDS proposed_default 待拍板）。详见 docs/verification/2026-10/M6-03/README.md。
+
 ## 未发布（M6-02 涨幅百分比随指针候选，待人工验收）
 
 - 新增每根 K 线涨幅百分比徽标：鼠标悬停或键盘十字线（←/→）所在 K 线相对前一根收盘的涨跌幅在指针附近显示，两位小数带符号（如 "+5.00%" "-2.00%" "0.00%"）；红涨 #ef4444/绿跌 #16a34a/零与无变化灰 #94a3b8（全工程配色约定）；首根（无前收）占位 "--"（灰），前收为 0/非有限同占位（除零保护）。

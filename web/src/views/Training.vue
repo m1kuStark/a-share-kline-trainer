@@ -18,7 +18,7 @@ import {
   KEYBOARD_SHORTCUTS_CHANGED_EVENT, loadKeyboardShortcuts, matchesActionShortcut,
   saveKeyboardShortcuts, shortcutId, type KeyboardShortcutPreferences, type ShortcutAction,
 } from '../keyboardShortcuts'
-import { fetchKeyboardShortcuts } from '../appSettings'
+import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart } from '../appSettings'
 import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
@@ -622,6 +622,14 @@ watch(tf, (value, previous) => {
   recording.finish(op, 'accepted')
   void load()
 })
+
+// M6-04 副图指标开关（VOL/MACD/KDJ）：与周期按钮同行同区的应用偏好（localStorage 独立键，
+// 默认全开）；切换立即增删对应副图窗格并跨重启保持；不属于录像布局，回放按当前开关渲染。
+const indicatorToggles = [
+  { name: 'VOL', label: '成交量', enabled: appVolSubchart, toggle: setVolSubchart },
+  { name: 'MACD', label: 'MACD', enabled: appMacdSubchart, toggle: setMacdSubchart },
+  { name: 'KDJ', label: 'KDJ', enabled: appKdjSubchart, toggle: setKdjSubchart },
+] as const
 void load()
 </script>
 
@@ -635,6 +643,10 @@ void load()
         <div class="training-current-date">当前 <strong>{{ training.currentDate }}</strong><span v-if="training.clockMode === 'open_close'" class="phase-tag">{{ training.currentPhase === 'open' ? '开盘阶段' : '收盘阶段' }}</span></div>
         <div class="timeframe-tabs" role="tablist" aria-label="K线周期">
           <button v-for="item in (['1D', '1W', '1M'] as Timeframe[])" :key="item" role="tab" :aria-selected="tf === item" :class="{ selected: tf === item }" @click="tf = item">{{ item === '1D' ? '日K' : item === '1W' ? '周K' : '月K' }}</button>
+        </div>
+        <!-- M6-04 副图指标开关：与周期按钮同区（股票信息行），aria-pressed 语义保留；off＝虚线灰 -->
+        <div class="indicator-toggles" role="group" aria-label="副图指标开关">
+          <button v-for="item in indicatorToggles" :key="item.name" class="indicator-toggle" :class="{ off: !item.enabled.value }" :aria-pressed="item.enabled.value ? 'true' : 'false'" :title="item.enabled.value ? `${item.label}副图：显示中（点击隐藏）` : `${item.label}副图：已隐藏（点击显示）`" @click="item.toggle(!item.enabled.value)">{{ item.name }}</button>
         </div>
         <details class="training-details" @keydown.esc.prevent.stop="($event.currentTarget as HTMLDetailsElement).open = false">
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>

@@ -86,6 +86,30 @@ async function loadKdjPreferenceFunctions(): Promise<{
   return { read, write }
 }
 
+/** 执行 web/src/appSettings.ts 的 VOL/MACD 偏好读写片段（M6-04，与 KDJ 同层同机制），返回四个纯函数 */
+async function loadVolMacdPreferenceFunctions(): Promise<{
+  readVol: (storage: Pick<Storage, 'getItem'>) => boolean
+  writeVol: (storage: Pick<Storage, 'setItem'>, enabled: boolean) => void
+  readMacd: (storage: Pick<Storage, 'getItem'>) => boolean
+  writeMacd: (storage: Pick<Storage, 'setItem'>, enabled: boolean) => void
+}> {
+  const source = await readFile(new URL('../../web/src/appSettings.ts', import.meta.url), 'utf8')
+  const start = source.indexOf('const VOL_SUBCHART_STORAGE_KEY')
+  const end = source.indexOf('export const appVolSubchart')
+  if (start < 0 || end < 0 || end <= start) throw new Error('VOL/MACD 偏好读写片段未在 appSettings.ts 中找到')
+  const js = ts.transpile(source.slice(start, end), { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS })
+  const exports_: Record<string, unknown> = {}
+  new Function('exports', js)(exports_)
+  const readVol = exports_.readVolSubchartPref as (storage: Pick<Storage, 'getItem'>) => boolean
+  const writeVol = exports_.writeVolSubchartPref as (storage: Pick<Storage, 'setItem'>, enabled: boolean) => void
+  const readMacd = exports_.readMacdSubchartPref as (storage: Pick<Storage, 'getItem'>) => boolean
+  const writeMacd = exports_.writeMacdSubchartPref as (storage: Pick<Storage, 'setItem'>, enabled: boolean) => void
+  if (typeof readVol !== 'function' || typeof writeVol !== 'function' || typeof readMacd !== 'function' || typeof writeMacd !== 'function') {
+    throw new Error('VOL/MACD 偏好导出缺失（readVolSubchartPref/writeVolSubchartPref/readMacdSubchartPref/writeMacdSubchartPref）')
+  }
+  return { readVol, writeVol, readMacd, writeMacd }
+}
+
 function memoryStorage(initial: Record<string, string> = {}): { storage: Storage; items: Record<string, string> } {
   const items: Record<string, string> = { ...initial }
   const storage = {
@@ -165,5 +189,35 @@ describe('M6-01 KDJ indicator (TDX semantics)', () => {
     write(on.storage, true)
     expect(on.items['trainer_kdj_subchart']).toBe('1')
     expect(read(on.storage)).toBe(true)
+  })
+
+  it('persists the VOL and MACD subchart preferences with independent keys, default on (M6-04)', async () => {
+    const { readVol, writeVol, readMacd, writeMacd } = await loadVolMacdPreferenceFunctions()
+    // 未设置 / 异常值 → 默认开（M6-04 拍板：三开关默认全开＝现状）
+    expect(readVol(memoryStorage().storage)).toBe(true)
+    expect(readMacd(memoryStorage().storage)).toBe(true)
+    expect(readVol(memoryStorage({ trainer_vol_subchart: 'garbage' }).storage)).toBe(true)
+    expect(readMacd(memoryStorage({ trainer_macd_subchart: '' }).storage)).toBe(true)
+    // 键独立：关掉 VOL 不影响 MACD（反之亦然）；KDJ 键同样不串
+    const volOff = memoryStorage({ trainer_vol_subchart: '0' })
+    expect(readVol(volOff.storage)).toBe(false)
+    expect(readMacd(volOff.storage)).toBe(true)
+    const macdOff = memoryStorage({ trainer_macd_subchart: '0' })
+    expect(readVol(macdOff.storage)).toBe(true)
+    expect(readMacd(macdOff.storage)).toBe(false)
+    // 写入往返：'1' 开 / '0' 关
+    const off = memoryStorage()
+    writeVol(off.storage, false)
+    writeMacd(off.storage, false)
+    expect(off.items['trainer_vol_subchart']).toBe('0')
+    expect(off.items['trainer_macd_subchart']).toBe('0')
+    expect(readVol(off.storage)).toBe(false)
+    expect(readMacd(off.storage)).toBe(false)
+    writeVol(off.storage, true)
+    writeMacd(off.storage, true)
+    expect(off.items['trainer_vol_subchart']).toBe('1')
+    expect(off.items['trainer_macd_subchart']).toBe('1')
+    expect(readVol(off.storage)).toBe(true)
+    expect(readMacd(off.storage)).toBe(true)
   })
 })

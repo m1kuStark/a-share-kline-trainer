@@ -3,7 +3,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 // M6-01 KDJ 副图（通达信口径）真实浏览器回归：
 // ① 默认偏好开启时 KDJ 副图随 VOL/MACD 同等挂载（窗格语义名/几何）；
-// ② 顶栏开关立即增删窗格并持久化（localStorage + 刷新后保持）；
+// ② 开关（M6-04 起迁至训练页周期按钮行 .indicator-toggles）立即增删窗格并持久化
+//    （localStorage + 刷新后保持；按钮可寻址名不变，断言无需随位置改写）；
 // ③ KDJ 副图与既有窗格交互语义同等：框选缩放可从 KDJ 窗格启动、双击最大化/还原、
 //    画线可落在 KDJ 窗格并以语义名 'KDJ' 保存/恢复。
 // 数值口径（RSV/SMA 平滑/种子 50）由 server/test/kdj-indicator.test.ts 的独立 oracle 锁定，

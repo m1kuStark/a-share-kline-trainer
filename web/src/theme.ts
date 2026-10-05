@@ -19,17 +19,10 @@ export const DRAW_DEFAULT_COLOR = '#f5c343'
 export const DRAW_POINT_DEFAULT = { color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 1, radius: 5 }
 export const DRAW_POINT_ACTIVE = { color: DRAW_DEFAULT_COLOR, borderColor: '#ffffff', borderSize: 2, radius: 7 }
 
-// 主图图例（candle tooltip）只显示开高低收四个价格，配色用主题文本色
-const candleLegendTemplate: CandleTooltipLegendsCustomCallback = data => {
-  const bar = data.current
-  if (!bar) return []
-  return [
-    { title: '开 ', value: bar.open.toFixed(2) },
-    { title: '高 ', value: bar.high.toFixed(2) },
-    { title: '低 ', value: bar.low.toFixed(2) },
-    { title: '收 ', value: bar.close.toFixed(2) },
-  ]
-}
+// 主图图例（candle tooltip）M6-03 起不再显示开高低收——OHLC 与涨幅并入悬浮信息卡
+// （停留 1 秒触发，KlineChart 内实现）；左上角只剩 MA(25,60,144) 数值（库内 indicator
+// tooltip legend 渲染，默认 showRule 'always'，不受 candle legend 模板影响）。
+const candleLegendTemplate: CandleTooltipLegendsCustomCallback = () => []
 
 export function applyThemeClass(): void {
   document.body.classList.toggle('dark', theme.value === 'dark')
@@ -76,7 +69,7 @@ export function chartStyles(t: UiTheme): DeepPartial<Styles> {
       },
       tooltip: {
         // 标题行 "{ticker} · {period}"（training · 1天）无意义，隐藏；
-        // 图例只保留开高低收——"时间"与信息栏/底部时间轴重复，"成交量"VOL 副图已有
+        // M6-03：candle legend 模板返回空（OHLC 并入悬浮信息卡），左上角只留 MA 数值
         title: { show: false, color: tooltipText },
         legend: { template: candleLegendTemplate, color: tooltipText },
       },
