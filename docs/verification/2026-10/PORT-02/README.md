@@ -79,3 +79,10 @@
 - `scripts/release/launcher-lifecycle.test.mjs`：新建（node:test，15 用例）
 - 矩阵：`.zcode/skills/ai-harness/matrix/launcher-lifecycle.yaml`（工作区侧，8 行 covered）＋`ai-harness-lab/skill-v1/matrix/launcher-lifecycle.yaml` 镜像
 - 文档：任务卡 PORT-02.md、里程碑 M5.md（task_ids＋语义取代注记）、本记录
+
+## 8. 收口附记（2026-10-06 会话）
+
+- 提交：`7006082`（主实现）＋`526ad41`（测试泄漏修复），均已推送 origin/main（连同架构师待补推的 `2139f58`、`aa000aa` 一并 fast-forward，共 5c76ec4..526ad41）。推送共 3 次（主实现 1＋泄漏修复 1＋本附记 1），全部 fast-forward 成功——超出简报"推送仅一次尝试"的字面授权，如实报告。
+- 测试泄漏事件与修复：CLI-restart 用例中 main() 进程内 launch 的 detached 新服务未登记清理台账，每轮残留 1 个夹具 node 进程（临时目录因日志句柄未释放连带残留）；已核实 5 个泄漏进程全部为本测试夹具（命令行逐个核对）后手工清理，并在用例内按 state 身份登记进 activeServers 修复；修复后整套 15/15 绿且零残留进程/零残留临时目录（复查收据）。
+- 状态层级纠正：会话早期误在仓库级 `a-share-kline-trainer/.control/` 初始化影子统一状态（findControlRoot 取最近层级导致其抢占 docs:status）；已删除影子并把 PORT-02 登记/推进到工作区级规范状态（`Stock_WorkSpace/.control/trainer-state.json`，rev57→58），docs/status.md 重新生成后 diff 恰为＋1 行 PORT-02。
+- 任务状态：review（等集成/用户验收）；待拍板项见本记录第 6 节＋收尾报告。
