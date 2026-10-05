@@ -13,7 +13,7 @@ export type HistoryIntegrity = 'ok' | 'unavailable'
 /** 结算方式（不认证历史数据完整性）：complete=到期结算，early-settled=提前结算。 */
 export type HistoryClassification = 'complete' | 'early-settled'
 /** RANGE 训练如实标注 preset/latest/bars；旧五档周期训练为 tier，绝不并入五档。 */
-export type HistoryRangeMode = 'tier' | 'preset' | 'latest' | 'bars'
+export type HistoryRangeMode = 'tier' | 'preset' | 'latest' | 'bars' | 'random'
 
 export const HISTORY_LIST_DEFAULT_LIMIT = 20
 
@@ -102,7 +102,7 @@ interface HistoryRow {
   rules_json: string | null
 }
 
-const RANGE_MODES: readonly string[] = ['preset', 'latest', 'bars']
+const RANGE_MODES: readonly string[] = ['preset', 'latest', 'bars', 'random']
 
 function rangeModeOf(row: Pick<HistoryRow, 'range_mode'>): HistoryRangeMode {
   return RANGE_MODES.includes(row.range_mode) ? row.range_mode as HistoryRangeMode : 'tier'
@@ -197,7 +197,7 @@ export interface HistoryReportTraining {
   initialCash: number
   createdAt: string
   range?: {
-    mode: 'preset' | 'latest' | 'bars'
+    mode: 'preset' | 'latest' | 'bars' | 'random'
     requestedStart: string
     requestedEnd: string | null
     startDate: string
@@ -297,7 +297,7 @@ export function historyReport(database: DatabaseSync, id: number): HistoryReport
     .filter(point => point.date >= startDate && point.date <= settleDate)
   const range = row.range_version === 1 && row.range_start && row.range_end
     ? {
-        mode: rangeModeOf(row) as 'preset' | 'latest' | 'bars',
+        mode: rangeModeOf(row) as 'preset' | 'latest' | 'bars' | 'random',
         requestedStart: row.requested_start ?? row.range_start,
         requestedEnd: row.requested_end,
         startDate: row.range_start,

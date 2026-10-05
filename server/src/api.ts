@@ -23,6 +23,8 @@ import { ensureRecordingNamespace } from './db.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
 import { registerRecordingContextRoutes } from './recording-context.js'
+// M7-01 随机训练模式：POST /api/trainings/random＋隐藏层钩子（经统一注册进入 drain 门闩）
+import { registerRandomTrainingSupport } from './train/random-mode.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining, retrainTraining,
   cancelOrder, equityCurveOf, ordersOf, placeOrder, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
@@ -279,6 +281,8 @@ export async function registerApi(
   registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
   // V1.2.6：训练数据目录设置（写回启动器配置 dataDir，重启生效；独立运行 409）
   registerDataDirSettingsRoutes(app, config)
+  // M7-01 随机训练模式：创建端点＋preHandler（请求侧去偏移）/onSend（响应侧遮蔽）钩子
+  registerRandomTrainingSupport(app, database, config)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
   let stockRefresh: Promise<Awaited<ReturnType<typeof refreshStockCatalog>>> | null = null
   let adjustmentRefresh: Promise<Awaited<ReturnType<typeof refreshAdjustmentCache>>> | null = null

@@ -22,6 +22,8 @@ import { industryByCode, loadIndustryCatalog } from '../tdx/industry.js'
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'
 /** 范围模式训练在 tier 列中的哨兵值：绝不伪装成五档周期（TRAIN-02）。 */
 export const RANGE_TIER_SENTINEL = 'RANGE'
+/** M7-01 随机训练模式维度：random_stock=随机股票、random_time=随机时间窗、random_both=全随机 */
+export type RandomDimension = 'random_stock' | 'random_time' | 'random_both'
 export type TrainingStatus = 'running' | 'settled' | 'abandoned'
 export type ClockMode = 'close_only' | 'open_close'
 export type TrainingPhase = 'open' | 'close'
@@ -39,7 +41,7 @@ export class HttpError extends Error {
   }
 }
 
-interface TrainingRow {
+export interface TrainingRow {
   id: number
   tier: string
   code: string
@@ -73,12 +75,17 @@ interface TrainingRow {
   industry_id: string | null
   industry_name: string | null
   industry_source_sha256: string | null
+  /** M7-01：随机维度；NULL=经典训练 */
+  random_mode: string | null
+  /** M7-01：隐藏时间的会话级常量偏移（天）；NULL=不隐藏时间 */
+  random_time_offset_days: number | null
 }
 
 /** 训练查询响应的可选 range 对象：version/mode/requested/actual/指纹与notes（TRAIN-02 冻结合同）。 */
 export interface TrainingRangeMeta {
   version: number
-  mode: 'preset' | 'latest' | 'bars'
+  /** M7-01 起随机训练为 'random'（仅服务端写入；客户端 range 请求仍只接受 preset/latest/bars） */
+  mode: 'preset' | 'latest' | 'bars' | 'random'
   requestedStart: string
   requestedEnd: string | null
   startDate: string
@@ -115,6 +122,8 @@ export interface TrainingMeta {
   rules?: TrainingRulesV1
   /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
   range?: TrainingRangeMeta
+  /** 仅随机模式训练（M7-01）；运行中由隐藏层注入/由创建响应携带，结算后随隐藏停用而消失 */
+  random?: { dimension: RandomDimension; hideStock: boolean; hideTime: boolean }
 }
 
 export interface AccountView {
@@ -183,7 +192,7 @@ function parseRangeNotes(raw: string | null): string[] {
   }
 }
 
-function toMeta(row: TrainingRow): TrainingMeta {
+export function toMeta(row: TrainingRow): TrainingMeta {
   const masked = row.blind === 1 && row.status === 'running'
   const range = row.range_version === 1 && row.range_start && row.range_end
     ? {
@@ -261,7 +270,7 @@ export function addMonths(date: string, months: number): string {
 // 训练/结算的 bars/actions/coverage/version 读取一律经 MarketDataReader（server/src/data/reader.ts），
 // 不再直读 TDX 文件路径。来源解析与刷新扫描同口径：config.tdxRoot 非空→TDX；否则注册的
 // 替代读取器（测试夹具/未来在线来源）；均不可用→保持既有 503 状态码合约。
-async function marketReader(database: DatabaseSync, config: AppConfig): Promise<MarketDataReader> {
+export async function marketReader(database: DatabaseSync, config: AppConfig): Promise<MarketDataReader> {
   try {
     return await resolveMarketReader(database, config)
   } catch (error) {
@@ -359,7 +368,7 @@ export async function createTraining(database: DatabaseSync, config: AppConfig, 
   return toMeta(loadTrainingRow(database, id))
 }
 
-interface TrainingCreationRow {
+export interface TrainingCreationRow {
   tier: string
   code: string
   name: string
@@ -390,9 +399,11 @@ interface TrainingCreationRow {
   currentPhase: TrainingPhase
   clockMode: ClockMode
   ordersEnabled: boolean
+  /** M7-01 随机模式元数据；缺省=经典训练（两列写 NULL） */
+  random?: { mode: string; offsetDays: number | null }
 }
 
-async function industrySnapshot(config: AppConfig, code: string): Promise<{ id: string; name: string; sha256: string } | null> {
+export async function industrySnapshot(config: AppConfig, code: string): Promise<{ id: string; name: string; sha256: string } | null> {
   const catalog = await loadIndustryCatalog(config)
   if (!catalog.ok) return null
   const entry = industryByCode(catalog.catalog).get(code)
@@ -404,7 +415,7 @@ async function industrySnapshot(config: AppConfig, code: string): Promise<{ id: 
 // 任一失败整体回滚，不留孤儿训练行。旧tier与范围模式路径共用。
 // TRAIN-01：规则默认在提交事务边界内读取（不用 await 前缓存的旧值），与训练行、
 // 初始权益同事务共提交，失败全回滚。
-function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow): number {
+export function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow): number {
   database.exec('BEGIN IMMEDIATE')
   try {
     const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
@@ -443,25 +454,29 @@ function commitTrainingCreation(database: DatabaseSync, row: TrainingCreationRow
       ? database.prepare(`
           INSERT INTO trainings (
             tier, code, name, market, start_date, planned_end, status, blind,
-            adjust_mode, initial_cash, created_at, current_date, current_close, industry_id, industry_name, industry_source_sha256, rules_json
-          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            adjust_mode, initial_cash, created_at, current_date, current_close, industry_id, industry_name, industry_source_sha256, rules_json,
+            random_mode, random_time_offset_days
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
           row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose, row.industry?.id ?? null, row.industry?.name ?? null, row.industry?.sha256 ?? null, rulesJson,
+          row.random?.mode ?? null, row.random?.offsetDays ?? null,
         )
       : database.prepare(`
           INSERT INTO trainings (
             tier, code, name, market, start_date, planned_end, status, blind,
             adjust_mode, initial_cash, created_at, current_date, current_close,
             range_version, range_mode, requested_start, requested_end, range_start, range_end,
-            range_bar_count, range_source_fingerprint, range_notes, industry_id, industry_name, industry_source_sha256, rules_json
-          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            range_bar_count, range_source_fingerprint, range_notes, industry_id, industry_name, industry_source_sha256, rules_json,
+            random_mode, random_time_offset_days
+          ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           row.tier, row.code, row.name, row.market, row.startDate, row.plannedEnd,
           row.blind, adjustMode, initialCash, row.createdAt, row.currentDate, row.currentClose,
           row.range.mode, row.range.requestedStart, row.range.requestedEnd,
           row.startDate, row.plannedEnd, row.range.barCount, row.range.fingerprint, JSON.stringify(row.range.notes), row.industry?.id ?? null, row.industry?.name ?? null, row.industry?.sha256 ?? null,
           rulesJson,
+          row.random?.mode ?? null, row.random?.offsetDays ?? null,
         )
     const id = Number(result.lastInsertRowid)
     database.prepare(`
@@ -543,7 +558,7 @@ interface StoredRangePreview {
 
 const rangePreviews = new Map<string, StoredRangePreview>()
 
-function shanghaiCompleteDataDate(now: Date): string {
+export function shanghaiCompleteDataDate(now: Date): string {
   const shifted = new Date(now.getTime() + SHANGHAI_OFFSET_MS)
   if (shifted.getUTCHours() * 60 + shifted.getUTCMinutes() < MARKET_CLOSE_MINUTES) {
     shifted.setTime(shifted.getTime() - 86_400_000)
@@ -599,7 +614,7 @@ function stalePreview(message: string): HttpError {
 }
 
 // 权息基准与完整日线一起进入指纹：未来权息变化会改变历史前复权价格，预览必须随之失效。
-function rangeFingerprint(
+export function rangeFingerprint(
   market: string,
   code: string,
   bars: DayBar[],
@@ -1335,8 +1350,9 @@ export async function retrainTraining(database: DatabaseSync, config: AppConfig,
         adjust_mode, initial_cash, created_at, current_date, current_close,
         range_version, range_mode, requested_start, requested_end, range_start, range_end,
         range_bar_count, range_source_fingerprint, range_notes,
-        industry_id, industry_name, industry_source_sha256, rules_json
-      ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        industry_id, industry_name, industry_source_sha256, rules_json,
+        random_mode, random_time_offset_days
+      ) VALUES (?, ?, ?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       fresh.tier, fresh.code, fresh.name, fresh.market, fresh.start_date, fresh.planned_end,
       fresh.blind, fresh.adjust_mode, fresh.initial_cash, createdAt, fresh.start_date, startBar.close,
@@ -1346,6 +1362,8 @@ export async function retrainTraining(database: DatabaseSync, config: AppConfig,
       fresh.industry_name,
       fresh.industry_source_sha256,
       fresh.rules_json,
+      fresh.random_mode,
+      fresh.random_time_offset_days,
     )
     const newId = Number(result.lastInsertRowid)
     database.prepare('UPDATE trainings SET current_open = ?, current_phase = ?, clock_mode = ?, orders_enabled = ?, current_close = ? WHERE id = ?').run(
