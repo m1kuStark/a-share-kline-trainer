@@ -351,9 +351,18 @@ const isTyping = (event: KeyboardEvent) => event.isComposing || !!(event.target 
 const tierLabel = computed(() => {
   if (training.value.tier === 'RANGE') {
     const range = training.value.range
+    if (range?.mode === 'random') return `随机窗口 ${range.barCount} 根`
     return range ? `自定义范围 ${range.startDate} ~ ${range.endDate}` : '自定义范围'
   }
   return ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier)
+})
+// ===== M7-02 随机模式遮蔽呈现：hideStock 会话标题显示占位（文案 proposed_default）＋随机模式徽标；
+// 日期字段按服务端偏移后数据原样呈现（前端不做二次变换）；结束态服务端不再下发 random 字段，
+// 徽标自然退场、真实名称顶上（揭晓）。经典标题组合式保持在模板内联（frontend-contract 源码契约）。 =====
+const maskedStock = computed(() => training.value.random?.hideStock === true)
+const randomDimensionLabel = computed(() => {
+  const dimension = training.value.random?.dimension
+  return dimension === 'random_stock' ? '随机股票' : dimension === 'random_time' ? '随机时段' : dimension === 'random_both' ? '全随机' : ''
 })
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
@@ -722,8 +731,11 @@ void load()
   <div class="training-shell">
     <header class="training-topbar" :inert="preparingRecording" @keydown.space.stop>
       <div class="training-context">
-        <div class="workspace-title" :title="training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}`">
-          {{ training.blind ? `盲训 · ${tierLabel}` : `${training.name ?? ''} · ${training.code ?? ''}` }}
+        <div class="title-row">
+          <div class="workspace-title" :title="training.blind ? `盲训 · ${tierLabel}` : maskedStock ? '随机标的 · 已隐藏' : `${training.name ?? ''} · ${training.code ?? ''}`">
+            {{ training.blind ? `盲训 · ${tierLabel}` : maskedStock ? '随机标的 · 已隐藏' : `${training.name ?? ''} · ${training.code ?? ''}` }}
+          </div>
+          <span v-if="training.random" class="random-mode-badge" :title="`随机模式 · ${randomDimensionLabel}`">随机模式</span>
         </div>
         <div class="training-current-date">当前 <strong>{{ training.currentDate }}</strong><span v-if="training.clockMode === 'open_close'" class="phase-tag">{{ training.currentPhase === 'open' ? '开盘阶段' : '收盘阶段' }}</span></div>
         <div class="timeframe-tabs" role="tablist" aria-label="K线周期">
@@ -985,6 +997,10 @@ void load()
 </template>
 
 <style scoped>
+/* M7-02 随机模式：标题行（标题＋徽标）与徽标样式（双主题，沿 phase-tag 胶囊风格） */
+.title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.random-mode-badge { flex: none; display: inline-flex; padding: 2px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
+:global(body.dark) .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .recording-strip { position: relative; display: flex; align-items: center; gap: 8px; font-size: 11px; white-space: nowrap; }
 .recording-strip label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .recording-strip .ghost-button { padding: 2px 7px; font-size: 11px; }

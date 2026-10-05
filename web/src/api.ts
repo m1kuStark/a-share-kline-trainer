@@ -17,7 +17,8 @@ export type TrainingTier = Tier | 'RANGE'
 /** 服务端 TrainingRangeMeta 的前端镜像（version/mode/requested/actual/指纹与notes） */
 export interface TrainingRangeMeta {
   version: 1
-  mode: 'preset' | 'latest' | 'bars'
+  /** M7-01 起随机训练为 'random'（仅服务端写入；客户端 range 请求仍只接受 preset/latest/bars） */
+  mode: 'preset' | 'latest' | 'bars' | 'random'
   requestedStart: string
   requestedEnd: string | null
   startDate: string
@@ -51,6 +52,16 @@ export interface TrainingRangePreview {
   expiresAt: string
 }
 
+/** M7-01 随机训练模式维度：random_stock=随机股票、random_time=随机时间窗、random_both=全随机 */
+export type RandomDimension = 'random_stock' | 'random_time' | 'random_both'
+
+/** 运行中随机会话的隐藏说明（服务端隐藏层注入；结束态不再下发＝揭晓） */
+export interface RandomTrainingMeta {
+  dimension: RandomDimension
+  hideStock: boolean
+  hideTime: boolean
+}
+
 export interface TrainingMeta {
   id: number
   tier: TrainingTier
@@ -77,6 +88,8 @@ export interface TrainingMeta {
   rules?: TrainingRulesView
   /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
   range?: TrainingRangeMeta
+  /** 仅运行中的随机训练存在（M7-01 隐藏层注入）；结算/放弃后消失＝真实信息揭晓 */
+  random?: RandomTrainingMeta
 }
 
 /** 服务端训练规则快照镜像（trainings.rules_json v1；TRAIN-01 冻结合同） */
@@ -414,6 +427,29 @@ export function createTraining(input: { tier?: Tier; code: string; start_date?: 
   })
 }
 
+/** 随机训练创建（M7-01 契约 §2.1）：random_stock 需 start_date/end_date；random_time 需 code
+ * （可选 window_bars 缺省 250）；random_both 可选 window_bars；code/start_date/end_date 与维度矛盾时 400。
+ * 422 错误码：RANDOM_WINDOW_NOT_FIT（无可行窗口起点）/ RANDOM_STOCK_UNIVERSE_EMPTY（随机池为空）。 */
+export interface RandomTrainingRequest {
+  dimension: RandomDimension
+  start_date?: string
+  end_date?: string
+  code?: string
+  window_bars?: number
+  initial_cash?: number
+  adjust_mode?: 'forward' | 'raw'
+  clock_mode?: 'close_only' | 'open_close'
+  orders_enabled?: boolean
+}
+
+export function createRandomTraining(input: RandomTrainingRequest): Promise<{ training: TrainingMeta }> {
+  return request('/api/trainings/random', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
 export function fetchActiveTraining(): Promise<TrainingSnapshot | { training: null }> {
   return request('/api/trainings/active')
 }
@@ -489,7 +525,7 @@ export function saveTradeNote(trainingId: number, seq: number, note: string): Pr
 
 // ===== 结算历史与只读事实成绩单（M4-HISTORY-01；只读查询，运行中训练存在时服务端 409） =====
 
-export type HistoryRangeMode = 'tier' | 'preset' | 'latest' | 'bars'
+export type HistoryRangeMode = 'tier' | 'preset' | 'latest' | 'bars' | 'random'
 
 /** 结算方式（不认证数据完整性）：complete=到期结算，early-settled=提前结算 */
 export type HistoryClassification = 'complete' | 'early-settled'
@@ -554,7 +590,7 @@ export interface HistoryReportTraining {
   initialCash: number
   createdAt: string
   range?: {
-    mode: 'preset' | 'latest' | 'bars'
+    mode: 'preset' | 'latest' | 'bars' | 'random'
     requestedStart: string
     requestedEnd: string | null
     startDate: string

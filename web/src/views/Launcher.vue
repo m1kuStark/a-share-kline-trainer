@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { createTraining, fetchTrainingSettings, previewTrainingRange, searchStocks, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest, type TrainingSettingsView } from '../api'
+import { ApiError, createRandomTraining, createTraining, fetchTrainingSettings, previewTrainingRange, searchStocks, type RandomDimension, type RandomTrainingRequest, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest, type TrainingSettingsView } from '../api'
 import { minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { lastSavedSettings, settingsSavedVersion } from '../settingsPanel'
@@ -9,6 +9,35 @@ const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record
 const recordingEnabled = ref(true)
 const clockMode = ref<'close_only' | 'open_close'>('close_only')
 const ordersEnabled = ref(false)
+
+// ===== M7-02 首页模式标签：经典模式（原表单）｜随机模式（复用同一面板，按维度显隐） =====
+const mode = ref<'classic' | 'random'>('classic')
+const randomDimension = ref<RandomDimension>('random_stock')
+const windowBars = ref(250)
+const RANDOM_DIMENSIONS: Array<{ value: RandomDimension; label: string; hint: string }> = [
+  { value: 'random_stock', label: '随机股票 · 我选时间段', hint: '选定时间段内由服务器随机选股，结算前隐藏股票名称与代码' },
+  { value: 'random_time', label: '随机时间段 · 我选股票', hint: '由服务器在该股票历史中随机选一段行情，结算前隐藏真实日期（图表日期为偏移伪日期）' },
+  { value: 'random_both', label: '全随机', hint: '股票与时间段都由服务器随机，双重隐藏，结算后揭晓' },
+]
+const dimensionHint = computed(() => RANDOM_DIMENSIONS.find(item => item.value === randomDimension.value)?.hint ?? '')
+/** 股票选择器：经典始终显示；随机模式仅 random_time（用户选股） */
+const showStockPicker = computed(() => mode.value === 'classic' || randomDimension.value === 'random_time')
+/** 经典 preset 起始日＋行内初始资金（原布局）；随机模式不渲染该行内组合 */
+const showPresetStart = computed(() => mode.value === 'classic' && tier.value !== 'RANGE')
+/** 起止日输入（复用 rangeStart/rangeEnd）：经典自定义范围｜随机 random_stock */
+const showRangeDates = computed(() => mode.value === 'classic' ? tier.value === 'RANGE' : randomDimension.value === 'random_stock')
+/** 训练窗口长度：仅随机 random_time / random_both */
+const showWindowBars = computed(() => mode.value === 'random' && randomDimension.value !== 'random_stock')
+
+function setMode(next: 'classic' | 'random'): void {
+  if (mode.value === next) return
+  mode.value = next
+  errorMessage.value = ''
+}
+function onDimensionClick(dimension: RandomDimension): void {
+  randomDimension.value = dimension
+  errorMessage.value = ''
+}
 
 // ===== 股票选择（UI-03 用户反馈）：代码/名称双框联动 =====
 // 任一框输入即清空另一框与已选股票（重新选择从两框空白开始）；所有匹配结果
@@ -94,7 +123,7 @@ const errorMessage = ref('')
 
 // 数据状态到达/变化后，手填过的起始日不覆盖；未动过则随最新锚点重算（选股、刷新不打扰）
 watch(dataStatus, () => {
-  if (tier.value !== 'RANGE' && !startDateTouched.value) {
+  if (mode.value === 'classic' && tier.value !== 'RANGE' && !startDateTouched.value) {
     startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[tier.value])
   }
 })
@@ -209,7 +238,7 @@ function onAdjustModeChanged(): void {
 }
 
 async function generateRangePreview(): Promise<boolean> {
-  if (tier.value !== 'RANGE' || !selected.value || previewing.value) return false
+  if (mode.value !== 'classic' || tier.value !== 'RANGE' || !selected.value || previewing.value) return false
   if (!rangeStart.value || !rangeEnd.value || rangeEnd.value < rangeStart.value) return false
   const versionAtRequest = inputVersion
   const requestAtRequest = currentRangeRequest()
@@ -247,9 +276,10 @@ function hasMatchingPreview(request: TrainingRangeRequest): boolean {
 }
 
 let previewTimer: ReturnType<typeof setTimeout> | null = null
-/** 自动校验：自定义范围下选中股票且输入合法时防抖触发（UI-03：去掉意义不明的手动按钮） */
+/** 自动校验：经典自定义范围下选中股票且输入合法时防抖触发（UI-03：去掉意义不明的手动按钮）；
+ *  随机模式不生成范围校验（窗口合法性由服务端随机池保证） */
 function schedulePreviewGeneration(): void {
-  if (tier.value !== 'RANGE' || !selected.value) return
+  if (mode.value !== 'classic' || tier.value !== 'RANGE' || !selected.value) return
   if (previewTimer) clearTimeout(previewTimer)
   previewTimer = setTimeout(() => {
     previewTimer = null
@@ -259,7 +289,7 @@ function schedulePreviewGeneration(): void {
 }
 
 watch([tier, rangeStart, rangeEnd, adjustMode, selected], () => {
-  if (tier.value !== 'RANGE' || !selected.value) return
+  if (mode.value !== 'classic' || tier.value !== 'RANGE' || !selected.value) return
   if (hasMatchingPreview(currentRangeRequest())) return
   schedulePreviewGeneration()
 })
@@ -310,6 +340,10 @@ async function submit(): Promise<void> {
 async function performCreate(): Promise<void> {
   if (submitting.value) return
   errorMessage.value = ''
+  if (mode.value === 'random') {
+    await performRandomCreate()
+    return
+  }
   if (!selected.value) {
     errorMessage.value = '请先在搜索结果中点击选择一只股票'
     return
@@ -409,17 +443,93 @@ function confirmStartAnyway(): void {
   showDataConfirm.value = false
   void performCreate()
 }
+
+// ===== M7-02 随机模式创建：POST /api/trainings/random（契约=M7-01 design.md §2.1） =====
+// 载荷按维度组装：random_stock=start_date+end_date；random_time=code+window_bars；
+// random_both=window_bars（不带 code/起止日）；initial_cash/adjust_mode/clock_mode/orders_enabled 与经典同语义。
+async function performRandomCreate(): Promise<void> {
+  const cash = Number(initialCash.value)
+  if (!Number.isFinite(cash) || cash <= 0) {
+    errorMessage.value = '初始资金必须是正数（默认 1,000,000）'
+    return
+  }
+  const params: RandomTrainingRequest = {
+    dimension: randomDimension.value,
+    initial_cash: cash,
+    adjust_mode: adjustMode.value,
+    clock_mode: clockMode.value,
+    orders_enabled: ordersEnabled.value,
+  }
+  if (randomDimension.value === 'random_stock') {
+    if (!rangeStart.value) {
+      errorMessage.value = '请选择范围起始日'
+      return
+    }
+    if (!rangeEnd.value) {
+      errorMessage.value = '请选择范围结束日'
+      return
+    }
+    if (rangeEnd.value < rangeStart.value) {
+      errorMessage.value = '结束日不能早于起始日，请调整日期范围'
+      return
+    }
+    params.start_date = rangeStart.value
+    params.end_date = rangeEnd.value
+  }
+  if (randomDimension.value === 'random_time') {
+    if (!selected.value) {
+      errorMessage.value = '请先在搜索结果中点击选择一只股票'
+      return
+    }
+    params.code = selected.value.code
+  }
+  if (randomDimension.value !== 'random_stock') {
+    const window = Math.floor(Number(windowBars.value))
+    if (!Number.isSafeInteger(window) || window < 20 || window > 2000) {
+      errorMessage.value = '训练窗口长度需为 20–2000 的整数（默认 250）'
+      return
+    }
+    params.window_bars = window
+  }
+  submitting.value = true
+  try {
+    await createRandomTraining(params)
+    // 录像 createdParams 是不透明 JSON 袋（经典分支同样以字面量整包透传），此处显式 widening
+    emit('created', { enabled: recordingEnabled.value, params: params as unknown as Record<string, string | number | boolean | TrainingRangeRequest> })
+  } catch (error) {
+    errorMessage.value = randomCreateErrorMessage(error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+/** 两类 422 映射为人话提示（M7-02 简报决策 3，文案 proposed_default）；其余错误原样呈现服务端 message */
+function randomCreateErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.code === 'RANDOM_WINDOW_NOT_FIT') return '该股票数据不足以容纳所选窗口，请缩短窗口或换股票'
+    if (error.code === 'RANDOM_STOCK_UNIVERSE_EMPTY') return '本地数据中没有满足窗口的股票，请缩短窗口或更新数据'
+  }
+  return error instanceof Error ? error.message : '创建失败'
+}
 </script>
 
 <template>
   <div class="launcher">
     <header class="launcher-head">
       <h1>创建训练</h1>
-      <p>选一只股票、一个周期档和一个起始日，从起始日向前盲走训练。创建后复权方式锁定，训练中不可切换。</p>
+      <p>{{ mode === 'random'
+        ? '服务器随机选股或随机选时段，训练中隐藏对应信息，结算后揭晓。创建后复权方式锁定，训练中不可切换。'
+        : '选一只股票、一个周期档和一个起始日，从起始日向前盲走训练。创建后复权方式锁定，训练中不可切换。' }}</p>
     </header>
 
+    <!-- M7-02 模式标签：经典模式（原表单）｜随机模式（复用同一面板，按维度显隐） -->
+    <div class="mode-tabs" role="tablist" aria-label="训练模式">
+      <button role="tab" :aria-selected="mode === 'classic'" :class="{ selected: mode === 'classic' }" @click="setMode('classic')">经典模式</button>
+      <button role="tab" :aria-selected="mode === 'random'" :class="{ selected: mode === 'random' }" @click="setMode('random')">随机模式</button>
+    </div>
+
     <section class="launcher-form">
-      <div class="form-field wide stock-field">
+      <div v-if="showStockPicker" class="form-field wide stock-field">
         <label>股票</label>
         <div class="stock-input-row">
           <input v-model="codeText" placeholder="股票代码，如 600519" aria-label="股票代码" @input="onCodeInput" />
@@ -436,38 +546,54 @@ function confirmStartAnyway(): void {
         <small v-else-if="suggestions.length" class="form-hint">请点击下方检索结果确认股票</small>
       </div>
 
-      <div class="form-field">
+      <!-- 随机维度三选一（仅随机模式；选项文案 proposed_default，见 M7-02 design.md §三） -->
+      <div v-if="mode === 'random'" class="form-field wide">
+        <label>随机维度</label>
+        <div class="tier-grid" role="group" aria-label="随机维度">
+          <button v-for="item in RANDOM_DIMENSIONS" :key="item.value" :class="{ selected: randomDimension === item.value }" @click="onDimensionClick(item.value)">{{ item.label }}</button>
+        </div>
+        <small class="form-hint">{{ dimensionHint }}</small>
+      </div>
+
+      <div v-if="mode === 'classic'" class="form-field">
         <label>训练周期</label>
         <div class="tier-grid">
           <button v-for="item in tiers" :key="item.value" :class="{ selected: tier === item.value }" @click="onTierClick(item.value)">{{ item.label }}</button>
         </div>
       </div>
 
-      <div class="form-row">
+      <div v-if="showPresetStart || showRangeDates" class="form-row">
         <div class="form-field">
           <label>起始日</label>
-          <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" @input="startDateTouched = true" />
-          <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged()" />
-          <small v-if="tier !== 'RANGE'" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
-          <small v-else class="form-hint">自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）</small>
+          <input v-if="showPresetStart" v-model="startDate" type="date" @input="startDateTouched = true" />
+          <input v-else v-model="rangeStart" type="date" @input="mode === 'classic' ? onRangeInputChanged() : (errorMessage = '')" />
+          <small v-if="showPresetStart" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
+          <small v-else class="form-hint">{{ mode === 'classic' ? '自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）' : '随机股票在此时间段内由服务器选取；起始日自动对齐到前方最近的交易日' }}</small>
         </div>
-        <div v-if="tier !== 'RANGE'" class="form-field">
+        <div v-if="showPresetStart" class="form-field">
           <label>初始资金</label>
           <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
         </div>
         <div v-else class="form-field">
           <label>结束日</label>
-          <input v-model="rangeEnd" type="date" @input="onRangeInputChanged()" />
-          <small class="form-hint">包含起止日期之间可用的交易日；不能选择未来日期</small>
+          <input v-model="rangeEnd" type="date" @input="mode === 'classic' ? onRangeInputChanged() : (errorMessage = '')" />
+          <small class="form-hint">{{ mode === 'classic' ? '包含起止日期之间可用的交易日；不能选择未来日期' : '数据需覆盖到结束日；窗口内至少包含 2 个交易日' }}</small>
         </div>
       </div>
 
-      <div v-if="tier === 'RANGE'" class="form-field">
+      <!-- 训练窗口长度（仅随机 random_time / random_both；默认 250，范围 20–2000） -->
+      <div v-if="showWindowBars" class="form-field">
+        <label>训练窗口长度（交易日）</label>
+        <input v-model.number="windowBars" type="number" min="20" max="2000" step="10" aria-label="训练窗口长度（交易日）" />
+        <small class="form-hint">默认 250，范围 20–2000；需保证所选股票（或本地数据）历史足够长</small>
+      </div>
+
+      <div v-if="!showPresetStart" class="form-field">
         <label>初始资金</label>
         <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
       </div>
 
-      <div v-if="tier === 'RANGE'" class="form-field wide">
+      <div v-if="mode === 'classic' && tier === 'RANGE'" class="form-field wide">
         <div v-if="clampNotice" class="form-hint clamp-notice">{{ clampNotice }}</div>
         <div v-if="rangePreview" class="form-hint">
           <strong>范围校验</strong>：请求 {{ rangePreview.request.startDate }} ~ {{ rangePreview.request.endDate }}；
@@ -477,8 +603,8 @@ function confirmStartAnyway(): void {
         <div v-else-if="previewing" class="form-hint">范围校验生成中…</div>
       </div>
 
-      <!-- 双盲遮蔽已从 V1 移除（股票由用户手动选定，隐藏名称无意义）；
-           随机股票＋随机时间的真盲测模式为 V2 候选，届时复用服务端休眠的 blind 遮蔽基建 -->
+      <!-- 经典双盲遮蔽已从 V1 移除（股票由用户手动选定，隐藏名称无意义）；
+           随机隐藏已由 M7 随机模式承接（服务端 API 级隐藏，见 POST /api/trainings/random） -->
       <div class="form-field">
         <label>复权方式（创建后锁定）</label>
         <div class="tier-grid">
@@ -527,3 +653,12 @@ function confirmStartAnyway(): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* M7-02 模式标签：沿用训练页 timeframe-tabs 的下划线风格（双主题） */
+.mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
+.mode-tabs button { border: 0; background: transparent; padding: 7px 16px; font-size: 14px; color: var(--text-secondary, #77869a); border-bottom: 2px solid transparent; cursor: pointer; }
+.mode-tabs button.selected { color: #245a72; border-bottom-color: #2e8191; font-weight: 600; }
+.mode-tabs button:focus-visible { outline: 2px solid #2e8191; outline-offset: -2px; }
+:global(body.dark) .mode-tabs button.selected { color: #ffffff; border-bottom-color: #c4c4c4; }
+</style>

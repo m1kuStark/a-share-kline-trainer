@@ -62,7 +62,8 @@ function turnPage(direction: -1 | 1): void {
 }
 
 const TIER_LABELS: Record<string, string> = { '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }
-const RANGE_MODE_LABELS: Record<string, string> = { preset: '自定义·预设', latest: '自定义·到最新', bars: '自定义·日K根数' }
+// random＝M7 随机训练（结算后真实信息已揭晓，档位标签不再误报「自定义范围」）
+const RANGE_MODE_LABELS: Record<string, string> = { preset: '自定义·预设', latest: '自定义·到最新', bars: '自定义·日K根数', random: '随机模式' }
 function tierText(item: HistoryItem): string {
   return item.tier === 'RANGE' ? (RANGE_MODE_LABELS[item.rangeMode] ?? '自定义范围') : (TIER_LABELS[item.tier] ?? item.tier)
 }
