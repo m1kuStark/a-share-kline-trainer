@@ -3,7 +3,7 @@ import cors from '@fastify/cors'
 import staticFiles from '@fastify/static'
 import { registerApi } from './api.js'
 import { registerSetupControlApi } from './setup/control-api.js'
-import { createDrainController } from './setup/drain-controller.js'
+import { createDrainController, type DrainController } from './setup/drain-controller.js'
 import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
@@ -28,6 +28,12 @@ export interface StartedTrainerServer {
   url: string
   port: number
   shutdown(): Promise<void>
+  /**
+   * PACK-02 优雅退出接线：SETUP-01 冻结排空控制器本体。进程内宿主（Electron 主进程）
+   * 复用同一排空语义（prepare→shutdown）的通道——不新造退出协议；HTTP 控制端点的严格
+   * 守卫（拒活动训练）面向一次性助手，进程内宿主走 in-app 退出口径（allowActiveTraining）。
+   */
+  drain: DrainController
 }
 
 export async function startTrainerServer(): Promise<StartedTrainerServer> {
@@ -76,7 +82,7 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   const url = await app.listen({ port: config.port, host: config.host })
   const address = app.server.address()
   if (!address || typeof address === 'string') throw new Error('Server did not bind a TCP port')
-  return { app, config, url, port: address.port, shutdown }
+  return { app, config, url, port: address.port, shutdown, drain: drainController }
 }
 
 /** 直接以进程入口运行本文件（而非被 import）时才执行 CLI 行为。 */

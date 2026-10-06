@@ -69,6 +69,21 @@ describe('DESKTOP-SERVER-ENTRY-PROGRAMMATIC：服务入口进程内可编程启�
     await expect(fetch(`http://127.0.0.1:${port}/api/health`)).rejects.toThrow()
   }, 30_000)
 
+  // PACK-02（优雅退出接线）：进程内宿主（桌面主进程）复用 SETUP-01 冻结排空控制器的通道。
+  // oracle＝drain-controller 冻结合同（prepare(allowActiveTraining) → prepared；无活动训练时立即 prepared），
+  // 不是从实现反推：期望 kind=prepared 由控制器语义独立给出。
+  it('DESKTOP-SERVER-ENTRY-PROGRAMMATIC: exposes the frozen drain controller for in-process hosts (prepare resolves prepared)', async () => {
+    current = await bootIsolated()
+    expect(current.drain).toBeTruthy()
+    expect(typeof current.drain.prepare).toBe('function')
+    expect(typeof current.drain.cancel).toBe('function')
+    expect(typeof current.drain.beginShutdown).toBe('function')
+    const outcome = await current.drain.prepare('desktop-pack02-attempt', { allowActiveTraining: true })
+    expect(outcome.kind).toBe('prepared')
+    await current.shutdown()
+    expect(await canBindPort(current.port)).toBe(true)
+  }, 30_000)
+
   afterAll(async () => {
     try { await current?.shutdown() } catch { /* already closed */ }
     if (isolatedRoot) await rm(isolatedRoot, { recursive: true, force: true }).catch(() => {})
