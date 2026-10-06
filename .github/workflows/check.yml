@@ -1,3 +1,5 @@
+# Windows-only matrix per user decision on 2026-10-07: the product targets Windows only,
+# so Linux jobs were removed (ubuntu failures were Windows-specific test infrastructure debt).
 name: Source checks
 on:
   push:
@@ -11,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
