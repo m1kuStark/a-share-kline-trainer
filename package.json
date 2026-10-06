@@ -36,6 +36,7 @@
     "verify:baseline": "tsx scripts/verify-candidate.ts",
     "verify:candidate": "tsx scripts/verify-candidate.ts",
     "release:windows": "tsx scripts/release/build.mjs",
+    "release:desktop": "node desktop/scripts/release-desktop.mjs",
     "release:source": "node scripts/release/export-source.mjs"
   },
   "dependencies": {

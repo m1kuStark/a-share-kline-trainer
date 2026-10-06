@@ -16,16 +16,26 @@
 //   ⑦ PACK-03 同库共存防线（阶段 G）：dataDir 预置活 trainer-state.json（记录假训练器 pid/端口）→
 //      TRAINER_DESKTOP_CONFLICT_ANSWER=reuse 启动 → 假服务被健康探测＋exe 不启第二服务
 //      （自身端口未 bind）＋不新建库文件
-// 隔离铁律：TRAINER_DATA_DIR/TRAINER_DB 指向临时目录，或阶段 F 以全套一致 profile env 重定向
+//   N PACK-05 NSIS 安装器门禁（--target nsis，--nsis-child 子模式）：静默安装（/S /D=场景
+//      临时目录）→ 安装版 exe 启动（全套 profile 沙箱＋显式 TRAINER_DATA_DIR/TRAINER_DB）→
+//      health/首页/窗口 → CloseMainWindow 优雅退出 exit 0 → 静默卸载（/S _?=）→ 无残留断言
+//      （应用文件/新增 HKCU 卸载键/新增快捷方式消失＋窗口计数回落）。安装目录
+//      resources/app-update.yml 存在断言＝PACK-04 extraResources 回退在 NSIS 形态的实证收口。
+//      已知瞬态真实系统触碰（非用户数据，报告披露，卸载器自清理＋残留断言兜底）：桌面/开始
+//      菜单快捷方式（NSIS $DESKTOP/$SMPROGRAMS 走 shell API，不受 env 重定向影响）＋HKCU
+//      卸载注册表键（electron-builder 模板 installSection.nsh 静默分支仍建快捷方式、
+//      uninstaller.nsh 卸载段无条件清理——2026-10-06 模板实证，见 PACK-05 design §1.2）。
+// 隔离铁律：TRAINER_DATA_DIR/TRAINER_DB 指向临时目录，或阶段 F/N 以全套一致 profile env 重定向
 // 到临时 home（USERPROFILE/APPDATA/LOCALAPPDATA/TEMP 等一起搬，见 spawnAdoptExe 注释），
 // 绝不触碰真实用户数据（%USERPROFILE%\.a-share-kline-trainer 或任何既有 zip 包的 data/）；
 // TDX_ROOT 置空；全程动态/随机端口，绝不动 8787 真实占用者；CloseMainWindow 只发给我们进程树的子进程。
 // 用法：node desktop/scripts/smoke-desktop.mjs --exe <便携exe路径> [--keep]
+//       node desktop/scripts/smoke-desktop.mjs --target nsis --installer <NSIS安装器路径> [--keep]
 import { spawn, execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { copyFile, mkdir, mkdtemp, readFile, rm, stat, open, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, open, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import net from 'node:net'
 
@@ -33,8 +43,21 @@ const args = process.argv.slice(2)
 const keep = args.includes('--keep')
 const exeIndex = args.indexOf('--exe')
 const exeArg = exeIndex >= 0 ? args[exeIndex + 1] : null
-if (!exeArg) {
+const installerIndex = args.indexOf('--installer')
+const installerArg = installerIndex >= 0 ? args[installerIndex + 1] : null
+const targetIndex = args.indexOf('--target')
+const targetArg = targetIndex >= 0 ? args[targetIndex + 1] : 'portable'
+const isNsisChild = args.includes('--nsis-child')
+if (targetArg !== 'portable' && targetArg !== 'nsis') {
+  console.error(`usage: --target must be portable or nsis (received ${JSON.stringify(targetArg)})`)
+  process.exit(1)
+}
+if (!isNsisChild && targetArg === 'portable' && !exeArg) {
   console.error('usage: node desktop/scripts/smoke-desktop.mjs --exe <portable-exe-path> [--keep]')
+  process.exit(1)
+}
+if (targetArg === 'nsis' && !installerArg) {
+  console.error('usage: node desktop/scripts/smoke-desktop.mjs --target nsis --installer <nsis-setup-exe-path> [--keep]')
   process.exit(1)
 }
 
@@ -306,7 +329,301 @@ const GRACEFUL_EXIT_TIMEOUT_MS = 60_000
 const CONFLICT_TAKEOVER_TIMEOUT_MS = 120_000
 const KILL_TIMEOUT_MS = 30_000
 const OVERALL_TIMEOUT_MS = 480_000
+const NSIS_INSTALL_TIMEOUT_MS = 300_000
+const NSIS_UNINSTALL_TIMEOUT_MS = 180_000
 const WINDOW_TITLE = 'K线训练器'
+const UNINSTALL_KEY_ROOT = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
+
+/**
+ * 阶段 N（PACK-05 NSIS 门禁）全流程——独立 node 宿主执行（同阶段 F/H 宿主结论）：
+ * 静默安装（/S /D=场景临时目录）→ 安装目录断言（应用 exe＋resources/app-update.yml＝
+ * PACK-04 extraResources 回退 NSIS 形态实证）→ 安装版 exe 全套 profile 沙箱＋显式数据
+ * env 启动 → health/首页/窗口 → CloseMainWindow 优雅退出 → 静默卸载（/S _?=）→
+ * 无残留断言。真实系统瞬态触碰（快捷方式＋HKCU 卸载键）先快照→检测→卸载→断言消失。
+ * spawn 前 fail-closed 断言全部重定向解析结果位于场景临时目录（development-principles §五）。
+ */
+async function runNsisChild() {
+  const sceneIndex = args.indexOf('--scene')
+  const sceneDir = sceneIndex >= 0 ? args[sceneIndex + 1] : null
+  if (!sceneDir) { console.error('[smoke] nsis: FAILED --nsis-child requires --scene'); process.exit(1) }
+  if (!installerArg) { console.error('[smoke] nsis: FAILED --nsis-child requires --installer'); process.exit(1) }
+  let failures = 0
+  const resolvedScene = resolve(sceneDir)
+
+  const installDir = join(sceneDir, 'installed')
+  const fakeHome = join(sceneDir, 'n-fake-home')
+  const fakeRoaming = join(fakeHome, 'AppData', 'Roaming')
+  const fakeLocal = join(fakeHome, 'AppData', 'Local')
+  const fakeTemp = join(fakeLocal, 'Temp')
+  for (const dir of [fakeRoaming, fakeLocal, fakeTemp]) await mkdir(dir, { recursive: true })
+  const dataDir = join(sceneDir, 'n-data')
+  const port = await freeLoopbackPort()
+
+  // fail-closed（development-principles §五）：spawn 前断言重定向解析结果确实位于场景临时目录
+  for (const redirected of [fakeHome, fakeRoaming, fakeLocal, fakeTemp, dataDir]) {
+    const resolved = resolve(redirected)
+    if (!resolved.startsWith(resolvedScene)) {
+      console.error(`[smoke] nsis: FAILED redirect escapes the scene temp dir (${resolved} vs ${resolvedScene})`)
+      process.exit(1)
+    }
+  }
+  // NSIS /D= 协议要求安装路径不带引号（spawn 逐参自动加引号会破坏解析）——路径含空格即 fail-closed 拒跑
+  if (/\s/.test(installDir)) {
+    console.error(`[smoke] nsis: FAILED install dir contains spaces (NSIS /D= unquoted protocol): ${installDir}`)
+    process.exit(1)
+  }
+  log('nsis-setup', `installer=${installerArg} installDir=${installDir} port=${port}`)
+
+  /** shell 目录经 API 解析（NSIS $DESKTOP/$SMPROGRAMS 同通道，env 重定向无效） */
+  const shellFolder = (kind) => {
+    try {
+      return execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+        `[Environment]::GetFolderPath('${kind}')`], { encoding: 'utf8', timeout: 15_000 }).trim()
+    } catch {
+      return null
+    }
+  }
+  const listLnks = async (dir) => {
+    if (!dir) return []
+    try {
+      return (await readdir(dir)).filter(name => name.toLowerCase().endsWith('.lnk')).sort()
+    } catch {
+      return []
+    }
+  }
+  const uninstallKeys = () => {
+    try {
+      const out = execFileSync('reg', ['query', UNINSTALL_KEY_ROOT], { encoding: 'utf8', timeout: 15_000 })
+      return out.split(/\r?\n/).map(line => line.trim()).filter(line => line.startsWith('HKEY_')).sort()
+    } catch {
+      return []
+    }
+  }
+
+  const desktopDir = shellFolder('Desktop')
+  const programsDir = shellFolder('Programs')
+  const lnkSnapshot = async () => [
+    ...(await listLnks(desktopDir)).map(name => join(desktopDir, name)),
+    ...(await listLnks(programsDir)).map(name => join(programsDir, name)),
+  ]
+  const titleSnapshot = windowTitleCount(WINDOW_TITLE)
+
+  // ===== 安装前快照 =====
+  const lnkBefore = await lnkSnapshot()
+  const keysBefore = uninstallKeys()
+  log('nsis-snapshot', `desktop=${desktopDir} lnk=${lnkBefore.length} uninstallKeys=${keysBefore.length} windowTitles=${titleSnapshot}`)
+
+  // ===== 静默安装：setup.exe /S /D=<installDir>（/D= 必须末参不带引号→windowsVerbatimArguments） =====
+  const installerStat = await stat(installerArg)
+  const installer = spawn(installerArg, [`/S /D=${installDir}`], { cwd: sceneDir, stdio: 'ignore', windowsHide: true, windowsVerbatimArguments: true })
+  const installResult = await waitForExit(installer, NSIS_INSTALL_TIMEOUT_MS, 'nsis-installer')
+  if (!installResult.exited) { killTree(installer.pid); console.error(`[smoke] nsis-install: FAILED installer did not finish within ${NSIS_INSTALL_TIMEOUT_MS}ms`); process.exit(1) }
+  if (installResult.code !== 0) { console.error(`[smoke] nsis-install: FAILED installer exit code ${installResult.code}`); process.exit(1) }
+  log('nsis-install', `silent install finished (${(installerStat.size / 1024 / 1024).toFixed(1)} MB installer)`)
+
+  // ===== 安装目录断言 =====
+  const dirEntries = await readdir(installDir).catch(() => null)
+  if (!dirEntries) { failures++; log('nsis-install', `FAILED install dir was not created: ${installDir}`) }
+  else {
+    const appExes = dirEntries.filter(name => name.toLowerCase().endsWith('.exe') && !/^uninstall/i.test(name))
+    if (appExes.length !== 1) { failures++; log('nsis-install', `FAILED expected exactly one app exe, found ${JSON.stringify(appExes)}`) }
+    const appUpdateYml = await stat(join(installDir, 'resources', 'app-update.yml')).then(() => true).catch(() => false)
+    if (!appUpdateYml) { failures++; log('nsis-install', 'FAILED resources/app-update.yml missing from the installed app (PACK-04 fallback under NSIS form)') }
+    else log('nsis-install', `installed app exe=${appExes[0] ?? '(missing)'}; resources/app-update.yml present (PACK-04 fallback intact under NSIS)`)
+  }
+  const appExePath = dirEntries
+    ? join(installDir, dirEntries.find(name => name.toLowerCase().endsWith('.exe') && !/^uninstall/i.test(name)) ?? '')
+    : null
+  const uninstallerPath = dirEntries
+    ? join(installDir, dirEntries.find(name => /^uninstall/i.test(name) && name.toLowerCase().endsWith('.exe')) ?? '')
+    : null
+  if (!appExePath || !uninstallerPath) {
+    failures++
+    log('nsis-install', `FAILED app exe or uninstaller not found in install dir: ${JSON.stringify(dirEntries)}`)
+  }
+
+  // ===== 安装后新增项检测（瞬态真实系统触碰：快捷方式＋HKCU 卸载键） =====
+  const lnkAfterInstall = await lnkSnapshot()
+  const createdLnks = lnkAfterInstall.filter(path => !lnkBefore.includes(path))
+  if (createdLnks.length === 0) log('nsis-install', 'no shortcuts created (installer config or silent behavior) — residue assertion scoped accordingly')
+  else log('nsis-install', `shortcuts created: ${createdLnks.map(path => basename(path)).join(', ')}`)
+  const keysAfterInstall = uninstallKeys()
+  const newKeys = keysAfterInstall.filter(key => !keysBefore.includes(key))
+  if (newKeys.length > 1) { failures++; log('nsis-install', `FAILED more than one new HKCU uninstall key: ${newKeys.join(', ')}`) }
+  const recordedKey = newKeys[0] ?? null
+  if (recordedKey) {
+    try {
+      const detail = execFileSync('reg', ['query', recordedKey, '/v', 'InstallLocation'], { encoding: 'utf8', timeout: 15_000 })
+      const location = /InstallLocation\s+REG_SZ\s+(\S*)/.exec(detail)?.[1] ?? ''
+      if (location.trim() && resolve(location.trim()) !== resolve(installDir)) {
+        failures++
+        log('nsis-install', `FAILED uninstall key InstallLocation=${location} != ${installDir}`)
+      } else {
+        log('nsis-install', `HKCU uninstall key recorded (${basename(recordedKey)}) InstallLocation matches install dir`)
+      }
+    } catch { log('nsis-install', 'uninstall key InstallLocation not readable (recorded, not asserted)') }
+  } else {
+    log('nsis-install', 'no new HKCU uninstall key detected (recorded, not asserted)')
+  }
+
+  // ===== 启动安装版 exe（全套 profile 沙箱＋显式数据 env；fail-closed 已在 spawn 前断言） =====
+  if (appExePath && !failures) {
+    const stderrLog = await open(join(sceneDir, 'nsis-exe-stderr.log'), 'a')
+    const stdoutLog = await open(join(sceneDir, 'nsis-exe-stderr.log.out'), 'a')
+    // windowsHide 必须 false：node 的 STARTUPINFO SW_HIDE 会被直启的 Electron 首窗口继承
+    // （win.show() 也不呈现；渲染进程照常运行、心跳可达——2026-10-06 诊断实证）。便携 exe
+    // 不受影响：其窗口属于解压启动器二跳 spawn 的子进程，不携带该旗标（阶段 A 同参可显示）。
+    const child = spawn(appExePath, [], {
+      cwd: installDir,
+      stdio: ['ignore', stdoutLog.fd, stderrLog.fd],
+      windowsHide: false,
+      env: {
+        ...process.env,
+        USERPROFILE: fakeHome,
+        HOMEDRIVE: fakeHome.slice(0, 2),
+        HOMEPATH: fakeHome.slice(2),
+        APPDATA: fakeRoaming,
+        LOCALAPPDATA: fakeLocal,
+        TEMP: fakeTemp,
+        TMP: fakeTemp,
+        PORT: String(port),
+        TRAINER_DATA_DIR: dataDir,
+        TRAINER_DB: join(dataDir, 'trainer.sqlite'),
+        TDX_ROOT: '',
+        OPEN_BROWSER: '0',
+      },
+    })
+    let healthy = null
+    const deadline = Date.now() + HEALTH_TIMEOUT_MS
+    while (Date.now() < deadline && child.exitCode === null) {
+      try {
+        const probe = await fetchJson(`http://127.0.0.1:${port}/api/health`, 3_000)
+        if (probe.status === 200) { healthy = JSON.parse(probe.text); break }
+      } catch { /* boot */ }
+      await new Promise(resolveWait => setTimeout(resolveWait, 500))
+    }
+    if (!healthy) {
+      failures++
+      log('nsis-run', `FAILED installed exe never became healthy (exit=${child.exitCode})`)
+      killTree(child.pid)
+    } else {
+      log('nsis-run', `health 200 status=${healthy.status} currentVersion=${healthy.currentVersion}`)
+      const page = await fetchJson(`http://127.0.0.1:${port}/`, 5_000)
+      if (page.status !== 200 || !/<html/i.test(page.text) || !/id="app"/i.test(page.text)) {
+        failures++
+        log('nsis-run', `FAILED homepage status=${page.status}`)
+      } else log('nsis-run', 'homepage html ok')
+      // 窗口出现＝有界等待（安装版免解压、启动快于便携：health 就绪时窗口可能尚未创建，一次性计数会误判 0）
+      let titles = windowTitleCount(WINDOW_TITLE)
+      if (titles === 0) {
+        const titleDeadline = Date.now() + 30_000
+        while (Date.now() < titleDeadline) {
+          await new Promise(resolveWait => setTimeout(resolveWait, 500))
+          titles = windowTitleCount(WINDOW_TITLE)
+          if (titles > 0) break
+        }
+      }
+      if (titles === -1) log('nsis-run', 'powershell unavailable; window check DEGRADED (recorded, not asserted)')
+      else if (titles < 1) { failures++; log('nsis-run', `NO window titled ${WINDOW_TITLE} (count=${titles})`) }
+      else log('nsis-run', `window titled ${WINDOW_TITLE} present (count=${titles})`)
+
+      // 优雅关闭：安装版窗口属于 spawn 进程本体（便携 exe 是解压启动器、窗口在其子进程）——两者都关
+      closeMainWindowOf(child.pid)
+      closeMainWindowOfChildren(child.pid)
+      const quit = await waitForExit(child, GRACEFUL_EXIT_TIMEOUT_MS, 'nsis-exe')
+      if (!quit.exited) { failures++; log('nsis-run', 'FAILED installed exe did not exit after window close'); killTree(child.pid) }
+      else if (quit.code !== 0) { failures++; log('nsis-run', `FAILED installed exe exit code ${quit.code} (expected 0)`) }
+      else log('nsis-run', `graceful exit 0 after window close`)
+      await new Promise(resolveWait => setTimeout(resolveWait, 1_000))
+      const portReleased = await canBindLoopback(port)
+      const healthRefused = !(await fetchJson(`http://127.0.0.1:${port}/api/health`, 3_000).then(() => true).catch(() => false))
+      if (!portReleased || !healthRefused) { failures++; log('nsis-run', `FAILED no-orphan check: port released=${portReleased} health refused=${healthRefused}`) }
+      else log('nsis-run', 'no orphan: port rebindable + health refused after exit')
+    }
+    for (const handle of [stderrLog, stdoutLog]) { try { await handle.close() } catch { /* best-effort */ } }
+  }
+
+  // ===== 静默卸载：Uninstall*.exe /S _?=<installDir>（_?= 阻止自拷贝副本、可等待退出） =====
+  if (uninstallerPath && await stat(uninstallerPath).then(() => true).catch(() => false)) {
+    const uninstaller = spawn(uninstallerPath, [`/S _?=${installDir}`], { cwd: installDir, stdio: 'ignore', windowsHide: true, windowsVerbatimArguments: true })
+    const uninstallResult = await waitForExit(uninstaller, NSIS_UNINSTALL_TIMEOUT_MS, 'nsis-uninstaller')
+    if (!uninstallResult.exited) { killTree(uninstaller.pid); failures++; log('nsis-uninstall', `FAILED uninstaller did not finish within ${NSIS_UNINSTALL_TIMEOUT_MS}ms`) }
+    else log('nsis-uninstall', `silent uninstall finished (exit ${uninstallResult.code})`)
+  } else {
+    failures++
+    log('nsis-uninstall', 'FAILED uninstaller exe not found; cannot clean up real-system traces')
+  }
+
+  // ===== 无残留断言 =====
+  await new Promise(resolveWait => setTimeout(resolveWait, 2_000))
+  const remaining = await readdir(installDir).catch(() => [])
+  const appRemains = remaining.filter(name => !/^uninstall/i.test(name))
+  if (appRemains.length > 0) { failures++; log('nsis-residue', `FAILED app files remain after uninstall: ${appRemains.join(', ')}`) }
+  else log('nsis-residue', `app files removed (only uninstaller residue may remain: ${remaining.join(', ') || 'none'})`)
+  if (recordedKey) {
+    let keyGone = false
+    try {
+      execFileSync('reg', ['query', recordedKey], { encoding: 'utf8', timeout: 15_000 })
+    } catch { keyGone = true }
+    if (!keyGone) { failures++; log('nsis-residue', `FAILED HKCU uninstall key still present: ${recordedKey}`) }
+    else log('nsis-residue', 'HKCU uninstall key removed')
+  }
+  const lnkFinal = await lnkSnapshot()
+  const lingeringLnks = createdLnks.filter(path => lnkFinal.includes(path))
+  if (lingeringLnks.length > 0) { failures++; log('nsis-residue', `FAILED shortcuts remain: ${lingeringLnks.map(path => basename(path)).join(', ')}`) }
+  else log('nsis-residue', `no shortcut residue (${createdLnks.length} created, all removed)`)
+  const titleFinal = windowTitleCount(WINDOW_TITLE)
+  if (titleFinal !== -1 && titleSnapshot !== -1 && titleFinal > titleSnapshot) {
+    failures++
+    log('nsis-residue', `FAILED window count did not fall back (before=${titleSnapshot} after=${titleFinal})`)
+  } else if (titleFinal !== -1) {
+    log('nsis-residue', `window count back to pre-smoke level (before=${titleSnapshot} after=${titleFinal})`)
+  }
+
+  // ===== 收尾：清理场景内残骸（卸载器自身因 _?= 协议不自杀） =====
+  await rm(installDir, { recursive: true, force: true }).catch(() => {})
+  if (failures > 0) { console.error(`[smoke] nsis-child FAIL failures=${failures}`); process.exit(1) }
+  log('nsis-child', 'PASS')
+  process.exit(0)
+}
+
+/** --target nsis 编排：场景目录＋全新 node 宿主执行阶段 N（同阶段 F/H 宿主结论） */
+async function runNsisSmoke() {
+  const installerStat = await stat(installerArg)
+  log('installer', `${installerArg} (${(installerStat.size / 1024 / 1024).toFixed(1)} MB)`)
+  tempDir = await mkdtemp(join(tmpdir(), 'pack05-nsis-'))
+  log('copy-scene', tempDir)
+  const stageN = spawn(process.execPath, [
+    fileURLToPath(import.meta.url),
+    '--nsis-child',
+    '--installer', resolve(installerArg),
+    '--scene', tempDir,
+  ], { cwd: process.cwd(), stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true })
+  const result = await waitForExit(stageN, 720_000, 'stage-n-child')
+  if (!result.exited) {
+    failures++
+    log('nsis', 'FAILED stage-N child did not finish within 720s')
+    killTree(stageN.pid)
+  } else if (result.code !== 0) {
+    failures++
+    log('nsis', `FAILED stage-N child exited with code ${result.code}`)
+  } else {
+    log('nsis', 'stage-N child passed (install/run/quit/uninstall/no-residue assertions above)')
+  }
+  clearTimeout(overallTimer)
+  const totalSeconds = ((Date.now() - startedAt) / 1_000).toFixed(1)
+  if (failures > 0) {
+    console.error(`[smoke] SMOKE_FAIL failures=${failures} total=${totalSeconds}s`)
+    for (const logName of ['nsis-exe-stderr.log']) {
+      const text = await readFile(join(tempDir, logName), 'utf8').catch(() => '')
+      if (text.trim()) console.error(`[smoke] ${logName} (tail):\n${text.trim().split('\n').slice(-15).join('\n')}`)
+    }
+    process.exitCode = 1
+  } else {
+    log('pass', `SMOKE_PASS total=${totalSeconds}s`)
+  }
+}
+
 function log(step, detail) {
   console.log(`[smoke] ${step}${detail ? `: ${detail}` : ''}`)
 }
@@ -353,6 +670,18 @@ function closeMainWindowOfChildren(rootPid) {
     const command = `$kids = Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq ${rootPid} };`
       + ` $closed = 0; foreach ($k in $kids) { try { $p = Get-Process -Id $k.ProcessId -ErrorAction Stop;`
       + ` if ($p.CloseMainWindow()) { $closed += 1 } } catch {} }; Write-Output $closed`
+    const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command], { encoding: 'utf8', timeout: 20_000 })
+    return Number(out.trim())
+  } catch (error) {
+    return -1
+  }
+}
+
+/** 向指定进程本体的主窗口发 WM_CLOSE（安装版形态：窗口属于 spawn 进程自身而非其子进程） */
+function closeMainWindowOf(pid) {
+  try {
+    const command = `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue;`
+      + ` if ($p -and $p.CloseMainWindow()) { '1' } else { '0' }`
     const out = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command], { encoding: 'utf8', timeout: 20_000 })
     return Number(out.trim())
   } catch (error) {
@@ -812,7 +1141,19 @@ try {
   if (args.includes('--update-child')) {
     await runUpdateChild()
   }
-  await runSmoke()
+  if (args.includes('--nsis-child')) {
+    await runNsisChild()
+  }
+  if (targetArg === 'nsis') {
+    overallTimer = setTimeout(() => {
+      log('timeout', 'overall 720000ms exceeded; force killing')
+      for (const cleanup of cleanups) cleanup()
+      process.exit(1)
+    }, 720_000)
+    await runNsisSmoke()
+  } else {
+    await runSmoke()
+  }
 } catch (error) {
   console.error(`[smoke] SMOKE_FAIL: ${error.message}`)
   if (overallTimer) clearTimeout(overallTimer)

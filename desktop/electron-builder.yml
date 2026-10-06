@@ -31,7 +31,20 @@ files:
 asar: true
 win:
   icon: desktop/build-resources/icon.ico
+  # PACK-05：双目标——portable（既有便携形态，命名保留）＋nsis（正式安装器形态）。
+  # 两者一次构建产出（release:desktop 编排）；build:desktop 仍单独构建 portable。
   target:
     - target: portable
       arch: [x64]
+    - target: nsis
+      arch: [x64]
   artifactName: kline-trainer-desktop-v${version}-windows-x64.exe
+# PACK-05：NSIS 安装器配置（派发简报设计决策 1，proposed_default 待用户验收）：
+# one-click=false 传统向导式（许可/安装目录/快捷方式分页）；per-user 安装免管理员
+# （默认装 %LOCALAPPDATA%\Programs，SHELL_CONTEXT=HKCU）；允许自选安装目录；
+# setup 命名与便携 exe 可区分（setup 段内 artifactName 覆盖 win 级默认）。
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: kline-trainer-desktop-setup-v${version}-windows-x64.exe

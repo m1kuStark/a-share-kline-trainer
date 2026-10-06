@@ -10,16 +10,18 @@
     "PACK-01",
     "PACK-02",
     "PACK-03",
-    "PACK-04"
+    "PACK-04",
+    "PACK-05"
   ],
   "verification_refs": [
     "docs/verification/2026-10/PACK-01/README.md",
     "docs/verification/2026-10/PACK-02/README.md",
     "docs/verification/2026-10/PACK-03/README.md",
-    "docs/verification/2026-10/PACK-04/README.md"
+    "docs/verification/2026-10/PACK-04/README.md",
+    "docs/verification/2026-10/PACK-05/README.md"
   ],
   "acceptance_ref": null,
-  "next_action": "PACK-01/02/03/04 均完成工程验证（review 态）。PACK-04 交付更新通道整合（packaged→electron-updater 双通道＋最小 IPC＋安装前排空；矩阵 updater.yaml 22/22 covered）并沉淀三平台实证（autoUpdater getter 导出/--publish never 不产 app-update.yml→extraResources 回退/sandboxed preload 须 CJS）。PACK-05（NSIS 安装器＋latest.yml 发布资产）待派发；PACK-02 的 8 项＋PACK-03 的 8 项＋PACK-04 的 10 项 proposed_default 待用户拍板（见各自验证记录）。"
+  "next_action": "PACK-01..05 全部完成工程验证（review 态）。PACK-05 交付发布流水线（release:desktop 全产物＋NSIS 静默安装冒烟门禁＋发布手册＋用户升级指引；desktop-app 矩阵 PACK-05 六行落位）。待用户：拍板 PACK-02 8 项＋PACK-03 8 项＋PACK-04 10 项＋PACK-05 4 项 proposed_default；按发布手册人工上传首个双形态 Release；真机验收安装版在线更新端到端。"
 }
 ```
 
