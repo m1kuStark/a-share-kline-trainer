@@ -493,10 +493,13 @@ describe('M2 chart interaction contract', () => {
   })
 
   it('adds zero npm dependencies for the odometer (self-built CSS+JS, M6-05)', async () => {
-    // ODO-NO-DEPS：依赖清单与 M6-04 基线完全一致（冻结清单，新增依赖即红）
+    // ODO-NO-DEPS：依赖清单与基线完全一致（冻结清单，新增依赖即红）。
+    // 基线演进记录：runtime dependencies 自 M6-04 起未动（ODO 零运行时依赖仍成立）；
+    // devDependencies 于 PACK-01（桌面 exe 形态）按派发简报授权新增 electron＋electron-builder，
+    // 均为构建工具链，不进生产依赖。
     const raw = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> }
     expect(Object.keys(raw.dependencies).sort()).toEqual(['@fastify/cors', '@fastify/static', 'fastify', 'klinecharts', 'lucide-vue-next', 'pinia', 'pinyin-pro', 'vue'])
-    expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
+    expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'electron', 'electron-builder', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
   })
 
   it('keeps the blind toggle out of the creation form (V1 shows stock info openly)', async () => {
