@@ -1,5 +1,19 @@
 appId: io.github.m1kustark.a-share-kline-trainer
 productName: K线训练器
+# PACK-04：publish 配置声明 GitHub feed（PACK-05 发布 latest.yml 时由 electron-builder 消费）。
+# 注意：实测 v26.15.3 ＋ --publish never 即便有 publish 配置也不产出包内 resources/app-update.yml
+# （PublishManager 发布路径才写）——该文件是 electron-updater downloadUpdate 的硬依赖
+# （getOrCreateDownloadHelper 读 updaterCacheDirName），故走 extraResources 静态映射入包
+# （desktop/build-resources/app-update.yml → resources/app-update.yml，见下方 extraResources；
+# PACK-04 design §5.3 回退决策，package-desktop.mjs 构建后 fail-closed 核验）。
+publish:
+  - provider: github
+    owner: m1kuStark
+    repo: a-share-kline-trainer
+# PACK-04：app-update.yml 入包（electron-updater feed 配置；updaterCacheDirName/publisherName 读取处）
+extraResources:
+  - from: desktop/build-resources/app-update.yml
+    to: app-update.yml
 # 产物与 zip 命名（kline-trainer-v<版本>-windows-x64.zip）可区分：desktop 前缀
 directories:
   output: desktop/release
@@ -10,8 +24,8 @@ files:
   - web/dist/**
   - package.json
   # 仅排除前端框架本体（vite 已把产物打进 web/dist；pinia 唯一依赖 vue，一并排除）。
-  # 其余 node_modules（含 @vue/@babel/postcss 等前端构建链）保留：electron-builder 的
-  # 依赖闭包包含 @fastify:*/fastify/pinyin-pro 的全部运行时传递依赖（如 glob、@lukeed/ms），
+  # 其余 node_modules（含 @fastify:*/fastify/pinyin-pro 的全部运行时传递依赖，如 glob、@lukeed/ms，
+  # 以及 PACK-04 的 electron-updater 及其闭包）保留：electron-builder 的依赖闭包按运行时依赖收敛；
   # 逐包手工裁剪已两次误杀运行时依赖（glob、@lukeed/ms），瘦身收益（压缩后 ~1MB）不值得风险；
   # 更精确的裁剪留给 PACK-02+ 以「运行时可达闭包」清单方式再做。
 asar: true

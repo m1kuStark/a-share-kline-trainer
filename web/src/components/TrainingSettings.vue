@@ -3,8 +3,9 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, selectSetupDirectory, type TrainingSettingsView } from '../api'
 import { notifySettingsSaved } from '../settingsPanel'
 import {
-  RECONNECT_MAX_ATTEMPTS, UPDATE_STATE_TEXT, decidePollStep, isBusyUpdatePhase, updateGuardText, versionLabel,
-  type UpdateFlowState,
+  RECONNECT_MAX_ATTEMPTS, UPDATE_STATE_TEXT, decidePollStep, detectUpdateChannel, desktopEventToApplyView,
+  DESKTOP_APPLY_STATE_TEXT, isBusyUpdatePhase, updateGuardText, versionLabel,
+  type DesktopApplyState, type DesktopUpdatesApi, type UpdateFlowState,
 } from '../updateFlow'
 import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
@@ -374,6 +375,15 @@ const dataDirSavedMessage = ref('')
 // ===== UPD-02 关于与更新分栏：在线版本更新（契约=docs/verification/2026-10/UPD-01/design.md §2） =====
 // 检查三态＋apply 守卫人话＋状态机轮询；决策核心在 ../updateFlow.ts（纯函数，单测锁定），
 // 本组件只做薄执行：fetch→decidePollStep→渲染/排程。真实换装全流程留用户真机验收。
+// PACK-04 双通道：packaged 桌面形态探测到 window.desktopUpdates（kind=packaged）时 check/apply
+// 走 IPC（electron-updater 通道），进度/状态经事件映射到既有呈现；http 通道（浏览器/dev）分支零改动。
+const desktopUpdatesApi = ((): DesktopUpdatesApi | undefined => {
+  const holder = window as unknown as { desktopUpdates?: DesktopUpdatesApi }
+  return holder.desktopUpdates
+})()
+/** 更新通道：desktop＝packaged 桌面 IPC；http＝既有 UPD HTTP 端点（零变化） */
+const updateChannel = detectUpdateChannel(desktopUpdatesApi)
+let desktopUnsubscribe: (() => void) | null = null
 const updateVersion = ref<string | null>(null)
 const checkPhase = ref<'idle' | 'checking' | 'available' | 'latest' | 'error'>('idle')
 const checkErrorText = ref('')
@@ -392,6 +402,17 @@ let updateFailedReconnects = 0
 /** 更新流程占线（POST 受理中或状态机轮询中）：禁用「下载并更新」防重复提交 */
 const updateInProgress = computed(() =>
   applyStarting.value || (applyPollState.value !== '' && !applyFailedReason.value && applyCompletedVersion.value === null))
+
+/** 状态行文案：desktop 通道新增态（downloaded/installing）用 PACK-04 文案表；http 通道沿用 UPD-02 八态表（值不变） */
+const applyStateText = computed(() => {
+  const state = applyPollState.value
+  if (state === '') return ''
+  if (updateChannel === 'desktop') {
+    const desktopText = DESKTOP_APPLY_STATE_TEXT[state as DesktopApplyState]
+    if (desktopText !== undefined) return desktopText
+  }
+  return UPDATE_STATE_TEXT[state as UpdateFlowState] ?? ''
+})
 
 interface UpdateCheckView {
   currentVersion: string | null
@@ -412,6 +433,9 @@ function stopUpdatePolling(): void {
     clearTimeout(updatePollTimer)
     updatePollTimer = undefined
   }
+  // PACK-04：desktop 通道事件订阅同步退订（面板关闭/重开不残留监听）
+  desktopUnsubscribe?.()
+  desktopUnsubscribe = null
 }
 
 function resetUpdatePresentation(): void {
@@ -441,8 +465,13 @@ async function runCheckUpdate(): Promise<void> {
   checkPhase.value = 'checking'
   checkErrorText.value = ''
   try {
-    const response = await fetch('/api/update/check')
-    const view = await response.json() as UpdateCheckView
+    // PACK-04 双通道：packaged 桌面走 IPC（同形视图，三态呈现复用）；否则既有 http 端点
+    const view = updateChannel === 'desktop' && desktopUpdatesApi
+      ? await desktopUpdatesApi.checkForUpdates()
+      : await (async () => {
+          const response = await fetch('/api/update/check')
+          return await response.json() as UpdateCheckView
+        })()
     updateVersion.value = typeof view.currentVersion === 'string' && view.currentVersion !== '' ? view.currentVersion : updateVersion.value
     if (view.updateAvailable && view.latestVersion) {
       updateAvailableInfo.value = { latestVersion: view.latestVersion, releaseNotes: view.releaseNotes }
@@ -515,6 +544,23 @@ async function startUpdateApply(): Promise<void> {
   applyFailedReason.value = ''
   applyCompletedVersion.value = null
   try {
+    // PACK-04 双通道：packaged 桌面走 IPC downloadAndInstall（下载→事件进度→排空→安装重启）
+    if (updateChannel === 'desktop' && desktopUpdatesApi) {
+      desktopUnsubscribe?.()
+      desktopUnsubscribe = desktopUpdatesApi.onUpdateEvent(event => {
+        const view = desktopEventToApplyView(event)
+        applyPollState.value = view.state
+        applyPollProgress.value = 'progressPercent' in view ? view.progressPercent : null
+        if (view.state === 'failed') applyFailedReason.value = view.message
+      })
+      applyPollState.value = 'downloading'
+      applyPollProgress.value = 0
+      const outcome = await desktopUpdatesApi.downloadAndInstall()
+      if (!outcome.ok) {
+        applyGuardMessage.value = outcome.error
+      }
+      return
+    }
     const response = await fetch('/api/update/apply', { method: 'POST' })
     if (response.status !== 202) {
       // 守卫拒绝（503/409/502）：人话呈现，不进入轮询，留在可重试态
@@ -895,7 +941,7 @@ function close(): void {
           class="update-progress" role="status"
         >
           <template v-if="applyReconnectAttempt > 0">正在重启，等待服务回来…（重连尝试 {{ applyReconnectAttempt }}/{{ RECONNECT_MAX_ATTEMPTS }}）</template>
-          <template v-else>{{ UPDATE_STATE_TEXT[applyPollState as UpdateFlowState] }}<template v-if="applyPollProgress !== null">（{{ applyPollProgress }}%）</template></template>
+          <template v-else>{{ applyStateText }}<template v-if="applyPollProgress !== null">（{{ applyPollProgress }}%）</template></template>
         </div>
         <p v-if="applyCompletedVersion !== null" class="settings-saved" role="status">已更新到 {{ versionLabel(applyCompletedVersion) }}</p>
         <p v-if="applyFailedReason" class="error-text" role="alert">更新失败：{{ applyFailedReason }}</p>

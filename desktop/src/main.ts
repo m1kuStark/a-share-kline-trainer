@@ -8,14 +8,18 @@
 //   删除既有库）＋trainer.config.json 旧配置沿用＋saved-tdx-choice 沿用；内嵌服务启动前取
 //   launch.lock 并按 dataDir 状态记录做共存裁决（与 zip launcher 双向防双写）；服务起来后写
 //   同格式 trainer-state.json 供 launcher 反向识别，退出时仅清理本进程身份匹配的自有记录。
+// PACK-04 更新通道：packaged 形态经 electron-updater（GitHub latest.yml；feed 可注入），
+//   dev/源码形态回落既有 UPD HTTP 端点（渲染端探测，UPD-01/02 零降级）；安装必经排空退出
+//   管线（resolveInstallActionOnExit：排空超时 forced 路径绝不安装）。preload 仅暴露更新窄接口。
 // 决策逻辑全部抽在纯函数层（boot-plan/port-conflict/quit-state/window-bounds/external-links/
-// data-home/coexist-guard，vitest 覆盖）；本文件只做 Electron API 粘合，实机行为由
+// data-home/coexist-guard/desktop-updates，vitest 覆盖）；本文件只做 Electron API 粘合，实机行为由
 // desktop/scripts/smoke-desktop.mjs 验证。
-import { app, BrowserWindow, dialog, screen, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, screen, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   buildAppUrl,
   buildServerEnv,
@@ -65,10 +69,21 @@ import {
   stateRecordIsOurs,
   type DesktopStateRecord,
 } from './coexist-guard.js'
+import {
+  createDesktopUpdateController,
+  resolveInstallActionOnExit,
+  resolveUpdateChannel,
+  resolveUpdateFeed,
+  type DesktopUpdateEvent,
+} from './desktop-updates.js'
+import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
+import { registerUpdateIpc } from './update-ipc.js'
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
 const WINDOW_TITLE = 'K线训练器'
 const WINDOW_STATE_FILE = 'window-state.json'
+// sandboxed preload 必须是 CJS（Electron ESM 文档）；src/preload.cts 编译产物为 dist/preload.cjs
+const PRELOAD_ENTRY = fileURLToPath(new URL('./preload.cjs', import.meta.url))
 
 type EmbeddedServer = {
   shutdown(): Promise<void>
@@ -85,6 +100,23 @@ let shutdownCall: Promise<void> | null = null
 let windowStatePath: string | null = null
 // PACK-03：内嵌服务的身份（写/清 trainer-state.json 与 health 上报同源）
 let serverIdentity: { runId: string; pid: number; dataDir: string } | null = null
+// PACK-04：更新通道（packaged→electron-updater；dev/源码→既有 UPD HTTP 端点由渲染端回落）
+const updateChannelKind = resolveUpdateChannel({ isPackaged: app.isPackaged })
+/** 排空完成后待安装的新版（downloaded 事件置位；仅 exit 分支非 forced 路径消费） */
+let installPendingUpdate = false
+/** 更新事件下发：窗口已销毁/未建时丢弃并日志（下载可在窗口生命周期外进行） */
+function sendUpdateEvent(event: DesktopUpdateEvent): void {
+  const win = mainWindow
+  if (!win || win.isDestroyed()) {
+    console.warn('[desktop] update event dropped (no live window):', event.type)
+    return
+  }
+  try {
+    win.webContents.send('desktop-update:event', event)
+  } catch (error) {
+    console.error('[desktop] update event send failed:', error)
+  }
+}
 
 // ===== 窗口 =====
 
@@ -146,12 +178,14 @@ function createWindow(url: string, bounds: WindowBounds | null): BrowserWindow {
     title: WINDOW_TITLE,
     autoHideMenuBar: true,
     show: false,
-    // 安全基线（PACK-02 决策⑥）：显式锁定 Electron 安全默认，不因后续升级漂移
+    // 安全基线（PACK-02 决策⑥）：显式锁定 Electron 安全默认，不因后续升级漂移；
+    // PACK-04：preload 仅更新窄接口（sandboxed preload＝CJS，见 PRELOAD_ENTRY 注释）
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
       webSecurity: true,
+      preload: PRELOAD_ENTRY,
     },
   })
   // 页面自带 <title>A股 K线训练器</title> 会在加载后覆盖窗口标题；PACK-01 冻结窗口标题
@@ -308,6 +342,38 @@ async function clearOwnTrainerState(): Promise<void> {
   }
 }
 
+// ===== PACK-04 更新通道接线（channel/adapter/IPC；安装走下方退出管线的 exit 分支） =====
+
+let updateAdapterRef: { quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void } | null = null
+
+async function setupUpdateChannel(): Promise<void> {
+  const updater = await defaultDesktopUpdater()
+  const adapter = adaptElectronUpdater(updater)
+  adapter.setFeedURL(resolveUpdateFeed(process.env))
+  updateAdapterRef = adapter
+  const controller = createDesktopUpdateController({
+    adapter,
+    getCurrentVersion: () => app.getVersion(),
+    sendEvent: sendUpdateEvent,
+    // 下载完成 → 排空退出管线（drain.prepare(allowActiveTraining:true)→shutdown→exit 分支安装）
+    requestInstallWithDrain: () => {
+      installPendingUpdate = true
+      requestGracefulQuit()
+    },
+    logger: console,
+  })
+  registerUpdateIpc({
+    ipcMain,
+    controller,
+    channelKind: updateChannelKind,
+    runBootCheck: () => controller.checkForUpdates(),
+    bootCheckOutPath: updateChannelKind === 'packaged'
+      ? (process.env.TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT?.trim() || null)
+      : null,
+    logger: console,
+  })
+}
+
 // ===== 启动 =====
 
 async function bootServerAndOpen(): Promise<void> {
@@ -445,6 +511,8 @@ async function bootServerAndOpen(): Promise<void> {
 async function bootstrap(): Promise<void> {
   await app.whenReady()
   try {
+    // PACK-04：更新 IPC 先于窗口（preload 启动即 invoke channel，主进程须已就绪）
+    await setupUpdateChannel()
     const boot = planInstanceBoot({ hasLock: true, devWindowUrl: DEV_WINDOW_URL })
     if (boot.kind === 'quit') return // 不可达：无锁实例不进本函数（见文件尾单实例检查）
     if (boot.mode === 'dev-window') {
@@ -492,6 +560,15 @@ function dispatchQuitEvent(event: Parameters<typeof nextQuitState>[1]): void {
         .then(() => dispatchQuitEvent({ type: 'shutdown-done' }))
         .catch(error => dispatchQuitEvent({ type: 'shutdown-error', message: error instanceof Error ? error.message : String(error) }))
     } else if (action.call === 'exit') {
+      // PACK-04：排空已收敛（exit 分支）且有待装更新 → 静默安装并装完自动重启；
+      // forced（排空超时/外层超时）路径绝不安装（更新留缓存可重试）——resolveInstallActionOnExit。
+      if (resolveInstallActionOnExit({ installPending: installPendingUpdate, forced: action.forced }) === 'quit-and-install') {
+        installPendingUpdate = false
+        sendUpdateEvent({ type: 'installing' })
+        console.log('[desktop] drained; installing downloaded update (quitAndInstall)')
+        updateAdapterRef?.quitAndInstall(true, true)
+        return
+      }
       if (action.forced) {
         console.error(`[desktop] forced exit: ${action.reason ?? 'unknown'}`)
         app.exit(action.code)

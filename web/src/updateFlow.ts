@@ -110,3 +110,62 @@ export function decidePollStep(failedReconnects: number, fetched: StatusFetchRes
   const continueDelayMs = isBusyUpdatePhase(state) ? POLL_INTERVAL_MS : null
   return { kind: 'render-state', state, progressPercent, continueDelayMs }
 }
+
+// ===== PACK-04 桌面更新通道（additive；既有 UPD HTTP 流程与文案零改动） =====
+// 契约＝docs/verification/2026-10/PACK-04/design.md §2/§4：preload 暴露的窄接口、
+// 通道探测三档、desktop 事件→既有呈现态映射。
+
+/** preload 暴露的 window.desktopUpdates 窄接口形状（main 侧实现于 desktop/src） */
+export interface DesktopUpdatesApi {
+  channel(): { kind: 'packaged' | 'dev' }
+  checkForUpdates(): Promise<{
+    currentVersion: string | null
+    latestVersion: string | null
+    updateAvailable: boolean
+    releaseNotes: string | null
+    error: string | null
+  }>
+  downloadAndInstall(): Promise<{ ok: true } | { ok: false, error: string }>
+  onUpdateEvent(callback: (event: DesktopUpdateEvent) => void): () => void
+}
+
+/** 主进程→渲染端更新事件（design §2.4 事件表） */
+export type DesktopUpdateEvent =
+  | { type: 'download-progress', percent: number, transferred: number, total: number, bytesPerSecond: number }
+  | { type: 'downloaded', version: string }
+  | { type: 'installing' }
+  | { type: 'error', message: string }
+
+/**
+ * 通道探测：window.desktopUpdates 不存在（纯浏览器/e2e）或 kind=dev → 既有 http 流程
+ * （零变化）；仅 packaged 桌面形态切换 desktop IPC 流程。
+ */
+export function detectUpdateChannel(api: DesktopUpdatesApi | undefined): 'desktop' | 'http' {
+  return api?.channel().kind === 'packaged' ? 'desktop' : 'http'
+}
+
+/** desktop 通道呈现态：downloading 复用既有态；downloaded/installing 为 additive 新态 */
+export type DesktopApplyState = 'downloading' | 'downloaded' | 'installing' | 'failed'
+
+/** desktop 呈现文案：downloading/failed 复用既有冻结文案；downloaded/installing 为新增（proposed_default） */
+export const DESKTOP_APPLY_STATE_TEXT: Record<DesktopApplyState, string> = {
+  downloading: UPDATE_STATE_TEXT.downloading,
+  downloaded: '新版本下载完成，准备安装…',
+  installing: '正在安装并重启…',
+  failed: UPDATE_STATE_TEXT.failed,
+}
+
+/** desktop 事件→呈现视图（组件薄执行：事件→本函数→渲染既有/新增态） */
+export type DesktopApplyView =
+  | { state: 'downloading' | 'downloaded' | 'installing', progressPercent: number | null }
+  | { state: 'failed', message: string }
+
+export function desktopEventToApplyView(event: DesktopUpdateEvent): DesktopApplyView {
+  if (event.type === 'download-progress') {
+    // electron-updater percent 为 0..100；归一到 0..1 走既有夹取管线（同一呈现粒度）
+    return { state: 'downloading', progressPercent: updateProgressPercent(event.percent / 100) }
+  }
+  if (event.type === 'downloaded') return { state: 'downloaded', progressPercent: null }
+  if (event.type === 'installing') return { state: 'installing', progressPercent: null }
+  return { state: 'failed', message: event.message }
+}

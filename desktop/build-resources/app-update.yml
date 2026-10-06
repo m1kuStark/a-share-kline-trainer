@@ -1,0 +1,12 @@
+# PACK-04：electron-updater 的包内更新配置（resources/app-update.yml）。
+# 实测 electron-builder 26.15.3 在 --publish never 下即便有 publish 配置也不产出该文件
+# （PublishManager 发布路径才写；PACK-04 design §5.3 回退决策）——故以 extraResources
+# 静态映射入包，内容与 electron-builder 正常发布时的产出同构：
+#   provider/owner/repo＝GitHub feed（与 package.json repository 同源，PACK-05 落实发布资产）；
+#   updaterCacheDirName＝下载缓存目录名（downloadUpdate 硬依赖字段）。
+# 运行时主进程仍会 setFeedURL（feed 可注入 env 覆盖），本文件主要供 updaterCacheDirName
+# 与 publisherName（缺省＝无签名 fail-open，v28 起将 fail-closed）读取。
+provider: github
+owner: m1kuStark
+repo: a-share-kline-trainer
+updaterCacheDirName: a-share-kline-trainer

@@ -202,3 +202,87 @@ describe('UPD-UI-APPLY-FLOW: 轮询决策核心 decidePollStep（契约 §2.3 �
     expect(recovered.continueDelayMs).toBeNull()
   })
 })
+
+// ===== PACK-04 桌面更新通道（渲染端纯逻辑；契约＝docs/verification/2026-10/PACK-04/design.md §2/§4） =====
+// oracle：通道三档探测语义（纯浏览器→http 零变化 / packaged→desktop / dev→http）与四事件
+// 呈现映射来自 PACK-04 派发简报决策 2「UI 文案复用现有三态」＋design §2.4 事件表；
+// percent 夹取期望独立计算（42.5→43、150→100、-5→0）。
+
+describe('PACK-04 桌面通道: detectUpdateChannel 通道探测（design §2.1）', () => {
+  type ChannelApi = { channel(): { kind: string } }
+
+  async function detect(api: ChannelApi | undefined): Promise<string> {
+    const mod = await loadUpdateFlowModule()
+    const fn = mod.detectUpdateChannel as (api: ChannelApi | undefined) => string
+    return fn(api)
+  }
+
+  it('a browser without the preload (no desktopUpdates) keeps the existing http flow', async () => {
+    expect(await detect(undefined)).toBe('http')
+  })
+
+  it('a packaged desktop (kind=packaged) switches to the desktop IPC flow', async () => {
+    expect(await detect({ channel: () => ({ kind: 'packaged' }) })).toBe('desktop')
+  })
+
+  it('a dev/source desktop (kind=dev) falls back to the existing http flow', async () => {
+    expect(await detect({ channel: () => ({ kind: 'dev' }) })).toBe('http')
+  })
+})
+
+describe('PACK-04 桌面通道: desktopEventToApplyView 事件呈现映射（design §2.4 事件表）', () => {
+  type UpdateEvent = { type: string, percent?: number, message?: string, version?: string }
+
+  async function mapEvent(event: UpdateEvent): Promise<Record<string, unknown>> {
+    const mod = await loadUpdateFlowModule()
+    const fn = mod.desktopEventToApplyView as (event: UpdateEvent) => Record<string, unknown>
+    return fn(event)
+  }
+
+  it('maps download progress onto the existing downloading presentation with a clamped percent', async () => {
+    // electron-updater percent 为 0..100；渲染端夹取成 0..100 整数（与 http 通道 0..1→整数同呈现粒度）
+    expect(await mapEvent({ type: 'download-progress', percent: 42.5 })).toEqual({ state: 'downloading', progressPercent: 43 })
+    expect(await mapEvent({ type: 'download-progress', percent: 150 })).toEqual({ state: 'downloading', progressPercent: 100 })
+    expect(await mapEvent({ type: 'download-progress', percent: -5 })).toEqual({ state: 'downloading', progressPercent: 0 })
+  })
+
+  it('maps downloaded / installing to the additive presentation states', async () => {
+    expect(await mapEvent({ type: 'downloaded', version: '9.9.9' })).toEqual({ state: 'downloaded', progressPercent: null })
+    expect(await mapEvent({ type: 'installing' })).toEqual({ state: 'installing', progressPercent: null })
+  })
+
+  it('maps errors to the failed presentation carrying the human message', async () => {
+    expect(await mapEvent({ type: 'error', message: 'HTTP 500' })).toEqual({ state: 'failed', message: 'HTTP 500' })
+  })
+
+  it('reuses the frozen downloading label and adds distinct new additive labels', async () => {
+    const mod = await loadUpdateFlowModule()
+    const base = mod.UPDATE_STATE_TEXT as Record<string, string>
+    const desktop = mod.DESKTOP_APPLY_STATE_TEXT as Record<string, string>
+    // 复用既有下载文案（不造第二套口径）
+    expect(desktop.downloading).toBe(base.downloading)
+    // 新增两呈现态非空且互不重复（呈现可区分）
+    expect(desktop.downloaded.trim()).not.toBe('')
+    expect(desktop.installing.trim()).not.toBe('')
+    expect(new Set([desktop.downloading, desktop.downloaded, desktop.installing]).size).toBe(3)
+    // failed 语义复用既有失败文案
+    expect(desktop.failed).toBe(base.failed)
+  })
+})
+
+describe('PACK-04 桌面通道: TrainingSettings.vue 接线源码契约（既有 http 分支零改动）', () => {
+  it('wires desktop channel probing and the IPC apply flow next to the untouched http flow', async () => {
+    const source = await readFile(new URL('../../web/src/components/TrainingSettings.vue', import.meta.url), 'utf8')
+    // 通道探测（进入分栏时）
+    expect(source).toContain('detectUpdateChannel(')
+    // desktop 分支：check 与 downloadAndInstall 走 IPC、订阅事件并退订
+    expect(source).toMatch(/desktopUpdates[\s\S]{0,120}checkForUpdates/)
+    expect(source).toContain('downloadAndInstall()')
+    expect(source).toMatch(/onUpdateEvent\(/)
+    expect(source).toMatch(/desktopUnsubscribe/)
+    // 既有 http 分支三端点原样保留（与既有 UPD-02 契约并存）
+    expect(source).toContain("fetch('/api/update/check')")
+    expect(source).toContain("fetch('/api/update/apply', { method: 'POST' })")
+    expect(source).toContain("fetch('/api/update/status')")
+  })
+})

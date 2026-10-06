@@ -26,6 +26,7 @@ async function exists(path) {
 
 const REQUIRED = [
   'desktop/dist/main.js',
+  'desktop/dist/preload.cjs',
   'server/dist/index.js',
   'web/dist/index.html',
 ]
@@ -46,6 +47,16 @@ const child = spawn(process.execPath, [builderCli, ...args], {
   stdio: 'inherit',
   env: process.env,
 })
-child.once('exit', (code, signal) => {
+child.once('exit', async (code, signal) => {
   process.exitCode = signal ? 1 : (code ?? 0)
+  // PACK-04 构建后实证（fail-closed）：resources/app-update.yml 必须入包——electron-updater
+  // downloadUpdate 的硬依赖（getOrCreateDownloadHelper 读 updaterCacheDirName；实测无 publish
+  // 配置时 v26.15.3 --publish never 不产出该文件）。publish 配置负责产出，此处缺即判构建失败。
+  const APP_UPDATE_YML = join(ROOT, 'desktop', 'release', 'win-unpacked', 'resources', 'app-update.yml')
+  if (process.exitCode === 0 && !(await exists(APP_UPDATE_YML))) {
+    console.error('[package-desktop] FAIL: resources/app-update.yml missing from the package (electron-updater hard dependency); check the publish section of desktop/electron-builder.yml')
+    process.exitCode = 1
+  } else if (process.exitCode === 0) {
+    console.log('[package-desktop] app-update.yml embedded (electron-updater feed config present)')
+  }
 })

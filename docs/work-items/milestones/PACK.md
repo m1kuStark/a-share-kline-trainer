@@ -9,15 +9,17 @@
   "task_ids": [
     "PACK-01",
     "PACK-02",
-    "PACK-03"
+    "PACK-03",
+    "PACK-04"
   ],
   "verification_refs": [
     "docs/verification/2026-10/PACK-01/README.md",
     "docs/verification/2026-10/PACK-02/README.md",
-    "docs/verification/2026-10/PACK-03/README.md"
+    "docs/verification/2026-10/PACK-03/README.md",
+    "docs/verification/2026-10/PACK-04/README.md"
   ],
   "acceptance_ref": null,
-  "next_action": "PACK-01/02/03 均完成工程验证（review 态）；矩阵 desktop-app covered=19/open=8/RED=0。PACK-03 交付历史数据零丢失防线（首启发现/adopt-in-place＋旧配置沿用＋双形态共存防双写＋零丢失不变量），并沉淀 Electron/Windows 平台实测四发现（PACK-03 design.md §八，PACK-04/05 必读）。PACK-04（electron-updater）/05（NSIS）待派发；PACK-02 的 8 项＋PACK-03 的 8 项 proposed_default 待用户拍板（见各自验证记录）。"
+  "next_action": "PACK-01/02/03/04 均完成工程验证（review 态）。PACK-04 交付更新通道整合（packaged→electron-updater 双通道＋最小 IPC＋安装前排空；矩阵 updater.yaml 22/22 covered）并沉淀三平台实证（autoUpdater getter 导出/--publish never 不产 app-update.yml→extraResources 回退/sandboxed preload 须 CJS）。PACK-05（NSIS 安装器＋latest.yml 发布资产）待派发；PACK-02 的 8 项＋PACK-03 的 8 项＋PACK-04 的 10 项 proposed_default 待用户拍板（见各自验证记录）。"
 }
 ```
 

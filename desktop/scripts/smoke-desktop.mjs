@@ -10,6 +10,9 @@
 //      预置伪造历史库（真实迁移建库＋settled 训练行）→ 无 TRAINER_DATA_DIR/TRAINER_DB env 启动 →
 //      断言沿用该库（health＋/api/trainings/history 返回预置记录）＋exe 同级 data/ 未创建＋
 //      desktop-data-choice.json mode=adopted；二次启动幂等（仍沿用、仍不新建 data/）
+//   ⑧ PACK-04 更新通道（阶段 H）：本地 fixture HTTP 服务（latest.yml v9.9.9＋假安装器＋
+//      sha512）＋TRAINER_DESKTOP_UPDATE_FEED 注入＋boot check 可观测缝（只查不装）→断言
+//      packaged exe 通道=packaged 且 fixture 新版被真实检出（electron-updater 真实链路）。
 //   ⑦ PACK-03 同库共存防线（阶段 G）：dataDir 预置活 trainer-state.json（记录假训练器 pid/端口）→
 //      TRAINER_DESKTOP_CONFLICT_ANSWER=reuse 启动 → 假服务被健康探测＋exe 不启第二服务
 //      （自身端口未 bind）＋不新建库文件
@@ -160,6 +163,143 @@ async function runAdoptChild() {
   process.exit(0)
 }
 
+/**
+ * 阶段 H（PACK-04 更新通道）全流程——独立 node 宿主执行（同阶段 F 宿主结论：全套 profile
+ * 沙箱重定向的 exe 只能在全新宿主 spawn）：本地 fixture HTTP 服务（latest.yml v9.9.9＋假
+ * 安装器＋sha512，测试侧独立计算）→ packaged exe 注入 TRAINER_DESKTOP_UPDATE_FEED＋
+ * TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT（一次性 boot check 可观测性缝，只查不装）→
+ * 断言 boot-check 结果：channel=packaged＋updateAvailable true＋latestVersion=9.9.9＋
+ * currentVersion=1.2.7＋error null；fixture 服务确实收到 latest.yml 请求（真实 electron-updater
+ * 链路，非桩）；优雅退出 exit 0。零 api.github.com；真实 %USERPROFILE% 绝不触碰
+ * （spawn 前 fail-closed 断言全套重定向路径位于 scene 临时目录内）。
+ */
+async function runUpdateChild() {
+  const sceneIndex = args.indexOf('--scene')
+  const sceneDir = sceneIndex >= 0 ? args[sceneIndex + 1] : null
+  if (!sceneDir) { console.error('[smoke] update-channel: FAILED --update-child requires --scene'); process.exit(1) }
+  let failures = 0
+  const { createHash, randomBytes } = await import('node:crypto')
+  const { createServer } = await import('node:http')
+
+  const FIXTURE_VERSION = '9.9.9'
+  const artifact = Buffer.concat([Buffer.from([0x4d, 0x5a]), randomBytes(600_000)])
+  const sha512 = createHash('sha512').update(artifact).digest('base64')
+  const latestYml = [
+    `version: ${FIXTURE_VERSION}`,
+    `path: fake-installer-${FIXTURE_VERSION}.exe`,
+    `sha512: ${sha512}`,
+    "releaseDate: '2026-10-05T00:00:00.000Z'",
+    'files:',
+    `  - url: fake-installer-${FIXTURE_VERSION}.exe`,
+    `    sha512: ${sha512}`,
+    `    size: ${artifact.length}`,
+  ].join('\n')
+  const servedPaths = []
+  const feedServer = createServer((request, response) => {
+    const path = (request.url ?? '/').split('?')[0]
+    servedPaths.push(path)
+    if (path === '/latest.yml') {
+      response.writeHead(200, { 'content-type': 'text/yaml', 'content-length': Buffer.byteLength(latestYml) })
+      response.end(latestYml)
+      return
+    }
+    if (path === `/fake-installer-${FIXTURE_VERSION}.exe`) {
+      response.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': artifact.length })
+      response.end(artifact)
+      return
+    }
+    response.writeHead(404, { 'content-type': 'text/plain' })
+    response.end('not found')
+  })
+  await new Promise(resolve => { feedServer.listen(0, '127.0.0.1', resolve) })
+  const feedPort = feedServer.address().port
+  const feedUrl = `http://127.0.0.1:${feedPort}/`
+  log('update-setup', `fixture feed ${feedUrl} (latest.yml v${FIXTURE_VERSION})`)
+
+  const hExeDir = join(sceneDir, 'h-exe')
+  await mkdir(hExeDir, { recursive: true })
+  const hExe = join(hExeDir, basename(exeArg))
+  await copyFile(exeArg, hExe)
+  const fakeHome = join(sceneDir, 'h-fake-home')
+  const fakeRoaming = join(fakeHome, 'AppData', 'Roaming')
+  const fakeLocal = join(fakeHome, 'AppData', 'Local')
+  const fakeTemp = join(fakeLocal, 'Temp')
+  for (const dir of [fakeRoaming, fakeLocal, fakeTemp]) await mkdir(dir, { recursive: true })
+  const hDataDir = join(sceneDir, 'h-data')
+  const hPort = await freeLoopbackPort()
+  const bootCheckOut = join(sceneDir, 'h-boot-check.json')
+  // fail-closed（development-principles §五）：spawn 前断言重定向解析结果确实位于 scene 临时目录
+  const resolvedFakeHome = await import('node:path').then(p => p.resolve(fakeHome))
+  const resolvedScene = await import('node:path').then(p => p.resolve(sceneDir))
+  if (!resolvedFakeHome.startsWith(resolvedScene)) {
+    console.error(`[smoke] update-channel: FAILED profile redirect escapes the scene temp dir (${resolvedFakeHome} vs ${resolvedScene})`)
+    process.exit(1)
+  }
+
+  const stderrLog = await open(join(sceneDir, 'exe-update-stderr.log'), 'a')
+  const stdoutLog = await open(join(sceneDir, 'exe-update-stderr.log.out'), 'a')
+  const child = spawn(hExe, [], {
+    cwd: hExeDir,
+    stdio: ['ignore', stdoutLog.fd, stderrLog.fd],
+    windowsHide: true,
+    env: {
+      ...process.env,
+      USERPROFILE: fakeHome,
+      HOMEDRIVE: fakeHome.slice(0, 2),
+      HOMEPATH: fakeHome.slice(2),
+      APPDATA: fakeRoaming,
+      LOCALAPPDATA: fakeLocal,
+      TEMP: fakeTemp,
+      TMP: fakeTemp,
+      PORT: String(hPort),
+      TRAINER_DATA_DIR: hDataDir,
+      TRAINER_DB: join(hDataDir, 'trainer.sqlite'),
+      TDX_ROOT: '',
+      OPEN_BROWSER: '0',
+      TRAINER_DESKTOP_UPDATE_FEED: feedUrl,
+      TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT: bootCheckOut,
+    },
+  })
+
+  const deadline = Date.now() + 120_000
+  let bootCheck = null
+  while (Date.now() < deadline && child.exitCode === null) {
+    bootCheck = await readFile(bootCheckOut, 'utf8').then(JSON.parse).catch(() => null)
+    if (bootCheck !== null) break
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
+  if (bootCheck === null) {
+    failures++
+    log('update-channel', `FAILED boot check result never appeared (${bootCheckOut})`)
+    killTree(child.pid)
+  } else {
+    if (bootCheck.channel !== 'packaged') { failures++; log('update-channel', `FAILED channel=${bootCheck.channel} (expected packaged)`) }
+    else log('update-channel', `channel=packaged detected via IPC-facing boot check`)
+    if (bootCheck.updateAvailable !== true || bootCheck.latestVersion !== FIXTURE_VERSION || bootCheck.error !== null) {
+      failures++
+      log('update-channel', `FAILED check view: ${JSON.stringify(bootCheck)}`)
+    } else {
+      log('update-channel', `fixture update detected: latest=${bootCheck.latestVersion} current=${bootCheck.currentVersion} updateAvailable=true`)
+    }
+  }
+  // 真实链路证据：packaged exe 的 electron-updater 确实从本地 fixture 拉了 latest.yml（非桩）
+  if (!servedPaths.includes('/latest.yml')) { failures++; log('update-channel', 'FAILED fixture server never served latest.yml (feed not exercised)') }
+  else log('update-channel', `fixture served: ${[...new Set(servedPaths)].join(', ')}`)
+
+  if (child.exitCode === null) {
+    closeMainWindowOfChildren(child.pid)
+    const quit = await waitForExit(child, GRACEFUL_EXIT_TIMEOUT_MS, 'update-exe')
+    if (!quit.exited) { failures++; log('update-channel', 'FAILED exe did not exit after window close'); killTree(child.pid) }
+    else if (quit.code !== 0) { failures++; log('update-channel', `FAILED exe exit code ${quit.code} (expected 0)`) }
+    else log('update-channel', `exe exited with code ${quit.code} (boot check only; nothing installed)`)
+  }
+  await new Promise(resolve => { feedServer.close(() => resolve()) })
+  for (const handle of [stderrLog, stdoutLog]) { try { await handle.close() } catch { /* best-effort */ } }
+  if (failures > 0) { console.error(`[smoke] update-child FAIL failures=${failures}`); process.exit(1) }
+  log('update-child', 'PASS')
+  process.exit(0)
+}
+
 const HEALTH_TIMEOUT_MS = 120_000
 const SECOND_INSTANCE_TIMEOUT_MS = 90_000
 const GRACEFUL_EXIT_TIMEOUT_MS = 60_000
@@ -167,7 +307,6 @@ const CONFLICT_TAKEOVER_TIMEOUT_MS = 120_000
 const KILL_TIMEOUT_MS = 30_000
 const OVERALL_TIMEOUT_MS = 480_000
 const WINDOW_TITLE = 'K线训练器'
-
 function log(step, detail) {
   console.log(`[smoke] ${step}${detail ? `: ${detail}` : ''}`)
 }
@@ -627,12 +766,34 @@ async function runSmoke() {
   else log('coexist-cleanup', `g exe exited with code ${gQuit.code}`)
   killTree(gFake.pid)
 
+  // ===== 阶段 H（PACK-04）：更新通道——packaged exe＋本地 fixture feed＋boot check 可观测缝 =====
+  // 经全新 node 宿主执行（--update-child 自再入，同阶段 F 宿主结论）；只查不装（真实安装
+  // 全流程待 PACK-05 发布资产＋真机验收）。断言：通道 packaged＋fixture 新版被真实检出。
+  await new Promise(resolve => setTimeout(resolve, 2_000))
+  const stageH = spawn(process.execPath, [
+    fileURLToPath(import.meta.url),
+    '--update-child',
+    '--exe', exeArg,
+    '--scene', tempDir,
+  ], { cwd: process.cwd(), stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true })
+  const stageHResult = await waitForExit(stageH, 240_000, 'stage-h-child')
+  if (!stageHResult.exited) {
+    failures++
+    log('update-channel', 'FAILED stage-H child did not finish within 240s')
+    killTree(stageH.pid)
+  } else if (stageHResult.code !== 0) {
+    failures++
+    log('update-channel', `FAILED stage-H child exited with code ${stageHResult.code}`)
+  } else {
+    log('update-channel', 'stage-H child passed (packaged channel + fixture feed assertions above)')
+  }
+
   clearTimeout(overallTimer)
   const totalSeconds = ((Date.now() - startedAt) / 1_000).toFixed(1)
   if (failures > 0) {
     console.error(`[smoke] SMOKE_FAIL failures=${failures} total=${totalSeconds}s`)
     // 失败路径同样必须留下 stderr 现场（此前仅 throw 路径打印日志，失败证据随临时目录清理湮灭）
-    for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt-stderr.log.out', 'exe-adopt2-stderr.log', 'exe-adopt2-stderr.log.out', 'exe-coexist-stderr.log']) {
+    for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt-stderr.log.out', 'exe-adopt2-stderr.log', 'exe-adopt2-stderr.log.out', 'exe-coexist-stderr.log', 'exe-update-stderr.log', 'exe-update-stderr.log.out']) {
       const text = await readFile(join(tempDir, logName), 'utf8').catch(() => '')
       if (text.trim()) console.error(`[smoke] ${logName} (tail):\n${text.trim().split('\n').slice(-15).join('\n')}`)
     }
@@ -648,6 +809,9 @@ try {
   if (args.includes('--adopt-child')) {
     await runAdoptChild()
   }
+  if (args.includes('--update-child')) {
+    await runUpdateChild()
+  }
   await runSmoke()
 } catch (error) {
   console.error(`[smoke] SMOKE_FAIL: ${error.message}`)
@@ -655,7 +819,7 @@ try {
   try {
     const { readFile } = await import('node:fs/promises')
     if (tempDir) {
-      for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt2-stderr.log', 'exe-coexist-stderr.log']) {
+      for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt2-stderr.log', 'exe-coexist-stderr.log', 'exe-update-stderr.log', 'exe-update-stderr.log.out']) {
         const text = await readFile(join(tempDir, logName), 'utf8').catch(() => '')
         if (text.trim()) console.error(`[smoke] ${logName} (tail):\n${text.trim().split('\n').slice(-12).join('\n')}`)
       }
