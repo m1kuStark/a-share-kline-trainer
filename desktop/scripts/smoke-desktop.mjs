@@ -1,19 +1,29 @@
 #!/usr/bin/env node
-// PACK-01/02 便携 exe 打包冒烟（门禁判据；PACK-02 扩展生命周期断言）：
+// PACK-01/02/03 便携 exe 打包冒烟（门禁判据；PACK-02 扩展生命周期断言；PACK-03 扩展数据防线断言）：
 //   ① 便携 exe → 复制到未跟踪临时目录 → 启动 → /api/health 200 且 currentVersion 存在
 //   ② web 首页 HTML 可达 → 窗口存在（标题「K线训练器」）
 //   ③ 第二实例：同 exe 再启动 → 限时自然退出（单实例锁）且首实例存活
 //   ④ 优雅退出（替代 PACK-01 强杀）：CloseMainWindow → 自然退出（exit 0）→ 端口可重绑＋health 拒连（无孤儿）
 //   ⑤ 冲突 restart 注入：假训练器（独立 node 进程，isTrainerHealth 身份）占随机端口 →
 //      TRAINER_DESKTOP_CONFLICT_ANSWER=restart → 假占用者被结束 → exe 自己的服务接管该端口
-// 隔离铁律：TRAINER_DATA_DIR/TRAINER_DB 指向临时目录，绝不触碰真实用户数据
-// （%USERPROFILE%\.a-share-kline-trainer 或任何既有 zip 包的 data/）；TDX_ROOT 置空；
-// 全程动态/随机端口，绝不动 8787 真实占用者；CloseMainWindow 只发给我们进程树的子进程。
+//   ⑥ PACK-03 首启发现/采用（阶段 F）：exe 复制到全新目录＋USERPROFILE 重定向到临时 home＋
+//      预置伪造历史库（真实迁移建库＋settled 训练行）→ 无 TRAINER_DATA_DIR/TRAINER_DB env 启动 →
+//      断言沿用该库（health＋/api/trainings/history 返回预置记录）＋exe 同级 data/ 未创建＋
+//      desktop-data-choice.json mode=adopted；二次启动幂等（仍沿用、仍不新建 data/）
+//   ⑦ PACK-03 同库共存防线（阶段 G）：dataDir 预置活 trainer-state.json（记录假训练器 pid/端口）→
+//      TRAINER_DESKTOP_CONFLICT_ANSWER=reuse 启动 → 假服务被健康探测＋exe 不启第二服务
+//      （自身端口未 bind）＋不新建库文件
+// 隔离铁律：TRAINER_DATA_DIR/TRAINER_DB 指向临时目录，或阶段 F 以全套一致 profile env 重定向
+// 到临时 home（USERPROFILE/APPDATA/LOCALAPPDATA/TEMP 等一起搬，见 spawnAdoptExe 注释），
+// 绝不触碰真实用户数据（%USERPROFILE%\.a-share-kline-trainer 或任何既有 zip 包的 data/）；
+// TDX_ROOT 置空；全程动态/随机端口，绝不动 8787 真实占用者；CloseMainWindow 只发给我们进程树的子进程。
 // 用法：node desktop/scripts/smoke-desktop.mjs --exe <便携exe路径> [--keep]
 import { spawn, execFileSync } from 'node:child_process'
-import { copyFile, mkdtemp, rm, stat, open } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, open, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import net from 'node:net'
 
 const args = process.argv.slice(2)
@@ -23,6 +33,131 @@ const exeArg = exeIndex >= 0 ? args[exeIndex + 1] : null
 if (!exeArg) {
   console.error('usage: node desktop/scripts/smoke-desktop.mjs --exe <portable-exe-path> [--keep]')
   process.exit(1)
+}
+
+/**
+ * 阶段 F（首启发现/采用）全流程——在独立 node 宿主里执行：
+ * 伪造历史库预置（真实迁移建库＋settled 行）→ 无 TRAINER_DATA_DIR/TRAINER_DB、全套一致
+ * profile 沙箱重定向 spawn 打包 exe → 断言：health＋history 返回预置行（沿用该库）＋
+ * exe 同级 data/ 未创建＋desktop-data-choice.json mode=adopted 指向伪造库 → 优雅退出 exit 0 →
+ * 二次启动幂等（仍沿用、仍不新建、exit 0）。绝不触碰真实 %USERPROFILE%。
+ */
+async function runAdoptChild() {
+  const sceneIndex = args.indexOf('--scene')
+  const sceneDir = sceneIndex >= 0 ? args[sceneIndex + 1] : null
+  if (!sceneDir) { console.error('[smoke] adoption: FAILED --adopt-child requires --scene'); process.exit(1) }
+  let failures = 0
+  const childLogHandles = []
+  const fExeDir = join(sceneDir, 'f-exe')
+  await mkdir(fExeDir, { recursive: true })
+  const fExe = join(fExeDir, basename(exeArg))
+  await copyFile(exeArg, fExe)
+  const fakeHome = join(sceneDir, 'fake-home')
+  const legacyLib = join(fakeHome, '.a-share-kline-trainer')
+  const markerCode = 'SMOKEF1'
+  await seedLegacyLibrary(join(legacyLib, 'trainer.sqlite'), markerCode)
+  const fakeRoaming = join(fakeHome, 'AppData', 'Roaming')
+  const fakeLocal = join(fakeHome, 'AppData', 'Local')
+  const fakeTemp = join(fakeLocal, 'Temp')
+  for (const dir of [fakeRoaming, fakeLocal, fakeTemp]) await mkdir(dir, { recursive: true })
+  const fPort = await freeLoopbackPort()
+  log('adoption-setup', `fExeDir=${fExeDir} fakeHome=${fakeHome} port=${fPort}`)
+
+  const spawnAdoptExe = async (logName) => {
+    const stderrLog = await open(join(sceneDir, logName), 'a')
+    const stdoutLog = await open(join(sceneDir, `${logName}.out`), 'a')
+    childLogHandles.push(stdoutLog, stderrLog)
+    return spawn(fExe, [], {
+      cwd: fExeDir,
+      stdio: ['ignore', stdoutLog.fd, stderrLog.fd],
+      windowsHide: true,
+      // 关键：不给 TRAINER_DATA_DIR/TRAINER_DB（发现流程必须自己找到②）；
+      // 全套 profile 一致重定向（只重定向 USERPROFILE 会留下不一致视图→原生崩溃）
+      env: {
+        ...process.env,
+        USERPROFILE: fakeHome,
+        HOMEDRIVE: fakeHome.slice(0, 2),
+        HOMEPATH: fakeHome.slice(2),
+        APPDATA: fakeRoaming,
+        LOCALAPPDATA: fakeLocal,
+        TEMP: fakeTemp,
+        TMP: fakeTemp,
+        PORT: String(fPort),
+        TDX_ROOT: '',
+        OPEN_BROWSER: '0',
+      },
+    })
+  }
+
+  const awaitHistoryHasMarker = async () => {
+    const deadline = Date.now() + 120_000
+    for (;;) {
+      try {
+        const probe = await fetchJson(`http://127.0.0.1:${fPort}/api/trainings/history`, 5_000)
+        if (probe.status === 200) {
+          const body = JSON.parse(probe.text)
+          const items = Array.isArray(body.items) ? body.items : []
+          if (items.some(item => item.code === markerCode)) return body
+        }
+      } catch { /* not up yet */ }
+      if (Date.now() > deadline) return null
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  }
+
+  const runOnce = async (logName, label) => {
+    const child = await spawnAdoptExe(logName)
+    let healthy = false
+    const deadline = Date.now() + 120_000
+    while (Date.now() < deadline && child.exitCode === null) {
+      try {
+        const probe = await fetchJson(`http://127.0.0.1:${fPort}/api/health`, 3_000)
+        if (probe.status === 200) { healthy = true; break }
+      } catch { /* boot */ }
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    if (!healthy) {
+      failures++
+      log(label, `FAILED exe never became healthy (exit=${child.exitCode})`)
+      killTree(child.pid)
+      return false
+    }
+    const history = await awaitHistoryHasMarker()
+    if (!history) {
+      failures++
+      log(label, `FAILED history endpoint did not return the seeded marker row (${markerCode}) — legacy library not adopted`)
+    } else {
+      log(label, `legacy library adopted in place: history total=${history.total}, marker row visible`)
+    }
+    const freshDefaultData = await stat(join(fExeDir, 'data')).then(() => true).catch(() => false)
+    if (freshDefaultData) { failures++; log(label, 'FAILED a fresh default data/ was created next to the exe') }
+    else log(label, 'no fresh data/ created next to the exe')
+    closeMainWindowOfChildren(child.pid)
+    const quit = await waitForExit(child, GRACEFUL_EXIT_TIMEOUT_MS, 'adopt-exe')
+    if (!quit.exited) { failures++; log(label, 'FAILED exe did not exit after window close'); killTree(child.pid) }
+    else if (quit.code !== 0) { failures++; log(label, `FAILED exe exit code ${quit.code} (expected 0)`) }
+    else log(label, `exe exited with code ${quit.code}`)
+    return history !== null && !freshDefaultData && quit.exited && quit.code === 0
+  }
+
+  const first = await runOnce('exe-adopt-stderr.log', 'adoption')
+  // 采用记录断言（首启后）：desktop-data-choice.json mode=adopted 指向伪造历史库
+  const choiceRaw = await readFile(join(fExeDir, 'desktop-data-choice.json'), 'utf8').then(JSON.parse).catch(() => null)
+  if (!choiceRaw || choiceRaw.mode !== 'adopted' || choiceRaw.dataDir !== legacyLib) {
+    failures++; log('adoption', `FAILED choice record missing/wrong: ${JSON.stringify(choiceRaw)}`)
+  } else log('adoption', `choice record mode=adopted -> ${choiceRaw.dataDir}`)
+  if (first) {
+    await new Promise(resolve => setTimeout(resolve, 2_000))
+    await runOnce('exe-adopt2-stderr.log', 'adoption-idempotent')
+  }
+  if (failures > 0) {
+    for (const handle of childLogHandles) { try { await handle.close() } catch { /* best-effort */ } }
+    console.error(`[smoke] adoption-child FAIL failures=${failures}`)
+    process.exit(1)
+  }
+  for (const handle of childLogHandles) { try { await handle.close() } catch { /* best-effort */ } }
+  log('adoption-child', 'PASS')
+  process.exit(0)
 }
 
 const HEALTH_TIMEOUT_MS = 120_000
@@ -110,14 +245,20 @@ function waitForExit(child, timeoutMs, label) {
   })
 }
 
-/** 假训练器占用者：独立 node 子进程，/api/health 回 isTrainerHealth 身份（pid=自身） */
-function spawnFakeTrainer(port) {
+/** 假训练器占用者：独立 node 子进程，/api/health 回 isTrainerHealth 身份（pid=自身）；
+ *  hitsFile 置位时每次 health 命中追加一行（PACK-03 阶段 G 断言「被健康探测」用）。
+ *  runId 默认 'run-fake-occupant'（PORT-02 端口冲突身份足够）；阶段 G 预置 trainer-state.json
+ *  时必须传 launcher writeStateFile 形状的 run-<uuid36>（coexist-guard RUN_ID_PATTERN 严格校验，
+ *  非 36 位 hex 会被判 stale→活 pid→拒绝启动，断言全红——收据：node -e 正则验证 false）。 */
+function spawnFakeTrainer(port, hitsFile = null, runId = 'run-fake-occupant') {
   const script = [
     "const http = require('http')",
+    "const fs = require('fs')",
     'const server = http.createServer((req, res) => {',
     "  if (req.url === '/api/health') {",
+    `    if (process.argv[2]) { try { fs.appendFileSync(process.argv[2], 'hit\\n') } catch {} }`,
     "    res.writeHead(200, { 'content-type': 'application/json' })",
-    "    res.end(JSON.stringify({ status: 'ok', runId: 'run-fake-occupant', pid: process.pid }))",
+    "    res.end(JSON.stringify({ status: 'ok', runId: process.argv[3], pid: process.pid }))",
     '    return',
     '  }',
     "  res.writeHead(404, { 'content-type': 'application/json' })",
@@ -125,16 +266,32 @@ function spawnFakeTrainer(port) {
     '})',
     "server.listen(Number(process.argv[1]), '127.0.0.1', () => { process.stdout.write('FAKE_READY') })",
   ].join('\n')
-  return spawn(process.execPath, ['-e', script, String(port)], {
+  return spawn(process.execPath, ['-e', script, String(port), hitsFile || '', runId], {
     cwd: tmpdir(),
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
 }
 
+/** PACK-03 阶段 F：伪造历史库（真实迁移建库＋一条 settled 训练行——历史列表端点可见的预置记录） */
+async function seedLegacyLibrary(databasePath, markerCode) {
+  const { pathToFileURL } = await import('node:url')
+  await mkdir(dirname(databasePath), { recursive: true })
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+  const dbModule = await import(pathToFileURL(join(repoRoot, 'server', 'dist', 'db.js')).href)
+  const database = dbModule.openDatabase(databasePath)
+  dbModule.migrateDatabase(database)
+  database.prepare(
+    "INSERT INTO trainings (tier, code, name, market, start_date, planned_end, status, initial_cash, created_at, settle_date)"
+    + " VALUES (?, ?, ?, 'sh', '2026-09-01', '2026-09-30', 'settled', 1000000, '2026-09-01T00:00:00.000Z', '2026-09-30')",
+  ).run('classic', markerCode, '冒烟预置历史训练')
+  database.close()
+}
+
 const startedAt = Date.now()
 let tempDir = null
 let failures = 0
+let overallTimer = null
 const cleanups = []
 const openLogHandles = []
 
@@ -179,10 +336,12 @@ async function runSmoke() {
   const spawnedAt = Date.now()
   const main = await spawnExe()
   cleanups.push(() => killTree(main.pid))
-  const overallTimer = setTimeout(() => {
+  overallTimer = setTimeout(() => {
     log('timeout', `overall ${OVERALL_TIMEOUT_MS}ms exceeded; force killing`)
     for (const cleanup of cleanups) cleanup()
     process.exitCode = 1
+    // 强制收口：清理后立即退出（不依赖事件循环排空——存活子进程的 stdio 管道可能钉住进程）
+    process.exit(1)
   }, OVERALL_TIMEOUT_MS)
 
   const awaitHealth = async (targetPort) => {
@@ -265,15 +424,17 @@ async function runSmoke() {
   const fake = spawnFakeTrainer(conflictPort)
   cleanups.push(() => killTree(fake.pid))
   const fakeReady = await new Promise((resolve, reject) => {
+    let settled = false
     const timer = setTimeout(() => reject(new Error('fake trainer did not become ready')), 10_000)
     fake.stderr.resume()
     fake.stdout.resume()
     const poll = async () => {
+      if (settled) return
       try {
         const probe = await fetchJson(`http://127.0.0.1:${conflictPort}/api/health`, 1_000)
-        if (probe.status === 200) { clearTimeout(timer); resolve(JSON.parse(probe.text)) }
+        if (probe.status === 200) { settled = true; clearTimeout(timer); resolve(JSON.parse(probe.text)); return }
       } catch { /* retry */ }
-      if (fake.exitCode !== null) return reject(new Error(`fake trainer exited early with code ${fake.exitCode}`))
+      if (fake.exitCode !== null) { settled = true; clearTimeout(timer); reject(new Error(`fake trainer exited early with code ${fake.exitCode}`)); return }
       setTimeout(poll, 200)
     }
     void poll()
@@ -342,10 +503,139 @@ async function runSmoke() {
     }
   }
 
+  // ===== 阶段 F（PACK-03）：首启发现/采用——USERPROFILE 重定向＋伪造历史库 → 原地沿用 =====
+  // 经由全新 node 子进程执行（--adopt-child 模式，本脚本自再入）：便携 exe 的「全套 profile
+  // 沙箱重定向」形态在冒烟主进程内直接 spawn 时实测 100% 崩溃（stub/应用自退 0xFFFFF003，
+  // 无 WER、无 stdout/stderr 痕迹），而同样的 spawn 参数在独立 node/直连 bash 进程里 100%
+  // 健康（诊断矩阵见验证记录 §五）——进程内暂态状态致原生故障，超出脚本层可及范围。
+  // 断言面不变：仍是对打包 exe 的真实 spawn＋HTTP/文件证据；仅多一跳宿主进程。
+  await new Promise(resolve => setTimeout(resolve, 2_000))
+  const stageF = spawn(process.execPath, [
+    fileURLToPath(import.meta.url),
+    '--adopt-child',
+    '--exe', exeArg,
+    '--scene', tempDir,
+  ], { cwd: process.cwd(), stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true })
+  const stageFResult = await waitForExit(stageF, 300_000, 'stage-f-child')
+  if (!stageFResult.exited) {
+    failures++
+    log('adoption', 'FAILED stage-F child did not finish within 300s')
+    killTree(stageF.pid)
+  } else if (stageFResult.code !== 0) {
+    failures++
+    log('adoption', `FAILED stage-F child exited with code ${stageFResult.code}`)
+  } else {
+    log('adoption', 'stage-F child passed (discovery/adopt/idempotent assertions above)')
+  }
+
+
+  // ===== 阶段 G（PACK-03）：同 dataDir 共存防线——活 trainer-state.json → reuse 注入 =====
+  // 预置 launcher 格式状态记录指向假训练器（不同端口）；reuse 应答 → 窗口连假服务、
+  // 绝不启第二服务（exe 自身端口保持未 bind）、不新建库文件。
+  const gPort = await freeLoopbackPort()
+  const gExePort = await freeLoopbackPort()
+  const gDataDir = join(tempDir, 'g-data')
+  await mkdir(gDataDir, { recursive: true })
+  const gHitsFile = join(tempDir, 'g-health-hits.txt')
+  // runId 必须满足 launcher assertStateIdentity 的 run-<uuid36>（spawnFakeTrainer 头注）
+  const gFake = spawnFakeTrainer(gPort, gHitsFile, `run-${randomUUID()}`)
+  cleanups.push(() => killTree(gFake.pid))
+  const gFakeReady = await new Promise((resolve, reject) => {
+    let settled = false
+    const timer = setTimeout(() => reject(new Error('g fake trainer did not become ready')), 10_000)
+    gFake.stderr.resume(); gFake.stdout.resume()
+    const poll = async () => {
+      if (settled) return
+      try {
+        const probe = await fetchJson(`http://127.0.0.1:${gPort}/api/health`, 1_000)
+        if (probe.status === 200) { settled = true; clearTimeout(timer); resolve(JSON.parse(probe.text)); return }
+      } catch { /* retry */ }
+      if (gFake.exitCode !== null) { settled = true; clearTimeout(timer); reject(new Error(`g fake trainer exited early with code ${gFake.exitCode}`)); return }
+      setTimeout(poll, 200)
+    }
+    void poll()
+  })
+  // launcher writeStateFile 同构记录（身份字段满足 assertStateIdentity）
+  await writeFile(join(gDataDir, 'trainer-state.json'), `${JSON.stringify({
+    appId: 'a-share-kline-trainer',
+    runId: gFakeReady.runId,
+    pid: gFakeReady.pid,
+    port: gPort,
+    baseURL: `http://127.0.0.1:${gPort}`,
+    startedAt: new Date().toISOString(),
+    databasePath: join(gDataDir, 'trainer.sqlite'),
+  }, null, 2)}\n`, 'utf8')
+  // ready-poll 自身的探测不计入断言：spawn exe 前清零，此后每次 hit＝守卫的健康探测
+  await writeFile(gHitsFile, '', 'utf8')
+  log('coexist-setup', `fake trainer pid=${gFakeReady.pid} port=${gPort}; exe target port=${gExePort}`)
+
+  const gStderrLog = await openStderrLog('exe-coexist-stderr.log')
+  const gExe = spawn(copiedExe, [], {
+    cwd: tempDir,
+    stdio: ['ignore', 'ignore', gStderrLog.fd],
+    windowsHide: true,
+    env: {
+      ...process.env,
+      PORT: String(gExePort),
+      TRAINER_DATA_DIR: gDataDir,
+      TRAINER_DB: join(gDataDir, 'trainer.sqlite'),
+      TDX_ROOT: '',
+      OPEN_BROWSER: '0',
+      TRAINER_DESKTOP_CONFLICT_ANSWER: 'reuse',
+    },
+  })
+  cleanups.push(() => killTree(gExe.pid))
+
+  // exe 便携解压＋Electron 引导实测约 12s：断言必须等「守卫已做决策」的证据，而非固定延时。
+  // reuse 决策证据＝假服务被探测 ≥2 次（身份复核＋应答后复测）后稳定 3s 仍无第二服务；
+  // proceed 证据＝exe 自身端口被 bind 或 dataDir 出现库文件（任一出现即提前判负并保留现场）。
+  const decisionState = await (async () => {
+    const deadline = Date.now() + 120_000
+    for (;;) {
+      const hits = await readFile(gHitsFile, 'utf8').then(t => t.trim().split('\n').filter(Boolean).length).catch(() => 0)
+      const bound = !(await canBindLoopback(gExePort))
+      const libCreated = await stat(join(gDataDir, 'trainer.sqlite')).then(() => true).catch(() => false)
+      if (bound || libCreated) return { hits, bound, libCreated, decided: true }
+      if (gExe.exitCode !== null) return { hits, bound, libCreated, decided: true }
+      if (hits >= 2) {
+        await new Promise(resolve => setTimeout(resolve, 3_000))
+        const stillBound = !(await canBindLoopback(gExePort))
+        const stillLib = await stat(join(gDataDir, 'trainer.sqlite')).then(() => true).catch(() => false)
+        return { hits, bound: stillBound, libCreated: stillLib, decided: true }
+      }
+      if (Date.now() > deadline) return { hits, bound, libCreated, decided: false }
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+  })()
+  if (!decisionState.decided) { failures++; log('coexist-reuse', 'FAILED no coexistence decision observed within 120s (neither probe hits nor server start)') }
+  if (decisionState.hits < 1) { failures++; log('coexist-reuse', 'FAILED recorded trainer was never health-probed') }
+  else log('coexist-reuse', `recorded trainer health-probed (${decisionState.hits} hits)`)
+
+  // 断言：exe 自身端口未被 bind（未启动第二个服务进程）＋进程存活；不新建库文件
+  const gExeAlive = gExe.exitCode === null
+  if (decisionState.bound) { failures++; log('coexist-reuse', 'FAILED exe started its own server (port bound despite live same-dir record)') }
+  else log('coexist-reuse', 'exe did not start a second server (port stays unbound)')
+  if (!gExeAlive) { failures++; log('coexist-reuse', `FAILED exe exited early with code ${gExe.exitCode}`) }
+  if (decisionState.libCreated) { failures++; log('coexist-reuse', 'FAILED a library file was created despite reuse decision') }
+  else log('coexist-reuse', 'no library file created (reuse decision preceded any server start)')
+
+  // 断言完毕即收尾本阶段：优雅关窗（reuse 窗口加载的是假服务 404 页、可能隐藏，关不掉即强杀兜底），
+  // 假训练器用后即杀——不留存活子进程（否则 node 事件循环被其 stdio 管道钉住永不退出）。
+  closeMainWindowOfChildren(gExe.pid)
+  const gQuit = await waitForExit(gExe, GRACEFUL_EXIT_TIMEOUT_MS, 'g-exe')
+  if (!gQuit.exited) { killTree(gExe.pid); log('coexist-cleanup', 'g exe force-killed (hidden reuse window did not close)') }
+  else log('coexist-cleanup', `g exe exited with code ${gQuit.code}`)
+  killTree(gFake.pid)
+
   clearTimeout(overallTimer)
-  const totalSeconds = ((Date.now() - startedAt) / 1000).toFixed(1)
+  const totalSeconds = ((Date.now() - startedAt) / 1_000).toFixed(1)
   if (failures > 0) {
     console.error(`[smoke] SMOKE_FAIL failures=${failures} total=${totalSeconds}s`)
+    // 失败路径同样必须留下 stderr 现场（此前仅 throw 路径打印日志，失败证据随临时目录清理湮灭）
+    for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt-stderr.log.out', 'exe-adopt2-stderr.log', 'exe-adopt2-stderr.log.out', 'exe-coexist-stderr.log']) {
+      const text = await readFile(join(tempDir, logName), 'utf8').catch(() => '')
+      if (text.trim()) console.error(`[smoke] ${logName} (tail):\n${text.trim().split('\n').slice(-15).join('\n')}`)
+    }
     process.exitCode = 1
   } else {
     log('pass', `SMOKE_PASS total=${totalSeconds}s`)
@@ -353,13 +643,19 @@ async function runSmoke() {
 }
 
 try {
+  // PACK-03 阶段 F 子模式（由主冒烟以全新 node 进程再入执行；见阶段 F 注释的宿主上下文结论）。
+  // 分发点必须在全部 const/函数声明之后（避免 TDZ）。
+  if (args.includes('--adopt-child')) {
+    await runAdoptChild()
+  }
   await runSmoke()
 } catch (error) {
   console.error(`[smoke] SMOKE_FAIL: ${error.message}`)
+  if (overallTimer) clearTimeout(overallTimer)
   try {
     const { readFile } = await import('node:fs/promises')
     if (tempDir) {
-      for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log']) {
+      for (const logName of ['exe-main-stderr.log', 'exe-second-stderr.log', 'exe-conflict-stderr.log', 'exe-adopt-stderr.log', 'exe-adopt2-stderr.log', 'exe-coexist-stderr.log']) {
         const text = await readFile(join(tempDir, logName), 'utf8').catch(() => '')
         if (text.trim()) console.error(`[smoke] ${logName} (tail):\n${text.trim().split('\n').slice(-12).join('\n')}`)
       }
@@ -371,4 +667,6 @@ try {
   for (const handle of openLogHandles) { try { await handle.close() } catch { /* best-effort */ } }
   if (tempDir && !keep) await rm(tempDir, { recursive: true, force: true }).catch(() => {})
   else if (tempDir) log('keep', tempDir)
+  // 收口保证：全部工作已完成，任何残留句柄不得钉住进程（本轮曾因假训练器 stdio 管道挂死）
+  process.exit(process.exitCode ?? 0)
 }

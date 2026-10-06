@@ -3,7 +3,7 @@
 // launch() 的 env 注入清单），不从被测实现反推；路径期望用 node:path join 在测试侧独立拼出。
 import { describe, expect, it } from 'vitest'
 import { join } from 'node:path'
-import { buildAppUrl, buildServerEnv, resolveDesktopConfig } from '../src/desktop-config.js'
+import { buildAppUrl, buildServerEnv, hasExplicitDataOverride, resolveDesktopConfig } from '../src/desktop-config.js'
 
 const EXE_DIR = join('C:', 'apps', 'trainer')
 const APP_ROOT = join('C:', 'apps', 'trainer', 'resources', 'app.asar')
@@ -70,5 +70,54 @@ describe('desktop runtime config', () => {
   it('DESKTOP-APP-URL: builds the loopback app URL from the listening port', () => {
     expect(buildAppUrl(8787)).toBe('http://127.0.0.1:8787')
     expect(buildAppUrl(52341)).toBe('http://127.0.0.1:52341')
+  })
+})
+
+describe('PACK-03 config merge and state-record identity channel', () => {
+  it('CONFIG-LEGACY-ADOPT: defaults (adoption/legacy config) fill in beneath env and above built-ins', () => {
+    const adopted = join('C:', 'Users', 'tester', '.a-share-kline-trainer')
+    const merged = resolveDesktopConfig({}, { exeDir: EXE_DIR, appRoot: APP_ROOT }, {
+      dataDir: adopted,
+      port: 9000,
+      databasePath: join(adopted, 'trainer.sqlite'),
+      tdxRoot: join('E:', 'tdx-legacy'),
+    })
+    expect(merged.dataDir).toBe(adopted)
+    expect(merged.databasePath).toBe(join(adopted, 'trainer.sqlite'))
+    expect(merged.port).toBe(9000)
+    expect(merged.tdxRoot).toBe(join('E:', 'tdx-legacy'))
+
+    // env 显式值恒胜 defaults（优先级结构化保证）
+    const envWins = resolveDesktopConfig({
+      TRAINER_DATA_DIR: join('D:', 'env-iso'),
+      PORT: '9527',
+      TDX_ROOT: join('F:', 'env-tdx'),
+    }, { exeDir: EXE_DIR, appRoot: APP_ROOT }, {
+      dataDir: adopted,
+      port: 9000,
+      tdxRoot: join('E:', 'tdx-legacy'),
+    })
+    expect(envWins.dataDir).toBe(join('D:', 'env-iso'))
+    expect(envWins.port).toBe(9527)
+    expect(envWins.tdxRoot).toBe(join('F:', 'env-tdx'))
+  })
+
+  it('COEXIST-SAME-DATADIR-GUARD: hasExplicitDataOverride detects env data config; buildServerEnv reuses the caller runId and emits the tdx source label', () => {
+    expect(hasExplicitDataOverride({})).toBe(false)
+    expect(hasExplicitDataOverride({ TRAINER_DATA_DIR: '  ' })).toBe(false)
+    expect(hasExplicitDataOverride({ TRAINER_DB: '  ' })).toBe(false)
+    expect(hasExplicitDataOverride({ TRAINER_DATA_DIR: join('D:', 'x') })).toBe(true)
+    expect(hasExplicitDataOverride({ TRAINER_DB: join('D:', 'x', 't.sqlite') })).toBe(true)
+
+    const config = resolveDesktopConfig({}, { exeDir: EXE_DIR, appRoot: APP_ROOT }, { tdxSource: 'saved-choice' })
+    const pinned = 'run-01234567-89ab-cdef-0123-456789abcdef'
+    const env = buildServerEnv(config, {}, { runId: pinned })
+    // 状态记录身份通道：runId 由调用方预生成（内嵌服务 health 上报与 trainer-state.json 记录同源）
+    expect(env.TRAINER_RUN_ID).toBe(pinned)
+    expect(env.TRAINER_TDX_SOURCE).toBe('saved-choice')
+
+    const unlabeled = buildServerEnv(resolveDesktopConfig({}, { exeDir: EXE_DIR, appRoot: APP_ROOT }), {})
+    expect(unlabeled.TRAINER_TDX_SOURCE).toBeUndefined()
+    expect(unlabeled.TRAINER_RUN_ID).toMatch(/^run-[0-9a-f-]{36}$/)
   })
 })

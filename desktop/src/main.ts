@@ -4,13 +4,25 @@
 //   进程内启动 Fastify server → BrowserWindow（bounds 记忆/最小尺寸/安全基线/外部链接系统浏览器）。
 //   退出：窗口全关→冻结排空（in-app 口径，未完成训练保留 SQLite）→server close→app 退出；
 //   超时（TRAINER_DESKTOP_DRAIN_TIMEOUT_MS，默认 15s）强制退出并如实记录。
-// 决策逻辑全部抽在纯函数层（boot-plan/port-conflict/quit-state/window-bounds/external-links，
-// vitest 覆盖）；本文件只做 Electron API 粘合，实机行为由 desktop/scripts/smoke-desktop.mjs 验证。
+// PACK-03 数据与配置兼容：启动早期先做首启数据发现/采用（adopt-in-place，绝不复制/迁移/
+//   删除既有库）＋trainer.config.json 旧配置沿用＋saved-tdx-choice 沿用；内嵌服务启动前取
+//   launch.lock 并按 dataDir 状态记录做共存裁决（与 zip launcher 双向防双写）；服务起来后写
+//   同格式 trainer-state.json 供 launcher 反向识别，退出时仅清理本进程身份匹配的自有记录。
+// 决策逻辑全部抽在纯函数层（boot-plan/port-conflict/quit-state/window-bounds/external-links/
+// data-home/coexist-guard，vitest 覆盖）；本文件只做 Electron API 粘合，实机行为由
+// desktop/scripts/smoke-desktop.mjs 验证。
 import { app, BrowserWindow, dialog, screen, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { buildAppUrl, buildServerEnv, resolveDesktopConfig, type DesktopRuntimeConfig } from './desktop-config.js'
+import {
+  buildAppUrl,
+  buildServerEnv,
+  hasExplicitDataOverride,
+  resolveDesktopConfig,
+  type DesktopRuntimeConfig,
+} from './desktop-config.js'
 import { planInstanceBoot } from './boot-plan.js'
 import {
   bindCheckTcp,
@@ -31,6 +43,28 @@ import {
   serializeBounds,
   type WindowBounds,
 } from './window-bounds.js'
+import {
+  createNodeDataHomeDeps,
+  LIBRARY_FILE,
+  parseDataHomeAnswerEnv,
+  parseSavedTdxChoice,
+  persistDataChoiceRecord,
+  resolveDataHome,
+  savedChoiceSearchDir,
+  SAVED_TDX_CHOICE_FILE,
+  type DataHomeAnswer,
+} from './data-home.js'
+import {
+  acquireLaunchLock,
+  buildStateRecord,
+  decideCoexistence,
+  launchLockPathOf,
+  parseTrainerStateRecord,
+  STATE_APP_ID,
+  STATE_FILE,
+  stateRecordIsOurs,
+  type DesktopStateRecord,
+} from './coexist-guard.js'
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
 const WINDOW_TITLE = 'K线训练器'
@@ -49,6 +83,8 @@ let serverRunning = false
 let quitState: QuitState = { phase: 'idle' }
 let shutdownCall: Promise<void> | null = null
 let windowStatePath: string | null = null
+// PACK-03：内嵌服务的身份（写/清 trainer-state.json 与 health 上报同源）
+let serverIdentity: { runId: string; pid: number; dataDir: string } | null = null
 
 // ===== 窗口 =====
 
@@ -179,16 +215,159 @@ async function killTrainerOccupant(occupant: TrainerIdentity): Promise<{ exited:
   }
 }
 
+// ===== PACK-03 数据落点发现/采用＋共存防线（GUI 询问可注入，测试/冒烟不依赖 GUI） =====
+
+const DATA_HOME_DIALOG = {
+  title: '选择训练数据',
+  message: '发现了两份训练数据',
+  detail: (candidates: { exe: string; legacy: string }) =>
+    `exe 旁数据目录：\n${candidates.exe}\n\n历史主目录数据：\n${candidates.legacy}\n\n`
+    + '请选择本次及以后沿用的数据；「取消」＝退出且不做任何改动。',
+  buttons: ['使用 exe 旁数据', '使用历史主目录数据', '取消'],
+  defaultId: 0,
+  cancelId: 2,
+}
+
+async function askDataHomeDialog(candidates: { exe: string; legacy: string }): Promise<DataHomeAnswer> {
+  const choice = await dialog.showMessageBox({
+    type: 'question',
+    title: DATA_HOME_DIALOG.title,
+    message: DATA_HOME_DIALOG.message,
+    detail: DATA_HOME_DIALOG.detail(candidates),
+    buttons: DATA_HOME_DIALOG.buttons,
+    defaultId: DATA_HOME_DIALOG.defaultId,
+    cancelId: DATA_HOME_DIALOG.cancelId,
+    noLink: true,
+  })
+  // 按钮序即应答序：0=exe / 1=legacy / 2=cancel（Esc/关闭＝cancelId→cancel）
+  return (['exe', 'legacy', 'cancel'] as const)[choice.response]
+}
+
+/** launcher pidAlive 镜像：EPERM＝活（无权限发信号≠进程不存在） */
+function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM'
+  }
+}
+
+function nodeLaunchLockDeps() {
+  return {
+    openExclusive: async (path: string) => {
+      try {
+        const handle = await open(path, 'wx')
+        await handle.writeFile(`${JSON.stringify({ appId: STATE_APP_ID, pid: process.pid, startedAt: new Date().toISOString() }, null, 2)}\n`)
+        await handle.close()
+        return { ok: true }
+      } catch (error) {
+        return { ok: false, code: (error as NodeJS.ErrnoException).code }
+      }
+    },
+    readLockInfo: async (path: string): Promise<unknown> => {
+      try {
+        return JSON.parse(await readFile(path, 'utf8'))
+      } catch (error) {
+        // 锁文件消失＝已释放（null）；存在但读不懂＝不可识别（非 null）
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+        return 'unreadable-lock'
+      }
+    },
+    removeFile: async (path: string) => { await rm(path, { force: true }) },
+    pidAlive,
+  }
+}
+
+async function readTrainerStateRaw(dataDir: string): Promise<unknown> {
+  try {
+    return JSON.parse(await readFile(join(dataDir, STATE_FILE), 'utf8'))
+  } catch {
+    return null // 缺失/损坏均按 launcher readOwnedState 缺席处理（决策层再分档）
+  }
+}
+
+/** 状态记录原子写入（launcher writeStateFile 同法：临时文件＋rename） */
+async function writeTrainerStateFile(dataDir: string, record: DesktopStateRecord): Promise<void> {
+  const path = join(dataDir, STATE_FILE)
+  const temporary = `${path}.${randomUUID()}.tmp`
+  await writeFile(temporary, `${JSON.stringify(record, null, 2)}\n`, { flag: 'wx' })
+  await rename(temporary, path)
+}
+
+/** 退出清理：仅当文件内容仍是本进程 runId+pid 身份时才删（绝不删他人记录） */
+async function clearOwnTrainerState(): Promise<void> {
+  const identity = serverIdentity
+  if (!identity) return
+  try {
+    const path = join(identity.dataDir, STATE_FILE)
+    const raw = await readTrainerStateRaw(identity.dataDir)
+    if (stateRecordIsOurs(raw, identity)) await rm(path, { force: true })
+  } catch (error) {
+    console.error('[desktop] state record cleanup failed:', error)
+  }
+}
+
 // ===== 启动 =====
 
 async function bootServerAndOpen(): Promise<void> {
   // 便携 exe：electron-builder 注入 PORTABLE_EXECUTABLE_DIR＝exe 所在目录（用户选择的位置），
   // 与 zip「包根 data」语义对齐；开发/非便携回退 process.execPath 同级。
   const exeDir = process.env.PORTABLE_EXECUTABLE_DIR?.trim() || join(app.getAppPath(), '..', '..')
-  const config = resolveDesktopConfig(process.env, { exeDir, appRoot: app.getAppPath() })
+  const appRoot = app.getAppPath()
+
+  // ---- PACK-03 步骤 1：首启数据发现/采用（adopt-in-place；env 注入应答优先于 GUI 询问） ----
+  const injectedDataAnswer = parseDataHomeAnswerEnv(process.env)
+  const dataHome = await resolveDataHome(
+    { envExplicit: hasExplicitDataOverride(process.env), paths: { exeDir, homeDir: homedir() } },
+    createNodeDataHomeDeps({ ask: injectedDataAnswer ? async () => injectedDataAnswer : askDataHomeDialog }),
+  )
+  if (dataHome.quit) {
+    console.log(`[desktop] ${dataHome.reason}`)
+    app.quit()
+    return
+  }
+  const { resolution, legacyConfig } = dataHome
+  if (resolution.record) {
+    try {
+      await persistDataChoiceRecord(exeDir, resolution.record)
+    } catch (error) {
+      // 记录失败不阻断启动（下次会重新发现，结果相同）；如实记录
+      console.error('[desktop] data choice persist failed:', error)
+    }
+  }
+  if (resolution.notice) {
+    // 一次性提示 v1 收敛为 console（呈现类保守默认，收尾报告标注）：原生 dialog 实测两种形态
+    // 均有硬伤——无父窗口（引导期）在 Windows 触发原生崩溃 0x80000003；挂主窗口则为模态，
+    // 阻塞窗口关闭（冒烟/diag 关不掉需强杀）。窗口内提示（页面 toast 等）留待验收轮拍板。
+    console.log(`[desktop] ${resolution.notice}`)
+  }
+
+  // ---- PACK-03 步骤 2：saved-tdx-choice 沿用（env > 旧配置 > 采用目录内保存的选择） ----
+  let savedTdxRoot: string | null = null
+  const tdxFromEnv = process.env.TDX_ROOT?.trim() || null
+  const tdxFromLegacy = legacyConfig?.tdxRoot ?? null
+  if (!tdxFromEnv && !tdxFromLegacy) {
+    // 搜索目录＝生效 dataDir（env 显式 TRAINER_DATA_DIR > 解析产物 > 便携默认；纯函数已测）
+    const effectiveDataDir = savedChoiceSearchDir(process.env, resolution, exeDir)
+    try {
+      savedTdxRoot = parseSavedTdxChoice(JSON.parse(await readFile(join(effectiveDataDir, SAVED_TDX_CHOICE_FILE), 'utf8')))?.root ?? null
+    } catch { savedTdxRoot = null }
+  }
+
+  // ---- 配置合并：env 显式 > 发现/旧配置产物（defaults）> 便携默认 ----
+  const config: DesktopRuntimeConfig = resolveDesktopConfig(process.env, { exeDir, appRoot }, {
+    dataDir: resolution.dataDir ?? undefined,
+    port: legacyConfig?.port,
+    databasePath: legacyConfig?.databasePathExplicit
+      ? legacyConfig.databasePath
+      : (resolution.dataDir ? join(resolution.dataDir, LIBRARY_FILE) : undefined),
+    tdxRoot: tdxFromLegacy ?? savedTdxRoot ?? undefined,
+    tdxSource: tdxFromEnv ? 'env' : tdxFromLegacy ? 'explicit-config' : savedTdxRoot ? 'saved-choice' : undefined,
+  })
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
 
-  // 端口决策（PORT-01/PORT-02 桌面版）：应答注入优先于 GUI 询问
+  // ---- 端口决策（PORT-01/PORT-02 桌面版）：应答注入优先于 GUI 询问 ----
   const injectedAnswer = parseConflictAnswerEnv(process.env)
   const plan: PortPlan = await resolvePortPlan(config.port, {
     probeHealth: probeHealthHttp,
@@ -205,16 +384,62 @@ async function bootServerAndOpen(): Promise<void> {
     return
   }
 
-  // start：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env
-  const effectiveConfig: DesktopRuntimeConfig = { ...config, port: plan.port }
-  process.env.TRAINER_PORT_FALLBACK = portFallbackEnvValue(plan.fallback)
-  // server loadConfig 在调用时读 process.env：先注入隔离运行 env 再动态导入入口。
-  Object.assign(process.env, buildServerEnv(effectiveConfig, process.env))
-  const serverEntry = await import('../../server/dist/index.js')
-  const started = await serverEntry.startTrainerServer()
-  serverHandle = started
-  serverRunning = true
-  mainWindow = createWindow(buildAppUrl(started.port), await loadWindowBounds())
+  // ---- PACK-03 步骤 3：共存防线——launch.lock ＋ dataDir 状态记录裁决（zip/exe 双向防双写） ----
+  // launcher 同法先确保数据目录存在（锁文件落在 dataDir 内；目录不可写＝启动失败如实呈现）
+  try {
+    await mkdir(config.dataDir, { recursive: true })
+  } catch (error) {
+    throw new Error(`数据目录不可用 / data directory is not usable: ${config.dataDir} (${(error as Error).message})`)
+  }
+  const lock = await acquireLaunchLock(launchLockPathOf(config.dataDir), nodeLaunchLockDeps())
+  if (!lock.ok) throw new Error(lock.reason)
+  let lockHeld = true
+  try {
+    const guard = await decideCoexistence(parseTrainerStateRecord(await readTrainerStateRaw(config.dataDir)), {
+      pidAlive,
+      probeHealth: probeHealthHttp,
+      askConflict: injectedAnswer ? async () => injectedAnswer : askConflictDialog,
+      killOccupant: killTrainerOccupant,
+    })
+    if (guard.action === 'quit') {
+      if (guard.fatal) throw new Error(guard.reason)
+      console.log(`[desktop] ${guard.reason}`)
+      app.quit()
+      return
+    }
+    if (guard.action === 'reuse') {
+      // 复用同库的已有训练器服务（zip launcher 等不占本端口的形态）：窗口加载其 URL，不启第二服务
+      console.log(`[desktop] reusing same-data-dir trainer at ${guard.url} (PID ${guard.occupant.pid})`)
+      mainWindow = createWindow(guard.url, await loadWindowBounds())
+      return
+    }
+
+    // proceed：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env。
+    // runId 预生成：状态记录 trainer-state.json 与内嵌服务 health 上报同源。
+    const runId = `run-${randomUUID()}`
+    const effectiveConfig: DesktopRuntimeConfig = { ...config, port: plan.port }
+    process.env.TRAINER_PORT_FALLBACK = portFallbackEnvValue(plan.fallback)
+    // server loadConfig 在调用时读 process.env：先注入隔离运行 env 再动态导入入口。
+    Object.assign(process.env, buildServerEnv(effectiveConfig, process.env, { runId }))
+    const serverEntry = await import('../../server/dist/index.js')
+    const started = await serverEntry.startTrainerServer()
+    serverHandle = started
+    serverRunning = true
+    serverIdentity = { runId, pid: process.pid, dataDir: config.dataDir }
+    // 反向防线：写 launcher 兼容状态记录，zip launcher decideRecordedServer 可识别并 reuse
+    await writeTrainerStateFile(config.dataDir, buildStateRecord({
+      runId,
+      pid: process.pid,
+      port: started.port,
+      databasePath: config.databasePath,
+    }))
+    mainWindow = createWindow(buildAppUrl(started.port), await loadWindowBounds())
+  } finally {
+    if (lockHeld) {
+      lockHeld = false
+      await rm(lock.path, { force: true }).catch(error => console.error('[desktop] launch lock release failed:', error))
+    }
+  }
 }
 
 async function bootstrap(): Promise<void> {
@@ -243,6 +468,8 @@ function runShutdownOnce(): Promise<void> {
   shutdownCall ??= (async () => {
     try {
       await serverHandle?.shutdown()
+      // PACK-03：清理自有状态记录（身份复核；绝不删他人记录；失败仅日志不阻断退出）
+      await clearOwnTrainerState()
     } catch (error) {
       console.error('[desktop] server shutdown error:', error)
       throw error
