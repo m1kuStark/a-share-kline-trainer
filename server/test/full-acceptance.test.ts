@@ -33,12 +33,12 @@ function weekdayDates(startDate: string, count: number): string[] {
   return dates
 }
 
-async function createFixture(): Promise<{ root: string; dates: string[] }> {
+async function createFixture(count = 45, start = '2026-07-01'): Promise<{ root: string; dates: string[] }> {
   const root = await mkdtemp(join(tmpdir(), 'tdx-full-acceptance-'))
   const directory = join(root, 'vipdoc', 'sh', 'lday')
   await mkdir(directory, { recursive: true })
   await mkdir(join(root, 'T0002', 'hq_cache'), { recursive: true })
-  const dates = weekdayDates('2026-07-01', 45)
+  const dates = weekdayDates(start, count)
   await writeFile(join(directory, 'sh600000.day'), Buffer.concat(dates.map((date, index) => dayRecord(
     Number(date.replaceAll('-', '')),
     10 + index * 0.1 - 0.05,
@@ -55,8 +55,8 @@ async function createFixture(): Promise<{ root: string; dates: string[] }> {
   return { root, dates }
 }
 
-async function withApp(run: (context: { app: Fastify.FastifyInstance; database: DatabaseSync; config: AppConfig; dates: string[] }) => Promise<void>): Promise<void> {
-  const { root, dates } = await createFixture()
+async function withApp(run: (context: { app: Fastify.FastifyInstance; database: DatabaseSync; config: AppConfig; dates: string[] }) => Promise<void>, count = 45, start = '2026-07-01'): Promise<void> {
+  const { root, dates } = await createFixture(count, start)
   const database = new DatabaseSync(':memory:')
   migrateDatabase(database)
   const app = Fastify()
@@ -72,6 +72,28 @@ async function withApp(run: (context: { app: Fastify.FastifyInstance; database: 
 }
 
 describe('full acceptance matrix', () => {
+  it('MA warmup extends the real training load window while retaining its cutoff and earlier-history boundary', async () => {
+    await withApp(async ({ app, dates }) => {
+      const current = dates[2000]
+      const created = await app.inject({ method: 'POST', url: '/api/trainings', payload: { code: '600000', tier: '1M', start_date: current, initial_cash: 100_000 } })
+      expect(created.statusCode).toBe(201)
+      const id = created.json().training.id
+      const defaults = (await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D` })).json()
+      const extended = (await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D&warmup=999` })).json()
+      const minimum = (await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D&warmup=0` })).json()
+      expect(defaults.bars).toHaveLength(1040)
+      expect(extended.bars).toHaveLength(1839)
+      expect(minimum.bars).toHaveLength(840)
+      expect(extended.bars.at(-1).date).toBe(current)
+      expect(extended.bars[0].date).toBe(dates[162])
+      expect(extended.bars.every((bar: { date: string }) => bar.date <= current)).toBe(true)
+      expect(extended.hasMore).toBe(true)
+      const earlier = (await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D&before=${extended.bars[0].date}&count=300` })).json()
+      expect(earlier.bars).toHaveLength(162)
+      expect(earlier.hasMore).toBe(false)
+      expect(earlier.bars.at(-1).date).toBe(dates[161])
+    }, 2300, '2017-01-02')
+  })
   it('M1 exposes the data contract: catalog, raw/forward bars, periods, benchmark, and validation errors', async () => {
     await withApp(async ({ app }) => {
       const env = await app.inject({ method: 'GET', url: '/api/env' })
@@ -186,6 +208,16 @@ describe('full acceptance matrix', () => {
       expect(badCount.statusCode).toBe(400)
       const badBefore = await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=1D&before=bad-date` })
       expect(badBefore.statusCode).toBe(400)
+      // Configurable MA warmup shares the same no-future training series for every period.
+      for (const tf of ['1D', '1W', '1M']) {
+        const extended = await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?tf=${tf}&warmup=999` })
+        expect(extended.statusCode).toBe(200)
+        expect(extended.json().bars.every((bar: { date: string }) => bar.date <= dates[3])).toBe(true)
+      }
+      for (const warmup of ['-1', '1000', '1.5', 'abc', '']) {
+        const invalid = await app.inject({ method: 'GET', url: `/api/trainings/${id}/bars?warmup=${warmup}` })
+        expect(invalid.statusCode).toBe(400)
+      }
 
       const rawDuringTraining = await app.inject({ method: 'GET', url: '/api/kline/600000?adjust=raw' })
       expect(rawDuringTraining.statusCode).toBe(409)

@@ -43,7 +43,7 @@ V1 页面不启用盲测；引擎仍接受 blind 并保留遮蔽逻辑供存量�
 
 `buildTrainingSeries` 当前读取整份本地日线，再按推进日截断 → 仅纳入推进日及以前权息的前复权 → 日/周/月聚合。截断顺序同样适用于形成中的周月 K 线。这里保证的是返回的可见行情无未来价格，不代表底层没有读取完整文件。
 
-`trainingBars` 首次返回最多 1040 根，含 840 根可见上限与 200 根均线暖机余量。`trainingBarsBefore` 返回严格早于 before 的最近 count 根及 hasMore；840 限制同屏显示，不限制全部历史载入量。API 默认历史批量 300、允许 1～1000。
+`trainingBars` 首次默认最多1040根，含840根可见上限与200根暖机余量。bars接口可传 `warmup=0..999`，初始上限为840+warmup；训练页面按已启用的最大MA周期申请max(200,周期-1)，默认1040根，MA1000最多1839根；修改成长周期后通过before/count按缺口补历史，保留图表与画线。`trainingBarsBefore` 返回严格早于before的最近count根及hasMore；840限制同屏显示，不限制全部历史载入量。API默认历史批量300、允许1～1000。warmup不改变截断/复权/聚合口径，不足历史不补造数据。
 
 `trainingSnapshot` 从流水重建账户；bars 响应另经 `buildChartSpace` 补图表成交价与成本。running 时 [api.ts](../../api.ts) 关闭 `/api/kline/:code`，避免前端旁路取得普通行情。
 

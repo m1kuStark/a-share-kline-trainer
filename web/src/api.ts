@@ -464,10 +464,11 @@ export interface TrainingBarsPayload extends TrainingSnapshot {
   drawingPriceBasis?: DrawingPriceBasis
 }
 
-export function fetchTrainingBars(id: number, tf: Timeframe, params?: { before?: string; count?: number }): Promise<TrainingBarsPayload> {
+export function fetchTrainingBars(id: number, tf: Timeframe, params?: { before?: string; count?: number; warmup?: number }): Promise<TrainingBarsPayload> {
   const search = new URLSearchParams({ tf })
   if (params?.before) search.set('before', params.before)
   if (params?.count) search.set('count', String(params.count))
+  if (params?.warmup !== undefined) search.set('warmup', String(params.warmup))
   return request(`/api/trainings/${id}/bars?${search}`)
 }
 

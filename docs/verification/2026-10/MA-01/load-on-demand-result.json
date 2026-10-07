@@ -1,0 +1,109 @@
+{
+  "baseCommit": "5f74db0ed3e46000f19754efb5ecf7ee7f3e4835",
+  "kind": "uncommitted-worktree",
+  "recordedAt": "2026-10-07T12:22:38.371Z",
+  "node": "v24.21.0",
+  "platform": "win32",
+  "files": [
+    {
+      "path": "web/src/maSettings.ts",
+      "sha256": "690997403405f5c12dcaf4be6d3dfc4b72ad94135f2a6bbd676d1aec17f6ea8d"
+    },
+    {
+      "path": "web/src/components/MaSettingsDialog.vue",
+      "sha256": "1a3fbdc3b1083990b420e305441e437e63deafb62bbe88ae7850b9dd8f042946"
+    },
+    {
+      "path": "web/src/components/KlineChart.vue",
+      "sha256": "90cc137b7ca6401858e0b6821bca988b99814d43e38c2a262d755a7d39b0f38d"
+    },
+    {
+      "path": "web/src/views/Training.vue",
+      "sha256": "91112468be57811bd75c7e974b95f01eba2a6a95b2b38dccab8b819571fd67c9"
+    },
+    {
+      "path": "web/src/api.ts",
+      "sha256": "b4918409a961f6b8dec71c3694796be3686843ce6dcfeb130f1cdb4ec153946b"
+    },
+    {
+      "path": "server/src/api.ts",
+      "sha256": "e823377a863b35b122288ba0416b71d10a36ba18410e5f773c9b58b4a18d7db1"
+    },
+    {
+      "path": "server/src/train/engine.ts",
+      "sha256": "67bb16b956879f8bc9a3fa2148c4176c8b08422d001844011a5aa5805916c5e4"
+    },
+    {
+      "path": "server/test/ma-settings.test.ts",
+      "sha256": "b3aa91290590b43079989a9922501b09aede3375d48c2bfef1abbeca387fa52c"
+    },
+    {
+      "path": "server/test/full-acceptance.test.ts",
+      "sha256": "2b7e6ea8e9155f1be7a7d97af203cd9fedad8c7dff5b4f65e53c18a39bf73e99"
+    },
+    {
+      "path": "e2e/ma-settings.spec.ts",
+      "sha256": "12d97f7a6ae8bad34742b611954680ca10d812e23d892d53e7517bbbd74c2f66"
+    }
+  ],
+  "sourceFingerprint": "c51dfba9f70845f0ae3643d80f9c25936fdc86b05c2284fe8eccbc74a555567b",
+  "checks": [
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/ma-settings.test.ts server/test/full-acceptance.test.ts server/test/recording-chart-capture.test.ts",
+      "exitCode": 0,
+      "passed": 20
+    },
+    {
+      "command": "npm test",
+      "exitCode": 1,
+      "serverPassed": 1511,
+      "serverFailed": 12,
+      "desktopNotRun": true,
+      "note": "Started before final capture-order adjustment. Two recording-chart-capture shape assertions subsequently passed in the 20-test targeted rerun. Ten other failures were in unmodified files; no baseline comparison was performed."
+    },
+    {
+      "command": "npm run test:desktop",
+      "exitCode": 0,
+      "passed": 40
+    },
+    {
+      "command": "npx --no-install tsx scripts/verify-m2.ts",
+      "exitCode": 0,
+      "passed": 24,
+      "database": "in-memory",
+      "source": "frozen read-only sample"
+    },
+    {
+      "command": "npm run journey -- e2e/ma-settings.spec.ts --retries=0",
+      "exitCode": 0,
+      "passed": 3,
+      "run": "run-27abf4f5-821e-439e-a70d-3432ef204e9b"
+    },
+    {
+      "command": "npm run journey -- --retries=0 --timeout=120000 --max-failures=1",
+      "exitCode": 1,
+      "failed": 1,
+      "notRun": 152,
+      "run": "run-98da044c-0fec-4f77-bfc1-12bd7057fbb1"
+    }
+  ],
+  "fullGatesPassed": false,
+  "integration": null,
+  "userAcceptance": null,
+  "visual": {
+    "inspector": "primary-agent",
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "sizes": [
+      "1440x900",
+      "1280x720"
+    ],
+    "passed": true
+  }
+}

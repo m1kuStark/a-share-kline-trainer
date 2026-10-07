@@ -13,6 +13,7 @@ import { SerialDrawingSaver, type Drawing } from '../drawingState'
 import { DrawingOutbox } from '../drawingOutbox'
 import type { DrawingPriceBasis } from '../drawingPriceBasis'
 import { nextTimeframe, MAX_VISIBLE_BARS } from '../chartNavigation'
+import { appMaSettings, maWarmup } from '../maSettings'
 import { DEFAULT_FAVORITE_TOOLS, loadFavoriteTools, moveFavoriteTool, saveFavoriteTools } from '../toolFavorites'
 import {
   KEYBOARD_SHORTCUTS_CHANGED_EVENT, loadKeyboardShortcuts, matchesActionShortcut,
@@ -380,7 +381,7 @@ async function load(): Promise<void> {
   const recordingOp = recording.begin('chart.load', { timeframe })
   try {
     const [payload, daily] = await Promise.all([
-      fetchTrainingBars(training.value.id, timeframe),
+      fetchTrainingBars(training.value.id, timeframe, { warmup: maWarmup(appMaSettings.value) }),
       timeframe === '1D' ? Promise.resolve(null) : fetchTrainingBars(training.value.id, '1D'),
     ])
     if (requestVersion !== loadVersion) { recording.finish(recordingOp, 'cancelled', { reason: '已被新请求替代' }); return }

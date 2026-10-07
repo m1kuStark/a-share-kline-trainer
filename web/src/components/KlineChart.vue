@@ -17,6 +17,8 @@ import { DRAW_TOOLS } from '../drawTools'
 import { loadToolStylePreferences } from '../toolFavorites'
 import { MAX_VISIBLE_BARS } from '../chartNavigation'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
+import MaSettingsDialog from './MaSettingsDialog.vue'
+import { appMaSettings, maWarmup } from '../maSettings'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
 import { builtInGeometry, pointInPolygon, segmentInRect } from '../builtInGeometry'
@@ -69,6 +71,21 @@ type RuntimeChart = Omit<Chart, 'getOverlays' | 'convertToPixel' | 'convertFromP
   convertFromPixel(points: Partial<Coordinate>[], filter?: ConvertFilter): Partial<Point>[]
 }
 let chart: RuntimeChart | null = null
+const maSettingsOpen = ref(false)
+const maHistoryError = ref('')
+function openMaSettings(): void {
+  closePanels()
+  maSettingsOpen.value = true
+  emit('panelChange', true)
+}
+function closeMaSettings(): void { maSettingsOpen.value = false; emit('panelChange', false) }
+function applyMaSettings(): void {
+  const active = appMaSettings.value.lines.filter(line => line.period > 0)
+  chart?.overrideIndicator({ name: 'MA', paneId: 'candle_pane', visible: active.length > 0,
+    calcParams: active.map(line => line.period), styles: { lines: active.map(line => ({ color: line.color })) } })
+  maHistoryError.value = ''
+  queueMicrotask(ensureMaHistory)
+}
 // 同屏最多840根，更早历史按需加载；窄窗口允许亚像素柱宽。
 const MIN_COUNT = 1
 const MAX_COUNT = MAX_VISIBLE_BARS
@@ -352,25 +369,44 @@ function dateTimestamp(date: string): number { return Date.parse(`${date.length 
 // 字段顺序保持 volume→date 收尾（M2 frontend-contract 断言依赖该字面量结尾）
 function toK(bar: Bar): KLineData & { date: string; amount: number } { return { timestamp: dateTimestamp(bar.date), open: bar.open, high: bar.high, low: bar.low, close: bar.close, amount: bar.amount, volume: bar.volume, date: bar.date } }
 
+function maHistoryMissing(): number {
+  const warmup = maWarmup(appMaSettings.value)
+  return warmup > 200 ? Math.max(0, MAX_VISIBLE_BARS + warmup - loadedData.length) : 0
+}
+function ensureMaHistory(): void {
+  if (disposed || props.readOnly || !chart || !props.fetchEarlier || !hasMoreForward || loadingForward || !maHistoryMissing()) return
+  // 10.0.3 has no public prepend method. Use its existing loader so the forward
+  // callback preserves timestamps, viewport offset, overlays and indicator calculation.
+  ;(chart as unknown as { getChartStore(): { _processDataLoad(type: 'forward'): void } }).getChartStore()._processDataLoad('forward')
+}
 async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore) => void): Promise<void> {
   const first = loadedData[0] as (KLineData & { date?: string }) | undefined
   if (!first?.date || loadingForward || !props.fetchEarlier) { callback([], { forward: hasMoreForward }); return }
   loadingForward = true
   const version = dataVersion
+  const forMa = maHistoryMissing() > 0
+  let succeeded = false
   try {
     // 库的 forward 前插是自锚定的（可见范围按 diff+total 推算，diff 不变 → 同名日期不动），
     // 不要再做任何锚定/补偿滚动——额外滚动会把滚动差值打到负极限，引发视图塌缩与加载风暴
-    const result = await props.fetchEarlier(first.date, LOAD_CHUNK_BARS)
+    const result = await props.fetchEarlier(first.date, forMa ? Math.min(1000, maHistoryMissing()) : LOAD_CHUNK_BARS)
     if (disposed || version !== dataVersion) return
     const older = result.bars.map(toK)
     if (older.length) loadedData = [...older, ...loadedData]
+    result.hasMore = result.hasMore && older.length > 0
     hasMoreForward = result.hasMore
     callback(older, { forward: result.hasMore })
     scheduleChartCapture()
+    succeeded = true
+    maHistoryError.value = ''
   } catch {
     if (!disposed && version === dataVersion) callback([], { forward: hasMoreForward })
+    if (!disposed && version === dataVersion && forMa) maHistoryError.value = '均线历史加载失败'
   } finally {
-    if (version === dataVersion) loadingForward = false
+    if (version === dataVersion) {
+      loadingForward = false
+      if (succeeded) queueMicrotask(ensureMaHistory)
+    }
   }
 }
 
@@ -384,6 +420,7 @@ function feedData(): void {
   drawingHistory.reset([])
   clearMultiSelection()
   closePanels()
+  maHistoryError.value = ''
   dataVersion++
   // 新数据版本＝视窗布局重建：同 view 也必须重放（appliedReplayView 去重只作用于同一数据版本内）
   appliedReplayView = null
@@ -402,6 +439,7 @@ function feedData(): void {
       callback(loadedData, { forward: hasMoreForward, backward: false })
       scheduleReplayRestore()
       scheduleChartCapture()
+      queueMicrotask(ensureMaHistory)
     },
   })
   applyLastPriceStyle()
@@ -1122,6 +1160,7 @@ function confirmTextPanel(): void {
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
+  if (maSettingsOpen.value) return // Native modal owns focus, Esc and editable number inputs.
   if (!ctxMenu.value && !editPanel.value && !textPanel.value) return
   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closePanels(); return }
   event.stopPropagation()
@@ -1412,6 +1451,10 @@ onMounted(() => {
   updateMarkerRail()
   if (props.savedDrawings && props.bars.length) restoreDrawings(props.savedDrawings.filter(item => (item.timeframe ?? '1D') === props.timeframe), true)
   if (import.meta.env.MODE === 'journey') Object.assign((window as any).__trainerChart, {
+    ma: () => {
+      const indicator = chart?.getIndicators({ name: 'MA' })[0]
+      return indicator ? { periods: indicator.calcParams, visible: indicator.visible, colors: indicator.styles?.lines?.map(line => line.color), result: indicator.result } : null
+    },
     drawings,
     geometry: () => (chart?.getOverlays() ?? []).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing()).map(overlay => ({ id: overlay.id, name: overlay.name, ...overlayHitGeometry(overlay as unknown as OverlayLike) })),
     panes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => ({ id: pane.id, name: paneName(pane.id), ...chart!.getSize(pane.id) })),
@@ -1471,12 +1514,17 @@ watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentP
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
 watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
+onMounted(applyMaSettings)
+watch(appMaSettings, applyMaSettings)
 defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
 </script>
 
 <template>
   <div class="chart-frame">
   <div class="chart-wrap">
+    <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
+    <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
+    <button v-if="maHistoryError" class="ma-history-error" role="alert" @click="ensureMaHistory">{{ maHistoryError }}，点击重试</button>
     <div ref="host" class="chart-host"></div>
     <div v-if="orderTooltip" class="order-tooltip" :style="{ left: `${orderTooltip.x}px`, top: `${orderTooltip.y}px` }" role="status">{{ orderTooltip.text }}</div>
     <!-- M6-03 悬浮信息卡：日期＋开/高/低/收＋涨幅（红涨/绿跌/零灰）；纯信息层不拦截指针 -->
@@ -1530,6 +1578,10 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 </template>
 
 <style scoped>
+.ma-settings-trigger { position: absolute; top: 5px; right: 90px; z-index: 4; border: 1px solid var(--surface-border); border-radius: 4px; padding: 3px 8px; background: var(--control-background); color: var(--text-secondary); font-size: 11px; }
+.ma-settings-trigger:disabled { opacity: .5; cursor: default; }
+.ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
+.ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: 12px; }
 .chart-frame { display: grid; grid-template-rows: minmax(0, 1fr) 40px; height: 100%; min-height: 0; }
 .chart-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; }
 /* 挂单悬浮信息层：只引用全局已定义的设计令牌（--surface-*、--text-*），深浅主题随令牌自动切换。

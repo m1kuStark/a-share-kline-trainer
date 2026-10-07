@@ -8,6 +8,8 @@
 
 | 依赖 | 当前用途与复核点 |
 |---|---|
+| `getChartStore()._processDataLoad('forward')` | MA-01仅在长周期缺少预热历史时主动触发既有loader。10.0.3以_loading防并发，经callback调用_addData的forward分支，前插不改右侧偏移，指标自动重算；不执行init或滚动补偿。复核主动补载、失败重试、切周期作废旧响应及同名日期/画线保留。 |
+| `overrideIndicator({name,paneId,calcParams,styles,visible})` | MA-01通过公开API更新MA参数、颜色和可见性；10.0.3模板regenerateFigures按参数生成图例，calc在完整窗口后输出收盘价等权均值。变更参数触发重算；不重建图表或替换行情。 |
 | `_chartStore.getLayoutOptions().barSpaceLimit.min/max` | onMounted 改为 0.1/300；允许窄屏多根和少根放大。实际 840 限制另由 `clampBarSpace` / `enforceVisibleLimit` 执行，范围变化后微任务再校正。 |
 | `yAxis.setAutoCalcTickFlag(false/true)` | 中键前设手动，`restoreYAxisAutoFit` 恢复自动；检查轴拖拽、框选、键盘缩放和复位组合。 |
 | `yAxis.getRange/setRange/valueToRealValue/realValueToDisplayValue` | 已知值域读写接口；getRange 用于只读断言，其余作为历史备用登记，不表示当前主动调用。 |

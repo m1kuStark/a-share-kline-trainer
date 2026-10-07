@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [MA-01 自定义主图均线](tasks/MA-01.md)：设计与实现固定八条 MA 参数面板，日周月共用配置。
+
 协作工具入口：[ORCH阶段](milestones/ORCH.md) → [影子路由](tasks/ORCH-01.md)、[独立验证](tasks/ORCH-02.md)、[动态派发](tasks/ORCH-03.md)、[分类审查](tasks/ORCH-04.md)。
 
 v0.3.2执行入口：[REL-03](tasks/REL-03.md)，首批[FRESH-01](tasks/FRESH-01.md)、[TDX-CHECK-01](tasks/TDX-CHECK-01.md)、[RANGE-01](tasks/RANGE-01.md)；基线取消问题见[RUN-CANCEL-01](tasks/RUN-CANCEL-01.md)。

@@ -4,6 +4,8 @@
 
 ## 指针入口
 
+MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点期间禁用。面板只编辑草稿，应用原位更新指标；panelChange隔离训练快捷键，dialog接管焦点、Esc和输入，modal阻止画布手势。取消及关闭回到入口，不改变画线/视窗。组件新增配置watch由Vue卸载，不新增全局监听器。
+
 `pointerdown` 与 `mousedown` 均在 host capture 处理，后者另有 bubble 修补。不能把它们理解成互不相关的操作；一次原生手势会依次经过两条链。
 
 1. `__klineSynthetic` 标记的中键内部合成事件直接放行，避免拦截自己。
@@ -19,7 +21,7 @@
 
 ## 视窗、日期和标记
 
-`zoomBy`、`resetView`、框选向左/向右四条程序化缩放路径调用 `restoreYAxisAutoFit()`；手动轴冻结不能带入新范围。`chartNavigation.ts` 提供 840 上限，图表按主画布宽度钳柱宽，并在范围变化微任务和 ResizeObserver 后再次校正。首批服务端最多 1040 根含暖机，后续按 300 根向前加载；加载量不等于同屏量。库 forward 前插自锚定，禁止再补偿滚动。
+`zoomBy`、`resetView`、框选向左/向右四条程序化缩放路径调用 `restoreYAxisAutoFit()`；手动轴冻结不能带入新范围。`chartNavigation.ts` 提供840上限，图表按主画布宽度钳柱宽，并在范围变化微任务和ResizeObserver后再次校正。MA-01训练页按启用的最大MA周期预热，至少200根，默认首批1040根；修改成长周期时按缺口主动forward前插，失败可重试。普通向左浏览仍按300根加载，加载量不等于同屏量。库forward前插自锚定，禁止再补偿滚动。
 
 `Training.loadVersion` 防过期周期请求，图表 `dataVersion` 防旧动态历史响应写回；`chart.setPeriod` 跟随日/周/月，形成中周期按当前周期归属锚点。`updateMarkerRail` 等布局后上报 `viewportDates`：实际可见末根、已载入末根和是否在最新端。页面据此区分日期与周/月周期，不能把横轴外推刻度或周一起点当截止日。
 

@@ -1,0 +1,112 @@
+{
+  "baseCommit": "5f74db0ed3e46000f19754efb5ecf7ee7f3e4835",
+  "kind": "uncommitted-worktree",
+  "recordedAt": "2026-10-06T14:16:48.406Z",
+  "node": "v24.21.0",
+  "platform": "win32",
+  "files": [
+    {
+      "path": "web/src/maSettings.ts",
+      "sha256": "474b084073ddd4afeedde2b5ce2a40d45e40e7c001a0fde7961cc6d5c1406bdd"
+    },
+    {
+      "path": "web/src/components/MaSettingsDialog.vue",
+      "sha256": "1a3fbdc3b1083990b420e305441e437e63deafb62bbe88ae7850b9dd8f042946"
+    },
+    {
+      "path": "web/src/components/KlineChart.vue",
+      "sha256": "63efacdf7cdecc8610eb8d7be0310be9ac0015b0345b3eb4c2b609bada81e672"
+    },
+    {
+      "path": "web/src/views/Training.vue",
+      "sha256": "f7514fcb42da288928edad1de23b641faacc623b3da90bf900c7b3f402fbcc46"
+    },
+    {
+      "path": "web/src/api.ts",
+      "sha256": "b4918409a961f6b8dec71c3694796be3686843ce6dcfeb130f1cdb4ec153946b"
+    },
+    {
+      "path": "server/src/api.ts",
+      "sha256": "e823377a863b35b122288ba0416b71d10a36ba18410e5f773c9b58b4a18d7db1"
+    },
+    {
+      "path": "server/src/train/engine.ts",
+      "sha256": "67bb16b956879f8bc9a3fa2148c4176c8b08422d001844011a5aa5805916c5e4"
+    },
+    {
+      "path": "server/test/ma-settings.test.ts",
+      "sha256": "bb8efcd622937e014917e1f318bdd48fd64a0638d67ae1fd851d45ac667f54a5"
+    },
+    {
+      "path": "server/test/full-acceptance.test.ts",
+      "sha256": "2b7e6ea8e9155f1be7a7d97af203cd9fedad8c7dff5b4f65e53c18a39bf73e99"
+    },
+    {
+      "path": "e2e/ma-settings.spec.ts",
+      "sha256": "e549440b1d224b41ffa3525858986107400039d3bf245182450e02668fb94525"
+    }
+  ],
+  "sourceFingerprint": "243a110af201321eaa12d3e753b24bffa30cf25861f8e001bddeec17c5a5530f",
+  "checks": [
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "npx vitest run --config server/vitest.config.ts server/test/ma-settings.test.ts server/test/full-acceptance.test.ts",
+      "exitCode": 0,
+      "passed": 11
+    },
+    {
+      "command": "npm test",
+      "exitCode": 1,
+      "serverPassed": 1511,
+      "serverFailed": 10,
+      "desktopNotRun": true
+    },
+    {
+      "command": "npx vitest run --config server/vitest.config.ts --maxWorkers=1 [six failing files]",
+      "exitCode": 1,
+      "passed": 93,
+      "failed": 1
+    },
+    {
+      "command": "npm run test:desktop",
+      "exitCode": 0,
+      "passed": 40
+    },
+    {
+      "command": "tsx scripts/verify-m2.ts",
+      "exitCode": 0,
+      "passed": 24,
+      "database": "in-memory"
+    },
+    {
+      "command": "npm run journey -- e2e/ma-settings.spec.ts --retries=0",
+      "exitCode": 0,
+      "passed": 3,
+      "run": "run-54985be6-2919-4917-b66c-f6424519ecd2"
+    },
+    {
+      "command": "npm run journey -- --retries=0 --timeout=120000 --max-failures=1",
+      "exitCode": 1,
+      "failed": 1,
+      "notRun": 152,
+      "run": "run-f0d2bf3a-c06d-4fab-9d54-f170ef74a835"
+    }
+  ],
+  "visual": {
+    "inspector": "primary-agent",
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "sizes": [
+      "1440x900",
+      "1280x720"
+    ],
+    "passed": true
+  },
+  "fullGatesPassed": false,
+  "userAcceptance": null
+}

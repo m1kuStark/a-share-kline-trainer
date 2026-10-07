@@ -8,6 +8,7 @@ import { aggregateBars, type Timeframe } from './tdx/kline.js'
 import type { AppConfig } from './config.js'
 import { refreshStockCatalog } from './tdx/catalog.js'
 import { loadAdjustmentEvents, refreshAdjustmentCache } from './tdx/adjustment-cache.js'
+import { trainingLoadBars } from './train/engine.js'
 import { applyForwardAdjustment } from './tdx/gbbq.js'
 import { parseTdxSymbol } from './tdx/symbol.js'
 import { buildStockSearchIndex, searchStockIndex, type StockSearchIndex } from './tdx/stock-search.js'
@@ -27,7 +28,7 @@ import { registerRecordingContextRoutes } from './recording-context.js'
 import { registerRandomTrainingSupport } from './train/random-mode.js'
 import {
   HttpError, TIERS, abandonTraining, advanceTraining, buildChartSpace, createTraining, retrainTraining,
-  cancelOrder, equityCurveOf, ordersOf, placeOrder, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot, TRAINING_LOAD_BARS,
+  cancelOrder, equityCurveOf, ordersOf, placeOrder, previewTrainingRange, settleTraining, tradeTraining, trainingBars, trainingBarsBefore, trainingSnapshot,
 } from './train/engine.js'
 import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
@@ -1153,10 +1154,14 @@ export async function registerApi(
     if (active && active.id !== id) {
       return reply.code(409).send({ error: '当前有进行中的训练，结束当前训练后可查看历史', code: 'HISTORY_ACTIVE_TRAINING' })
     }
-    const query = request.query as { tf?: Timeframe; before?: string; count?: string }
+    const query = request.query as { tf?: Timeframe; before?: string; count?: string; warmup?: string }
     const timeframe = query.tf ?? '1D'
     if (!['1D', '1W', '1M'].includes(timeframe)) {
       return reply.code(400).send({ error: `Unsupported timeframe: ${timeframe}` })
+    }
+    const warmup = query.warmup === undefined ? undefined : Number(query.warmup)
+    if (query.warmup !== undefined && (!/^\d+$/.test(query.warmup) || !Number.isInteger(warmup) || warmup! < 0 || warmup! > 999)) {
+      return reply.code(400).send({ error: 'warmup 必须是 0~999 的整数' })
     }
     // 动态历史加载：before/count 分批取更早历史；before 接受 YYYY-MM（月 K）或 YYYY-MM-DD
     let chunk: { bars: Awaited<ReturnType<typeof trainingBars>>; hasMore: boolean } | null = null
@@ -1177,7 +1182,7 @@ export async function registerApi(
     }
     try {
       const snapshot = trainingSnapshot(database, id)
-      const bars = chunk ? chunk.bars : await trainingBars(database, config, id, timeframe)
+      const bars = chunk ? chunk.bars : await trainingBars(database, config, id, timeframe, warmup)
       const chart = buildChartSpace(database, id, snapshot.trades)
       return {
         ...snapshot,
@@ -1187,7 +1192,7 @@ export async function registerApi(
         bars,
         // 画线前复权基准：bars 计算后读取（权息缓存已刷新）；与 bars 同次返回，不含未来权息。
         drawingPriceBasis: drawingPriceBasis(database, id),
-        hasMore: chunk ? chunk.hasMore : bars.length >= TRAINING_LOAD_BARS,
+        hasMore: chunk ? chunk.hasMore : bars.length >= trainingLoadBars(warmup),
       }
     } catch (error) {
       if (error instanceof HttpError) return reply.code(error.statusCode).send({ error: error.message })
