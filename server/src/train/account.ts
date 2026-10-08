@@ -61,6 +61,13 @@ export function sellFee(amount: number, fees: FeeConfig): number {
   return Math.max(fees.minimumCommission, amount * fees.commissionRate) + amount * fees.stampDutyRate
 }
 
+// RF-01：A 股口径——送转/配股到账股数取整，零股舍去（现实市场从不入账非整数股）。
+// gbbq 源以 float32 存每 10 股比例（如 2.2 解码为 2.2000000476837158），比例/10 × 持仓
+// 的浮点乘积带 ~1e-3 股级尾巴；epsilon 保护「数学上为整数」的乘积不被向下噪声截掉一整股。
+export function integerShareCredit(value: number): number {
+  return Math.floor(value + 1e-6)
+}
+
 // 仓位比例按总权益（现金＋持仓市值）计，再受可用资金约束；金额向下取整到一手（手数=快照 lotSize）。
 // 若连费用一起超出可用资金，逐手缩减；缩到不足一手则拒绝。
 export function planBuy(
