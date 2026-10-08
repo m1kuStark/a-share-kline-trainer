@@ -8,6 +8,7 @@
 
 | 任务 | 正文与实现 |
 |---|---|
+| 主图均线参数 | [MaSettingsDialog.vue](./MaSettingsDialog.vue) 编辑八行草稿，[maSettings.ts](../maSettings.ts) 校验及浏览器持久化；KlineChart用公开overrideIndicator原位更新MA。日周月共用，默认25/60/144，0关闭。 |
 | 改指针、快捷键、窗格或视窗 | [事件仲裁与生命周期](./docs/interaction.md)；[chartNavigation.ts](../chartNavigation.ts) |
 | 升级图库、覆盖默认绘制 | [库适配登记](./docs/library-adapter.md)；[theme.ts](../theme.ts)、[indicators.ts](../indicators.ts)、[overlays.ts](../overlays.ts) |
 | 改创建/编辑/撤销/恢复/保存 | [画线持久化](./docs/drawing-persistence.md)；[drawingState.ts](../drawingState.ts)、[drawingOutbox.ts](../drawingOutbox.ts) |

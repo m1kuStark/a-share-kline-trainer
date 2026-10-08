@@ -819,9 +819,15 @@ async function buildTrainingSeries(database: DatabaseSync, config: AppConfig, id
   return aggregateBars(adjusted, timeframe)
 }
 
-export async function trainingBars(database: DatabaseSync, config: AppConfig, id: number, timeframe: Timeframe): Promise<KlineBar[]> {
+export function trainingLoadBars(warmup = MA_WARMUP_BARS): number {
+  if (!Number.isInteger(warmup) || warmup < 0 || warmup > 999) throw new HttpError(400, 'warmup 必须是 0~999 的整数')
+  return VISIBLE_BARS + warmup
+}
+
+export async function trainingBars(database: DatabaseSync, config: AppConfig, id: number, timeframe: Timeframe, warmup = MA_WARMUP_BARS): Promise<KlineBar[]> {
+  const limit = trainingLoadBars(warmup)
   const series = await buildTrainingSeries(database, config, id, timeframe)
-  return series.slice(-TRAINING_LOAD_BARS)
+  return series.slice(-limit)
 }
 
 // 动态历史加载：840 限定的是同屏最大可见根数（缩放下限），不是加载总量。

@@ -6,6 +6,7 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [ma-settings](ma-settings.spec.ts) | 八条MA参数、草稿/取消/校验、颜色和持久化、周期共用、1000周期预热、视窗画线保留及双主题尺寸 |
 | [acceptance-feedback](acceptance-feedback.spec.ts) | 录像入口、活动训练往返、快捷键与顶部空间 |
 | [drawing-basis](drawing-basis.spec.ts) | 除权推进/轴缩放/撤销刷新时画线锚点对齐 |
 | [recording](recording.spec.ts) | 默认录制、交易拒单、周期/绘图、暂停刷新、导出与只读回放 |
