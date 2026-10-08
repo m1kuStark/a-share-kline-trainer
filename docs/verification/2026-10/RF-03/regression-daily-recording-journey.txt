@@ -1,0 +1,51 @@
+
+Running 6 tests using 1 worker
+
+  ok 1 e2e\recording-daily.spec.ts:107:1 › 按交易日回放：键盘步进、观察周期独立、画线终态与只读安全 (6.3s)
+  ok 2 e2e\recording-daily.spec.ts:231:1 › 旧文件缺当日日线：首日即时回退唯一周期、明示缺日线、次日恢复偏好 (4.3s)
+  ok 3 e2e\recording.spec.ts:8:1 › 录制上下文准备期间不会漏掉第一笔交易 (8.4s)
+  x  4 e2e\recording.spec.ts:57:1 › 默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放 (16.8s)
+  ok 5 e2e\recording.spec.ts:153:1 › 浏览器存储恢复后可重试录制，错误不伪装成正在记录 (8.3s)
+  ok 6 e2e\recording.spec.ts:186:1 › 首页关闭仅影响本场，刷新保留暂停且恢复后可导出 (11.2s)
+
+
+  1) e2e\recording.spec.ts:57:1 › 默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放 ───────────────────────────────────
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      135 |   await page.getByRole('button', { name: '跳到最后一天' }).click()
+      136 |   await expect(page.locator('.replay-day')).toHaveText(/第 \d+ \/ \d+ 日/)
+    > 137 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings().length ?? 0)).toBeGreaterThan(0)
+          |                                                                                                        ^
+      138 |   const drawingsBefore = await page.evaluate(() => (window as any).__trainerChart.drawings())
+      139 |   await expect(page.getByRole('button', { name: '买入', exact: true })).toHaveCount(0)
+      140 |   await page.keyboard.press('b')
+        at D:\tmp\rf03\e2e\recording.spec.ts:137:104
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .runs\run-44d0e3ec-1884-482e-8f58-ccfd50a0face\artifacts\test-results\recording-默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .runs\run-44d0e3ec-1884-482e-8f58-ccfd50a0face\artifacts\test-results\recording-默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .runs\run-44d0e3ec-1884-482e-8f58-ccfd50a0face\artifacts\test-results\recording-默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .runs\run-44d0e3ec-1884-482e-8f58-ccfd50a0face\artifacts\test-results\recording-默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放\trace.zip
+    Usage:
+
+        npx playwright show-trace .runs\run-44d0e3ec-1884-482e-8f58-ccfd50a0face\artifacts\test-results\recording-默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e\recording.spec.ts:57:1 › 默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放 ────────────────────────────────────
+  5 passed (58.0s)

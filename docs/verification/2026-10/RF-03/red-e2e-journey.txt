@@ -1,0 +1,51 @@
+
+Running 1 test using 1 worker
+
+  x  1 e2e\replay-period.spec.ts:11:1 › 开盘训练回放：开盘段可切周K月K且不再提示缺日线 (21.8s)
+
+
+  1) e2e\replay-period.spec.ts:11:1 › 开盘训练回放：开盘段可切周K月K且不再提示缺日线 ─────────────────────────────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.replay-gap').filter({ hasText: '缺日线' })
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.replay-gap').filter({ hasText: '缺日线' }) with timeout 5000ms
+      - waiting for locator('.replay-gap').filter({ hasText: '缺日线' })
+        14 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      62 |   // 第 1 步 = D1 初始开盘段：三周期都必须可用（无缺日线回落）
+      63 |   await expect(page.locator('.replay-day')).toContainText('第 1 /')
+    > 64 |   await expect(page.locator('.replay-gap', { hasText: '缺日线' })).toHaveCount(0)
+         |                                                                 ^
+      65 |   const dailyDates = await page.evaluate(() =>
+      66 |     (window as any).__trainerChart.bars().map((bar: any) => bar.date as string))
+      67 |   expect(dailyDates.length).toBeGreaterThan(50)
+        at D:\tmp\rf03\e2e\replay-period.spec.ts:64:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .runs\run-f44680a5-e954-4b36-81dc-b88513d6e89a\artifacts\test-results\replay-period-开盘训练回放：开盘段可切周K月K且不再提示缺日线\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .runs\run-f44680a5-e954-4b36-81dc-b88513d6e89a\artifacts\test-results\replay-period-开盘训练回放：开盘段可切周K月K且不再提示缺日线\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .runs\run-f44680a5-e954-4b36-81dc-b88513d6e89a\artifacts\test-results\replay-period-开盘训练回放：开盘段可切周K月K且不再提示缺日线\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    .runs\run-f44680a5-e954-4b36-81dc-b88513d6e89a\artifacts\test-results\replay-period-开盘训练回放：开盘段可切周K月K且不再提示缺日线\trace.zip
+    Usage:
+
+        npx playwright show-trace .runs\run-f44680a5-e954-4b36-81dc-b88513d6e89a\artifacts\test-results\replay-period-开盘训练回放：开盘段可切周K月K且不再提示缺日线\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    e2e\replay-period.spec.ts:11:1 › 开盘训练回放：开盘段可切周K月K且不再提示缺日线 ──────────────────────────────────────

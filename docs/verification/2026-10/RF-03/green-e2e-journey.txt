@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ok 1 e2e\replay-period.spec.ts:11:1 › 开盘训练回放：开盘段可切周K月K且不再提示缺日线 (18.3s)
+
+  1 passed (19.6s)
