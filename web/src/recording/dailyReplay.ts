@@ -288,7 +288,8 @@ export interface ReplayDayState {
   drawings: Drawing[]
   /** 画线版本内容 id：内容寻址，跨日比较即可判断画线是否真的变化 */
   drawingsRef: string | null
-  /** 覆盖当日的完整日线（末根日期=当日）；null＝该日没有当日日线 */
+  /** 该日当时已见的完整日线：收盘段末根=当日；开盘段（open_close）当日K线未形成，
+   * 末根止于前一交易日（与训练页/服务端 phase 截断同口径）。null＝该日没有当日日线观察 */
   dailyBars: Bar[] | null
   /** 无当日日线时的兜底：该日最后快照自身的周期与K线（旧文件只有周/月快照） */
   fallback: { timeframe: Timeframe; bars: Bar[] } | null
@@ -453,10 +454,16 @@ export class DailyReplaySession {
         : safeCheckpoint
     const dailyBars = dailyCheckpoint?.chart?.timeframe === '1D' ? dailyCheckpoint.chart.bars : null
     const referenceDate = training?.training.currentDate ?? day.date
+    // RF-03：开盘阶段（open_close）当日K线尚未形成，服务端与训练页的周/月视图都以
+    // 「截至前一交易日的日线」为当时已见口径（buildTrainingSeries 在 open 阶段截断到
+    // bar.date < current）。完整性判断必须与该口径一致：开盘段末根严格早于当日即完整，
+    // 收盘/仅收盘段仍要求覆盖到当日；旧快照无阶段字段按收盘口径兼容。
+    const openPhase = training?.training.clockMode === 'open_close' && training?.training.currentPhase === 'open'
+    const lastDailyDate = dailyBars !== null && dailyBars.length > 0 ? dailyBars[dailyBars.length - 1]!.date : null
     const dailyComplete =
-      dailyBars !== null &&
-      dailyBars.length > 0 &&
-      (referenceDate === null || dailyBars[dailyBars.length - 1]!.date >= referenceDate)
+      lastDailyDate !== null &&
+      (referenceDate === null ||
+        (openPhase ? lastDailyDate < referenceDate : lastDailyDate >= referenceDate))
     let date = day.date
     if (date === null && dailyComplete) date = dailyBars![dailyBars!.length - 1]!.date
     const blind = training?.training.blind ?? day.blind

@@ -1,0 +1,85 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/tmp/rf03[39m
+
+ [31m❯[39m server/test/recording-daily-replay.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 14[2mms[22m[39m
+     [32m✓[39m 按推进事件分日：被拒推进不加日，区间与推进事件对齐[32m 2[2mms[22m[39m
+     [32m✓[39m 当日终态取范围内最后一个可用检查点：账户为终态权益而非日初权益[32m 0[2mms[22m[39m
+     [32m✓[39m 画线终态随日还原：画线出现前的日子没有画线[32m 1[2mms[22m[39m
+     [32m✓[39m 防未来：每日日线严格止于当日，绝不含之后日期的K线[32m 0[2mms[22m[39m
+     [32m✓[39m 周K按周一起始、月K按自然月：开高低收量额与手算一致[32m 0[2mms[22m[39m
+     [32m✓[39m 跨月日线聚合为多根月K[32m 0[2mms[22m[39m
+     [32m✓[39m 推进日推进部分周K：周K收盘随当日已见日线增长[32m 1[2mms[22m[39m
+     [32m✓[39m 缺口内被吞的推进日补出独立日期，不吞并也不借用未来[32m 0[2mms[22m[39m
+     [32m✓[39m 业务操作按发生日归属，便于按日跳转[32m 0[2mms[22m[39m
+     [32m✓[39m 终态虽是周K，但当日已有日线快照时三个周期都可用[32m 0[2mms[22m[39m
+     [32m✓[39m 账户与画线取当日终态检查点，日线可来自同日更早快照（无未来）[32m 0[2mms[22m[39m
+     [32m✓[39m 整天只有周K快照的日子：只提供周K并保留兜底标记[32m 0[2mms[22m[39m
+     [32m✓[39m 盲训无日期时按 T+序号展示，有当日日线则回填真实末根日期[32m 0[2mms[22m[39m
+     [32m✓[39m 空录制：单日占位、无状态、无可用周期、无业务操作[32m 0[2mms[22m[39m
+     [32m✓[39m 迟到的新日首观察不补分界：两个真实日各出现一次[32m 0[2mms[22m[39m
+     [32m✓[39m 中间空检查点不产生幻影日，新日终态仍取 afterSeq=4 的可用检查点[32m 0[2mms[22m[39m
+     [32m✓[39m day2 无当日日线：不继承 day1 日线，回落周K兜底[32m 0[2mms[22m[39m
+     [32m✓[39m day2 不得标注成 day1 的日期：盲训无日线保持 T+序号[32m 0[2mms[22m[39m
+     [32m✓[39m 推进触发自然结算但没有新K线时不增加一个重复交易日[32m 0[2mms[22m[39m
+     [32m✓[39m 只保留完成的买卖与图形/文字变更，一次操作一条[32m 0[2mms[22m[39m
+     [32m✓[39m 拒单保留并标注，成交带方向/数量/价格，文字标注说明来源[32m 0[2mms[22m[39m
+[31m     [31m×[31m 开盘段四步：日0/日2 为开盘，日期与日线止点如实分层[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m 开盘段与训练页同级：日/周/月三周期都可用，不回落、不标缺日线[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m 开盘段周/月由已见日线聚合：口径与 aggregateDailyBars 一致[39m[32m 0[2mms[22m[39m
+     [32m✓[39m 收盘段行为不变：日线含当日，三周期可用[32m 0[2mms[22m[39m
+     [32m✓[39m 旧快照无阶段字段：仍按收盘口径判完整，不因缺字段回落[32m 0[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/test/recording-daily-replay.test.ts[2m > [22m开盘阶段回放可与训练页同口径切周/月（RF-03）[2m > [22m开盘段四步：日0/日2 为开盘，日期与日线止点如实分层
+[31m[1mTypeError[22m: Cannot read properties of null (reading 'at')[39m
+[36m [2m❯[22m server/test/recording-daily-replay.test.ts:[2m531:29[22m[39m
+    [90m529|[39m   [34mit[39m([32m'开盘段四步：日0/日2 为开盘，日期与日线止点如实分层'[39m[33m,[39m () [33m=>[39m {
+    [90m530|[39m     [34mexpect[39m(session[33m.[39mdayCount)[33m.[39m[34mtoBe[39m([34m4[39m)
+    [90m531|[39m     [34mexpect[39m(session[33m.[39m[34mstate[39m([34m0[39m)[33m.[39mdailyBars[33m![39m[33m.[39m[34mat[39m([33m-[39m[34m1[39m)[33m![39m[33m.[39mdate)[33m.[39m[34mtoBe[39m([33mPRIOR[39m)
+    [90m   |[39m                             [31m^[39m
+    [90m532|[39m     [34mexpect[39m(session[33m.[39m[34mstate[39m([34m1[39m)[33m.[39mdailyBars[33m![39m[33m.[39m[34mat[39m([33m-[39m[34m1[39m)[33m![39m[33m.[39mdate)[33m.[39m[34mtoBe[39m([33mDATES[39m[[34m0[39m])
+    [90m533|[39m     [34mexpect[39m(session[33m.[39m[34mstate[39m([34m2[39m)[33m.[39mdailyBars[33m![39m[33m.[39m[34mat[39m([33m-[39m[34m1[39m)[33m![39m[33m.[39mdate)[33m.[39m[34mtoBe[39m([33mDATES[39m[[34m0[39m])
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/recording-daily-replay.test.ts[2m > [22m开盘阶段回放可与训练页同口径切周/月（RF-03）[2m > [22m开盘段与训练页同级：日/周/月三周期都可用，不回落、不标缺日线
+[31m[1mAssertionError[22m: expected [ '1D' ] to deeply equal [ '1D', '1W', '1M' ][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    "1D",[22m
+[32m-   "1W",[39m
+[32m-   "1M",[39m
+[2m  ][22m
+
+[36m [2m❯[22m server/test/recording-daily-replay.test.ts:[2m540:39[22m[39m
+    [90m538|[39m     [35mfor[39m ([35mconst[39m index [35mof[39m [[34m0[39m[33m,[39m [34m2[39m]) {
+    [90m539|[39m       [35mconst[39m state [33m=[39m session[33m.[39m[34mstate[39m(index)
+    [90m540|[39m       [34mexpect[39m([34mavailablePeriods[39m(state))[33m.[39m[34mtoEqual[39m([[32m'1D'[39m[33m,[39m [32m'1W'[39m[33m,[39m [32m'1M'[39m])
+    [90m   |[39m                                       [31m^[39m
+    [90m541|[39m       [34mexpect[39m(state[33m.[39mfallback)[33m.[39m[34mtoBeNull[39m()
+    [90m542|[39m     }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/recording-daily-replay.test.ts[2m > [22m开盘阶段回放可与训练页同口径切周/月（RF-03）[2m > [22m开盘段周/月由已见日线聚合：口径与 aggregateDailyBars 一致
+[31m[1mTypeError[22m: Cannot read properties of null (reading 'bars')[39m
+[36m [2m❯[22m server/test/recording-daily-replay.test.ts:[2m548:39[22m[39m
+    [90m546|[39m     [35mconst[39m open1 [33m=[39m session[33m.[39m[34mstate[39m([34m0[39m)
+    [90m547|[39m     [90m// PRIOR=周五属上一周（周一键 2025-12-29），月键 2026-01[39m
+    [90m548|[39m     expect(observationBars(open1, '1W')!.bars.map(bar => bar.date)).to…
+    [90m   |[39m                                       [31m^[39m
+    [90m549|[39m     expect(observationBars(open1, '1M')!.bars.map(bar => bar.date)).to…
+    [90m550|[39m     [35mconst[39m open2 [33m=[39m session[33m.[39m[34mstate[39m([34m2[39m)
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m23 passed[39m[22m[90m (26)[39m
+[2m   Start at [22m 00:56:54
+[2m   Duration [22m 284ms[2m (transform 97ms, setup 0ms, import 128ms, tests 14ms, environment 0ms)[22m
+

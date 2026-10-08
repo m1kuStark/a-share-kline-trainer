@@ -28,7 +28,12 @@ function makeDailyBars(through: number): Bar[] {
   return DATES.slice(0, through + 1).map((date, index) => makeBar(date, 10 + index))
 }
 
-function makeTraining(currentDate: string, equity: number, blind = false): TrainingSnapshot {
+function makeTraining(
+  currentDate: string,
+  equity: number,
+  blind = false,
+  phase?: 'open' | 'close',
+): TrainingSnapshot {
   return {
     training: {
       id: 7,
@@ -39,6 +44,9 @@ function makeTraining(currentDate: string, equity: number, blind = false): Train
       startDate: BASE_DATE,
       plannedEnd: '2026-07-01',
       currentDate: blind ? null : currentDate,
+      // RF-03：open_close 训练的检查点带阶段元数据（服务端 TrainingMeta 同源字段）；
+      // 不传＝旧快照无阶段字段，回放按 close 口径兼容。
+      ...(phase ? { currentPhase: phase, clockMode: 'open_close' as const } : {}),
       status: 'running',
       settleDate: null,
       earlySettle: false,
@@ -491,5 +499,81 @@ describe('业务操作列表过滤', () => {
     expect(rejected!.outcome).toBe('rejected')
     expect(rejected!.label).toBe('卖出')
     expect(drawing!.label).toBe('新增画线 · 文字标注')
+  })
+})
+
+describe('开盘阶段回放可与训练页同口径切周/月（RF-03）', () => {
+  // open_close 训练的真实形态：每次推进产生一个事件分界，同一交易日拆成
+  // 开盘段（日线止于前一交易日，当日K线尚未形成）与收盘段（日线含当日）两步。
+  // 检查点按 MA-01 后的 canonical 1D 口径嵌入当时已见日线——开盘段的日线
+  // 必然止于 currentDate 之前，旧门控（末根日期 >= currentDate）把整个开盘段
+  // 误判为「缺日线」，导致回放中周K/月K被禁用并弹出缺日线提示（用户验收 RF-03）。
+  const PRIOR = '2026-01-02' // 周五：起始日之前的最后一根真实日线
+  const priorBar = makeBar(PRIOR, 9)
+  const phaseFile = makeFile({
+    events: [
+      ...makePair(1, 'op-create', 'training.create'),
+      ...makePair(3, 'op-adv1', 'training.advance', { checkpointId: 'cp-4' }), // D1 开盘→收盘
+      ...makePair(5, 'op-adv2', 'training.advance', { checkpointId: 'cp-6' }), // D1 收盘→D2 开盘
+      ...makePair(7, 'op-adv3', 'training.advance', { checkpointId: 'cp-8' }), // D2 开盘→收盘
+    ],
+    checkpoints: [
+      makeCheckpoint(0, { id: 'cp-0', training: makeTraining(DATES[0]!, 100000, false, 'open'), chart: makeChart('1D', [priorBar]) }),
+      makeCheckpoint(4, { id: 'cp-4', training: makeTraining(DATES[0]!, 101000, false, 'close'), chart: makeChart('1D', [priorBar, makeBar(DATES[0]!, 10)]) }),
+      makeCheckpoint(6, { id: 'cp-6', training: makeTraining(DATES[1]!, 102000, false, 'open'), chart: makeChart('1D', [priorBar, makeBar(DATES[0]!, 10)]) }),
+      makeCheckpoint(8, { id: 'cp-8', training: makeTraining(DATES[1]!, 103000, false, 'close'), chart: makeChart('1D', [priorBar, makeBar(DATES[0]!, 10), makeBar(DATES[1]!, 11)]) }),
+    ],
+  })
+  const session = toSession(phaseFile)
+
+  it('开盘段四步：日0/日2 为开盘，日期与日线止点如实分层', () => {
+    expect(session.dayCount).toBe(4)
+    expect(session.state(0).dailyBars!.at(-1)!.date).toBe(PRIOR)
+    expect(session.state(1).dailyBars!.at(-1)!.date).toBe(DATES[0])
+    expect(session.state(2).dailyBars!.at(-1)!.date).toBe(DATES[0])
+    expect(session.state(3).dailyBars!.at(-1)!.date).toBe(DATES[1])
+  })
+
+  it('开盘段与训练页同级：日/周/月三周期都可用，不回落、不标缺日线', () => {
+    for (const index of [0, 2]) {
+      const state = session.state(index)
+      expect(availablePeriods(state)).toEqual(['1D', '1W', '1M'])
+      expect(state.fallback).toBeNull()
+    }
+  })
+
+  it('开盘段周/月由已见日线聚合：口径与 aggregateDailyBars 一致', () => {
+    const open1 = session.state(0)
+    // PRIOR=周五属上一周（周一键 2025-12-29），月键 2026-01
+    expect(observationBars(open1, '1W')!.bars.map(bar => bar.date)).toEqual(['2025-12-29'])
+    expect(observationBars(open1, '1M')!.bars.map(bar => bar.date)).toEqual(['2026-01'])
+    const open2 = session.state(2)
+    expect(observationBars(open2, '1W')!.bars.map(bar => bar.date)).toEqual(['2025-12-29', '2026-01-05'])
+    expect(observationBars(open2, '1W')!.bars[1]).toMatchObject({ open: 9, close: 10 })
+    expect(observationBars(open2, '1M')!.bars.map(bar => bar.date)).toEqual(['2026-01'])
+  })
+
+  it('收盘段行为不变：日线含当日，三周期可用', () => {
+    for (const index of [1, 3]) {
+      const state = session.state(index)
+      expect(availablePeriods(state)).toEqual(['1D', '1W', '1M'])
+      expect(state.fallback).toBeNull()
+    }
+    expect(observationBars(session.state(3), '1W')!.bars.at(-1)!.close).toBe(11)
+  })
+
+  it('旧快照无阶段字段：仍按收盘口径判完整，不因缺字段回落', () => {
+    // 旧录制（阶段字段尚未存在）的收盘段快照：末根=当日 → 完整（与历史行为一致）
+    const legacy = toSession(makeFile({
+      events: [
+        ...makePair(1, 'op-create', 'training.create'),
+        ...makePair(3, 'op-adv1', 'training.advance', { checkpointId: 'cp-4' }),
+      ],
+      checkpoints: [
+        makeCheckpoint(0, { id: 'cp-0', training: makeTraining(DATES[0]!, 100000), chart: makeChart('1D', [makeBar(DATES[0]!, 10)]) }),
+        makeCheckpoint(4, { id: 'cp-4', training: makeTraining(DATES[1]!, 101000), chart: makeChart('1D', [makeBar(DATES[0]!, 10), makeBar(DATES[1]!, 11)]) }),
+      ],
+    }))
+    expect(availablePeriods(legacy.state(1))).toEqual(['1D', '1W', '1M'])
   })
 })
