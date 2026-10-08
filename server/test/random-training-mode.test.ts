@@ -57,6 +57,36 @@ function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY)
 }
 
+/** RF-04 测试本地自然月加法 oracle（不 import 服务端 addMonths） */
+function addMonthsLocal(date: string, months: number): string {
+  const [year, month, day] = date.split('-').map(Number)
+  const total = year * 12 + (month - 1) + months
+  const targetYear = Math.floor(total / 12)
+  const targetMonth = (total % 12) + 1
+  const daysInTarget = new Date(Date.UTC(targetYear, targetMonth, 0)).getUTCDate()
+  const targetDay = Math.min(day, daysInTarget)
+  return `${String(targetYear).padStart(4, '0')}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`
+}
+
+/** RF-04 契约本地实现：完整 months 自然月跨度（窗末日期不超出数据末日）＋200 根预热＋窗口≥2 根
+ *  的可行起始日集合；期望值独立推算，不 import 服务端实现。 */
+function contractMonthStarts(dates: string[], months: number, warmup = 200): string[] {
+  const last = dates[dates.length - 1]
+  const starts: string[] = []
+  for (let i = warmup; i < dates.length - 1; i++) {
+    const end = addMonthsLocal(dates[i], months)
+    if (end > last) break
+    if (dates[i + 1] <= end) starts.push(dates[i])
+  }
+  return starts
+}
+
+/** RF-04 契约本地实现：起始日＋自然月跨度对应的窗口日期（末根＝跨度内最后一个交易日） */
+function contractMonthWindow(dates: string[], start: string, months: number): string[] {
+  const end = addMonthsLocal(start, months)
+  return dates.filter(date => date >= start && date <= end)
+}
+
 const LONG_DATES = weekdayDates('2024-01-02', 520)
 const SHORT_DATES = weekdayDates('2024-01-02', 120)
 const MID_DATES = weekdayDates('2024-01-02', 260)
@@ -302,6 +332,180 @@ describe('POST /api/trainings/random creation', () => {
       expect(response.statusCode).toBe(422)
       expect(response.json().code).toBe('RANDOM_WINDOW_NOT_FIT')
       expect(trainingCount(database)).toBe(0)
+    })
+  })
+})
+
+// RF-04 随机时间维度复用经典训练周期：random_time/random_both 支持 window_months 档位参数
+// （1/3/6/12/24，与经典 TIER_MONTHS 同口径），窗口＝「N 个自然月日期跨度、起点随机、
+// 跨度完整落在数据内」（不换算固定根数）；window_bars 旧口径保留（自定义根数档）。
+describe('RF-04 random window by classic tier months (window_months)', () => {
+  it('creates a random_time training whose window is a full 3-month calendar span with random start', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600001', window_months: 3 },
+      })
+      expect(response.statusCode).toBe(201)
+      const training = response.json().training
+      expect(training.code).toBe('600001')
+      expect(training.name).toBe('STOCK-AA')
+      expect(training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true })
+      // 录制契约冻结（validation.ts RANGE_MODES＋旧五档不得携带 range 元数据）：随机训练 tier 恒为 RANGE 哨兵
+      expect(training.tier).toBe('RANGE')
+      const row = singleTraining(database)
+      const starts = contractMonthStarts(LONG_DATES, 3)
+      expect(starts.length, '夹具自证：600001 应存在 3 个月档可行起点').toBeGreaterThan(0)
+      expect(starts).toContain(row.start_date)
+      const windowDates = contractMonthWindow(LONG_DATES, row.start_date, 3)
+      expect(windowDates.length).toBeGreaterThanOrEqual(2)
+      expect(row.planned_end).toBe(windowDates[windowDates.length - 1])
+      expect(row.range_bar_count).toBe(windowDates.length)
+      expect(row.range_mode).toBe('random')
+      // 偏移语义与 window_bars 相同：响应日期整体常数偏移
+      const offset = daysBetween(row.start_date, training.startDate)
+      expect(offset).toBe(row.random_time_offset_days)
+      expect(training.plannedEnd).toBe(addDays(row.planned_end, offset))
+      expect(training.range.startDate).toBe(addDays(row.start_date, offset))
+      expect(training.range.endDate).toBe(addDays(row.planned_end, offset))
+      expect(training.range.barCount).toBe(windowDates.length)
+      // notes 记录档位口径（月跨度，非根数）
+      expect(training.range.notes.join(' ')).toContain('3 个自然月')
+    })
+  })
+
+  it('picks window_months start deterministically from the injectable rng across the feasible set', async () => {
+    await withFixture(async ({ database, config }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const { createRandomTraining } = await import('../src/train/random-mode.js')
+      const first = await createRandomTraining(database, config, {
+        dimension: 'random_time', code: '600001', window_months: 3, random: () => 0,
+      })
+      expect(first.code).toBe('600001')
+      const firstRow = singleTraining(database)
+      const starts = contractMonthStarts(LONG_DATES, 3)
+      expect(firstRow.start_date).toBe(starts[0]) // rng=0 → 首个可行起点（预热边界之后首个完整跨度起点）
+      expect(contractMonthWindow(LONG_DATES, firstRow.start_date, 3).length).toBe(firstRow.range_bar_count)
+      await database.prepare('UPDATE trainings SET status = ?').run('settled')
+      const tail = await createRandomTraining(database, config, {
+        dimension: 'random_time', code: '600001', window_months: 3, random: () => 0.999999,
+      })
+      expect(tail.code).toBe('600001')
+      const tailRow = trainingRows(database).at(-1) as TrainingDbRow
+      expect(tailRow.start_date).toBe(starts[starts.length - 1]) // rng≈1 → 末个可行起点
+      expect(tailRow.random_time_offset_days).not.toBe(0)
+      // 时长口径一致：任意可行起点的窗口均为完整 3 个自然月跨度（交易末日 ≤ 跨度末日且 ≥ 跨度起点）
+      for (const row of [firstRow, tailRow]) {
+        const spanEnd = addMonthsLocal(row.start_date, 3)
+        expect(row.planned_end <= spanEnd).toBe(true)
+        expect(daysBetween(row.start_date, row.planned_end)).toBeGreaterThanOrEqual(80)
+      }
+    })
+  })
+
+  it('creates a random_both training with window_months picking from stocks that fit the span', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_both', window_months: 1 },
+      })
+      expect(response.statusCode).toBe(201)
+      const training = response.json().training
+      expect(training.code).toBeNull()
+      expect(training.name).toBeNull()
+      expect(training.random).toEqual({ dimension: 'random_both', hideStock: true, hideTime: true })
+      const row = singleTraining(database)
+      // 契约池：目录中能放下完整 1 个月跨度＋200 预热的股票（600001/000002/600005；600003 预热不足）
+      const stock = STOCKS.find(item => item.code === row.code) as FixtureStock
+      expect(['600001', '000002', '600005']).toContain(row.code)
+      expect(contractMonthStarts(stock.dates, 1)).toContain(row.start_date)
+      const windowDates = contractMonthWindow(stock.dates, row.start_date, 1)
+      expect(windowDates.length).toBeGreaterThanOrEqual(2)
+      expect(row.planned_end).toBe(windowDates[windowDates.length - 1])
+      expect(row.range_bar_count).toBe(windowDates.length)
+      expect(training.range.barCount).toBe(windowDates.length)
+      expect(training.range.notes.join(' ')).toContain('1 个自然月')
+    })
+  })
+
+  it('keeps the legacy window_bars caliber working alongside window_months', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600001', window_bars: 10 },
+      })
+      expect(response.statusCode).toBe(201)
+      const row = singleTraining(database)
+      expect(row.range_bar_count).toBe(10) // 旧口径（根数）不回归
+      expect(trainingRows(database).length).toBe(1)
+    })
+  })
+
+  it('settles a window_months training and surfaces it in range rankings under its exact window key', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600001', window_months: 3 },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/settle` })
+      const rankings = await app.inject({ method: 'GET', url: '/api/rankings?view=range' })
+      expect(rankings.statusCode).toBe(200)
+      const groups = rankings.json().rangeGroups as Array<{ key: string; complete: Array<{ id: number }>; earlySettled: Array<{ id: number }> }>
+      const group = groups.find(item => item.key === `RANGE:${row.start_date}:${row.planned_end}`)
+      expect(group, '月跨度随机训练应按其精确窗口键进入范围排行（tier 哨兵口径不变）').toBeTruthy()
+      expect([...(group?.complete ?? []), ...(group?.earlySettled ?? [])].map(item => item.id)).toContain(row.id)
+    })
+  })
+
+  it('rejects with 422 RANDOM_WINDOW_NOT_FIT when warmup or the full month span cannot fit', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      // 600003＝120 根：预热 200 根即不足
+      const warmupCase = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600003', window_months: 1 },
+      })
+      expect(warmupCase.statusCode).toBe(422)
+      expect(warmupCase.json().code).toBe('RANDOM_WINDOW_NOT_FIT')
+      // 600005＝260 根：预热足够，但从任何可行起点都无法容纳完整 3 个自然月跨度（数据止于 ~2025-01）
+      const spanCase = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600005', window_months: 3 },
+      })
+      expect(spanCase.statusCode).toBe(422)
+      expect(spanCase.json().code).toBe('RANDOM_WINDOW_NOT_FIT')
+      expect(contractMonthStarts(MID_DATES, 3), '夹具自证：600005 无完整 3 个月跨度可行起点').toEqual([])
+      expect(trainingCount(database)).toBe(0)
+    })
+  })
+
+  it('rejects window_months misuse with 400 and zero side effects', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const cases: Array<Record<string, unknown>> = [
+        { dimension: 'random_time', code: '600001', window_months: 5 }, // 非经典档位月数
+        { dimension: 'random_time', code: '600001', window_months: 0 },
+        { dimension: 'random_time', code: '600001', window_months: -3 },
+        { dimension: 'random_time', code: '600001', window_months: 2.5 },
+        { dimension: 'random_time', code: '600001', window_months: '3M' },
+        { dimension: 'random_time', code: '600001', window_months: null },
+        { dimension: 'random_time', code: '600001', window_months: 3, window_bars: 100 }, // 二选一
+        { dimension: 'random_stock', start_date: '2025-06-02', end_date: '2025-09-30', window_months: 3 },
+        { dimension: 'random_time', code: '600001', window_months: 3, start_date: '2025-06-02' },
+        { dimension: 'random_both', window_months: 12, code: '600001' },
+      ]
+      for (const payload of cases) {
+        const response = await app.inject({ method: 'POST', url: '/api/trainings/random', payload })
+        expect(response.statusCode, `payload ${JSON.stringify(payload)} should be 400`).toBe(400)
+        expect(response.json().error).toBeTruthy()
+        expect(trainingCount(database), `payload ${JSON.stringify(payload)} must not write`).toBe(0)
+      }
     })
   })
 })

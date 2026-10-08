@@ -1,0 +1,328 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/tmp/rf04[39m
+
+[90mstdout[2m | server/test/runtime-isolation.test.ts[2m > [22m[2mruntime CLI[2m > [22m[2mbuilds an isolated journey through the CLI and returns its manifest
+[22m[39mRun manifest: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-iCCOEu\.runs\run-1c3e5687-ac04-41d7-86bf-daeb5b1a9aa2\manifest.json
+
+[90mstdout[2m | server/test/runtime-isolation.test.ts[2m > [22m[2mruntime CLI[2m > [22m[2mbuilds an isolated journey through the CLI and returns its manifest
+[22m[39mEvidence retained: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-iCCOEu\.runs\run-1c3e5687-ac04-41d7-86bf-daeb5b1a9aa2\artifacts
+
+[90mstdout[2m | server/test/runtime-isolation.test.ts[2m > [22m[2mruntime CLI[2m > [22m[2mretains evidence and releases the server when the browser command fails
+[22m[39mRun manifest: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-X1LVb8\.runs\run-091b1951-36cb-4440-8c4e-1b88052ed029\manifest.json
+
+[90mstdout[2m | server/test/runtime-isolation.test.ts[2m > [22m[2mruntime CLI[2m > [22m[2mretains evidence and releases the server when the browser command fails
+[22m[39mIsolated server: http://127.0.0.1:10762
+
+[90mstdout[2m | server/test/runtime-isolation.test.ts[2m > [22m[2mruntime CLI[2m > [22m[2mretains evidence and releases the server when the browser command fails
+[22m[39mEvidence retained: C:\Users\Stark_Du666\AppData\Local\Temp\trainer-runtime-X1LVb8\.runs\run-091b1951-36cb-4440-8c4e-1b88052ed029\artifacts
+
+ [32m✓[39m server/test/runtime-isolation.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 25495[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects a run directory junction that aliases a different run namespace [33m 302[2mms[22m[39m
+     [33m[2m✓[22m[39m cancels an owned child command and preserves its failure log [33m 6710[2mms[22m[39m
+     [33m[2m✓[22m[39m builds and serves two concurrent runs without replacing production assets or sharing ports/databases [33m 4067[2mms[22m[39m
+     [33m[2m✓[22m[39m terminates a server that never becomes ready [33m 5789[2mms[22m[39m
+     [33m[2m✓[22m[39m builds an isolated journey through the CLI and returns its manifest [33m 3119[2mms[22m[39m
+     [33m[2m✓[22m[39m retains evidence and releases the server when the browser command fails [33m 4280[2mms[22m[39m
+ [32m✓[39m server/test/release-launcher.test.ts [2m([22m[2m52 tests[22m[2m)[22m[33m 32224[2mms[22m[39m
+     [33m[2m✓[22m[39m waits for pending launches before removing their fixture roots [33m 2365[2mms[22m[39m
+     [33m[2m✓[22m[39m starts once and reuses the owned healthy server on repeat launch [33m 679[2mms[22m[39m
+     [33m[2m✓[22m[39m does not adopt a trainer-shaped server that has no launcher state [33m 707[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses a second writer when the running server listens on another port [33m 1056[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the server log when startup fails and records nothing in state [33m 806[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects a readiness record that does not identify the launched server [33m 824[2mms[22m[39m
+     [33m[2m✓[22m[39m stops a server that never becomes ready and keeps its log [33m 1546[2mms[22m[39m
+     [33m[2m✓[22m[39m recovers a stale launch lock after verifying its PID is dead [33m 674[2mms[22m[39m
+     [33m[2m✓[22m[39m waits for a live launcher lock and refuses to bypass it [33m 413[2mms[22m[39m
+     [33m[2m✓[22m[39m clears stale state and readiness files, then starts fresh [33m 790[2mms[22m[39m
+     [33m[2m✓[22m[39m auto-falls back to a nearby port when the unconfigured default port is reserved [33m 779[2mms[22m[39m
+     [33m[2m✓[22m[39m reuses the fallback port on repeat launch without a configured port (no second writer) [33m 807[2mms[22m[39m
+     [33m[2m✓[22m[39m stops the recorded server on the RECORDED port even after the config port changed, keeps database and logs, and is idempotent [33m 646[2mms[22m[39m
+     [33m[2m✓[22m[39m survives a stop/start loop without removing the persisted database [33m 874[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses to signal a live server whose health identity does not match the recorded state, and preserves the state file [33m 1215[2mms[22m[39m
+     [33m[2m✓[22m[39m yields to a live lifecycle lock instead of racing it, leaving the server untouched [33m 1114[2mms[22m[39m
+     [33m[2m✓[22m[39m serializes a concurrent stop and launch so exactly one lifecycle owns the server [33m 1537[2mms[22m[39m
+     [33m[2m✓[22m[39m deterministic regression: a launch started while a stop holds the lock waits it out instead of rejecting the dying server [33m 3147[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses to replace a live recorded server it cannot verify and never spawns a second writer, even on another configured port [33m 2259[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses reuse when the requested databasePath differs and tells the user to stop first [33m 661[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses reuse of a server from a different release version or git commit, then reuses after the package matches again [33m 682[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses reuse when the resolved tdxRoot differs from the recorded one [33m 680[2mms[22m[39m
+     [33m[2m✓[22m[39m reuses a legacy state that predates the optional compatibility fields [33m 817[2mms[22m[39m
+     [33m[2m✓[22m[39m only accepts health identity over HTTP 200: the same body on a 500 never confirms [33m 885[2mms[22m[39m
+     [33m[2m✓[22m[39m launch leaves TDX unset when a default system candidate exists but was not selected [33m 697[2mms[22m[39m
+     [33m[2m✓[22m[39m launch adopts the saved choice, injects session env, and never leaks the control token [33m 722[2mms[22m[39m
+     [33m[2m✓[22m[39m reaches ready: drain, old exit, new run on the same port, bound health, state file [33m 1052[2mms[22m[39m
+     [33m[2m✓[22m[39m CLI assembly: --setup-restart-attempt reaches ready through main() [33m 1268[2mms[22m[39m
+     [33m[2m✓[22m[39m restores the previous saved choice and rolls back when the new run never becomes healthy [33m 888[2mms[22m[39m
+ [32m✓[39m server/test/runtime-cancel.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 10276[2mms[22m[39m
+     [33m[2m✓[22m[39m returns a bounded cleanup error when Windows taskkill stalls [33m 10275[2mms[22m[39m
+ [32m✓[39m server/test/settings-training.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 7380[2mms[22m[39m
+     [33m[2m✓[22m[39m GET 缺键默认：initialCash 1,000,000、adjustMode forward；GET 反映已存新键 [33m 534[2mms[22m[39m
+     [33m[2m✓[22m[39m GET 损坏键不是缺键：409 TRAINING_DEFAULTS_UNREADABLE 可行动报错，不自动修复 [33m 369[2mms[22m[39m
+     [33m[2m✓[22m[39m 四字段 PUT 原子保存并持久：数值/枚举校验通过，其他键保留，文件库重开不变 [33m 521[2mms[22m[39m
+     [33m[2m✓[22m[39m 旧两布尔 PUT 兼容：只更新旧两键并保留新默认资金/复权；不修复损坏新键 [33m 374[2mms[22m[39m
+     [33m[2m✓[22m[39m 四键同事务：新键写入中途失败整体回滚（旧两键也不落库） [33m 301[2mms[22m[39m
+     [33m[2m✓[22m[39m F2 旧两布尔 PUT 响应不伪造损坏新键：损坏字段整体缺席于响应 [33m 392[2mms[22m[39m
+     [33m[2m✓[22m[39m GET 反映既有 settings 键的当前值，无 TDX 也可读取 [33m 337[2mms[22m[39m
+     [33m[2m✓[22m[39m PUT 非法请求整体拒绝（缺 tPlusOne）且零写入 [33m 317[2mms[22m[39m
+     [33m[2m✓[22m[39m 同一请求内两值同事务更新，不部分成功（第二次更新失败则整体回滚） [33m 447[2mms[22m[39m
+ [32m✓[39m server/test/docs-tooling.test.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 29255[2mms[22m[39m
+     [33m[2m✓[22m[39m requires declared documentation updates for tracked working-tree source changes [33m 2872[2mms[22m[39m
+     [33m[2m✓[22m[39m includes untracked runtime files and rejects paths outside the assigned scope [33m 2096[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects empty no-impact reasons but accepts a concrete internal-change explanation [33m 11939[2mms[22m[39m
+     [33m[2m✓[22m[39m uses the requested base through HEAD, index and working tree, not only staged files [33m 1715[2mms[22m[39m
+     [33m[2m✓[22m[39m allows documentation-only changes without manufacturing source changes [33m 1349[2mms[22m[39m
+     [33m[2m✓[22m[39m executes the CLI and rejects unknown arguments without writing status [33m 775[2mms[22m[39m
+     [33m[2m✓[22m[39m uses normalized scope globs for untracked files and rejects invalid base commits [33m 1583[2mms[22m[39m
+     [33m[2m✓[22m[39m treats test fixtures and shipped assets as runtime inputs, even with text or image extensions [33m 1469[2mms[22m[39m
+     [33m[2m✓[22m[39m enforces allowed_paths for Markdown, AGENTS and task cards as well as runtime files [33m 1553[2mms[22m[39m
+     [33m[2m✓[22m[39m includes staged changes even when the working tree restores the baseline content [33m 1817[2mms[22m[39m
+     [33m[2m✓[22m[39m requires docs impact reasoning for executable scripts inside scripts/docs [33m 1615[2mms[22m[39m
+ [32m✓[39m server/test/runtime-shutdown.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 5803[2mms[22m[39m
+     [33m[2m✓[22m[39m releases a never-ready server even when the external tree killer stalls [33m 5801[2mms[22m[39m
+ [32m✓[39m server/test/api.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 5728[2mms[22m[39m
+     [33m[2m✓[22m[39m returns forward-adjusted bars by default and raw bars on request [33m 468[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects malformed and reversed date ranges with 400 instead of an internal error [33m 307[2mms[22m[39m
+     [33m[2m✓[22m[39m returns a stable private recording namespace for each database instance [33m 321[2mms[22m[39m
+     [33m[2m✓[22m[39m refreshes the in-memory catalog after a source day file changes [33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m never serves future bars and closes raw kline while a training is running [33m 325[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects cross-origin requests, bad session tokens, and unavailable lifecycle wiring [33m 699[2mms[22m[39m
+     [33m[2m✓[22m[39m single tab: exit drains via the frozen controller then closes the app exactly once [33m 329[2mms[22m[39m
+     [33m[2m✓[22m[39m maps honest failures: active training and drain timeout never become a force stop [33m 466[2mms[22m[39m
+     [33m[2m✓[22m[39m allows a fresh exit attempt after a failed drain attempt [33m 465[2mms[22m[39m
+ [32m✓[39m server/test/history-report.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 5825[2mms[22m[39m
+     [33m[2m✓[22m[39m 只返回 settled：complete/early-settled 分类如实；abandoned 不出现；RANGE 与五档 rangeMode 如实分类 [33m 363[2mms[22m[39m
+     [33m[2m✓[22m[39m 冻结手算：初始 100000、结算点 110000 → 收益率 0.1；finalEquity 不取末笔现金 90000；费用只在成交行展示 [33m 302[2mms[22m[39m
+     [33m[2m✓[22m[39m 结算日持久点缺失：不得用前一日 109000 代补，integrity=unavailable 且 finalEquity/returnRate=null [33m 394[2mms[22m[39m
+     [33m[2m✓[22m[39m blind 训练结算后列表如实展示代码/名称（脱敏只属于进行中） [33m 318[2mms[22m[39m
+ [32m✓[39m server/test/train-range-preview.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 5246[2mms[22m[39m
+     [33m[2m✓[22m[39m preset 预览返回冻结元信息且不泄露OHLC [33m 500[2mms[22m[39m
+     [33m[2m✓[22m[39m 股票无本地日线返回404 [33m 354[2mms[22m[39m
+     [33m[2m✓[22m[39m 请求/复权方式/股票与预览不一致均返回409 [33m 306[2mms[22m[39m
+ [32m✓[39m server/test/setup-onboarding.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 4694[2mms[22m[39m
+     [33m[2m✓[22m[39m returns the picker result without auto-adopting anything [33m 380[2mms[22m[39m
+     [33m[2m✓[22m[39m picker failure surfaces as unavailable without leaking internals [33m 357[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses explicit env/config sources with 409 and dev sessions with 503 [33m 412[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects a second apply while the first is still running (202 without done) [33m 328[2mms[22m[39m
+     [33m[2m✓[22m[39m never echoes the control token [33m 374[2mms[22m[39m
+ [32m✓[39m server/test/data-refresh.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 3830[2mms[22m[39m
+     [33m[2m✓[22m[39m a) scans a synthetic TDX fixture: baseline updated, then unchanged on rescan [33m 545[2mms[22m[39m
+     [33m[2m✓[22m[39m d) fails the task and preserves snapshot+caches when a market day directory disappears [33m 382[2mms[22m[39m
+     [33m[2m✓[22m[39m e) rejects a torn (non-32-byte-multiple) .day file: failed, nothing published, recovers after fix [33m 434[2mms[22m[39m
+     [33m[2m✓[22m[39m l) late async work after the watchdog cannot publish and cannot clobber a newer task [33m 387[2mms[22m[39m
+ [32m✓[39m server/test/review-profile.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 73710[2mms[22m[39m
+     [33m[2m✓[22m[39m classifies committed plain markdown as docs-only with visual evidence not applicable [33m 26552[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts root README and CONTRIBUTING edits and plain markdown deletions [33m 1455[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts both sides of a pure docs rename by observing deletes and adds without rename pairing [33m 2234[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects code, config and UI paths as ineligible and names the offending path [33m 1485[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects control documentation directories even when the files are markdown [33m 11827[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects AGENTS and CLAUDE files anywhere including nested docs paths [33m 3421[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects mixed change sets, non-markdown files under docs, and empty change sets [33m 2775[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects executable or symlinked markdown through raw file modes [33m 2417[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects renames that introduce or remove control paths on either side [33m 3068[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses the docs exemption while skip-worktree or assume-unchanged flags hide worktree state [33m 3116[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses docs-only while a changed directory resolves through a junction and recovers once the real directory returns [33m 2567[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps validating deletions from the committed tree and tolerates their missing file under a junctioned parent [33m 2527[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the fingerprint stable across content edits but changes it with the path set [33m 2859[2mms[22m[39m
+     [33m[2m✓[22m[39m plans exactly the docs, impact and status checks for docs-only candidates [33m 966[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the full eight-check gate for ordinary candidates and the original baseline sequence [33m 907[2mms[22m[39m
+     [33m[2m✓[22m[39m executes the real verify-candidate CLI on a docs-only fixture and runs only docs, impact and status [33m 5531[2mms[22m[39m
+ [32m✓[39m server/test/random-training-mode.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 6613[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a random_stock training from a valid date window and hides code and name while running [33m 424[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a random_time training with exact window_bars and shifted dates while code stays visible [33m 375[2mms[22m[39m
+     [33m[2m✓[22m[39m picks window_months start deterministically from the injectable rng across the feasible set [33m 361[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the legacy window_bars caliber working alongside window_months [33m 395[2mms[22m[39m
+     [33m[2m✓[22m[39m derives every random decision from the injectable rng deterministically [33m 1204[2mms[22m[39m
+ [32m✓[39m server/test/updater-verify.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 3215[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts an intact release zip when the SHA256 matches and versions line up [33m 1094[2mms[22m[39m
+     [33m[2m✓[22m[39m UPD-RUNTIME-COMPAT: refuses online swap and names the full-package reinstall path when nodeVersion differs [33m 2089[2mms[22m[39m
+ [32m✓[39m server/test/release-integrity.test.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 3011[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects malformed or mismatched metadata [33m 433[2mms[22m[39m
+ [32m✓[39m server/test/public-source.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 3825[2mms[22m[39m
+     [33m[2m✓[22m[39m exports a clean runnable snapshot without development history or private files [33m 3821[2mms[22m[39m
+[90mstderr[2m | server/test/release-package.test.ts[2m > [22m[2moutput reservation lock[2m > [22m[2mreleases only its own reservation; a rewritten foreign lock is never removed
+[22m[39mLock C:\Users\STARK_~1\AppData\Local\Temp\relpack-lock-foreign-G5pqeU\.kline-trainer-v0.3.0-windows-x64.build.lock no longer holds this build's reservation; leaving it untouched.
+
+ [32m✓[39m server/test/recording-context.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 3402[2mms[22m[39m
+     [33m[2m✓[22m[39m 拒绝非正整数训练 id 并返回中文错误 [33m 436[2mms[22m[39m
+     [33m[2m✓[22m[39m rules 来自本局冻结快照：创建/迁移后修改 settings 不漂移，并如实透出规则来源元数据 [33m 310[2mms[22m[39m
+     [33m[2m✓[22m[39m 按 current_date 截断权息事件并按 date/seq 稳定排序，不泄漏未来数据 [33m 318[2mms[22m[39m
+     [33m[2m✓[22m[39m 根定位跟随服务进程 cwd 而非模块位置：独立进程在隔离根启动时不再上推到仓库或 .runs [33m 454[2mms[22m[39m
+ [32m✓[39m server/test/rankings.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 2529[2mms[22m[39m
+     [33m[2m✓[22m[39m 缺 tier/非法 tier 一律 400 [33m 376[2mms[22m[39m
+ [32m✓[39m server/test/release-package.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 2920[2mms[22m[39m
+     [33m[2m✓[22m[39m round-trips a directory whose path contains wildcard characters [33m 1823[2mms[22m[39m
+     [33m[2m✓[22m[39m turns a failed cmdlet into a rejected run instead of a silent exit 0 [33m 784[2mms[22m[39m
+ [32m✓[39m server/test/full-acceptance.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2365[2mms[22m[39m
+     [33m[2m✓[22m[39m MA warmup extends the real training load window while retaining its cutoff and earlier-history boundary [33m 1114[2mms[22m[39m
+ [32m✓[39m server/test/drawings.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2288[2mms[22m[39m
+     [33m[2m✓[22m[39m saves and restores both curse-line timestamp and value anchors in their original order [33m 339[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects invalid identifiers and nonexistent trainings for both read and write [33m 377[2mms[22m[39m
+     [33m[2m✓[22m[39m replaces drawings independently by training and restores them after the database reopens [33m 569[2mms[22m[39m
+ [32m✓[39m server/test/conditional-orders.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2098[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps an above-market buy limit pending until the price actually reaches the trigger, then fills at the trigger price [33m 380[2mms[22m[39m
+     [33m[2m✓[22m[39m fills stops at market price (close in-session) while limits fill at trigger and survive adverse gap opens [33m 387[2mms[22m[39m
+ [32m✓[39m server/test/updater-swap.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 1531[2mms[22m[39m
+     [33m[2m✓[22m[39m moves old-only files away, places new files, and leaves runtime + preserve untouched [33m 1136[2mms[22m[39m
+[90mstderr[2m | server/test/updater-apply.test.ts[2m > [22m[2mPOST /api/update/apply verify gate (UPD-DOWNLOAD-VERIFY)[2m > [22m[2mfails the attempt on a SHA256 mismatch without touching the package and without launching the updater
+[22m[39mError: SHA256 校验失败：期望 0000000000000000000000000000000000000000000000000000000000000000，实际 76d70768790727a7348aa13c4f00469492fdd7729185296d1ad4dd6f433f1cf5；已拒绝应用该更新包（下载可能不完整或被篡改）
+    at D:/tmp/rf04/server/src/update/api.ts:292:29
+    at async Promise.allSettled (index 0)
+    at settle (D:/tmp/rf04/server/test/updater-apply.test.ts:124:3)
+    at D:/tmp/rf04/server/test/updater-apply.test.ts:181:5
+    at file:///D:/Superlinear_Academy/Stock_WorkSpace/a-share-kline-trainer/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20
+
+ [32m✓[39m server/test/updater-apply.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 1514[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects when no newer release is available or the manifest fails [33m 1115[2mms[22m[39m
+ [32m✓[39m server/test/setup-api.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 3443[2mms[22m[39m
+     [33m[2m✓[22m[39m browser same-origin request returns disabled status and never calls diagnostics [33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m helper request with the configured token succeeds [33m 1180[2mms[22m[39m
+     [33m[2m✓[22m[39m expected host comes from config, never from the request Host header [33m 389[2mms[22m[39m
+     [33m[2m✓[22m[39m diagnostics stubs are ignored because automatic discovery is disabled [33m 356[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-storage.test.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 1457[2mms[22m[39m
+ [32m✓[39m server/test/tdx-inspect.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 925[2mms[22m[39m
+     [33m[2m✓[22m[39m reports access-denied data as unreadable instead of absent [33m 347[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-recorder.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 2119[2mms[22m[39m
+     [33m[2m✓[22m[39m 文件不内嵌全量chart重复，资源按增量表达，逐cp经Reader还原正确并通过v2校验 [33m 2027[2mms[22m[39m
+ [32m✓[39m server/test/setup-control-process.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1338[2mms[22m[39m
+     [33m[2m✓[22m[39m 健康→prepare 200→shutdown 202→子进程 exit 0→端口可重绑→ready 清理→SQLite 数据完整 [33m 1336[2mms[22m[39m
+{"level":30,"time":1791483894956,"pid":2864,"hostname":"StarkDu","msg":"Server listening at http://127.0.0.1:4230"}
+{"level":30,"time":1791483894980,"pid":2864,"hostname":"StarkDu","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:4230","remoteAddress":"127.0.0.1","remotePort":4231},"msg":"incoming request"}
+{"level":30,"time":1791483894983,"pid":2864,"hostname":"StarkDu","reqId":"req-1","res":{"statusCode":200},"responseTime":3.1625999999960186,"msg":"request completed"}
+{"level":30,"time":1791483894991,"pid":2864,"hostname":"StarkDu","reqId":"req-2","req":{"method":"GET","url":"/","host":"127.0.0.1:4230","remoteAddress":"127.0.0.1","remotePort":4232},"msg":"incoming request"}
+{"level":30,"time":1791483894994,"pid":2864,"hostname":"StarkDu","reqId":"req-2","res":{"statusCode":200},"responseTime":2.9407000000064727,"msg":"request completed"}
+ [32m✓[39m server/test/train-engine.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 639[2mms[22m[39m
+ [32m✓[39m server/test/setup-control-api.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 843[2mms[22m[39m
+     [33m[2m✓[22m[39m F1: 已接纳刷新在 prepare 后才派生 scan 后台任务时不得提前 prepared；scan 完成正例钉住 [33m 371[2mms[22m[39m
+{"level":30,"time":1791483895253,"pid":2864,"hostname":"StarkDu","msg":"Server listening at http://127.0.0.1:4235"}
+ [32m✓[39m server/test/server-entry-programmatic.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 690[2mms[22m[39m
+     [33m[2m✓[22m[39m DESKTOP-SERVER-ENTRY-PROGRAMMATIC: startTrainerServer boots in-process on a temp DB and serves health with currentVersion [33m 421[2mms[22m[39m
+ [32m✓[39m server/test/train-rules-snapshot.test.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 585[2mms[22m[39m
+ [32m✓[39m server/test/setup-drain.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 642[2mms[22m[39m
+ [32m✓[39m server/test/settings-tdx-path.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 572[2mms[22m[39m
+ [32m✓[39m server/test/drawing-price-basis.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 664[2mms[22m[39m
+     [33m[2m✓[22m[39m returns the drawing basis with bars and keeps the blind advance date masked [33m 392[2mms[22m[39m
+ [32m✓[39m server/test/settings-app.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 487[2mms[22m[39m
+ [32m✓[39m server/test/recording-file.test.ts [2m([22m[2m25 tests[22m[2m)[22m[33m 784[2mms[22m[39m
+     [33m[2m✓[22m[39m 1MiB正常gzip按1/16/16384/65536/1MiB输入块往返无损 [33m 634[2mms[22m[39m
+ [32m✓[39m server/test/history-protection.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 482[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-validation.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 775[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts 10000 viewport checkpoints sharing one series without charging restore per reference [33m 525[2mms[22m[39m
+ [32m✓[39m server/test/settings-data-dir.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 508[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-removal.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 444[2mms[22m[39m
+ [32m✓[39m server/test/training-creation-defaults.test.ts [2m([22m[2m16 tests[22m[2m)[22m[33m 399[2mms[22m[39m
+ [32m✓[39m server/test/drawings-migration.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 365[2mms[22m[39m
+     [33m[2m✓[22m[39m preserves legacy payloads across repeated migration and enables drawing API writes [33m 364[2mms[22m[39m
+ [32m✓[39m server/test/release-metadata.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 374[2mms[22m[39m
+     [33m[2m✓[22m[39m does not accept unrelated, mismatched or invalid release metadata [33m 361[2mms[22m[39m
+ [32m✓[39m server/test/recording-storage.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m server/test/e2e-runtime.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 156[2mms[22m[39m
+ [32m✓[39m server/test/updater-check.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 251[2mms[22m[39m
+ [32m✓[39m server/test/updater-ui.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 246[2mms[22m[39m
+ [32m✓[39m server/test/rf01-float-shares.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 427[2mms[22m[39m
+     [33m[2m✓[22m[39m credits a float32 bonus rate as whole shares and keeps snapshot fields integer with full exit succeeding [33m 413[2mms[22m[39m
+ [32m✓[39m server/test/data-reader.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m server/test/settings-shortcuts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 246[2mms[22m[39m
+ [32m✓[39m server/test/recording-validation.test.ts [2m([22m[2m58 tests[22m[2m)[22m[33m 329[2mms[22m[39m
+ [32m✓[39m server/test/journey-snapshot.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 157[2mms[22m[39m
+ [32m✓[39m server/test/workflow-bridge.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 150[2mms[22m[39m
+ [32m✓[39m server/test/odometer.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m server/test/setup-saved-choice.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 120[2mms[22m[39m
+ [32m✓[39m server/test/percent-hover.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m server/test/kdj-indicator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+ [32m✓[39m server/test/workflow-state.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 94[2mms[22m[39m
+ [32m✓[39m server/test/frontend-contract.test.ts [2m([22m[2m35 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m server/test/data-status-feedback.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 105[2mms[22m[39m
+ [32m✓[39m server/test/db-training-rules-migration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m server/test/catalog-protection.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m server/test/data-status-store-order.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+ [32m✓[39m server/test/discover.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-codec.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m server/test/rights-cost-basis.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m server/test/recording-core.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m server/test/recording-chart-actions.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32m✓[39m server/test/catalog.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m server/test/workflow-docs.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m server/test/equity-comparison.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m server/test/recording-range-v3.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m server/test/data-status-timing.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m server/test/names.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m server/test/drawing-geometry.test.ts [2m([22m[2m60 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m server/test/chart-cost-basis.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m server/test/industry.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m server/test/adjustment-cache.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m server/test/drawing-state.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m server/test/dayfile.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m server/test/frontend-data-status-contract.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m server/test/process-clues.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m server/test/recording-compact-replay.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m server/test/recording-daily-replay.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m server/test/trade-notes.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m server/test/recording-replay.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m server/test/recording-chart-capture.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m server/test/setup-restart-plan.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m server/test/ma-settings.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m server/test/train-range.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m server/test/recording-library.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m server/test/training-rules-frontend.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m server/test/recording-chart-readonly.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m server/test/trade-marker-layout.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m server/test/data-freshness.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m server/test/recording-chart.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m server/test/trade-marker-details.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m server/test/m5-settings-frontend.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/tool-favorites.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/verification.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m server/test/data-calendar.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/gbbq.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/keyboard-shortcuts.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/candidate-diagnostics.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/phase-price.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m server/test/drawing-outbox.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/recording-business-events.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/train-account.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m server/test/phase-price-line.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/test/klinecharts-pin.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/setup-control-guard.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/stock-search.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/test/symbol.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/test/chart-navigation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m server/test/recording-drawing-operations.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/test/kline.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m server/test/drawing-hit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m server/test/stocks.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m server/test/range-date.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m server/test/worktree-tools.test.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 276860[2mms[22m[39m
+     [33m[2m✓[22m[39m combines the latest target with one task and records the exact merged commit without moving main [33m 31713[2mms[22m[39m
+     [33m[2m✓[22m[39m retains a conflicting candidate for inspection and never changes main or the worker [33m 16563[2mms[22m[39m
+     [33m[2m✓[22m[39m enforces the baseline scope even if a task tries to broaden its own card [33m 4795[2mms[22m[39m
+     [33m[2m✓[22m[39m shares an exclusive lock across worktrees and does not steal a lock after an interrupted owner [33m 2750[2mms[22m[39m
+     [33m[2m✓[22m[39m routes CLI create and list operations and rejects unknown or incomplete mutation arguments [33m 2231[2mms[22m[39m
+     [33m[2m✓[22m[39m creates independent worktrees at the captured baseline and lists both without changing main [33m 3991[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses an uncommitted baseline and leaves its edits and refs untouched [33m 1576[2mms[22m[39m
+     [33m[2m✓[22m[39m requires the task card and its integrated dependencies on the committed baseline [33m 2665[2mms[22m[39m
+     [33m[2m✓[22m[39m runs the candidate gate and promotes exactly the reviewed commit, then cleans up only that candidate [33m 14333[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a verified candidate and a complete passing proof for its exact commit, tree, task and baseline [33m 13275[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects proof run manifests that are missing, outside or junction-redirected while retaining valid proofs [33m 12027[2mms[22m[39m
+     [33m[2m✓[22m[39m applies the same run-manifest ownership to v2 proofs before a visual-exempt promotion [33m 12820[2mms[22m[39m
+     [33m[2m✓[22m[39m requires v2 proofs to promise a clean worktree before and after the checks [33m 11789[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a matching manual UI review and existing relative evidence files [33m 9587[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects stale source refs before verification and after proof without advancing the target [33m 11849[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects an advanced target and never reuses proof against a new main [33m 8806[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses dirty candidates and targets while preserving their files [33m 9980[2mms[22m[39m
+     [33m[2m✓[22m[39m refuses cleanup before promotion and preserves unmerged candidate files [33m 5139[2mms[22m[39m
+     [33m[2m✓[22m[39m never writes verification artifacts through a redirected run directory [33m 5803[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a local dependency directory rather than accepting an arbitrary node_modules file [33m 5255[2mms[22m[39m
+     [33m[2m✓[22m[39m retains failed gate evidence and refuses promotion even if an older proof existed [33m 7079[2mms[22m[39m
+     [33m[2m✓[22m[39m promotes through compare-and-swap when the target is not checked out [33m 10444[2mms[22m[39m
+     [33m[2m✓[22m[39m preserves a promoted candidate if it becomes dirty or its registered branch changes [33m 10150[2mms[22m[39m
+     [33m[2m✓[22m[39m verifies a docs-only candidate with the exact docs check set and promotes without a visual review [33m 11445[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the manual UI requirement for legacy v1 proofs even when the change set is docs-only [33m 10190[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects forged docs-only proofs over full change sets and mismatched change-set fingerprints [33m 17411[2mms[22m[39m
+     [33m[2m✓[22m[39m rejects unknown policy versions, wrong visual flags and incomplete, extra or duplicated v2 check sets [33m 13212[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps the full eight-check gate, required visual and exact proof bindings for ordinary change sets [33m 9980[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m122 passed[39m[22m[90m (122)[39m
+[2m      Tests [22m [1m[32m1546 passed[39m[22m[90m (1546)[39m
+[2m   Start at [22m 02:23:26
+[2m   Duration [22m 277.23s[2m (transform 2.40s, setup 0ms, import 11.50s, tests 544.90s, environment 12ms)[22m
+

@@ -1,8 +1,15 @@
 // M7-01 随机训练模式·服务端核心（docs/verification/2026-10/M7-01/design.md §2 为契约）。
 // 三种维度：random_stock（用户起止日期＋服务器随机选股）/ random_time（用户股票＋服务器
-// 随机 window_bars 时间窗）/ random_both（全随机）。随机决定全部经可注入 rng；股票池按
+// 随机时间窗）/ random_both（全随机）。随机决定全部经可注入 rng；股票池按
 // 窗口需求（含 200 根指标预热）过滤，池空 422 RANDOM_STOCK_UNIVERSE_EMPTY、无可行起点
 // 422 RANDOM_WINDOW_NOT_FIT。
+//
+// RF-04（2026-10-08）：random_time / random_both 时间维度复用经典训练周期口径——新增
+// window_months 档位参数（值域＝经典 TIER_MONTHS 的 1/3/6/12/24），窗口＝「N 个自然月
+// 日期跨度、起点随机、跨度完整落在数据内」，与经典 3M 档＝anchor−3M 同源（不换算固定
+// 根数）；window_bars 旧口径（按 K 线根数随机）保留为「自定义根数」档，二参数互斥。
+// 训练时长口径与经典一致（月跨度）；tier 列仍恒为 RANGE 哨兵（录制契约冻结：
+// web/src/recording/validation.ts 旧五档不得携带 range 元数据）。
 //
 // 信息隐藏是 API 级真隐藏（网络面板可见即算泄漏）：隐藏股票→运行中会话一切响应无名称/代码；
 // 隐藏时间→响应内全部市场日期经会话级随机常量偏移变换（纯日期/月键/长字符串内日期子串/
@@ -19,13 +26,16 @@ import { parseTdxSymbol } from '../tdx/symbol.js'
 import type { TdxMarket } from '../tdx/stocks.js'
 import type { ReaderCatalogEntry } from '../data/reader.js'
 import {
-  HttpError, MA_WARMUP_BARS, RANGE_TIER_SENTINEL, commitTrainingCreation, industrySnapshot, marketReader,
+  HttpError, MA_WARMUP_BARS, RANGE_TIER_SENTINEL, TIER_MONTHS, addMonths, commitTrainingCreation, industrySnapshot, marketReader,
   rangeFingerprint, shanghaiCompleteDataDate, toMeta,
   type RandomDimension, type TrainingCreationRow, type TrainingMeta, type TrainingRow,
 } from './engine.js'
 
 export const RANDOM_DEFAULT_WINDOW_BARS = 250
 export const RANDOM_OFFSET_MAX_DAYS = 3650
+
+/** RF-04 档位口径：window_months 合法值域＝经典 TIER_MONTHS 的月数集合（1/3/6/12/24） */
+const TIER_MONTH_VALUES: readonly number[] = Object.values(TIER_MONTHS)
 
 const MS_PER_DAY = 86_400_000
 const EXACT_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -191,6 +201,8 @@ export interface CreateRandomTrainingInput {
   end_date?: unknown
   code?: unknown
   window_bars?: unknown
+  /** RF-04 档位口径月数（1/3/6/12/24）：窗口＝N 个自然月跨度、起点随机；与 window_bars 互斥 */
+  window_months?: unknown
   initial_cash?: unknown
   adjust_mode?: unknown
   clock_mode?: unknown
@@ -224,6 +236,38 @@ function windowNotFit(available: number, windowBars: number): HttpError {
     `该股票可用日线 ${available} 根，无法在保留 ${MA_WARMUP_BARS} 根指标预热的前提下随机选取 ${windowBars} 根窗口；请减小窗口或换一只历史更长的股票`,
     'RANDOM_WINDOW_NOT_FIT',
   )
+}
+
+/** RF-04 档位口径无可行起点（预热不足或完整 N 个自然月跨度放不进数据） */
+function windowMonthsNotFit(available: number, months: number): HttpError {
+  return new HttpError(
+    422,
+    `该股票可用日线 ${available} 根，无法在保留 ${MA_WARMUP_BARS} 根指标预热的前提下随机选取完整 ${months} 个自然月跨度的窗口；请换更短档位或一只历史更长的股票`,
+    'RANDOM_WINDOW_NOT_FIT',
+  )
+}
+
+/**
+ * RF-04 档位口径可行起始下标：预热 200 根之后、起点＋N 个自然月跨度完整落在数据内
+ * （窗末日期不超出数据末日，杜绝截断残窗）、且窗口至少 2 个交易日。addMonths 对起点
+ * 单调不减，故窗末一旦越过数据末日即可提前终止。
+ */
+function monthWindowStarts(bars: DayBar[], months: number): number[] {
+  if (bars.length === 0) return []
+  const lastDate = bars[bars.length - 1].date
+  const starts: number[] = []
+  for (let i = MA_WARMUP_BARS; i < bars.length - 1; i++) {
+    const windowEnd = addMonths(bars[i].date, months)
+    if (windowEnd > lastDate) break
+    if (bars[i + 1].date <= windowEnd) starts.push(i)
+  }
+  return starts
+}
+
+/** RF-04 档位口径窗口：起始下标 → [start, addMonths(start, N)] 内的全部日线 */
+function monthWindowSlice(bars: DayBar[], startIndex: number, months: number): DayBar[] {
+  const windowEnd = addMonths(bars[startIndex].date, months)
+  return bars.filter(bar => bar.date >= bars[startIndex].date && bar.date <= windowEnd)
 }
 
 function drawOffsetDays(rng: () => number): number {
@@ -288,11 +332,22 @@ export async function createRandomTraining(
     windowBars = input.window_bars
   }
 
+  // RF-04 档位口径：window_months 只接受经典档位月数，与 window_bars（根数口径）互斥
+  let windowMonths: number | null = null
+  if (input?.window_months !== undefined) {
+    if (typeof input.window_months !== 'number' || !Number.isSafeInteger(input.window_months) || !TIER_MONTH_VALUES.includes(input.window_months)) {
+      throw new HttpError(400, `window_months 必须是经典档位月数（${TIER_MONTH_VALUES.join(' / ')}）之一`)
+    }
+    if (windowBars !== null) throw new HttpError(400, 'window_months 与 window_bars 只能提供其一（档位月跨度或自定义根数二选一）')
+    windowMonths = input.window_months
+  }
+
   let picked: PickedWindow | null = null
 
   if (dimension === 'random_stock') {
     if (input?.code !== undefined) throw new HttpError(400, 'random_stock 不接受 code（股票由服务器随机选取）')
     if (windowBars !== null) throw new HttpError(400, 'random_stock 不接受 window_bars（时间段由用户指定）')
+    if (windowMonths !== null) throw new HttpError(400, 'random_stock 不接受 window_months（时间段由用户指定）')
     if (typeof input?.start_date !== 'string' || !isDayDate(input.start_date) || typeof input?.end_date !== 'string' || !isDayDate(input.end_date)) {
       throw new HttpError(400, 'start_date 与 end_date 必须是有效的 YYYY-MM-DD 日期')
     }
@@ -351,41 +406,74 @@ export async function createRandomTraining(
       const stock = stocks.find(item => item.market === parsed.market && item.code === parsed.code)
       if (!stock) throw new HttpError(400, `代码 ${parsed.code} 不在 A 股目录中`)
       const bars = (await reader.readBars(parsed.market, parsed.code)).filter(bar => bar.date <= cutoff)
-      const feasible = bars.length - effectiveWindowBars - MA_WARMUP_BARS + 1
-      if (feasible < 1) throw windowNotFit(bars.length, effectiveWindowBars)
-      const startIndex = MA_WARMUP_BARS + Math.floor(rng() * feasible)
-      picked = {
-        market: parsed.market,
-        code: parsed.code,
-        name: stock.name,
-        window: bars.slice(startIndex, startIndex + effectiveWindowBars),
-        fingerprint: await fingerprintOf(database, config, parsed.market, parsed.code, bars),
-        notes: [`随机窗口模式：起点由服务器在可行起点集合中随机选取（预热 ${MA_WARMUP_BARS} 根，窗口 ${effectiveWindowBars} 根）`],
+      if (windowMonths !== null) {
+        // RF-04 档位口径：N 个自然月跨度、起点在可行集合内均匀随机（不换算固定根数）
+        const feasibleStarts = monthWindowStarts(bars, windowMonths)
+        if (feasibleStarts.length === 0) throw windowMonthsNotFit(bars.length, windowMonths)
+        const startIndex = feasibleStarts[Math.floor(rng() * feasibleStarts.length)]
+        picked = {
+          market: parsed.market,
+          code: parsed.code,
+          name: stock.name,
+          window: monthWindowSlice(bars, startIndex, windowMonths),
+          fingerprint: await fingerprintOf(database, config, parsed.market, parsed.code, bars),
+          notes: [`随机窗口模式（档位口径）：起点由服务器在可行起点集合中随机选取（预热 ${MA_WARMUP_BARS} 根，窗口为 ${windowMonths} 个自然月跨度，与经典训练周期同口径）`],
+        }
+      } else {
+        const feasible = bars.length - effectiveWindowBars - MA_WARMUP_BARS + 1
+        if (feasible < 1) throw windowNotFit(bars.length, effectiveWindowBars)
+        const startIndex = MA_WARMUP_BARS + Math.floor(rng() * feasible)
+        picked = {
+          market: parsed.market,
+          code: parsed.code,
+          name: stock.name,
+          window: bars.slice(startIndex, startIndex + effectiveWindowBars),
+          fingerprint: await fingerprintOf(database, config, parsed.market, parsed.code, bars),
+          notes: [`随机窗口模式：起点由服务器在可行起点集合中随机选取（预热 ${MA_WARMUP_BARS} 根，窗口 ${effectiveWindowBars} 根）`],
+        }
       }
     } else {
       if (input?.code !== undefined) throw new HttpError(400, 'random_both 不接受 code（股票由服务器随机选取）')
       const stocks = await reader.readCatalog()
+      // 目录预筛仅为省 IO：档位口径最低要求＝预热 200 根＋窗口 ≥2 根（能否容纳完整跨度逐股核验）
+      const minimumBars = windowMonths !== null ? MA_WARMUP_BARS + 2 : effectiveWindowBars + MA_WARMUP_BARS
       const remaining = stocks.filter(stock =>
-        typeof stock.bars === 'number' && stock.bars >= effectiveWindowBars + MA_WARMUP_BARS) as Array<ReaderCatalogEntry & { market: TdxMarket }>
+        typeof stock.bars === 'number' && stock.bars >= minimumBars) as Array<ReaderCatalogEntry & { market: TdxMarket }>
       while (remaining.length > 0) {
         const index = Math.floor(rng() * remaining.length)
         const candidate = remaining.splice(index, 1)[0]
         const bars = (await reader.readBars(candidate.market, candidate.code)).filter(bar => bar.date <= cutoff)
-        const feasible = bars.length - effectiveWindowBars - MA_WARMUP_BARS + 1
-        if (feasible < 1) continue
-        const startIndex = MA_WARMUP_BARS + Math.floor(rng() * feasible)
-        picked = {
-          market: candidate.market,
-          code: candidate.code,
-          name: candidate.name,
-          window: bars.slice(startIndex, startIndex + effectiveWindowBars),
-          fingerprint: await fingerprintOf(database, config, candidate.market, candidate.code, bars),
-          notes: [`随机窗口模式：股票与起点均由服务器随机选取（预热 ${MA_WARMUP_BARS} 根，窗口 ${effectiveWindowBars} 根）`],
+        if (windowMonths !== null) {
+          const feasibleStarts = monthWindowStarts(bars, windowMonths)
+          if (feasibleStarts.length === 0) continue
+          const startIndex = feasibleStarts[Math.floor(rng() * feasibleStarts.length)]
+          picked = {
+            market: candidate.market,
+            code: candidate.code,
+            name: candidate.name,
+            window: monthWindowSlice(bars, startIndex, windowMonths),
+            fingerprint: await fingerprintOf(database, config, candidate.market, candidate.code, bars),
+            notes: [`随机窗口模式（档位口径）：股票与起点均由服务器随机选取（预热 ${MA_WARMUP_BARS} 根，窗口为 ${windowMonths} 个自然月跨度，与经典训练周期同口径）`],
+          }
+        } else {
+          const feasible = bars.length - effectiveWindowBars - MA_WARMUP_BARS + 1
+          if (feasible < 1) continue
+          const startIndex = MA_WARMUP_BARS + Math.floor(rng() * feasible)
+          picked = {
+            market: candidate.market,
+            code: candidate.code,
+            name: candidate.name,
+            window: bars.slice(startIndex, startIndex + effectiveWindowBars),
+            fingerprint: await fingerprintOf(database, config, candidate.market, candidate.code, bars),
+            notes: [`随机窗口模式：股票与起点均由服务器随机选取（预热 ${MA_WARMUP_BARS} 根，窗口 ${effectiveWindowBars} 根）`],
+          }
         }
         break
       }
       if (!picked) {
-        throw universeEmpty(`本地数据中没有可用 K 线根数满足 ${effectiveWindowBars} 根窗口（含 ${MA_WARMUP_BARS} 根指标预热）的股票，请减小窗口或补充本地数据`)
+        throw universeEmpty(windowMonths !== null
+          ? `本地数据中没有能容纳完整 ${windowMonths} 个自然月跨度窗口（含 ${MA_WARMUP_BARS} 根指标预热）的股票，请换更短档位或补充本地数据`
+          : `本地数据中没有可用 K 线根数满足 ${effectiveWindowBars} 根窗口（含 ${MA_WARMUP_BARS} 根指标预热）的股票，请减小窗口或补充本地数据`)
       }
     }
   }

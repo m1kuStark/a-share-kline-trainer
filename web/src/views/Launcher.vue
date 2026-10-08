@@ -14,6 +14,8 @@ const ordersEnabled = ref(false)
 const mode = ref<'classic' | 'random'>('classic')
 const randomDimension = ref<RandomDimension>('random_stock')
 const windowBars = ref(250)
+/** RF-04 随机训练周期档：默认 3M（与经典默认档一致）；WINDOW_BARS＝自定义根数（旧口径） */
+const randomTier = ref<Tier | 'WINDOW_BARS'>('3M')
 const RANDOM_DIMENSIONS: Array<{ value: RandomDimension; label: string; hint: string }> = [
   { value: 'random_stock', label: '随机股票 · 我选时间段', hint: '选定时间段内由服务器随机选股，结算前隐藏股票名称与代码' },
   { value: 'random_time', label: '随机时间段 · 我选股票', hint: '由服务器在该股票历史中随机选一段行情，结算前隐藏真实日期（图表日期为偏移伪日期）' },
@@ -26,8 +28,10 @@ const showStockPicker = computed(() => mode.value === 'classic' || randomDimensi
 const showPresetStart = computed(() => mode.value === 'classic' && tier.value !== 'RANGE')
 /** 起止日输入（复用 rangeStart/rangeEnd）：经典自定义范围｜随机 random_stock */
 const showRangeDates = computed(() => mode.value === 'classic' ? tier.value === 'RANGE' : randomDimension.value === 'random_stock')
-/** 训练窗口长度：仅随机 random_time / random_both */
-const showWindowBars = computed(() => mode.value === 'random' && randomDimension.value !== 'random_stock')
+/** RF-04 随机训练周期档位网格：仅随机 random_time / random_both（复用经典五档＋自定义根数） */
+const showRandomPeriod = computed(() => mode.value === 'random' && randomDimension.value !== 'random_stock')
+/** 训练窗口长度（根数输入）：随机模式下仅「自定义根数」档显示 */
+const showWindowBars = computed(() => showRandomPeriod.value && randomTier.value === 'WINDOW_BARS')
 
 function setMode(next: 'classic' | 'random'): void {
   if (mode.value === next) return
@@ -315,6 +319,18 @@ const tiers: Array<{ value: Tier | 'RANGE'; label: string }> = [
   { value: 'RANGE', label: '自定义范围' },
 ]
 
+/** RF-04 随机训练周期档位：完全复用经典五档（同 TIER_MONTHS 月数与同文案）＋「自定义根数」
+ *  （window_bars 旧口径，兼容既有习惯与旧 API 载荷）。 */
+const randomPeriodOptions: Array<{ value: Tier | 'WINDOW_BARS'; label: string }> = [
+  ...tiers.filter((item): item is { value: Tier; label: string } => item.value !== 'RANGE'),
+  { value: 'WINDOW_BARS', label: '自定义根数' },
+]
+
+function onRandomTierClick(value: Tier | 'WINDOW_BARS'): void {
+  randomTier.value = value
+  errorMessage.value = ''
+}
+
 /** 预设点击＝从锚点（最新数据日）回退对应周期重新生成起始日；自定义则重置默认区间 */
 function onTierClick(value: Tier | 'RANGE'): void {
   tier.value = value
@@ -444,9 +460,10 @@ function confirmStartAnyway(): void {
   void performCreate()
 }
 
-// ===== M7-02 随机模式创建：POST /api/trainings/random（契约=M7-01 design.md §2.1） =====
-// 载荷按维度组装：random_stock=start_date+end_date；random_time=code+window_bars；
-// random_both=window_bars（不带 code/起止日）；initial_cash/adjust_mode/clock_mode/orders_enabled 与经典同语义。
+// ===== M7-02 随机模式创建：POST /api/trainings/random（契约=M7-01 design.md §2.1；RF-04 增档位） =====
+// 载荷按维度组装：random_stock=start_date+end_date；random_time=code+window_months（档位）或
+// window_bars（自定义根数）；random_both=window_months/window_bars（不带 code/起止日）；
+// initial_cash/adjust_mode/clock_mode/orders_enabled 与经典同语义。
 async function performRandomCreate(): Promise<void> {
   const cash = Number(initialCash.value)
   if (!Number.isFinite(cash) || cash <= 0) {
@@ -484,12 +501,17 @@ async function performRandomCreate(): Promise<void> {
     params.code = selected.value.code
   }
   if (randomDimension.value !== 'random_stock') {
-    const window = Math.floor(Number(windowBars.value))
-    if (!Number.isSafeInteger(window) || window < 20 || window > 2000) {
-      errorMessage.value = '训练窗口长度需为 20–2000 的整数（默认 250）'
-      return
+    // RF-04：档位网格默认路径发 window_months（经典同口径月跨度）；「自定义根数」档发旧 window_bars
+    if (randomTier.value === 'WINDOW_BARS') {
+      const window = Math.floor(Number(windowBars.value))
+      if (!Number.isSafeInteger(window) || window < 20 || window > 2000) {
+        errorMessage.value = '训练窗口长度需为 20–2000 的整数（默认 250）'
+        return
+      }
+      params.window_bars = window
+    } else {
+      params.window_months = TIER_MONTHS[randomTier.value]
     }
-    params.window_bars = window
   }
   submitting.value = true
   try {
@@ -581,7 +603,16 @@ function randomCreateErrorMessage(error: unknown): string {
         </div>
       </div>
 
-      <!-- 训练窗口长度（仅随机 random_time / random_both；默认 250，范围 20–2000） -->
+      <!-- RF-04 随机训练周期（仅 random_time / random_both）：复用经典五档网格（同文案同月数口径）＋自定义根数档 -->
+      <div v-if="showRandomPeriod" class="form-field">
+        <label>训练周期</label>
+        <div class="tier-grid">
+          <button v-for="item in randomPeriodOptions" :key="item.value" :class="{ selected: randomTier === item.value }" @click="onRandomTierClick(item.value)">{{ item.label }}</button>
+        </div>
+        <small class="form-hint">与经典模式同一时间长度口径：起点随机，窗口为所选档位的自然月跨度；「自定义根数」＝按 K 线根数随机（旧口径）</small>
+      </div>
+
+      <!-- 训练窗口长度（仅随机「自定义根数」档；默认 250，范围 20–2000） -->
       <div v-if="showWindowBars" class="form-field">
         <label>训练窗口长度（交易日）</label>
         <input v-model.number="windowBars" type="number" min="20" max="2000" step="10" aria-label="训练窗口长度（交易日）" />

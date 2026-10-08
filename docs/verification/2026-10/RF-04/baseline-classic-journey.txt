@@ -1,0 +1,8 @@
+
+> a-share-kline-trainer@1.2.7 journey
+> tsx scripts/runtime.ts journey e2e/training-defaults.spec.ts e2e/journey.spec.ts --retries=0 --grep Act4d|返修F5|设置保存失败反馈
+
+Run manifest: D:\tmp\rf04\.runs\run-2a44b471-5f21-4fb4-9f6c-d895afd95f21\manifest.json
+Isolated server: http://127.0.0.1:7220
+Evidence retained: D:\tmp\rf04\.runs\run-2a44b471-5f21-4fb4-9f6c-d895afd95f21\artifacts
+Command exited with 1; see D:\tmp\rf04\.runs\run-2a44b471-5f21-4fb4-9f6c-d895afd95f21\artifacts\journey.log
