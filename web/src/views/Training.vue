@@ -545,29 +545,50 @@ async function backToLauncher(): Promise<void> {
 async function placeOrder(): Promise<void> {
   if (!training.value.ordersEnabled || loading.value || orderTrigger.value === null) return
   loading.value = true; orderError.value = ''
+  // 仓位控件与普通下单共享：显式股数优先；否则按比例折算——买入按触发价折算总权益，
+  // 卖出按可卖持仓折算（折算不足一手时按一手下限提交，由服务端校验兜底拒绝）
+  const weightPct = Math.min(100, Math.max(1, customWeight.value ?? weight.value))
+  const shares = customShares.value ?? (orderSide.value === 'buy'
+    ? Math.max(100, Math.floor((account.value.equity * weightPct / 100) / orderTrigger.value / 100) * 100)
+    : Math.max(100, Math.floor((account.value.availableShares * weightPct / 100) / 100) * 100))
+  // RF-02：挂单是用户业务动作，params 记录提交关键信息（方向/类型/触发价/数量/理由），口径同 training.trade
+  const recordingOp = recording.begin('training.order.create', {
+    side: orderSide.value, orderType: orderType.value, triggerPrice: orderTrigger.value, shares,
+    ...(orderReason.value ? { reason: orderReason.value } : {}),
+  })
   try {
-    // 仓位控件与普通下单共享：显式股数优先；否则按比例折算——买入按触发价折算总权益，
-    // 卖出按可卖持仓折算（折算不足一手时按一手下限提交，由服务端校验兜底拒绝）
-    const weightPct = Math.min(100, Math.max(1, customWeight.value ?? weight.value))
-    const shares = customShares.value ?? (orderSide.value === 'buy'
-      ? Math.max(100, Math.floor((account.value.equity * weightPct / 100) / orderTrigger.value / 100) * 100)
-      : Math.max(100, Math.floor((account.value.availableShares * weightPct / 100) / 100) * 100))
     const result = await placeTrainingOrder(training.value.id, { side: orderSide.value, order_type: orderType.value, trigger_price: orderTrigger.value, shares, reason: orderReason.value || undefined })
     snapshot.value = result.snapshot
+    recording.finish(recordingOp, 'accepted', { order: orderRecordingView(result.order) })
     orderTrigger.value = null
     orderReason.value = ''
     customShares.value = null
     customWeight.value = null
-  } catch (error) { orderError.value = error instanceof Error ? error.message : '挂单失败' }
+  } catch (error) {
+    recording.rejected(recordingOp, error)
+    orderError.value = error instanceof Error ? error.message : '挂单失败'
+  }
   finally { loading.value = false }
 }
 
 async function cancelOrder(orderId: number): Promise<void> {
   if (loading.value) return
   loading.value = true; orderError.value = ''
-  try { snapshot.value = (await cancelTrainingOrder(training.value.id, orderId)).snapshot }
-  catch (error) { orderError.value = error instanceof Error ? error.message : '撤单失败' }
+  const recordingOp = recording.begin('training.order.cancel', { orderId })
+  try {
+    const result = await cancelTrainingOrder(training.value.id, orderId)
+    snapshot.value = result.snapshot
+    recording.finish(recordingOp, 'accepted', { order: orderRecordingView(result.order) })
+  } catch (error) {
+    recording.rejected(recordingOp, error)
+    orderError.value = error instanceof Error ? error.message : '撤单失败'
+  }
   finally { loading.value = false }
+}
+
+/** 条件单事件 result.order 摘要：回放标签与核对所需的最小 OrderView 子集（含有效期） */
+function orderRecordingView(order: OrderView): Pick<OrderView, 'id' | 'side' | 'orderType' | 'triggerPrice' | 'shares' | 'expiresDate'> {
+  return { id: order.id, side: order.side, orderType: order.orderType, triggerPrice: order.triggerPrice, shares: order.shares, expiresDate: order.expiresDate }
 }
 async function retrain(): Promise<void> {
   if (finishingSession.value || !settledView.value) return

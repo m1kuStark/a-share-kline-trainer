@@ -49,6 +49,8 @@ const ACTION_LABELS: Record<Action, string> = {
   'training.create': '创建训练',
   'training.advance': '推进交易日',
   'training.trade': '下单交易',
+  'training.order.create': '挂条件单',
+  'training.order.cancel': '撤条件单',
   'training.settle': '结算训练',
   'training.abandon': '放弃训练',
   'chart.load': '加载图表',

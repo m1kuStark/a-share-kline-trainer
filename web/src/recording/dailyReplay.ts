@@ -14,6 +14,8 @@ const BUSINESS_ACTION_LABELS: Record<Action, string> = {
   'training.create': '创建训练',
   'training.advance': '推进交易日',
   'training.trade': '下单交易',
+  'training.order.create': '挂条件单',
+  'training.order.cancel': '撤条件单',
   'training.settle': '结算训练',
   'training.abandon': '放弃训练',
   'chart.load': '加载图表',
@@ -342,10 +344,29 @@ function tradeLabel(event: RecordingEvent, started?: RecordingEvent): string {
 
 function businessLabel(event: RecordingEvent, started?: RecordingEvent): string {
   if (event.action === 'training.trade') return tradeLabel(event, started)
+  if (event.action === 'training.order.create' || event.action === 'training.order.cancel') {
+    return orderLabel(event, started)
+  }
   const params = (event.params ?? started?.params) as { name?: string } | undefined
   const base = BUSINESS_ACTION_LABELS[event.action]
   if (params?.name === 'textAnnotation') return `${base} · 文字标注`
   return base
+}
+
+/** 条件单挂/撤标签：方向+类型+触发价+数量（优先取服务端 result.order，拒单时回退提交参数） */
+function orderLabel(event: RecordingEvent, started?: RecordingEvent): string {
+  const params = (event.params ?? started?.params) as
+    | { side?: string; orderType?: string; triggerPrice?: number; shares?: number; orderId?: number }
+    | undefined
+  const order = (event.result as { order?: { side?: string; orderType?: string; triggerPrice?: number; shares?: number } } | undefined)?.order
+  const sideText = (order?.side ?? params?.side) === 'sell' ? '卖出' : '买入'
+  const typeText = (order?.orderType ?? params?.orderType) === 'stop' ? '止损' : '限价'
+  const parts = [`${BUSINESS_ACTION_LABELS[event.action]} ${sideText}${typeText}`]
+  const shares = order?.shares ?? params?.shares
+  if (typeof shares === 'number') parts.push(`${shares}股`)
+  const triggerPrice = order?.triggerPrice ?? params?.triggerPrice
+  if (typeof triggerPrice === 'number' && Number.isFinite(triggerPrice)) parts.push(`@${triggerPrice.toFixed(2)}`)
+  return parts.join(' ')
 }
 
 function dayIndexForSeq(days: readonly ReplayDay[], seq: number): number {
