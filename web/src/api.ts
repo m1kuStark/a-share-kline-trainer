@@ -60,6 +60,22 @@ export interface RandomTrainingMeta {
   dimension: RandomDimension
   hideStock: boolean
   hideTime: boolean
+  /** RF-05：剩余未推进 K 线根数（隐藏日期时前端以剩余根数替代日期呈现；随推进递减） */
+  remainingBars?: number
+}
+
+/** RF-05 揭示端点载荷：运行中随机会话经用户确认后的显式揭示（其余端点仍遮蔽） */
+export interface RandomRevealTraining {
+  id: number
+  code: string | null
+  name: string | null
+  startDate: string
+  plannedEnd: string
+  currentDate: string | null
+}
+
+export function revealRandomTraining(id: number): Promise<{ training: RandomRevealTraining }> {
+  return request(`/api/trainings/${id}/reveal`, { method: 'POST' })
 }
 
 export interface TrainingMeta {
@@ -458,6 +474,11 @@ export function fetchActiveTraining(): Promise<TrainingSnapshot | { training: nu
   return request('/api/trainings/active')
 }
 
+/** RF-05：按 id 读取训练快照（录像库标注真实标的与「随机模式」tag 用；404/失败由调用方降级） */
+export function fetchTrainingSnapshot(id: number): Promise<TrainingSnapshot> {
+  return request(`/api/trainings/${id}`)
+}
+
 export interface TrainingBarsPayload extends TrainingSnapshot {
   chartCostPrice: number | null
   timeframe: Timeframe
@@ -668,6 +689,8 @@ export interface RankingItem {
   benchmarkExcess: number | null
   /** benchmarkExcess 为 null 时给出中文原因（文件缺失/未覆盖等） */
   benchmarkExcessReason?: string
+  /** RF-05：RANGE 训练的范围模式（preset/latest/bars/random）；'random' 供 UI 打「随机模式」tag */
+  rangeMode?: string
 }
 
 export interface RankingGroups {

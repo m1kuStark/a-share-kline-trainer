@@ -205,7 +205,7 @@ function daysText(item: RankingItem): string {
       <section v-for="group in groups.rangeGroups" :key="group.key" aria-label="自定义区间排行">
         <h2>{{ group.startDate }} ~ {{ group.endDate }}</h2>
         <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
-          <tbody><tr v-for="(item, index) in [...group.complete, ...group.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+          <tbody><tr v-for="(item, index) in [...group.complete, ...group.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
       </section>
     </template>
@@ -226,7 +226,7 @@ function daysText(item: RankingItem): string {
       <section v-else v-for="entry in groups.industry?.entries" :key="entry.id" aria-label="行业排行">
         <div class="industry-result-heading"><h2>{{ entry.name }}</h2><button class="ghost-button" type="button" @click="clearIndustrySelection">返回行业列表</button></div>
         <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
-          <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }}</td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+          <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
         <p v-if="!entry.complete.length && !entry.earlySettled.length" class="history-empty">该行业暂无已结算训练成绩</p>
       </section>
@@ -239,7 +239,7 @@ function daysText(item: RankingItem): string {
           <thead><tr><th>名次</th><th>周期</th><th>区间</th><th>收益率</th><th>最大回撤</th><th>交易笔数</th><th>结算日</th></tr></thead>
           <tbody>
             <tr v-for="(item, index) in [...(groups.stock?.complete || []), ...(groups.stock?.earlySettled || [])]" :key="item.id" class="rankings-row" :data-training-id="item.id" @click="selectedId = item.id">
-              <td>{{ rank(index) }}</td><td>{{ item.tier }}</td><td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
+              <td>{{ rank(index) }}</td><td>{{ item.tier }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
               <td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ ratioPercent(item.maxDrawdown) }}</td><td>{{ item.tradeCount }}</td><td>{{ item.settleDate ?? '--' }}</td>
             </tr>
           </tbody>
@@ -326,6 +326,9 @@ function daysText(item: RankingItem): string {
 </template>
 
 <style scoped>
+/* RF-05 随机模式训练在排行中的 tag（信息隐藏仅限随机训练运行中） */
+.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; vertical-align: middle; }
+:global(body.dark) .random-mode-tag { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .industry-picker { margin-top: 18px; }
 .industry-picker h2 { display: flex; align-items: baseline; gap: 10px; }
 .industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: 12px; font-weight: 500; }

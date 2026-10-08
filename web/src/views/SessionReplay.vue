@@ -22,10 +22,14 @@ import {
 import { describeGap, gapCoveringSeq, summarizeGaps } from '../recording/replay'
 import { cycleDirection, nextTimeframe } from '../chartNavigation'
 
-// REC-03 按交易日回放：完全离线，只消费传入的已校验录制（v1 或 v2 紧凑）。
+// REC-03 按交易日回放：只消费传入的已校验录制（v1 或 v2 紧凑），不依赖服务端训练数据。
 // 倒退/前进/空格=一个已录交易日；观察周期（日/周/月）与播放日期独立，跨日保持；
 // 图表实例不随日期重建（仅当日画线内容变化时重挂并还原当前视窗），缩放/平移跨日保留。
 // 周月只由「当日已见日线」前端聚合；旧文件缺当日日线时如实只展示可用周期并提示。
+// RF-05：随机训练的录像在头部/账户摘要显示真实标的与「随机模式」tag——真实信息取自
+// 录像内终末检查点的训练元信息（结算/放弃后服务端已揭晓、终末检查点不再携带 random 隐藏
+// 字段）；隐藏时间的会话内逐日标签按「录制起始日↔真实起始日」的常量差换算回真实日期。
+// 图表 X 轴保持录制时呈现（偏移假日期），与运行中口径一致。
 const props = defineProps<{ recording: RecordingFile | CompactRecordingFile }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -72,7 +76,7 @@ const stepGap = computed(() => gapCoveringSeq(gaps.value, day.value.lastSeq))
 const dayLabel = computed(() => {
   const total = dayCount.value
   if (total === 0) return '无交易日'
-  return `第 ${dayIndex.value + 1} / ${total} 日 · ${state.value.date}`
+  return `第 ${dayIndex.value + 1} / ${total} 日 · ${realDateOf(state.value.date)}`
 })
 const businessItems = computed(() => session.value.businessItems)
 const dayTail = computed(() => {
@@ -106,7 +110,7 @@ const PERIOD_NAMES: Record<Timeframe, string> = { '1D': '日K', '1W': '周K', '1
 const metaShort = computed(() => {
   const file = compactFile.value
   const parts = [
-    file.trainingKey ?? `会话 ${file.sessionId}`,
+    replayStockLabel.value ?? file.trainingKey ?? `会话 ${file.sessionId}`,
     `${dayCount.value} 个交易日`,
     `${businessItems.value.length} 条业务操作`,
   ]
@@ -117,12 +121,45 @@ const metaFull = computed(() => {
   return [
     `训练 ${file.trainingKey ?? '未知'}`,
     `会话 ${file.sessionId}`,
+    ...(replayRange.value ? [`区间 ${replayRange.value}`] : []),
     `版本 ${file.app.version}`,
     `提交 ${file.app.gitCommit}`,
     file.complete ? '尾段已闭合' : '尾段未闭合',
     `${file.events.length} 个事件 · ${file.checkpoints.length} 个检查点`,
   ].join(' · ')
 })
+
+// ===== RF-05 随机训练录像的真实信息（取自录像内训练元信息资源，离线可得） =====
+const MS_PER_DAY = 86_400_000
+const recordedMetas = computed(() => compactFile.value.resources.trainingMeta.map(entry => entry.value))
+/** 随机模式录像：任一元信息快照的范围模式为 random（随机训练 tier 恒 RANGE 且 range.mode='random'） */
+const randomRecording = computed(() => recordedMetas.value.some(meta => meta.range?.mode === 'random'))
+/** 终末真实元信息：结算/放弃后的检查点不再携带 random 隐藏字段＝服务端已揭晓的真实值 */
+const endedMeta = computed(() => [...recordedMetas.value].reverse().find(meta => meta.random === undefined) ?? null)
+const replayStockLabel = computed(() => {
+  const meta = endedMeta.value
+  return meta && meta.code !== null ? `${meta.name ?? ''} · ${meta.code}` : null
+})
+const replayRange = computed(() => {
+  const meta = endedMeta.value
+  if (!meta) return null
+  const end = meta.settleDate ?? meta.currentDate ?? meta.plannedEnd
+  return `${meta.startDate} ~ ${end}`
+})
+/** 隐藏时间会话的逐日标签换算：录制（偏移）起始日 ↔ 真实起始日的常量差；无隐藏时间则为 0 */
+const dateOffsetDays = computed(() => {
+  const ended = endedMeta.value
+  const masked = recordedMetas.value.find(meta => meta.random?.hideTime === true)
+  if (!ended || !masked) return 0
+  return Math.round((Date.parse(`${ended.startDate}T00:00:00Z`) - Date.parse(`${masked.startDate}T00:00:00Z`)) / MS_PER_DAY)
+})
+function realDateOf(date: string): string {
+  const offset = dateOffsetDays.value
+  if (!offset) return date
+  return new Date(Date.parse(`${date}T00:00:00Z`) + offset * MS_PER_DAY).toISOString().slice(0, 10)
+}
+const replayCode = computed(() => endedMeta.value?.code ?? state.value.training?.training.code ?? '未知代码')
+const replayName = computed(() => endedMeta.value?.name ?? state.value.training?.training.name ?? '')
 
 const KEY_HINT = '空格 下一日 · PgUp/PgDn 前后日 · [ ] 周期 · ↑↓ 缩放 · ←→ 十字线 · Home 最新'
 
@@ -322,6 +359,7 @@ onBeforeUnmount(() => {
     <header class="replay-head">
       <div class="replay-title">
         <h2>录制回放</h2>
+        <span v-if="randomRecording" class="random-mode-badge" title="本录像来自随机模式训练">随机模式</span>
         <p class="replay-meta" :title="metaFull">{{ metaShort }}</p>
       </div>
       <button class="replay-close" type="button" aria-label="关闭回放" @click="emit('close')">关闭回放</button>
@@ -414,8 +452,8 @@ onBeforeUnmount(() => {
           <h3>账户摘要</h3>
           <template v-if="state.training">
             <p class="replay-account-title">
-              {{ state.training.training.code ?? '未知代码' }} {{ state.training.training.name ?? '' }}
-              · {{ state.date }}
+              {{ replayCode }} {{ replayName }}
+              · {{ realDateOf(state.date) }}
             </p>
             <dl class="replay-account">
               <div><dt>总权益</dt><dd>{{ money(state.training.account.equity) }}</dd></div>
@@ -498,6 +536,9 @@ onBeforeUnmount(() => {
 }
 .replay-title { min-width: 0; display: flex; align-items: baseline; gap: 10px; }
 .replay-title h2 { margin: 0; font-size: 14px; white-space: nowrap; }
+/* RF-05 随机模式录像 tag（与训练页徽标同胶囊风格） */
+.random-mode-badge { flex: none; align-self: center; display: inline-flex; padding: 2px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; white-space: nowrap; }
+body.dark .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .replay-meta {
   margin: 0;
   font-size: 11px;

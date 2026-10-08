@@ -1,13 +1,17 @@
 // M7-02 随机训练模式·前端接线 e2e：真实 journey 服务＋真实 TDX 数据。
 // 覆盖矩阵 RAND-UI-* 六行：首页经典/随机标签切换（RAND-UI-TABS）、维度驱动的控件显隐
-// 与 POST /api/trainings/random 载荷（RAND-UI-PANEL-REUSE）、运行中遮蔽呈现（RAND-UI-MASKED-DISPLAY）、
+// 与 POST /api/trainings/random 载荷（RAND-UI-PANEL-REUSE）、运行中遮蔽呈现（RAND-UI-MASK-STARS）、
 // 结算揭晓（RAND-UI-REVEAL-DISPLAY）、两类 422 人话提示（RAND-UI-ERROR-422）、
 // 经典面板回归抽查（RAND-UI-CLASSIC-INTACT）。
 // RF-04（2026-10-08）：random_time/random_both 的时间选择改为复用经典训练周期档位网格
 // （RAND-UI-PERIOD-REUSE）——载荷 window_months（1/3/6/12/24 档），自定义根数档保留旧
 // window_bars 口径。
-// oracle 独立性：期望文案来自 M7-02 派发简报/设计文档字面量（不从 DOM 抄回）；
-// 遮蔽/揭晓期望来自 M7-01 契约（运行中 code/name=null、结束态真实值、非零常量偏移）。
+// RF-05（2026-10-08 用户验收反馈）：遮蔽呈现改为密码输入式 * 号＋小眼睛确认揭示
+// （RAND-UI-MASK-STARS / RANDOM-REVEAL-MIDRUN）、隐藏日期的会话以剩余未推进根数替代日期
+// （RANDOM-HIDE-TIME-REMAINING）、随机训练录像在录像库/回放携带「随机模式」tag 与真实标的
+// （RANDOM-REPLAY-TAG）。
+// oracle 独立性：期望文案来自用户原话/派发简报字面量（不从 DOM 抄回）；遮蔽/揭晓期望来自
+// M7-01 契约（运行中 code/name=null、结束态真实值、非零常量偏移）与 reveal 端点响应。
 import { expect, test, type Page } from '@playwright/test'
 
 const CODE_INPUT = '股票代码，如 600519'
@@ -242,7 +246,7 @@ test.describe('random mode (M7-02)', () => {
         range: { mode: string; barCount: number }
       }
     }
-    expect(active.training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true })
+    expect(active.training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true, remainingBars: expect.any(Number) })
     // 录制契约冻结：随机训练 tier 恒 RANGE 哨兵（档位口径进 range.notes）
     expect(active.training.tier).toBe('RANGE')
     expect(active.training.range.mode).toBe('random')
@@ -251,7 +255,9 @@ test.describe('random mode (M7-02)', () => {
     expect(active.training.range.barCount).toBeLessThanOrEqual(70)
   })
 
-  test('masked session: hidden stock shows placeholder and badge while dates render as served', async ({ page }) => {
+  // RF-05 星号遮蔽（RAND-UI-MASK-STARS）：隐藏股票＝密码输入式 * 号（非占位文字）＋徽标＋眼睛按钮；
+  // random_stock 日期不隐藏（RANDOM-HIDE-TIME-REMAINING 维度联动），当前日期按服务端下发原样呈现
+  test('masked session: hidden stock shows star-masked title and badge while dates render as served', async ({ page }) => {
     // 真实创建（random_stock：隐藏股票、日期真实）；窗口末缘取目录流动股 lastDate 前推 14 天，
     // 保证随机池中 lastDate ≥ end 的股票充足（不依赖冷启慢完成的数据状态扫描）
     const liquid = (await searchRealStocks(page, '600519'))[0]
@@ -267,16 +273,106 @@ test.describe('random mode (M7-02)', () => {
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
 
     await waitTrainingInteractive(page)
-    // 遮蔽态：占位＋徽标；当前日期按服务端下发原样呈现（不二次处理）
-    await expect(page.locator('.workspace-title')).toHaveText('随机标的 · 已隐藏')
+    // 遮蔽态：星号遮蔽标题（不含任何股票名/码）＋徽标＋眼睛按钮；旧占位文字退场
+    await expect(page.locator('.workspace-title')).toHaveText('****** · ******')
+    await expect(page.locator('.workspace-title')).not.toContainText('随机标的')
     await expect(page.locator('.random-mode-badge')).toBeVisible()
+    await expect(page.getByRole('button', { name: '显示被隐藏的信息' })).toBeVisible()
     const active = await (await page.request.get('/api/trainings/active')).json() as {
-      training: { code: string | null; name: string | null; currentDate: string | null; random: { dimension: string; hideStock: boolean; hideTime: boolean } }
+      training: { code: string | null; name: string | null; currentDate: string | null; random: { dimension: string; hideStock: boolean; hideTime: boolean; remainingBars: number } }
     }
     expect(active.training.code).toBeNull()
     expect(active.training.name).toBeNull()
-    expect(active.training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false })
+    expect(active.training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false, remainingBars: expect.any(Number) })
+    // random_stock 维度联动：日期不隐藏，当前日期真实呈现
     await expect(page.locator('.training-current-date strong')).toHaveText(active.training.currentDate ?? '')
+    await expect(page.locator('.training-current-date')).toContainText('当前')
+  })
+
+  // RF-05 眼睛按钮＋确认揭示（RAND-UI-MASK-STARS / RANDOM-REVEAL-MIDRUN）：全随机会话；
+  // 取消维持遮蔽；确认（spoiler 风险自担文案）后显示真实标的与真实日期；再点恢复遮蔽
+  test('eye toggle: confirm reveals real stock and dates, cancel keeps mask, re-click restores', async ({ page }) => {
+    await openLauncher(page)
+    await switchToRandomMode(page)
+    await page.getByRole('button', { name: DIMENSION_BUTTON.random_both }).click()
+    await page.getByRole('button', { name: '自定义根数', exact: true }).click()
+    await page.getByLabel('训练窗口长度（交易日）').fill('20')
+    await page.getByRole('button', { name: '开始训练', exact: true }).click()
+    await waitTrainingInteractive(page)
+
+    // 遮蔽态：标题星号＋日期区显示剩余根数（random_both 双隐藏）
+    await expect(page.locator('.workspace-title')).toHaveText('****** · ******')
+    await expect(page.locator('.training-current-date')).toContainText('剩余未推进')
+    const active = await (await page.request.get('/api/trainings/active')).json() as {
+      training: { id: number; random: { remainingBars: number } }
+    }
+    await expect(page.locator('.training-current-date strong')).toHaveText(String(active.training.random.remainingBars))
+
+    // 取消路径：弹确认框（含剧透风险文案）→ 取消 → 维持遮蔽
+    await page.getByRole('button', { name: '显示被隐藏的信息' }).click()
+    const dialog = page.getByRole('dialog', { name: '显示随机训练隐藏信息' })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText('剧透风险')
+    await dialog.getByRole('button', { name: '取消', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.locator('.workspace-title')).toHaveText('****** · ******')
+
+    // 确认路径：真实信息来自服务端 reveal 端点（oracle 不依赖具体随机结果）
+    const revealed = await (await page.request.post(`/api/trainings/${active.training.id}/reveal`)).json() as {
+      training: { code: string; name: string; currentDate: string | null; startDate: string }
+    }
+    await page.getByRole('button', { name: '显示被隐藏的信息' }).click()
+    await dialog.getByRole('button', { name: '确认显示', exact: true }).click()
+    await expect(page.locator('.workspace-title')).toHaveText(`${revealed.training.name} · ${revealed.training.code}`)
+    await expect(page.locator('.training-current-date strong')).toHaveText(revealed.training.currentDate ?? revealed.training.startDate)
+
+    // 再次点击恢复遮蔽（无需确认）
+    await page.getByRole('button', { name: '恢复星号遮蔽' }).click()
+    await expect(page.locator('.workspace-title')).toHaveText('****** · ******')
+    await expect(page.locator('.training-current-date')).toContainText('剩余未推进')
+  })
+
+  // RF-05 随机训练录像（RANDOM-REPLAY-TAG）：结算保留录像 → 录像库条目带「随机模式」tag 与真实标的
+  // → 回放头部带 tag、真实标的与真实区间（信息隐藏仅限随机训练运行中）
+  test('random recording: library item and replay carry random tag with real stock info', async ({ page }) => {
+    const search = await searchRealStocks(page, '600519')
+    expect(search.length, '真实目录应能检索到 600519').toBeGreaterThan(0)
+    const code = search[0].code
+
+    await openLauncher(page)
+    await switchToRandomMode(page)
+    await page.getByRole('button', { name: DIMENSION_BUTTON.random_time }).click()
+    await page.getByPlaceholder(CODE_INPUT).fill(code)
+    await expect(page.locator('.suggestions button').first()).toBeVisible()
+    await page.locator('.suggestions button').first().click()
+    await expect(page.getByText(/已选：/)).toBeVisible()
+    await page.getByRole('button', { name: '自定义根数', exact: true }).click()
+    await page.getByLabel('训练窗口长度（交易日）').fill('20')
+
+    await page.getByRole('button', { name: '开始训练', exact: true }).click()
+    await waitTrainingInteractive(page)
+
+    // 结算（默认保留录像），返回首页后进训练录像库
+    await page.getByRole('button', { name: '提前结算', exact: true }).click()
+    const settleDialog = page.getByRole('dialog', { name: '结束训练' })
+    await expect(settleDialog).toBeVisible()
+    await settleDialog.getByRole('button', { name: '确认结算', exact: true }).click()
+    const results = page.getByRole('dialog', { name: '训练结算' })
+    await expect(results).toBeVisible()
+    await results.getByRole('button', { name: '完成，返回首页' }).click()
+    await expect(results).not.toBeVisible()
+
+    await page.getByRole('button', { name: '训练录像', exact: true }).click()
+    const localItem = page.locator('[data-recording-source="local"] .recording-history-item').first()
+    await expect(localItem.locator('.random-mode-badge')).toBeVisible({ timeout: 15_000 })
+    await expect(localItem).toContainText(code)
+
+    // 回放：头部带「随机模式」tag，真实标的进入标题摘要与账户摘要
+    await localItem.click()
+    await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
+    await expect(page.locator('.replay-title .random-mode-badge')).toBeVisible()
+    await expect(page.locator('.replay-meta')).toContainText(code)
+    await expect(page.locator('.replay-account-title')).toContainText(code)
   })
 
   test('settle reveal: real stock and real date window surface after settlement', async ({ page }) => {
@@ -299,14 +395,17 @@ test.describe('random mode (M7-02)', () => {
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
     await waitTrainingInteractive(page)
 
-    // 运行中：真实名称·代码可见＋徽标；日期为偏移空间（UI 原样呈现服务端值）
+    // 运行中：真实名称·代码可见＋徽标（random_time 只隐藏时间）；日期不显示，以剩余根数替代
     await expect(page.locator('.workspace-title')).toHaveText(new RegExp(`· ${code}`))
     await expect(page.locator('.random-mode-badge')).toBeVisible()
     const running = await (await page.request.get('/api/trainings/active')).json() as {
-      training: { id: number; startDate: string; currentDate: string; random: { dimension: string; hideStock: boolean; hideTime: boolean } }
+      training: { id: number; startDate: string; currentDate: string; random: { dimension: string; hideStock: boolean; hideTime: boolean; remainingBars: number } }
     }
-    expect(running.training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true })
-    await expect(page.locator('.training-current-date strong')).toHaveText(running.training.currentDate)
+    expect(running.training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true, remainingBars: expect.any(Number) })
+    await expect(page.locator('.training-current-date')).toContainText('剩余未推进')
+    await expect(page.locator('.training-current-date strong')).toHaveText(String(running.training.random.remainingBars))
+    // 偏移假日期不出现在头部呈现层（RANDOM-HIDE-TIME-REMAINING：日期字段不显示）
+    await expect(page.locator('.training-current-date')).not.toContainText(running.training.currentDate ?? '')
 
     // 结算（显式确认弹窗，真实 settle）
     await page.getByRole('button', { name: '提前结算', exact: true }).click()
@@ -318,7 +417,7 @@ test.describe('random mode (M7-02)', () => {
 
     // 揭晓：结束态响应为真实信息（random 字段消失、名称/代码非空、真实起始日≠运行中偏移起始日）
     const revealed = await (await page.request.get(`/api/trainings/${running.training.id}`)).json() as {
-      training: { code: string; name: string; startDate: string; settleDate: string | null; random?: unknown }
+      training: { code: string; name: string; startDate: string; currentDate: string | null; settleDate: string | null; random?: unknown }
     }
     expect(revealed.training.code).toBe(code)
     expect(revealed.training.name.length).toBeGreaterThan(0)
@@ -329,11 +428,14 @@ test.describe('random mode (M7-02)', () => {
     await expect(results.getByText('训练区间')).toBeVisible()
     await expect(results.locator('.settle-grid')).toContainText(revealed.training.startDate)
 
-    // 留在图表：徽标退场、真实名称·代码顶上
+    // 留在图表：徽标退场、真实名称·代码顶上、真实当前日期顶上（结束＝揭晓）
     await results.getByRole('button', { name: '留在当前界面', exact: true }).click()
     await expect(results).not.toBeVisible()
     await expect(page.locator('.random-mode-badge')).toHaveCount(0)
     await expect(page.locator('.workspace-title')).toHaveText(new RegExp(`· ${code}`))
+    await expect(page.locator('.training-current-date strong')).toHaveText(revealed.training.currentDate ?? '')
+    // 眼睛按钮随 random 字段一起退场
+    await expect(page.getByRole('button', { name: '显示被隐藏的信息' })).toHaveCount(0)
   })
 
   test('error mapping: 422 RANDOM_WINDOW_NOT_FIT and RANDOM_STOCK_UNIVERSE_EMPTY show friendly hints', async ({ page }) => {

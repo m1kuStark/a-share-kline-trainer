@@ -17,6 +17,12 @@
 // 画线 timestamp）反向去偏移，库内恒真实空间。结算/放弃后隐藏停用，揭晓真实信息。
 // 训练引擎撮合/推进/结算语义零改动：创建复用 commitTrainingCreation 提交边界，
 // 遮蔽在 HTTP 出口层（onSend）实施，威胁模型不含拿偏移序列对全市场日历做缺口指纹暴力比对。
+//
+// RF-05（2026-10-08 用户验收反馈）：①运行中随机会话 random 对象携带 remainingBars
+// （剩余未推进 K 线根数）——前端隐藏日期时以剩余根数替代日期呈现；②新增显式揭示端点
+// POST /api/trainings/:id/reveal——确认弹窗后的用户主动动作，仅该端点返回真实
+// code/name/日期区间，其余端点遮蔽不因揭示失效；结束态端点本就揭晓故 409 拒绝。
+// 偏移机制保留（K 线轴标签可用性基础），隐藏边界＝呈现层（训练页头部不显示日期）。
 
 import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
@@ -79,6 +85,19 @@ export interface RandomSession {
   hideStock: boolean
   hideTime: boolean
   offsetDays: number | null
+  /** RF-05：剩余未推进 K 线根数（运行中随每次推进递减）；缺省＝未计算（randomSessionOf 填充） */
+  remainingBars?: number | null
+}
+
+/** RF-05：剩余未推进根数＝range_bar_count−已推进交易日数（equity_curve 按 (training,date) 唯一入账） */
+export function remainingBarsOf(database: DatabaseSync, id: number): number | null {
+  const row = database.prepare(`
+    SELECT t.range_bar_count AS total, COUNT(DISTINCT e.date) AS advanced
+    FROM trainings t LEFT JOIN equity_curve e ON e.training_id = t.id
+    WHERE t.id = ?
+  `).get(id) as unknown as { total: number | null; advanced: number } | undefined
+  if (!row || typeof row.total !== 'number' || !Number.isFinite(row.total)) return null
+  return Math.max(0, row.total - row.advanced)
 }
 
 function sessionOfRow(row: { id: number | bigint; random_mode: string | null; random_time_offset_days: number | null }): RandomSession | null {
@@ -100,7 +119,8 @@ export function randomSessionOf(database: DatabaseSync, id: number): RandomSessi
     'SELECT id, random_mode, random_time_offset_days, status FROM trainings WHERE id = ?',
   ).get(id) as unknown as { id: number; random_mode: string | null; random_time_offset_days: number | null; status: string } | undefined
   if (!row || row.status !== 'running') return null
-  return sessionOfRow(row)
+  const session = sessionOfRow(row)
+  return session ? { ...session, remainingBars: remainingBarsOf(database, id) } : null
 }
 
 /** 当前活动训练若为运行中的随机会话则返回其上下文（/api/trainings/active 出口用） */
@@ -138,13 +158,16 @@ export function transformRandomPayload(value: unknown, session: RandomSession): 
       masked.code = null
       masked.name = null
     }
-    masked.random = { dimension: session.dimension, hideStock: session.hideStock, hideTime: session.hideTime }
+    masked.random = {
+      dimension: session.dimension, hideStock: session.hideStock, hideTime: session.hideTime,
+      ...(session.remainingBars === null ? {} : { remainingBars: session.remainingBars }),
+    }
   }
   return masked
 }
 
 /** 创建响应等模块内直用：把真实 meta 按会话隐藏规则变换后返回 */
-function maskedMetaOf(row: TrainingRow): TrainingMeta {
+function maskedMetaOf(database: DatabaseSync, row: TrainingRow): TrainingMeta {
   const session = sessionOfRow(row)
   if (!session) return toMeta(row)
   let meta = toMeta(row)
@@ -167,7 +190,14 @@ function maskedMetaOf(row: TrainingRow): TrainingMeta {
     }
   }
   if (session.hideStock) meta = { ...meta, code: null, name: null }
-  return { ...meta, random: { dimension: session.dimension, hideStock: session.hideStock, hideTime: session.hideTime } }
+  const remainingBars = remainingBarsOf(database, Number(row.id))
+  return {
+    ...meta,
+    random: {
+      dimension: session.dimension, hideStock: session.hideStock, hideTime: session.hideTime,
+      ...(remainingBars === null ? {} : { remainingBars }),
+    },
+  }
 }
 
 // ===== 请求侧去偏移（客户端只能拿到偏移空间） =====
@@ -503,7 +533,7 @@ export async function createRandomTraining(
     random: { mode: dimension, offsetDays },
   })
   const row = database.prepare('SELECT * FROM trainings WHERE id = ?').get(id) as unknown as TrainingRow
-  return maskedMetaOf(row)
+  return maskedMetaOf(database, row)
 }
 
 // ===== Fastify 挂接（api.ts 一行接入；钩子对非随机会话零改动直通） =====
@@ -513,6 +543,31 @@ export function registerRandomTrainingSupport(app: FastifyInstance, database: Da
     if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
     const training = await createRandomTraining(database, config, request.body as Record<string, unknown>)
     return reply.code(201).send({ training })
+  })
+
+  // RF-05 显式揭示（RANDOM-REVEAL-MIDRUN）：运行中随机会话经用户确认后的主动揭示动作，
+  // 返回真实 code/name 与真实日期区间；仅此端点下发真实值，其余端点遮蔽不因揭示失效。
+  app.post('/api/trainings/:id/reveal', async (request, reply) => {
+    const id = Number((request.params as { id?: string }).id)
+    if (!Number.isSafeInteger(id) || id < 1) throw new HttpError(400, 'id 必须是正整数')
+    // 注意：current_date 是 SQLite 关键字（CURRENT_DATE＝今日日期），列名必须加引号取列值
+    const row = database.prepare(
+      'SELECT id, code, name, start_date, planned_end, "current_date" AS currentDate FROM trainings WHERE id = ?',
+    ).get(id) as unknown as { id: number; code: string; name: string; start_date: string; planned_end: string; currentDate: string | null } | undefined
+    if (!row) throw new HttpError(404, `训练 ${id} 不存在`)
+    if (!randomSessionOf(database, id)) {
+      throw new HttpError(409, '该训练已结束或不是随机模式训练，无需揭示（结束后信息自动揭晓）', 'RANDOM_REVEAL_UNAVAILABLE')
+    }
+    return {
+      training: {
+        id: Number(row.id),
+        code: row.code,
+        name: row.name,
+        startDate: row.start_date,
+        plannedEnd: row.planned_end,
+        currentDate: row.currentDate,
+      },
+    }
   })
 
   // 请求侧去偏移：隐藏时间会话的 bars?before 与画线 timestamp 由客户端偏移空间换回真实空间
@@ -530,9 +585,11 @@ export function registerRandomTrainingSupport(app: FastifyInstance, database: Da
     if (request.body !== undefined) deshiftDrawingsPayload(request.body, session.offsetDays)
   })
 
-  // 响应侧遮蔽：该会话一切出口（含错误消息）统一深度变换；结算/放弃后 status 非 running 自动停用
+  // 响应侧遮蔽：该会话一切出口（含错误消息）统一深度变换；结算/放弃后 status 非 running 自动停用。
+  // 揭示端点自身除外——它的合同就是下发真实值（下方显式排除，防止遮蔽层把揭示结果再洗掉）。
   app.addHook('onSend', async (request, _reply, payload) => {
     const url = request.routeOptions?.url ?? ''
+    if (url === '/api/trainings/:id/reveal') return payload
     if (url !== '/api/trainings/active' && !url.startsWith('/api/trainings/:id')) return payload
     if (typeof payload !== 'string' || payload.length === 0) return payload
     let parsed: unknown

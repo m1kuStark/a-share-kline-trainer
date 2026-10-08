@@ -139,7 +139,7 @@ async function removeHistory(ids: number | number[]): Promise<void> {
         <div class="history-list">
         <div v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" role="button" tabindex="0" @click="selectedId = item.id" @keydown.enter="selectedId = item.id">
           <input class="history-row-check" type="checkbox" :checked="isSelected(item.id)" :aria-label="`选择第 ${item.id} 局`" @click.stop @change="toggleSelected(item.id)" />
-          <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small>{{ tierText(item) }}</small></span>
+          <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small v-if="item.rangeMode !== 'random'" class="history-range-label">{{ tierText(item) }}</small><small v-else class="random-mode-tag" title="本局来自随机模式训练">{{ tierText(item) }}</small></span>
           <span class="history-row-dates">{{ item.startDate }} ~ {{ item.settleDate ?? '未知' }}</span>
           <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}</span>
           <span class="history-row-money">{{ money(item.finalEquity) }}</span>
@@ -164,3 +164,9 @@ async function removeHistory(ids: number | number[]): Promise<void> {
     </div>
   </section>
 </template>
+
+<style scoped>
+/* RF-05 随机模式训练在历史列表中的 tag（胶囊形态区别于普通范围文字标签） */
+.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
+:global(body.dark) .random-mode-tag { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+</style>

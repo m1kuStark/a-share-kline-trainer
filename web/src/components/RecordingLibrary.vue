@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, Trash2, Upload } from 'lucide-vue-next'
+import { fetchTrainingSnapshot } from '../api'
 import type { RecordingLibraryItem, RecordingSource } from '../recording/recordingRepository'
 
 const props = withDefaults(defineProps<{
@@ -9,6 +10,27 @@ const props = withDefaults(defineProps<{
   error?: string
   activeSessionIds?: string[]
 }>(), { busy: false, error: '', activeSessionIds: () => [] })
+
+// RF-05：随机模式录像要在录像库可见「随机模式」tag 与真实标的。标注按 trainingKey 前缀
+// （＝训练 id）经 GET /api/trainings/:id 读取训练快照派生，best-effort——训练已删除或服务
+// 不可达时保持既有信息量（仅日期与事件数），不影响打开与回放。
+interface RecordingBrief { stock: string; random: boolean }
+const briefs = ref<Record<string, RecordingBrief>>({})
+async function loadBriefs(items: RecordingLibraryItem[]): Promise<void> {
+  const keys = [...new Set(items.map(item => item.trainingKey).filter((key): key is string => typeof key === 'string'))]
+  await Promise.all(keys.map(async key => {
+    if (briefs.value[key] !== undefined) return
+    const id = Number(key.split('.')[0])
+    if (!Number.isSafeInteger(id) || id < 1) return
+    try {
+      const snapshot = await fetchTrainingSnapshot(id)
+      const training = snapshot.training
+      briefs.value = { ...briefs.value, [key]: { stock: training.code ? `${training.name ?? ''} · ${training.code}` : '', random: training.range?.mode === 'random' } }
+    } catch { /* 已删除/不可达：不标注 */ }
+  }))
+}
+onMounted(() => { void loadBriefs(props.items) })
+watch(() => props.items, items => { void loadBriefs(items) })
 
 const emit = defineEmits<{
   replay: [sessionId: string]
@@ -74,7 +96,12 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
         <ul v-else class="recording-history-list">
           <li v-for="item in localItems" :key="item.sessionId" class="recording-history-item">
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
-              <strong>{{ formatDate(item.createdAt) }}</strong><span>{{ item.eventCount }} 个事件 · 查看回放 →</span>
+              <strong>{{ formatDate(item.createdAt) }}</strong>
+              <span>
+                <em v-if="briefs[item.trainingKey ?? '']?.stock" class="recording-item-brief">{{ briefs[item.trainingKey ?? '']?.stock }}</em>
+                <span v-if="briefs[item.trainingKey ?? '']?.random" class="random-mode-badge">随机模式</span>
+                {{ item.eventCount }} 个事件 · 查看回放 →
+              </span>
             </button>
             <button type="button" class="recording-delete icon-button" :disabled="busy || isActive(item.sessionId)" :title="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" :aria-label="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" @click="askRemove(item)"><Trash2 :size="15" /></button>
           </li>
@@ -90,7 +117,12 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
         <ul v-else class="recording-history-list">
           <li v-for="item in importedItems" :key="item.sessionId" class="recording-history-item">
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
-              <strong>{{ item.fileName || formatDate(item.createdAt) }}</strong><span>{{ item.eventCount }} 个事件 · {{ formatDate(item.createdAt) }} · 查看回放 →</span>
+              <strong>{{ item.fileName || formatDate(item.createdAt) }}</strong>
+              <span>
+                <em v-if="briefs[item.trainingKey ?? '']?.stock" class="recording-item-brief">{{ briefs[item.trainingKey ?? '']?.stock }}</em>
+                <span v-if="briefs[item.trainingKey ?? '']?.random" class="random-mode-badge">随机模式</span>
+                {{ item.eventCount }} 个事件 · {{ formatDate(item.createdAt) }} · 查看回放 →
+              </span>
             </button>
             <button type="button" class="recording-delete icon-button" :disabled="busy || isActive(item.sessionId)" :title="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" :aria-label="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" @click="askRemove(item)"><Trash2 :size="15" /></button>
           </li>
@@ -130,6 +162,10 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 .recording-history-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; padding: 8px 10px; }
 .recording-history-open { flex: 1; min-width: 0; display: flex; justify-content: space-between; gap: 12px; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; }
 .recording-history-open span { color: var(--text-secondary, #64748b); }
+/* RF-05 录像库标注：真实标的（斜体弱化）＋「随机模式」tag 胶囊 */
+.recording-item-brief { font-style: normal; margin-right: 6px; color: var(--text-primary, #25364b); }
+.random-mode-badge { display: inline-flex; margin-right: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
+:global(body.dark) .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .recording-delete, .danger-button { color: #e47777; }
 .recording-confirm-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / .55); z-index: 20; }
 .recording-confirm-panel { width: min(420px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--surface-border, #444); border-radius: 8px; background: var(--surface-background, #181818); color: var(--text-primary, #eee); }

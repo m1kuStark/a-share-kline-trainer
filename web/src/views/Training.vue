@@ -5,8 +5,8 @@ import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
 import KlineChart from '../components/KlineChart.vue'
 import {
-  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
-  type Bar, type OrderView, type Tier, type Timeframe, type TrainingSnapshot,
+  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, revealRandomTraining, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
+  type Bar, type OrderView, type RandomRevealTraining, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
 import { SerialDrawingSaver, type Drawing } from '../drawingState'
@@ -24,7 +24,7 @@ import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
-import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward } from 'lucide-vue-next'
+import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff } from 'lucide-vue-next'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
 const emit = defineEmits<{ ended: []; 'open-history': []; retrained: [TrainingSnapshot] }>()
@@ -357,14 +357,52 @@ const tierLabel = computed(() => {
   }
   return ({ '1M': '1个月', '3M': '3个月', '6M': '6个月', '1Y': '1年', '2Y': '2年' }[training.value.tier as Tier] ?? training.value.tier)
 })
-// ===== M7-02 随机模式遮蔽呈现：hideStock 会话标题显示占位（文案 proposed_default）＋随机模式徽标；
-// 日期字段按服务端偏移后数据原样呈现（前端不做二次变换）；结束态服务端不再下发 random 字段，
-// 徽标自然退场、真实名称顶上（揭晓）。经典标题组合式保持在模板内联（frontend-contract 源码契约）。 =====
-const maskedStock = computed(() => training.value.random?.hideStock === true)
+// ===== RF-05 随机模式信息隐藏（用户 2026-10-08 验收口径，取代 M7-02 占位文字方案）：
+// 被隐藏字段以 * 号遮蔽（密码输入式）＋小眼睛按钮；点击眼睛弹确认框（明示 spoiler 风险自担），
+// 确认后调 POST /reveal 取真实信息显示，再次点击恢复遮蔽。维度联动：random_stock 只遮股票、
+// 日期真实；random_time 只遮日期（以剩余未推进根数替代）＋股票真实；random_both 两者皆遮。
+// 隐藏边界＝呈现层：训练页头部/详情不显示日期；K 线轴日期（服务端偏移假日期）保留为训练可用性基础。
+// 结束态服务端不再下发 random 字段，遮蔽与眼睛按钮自然退场、真实信息顶上（结算/放弃即揭晓）。 =====
+const revealInfo = ref<RandomRevealTraining | null>(null)
+const revealDialogOpen = ref(false)
+const revealError = ref('')
+const revealing = ref(false)
+const maskedStock = computed(() => training.value.random?.hideStock === true && revealInfo.value === null)
+const maskedTime = computed(() => training.value.random?.hideTime === true && revealInfo.value === null)
 const randomDimensionLabel = computed(() => {
   const dimension = training.value.random?.dimension
   return dimension === 'random_stock' ? '随机股票' : dimension === 'random_time' ? '随机时段' : dimension === 'random_both' ? '全随机' : ''
 })
+const hiddenTitle = '****** · ******'
+// 经典标题组合式保持在模板内联（frontend-contract 源码契约）；遮蔽/揭示分支见模板三元
+async function confirmReveal(): Promise<void> {
+  if (revealing.value) return
+  revealing.value = true
+  revealError.value = ''
+  try {
+    const payload = await revealRandomTraining(training.value.id)
+    revealInfo.value = payload.training
+    revealDialogOpen.value = false
+  } catch (error) {
+    revealError.value = error instanceof Error ? error.message : '揭示失败'
+  } finally {
+    revealing.value = false
+  }
+}
+function onRevealToggle(): void {
+  if (revealInfo.value !== null) {
+    revealInfo.value = null // 再次点击恢复遮蔽（无需确认）
+    return
+  }
+  if (maskedStock.value || maskedTime.value) revealDialogOpen.value = true
+}
+/** 揭示是一次性读取：已揭示的会话推进后静默刷新真实当前日（409＝已结束，忽略） */
+async function refreshReveal(): Promise<void> {
+  try {
+    const payload = await revealRandomTraining(training.value.id)
+    revealInfo.value = payload.training
+  } catch { /* 已结束/失败时维持现有揭示视图，结束态本就揭晓 */ }
+}
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
   if (!drawTool.value) return message.value
@@ -428,6 +466,11 @@ async function advance(): Promise<void> {
       settledView.value = result.snapshot
       setTrainingUrl()
       message.value = `已到期结算：结算日 ${snapshot.value.training.settleDate}`
+    } else if (maskedTime.value) {
+      // RF-05：隐藏日期的会话消息不出现（偏移）日期，以剩余根数替代
+      message.value = `已推进 · 剩余 ${snapshot.value.training.random?.remainingBars ?? '--'} 根 K 线`
+      // 已揭示时刷新揭示视图的真实当前日（揭示是一次性读取，不随推进自动更新）
+      if (revealInfo.value !== null) void refreshReveal()
     } else {
       // 消息只报当前阶段的成交价：开盘阶段报开盘价——当日收盘价尚未发生，报出来是未来数据泄露
       const openPhase = snapshot.value.training.clockMode === 'open_close' && snapshot.value.training.currentPhase === 'open'
@@ -494,8 +537,9 @@ async function abandon(): Promise<void> {
   loading.value = true
   const recordingOp = recording.begin('training.abandon')
   try {
-    await abandonTraining(training.value.id)
-    snapshot.value = { ...snapshot.value, training: { ...snapshot.value.training, status: 'abandoned' } }
+    // RF-05：接用服务端放弃响应（结束态＝揭晓真实信息；随机会话录像的终末检查点据此携带真实标的）
+    const result = await abandonTraining(training.value.id)
+    snapshot.value = { ...snapshot.value, training: result.training }
     recording.finish(recordingOp, 'accepted')
     await recording.flush()
   } catch (error) {
@@ -631,7 +675,7 @@ function onKeydown(event: KeyboardEvent): void {
   if (event.code) pressedShortcutKeys.add(event.code)
   // 设置弹层打开期间完全隔离训练热键：不能从设置触发买卖/推进/画线
   if (trainingSettingsOpen.value) return
-  if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value) return
+  if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value || revealDialogOpen.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
     if (['advance', 'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'deleteDrawing', 'resetView'].some(action => isShortcut(action as ShortcutAction, event))) event.preventDefault()
@@ -754,12 +798,25 @@ void load()
     <header class="training-topbar" :inert="preparingRecording" @keydown.space.stop>
       <div class="training-context">
         <div class="title-row">
-          <div class="workspace-title" :title="training.blind ? `盲训 · ${tierLabel}` : maskedStock ? '随机标的 · 已隐藏' : `${training.name ?? ''} · ${training.code ?? ''}`">
-            {{ training.blind ? `盲训 · ${tierLabel}` : maskedStock ? '随机标的 · 已隐藏' : `${training.name ?? ''} · ${training.code ?? ''}` }}
-          </div>
+          <div
+            class="workspace-title" :class="{ 'masked-title': maskedStock }"
+            :title="training.blind ? `盲训 · ${tierLabel}` : maskedStock ? hiddenTitle : revealInfo ? `${revealInfo.name ?? ''} · ${revealInfo.code ?? ''}` : `${training.name ?? ''} · ${training.code ?? ''}`"
+          >{{ training.blind ? `盲训 · ${tierLabel}` : maskedStock ? '****** · ******' : revealInfo ? `${revealInfo.name ?? ''} · ${revealInfo.code ?? ''}` : `${training.name ?? ''} · ${training.code ?? ''}` }}</div>
           <span v-if="training.random" class="random-mode-badge" :title="`随机模式 · ${randomDimensionLabel}`">随机模式</span>
+          <button
+            v-if="training.random"
+            class="ghost-button compact-icon-button reveal-toggle"
+            :title="revealInfo !== null ? '恢复 * 遮蔽' : '显示被隐藏的信息（需确认）'"
+            :aria-label="revealInfo !== null ? '恢复星号遮蔽' : '显示被隐藏的信息'"
+            @click="onRevealToggle"
+          ><EyeOff v-if="revealInfo === null" :size="14" /><Eye v-else :size="14" /></button>
         </div>
-        <div class="training-current-date">当前 <strong>{{ training.currentDate }}</strong><span v-if="training.clockMode === 'open_close'" class="phase-tag">{{ training.currentPhase === 'open' ? '开盘阶段' : '收盘阶段' }}</span></div>
+        <div class="training-current-date">
+          <template v-if="revealInfo !== null">当前 <strong>{{ revealInfo.currentDate ?? revealInfo.startDate }}</strong></template>
+          <template v-else-if="maskedTime">剩余未推进 <strong>{{ training.random?.remainingBars ?? '--' }}</strong> 根 K 线</template>
+          <template v-else>当前 <strong>{{ training.currentDate }}</strong></template>
+          <span v-if="training.clockMode === 'open_close'" class="phase-tag">{{ training.currentPhase === 'open' ? '开盘阶段' : '收盘阶段' }}</span>
+        </div>
         <div class="timeframe-tabs" role="tablist" aria-label="K线周期">
           <button v-for="item in (['1D', '1W', '1M'] as Timeframe[])" :key="item" role="tab" :aria-selected="tf === item" :class="{ selected: tf === item }" @click="tf = item">{{ item === '1D' ? '日K' : item === '1W' ? '周K' : '月K' }}</button>
         </div>
@@ -774,9 +831,9 @@ void load()
             <span>{{ training.adjustMode === 'forward' ? '前复权' : '不复权' }}（已锁定）</span>
             <span v-if="rulesSummary">{{ rulesSummary }}</span>
             <span v-if="training.rules?.origin === 'legacy-migration'">旧训练按升级时设置继续，历史设置未记录</span>
-            <span>起始 {{ training.startDate }}</span>
-            <span>当前 <strong>{{ training.currentDate }}</strong></span>
-            <span>计划结束 {{ training.plannedEnd }}</span>
+            <span>起始 {{ revealInfo !== null ? revealInfo.startDate : maskedTime ? '******' : training.startDate }}</span>
+            <span>当前 <strong>{{ revealInfo !== null ? (revealInfo.currentDate ?? revealInfo.startDate) : maskedTime ? '******' : training.currentDate }}</strong></span>
+            <span>计划结束 {{ revealInfo !== null ? revealInfo.plannedEnd : maskedTime ? '******' : training.plannedEnd }}</span>
             <span>时长 {{ tierLabel }}</span>
             <span v-if="legacyDrawingNotice" class="legacy-drawing-notice">{{ legacyDrawingNotice }}</span>
           </div>
@@ -1015,12 +1072,27 @@ void load()
         </div>
       </div>
     </div>
+
+    <!-- RF-05 随机模式揭示确认：明示 spoiler 风险自担；取消维持遮蔽 -->
+    <div v-if="revealDialogOpen" class="settle-mask" role="dialog" aria-modal="true" aria-label="显示随机训练隐藏信息" @keydown.stop>
+      <div class="settle-panel">
+        <h2>显示被隐藏的信息？</h2>
+        <p>本局为随机训练，股票与时间信息已被隐藏。确认显示将揭晓真实标的与训练时间段，剧透风险由你自己承担。</p>
+        <p v-if="revealError" class="error-text" role="alert">{{ revealError }}</p>
+        <div class="settle-actions">
+          <button class="trade-action buy" :disabled="revealing" @click="confirmReveal">确认显示</button>
+          <button class="ghost-button" :disabled="revealing" @click="revealDialogOpen = false">取消</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 /* M7-02 随机模式：标题行（标题＋徽标）与徽标样式（双主题，沿 phase-tag 胶囊风格） */
 .title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* RF-05 密码输入式遮蔽标题：等宽星号弱化长度侧信道 */
+.masked-title { font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .random-mode-badge { flex: none; display: inline-flex; padding: 2px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
 :global(body.dark) .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .recording-strip { position: relative; display: flex; align-items: center; gap: 8px; font-size: 11px; white-space: nowrap; }

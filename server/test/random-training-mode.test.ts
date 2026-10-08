@@ -215,7 +215,8 @@ describe('POST /api/trainings/random creation', () => {
       expect(training.code).toBeNull()
       expect(training.name).toBeNull()
       expect(['sh', 'sz']).toContain(training.market)
-      expect(training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false })
+      // RF-05：random 对象新增 remainingBars（剩余未推进根数），旧三字段语义不变
+      expect(training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false, remainingBars: expect.any(Number) })
       expect(training.tier).toBe('RANGE')
       expect(training.range.mode).toBe('random')
       expect(training.range.barCount).toBeGreaterThanOrEqual(2)
@@ -250,7 +251,7 @@ describe('POST /api/trainings/random creation', () => {
       const training = response.json().training
       expect(training.code).toBe('600001')
       expect(training.name).toBe('STOCK-AA')
-      expect(training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true })
+      expect(training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true, remainingBars: expect.any(Number) })
       const row = singleTraining(database)
       expect(row.code).toBe('600001')
       expect(row.random_mode).toBe('random_time')
@@ -284,7 +285,7 @@ describe('POST /api/trainings/random creation', () => {
       const training = response.json().training
       expect(training.code).toBeNull()
       expect(training.name).toBeNull()
-      expect(training.random).toEqual({ dimension: 'random_both', hideStock: true, hideTime: true })
+      expect(training.random).toEqual({ dimension: 'random_both', hideStock: true, hideTime: true, remainingBars: expect.any(Number) })
       const row = singleTraining(database)
       // 契约池：目录 bars ≥ window_bars+200 → 600001/000002/600005
       expect(['600001', '000002', '600005']).toContain(row.code)
@@ -351,7 +352,7 @@ describe('RF-04 random window by classic tier months (window_months)', () => {
       const training = response.json().training
       expect(training.code).toBe('600001')
       expect(training.name).toBe('STOCK-AA')
-      expect(training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true })
+      expect(training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true, remainingBars: expect.any(Number) })
       // 录制契约冻结（validation.ts RANGE_MODES＋旧五档不得携带 range 元数据）：随机训练 tier 恒为 RANGE 哨兵
       expect(training.tier).toBe('RANGE')
       const row = singleTraining(database)
@@ -415,7 +416,7 @@ describe('RF-04 random window by classic tier months (window_months)', () => {
       const training = response.json().training
       expect(training.code).toBeNull()
       expect(training.name).toBeNull()
-      expect(training.random).toEqual({ dimension: 'random_both', hideStock: true, hideTime: true })
+      expect(training.random).toEqual({ dimension: 'random_both', hideStock: true, hideTime: true, remainingBars: expect.any(Number) })
       const row = singleTraining(database)
       // 契约池：目录中能放下完整 1 个月跨度＋200 预热的股票（600001/000002/600005；600003 预热不足）
       const stock = STOCKS.find(item => item.code === row.code) as FixtureStock
@@ -636,6 +637,166 @@ describe('random session hiding while running', () => {
       expect(get.statusCode).toBe(200)
       expect((get.json().drawings as Array<{ points: Array<{ timestamp: number }> }>)[0].points[0].timestamp)
         .toBe(shiftedTimestamp)
+    })
+  })
+})
+
+// RF-05 随机模式信息隐藏改造（用户 2026-10-08 验收反馈）：遮蔽字段配套服务端支撑——
+// ① 运行中随机会话提供 remainingBars（剩余未推进 K 线根数＝range_bar_count−已推进交易日数），
+//   供前端在隐藏日期时以剩余根数替代日期呈现；② 显式揭示端点 POST /reveal（确认弹窗后的
+//   主动动作，运行中其他端点仍遮蔽）；③ 隐藏时间的会话一切运行中响应不得出现任何未偏移的
+//   真实市场日期（deep-walk 日期版防泄露，口径同股票版）；④ 已结算随机训练在范围排行/历史
+//   携带 random 标记（rangeMode='random'），供前端打「随机模式」tag。
+describe('RF-05 remaining bars, on-demand reveal, date no-leak and random tag', () => {
+  it('serves remainingBars on running random sessions and decrements it per advance', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600001', window_bars: 10 },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      expect(row.range_bar_count).toBe(10)
+      // 创建即位于窗口首日：剩余＝10−1（range_bar_count−equity_curve 已推进交易日数）
+      expect(created.json().training.random.remainingBars).toBe(9)
+      const advanced = await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/next` })
+      expect(advanced.statusCode).toBe(200)
+      expect(advanced.json().snapshot.training.random.remainingBars).toBe(8)
+      const active = await app.inject({ method: 'GET', url: '/api/trainings/active' })
+      expect(active.json().training.random.remainingBars).toBe(8)
+      // random_stock 同样携带（时间未隐藏，前端不消费该字段也不得报错）
+      await database.prepare('UPDATE trainings SET status = ?').run('settled')
+      const stockMode = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', start_date: '2025-06-02', end_date: '2025-09-30' },
+      })
+      expect(stockMode.statusCode).toBe(201)
+      const stockRow = trainingRows(database).at(-1) as TrainingDbRow
+      expect(stockMode.json().training.random.remainingBars).toBe(stockRow.range_bar_count - 1)
+    })
+  })
+
+  it('reveals real identity on demand for running random sessions while other endpoints stay masked', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_both', window_bars: 10 },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      // 揭示端点返回真实身份与真实日期区间（确认弹窗后的显式动作）
+      const reveal = await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/reveal` })
+      expect(reveal.statusCode).toBe(200)
+      const revealed = reveal.json().training
+      expect(revealed.id).toBe(row.id)
+      expect(revealed.code).toBe(row.code)
+      expect(revealed.name).toBe(row.name)
+      expect(revealed.startDate).toBe(row.start_date)
+      expect(revealed.plannedEnd).toBe(row.planned_end)
+      expect(revealed.currentDate).toBe(row.current_date)
+      // 揭示是一次性读取：其余端点在揭示后仍保持遮蔽（API 级真隐藏不因揭示而失效）
+      const active = await app.inject({ method: 'GET', url: '/api/trainings/active' })
+      expect(active.json().training.code).toBeNull()
+      expect(active.json().training.name).toBeNull()
+      expect(active.json().training.startDate).not.toBe(row.start_date)
+      // 结束态：常规端点已揭晓，无需再揭示 → 409
+      const settled = await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/settle` })
+      expect(settled.statusCode).toBe(200)
+      const afterEnd = await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/reveal` })
+      expect(afterEnd.statusCode).toBe(409)
+      // 经典训练没有隐藏信息 → 409；未知 id → 404
+      const classic = await app.inject({
+        method: 'POST', url: '/api/trainings',
+        payload: { tier: '1M', code: '600001', start_date: '2025-06-02' },
+      })
+      expect(classic.statusCode).toBe(201)
+      const classicReveal = await app.inject({ method: 'POST', url: `/api/trainings/${classic.json().training.id}/reveal` })
+      expect(classicReveal.statusCode).toBe(409)
+      const unknown = await app.inject({ method: 'POST', url: '/api/trainings/999999/reveal' })
+      expect(unknown.statusCode).toBe(404)
+      const badId = await app.inject({ method: 'POST', url: '/api/trainings/abc/reveal' })
+      expect(badId.statusCode).toBe(400)
+    })
+  })
+
+  it('keeps every running hideTime response free of unshifted real market dates via deep walk', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_both', window_bars: 12, orders_enabled: true },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      const offset = row.random_time_offset_days as number
+      const stockDates = (STOCKS.find(stock => stock.code === row.code) as FixtureStock).dates
+      // 允许集＝全部真实市场日期经会话常量偏移后的像（间距结构无关，只看值域）；
+      // 周K 锚定周一，周一同日可为非交易日（节假日周），其偏移像单列（口径同既有 shifts all market dates 测试）
+      const shiftedDates = new Set(stockDates.map(date => addDays(date, offset)))
+      for (const date of stockDates) {
+        const day = new Date(`${date}T00:00:00Z`)
+        const monday = new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * MS_PER_DAY).toISOString().slice(0, 10)
+        shiftedDates.add(addDays(monday, offset))
+      }
+      const id = row.id
+      const responses: Array<{ label: string; body: string }> = [{ label: 'create', body: created.body }]
+      const collect = async (label: string, method: string, url: string, payload?: unknown): Promise<void> => {
+        const response = await app.inject({ method, url, payload })
+        expect(response.statusCode).toBeLessThan(500)
+        responses.push({ label, body: response.body })
+      }
+      await collect('reveal', 'POST', `/api/trainings/${id}/reveal`)
+      await collect('active', 'GET', '/api/trainings/active')
+      await collect('snapshot', 'GET', `/api/trainings/${id}`)
+      await collect('bars-1d', 'GET', `/api/trainings/${id}/bars`)
+      await collect('bars-1w', 'GET', `/api/trainings/${id}/bars?tf=1W`)
+      await collect('next', 'POST', `/api/trainings/${id}/next`)
+      const closePrice = (database.prepare('SELECT current_close AS close FROM trainings WHERE id = ?').get(id) as unknown as { close: number }).close
+      await collect('orders-post', 'POST', `/api/trainings/${id}/orders`, {
+        side: 'buy', order_type: 'limit', trigger_price: Math.round(closePrice * 1.2 * 100) / 100, shares: 100,
+      })
+      await collect('trade', 'POST', `/api/trainings/${id}/trade`, { side: 'buy', shares: 100 })
+      await collect('drawings-get', 'GET', `/api/trainings/${id}/drawings`)
+      await collect('recording-context', 'GET', `/api/trainings/${id}/recording-context`)
+      // reveal 响应按契约携带真实日期（用户确认后的显式动作），不参与防泄露扫描
+      const masked = responses.filter(item => item.label !== 'reveal')
+      const ISO_DATETIME = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^"\\]*/g
+      const DATE_LIKE = /\d{4}-\d{2}-\d{2}/g
+      for (const { label, body } of masked) {
+        const remainder = body.replace(ISO_DATETIME, '')
+        for (const match of remainder.match(DATE_LIKE) ?? []) {
+          expect(shiftedDates.has(match), `response ${label} leaked unshifted real date ${match}`).toBe(true)
+        }
+      }
+    })
+  })
+
+  it('exposes the random caliber on settled range rankings and history for tagging', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_time', code: '600001', window_bars: 10 },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/settle` })
+      // 范围排行：随机训练行携带 rangeMode='random'（前端据此打「随机模式」tag）
+      const rankings = await app.inject({ method: 'GET', url: '/api/rankings?view=range' })
+      expect(rankings.statusCode).toBe(200)
+      const groups = rankings.json().rangeGroups as Array<{ complete: Array<{ id: number }>; earlySettled: Array<{ id: number }> }>
+      const items = groups.flatMap(group => [...group.complete, ...group.earlySettled]) as Array<{ id: number; rangeMode?: string }>
+      const mine = items.find(item => item.id === row.id)
+      expect(mine?.rangeMode).toBe('random')
+      // 历史：真实身份＋rangeMode='random'（列表 tierText 的 tag 来源）
+      const history = await app.inject({ method: 'GET', url: '/api/trainings/history' })
+      expect(history.statusCode).toBe(200)
+      const historyItem = (history.json().items as Array<{ id: number; code: string; name: string; rangeMode: string }>).find(item => item.id === row.id)
+      expect(historyItem?.code).toBe(row.code)
+      expect(historyItem?.name).toBe(row.name)
+      expect(historyItem?.rangeMode).toBe('random')
     })
   })
 })
