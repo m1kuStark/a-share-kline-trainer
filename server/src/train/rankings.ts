@@ -42,6 +42,8 @@ export interface RankingItem {
   benchmarkExcess: number | null
   benchmarkExcessReason?: string
   rangeKey?: string
+  /** RF-05：RANGE 训练的范围模式（preset/latest/bars/random）；random 供前端打「随机模式」tag */
+  rangeMode?: string
   industryId?: string | null
   industryName?: string | null
 }
@@ -93,6 +95,7 @@ interface RankingRow {
   rules_json: string | null
   range_start?: string | null
   range_end?: string | null
+  range_mode?: string | null
   industry_id?: string | null
   industry_name?: string | null
 }
@@ -150,6 +153,7 @@ function itemOf(database: DatabaseSync, row: RankingRow): { item: RankingItem } 
       profitLossRatio: profitLossRatioOf(sells),
       benchmarkExcess: null,
       ...(row.tier === 'RANGE' && row.range_start && row.range_end ? { rangeKey: `RANGE:${row.range_start}:${row.range_end}` } : {}),
+      ...(row.range_mode ? { rangeMode: row.range_mode } : {}),
       industryId: row.industry_id ?? null,
       industryName: row.industry_name ?? null,
     },
@@ -199,7 +203,7 @@ export function rankingGroups(database: DatabaseSync, tier: Tier): RankingGroups
 export function rangeRankingGroups(database: DatabaseSync): RankingGroups {
   const rows = database.prepare(`
     SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
-           range_start, range_end, industry_id, industry_name
+           range_start, range_end, range_mode, industry_id, industry_name
     FROM trainings WHERE status = 'settled' AND tier = 'RANGE' AND range_start IS NOT NULL AND range_end IS NOT NULL
   `).all() as unknown as RankingRow[]
   const groups = new Map<string, { key: string; startDate: string; endDate: string; complete: RankingItem[]; earlySettled: RankingItem[] }>()
@@ -267,7 +271,7 @@ export async function rangeRankingsPayload(database: DatabaseSync, config: AppCo
 export async function stockRankingsPayload(database: DatabaseSync, config: AppConfig, code: string): Promise<RankingGroups> {
   const rows = database.prepare(`
     SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
-           range_start, range_end, industry_id, industry_name
+           range_start, range_end, range_mode, industry_id, industry_name
     FROM trainings WHERE status = 'settled' AND code = ?
   `).all(code) as unknown as RankingRow[]
   const complete: RankingItem[] = []
@@ -314,7 +318,7 @@ export async function industryRankingsPayload(database: DatabaseSync, config: Ap
   const byCode = industryByCode(result.catalog)
   const rows = database.prepare(`
     SELECT id, tier, code, name, market, start_date, settle_date, early_settle, initial_cash, rules_json,
-           range_start, range_end, industry_id, industry_name
+           range_start, range_end, range_mode, industry_id, industry_name
     FROM trainings WHERE status = 'settled'
   `).all() as unknown as RankingRow[]
   // The unfiltered response is also the industry picker data source. Seed every

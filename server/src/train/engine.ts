@@ -122,8 +122,9 @@ export interface TrainingMeta {
   rules?: TrainingRulesV1
   /** 仅范围模式训练存在；旧 tier 训练不返回该字段 */
   range?: TrainingRangeMeta
-  /** 仅随机模式训练（M7-01）；运行中由隐藏层注入/由创建响应携带，结算后随隐藏停用而消失 */
-  random?: { dimension: RandomDimension; hideStock: boolean; hideTime: boolean }
+  /** 仅随机模式训练（M7-01）；运行中由隐藏层注入/由创建响应携带，结算后随隐藏停用而消失。
+   * RF-05：remainingBars＝剩余未推进 K 线根数（隐藏日期时前端以剩余根数替代日期呈现）。 */
+  random?: { dimension: RandomDimension; hideStock: boolean; hideTime: boolean; remainingBars?: number }
 }
 
 export interface AccountView {

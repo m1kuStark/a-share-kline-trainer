@@ -22,6 +22,7 @@
 | [pane-resize](pane-resize.spec.ts) | 原生分隔条所有权、对角拖动、组合模式 |
 | [data-update](data-update.spec.ts) | 更新入口、建议弹窗双路径、失败/409状态 |
 | [replay-period](replay-period.spec.ts) | 开盘段回放可切周K/月K且不再误报缺日线（RF-03） |
+| [random-mode](random-mode.spec.ts) | 经典/随机标签与维度面板、载荷与 422 提示、星号遮蔽＋眼睛确认揭示、剩余根数替代日期、结算揭晓、随机录像库/回放 tag（RF-04/RF-05） |
 | [order-panel](order-panel.spec.ts) | 统一下单面板标签页、多条件单挂单/撤单、悬停信息主题一致、开盘阶段唯一价位线 |
 | [phase-price-line](phase-price-line.spec.ts) | 开盘/收盘一致虚线与唯一价格轴标签、实际日线前收配色、跳空价格范围 |
 | [data-update-feedback](data-update-feedback.spec.ts) | 训练页休市误报隔离、扫描未变时完成与下一步提示、失败/409可见反馈 |
