@@ -12,6 +12,7 @@
 | [recording](recording.spec.ts) | 默认录制、交易拒单、周期/绘图、暂停刷新、导出与只读回放 |
 | [recording-long](recording-long.spec.ts) | v2 gzip、两年真实推进/交易/画线/周期/刷新、离线回放与体积/耗时 |
 | [recording-migration](recording-migration.spec.ts) | v1存储保留及迁移、损坏导入、旧JSON、复制标签页独立录制 |
+| [recording-orders](recording-orders.spec.ts) | 条件单挂单/撤单录制进录像、结算后回放业务列表可见（RF-02） |
 | [journey](journey.spec.ts) | 创建、交易、画线、手势、多选、周期、主题 |
 | [m3-tools](m3-tools.spec.ts) | 23工具、保存恢复、跨窗格、故障注入 |
 | [m3-feedback](m3-feedback.spec.ts) | 收藏拖拽、自定义隔离、保存栏布局 |
@@ -20,6 +21,7 @@
 | [cost-basis](cost-basis.spec.ts) | 权息成本、清仓后GET失败、周期恢复 |
 | [pane-resize](pane-resize.spec.ts) | 原生分隔条所有权、对角拖动、组合模式 |
 | [data-update](data-update.spec.ts) | 更新入口、建议弹窗双路径、失败/409状态 |
+| [replay-period](replay-period.spec.ts) | 开盘段回放可切周K/月K且不再误报缺日线（RF-03） |
 | [order-panel](order-panel.spec.ts) | 统一下单面板标签页、多条件单挂单/撤单、悬停信息主题一致、开盘阶段唯一价位线 |
 | [phase-price-line](phase-price-line.spec.ts) | 开盘/收盘一致虚线与唯一价格轴标签、实际日线前收配色、跳空价格范围 |
 | [data-update-feedback](data-update-feedback.spec.ts) | 训练页休市误报隔离、扫描未变时完成与下一步提示、失败/409可见反馈 |
