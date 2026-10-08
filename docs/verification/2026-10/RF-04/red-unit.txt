@@ -1,0 +1,112 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/tmp/rf04[39m
+
+ [31m❯[39m server/test/random-training-mode.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 4874[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a random_stock training from a valid date window and hides code and name while running [33m 345[2mms[22m[39m
+     [32m✓[39m creates a random_time training with exact window_bars and shifted dates while code stays visible[32m 216[2mms[22m[39m
+     [32m✓[39m creates a random_both training hiding both stock identity and time[32m 213[2mms[22m[39m
+     [32m✓[39m rejects with 422 RANDOM_STOCK_UNIVERSE_EMPTY when no stock covers the requested window[32m 210[2mms[22m[39m
+     [32m✓[39m rejects with 422 RANDOM_STOCK_UNIVERSE_EMPTY for random_both when catalog pool is empty[32m 209[2mms[22m[39m
+     [32m✓[39m rejects with 422 RANDOM_WINDOW_NOT_FIT when the stock cannot fit the window with warmup[32m 209[2mms[22m[39m
+[31m     [31m×[31m creates a random_time training whose window is a full 3-month calendar span with random start[39m[32m 215[2mms[22m[39m
+[31m     [31m×[31m picks window_months start deterministically from the injectable rng across the feasible set[39m[32m 246[2mms[22m[39m
+[31m     [31m×[31m creates a random_both training with window_months picking from stocks that fit the span[39m[32m 220[2mms[22m[39m
+     [32m✓[39m keeps the legacy window_bars caliber working alongside window_months[32m 224[2mms[22m[39m
+     [32m✓[39m settles a window_months training and surfaces it in range rankings under its exact window key[32m 234[2mms[22m[39m
+     [32m✓[39m rejects with 422 RANDOM_WINDOW_NOT_FIT when warmup or the full month span cannot fit[32m 222[2mms[22m[39m
+[31m     [31m×[31m rejects window_months misuse with 400 and zero side effects[39m[32m 223[2mms[22m[39m
+     [32m✓[39m keeps every running random session response free of stock code and name substrings via deep walk[32m 263[2mms[22m[39m
+     [32m✓[39m shifts all market dates by one constant session offset preserving gaps and leaving ISO wall-clock real[32m 252[2mms[22m[39m
+     [32m✓[39m round-trips shifted before queries and drawing timestamps into real server space[32m 228[2mms[22m[39m
+     [32m✓[39m reveals real stock and dates after settle and abandon and in history endpoints[32m 229[2mms[22m[39m
+     [32m✓[39m keeps classic tier creation fully unmasked with no random field[32m 222[2mms[22m[39m
+     [33m[2m✓[22m[39m derives every random decision from the injectable rng deterministically [33m 468[2mms[22m[39m
+     [32m✓[39m validates request bodies with 400 and zero side effects[32m 225[2mms[22m[39m
+     [32m✓[39m shifts date substrings inside longer strings and preserves ISO datetimes via the pure shifter[32m 1[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m server/test/random-training-mode.test.ts[2m > [22mRF-04 random window by classic tier months (window_months)[2m > [22mcreates a random_time training whose window is a full 3-month calendar span with random start
+[31m[1mAssertionError[22m: expected '2025-11-19' to be '2025-03-05' // Object.is equality[39m
+
+Expected: [32m"2025-[7m03-05[27m"[39m
+Received: [31m"2025-[7m11-19[27m"[39m
+
+[36m [2m❯[22m server/test/random-training-mode.test.ts:[2m363:31[22m[39m
+    [90m361|[39m       const windowDates = contractMonthWindow(LONG_DATES, row.start_da…
+    [90m362|[39m       [34mexpect[39m(windowDates[33m.[39mlength)[33m.[39m[34mtoBeGreaterThanOrEqual[39m([34m2[39m)
+    [90m363|[39m       [34mexpect[39m(row[33m.[39mplanned_end)[33m.[39m[34mtoBe[39m(windowDates[windowDates[33m.[39mlength [33m-[39m [34m1[39m])
+    [90m   |[39m                               [31m^[39m
+    [90m364|[39m       [34mexpect[39m(row[33m.[39mrange_bar_count)[33m.[39m[34mtoBe[39m(windowDates[33m.[39mlength)
+    [90m365|[39m       [34mexpect[39m(row[33m.[39mrange_mode)[33m.[39m[34mtoBe[39m([32m'random'[39m)
+[90m [2m❯[22m withFixture server/test/random-training-mode.test.ts:[2m144:5[22m[39m
+[90m [2m❯[22m server/test/random-training-mode.test.ts:[2m344:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/random-training-mode.test.ts[2m > [22mRF-04 random window by classic tier months (window_months)[2m > [22mpicks window_months start deterministically from the injectable rng across the feasible set
+[31m[1mAssertionError[22m: expected 67 to be 250 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 250[39m
+[31m+ 67[39m
+
+[36m [2m❯[22m server/test/random-training-mode.test.ts:[2m389:78[22m[39m
+    [90m387|[39m       [35mconst[39m starts [33m=[39m [34mcontractMonthStarts[39m([33mLONG_DATES[39m[33m,[39m [34m3[39m)
+    [90m388|[39m       expect(firstRow.start_date).toBe(starts[0]) // rng=0 → 首个可行起点（预热…
+    [90m389|[39m       expect(contractMonthWindow(LONG_DATES, firstRow.start_date, 3).l…
+    [90m   |[39m                                                                              [31m^[39m
+    [90m390|[39m       await database.prepare('UPDATE trainings SET status = ?').run('s…
+    [90m391|[39m       [35mconst[39m tail [33m=[39m [35mawait[39m [34mcreateRandomTraining[39m(database[33m,[39m config[33m,[39m {
+[90m [2m❯[22m withFixture server/test/random-training-mode.test.ts:[2m144:5[22m[39m
+[90m [2m❯[22m server/test/random-training-mode.test.ts:[2m379:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/random-training-mode.test.ts[2m > [22mRF-04 random window by classic tier months (window_months)[2m > [22mcreates a random_both training with window_months picking from stocks that fit the span
+[31m[1mAssertionError[22m: expected '2025-11-07' to be '2024-12-25' // Object.is equality[39m
+
+Expected: [32m"202[7m4-12-25[27m"[39m
+Received: [31m"202[7m5-11-07[27m"[39m
+
+[36m [2m❯[22m server/test/random-training-mode.test.ts:[2m426:31[22m[39m
+    [90m424|[39m       const windowDates = contractMonthWindow(stock.dates, row.start_d…
+    [90m425|[39m       [34mexpect[39m(windowDates[33m.[39mlength)[33m.[39m[34mtoBeGreaterThanOrEqual[39m([34m2[39m)
+    [90m426|[39m       [34mexpect[39m(row[33m.[39mplanned_end)[33m.[39m[34mtoBe[39m(windowDates[windowDates[33m.[39mlength [33m-[39m [34m1[39m])
+    [90m   |[39m                               [31m^[39m
+    [90m427|[39m       [34mexpect[39m(row[33m.[39mrange_bar_count)[33m.[39m[34mtoBe[39m(windowDates[33m.[39mlength)
+    [90m428|[39m       [34mexpect[39m(training[33m.[39mrange[33m.[39mbarCount)[33m.[39m[34mtoBe[39m(windowDates[33m.[39mlength)
+[90m [2m❯[22m withFixture server/test/random-training-mode.test.ts:[2m144:5[22m[39m
+[90m [2m❯[22m server/test/random-training-mode.test.ts:[2m408:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m server/test/random-training-mode.test.ts[2m > [22mRF-04 random window by classic tier months (window_months)[2m > [22mrejects window_months misuse with 400 and zero side effects
+[31m[1mAssertionError[22m: payload {"dimension":"random_time","code":"600001","window_months":5} should be 400: expected 201 to be 400 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 201[39m
+
+[36m [2m❯[22m server/test/random-training-mode.test.ts:[2m505:89[22m[39m
+    [90m503|[39m       [35mfor[39m ([35mconst[39m payload [35mof[39m cases) {
+    [90m504|[39m         const response = await app.inject({ method: 'POST', url: '/api…
+    [90m505|[39m         expect(response.statusCode, `payload ${JSON.stringify(payload)…
+    [90m   |[39m                                                                                         [31m^[39m
+    [90m506|[39m         [34mexpect[39m(response[33m.[39m[34mjson[39m()[33m.[39merror)[33m.[39m[34mtoBeTruthy[39m()
+    [90m507|[39m         expect(trainingCount(database), `payload ${JSON.stringify(payl…
+[90m [2m❯[22m withFixture server/test/random-training-mode.test.ts:[2m144:5[22m[39m
+[90m [2m❯[22m server/test/random-training-mode.test.ts:[2m489:5[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m17 passed[39m[22m[90m (21)[39m
+[2m   Start at [22m 02:00:14
+[2m   Duration [22m 5.56s[2m (transform 329ms, setup 0ms, import 546ms, tests 4.87s, environment 0ms)[22m
+
