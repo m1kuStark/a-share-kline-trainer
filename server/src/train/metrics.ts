@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { loadAdjustmentEvents } from '../tdx/adjustment-cache.js'
+import { integerShareCredit } from './account.js'
 
 // M4-01 指标计算：纯函数、只读派生，不读行情、不写库。
 // 口径已按拍板 S4 冻结（2026-09-29，roadmap §2.7 固定样例逐项确认）：
@@ -80,7 +81,8 @@ export function realizedSellResults(
       }
       state = {
         cash: state.cash + item.event.cash_delta,
-        shares: state.shares + item.event.shares_delta,
+        // RF-01：与 engine.replayState 同口径——旧流水行的 float32 比例尾巴在重放时取整。
+        shares: state.shares + integerShareCredit(item.event.shares_delta),
         costTotal: state.costTotal + costDelta,
       }
     } else if (item.trade) {

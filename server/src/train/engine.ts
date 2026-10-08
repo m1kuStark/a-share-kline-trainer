@@ -12,7 +12,7 @@ import type { TdxMarket } from '../tdx/stocks.js'
 import { MarketReaderUnavailableError, resolveMarketReader, type MarketDataReader } from '../data/reader.js'
 import { planTrainingRange, type TrainingRangeRequest, type TrainingRangeResult } from './range.js'
 import {
-  applyTrade, buyCommission, dilutedCostPrice, equityOf, initialAccountState, planBuy, planBuyShares, planSell,
+  applyTrade, buyCommission, dilutedCostPrice, equityOf, initialAccountState, integerShareCredit, planBuy, planBuyShares, planSell,
   type AccountState, type FeeConfig, type TradePlan,
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
@@ -874,7 +874,10 @@ function replayState(database: DatabaseSync, row: TrainingRow): AccountState {
       }
       state = {
         cash: state.cash + item.event.cash_delta,
-        shares: state.shares + item.event.shares_delta,
+        // RF-01：旧版本按 float32 比例直入账的流水行带浮点尾巴（position_events 唯一写者
+        // 是 applyPositionEvents，非整数 shares_delta 必来自本 bug）——重放时同口径取整，
+        // 已污染的旧训练无需迁移即可恢复可卖。
+        shares: state.shares + integerShareCredit(item.event.shares_delta),
         costTotal: state.costTotal + costDelta,
       }
     } else if (item.trade) {
@@ -1082,10 +1085,12 @@ export function applyPositionEvents(
   for (const event of sameDay) {
     if (result.shares <= 0) break
     const sharesBefore = result.shares
+    // RF-01：到账股数取整（A 股零股舍去）——gbbq 比例是 float32，未取整会把 ~1e-3 股级
+    // 浮点尾巴写进 shares，进而让 planSell 的整数可卖校验误报「当前没有可卖持仓」。
     let cashDelta = (event.dividend / 10) * sharesBefore
-    let sharesDelta = (event.bonusShares / 10) * sharesBefore
+    let sharesDelta = integerShareCredit((event.bonusShares / 10) * sharesBefore)
     let costDelta = 0
-    const rightsShares = (event.rightsShares / 10) * sharesBefore
+    const rightsShares = integerShareCredit((event.rightsShares / 10) * sharesBefore)
     const rightsCost = event.rightsPrice * rightsShares
     if (rightsShares > 0 && result.cash + cashDelta >= rightsCost) {
       cashDelta -= rightsCost
