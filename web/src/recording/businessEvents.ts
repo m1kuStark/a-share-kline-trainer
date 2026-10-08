@@ -6,9 +6,12 @@
 // 旧文件兼容：不修改既有历史，只按本口径筛选展示。
 import type { Action, RecordingEvent } from './types'
 
-/** 业务动作白名单：买卖与图形/文字变更；画线取消（chart.drawing.cancel）是 no-op 不算业务 */
+/** 业务动作白名单：买卖、条件单挂/撤与图形/文字变更；画线取消（chart.drawing.cancel）是 no-op 不算业务。
+ * RF-02：挂条件单/撤条件单是用户视角的操作记录（挂单等价于一笔计划中的买卖意图），纳入业务口径。 */
 const BUSINESS_ACTIONS: ReadonlySet<Action> = new Set<Action>([
   'training.trade',
+  'training.order.create',
+  'training.order.cancel',
   'chart.drawing.create',
   'chart.drawing.edit',
   'chart.drawing.move',

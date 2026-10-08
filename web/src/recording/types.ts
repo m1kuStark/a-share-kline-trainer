@@ -11,6 +11,8 @@ export const ACTIONS = [
   'training.create',
   'training.advance',
   'training.trade',
+  'training.order.create',
+  'training.order.cancel',
   'training.settle',
   'training.abandon',
   'chart.load',
