@@ -25,8 +25,10 @@ const RANDOM_DIMENSIONS: Array<{ value: RandomDimension; label: string; hint: st
 const dimensionHint = computed(() => RANDOM_DIMENSIONS.find(item => item.value === randomDimension.value)?.hint ?? '')
 /** 股票选择器：经典始终显示；随机模式仅 random_time（用户选股） */
 const showStockPicker = computed(() => mode.value === 'classic' || randomDimension.value === 'random_time')
-/** 经典 preset 起始日＋行内初始资金（原布局）；随机模式不渲染该行内组合 */
-const showPresetStart = computed(() => mode.value === 'classic' && tier.value !== 'RANGE')
+/** RF3-01 random_stock 档位（非自定义范围）起始日输入：完全照搬经典 preset start（同控件同行为，默认＝锚点回退档位月数、可改） */
+const showRandomStockStart = computed(() => mode.value === 'random' && randomDimension.value === 'random_stock' && randomTier.value !== 'RANGE')
+/** 经典 preset 起始日＋行内初始资金（原布局）；RF3-01 起 random_stock 档位下同款起始日输入复用该行 */
+const showPresetStart = computed(() => (mode.value === 'classic' && tier.value !== 'RANGE') || showRandomStockStart.value)
 /** 起止日输入（复用 rangeStart/rangeEnd）：经典自定义范围｜随机 random_stock 的「自定义范围」档（RF2-01） */
 const showRangeDates = computed(() => mode.value === 'classic' ? tier.value === 'RANGE' : randomDimension.value === 'random_stock' && randomTier.value === 'RANGE')
 /** RF-04/RF2-01 随机训练周期档位网格：三种随机维度全部复用经典五档（random_stock 另配「自定义范围」档） */
@@ -38,6 +40,11 @@ function setMode(next: 'classic' | 'random'): void {
   if (mode.value === next) return
   mode.value = next
   errorMessage.value = ''
+  // RF3-01 切入随机模式若落在 random_stock 档位：起始日按档位重算（不沿用经典面板残留值）
+  if (next === 'random' && randomDimension.value === 'random_stock' && randomTier.value !== 'RANGE') {
+    startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[randomTier.value as Exclude<Tier, 'RANGE'>])
+    startDateTouched.value = false
+  }
 }
 function onDimensionClick(dimension: RandomDimension): void {
   randomDimension.value = dimension
@@ -45,6 +52,11 @@ function onDimensionClick(dimension: RandomDimension): void {
   // RF2-01 档位状态跨维度归一：「自定义根数」档仅 random_time/random_both；「自定义范围」档仅 random_stock
   if (dimension === 'random_stock' && randomTier.value === 'WINDOW_BARS') randomTier.value = '3M'
   if (dimension !== 'random_stock' && randomTier.value === 'RANGE') randomTier.value = '3M'
+  // RF3-01 进入 random_stock 档位维度：起始日按当前档位重算（与经典点击周期同式，不保留旧值）
+  if (dimension === 'random_stock' && randomTier.value !== 'RANGE') {
+    startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[randomTier.value as Exclude<Tier, 'RANGE'>])
+    startDateTouched.value = false
+  }
 }
 
 // ===== 股票选择（UI-03 用户反馈）：代码/名称双框联动 =====
@@ -129,11 +141,14 @@ const adjustMode = ref<'forward' | 'raw'>('forward')
 const submitting = ref(false)
 const errorMessage = ref('')
 
-// 数据状态到达/变化后，手填过的起始日不覆盖；未动过则随最新锚点重算（选股、刷新不打扰）
+// 数据状态到达/变化后，手填过的起始日不覆盖；未动过则随最新锚点重算（选股、刷新不打扰）。
+// RF3-01：random_stock 档位起始日输入与经典同行为（同一 startDate 状态与 touched 标记复用）
 watch(dataStatus, () => {
-  if (mode.value === 'classic' && tier.value !== 'RANGE' && !startDateTouched.value) {
-    startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[tier.value])
-  }
+  if (!showPresetStart.value || startDateTouched.value) return
+  const months = mode.value === 'classic'
+    ? TIER_MONTHS[tier.value as Exclude<Tier, 'RANGE'>]
+    : TIER_MONTHS[randomTier.value as Exclude<Tier, 'RANGE'>]
+  startDate.value = minusMonthsShanghai(anchorDate.value, months)
 })
 
 // ===== 自定义范围：用户明确选择起止日期 =====
@@ -346,8 +361,16 @@ const randomPeriodHint = computed(() => randomDimension.value === 'random_stock'
 function onRandomTierClick(value: Tier | 'WINDOW_BARS' | 'RANGE'): void {
   randomTier.value = value
   errorMessage.value = ''
-  // random_stock「自定义范围」档进场时重置默认区间（锚点回退 3 自然月，同经典 RANGE 习惯）
-  if (mode.value === 'random' && randomDimension.value === 'random_stock' && value === 'RANGE') resetRangeDefaults()
+  if (mode.value === 'random' && randomDimension.value === 'random_stock') {
+    if (value === 'RANGE') {
+      // random_stock「自定义范围」档进场时重置默认区间（锚点回退 3 自然月，同经典 RANGE 习惯）
+      resetRangeDefaults()
+    } else {
+      // RF3-01 档位点击＝按档位月数从锚点重算起始日并清除手填标记（与经典 onTierClick 同式）
+      startDate.value = minusMonthsShanghai(anchorDate.value, TIER_MONTHS[value as Exclude<Tier, 'RANGE'>])
+      startDateTouched.value = false
+    }
+  }
 }
 
 /** 预设点击＝从锚点（最新数据日）回退对应周期重新生成起始日；自定义则重置默认区间 */
@@ -480,9 +503,10 @@ function confirmStartAnyway(): void {
 }
 
 // ===== M7-02 随机模式创建：POST /api/trainings/random（契约=M7-01 design.md §2.1；RF-04/RF2-01 增档位） =====
-// 载荷按维度组装：random_stock=window_months（档位：窗口＝最近 N 个自然月）或 start_date+end_date
-// （自定义范围档，旧口径）；random_time=code+window_months（档位）或 window_bars（自定义根数）；
-// random_both=window_months/window_bars（不带 code/起止日）；其余字段与经典同语义。
+// 载荷按维度组装：random_stock=window_months＋start_date（RF3-01：档位＋用户起始日，窗口＝
+// 起始日起 N 个自然月）或 start_date+end_date（自定义范围档，旧口径）；random_time=code+
+// window_months（档位）或 window_bars（自定义根数）；random_both=window_months/window_bars
+// （不带 code/起止日）；其余字段与经典同语义。
 async function performRandomCreate(): Promise<void> {
   const cash = Number(initialCash.value)
   if (!Number.isFinite(cash) || cash <= 0) {
@@ -515,7 +539,13 @@ async function performRandomCreate(): Promise<void> {
       params.start_date = rangeStart.value
       params.end_date = rangeEnd.value
     } else if (randomTier.value !== 'WINDOW_BARS') {
+      // RF3-01：档位＋起始日载荷（窗口＝用户起始日起 N 个自然月；起始日输入照搬经典 preset start）
+      if (!startDate.value) {
+        errorMessage.value = '请选择起始日'
+        return
+      }
       params.window_months = TIER_MONTHS[randomTier.value]
+      params.start_date = startDate.value
     }
   }
   if (randomDimension.value === 'random_time') {
@@ -615,7 +645,9 @@ function randomCreateErrorMessage(error: unknown): string {
           <label>起始日</label>
           <input v-if="showPresetStart" v-model="startDate" type="date" @input="startDateTouched = true" />
           <input v-else v-model="rangeStart" type="date" @input="mode === 'classic' ? onRangeInputChanged() : (errorMessage = '')" />
-          <small v-if="showPresetStart" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
+          <small v-if="showPresetStart" class="form-hint">{{ mode === 'classic'
+            ? '选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示'
+            : '起始日默认从最新数据日回退所选档位时长；窗口为起始日起所选档位的自然月数，股票由服务器在窗口内随机选取' }}</small>
           <small v-else class="form-hint">{{ mode === 'classic' ? '自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）' : '随机股票在此时间段内由服务器选取；起始日自动对齐到前方最近的交易日' }}</small>
         </div>
         <div v-if="showPresetStart" class="form-field">

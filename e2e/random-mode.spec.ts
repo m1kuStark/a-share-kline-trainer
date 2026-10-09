@@ -122,21 +122,24 @@ test.describe('random mode (M7-02)', () => {
     })
 
     // RF2-01 默认维度＝随机股票：训练周期档位网格可见且默认 3个月；
-    // 股票选择器/根数输入/起止日均隐藏（起止日仅「自定义范围」档显示）
+    // RF3-01 档位下起始日输入在场（照搬经典 preset start，默认＝锚点回退 3 自然月）；
+    // 股票选择器/根数输入隐藏（起止日仅「自定义范围」档显示）
     await expect(page.getByRole('button', { name: DIMENSION_BUTTON.random_stock })).toHaveClass(/selected/)
     await expect(page.getByPlaceholder(CODE_INPUT)).toHaveCount(0)
     await expect(page.getByLabel('训练窗口长度（交易日）')).toHaveCount(0)
-    await expect(page.locator('input[type="date"]')).toHaveCount(0)
+    const stockStartInput = page.locator('input[type="date"]')
+    await expect(stockStartInput).toHaveCount(1)
+    await expect(stockStartInput).toHaveValue('2026-06-24') // 锚点 2026-09-24 回退 3 自然月
     const tier3M = page.getByRole('button', { name: '3个月', exact: true })
     await expect(tier3M).toBeVisible()
     await expect(tier3M).toHaveClass(/selected/)
 
-    // 默认 3个月档 → window_months=3，不带起止日期/根数
+    // 默认 3个月档 → window_months=3 + start_date（默认起始日）；不带结束日/根数
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
     await expect.poll(() => createBodies.length).toBe(1)
     expect(createBodies[0].dimension).toBe('random_stock')
     expect(createBodies[0].window_months).toBe(3)
-    expect(createBodies[0].start_date).toBeUndefined()
+    expect(createBodies[0].start_date).toBe('2026-06-24')
     expect(createBodies[0].end_date).toBeUndefined()
     expect(createBodies[0].code).toBeUndefined()
     expect(createBodies[0].window_bars).toBeUndefined()
@@ -144,26 +147,35 @@ test.describe('random mode (M7-02)', () => {
     expect(createBodies[0].orders_enabled).toBe(false)
     expect(createBodies[0].adjust_mode).toBe('forward')
 
-    // 切 1年 档 → window_months=12
+    // 切 1年 档 → window_months=12，起始日随档位重算（锚点回退 12 自然月，同经典联动）
     await page.getByRole('button', { name: '1年', exact: true }).click()
+    await expect(stockStartInput).toHaveValue('2025-09-24')
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
     await expect.poll(() => createBodies.length).toBe(2)
     expect(createBodies[1].window_months).toBe(12)
-    expect(createBodies[1].start_date).toBeUndefined()
+    expect(createBodies[1].start_date).toBe('2025-09-24')
+    expect(createBodies[1].end_date).toBeUndefined()
 
-    // 自定义范围档（旧起止日期口径保留）：起止日进场，payload 换 start_date/end_date
+    // 手动改起始日后创建：载荷携带用户值（窗口＝起始日起 N 个自然月）
+    await stockStartInput.fill('2026-01-05')
+    await page.getByRole('button', { name: '开始训练', exact: true }).click()
+    await expect.poll(() => createBodies.length).toBe(3)
+    expect(createBodies[2].start_date).toBe('2026-01-05')
+    expect(createBodies[2].window_months).toBe(12)
+
+    // 自定义范围档（旧起止日期口径保留）：档位起始日退场，起止日对进场，payload 换 start_date/end_date
     await page.getByRole('button', { name: '自定义范围', exact: true }).click()
     const dates = page.locator('input[type="date"]')
     await expect(dates).toHaveCount(2)
     await dates.nth(0).fill('2026-06-24')
     await dates.nth(1).fill('2026-09-24')
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
-    await expect.poll(() => createBodies.length).toBe(3)
-    expect(createBodies[2].dimension).toBe('random_stock')
-    expect(createBodies[2].start_date).toBe('2026-06-24')
-    expect(createBodies[2].end_date).toBe('2026-09-24')
-    expect(createBodies[2].window_months).toBeUndefined()
-    expect(createBodies[2].window_bars).toBeUndefined()
+    await expect.poll(() => createBodies.length).toBe(4)
+    expect(createBodies[3].dimension).toBe('random_stock')
+    expect(createBodies[3].start_date).toBe('2026-06-24')
+    expect(createBodies[3].end_date).toBe('2026-09-24')
+    expect(createBodies[3].window_months).toBeUndefined()
+    expect(createBodies[3].window_bars).toBeUndefined()
   })
 
   test('random panel: dimension-driven control visibility and payload for random_time', async ({ page }) => {
@@ -283,26 +295,37 @@ test.describe('random mode (M7-02)', () => {
   })
 
   // RF2-01 真实创建：random_stock 档位网格与经典同文案（五档＋自定义范围，无自定义根数档），
-  // 默认 3个月真实创建成功（窗口＝最近 3 个自然月，股票由服务器随机并隐藏）
+  // 默认 3个月真实创建成功（窗口＝最近 3 个自然月，股票由服务器随机并隐藏）；
+  // RF3-01 档位下起始日输入在场（照搬经典），改起始日后真实创建＝起始日起 3 自然月窗口
   test('random stock period grid: tier options mirror classic and real creation with 3M succeeds', async ({ page }) => {
+    const liquid = (await searchRealStocks(page, '600519'))[0]
+    expect(liquid?.lastDate, '真实目录应给出 600519 的 lastDate').toBeTruthy()
+
     await openLauncher(page)
     await switchToRandomMode(page)
 
-    // 默认维度＝随机股票：档位网格与经典训练周期同文案（五档＋自定义范围）；根数输入与起止日退场
+    // 默认维度＝随机股票：档位网格与经典训练周期同文案（五档＋自定义范围）；根数输入退场
     for (const label of ['1个月', '3个月', '6个月', '1年', '2年', '自定义范围']) {
       await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible()
     }
     await expect(page.getByRole('button', { name: '自定义根数', exact: true })).toHaveCount(0)
     await expect(page.getByRole('button', { name: '3个月', exact: true })).toHaveClass(/selected/)
     await expect(page.getByLabel('训练窗口长度（交易日）')).toHaveCount(0)
-    await expect(page.locator('input[type="date"]')).toHaveCount(0)
+    // RF3-01 起始日输入在场（单输入，非自定义范围起止对），默认＝锚点回退 3 自然月
+    const stockStart = page.locator('input[type="date"]')
+    await expect(stockStart).toHaveCount(1)
+    await expect(stockStart).toHaveValue('2026-06-24')
 
+    // 改起始日（真实数据窗内、距数据末日约 6.5 自然月 → 3 自然月窗完整落在数据内）后创建
+    const userStart = minusDays(liquid.lastDate as string, 200)
+    await stockStart.fill(userStart)
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
     await waitTrainingInteractive(page)
 
     const active = await (await page.request.get('/api/trainings/active')).json() as {
       training: {
         tier: string
+        startDate: string
         random: { dimension: string; hideStock: boolean; hideTime: boolean }
         range: { mode: string; barCount: number }
       }
@@ -311,7 +334,10 @@ test.describe('random mode (M7-02)', () => {
     // 录制契约冻结：随机训练 tier 恒 RANGE 哨兵（档位口径进 range.notes）
     expect(active.training.tier).toBe('RANGE')
     expect(active.training.range.mode).toBe('random')
-    // 最近 3 个自然月 ≈ 40–70 个交易日（真实数据容差口径，同 random_time 档位）
+    // 服务端把起始日对齐到前方最近交易日（≤ 用户输入，且不在数据边缘）
+    expect(new Date(active.training.startDate).getTime()).toBeLessThanOrEqual(Date.parse(`${userStart}T00:00:00Z`))
+    expect(new Date(active.training.startDate).getTime()).toBeGreaterThanOrEqual(Date.parse(`${userStart}T00:00:00Z`) - 10 * 86_400_000)
+    // 用户起始日起 3 个自然月 ≈ 40–70 个交易日（真实数据容差口径，同 random_time 档位）
     expect(active.training.range.barCount).toBeGreaterThanOrEqual(40)
     expect(active.training.range.barCount).toBeLessThanOrEqual(70)
   })
