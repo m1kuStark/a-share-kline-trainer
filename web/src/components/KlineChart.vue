@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { init, dispose, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
+import { init, dispose, utils, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
 import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
@@ -57,7 +57,11 @@ const props = withDefaults(defineProps<{
   drawingPriceBasis?: DrawingPriceBasis | null
   /** 交易标记笔记的本轮训练隔离键 */
   trainingId?: number
-}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false })
+  /** RF2-02 随机时间遮蔽：true＝隐藏日期呈现（X 轴刻度空文本；十字线/悬浮卡日期星号遮蔽），训练页随眼睛按钮联动 */
+  hideDates?: boolean
+  /** RF2-02 揭示态常量差换算：真实日期＝呈现时间戳＋N 天（0＝原样呈现；与 SessionReplay 的 realDateOf 同法） */
+  dateShiftDays?: number
+}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0 })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
 const host = ref<HTMLElement | null>(null)
@@ -152,15 +156,54 @@ function cancelHoverTimer(): void {
   hoverPendingIndex = null
   hoverPendingAnchor = null
 }
+// ===== RF2-02 随机时间遮蔽的日期呈现层（训练页随眼睛按钮联动；回放侧不接线＝原样呈现） =====
+// hidden：X 轴刻度文本为空串（轴保留、日期隐藏），十字线/画线端点轴标签与悬浮卡日期用星号
+// 遮蔽符（与 RF-05 星号遮蔽同语言）；shiftDays≠0：时间戳/日期串按会话常量差换算成真实日期
+// 再呈现（先例＝SessionReplay.realDateOf 的「偏移起始日↔真实起始日」常量差）。经 klinecharts
+// setFormatter 注入（Chart 侧 setFormatter 走 _setOptions 全量 layout，含 X 轴刻度重建）。
+const MS_PER_DAY = 86_400_000
+const MASKED_DATE_TEXT = '******'
+const datePresentation = { hidden: false, shiftDays: 0 }
+function presentableTimestamp(timestamp: number): number {
+  return datePresentation.shiftDays === 0 ? timestamp : timestamp + datePresentation.shiftDays * MS_PER_DAY
+}
+/** 呈现层日期字符串换算：支持完整日期与月键（周/月观察周期的 bar.date 形态）；未知形态原样 */
+function presentableDateString(date: string): string {
+  if (datePresentation.hidden) return MASKED_DATE_TEXT
+  if (datePresentation.shiftDays === 0) return date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 10)
+  if (/^\d{4}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}-01T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 7)
+  return date
+}
+function applyDateFormatter(): void {
+  // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径
+  chart?.setFormatter({
+    formatDate: ({ dateTimeFormat, timestamp, template, type }) => {
+      if (datePresentation.hidden) return type === 'xAxis' ? '' : MASKED_DATE_TEXT
+      return utils.formatDate(dateTimeFormat, presentableTimestamp(timestamp), template)
+    },
+  })
+}
+watch(() => [props.hideDates, props.dateShiftDays] as const, ([hidden, shiftDays]) => {
+  if (datePresentation.hidden === hidden && datePresentation.shiftDays === shiftDays) return
+  datePresentation.hidden = hidden
+  datePresentation.shiftDays = shiftDays
+  // 重设同一闭包即可：Chart 侧 setFormatter 触发全量重绘（X 轴刻度重建、canvas 重画）
+  applyDateFormatter()
+})
 function hideHoverCard(): void { cancelHoverTimer(); hoverCard.value = null }
 // 卡数据源＝chart.getDataList()（训练与只读回放同一路径：回放按回放数据序列计算），
 // 计算不受只读门控（只读回放十字线照常可用，卡与十字线同一可用性）。
+// RF2-02：日期行先过呈现层（遮蔽期星号、揭示期常量差换算）再进卡，与轴同口径联动。
 function buildHoverModel(dataIndex: number): HoverCardModel | null {
   if (!chart) return null
   const list = chart.getDataList() as Array<KLineData & { date?: string }>
   const bar = list[dataIndex]
   if (!bar) return null
-  return formatHoverCard(bar, dataIndex > 0 ? list[dataIndex - 1]?.close ?? null : null)
+  return formatHoverCard(
+    { ...bar, date: typeof bar.date === 'string' ? presentableDateString(bar.date) : bar.date },
+    dataIndex > 0 ? list[dataIndex - 1]?.close ?? null : null,
+  )
 }
 // 位置＝十字线交点（吸附 K 线中心的竖线 × 指针横线）右下方（TDX 参照）；右侧空间不足
 // 翻左侧；整体钳制在主图绘图区内（不遮价格轴/时间轴），并与指针热点区垂直分离。
@@ -1443,6 +1486,10 @@ function resetLibraryClick(): void {
 function completePointerAction(): void { queueMicrotask(() => { updateAnchorDots(); recordDrawings() }) }
 onMounted(() => {
   configurePhasePriceRange()
+  // RF2-02：初始 props 即为遮蔽/换算态时（如直接恢复运行中的随机会话）也要在挂载期生效
+  datePresentation.hidden = props.hideDates ?? false
+  datePresentation.shiftDays = props.dateShiftDays ?? 0
+  applyDateFormatter()
   window.addEventListener('pointerup', completePointerAction)
   window.addEventListener('pointercancel', onPaneResizeCancel)
   chart?.subscribeAction('onVisibleRangeChange', updateMarkerRail)
@@ -1463,6 +1510,13 @@ onMounted(() => {
     indicatorPanes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => paneName(pane.id)),
     // M6-03 信息卡 e2e 只读探针：卡可见性/内容/位置（测试专用，不影响生产行为）
     hoverCard: () => ({ visible: hoverCard.value !== null, date: hoverCard.value?.model.date ?? null, rows: hoverCard.value?.model.rows.map(row => `${row.label}:${row.value}`) ?? null, pctText: hoverCard.value?.model.pct.text ?? null, pctCls: hoverCard.value?.model.pct.cls ?? null, x: hoverCard.value?.x ?? null, y: hoverCard.value?.y ?? null }),
+    // RF2-02 时间轴 e2e 只读探针：当前 X 轴刻度文本（klinecharts 轴为 canvas 绘制，DOM 断言不可用；
+    // 遮蔽期刻度文本为空串、揭示/真实期为 YYYY-MM-DD）。测试专用，不影响生产行为。
+    xAxisLabels: () => {
+      const paneAxis = (chart as unknown as { getXAxisPane?: () => { getXAxisComponent?: () => { getTicks?: () => Array<{ text: string }> } } } | null)
+      const axis = paneAxis?.getXAxisPane?.().getXAxisComponent?.()
+      return axis?.getTicks?.().map(tick => tick.text) ?? []
+    },
     visibleRange: () => chart?.getVisibleRange(),
     costLine: () => {
       const overlay = chart?.getOverlays({ name: 'costLine' })[0]
