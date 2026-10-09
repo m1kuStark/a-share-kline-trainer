@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, Trash2, Upload } from 'lucide-vue-next'
+import { ArrowLeft, Download, Trash2, Upload } from 'lucide-vue-next'
 import { fetchTrainingSnapshot } from '../api'
+import { bulkImportRecordingFiles, exportRecordingBundleFile, isRecordingBundleFile } from '../recording/bundle'
+import { importRecording, listRecordingLibrary, loadLibraryRecording } from '../recording/recordingRepository'
+import type { CompactRecordingFile } from '../recording/compactTypes'
 import type { RecordingLibraryItem, RecordingSource } from '../recording/recordingRepository'
 
 const props = withDefaults(defineProps<{
@@ -29,8 +32,6 @@ async function loadBriefs(items: RecordingLibraryItem[]): Promise<void> {
     } catch { /* 已删除/不可达：不标注 */ }
   }))
 }
-onMounted(() => { void loadBriefs(props.items) })
-watch(() => props.items, items => { void loadBriefs(items) })
 
 const emit = defineEmits<{
   replay: [sessionId: string]
@@ -40,8 +41,68 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const localItems = computed(() => props.items.filter(item => item.source === 'local'))
-const importedItems = computed(() => props.items.filter(item => item.source === 'imported'))
+// REC-BULK-01：批量导出/导入。录像库列表数据由父页面持有（进入录像库时刷新），
+// 批量导入的新条目先以本地补充行呈现保证即时可见；父列表下次刷新后自然收编。
+const bulkBusy = ref(false)
+const bulkNotice = ref('')
+const bulkNoticeIsError = ref(false)
+const extraItems = ref<RecordingLibraryItem[]>([])
+const rowKey = (item: RecordingLibraryItem) => `${item.source}:${item.sessionId}`
+const displayItems = computed(() => {
+  const known = new Set(props.items.map(rowKey))
+  return [...props.items, ...extraItems.value.filter(item => !known.has(rowKey(item)))]
+})
+onMounted(() => { void loadBriefs(displayItems.value) })
+watch(displayItems, items => { void loadBriefs(items) })
+watch(() => props.items, () => { void pruneExtras() })
+async function pruneExtras(): Promise<void> {
+  if (!extraItems.value.length) return
+  try {
+    const alive = new Set((await withNamespaceRetry(listRecordingLibrary)).map(rowKey))
+    extraItems.value = extraItems.value.filter(item => alive.has(rowKey(item)))
+  } catch { /* 列表不可达时保留现有补充行 */ }
+}
+// 录像库壳层可能先于安装隔离初始化渲染（与 App 单条导入的 recordingNamespaceReady 守卫同语义）；
+// 对「尚未完成安装隔离初始化」做短重试，其余错误原样抛出。
+async function withNamespaceRetry<T>(action: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try { return await action() }
+    catch (error) {
+      if (attempt < 30 && error instanceof Error && error.message.includes('尚未完成安装隔离初始化')) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        continue
+      }
+      throw error
+    }
+  }
+}
+const localItems = computed(() => displayItems.value.filter(item => item.source === 'local'))
+const importedItems = computed(() => displayItems.value.filter(item => item.source === 'imported'))
+async function exportAll(): Promise<void> {
+  if (props.busy || bulkBusy.value || !displayItems.value.length) return
+  bulkBusy.value = true
+  bulkNotice.value = ''
+  bulkNoticeIsError.value = false
+  try {
+    const files: CompactRecordingFile[] = []
+    for (const item of await withNamespaceRetry(listRecordingLibrary)) {
+      const file = await loadLibraryRecording(item)
+      if (file) files.push(file)
+    }
+    if (!files.length) throw new Error('录像库为空，没有可导出的录像')
+    const blob = await exportRecordingBundleFile(files)
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `训练录像库-${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13).replace('T', '')}.trainer-recordings.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    bulkNotice.value = `已导出 ${files.length} 份录像为合并包文件`
+  } catch (error) {
+    bulkNotice.value = error instanceof Error ? error.message : '无法导出录像库'
+    bulkNoticeIsError.value = true
+  } finally { bulkBusy.value = false }
+}
 const confirming = ref<{ kind: 'item' | 'source'; id?: string; source?: RecordingSource; label: string } | null>(null)
 const isActive = (id: string) => props.activeSessionIds.includes(id)
 const askRemove = (item: RecordingLibraryItem) => {
@@ -59,11 +120,39 @@ const confirmRemoval = () => {
   if (action.kind === 'item' && action.id) emit('remove', action.id)
   if (action.kind === 'source' && action.source) emit('clear', action.source)
 }
-const onImport = (event: Event) => {
+const onImport = async (event: Event) => {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+  const files = Array.from(input.files ?? [])
   input.value = ''
-  if (file) emit('import', file)
+  if (!files.length) return
+  // 单条非合并包文件保持既有单条导入路径（校验/报错/导入后直接回放不变）
+  if (files.length === 1 && !await isRecordingBundleFile(files[0]!)) {
+    emit('import', files[0]!)
+    return
+  }
+  if (props.busy || bulkBusy.value) return
+  bulkBusy.value = true
+  bulkNoticeIsError.value = false
+  bulkNotice.value = `正在批量导入 ${files.length} 个文件…`
+  try {
+    const outcome = await bulkImportRecordingFiles(files, {
+      list: () => withNamespaceRetry(listRecordingLibrary),
+      import: (file, fileName) => withNamespaceRetry(() => importRecording(file, fileName)),
+    })
+    extraItems.value = [...extraItems.value, ...outcome.imported]
+    const parts = [`成功 ${outcome.imported.length}`]
+    if (outcome.skipped.length) parts.push(`跳过 ${outcome.skipped.length}`)
+    if (outcome.failed.length) parts.push(`失败 ${outcome.failed.length}`)
+    let notice = `批量导入完成：${parts.join(' / ')}`
+    if (outcome.failed.length) notice += `（${[...new Set(outcome.failed.map(failure => `${failure.label}：${failure.reason}`))].join('；')}）`
+    if (outcome.skipped.length) notice += '；重复录像已跳过，未覆盖库中既有条目'
+    if (outcome.imported.length) notice += '；新导入录像可返回训练后重新打开录像库回放'
+    bulkNotice.value = notice
+    bulkNoticeIsError.value = outcome.failed.length > 0
+  } catch (error) {
+    bulkNotice.value = error instanceof Error ? error.message : '无法批量导入录像'
+    bulkNoticeIsError.value = true
+  } finally { bulkBusy.value = false }
 }
 const formatDate = (value: string) => new Date(value).toLocaleString()
 </script>
@@ -80,9 +169,11 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 
     <div class="recording-library-actions">
       <label class="recording-import"><Upload :size="15" />导入分享的录像
-        <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" :disabled="busy" @change="onImport" />
+        <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" multiple :disabled="busy || bulkBusy" @change="onImport" />
       </label>
-      <span v-if="busy" role="status">正在处理录像…</span>
+      <button type="button" class="recording-import" :disabled="busy || bulkBusy || !displayItems.length" @click="exportAll"><Download :size="15" />全部导出</button>
+      <span v-if="busy || bulkBusy" role="status">正在处理录像…</span>
+      <p v-if="bulkNotice" :class="bulkNoticeIsError ? 'error-text' : ''" :role="bulkNoticeIsError ? 'alert' : 'status'">{{ bulkNotice }}</p>
       <p v-if="error" class="error-text" role="alert">{{ error }}</p>
     </div>
 
