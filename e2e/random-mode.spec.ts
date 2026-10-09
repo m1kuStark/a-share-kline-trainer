@@ -328,6 +328,8 @@ test.describe('random mode (M7-02)', () => {
 
     await openLauncher(page)
     await switchToRandomMode(page)
+    // RF2-01 起随机股票默认档位网格；本用例走旧起止日期口径，先切「自定义范围」档
+    await page.getByRole('button', { name: '自定义范围', exact: true }).click()
     const dates = page.locator('input[type="date"]')
     await dates.nth(0).fill(windowStart)
     await dates.nth(1).fill(windowEnd)
