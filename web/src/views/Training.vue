@@ -361,8 +361,9 @@ const tierLabel = computed(() => {
 // 被隐藏字段以 * 号遮蔽（密码输入式）＋小眼睛按钮；点击眼睛弹确认框（明示 spoiler 风险自担），
 // 确认后调 POST /reveal 取真实信息显示，再次点击恢复遮蔽。维度联动：random_stock 只遮股票、
 // 日期真实；random_time 只遮日期（以剩余未推进根数替代）＋股票真实；random_both 两者皆遮。
-// 隐藏边界＝呈现层：训练页头部/详情不显示日期；K 线轴日期（服务端偏移假日期）保留为训练可用性基础。
-// 结束态服务端不再下发 random 字段，遮蔽与眼睛按钮自然退场、真实信息顶上（结算/放弃即揭晓）。 =====
+// RF2-02（2026-10-09 用户验收修订）：隐藏时间会话的 K 线时间轴日期不再保留偏移假日期——
+// 遮蔽期轴/悬浮卡日期隐藏，眼睛揭示后按常量差换算真实日期同步显示；结束态（结算/放弃）
+// 服务端不下发 random 字段、bars 取回真实空间，遮蔽与眼睛自然退场、真实信息顶上。 =====
 const revealInfo = ref<RandomRevealTraining | null>(null)
 const revealDialogOpen = ref(false)
 const revealError = ref('')
@@ -402,6 +403,31 @@ async function refreshReveal(): Promise<void> {
     const payload = await revealRandomTraining(training.value.id)
     revealInfo.value = payload.training
   } catch { /* 已结束/失败时维持现有揭示视图，结束态本就揭晓 */ }
+}
+// RF2-02 时间轴遮蔽联动（RANDOM-HIDE-TIME-REMAINING 轴子句）：random_time/random_both 运行中
+// 遮蔽期 K 线轴/悬浮卡日期隐藏；眼睛确认揭示后按「reveal 真实起始日 ↔ 运行中偏移起始日」的
+// 会话常量差换算真实日期同步显示（先例＝SessionReplay.realDateOf）；再点眼睛恢复遮蔽。
+// 结束态（结算后 random 字段消失、load 已取回真实 bars）换算关闭、轴自然显示真实日期。
+const axisDateHidden = computed(() => maskedTime.value)
+const axisDateShiftDays = computed(() => {
+  if (revealInfo.value === null || training.value.status !== 'running') return 0
+  if (training.value.random?.hideTime !== true) return 0
+  const realStart = revealInfo.value.startDate
+  const maskedStart = training.value.startDate
+  if (!realStart || !maskedStart) return 0
+  return Math.round((Date.parse(`${realStart}T00:00:00Z`) - Date.parse(`${maskedStart}T00:00:00Z`)) / 86_400_000)
+})
+// RF2-02 同类遮蔽面：状态条「可见至/末根」视窗日期也来自（偏移空间的）bar 日期，遮蔽期若原样
+// 显示＝轴日期被隐藏后又一处错误日期呈现（用户口径「隐藏这些日期信息」）——与轴同口径过呈现层。
+const MASKED_DATE_TEXT = '******'
+function viewportDateText(date: string | null): string | null {
+  if (date === null) return null
+  if (axisDateHidden.value) return MASKED_DATE_TEXT
+  const shift = axisDateShiftDays.value
+  if (shift === 0) return date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 10)
+  if (/^\d{4}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}-01T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 7)
+  return date
 }
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
@@ -859,8 +885,8 @@ void load()
       <span v-else class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
       <span v-if="!miniFeedback" class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
       <span v-if="loading" class="loading-dot">处理中</span>
-      <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ chartViewport.visibleDate }}</span>
-      <span v-if="chartViewport.latestDate && chartViewport.latestDate !== chartViewport.visibleDate" class="viewport-date latest-date">{{ tf === '1D' ? '末根' : tf === '1W' ? '最新周K' : '最新月K' }} {{ chartViewport.latestDate }}</span>
+      <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ viewportDateText(chartViewport.visibleDate) }}</span>
+      <span v-if="chartViewport.latestDate && chartViewport.latestDate !== chartViewport.visibleDate" class="viewport-date latest-date">{{ tf === '1D' ? '末根' : tf === '1W' ? '最新周K' : '最新月K' }} {{ viewportDateText(chartViewport.latestDate) }}</span>
       <span class="view-count" title="当前同屏K线根数 / 同屏上限">{{ visibleCount }} / {{ MAX_VISIBLE_BARS }} 根</span>
     </section>
 
@@ -877,6 +903,7 @@ void load()
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"
           :magnet="magnet" :saved-drawings="initialDrawings" :training-id="training.id"
+          :hide-dates="axisDateHidden" :date-shift-days="axisDateShiftDays"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
@@ -1049,6 +1076,8 @@ void load()
       <div class="settle-panel">
         <h2>{{ settledView.training.earlySettle ? '提前结算' : '到期结算' }}</h2>
         <div class="settle-grid">
+          <!-- RF2-03：随机模式结束后及时披露真实标的（与训练区间、成绩并列；经典/盲训结束态本就揭晓） -->
+          <div><span>训练标的</span><strong :title="`${settledView.training.name ?? ''} · ${settledView.training.code ?? ''}`">{{ settledView.training.name ?? '--' }} · {{ settledView.training.code ?? '--' }}</strong></div>
           <div><span>结算日</span><strong>{{ settledView.training.settleDate }}</strong></div>
           <div><span>初始资金</span><strong>¥{{ settledView.training.initialCash.toLocaleString('zh-CN') }}</strong></div>
           <div><span>最终权益</span><strong>¥{{ settledView.account.equity.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) }}</strong></div>
