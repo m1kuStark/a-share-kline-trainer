@@ -511,6 +511,136 @@ describe('RF-04 random window by classic tier months (window_months)', () => {
   })
 })
 
+// RF2-01 随机股票维度复用经典训练周期（用户 2026-10-09 报告：随机股票/用户自选时间段
+// 也要档位复用）。契约：random_stock 接受 window_months（1/3/6/12/24）——窗口＝「最近
+// N 个自然月」，锚点＝数据可用末日（目录 lastDate 最大值，与经典面板 anchorDate＝
+// dataStatus.sourceMaxDate 同源：tdxSource 对全部 day 文件取 max）；起始日＝锚点回退
+// N 自然月、对齐前方最近交易日，窗末＝起始交易日＋N 自然月（经典 tier 服务端
+// plannedEnd 同式，恒 ≤ 锚点）；股票从「数据覆盖到锚点＋预热 200 根」池内随机。
+// window_months 与 start_date/end_date 互斥 400；window_bars 对 random_stock 仍 400。
+describe('RF2-01 random stock by classic tier months (window_months)', () => {
+  /** 契约本地实现：最近 N 自然月档位窗口（锚点＝数据末日 max lastDate）；期望值独立推算 */
+  function contractTierStockWindow(dates: string[], months: number, anchorEnd: string): { start: string; window: string[] } {
+    const startDateInput = addMonthsLocal(anchorEnd, -months)
+    const prefix = dates.filter(date => date <= startDateInput)
+    const start = prefix[prefix.length - 1]
+    const windowEnd = addMonthsLocal(start, months)
+    return { start, window: dates.filter(date => date >= start && date <= windowEnd) }
+  }
+
+  it('creates a random_stock tier training whose window is the most recent 3 natural months anchored at data end', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 3 },
+      })
+      expect(response.statusCode).toBe(201)
+      const training = response.json().training
+      expect(training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false, remainingBars: expect.any(Number) })
+      // 录制契约冻结：随机训练 tier 恒为 RANGE 哨兵
+      expect(training.tier).toBe('RANGE')
+      const row = singleTraining(database)
+      // 档位池＝数据覆盖到锚点（目录 lastDate 最大值）的股票：600001/000002（SHORT/MID 止于更早日期）
+      expect(['600001', '000002']).toContain(row.code)
+      // 窗口口径：锚点回退 3 自然月 → 对齐前方最近交易日 → 窗末＝起始日＋3 自然月（≤锚点）
+      const anchorEnd = LONG_DATES[LONG_DATES.length - 1]
+      const expected = contractTierStockWindow(LONG_DATES, 3, anchorEnd)
+      expect(row.start_date).toBe(expected.start)
+      expect(row.planned_end).toBe(expected.window[expected.window.length - 1])
+      expect(row.range_bar_count).toBe(expected.window.length)
+      expect(row.planned_end <= anchorEnd, '窗末不得超过数据可用末日').toBe(true)
+      expect(daysBetween(row.start_date, row.planned_end)).toBeGreaterThanOrEqual(80) // 完整 3 自然月跨度
+      expect(row.range_mode).toBe('random')
+      // random_stock 不隐藏时间：响应日期即真实日期
+      expect(training.startDate).toBe(row.start_date)
+      expect(training.plannedEnd).toBe(row.planned_end)
+      // notes 记录档位口径（最近 N 自然月，与经典同源）
+      expect(training.range.notes.join(' ')).toContain('3 个自然月')
+    })
+  })
+
+  it('picks the tier pool stock deterministically from the injectable rng', async () => {
+    await withFixture(async ({ database, config }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const { createRandomTraining } = await import('../src/train/random-mode.js')
+      // 档位池按目录代码排序为 [000002, 600001]（均止于锚点）：rng=0 取首位、rng=0.9 取末位
+      const first = await createRandomTraining(database, config, {
+        dimension: 'random_stock', window_months: 3, random: () => 0,
+      })
+      expect(first.code).toBeNull()
+      const firstRow = singleTraining(database)
+      expect(firstRow.code).toBe('000002')
+      const anchorEnd = LONG_DATES[LONG_DATES.length - 1]
+      const expected = contractTierStockWindow(LONG_DATES, 3, anchorEnd)
+      expect(firstRow.start_date).toBe(expected.start)
+      expect(firstRow.planned_end).toBe(expected.window[expected.window.length - 1])
+      await database.prepare('UPDATE trainings SET status = ?').run('settled')
+      const tail = await createRandomTraining(database, config, {
+        dimension: 'random_stock', window_months: 3, random: () => 0.9,
+      })
+      expect(tail.code).toBeNull()
+      const tailRow = trainingRows(database).at(-1) as TrainingDbRow
+      expect(tailRow.code).toBe('600001')
+      // 池内两只共用同一日期序列：窗口逐字段一致
+      expect(tailRow.start_date).toBe(firstRow.start_date)
+      expect(tailRow.planned_end).toBe(firstRow.planned_end)
+      expect(tailRow.range_bar_count).toBe(firstRow.range_bar_count)
+    })
+  })
+
+  it('settles a random_stock tier training into range rankings under its exact window key', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const created = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 1 },
+      })
+      expect(created.statusCode).toBe(201)
+      const row = singleTraining(database)
+      await app.inject({ method: 'POST', url: `/api/trainings/${row.id}/settle` })
+      const rankings = await app.inject({ method: 'GET', url: '/api/rankings?view=range' })
+      expect(rankings.statusCode).toBe(200)
+      const groups = rankings.json().rangeGroups as Array<{ key: string; complete: Array<{ id: number }>; earlySettled: Array<{ id: number }> }>
+      const group = groups.find(item => item.key === `RANGE:${row.start_date}:${row.planned_end}`)
+      expect(group, '随机股票档位训练应按其精确窗口键进入范围排行（口径同 random_time 档位）').toBeTruthy()
+      expect([...(group?.complete ?? []), ...(group?.earlySettled ?? [])].map(item => item.id)).toContain(row.id)
+    })
+  })
+
+  it('rejects with 422 RANDOM_STOCK_UNIVERSE_EMPTY when no stock fits the tier window warmup', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      // 唯一股票仅 120 根：锚点回退 1 自然月后预热 200 根即不足
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 1 },
+      })
+      expect(response.statusCode).toBe(422)
+      expect(response.json().code).toBe('RANDOM_STOCK_UNIVERSE_EMPTY')
+      expect(trainingCount(database)).toBe(0)
+    }, [{ market: 'sh', code: '600003', name: 'STOCK-CC', dates: SHORT_DATES }])
+  })
+
+  it('rejects tier misuse with 400 and zero side effects', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const cases: Array<Record<string, unknown>> = [
+        { dimension: 'random_stock', window_months: 3, start_date: '2025-06-02' }, // 档位与自定义范围二选一
+        { dimension: 'random_stock', window_months: 3, end_date: '2025-09-30' },
+        { dimension: 'random_stock', window_bars: 250 }, // 随机股票无根数口径
+        { dimension: 'random_stock', window_months: 5 }, // 非经典档位月数（共享校验）
+      ]
+      for (const payload of cases) {
+        const response = await app.inject({ method: 'POST', url: '/api/trainings/random', payload })
+        expect(response.statusCode, `payload ${JSON.stringify(payload)} should be 400`).toBe(400)
+        expect(response.json().error).toBeTruthy()
+        expect(trainingCount(database), `payload ${JSON.stringify(payload)} must not write`).toBe(0)
+      }
+    })
+  })
+})
+
 describe('random session hiding while running', () => {
   it('keeps every running random session response free of stock code and name substrings via deep walk', async () => {
     await withFixture(async ({ app, database }) => {
