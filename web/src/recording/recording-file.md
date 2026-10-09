@@ -44,3 +44,33 @@ IndexedDB 增量存储、CompactRecorder/useRecording 接线、页面导入导�
 ## 小块输入合并
 
 输入的小块立即复制到一个64KiB自有缓冲，填满或结束时以独立副本写入解压器，避免每字节一次异步写入。既不依赖上游保留原数组，也不假定原生解压器在write结束时已放弃对输入视图的引用。大块仍直接写入。取消、预算、损坏分类和文件格式不变，禁止先读取全部压缩数据再解压。回归覆盖边界残余、复用源内存、源错误及预算触发取消。
+
+## 录像合并包（REC-BULK-01：批量导出/导入的文件契约）
+
+版本迁移工具链与日常备份/恢复以本节为准。合并包是**单个明文 JSON 文件**（扩展名建议 `.trainer-recordings.json`，文件名 `训练录像库-<yyyyMMddHHmm>.trainer-recordings.json`），结构如下：
+
+```json
+{
+  "format": "trainer-recordings-bundle",
+  "version": 1,
+  "exportedAt": "2026-10-09T08:00:00.000Z",
+  "items": [ /* CompactRecordingFile, ... */ ]
+}
+```
+
+字段定义：
+
+- `format`：固定字符串 `trainer-recordings-bundle`，区分于单条录像文件的 `trainer-session`。
+- `version`：合并包结构版本，当前为 `1`；未来不兼容变更递增，读取端对未知版本显式拒绝。
+- `exportedAt`：导出时刻的 ISO 8601 字符串（`Date.prototype.toISOString`），必须可被 `Date.parse` 解析。
+- `items`：数组；每个元素是**现有单条导出 JSON 的载荷**（v2/v3 紧凑录制文件，即 `writeRecordingFile(compressed=false)` 的 JSON 对象）。导出侧先逐条 `validateCompactRecording`（导出自洽，不产出读不回的包）；旧录像（v1 明文/已迁移 v2）按现有导出路径的规范化形态进入包，不做新转换。
+
+实现：`web/src/recording/bundle.ts`（`buildRecordingBundle` / `parseRecordingBundle` / `exportRecordingBundleFile` / `isRecordingBundleFile` / `bulkImportRecordingFiles`）。
+
+### 批量导入语义（容错与去重口径）
+
+- 导入入口接受三类输入：合并包（单文件多录像）、既有单条录像文件（明文 JSON / gzip / v1，完全向后兼容，单条 gzip 一律按单条处理）、多选文件混合。**单条非合并包文件保持既有单条导入路径不变**（导入后直接回放的行为不回归）。
+- 逐条校验：损坏文件或包内损坏条目**计数为失败并继续**，不整批失败；结构错误的合并包（format/version/exportedAt/items 不合法）整文件计一次失败。
+- 去重：候选条目与库中既有条目（或同批已导入条目）`trainingKey` 相同、或 `sessionId`/`originalSessionId` 相同即**跳过并计数，不覆盖**（防止迁移/备份场景误覆盖）。`trainingKey` 为 null 的条目不参与去重，按新条目导入。
+- 结果报告：`成功 N / 跳过 M / 失败 K`，失败原因逐条列出。
+- 合并包不 gzip、不设独立字节预算（单条预算仍由 `readRecordingFile` 在单条路径上执行）；如未来需要压缩再按合同另立版本。

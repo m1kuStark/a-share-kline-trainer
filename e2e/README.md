@@ -13,6 +13,7 @@
 | [recording-long](recording-long.spec.ts) | v2 gzip、两年真实推进/交易/画线/周期/刷新、离线回放与体积/耗时 |
 | [recording-migration](recording-migration.spec.ts) | v1存储保留及迁移、损坏导入、旧JSON、复制标签页独立录制 |
 | [recording-orders](recording-orders.spec.ts) | 条件单挂单/撤单录制进录像、结算后回放业务列表可见（RF-02） |
+| [recording-bulk](recording-bulk.spec.ts) | 录像库全部导出为合并包、新环境批量导入恢复与回放、多选容错/去重（REC-BULK-01） |
 | [journey](journey.spec.ts) | 创建、交易、画线、手势、多选、周期、主题 |
 | [m3-tools](m3-tools.spec.ts) | 23工具、保存恢复、跨窗格、故障注入 |
 | [m3-feedback](m3-feedback.spec.ts) | 收藏拖拽、自定义隔离、保存栏布局 |
