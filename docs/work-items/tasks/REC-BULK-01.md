@@ -8,7 +8,7 @@
   "next_action": "待集成侧合码与用户验收；App.vue 不在本卡 allowed_paths，批量导入后父页面列表刷新与直接回放需要集成侧补一条约 3 行的通道（详见待拍板项）。",
   "allowed_paths": ["web/src/recording/**", "web/src/components/RecordingLibrary.vue", "server/test/recording-*.test.ts", "e2e/recording-bulk.spec.ts", "e2e/README.md", "docs/work-items/tasks/REC-BULK-01.md", "docs/verification/2026-10/REC-BULK-01/**", "docs/status.md"],
   "depends_on": [],
-  "docs_impact": { "update": ["web/src/recording/recording-file.md（新增「录像合并包」契约节）", "e2e/README.md（recording-bulk 行）"], "reason": "合并包格式是版本迁移工具链的对外契约，按任务要求写入格式文档。" },
+  "docs_impact": { "update": ["web/src/recording/recording-file.md", "e2e/README.md"], "reason": "合并包格式是版本迁移工具链的对外契约，按任务要求写入格式文档。" },
   "verification_refs": ["docs/verification/2026-10/REC-BULK-01/README.md"], "integration_ref": null, "acceptance_ref": null
 }
 ```

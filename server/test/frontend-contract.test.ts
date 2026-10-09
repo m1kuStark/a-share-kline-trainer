@@ -19,8 +19,9 @@ describe('M2 chart interaction contract', () => {
     const library = await readFile(new URL('../../web/src/components/RecordingLibrary.vue', import.meta.url), 'utf8')
     expect(library).toMatch(/data-recording-source="local"/)
     expect(library).toMatch(/data-recording-source="imported"/)
-    expect(library).toMatch(/props\.items\.filter\(item => item\.source === 'local'\)/)
-    expect(library).toMatch(/props\.items\.filter\(item => item\.source === 'imported'\)/)
+    // REC-BULK-01 起列表数据源为 displayItems（props.items + 批量导入补充行），分列过滤语义不变
+    expect(library).toMatch(/displayItems\.value\.filter\(item => item\.source === 'local'\)/)
+    expect(library).toMatch(/displayItems\.value\.filter\(item => item\.source === 'imported'\)/)
   })
   it('keeps exact stock matches in the clickable suggestion list and exposes search progress', async () => {
     const source = await readFile(launcherPath, 'utf8')
