@@ -1,0 +1,17 @@
+
+> a-share-kline-trainer@1.2.7 journey
+> tsx scripts/runtime.ts journey e2e/random-mode.spec.ts --retries=0 -g random panel: dimension-driven control visibility and payload for random_stock|random stock period grid
+
+Run manifest: D:\tmp\rf3\.runs\run-f57a5a95-cd72-4c16-97c1-cd65cb8f89c2\manifest.json
+Isolated server: http://127.0.0.1:5148
+Evidence retained: D:\tmp\rf3\.runs\run-f57a5a95-cd72-4c16-97c1-cd65cb8f89c2\artifacts
+Command exited with 1; see D:\tmp\rf3\.runs\run-f57a5a95-cd72-4c16-97c1-cd65cb8f89c2\artifacts\journey.log
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 1
+    Received: 0
+    .runs\run-f57a5a95-cd72-4c16-97c1-cd65cb8f89c2\artifacts\test-results\random-mode-random-mode-M7-c2642-nd-payload-for-random-stock\test-failed-1.png
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 1
+    Received: 0
+    .runs\run-f57a5a95-cd72-4c16-97c1-cd65cb8f89c2\artifacts\test-results\random-mode-random-mode-M7-9154b-l-creation-with-3M-succeeds\test-failed-1.png
+  2 failed

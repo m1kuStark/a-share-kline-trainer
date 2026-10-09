@@ -626,7 +626,8 @@ describe('RF2-01 random stock by classic tier months (window_months)', () => {
     await withFixture(async ({ app, database }) => {
       vi.setSystemTime(FIXED_NOW)
       const cases: Array<Record<string, unknown>> = [
-        { dimension: 'random_stock', window_months: 3, start_date: '2025-06-02' }, // 档位与自定义范围二选一
+        // RF3-01 修订：window_months+start_date（用户起始日）组合已合法，原 400 用例移至
+        // RF3-01 describe 断言 201（行为变更双向留痕见该处）
         { dimension: 'random_stock', window_months: 3, end_date: '2025-09-30' },
         { dimension: 'random_stock', window_bars: 250 }, // 随机股票无根数口径
         { dimension: 'random_stock', window_months: 5 }, // 非经典档位月数（共享校验）
@@ -637,6 +638,95 @@ describe('RF2-01 random stock by classic tier months (window_months)', () => {
         expect(response.json().error).toBeTruthy()
         expect(trainingCount(database), `payload ${JSON.stringify(payload)} must not write`).toBe(0)
       }
+    })
+  })
+})
+
+// RF3-01 随机股票档位＋起始日期（用户 2026-10-09 报告：random_stock 时间控件完全照搬经典——
+// 档位网格＋起始日输入，与经典 preset start 同控件同行为；窗口＝用户起始日起 N 个自然月）。
+// 契约：random_stock 接受 window_months + start_date（唯一合法组合维度）；start_date 对齐
+// 前方最近交易日起窗，窗末＝起始交易日＋N 自然月；未提供 start_date 时维持 RF2-01 数据
+// 末日锚点默认行为（向后兼容）；end_date+window_months 仍 400；random_time/random_both
+// 带 start_date 仍 400（时间窗由服务器随机，口径已正确不动）。
+describe('RF3-01 random stock tier with user start date (window_months + start_date)', () => {
+  /** 契约本地实现：用户起始日档位窗口；期望值独立推算，不 import 服务端实现 */
+  function contractUserStartWindow(dates: string[], months: number, startInput: string): { start: string; windowEnd: string; window: string[] } {
+    const prefix = dates.filter(date => date <= startInput)
+    const start = prefix[prefix.length - 1]
+    const windowEnd = addMonthsLocal(start, months)
+    return { start, windowEnd, window: dates.filter(date => date >= start && date <= windowEnd) }
+  }
+
+  it('creates a random_stock tier training whose window spans 3 natural months from the user start date', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 3, start_date: '2025-03-03' },
+      })
+      expect(response.statusCode).toBe(201)
+      const training = response.json().training
+      expect(training.random).toEqual({ dimension: 'random_stock', hideStock: true, hideTime: false, remainingBars: expect.any(Number) })
+      expect(training.tier).toBe('RANGE')
+      const row = singleTraining(database)
+      // 池＝数据覆盖到窗末（用户起始日＋3 自然月上界）的股票：600001/000002
+      expect(['600001', '000002']).toContain(row.code)
+      // 窗口口径：起始日对齐前方最近交易日 → 窗末＝起始交易日＋3 自然月
+      const expected = contractUserStartWindow(LONG_DATES, 3, '2025-03-03')
+      expect(row.start_date).toBe(expected.start)
+      expect(row.planned_end).toBe(expected.window[expected.window.length - 1])
+      expect(row.range_bar_count).toBe(expected.window.length)
+      expect(daysBetween(row.start_date, row.planned_end)).toBeGreaterThanOrEqual(80) // 完整 3 自然月跨度
+      expect(row.range_mode).toBe('random')
+      // random_stock 不隐藏时间：响应日期即真实日期
+      expect(training.startDate).toBe(row.start_date)
+      expect(training.plannedEnd).toBe(row.planned_end)
+      // notes 记录档位口径（用户起始日起 N 个自然月）
+      expect(training.range.notes.join(' ')).toContain('3 个自然月')
+      expect(training.range.notes.join(' ')).toContain('2025-03-03')
+    })
+  })
+
+  it('keeps the RF2-01 data-end anchor default when start_date is absent', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const response = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 3 },
+      })
+      expect(response.statusCode).toBe(201)
+      const row = singleTraining(database)
+      // 默认行为向后兼容：锚点＝数据末日回退 3 自然月（RF2-01 口径原样）
+      const anchorEnd = LONG_DATES[LONG_DATES.length - 1]
+      const prefix = LONG_DATES.filter(date => date <= addMonthsLocal(anchorEnd, -3))
+      expect(row.start_date).toBe(prefix[prefix.length - 1])
+    })
+  })
+
+  it('rejects start_date misuse with 400 and a start date no stock covers with 422, zero side effects', async () => {
+    await withFixture(async ({ app, database }) => {
+      vi.setSystemTime(FIXED_NOW)
+      const cases: Array<Record<string, unknown>> = [
+        { dimension: 'random_stock', window_months: 3, start_date: '2025/03/03' }, // 非法日期格式
+        { dimension: 'random_stock', window_months: 3, start_date: '2025-03-03', end_date: '2025-06-03' }, // end_date 仍互斥
+        { dimension: 'random_stock', window_months: 3, start_date: null },
+        { dimension: 'random_time', code: '600001', window_months: 3, start_date: '2025-03-03' }, // 随机时间不吃用户起始日
+        { dimension: 'random_both', window_months: 3, start_date: '2025-03-03' },
+      ]
+      for (const payload of cases) {
+        const response = await app.inject({ method: 'POST', url: '/api/trainings/random', payload })
+        expect(response.statusCode, `payload ${JSON.stringify(payload)} should be 400`).toBe(400)
+        expect(response.json().error).toBeTruthy()
+        expect(trainingCount(database), `payload ${JSON.stringify(payload)} must not write`).toBe(0)
+      }
+      // 起始日晚于全部数据：池空 422（窗口上界超过数据末日，无股票覆盖）
+      const emptyPool = await app.inject({
+        method: 'POST', url: '/api/trainings/random',
+        payload: { dimension: 'random_stock', window_months: 3, start_date: '2030-01-01' },
+      })
+      expect(emptyPool.statusCode).toBe(422)
+      expect(emptyPool.json().code).toBe('RANDOM_STOCK_UNIVERSE_EMPTY')
+      expect(trainingCount(database)).toBe(0)
     })
   })
 })

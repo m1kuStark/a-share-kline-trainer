@@ -1,0 +1,7 @@
+
+> a-share-kline-trainer@1.2.7 journey
+> tsx scripts/runtime.ts journey e2e/training-range.spec.ts --retries=0
+
+Run manifest: D:\tmp\rf3\.runs\run-ca6867f9-a43c-4f3f-97a1-d15c9434ed2b\manifest.json
+Isolated server: http://127.0.0.1:14803
+Evidence retained: D:\tmp\rf3\.runs\run-ca6867f9-a43c-4f3f-97a1-d15c9434ed2b\artifacts

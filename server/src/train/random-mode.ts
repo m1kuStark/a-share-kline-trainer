@@ -30,6 +30,11 @@
 // 窗末＝起始交易日＋N 自然月（经典 plannedEnd 同式，恒 ≤ 锚点）；start_date/end_date
 // 旧口径保留为「自定义范围」档，与 window_months 互斥 400；window_bars 对 random_stock
 // 仍 400（随机股票无根数口径）。排行口径与 random_time 档位一致（range 键按精确起止）。
+//
+// RF3-01（2026-10-09 用户报告）：random_stock 档位支持 window_months + start_date
+// （用户起始日，与经典 preset start 同控件同行为）——起始日对齐前方最近交易日起窗、
+// 窗末＝起始交易日＋N 自然月；无 start_date 时维持数据末日锚点默认（向后兼容）；
+// end_date+window_months 仍 400；random_time/random_both 带 start_date 仍 400（口径已正确）。
 
 import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
@@ -389,14 +394,32 @@ export async function createRandomTraining(
     // 最大值，与经典面板 anchorDate＝dataStatus.sourceMaxDate 同源——tdxSource 对全部
     // day 文件取 max）；起始日＝锚点回退 N 自然月、对齐前方最近交易日，窗末＝起始交易日
     // ＋N 自然月（经典 tier 服务端 plannedEnd 同式，恒 ≤ 锚点，杜绝截断残窗）。
+    // RF3-01（2026-10-09 用户报告）：random_stock 档位可携带 start_date（用户起始日，
+    // 与经典 preset start 同控件同行为）——起始日对齐前方最近交易日起窗、窗末＝起始交易
+    // 日＋N 自然月；未提供 start_date 时维持数据末日锚点默认行为（向后兼容）。
+    // end_date 与 window_months 仍互斥（档位窗口末缘由起始日＋N 自然月决定）。
     let tierMonths: number | null = null
     let startDateInput: string
     let endDate: string
+    let userStartDate: string | null = null
     if (windowMonths !== null) {
-      if (input?.start_date !== undefined || input?.end_date !== undefined) {
-        throw new HttpError(400, 'random_stock 的 window_months 与 start_date / end_date 只能提供其一（档位月跨度或自定义范围二选一）')
+      if (input?.end_date !== undefined) {
+        throw new HttpError(400, 'random_stock 的 window_months 与 end_date 不能同时提供（档位窗口末缘由起始日＋N 自然月决定；自定义起止请走 start_date/end_date 口径）')
       }
       tierMonths = windowMonths
+      if (input?.start_date !== undefined) {
+        if (typeof input.start_date !== 'string' || !isDayDate(input.start_date)) {
+          throw new HttpError(400, 'start_date 必须是有效的 YYYY-MM-DD 日期')
+        }
+        userStartDate = input.start_date
+      }
+    }
+    if (tierMonths !== null && userStartDate !== null) {
+      // 用户起始日：候选池按「数据覆盖到起始日＋N 自然月上界」预筛（startBar ≤ 起始日
+      // ⇒ 各股实际窗末 ≤ 该上界，覆盖上界即覆盖自身窗末）
+      startDateInput = userStartDate
+      endDate = addMonths(userStartDate, tierMonths)
+    } else if (tierMonths !== null) {
       const anchorEnd = stocks.reduce<string | null>((max, stock) =>
         typeof stock.lastDate === 'string' && (!max || stock.lastDate > max) ? stock.lastDate : max, null)
       if (anchorEnd === null) {
@@ -435,7 +458,9 @@ export async function createRandomTraining(
         fingerprint: await fingerprintOf(database, config, candidate.market, candidate.code, all.filter(bar => bar.date <= cutoff)),
         notes: tierMonths !== null
           ? [
-              `随机股票模式（档位口径）：股票由服务器从满足窗口约束的池中随机选取，窗口为最近 ${tierMonths} 个自然月（锚点＝数据末日，与经典训练周期同口径）`,
+              userStartDate !== null
+                ? `随机股票模式（档位口径）：股票由服务器从满足窗口约束的池中随机选取，窗口为起始日起 ${tierMonths} 个自然月（起始日 ${userStartDate}，用户指定，与经典训练周期同口径）`
+                : `随机股票模式（档位口径）：股票由服务器从满足窗口约束的池中随机选取，窗口为最近 ${tierMonths} 个自然月（锚点＝数据末日，与经典训练周期同口径）`,
               `请求窗口 ${startDateInput} 至 ${endDate}`,
             ]
           : [
@@ -447,7 +472,7 @@ export async function createRandomTraining(
     }
     if (!picked) {
       throw universeEmpty(tierMonths !== null
-        ? `本地数据中没有满足最近 ${tierMonths} 个自然月窗口需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请换更短档位或补充本地数据`
+        ? `本地数据中没有满足${userStartDate !== null ? `起始日 ${userStartDate} 起 ${tierMonths} 个自然月窗口` : `最近 ${tierMonths} 个自然月窗口`}需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请换更短档位或补充本地数据`
         : `请求时间段 ${startDateInput} 至 ${endDate} 内没有满足窗口需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请调整起止日期或补充本地数据`)
     }
   } else {
