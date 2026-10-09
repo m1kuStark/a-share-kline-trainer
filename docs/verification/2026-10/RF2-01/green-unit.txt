@@ -1,0 +1,12 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mD:/tmp/rfa[39m
+
+ [32m✓[39m server/test/random-training-mode.test.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 7986[2mms[22m[39m
+     [33m[2m✓[22m[39m creates a random_stock training from a valid date window and hides code and name while running [33m 383[2mms[22m[39m
+     [33m[2m✓[22m[39m derives every random decision from the injectable rng deterministically [33m 539[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m   Start at [22m 00:43:05
+[2m   Duration [22m 8.67s[2m (transform 323ms, setup 0ms, import 541ms, tests 7.99s, environment 0ms)[22m
+

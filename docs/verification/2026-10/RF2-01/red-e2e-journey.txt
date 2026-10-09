@@ -1,0 +1,8 @@
+
+> a-share-kline-trainer@1.2.7 journey
+> tsx scripts/runtime.ts journey e2e/random-mode.spec.ts --retries=0
+
+Run manifest: D:\tmp\rfa\.runs\run-331e5f63-233a-427b-bebd-1e4e75ef3cc9\manifest.json
+Isolated server: http://127.0.0.1:4053
+Evidence retained: D:\tmp\rfa\.runs\run-331e5f63-233a-427b-bebd-1e4e75ef3cc9\artifacts
+Command exited with 1; see D:\tmp\rfa\.runs\run-331e5f63-233a-427b-bebd-1e4e75ef3cc9\artifacts\journey.log

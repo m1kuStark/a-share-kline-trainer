@@ -23,6 +23,13 @@
 // POST /api/trainings/:id/reveal——确认弹窗后的用户主动动作，仅该端点返回真实
 // code/name/日期区间，其余端点遮蔽不因揭示失效；结束态端点本就揭晓故 409 拒绝。
 // 偏移机制保留（K 线轴标签可用性基础），隐藏边界＝呈现层（训练页头部不显示日期）。
+//
+// RF2-01（2026-10-09 用户报告补全）：random_stock 维度同样复用经典训练周期——
+// 新增 window_months 档位载荷（值域同 TIER_MONTHS），窗口＝「最近 N 个自然月」，
+// 锚点＝数据可用末日（目录 lastDate 最大值，与经典面板 anchorDate=sourceMaxDate 同源），
+// 窗末＝起始交易日＋N 自然月（经典 plannedEnd 同式，恒 ≤ 锚点）；start_date/end_date
+// 旧口径保留为「自定义范围」档，与 window_months 互斥 400；window_bars 对 random_stock
+// 仍 400（随机股票无根数口径）。排行口径与 random_time 档位一致（range 键按精确起止）。
 
 import type { FastifyInstance } from 'fastify'
 import type { DatabaseSync } from 'node:sqlite'
@@ -376,16 +383,36 @@ export async function createRandomTraining(
 
   if (dimension === 'random_stock') {
     if (input?.code !== undefined) throw new HttpError(400, 'random_stock 不接受 code（股票由服务器随机选取）')
-    if (windowBars !== null) throw new HttpError(400, 'random_stock 不接受 window_bars（时间段由用户指定）')
-    if (windowMonths !== null) throw new HttpError(400, 'random_stock 不接受 window_months（时间段由用户指定）')
-    if (typeof input?.start_date !== 'string' || !isDayDate(input.start_date) || typeof input?.end_date !== 'string' || !isDayDate(input.end_date)) {
-      throw new HttpError(400, 'start_date 与 end_date 必须是有效的 YYYY-MM-DD 日期')
-    }
-    const startDateInput = input.start_date
-    const endDate = input.end_date
-    if (startDateInput > endDate) throw new HttpError(400, 'start_date 不得晚于 end_date')
+    if (windowBars !== null) throw new HttpError(400, 'random_stock 不接受 window_bars（随机股票无根数口径，训练周期按档位月跨度或自定义起止日期）')
     const stocks = await reader.readCatalog()
-    // 目录预筛：数据覆盖到窗末；再逐股核验预热与窗口可推进（拒绝采样）
+    // RF2-01 档位口径：window_months＝最近 N 个自然月，锚点＝数据可用末日（目录 lastDate
+    // 最大值，与经典面板 anchorDate＝dataStatus.sourceMaxDate 同源——tdxSource 对全部
+    // day 文件取 max）；起始日＝锚点回退 N 自然月、对齐前方最近交易日，窗末＝起始交易日
+    // ＋N 自然月（经典 tier 服务端 plannedEnd 同式，恒 ≤ 锚点，杜绝截断残窗）。
+    let tierMonths: number | null = null
+    let startDateInput: string
+    let endDate: string
+    if (windowMonths !== null) {
+      if (input?.start_date !== undefined || input?.end_date !== undefined) {
+        throw new HttpError(400, 'random_stock 的 window_months 与 start_date / end_date 只能提供其一（档位月跨度或自定义范围二选一）')
+      }
+      tierMonths = windowMonths
+      const anchorEnd = stocks.reduce<string | null>((max, stock) =>
+        typeof stock.lastDate === 'string' && (!max || stock.lastDate > max) ? stock.lastDate : max, null)
+      if (anchorEnd === null) {
+        throw universeEmpty(`本地目录没有可用日线（无法确定数据末日锚点），请先补充本地数据`)
+      }
+      startDateInput = addMonths(anchorEnd, -tierMonths)
+      endDate = anchorEnd
+    } else {
+      if (typeof input?.start_date !== 'string' || !isDayDate(input.start_date) || typeof input?.end_date !== 'string' || !isDayDate(input.end_date)) {
+        throw new HttpError(400, 'start_date 与 end_date 必须是有效的 YYYY-MM-DD 日期')
+      }
+      startDateInput = input.start_date
+      endDate = input.end_date
+      if (startDateInput > endDate) throw new HttpError(400, 'start_date 不得晚于 end_date')
+    }
+    // 目录预筛：数据覆盖到窗末（档位口径窗末＝数据可用末日）；再逐股核验预热与窗口可推进（拒绝采样）
     const candidates = stocks.filter(stock => typeof stock.lastDate === 'string' && stock.lastDate >= endDate)
     const remaining = [...candidates]
     while (remaining.length > 0) {
@@ -395,8 +422,9 @@ export async function createRandomTraining(
       const prefix = all.filter(bar => bar.date <= startDateInput)
       if (prefix.length < MA_WARMUP_BARS + 1) continue
       const startBar = prefix[prefix.length - 1]
-      if (startBar.date >= endDate) continue
-      const window = all.filter(bar => bar.date >= startBar.date && bar.date <= endDate)
+      const windowEnd = tierMonths !== null ? addMonths(startBar.date, tierMonths) : endDate
+      if (startBar.date >= windowEnd) continue
+      const window = all.filter(bar => bar.date >= startBar.date && bar.date <= windowEnd)
       if (window.length < 2) continue
       const cutoff = shanghaiCompleteDataDate(now)
       picked = {
@@ -405,15 +433,22 @@ export async function createRandomTraining(
         name: candidate.name,
         window,
         fingerprint: await fingerprintOf(database, config, candidate.market, candidate.code, all.filter(bar => bar.date <= cutoff)),
-        notes: [
-          '随机股票模式：股票由服务器从满足窗口约束的池中随机选取',
-          `请求窗口 ${startDateInput} 至 ${endDate}`,
-        ],
+        notes: tierMonths !== null
+          ? [
+              `随机股票模式（档位口径）：股票由服务器从满足窗口约束的池中随机选取，窗口为最近 ${tierMonths} 个自然月（锚点＝数据末日，与经典训练周期同口径）`,
+              `请求窗口 ${startDateInput} 至 ${endDate}`,
+            ]
+          : [
+              '随机股票模式：股票由服务器从满足窗口约束的池中随机选取',
+              `请求窗口 ${startDateInput} 至 ${endDate}`,
+            ],
       }
       break
     }
     if (!picked) {
-      throw universeEmpty(`请求时间段 ${startDateInput} 至 ${endDate} 内没有满足窗口需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请调整起止日期或补充本地数据`)
+      throw universeEmpty(tierMonths !== null
+        ? `本地数据中没有满足最近 ${tierMonths} 个自然月窗口需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请换更短档位或补充本地数据`
+        : `请求时间段 ${startDateInput} 至 ${endDate} 内没有满足窗口需求（含 ${MA_WARMUP_BARS} 根指标预热且数据覆盖窗末）的股票，请调整起止日期或补充本地数据`)
     }
   } else {
     // random_time / random_both：服务器选 window_bars 根窗口（闭包内使用需 const 收窄）

@@ -443,9 +443,10 @@ export function createTraining(input: { tier?: Tier; code: string; start_date?: 
   })
 }
 
-/** 随机训练创建（M7-01 契约 §2.1；RF-04 增 window_months）：random_stock 需 start_date/end_date；
- * random_time 需 code；random_time/random_both 的时间窗二选一——window_months（经典档位月数
- * 1/3/6/12/24，窗口＝N 个自然月跨度、起点随机）或 window_bars（自定义根数，缺省 250）；
+/** 随机训练创建（M7-01 契约 §2.1；RF-04/RF2-01 增 window_months）：random_stock 时间窗二选一——
+ * window_months（经典档位月数 1/3/6/12/24，窗口＝最近 N 个自然月、锚点＝本地数据末日）或
+ * start_date/end_date（自定义范围，旧口径）；random_time 需 code；random_time/random_both 的
+ * 时间窗二选一——window_months（N 个自然月跨度、起点随机）或 window_bars（自定义根数，缺省 250）；
  * code/start_date/end_date 与维度矛盾、window_months 与 window_bars 同给时 400。
  * 422 错误码：RANDOM_WINDOW_NOT_FIT（无可行窗口起点）/ RANDOM_STOCK_UNIVERSE_EMPTY（随机池为空）。 */
 export interface RandomTrainingRequest {
@@ -454,7 +455,7 @@ export interface RandomTrainingRequest {
   end_date?: string
   code?: string
   window_bars?: number
-  /** RF-04 档位口径月数（1/3/6/12/24），与经典训练周期同长度口径；与 window_bars 互斥 */
+  /** RF-04/RF2-01 档位口径月数（1/3/6/12/24），与经典训练周期同长度口径；与 window_bars 互斥 */
   window_months?: number
   initial_cash?: number
   adjust_mode?: 'forward' | 'raw'
