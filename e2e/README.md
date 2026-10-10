@@ -14,6 +14,7 @@
 | [recording-migration](recording-migration.spec.ts) | v1存储保留及迁移、损坏导入、旧JSON、复制标签页独立录制 |
 | [recording-orders](recording-orders.spec.ts) | 条件单挂单/撤单录制进录像、结算后回放业务列表可见（RF-02） |
 | [recording-bulk](recording-bulk.spec.ts) | 录像库全部导出为合并包、新环境批量导入恢复与回放、多选容错/去重（REC-BULK-01） |
+| [migration-v127](migration-v127.spec.ts) | v1.2.7→v1.3.0 迁移真实链路：真实老包（`MIG_V127_PACKAGE` 环境变量注入，无包 skip）隔离起服→旧格式播种→导出工具同源页导出→新版录像库导入回放（MIG-01） |
 | [journey](journey.spec.ts) | 创建、交易、画线、手势、多选、周期、主题 |
 | [m3-tools](m3-tools.spec.ts) | 23工具、保存恢复、跨窗格、故障注入 |
 | [m3-feedback](m3-feedback.spec.ts) | 收藏拖拽、自定义隔离、保存栏布局 |

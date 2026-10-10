@@ -74,3 +74,14 @@ IndexedDB 增量存储、CompactRecorder/useRecording 接线、页面导入导�
 - 去重：候选条目与库中既有条目（或同批已导入条目）`trainingKey` 相同、或 `sessionId`/`originalSessionId` 相同即**跳过并计数，不覆盖**（防止迁移/备份场景误覆盖）。`trainingKey` 为 null 的条目不参与去重，按新条目导入。
 - 结果报告：`成功 N / 跳过 M / 失败 K`，失败原因逐条列出。
 - 合并包不 gzip、不设独立字节预算（单条预算仍由 `readRecordingFile` 在单条路径上执行）；如未来需要压缩再按合同另立版本。
+
+### 迁移工具载荷适配（MIG-01：v1.2.7 → v1.3.0 过渡导出）
+
+`tools/migrate-v127`（老侧同源一次性导出页＋控制台兜底脚本）产出的也是本节合并包，但条目来源是 v1.2.7 的 IndexedDB 三套 store，载荷规范化口径如下（对齐 v1.2.7 自身 `exportFile` 的载荷形态，即 `writeRecordingFile(compressed=false)` 的 JSON 对象）：
+
+- **compactSessions/compactRecords（v2/v3 权威形态）**：按 header+记录行重组为单条 `CompactRecordingFile`（重组规则与 `compactStorage.assemble` 一致：行下标连续、行数与 header.counts 精确一致），重组后逐条 `validateCompactRecording`；
+- **legacy sessions（v1 原始行）**：同 id 已有 compact 时跳过（v1.2.7 `list()` 同语义）；否则走 `validateRecording(maxCheckpoints=20000)` → `compactRecording` → `validateCompactRecording`（与 v1.2.7 `loadLocalRecording` 同链，但**只在内存转换、绝不回写老库**）；
+- **imports 库（`<录像库名>.imports`）**：v2 `recordings` store 原样载荷；更老的 v1 `imports` store 取 `entry.recording`；
+- **失败不静默丢弃**：转换/校验失败的条目**原样入包并在清单标记**——导入端按上节逐条容错语义将其计为失败并给出原因；compact 行结构损坏（无法组出单条载荷）的会话在导出侧如实列入失败清单，不进包。
+- 版本兼容依据：main 的 `DRAWING_PANES`/`RANGE_MODES` 是 v1.2.7 的超集（+KDJ 窗格、+random 区间模式），`compactValidation` 两版逐字节一致，因此 v1.2.7 合法录像必然通过新版导入校验。
+- 导入归属：迁移包经「导入录制」入口进入新版后落在**导入分享库**（`imported` 来源），不写入本机录像库；重复导入按 trainingKey/originalSessionId 去重跳过。
