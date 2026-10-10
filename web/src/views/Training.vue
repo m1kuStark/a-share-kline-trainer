@@ -3,6 +3,9 @@ import { computed, nextTick, onUnmounted, ref, shallowRef, watch, type Ref } fro
 import { theme } from '../theme'
 import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
+import { writeRecordingFile } from '../recording/recordingFile'
+import { archiveRecordingFile } from '../recording/archive'
+import { buildArchiveFileName, describeRecordingForArchive } from '../recording/archiveNaming'
 import KlineChart from '../components/KlineChart.vue'
 import {
   abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, revealRandomTraining, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
@@ -582,6 +585,36 @@ function requestEnd(action: 'settle' | 'abandon'): void {
   endError.value = ''
   endAction.value = action
 }
+/**
+ * DATA-ARCH-01：训练结束且保留录像时自动归档到数据目录 recordings/。
+ * 命名＝<股票名>-<训练模式>-<训练周期>-<起始日>-收益段.trainer-session.json.gz（真实标的与
+ * 终态取自结算/放弃响应快照；随机维度取自录像内运行中元信息——结束态不再下发）。
+ * Electron 经桌面 IPC 写文件；纯浏览器环境降级为控制台提示。任何失败只提示不抛出，
+ * 绝不阻塞结算/退出流程（录像本体仍在 IndexedDB，可手动导出）。
+ */
+async function archiveFinishedRecording(): Promise<void> {
+  const file = recording.retainedRecording()
+  if (!file) return
+  try {
+    const training = snapshot.value.training
+    const settled = training.status === 'settled'
+    const returnPct = settled && training.initialCash > 0
+      ? (snapshot.value.account.equity - training.initialCash) / training.initialCash * 100
+      : null
+    const fileName = buildArchiveFileName(describeRecordingForArchive(file, { training, settled, returnPct }))
+    const blob = await writeRecordingFile(file, true)
+    const result = await archiveRecordingFile(fileName, new Uint8Array(await blob.arrayBuffer()))
+    if (result.ok) {
+      message.value = `录像已自动归档：${result.path}`
+      console.info(`[录像归档] ${result.path}`)
+    } else if (!result.degraded) {
+      message.value = `录像未归档：${result.error}（录像已保留，可从结算面板导出）`
+    }
+  } catch (error) {
+    console.warn('[录像归档] 归档失败，不影响已保存的录像：', error)
+    message.value = `录像归档失败：${error instanceof Error ? error.message : String(error)}（录像已保留，可从结算面板导出）`
+  }
+}
 async function confirmEnd(): Promise<void> {
   if (!endAction.value || finishingSession.value) return
   finishingSession.value = true
@@ -595,6 +628,7 @@ async function confirmEnd(): Promise<void> {
     }
     if (training.value.status === 'running') throw new Error(errorMessage.value || '训练尚未结束，请重试')
     await recording.finishSession(keepRecording.value)
+    if (keepRecording.value) await archiveFinishedRecording()
     endAction.value = null
     if (action === 'abandon') emit('ended')
   } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
@@ -606,8 +640,25 @@ async function backToLauncher(): Promise<void> {
   endError.value = ''
   try {
     if (!await flushDrawings()) throw new Error(drawingSaveError.value || '请先重试保存画线')
+    // 已定案的会话（查看历史/已结束训练的复用视图）不再重复归档；只有本场真实结束才归档
+    const shouldArchive = keepRecording.value && !recording.finalized.value
     await recording.finishSession(keepRecording.value)
+    if (shouldArchive) await archiveFinishedRecording()
     emit('ended')
+  } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
+  finally { finishingSession.value = false }
+}
+/** 结算面板「查看历史成绩单」出口：先按同口径定案本场录制并归档，再进入历史视图 */
+async function finishSessionAndOpenHistory(): Promise<void> {
+  if (finishingSession.value) return
+  finishingSession.value = true
+  endError.value = ''
+  try {
+    if (!await flushDrawings()) throw new Error(drawingSaveError.value || '请先重试保存画线')
+    const shouldArchive = keepRecording.value && !recording.finalized.value
+    await recording.finishSession(keepRecording.value)
+    if (shouldArchive) await archiveFinishedRecording()
+    emit('open-history')
   } catch (error) { endError.value = error instanceof Error ? error.message : String(error) }
   finally { finishingSession.value = false }
 }
@@ -1094,7 +1145,7 @@ void load()
         <p v-if="endError" class="error-text" role="alert">{{ endError }}</p>
         <div class="settle-actions">
           <button class="trade-action buy" :disabled="finishingSession" @click="backToLauncher">完成，返回首页</button>
-          <button class="ghost-button" :disabled="finishingSession" @click="emit('open-history')">查看历史成绩单</button>
+          <button class="ghost-button" :disabled="finishingSession" @click="finishSessionAndOpenHistory">查看历史成绩单</button>
           <button class="ghost-button" :disabled="finishingSession" @click="retrain">重新训练</button>
           <button class="ghost-button" :disabled="loading || !recording.ready.value || (recording.finalized.value && !recording.hasRetainedFile.value)" @click="recording.exportFile">导出本场录制</button>
           <button class="ghost-button" @click="settledView = null">留在当前界面</button>

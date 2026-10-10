@@ -296,8 +296,16 @@ export function useRecording(options: {
     if (sessionEnded) { releaseLease?.(); releaseLease = null; return }
     await flush(); releaseLease?.(); releaseLease = null
   }
+  /**
+   * DATA-ARCH-01：结束后保留的本场录制文件（finishSession(keep=true) 或查看已结束训练时
+   * 复用的既有保留件）；未保留/进行中为 null。只读快照引用，供训练页结束钩子做自动归档，
+   * 不改变录制器状态。
+   */
+  function retainedRecording(): CompactRecordingFile | null {
+    return retainedFile
+  }
   const onHide = () => { void release() }
   window.addEventListener('pagehide', onHide)
   onUnmounted(() => { disposed = true; window.removeEventListener('pagehide', onHide); void release() })
-  return { status, ready, enabled, error, notice, label, finalized, hasRetainedFile, businessEventCount, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, finishSession, refreshContext, retry, fail }
+  return { status, ready, enabled, error, notice, label, finalized, hasRetainedFile, businessEventCount, capture, initialize, begin, finish, rejected, operation, toggle, exportFile, flush, finishSession, refreshContext, retry, fail, retainedRecording }
 }

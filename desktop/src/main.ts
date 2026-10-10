@@ -16,7 +16,7 @@
 // desktop/scripts/smoke-desktop.mjs 验证。
 import { app, BrowserWindow, dialog, ipcMain, screen, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -78,6 +78,7 @@ import {
 } from './desktop-updates.js'
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
 import { registerUpdateIpc } from './update-ipc.js'
+import { registerArchiveIpc } from './archive-recording.js'
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
 const WINDOW_TITLE = 'K线训练器'
@@ -102,6 +103,8 @@ let windowStatePath: string | null = null
 let serverIdentity: { runId: string; pid: number; dataDir: string } | null = null
 // PACK-04：更新通道（packaged→electron-updater；dev/源码→既有 UPD HTTP 端点由渲染端回落）
 const updateChannelKind = resolveUpdateChannel({ isPackaged: app.isPackaged })
+// DATA-ARCH-01：录像归档目录的数据目录来源（bootServerAndOpen 解析后生效；dev 窗口保持 null）
+let archiveDataDir: string | null = null
 /** 排空完成后待安装的新版（downloaded 事件置位；仅 exit 分支非 forced 路径消费） */
 let installPendingUpdate = false
 /** 更新事件下发：窗口已销毁/未建时丢弃并日志（下载可在窗口生命周期外进行） */
@@ -374,6 +377,23 @@ async function setupUpdateChannel(): Promise<void> {
   })
 }
 
+// ===== DATA-ARCH-01 录像归档 IPC（唯一新增 IPC 段；不触碰更新绑定段） =====
+// 渲染端经 preload 的 desktopRecordings.archiveRecording 提交语义化文件名＋gzip 载荷，
+// 主进程原子写入 <dataDir>/recordings/（决策与原子写法在 archive-recording.ts）。
+// 真实 fs 注入；recordingsDir 惰性取值（bootServerAndOpen 设置 archiveDataDir 后才可用，
+// dev 窗口/启动早期为 null → 结构化未就绪错误，渲染端降级提示）。
+registerArchiveIpc({
+  ipcMain,
+  recordingsDir: () => (archiveDataDir ? join(archiveDataDir, 'recordings') : null),
+  fs: {
+    mkdir: async path => { await mkdir(path, { recursive: true }) },
+    writeFile: async (path, data, options) => { await writeFile(path, data, options) },
+    rename: async (oldPath, newPath) => { await rename(oldPath, newPath) },
+    access: async path => { await access(path) },
+  },
+  logger: console,
+})
+
 // ===== 启动 =====
 
 async function bootServerAndOpen(): Promise<void> {
@@ -432,6 +452,8 @@ async function bootServerAndOpen(): Promise<void> {
     tdxSource: tdxFromEnv ? 'env' : tdxFromLegacy ? 'explicit-config' : savedTdxRoot ? 'saved-choice' : undefined,
   })
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
+  // DATA-ARCH-01：归档目录跟生效数据目录（复用/reuse 分支同样生效——config 在分支前已解析）
+  archiveDataDir = config.dataDir
 
   // ---- 端口决策（PORT-01/PORT-02 桌面版）：应答注入优先于 GUI 询问 ----
   const injectedAnswer = parseConflictAnswerEnv(process.env)

@@ -282,6 +282,11 @@ export async function registerApi(
   registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
   // V1.2.6：训练数据目录设置（写回启动器配置 dataDir，重启生效；独立运行 409）
   registerDataDirSettingsRoutes(app, config)
+  // DATA-ARCH-01：录像归档目录只读信息（<dataDir>/recordings；写入走桌面 IPC 不经 HTTP）。
+  // 供前端/设置页提示与校验；查询本身不创建目录。
+  app.get('/api/settings/recordings-dir', async () => ({
+    recordingsDir: join(dirname(config.databasePath), 'recordings'),
+  }))
   // M7-01 随机训练模式：创建端点＋preHandler（请求侧去偏移）/onSend（响应侧遮蔽）钩子
   registerRandomTrainingSupport(app, database, config)
   let stockCache: Awaited<ReturnType<typeof refreshStockCatalog>>['stocks'] | null = null
