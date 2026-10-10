@@ -204,11 +204,15 @@ describe('PACK-04 主进程粘合源码契约（main.ts / preload.cts）', () =>
     expect(source).toMatch(/quit-and-install[\s\S]{0,200}quitAndInstall/)
   })
 
-  it('UPD-DESKTOP-IPC-MINIMAL: preload exposes a single desktopUpdates object via contextBridge and nothing else', async () => {
+  it('UPD-DESKTOP-IPC-MINIMAL: preload exposes exactly the allow-listed contextBridge objects (desktopUpdates + DATA-ARCH-01 desktopRecordings) and nothing else', async () => {
     const source = await readPreloadSource()
     expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopUpdates'/)
-    // 只暴露一次（无第二个 exposeInMainWorld 面）
-    expect(source.match(/exposeInMainWorld/g)?.length).toBe(1)
+    // DATA-ARCH-01（2026-10-11 契约修订）：新增第二个窄对象 desktopRecordings（单一方法
+    // archiveRecording，录像归档写入）。窄面精神不变——桥面为枚举式白名单，出现任何
+    // 白名单外的 exposeInMainWorld 即违约；desktopUpdates 仍只暴露一次、四成员不变。
+    expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopRecordings'/)
+    const exposed = [...source.matchAll(/exposeInMainWorld\(\s*'([^']+)'/g)].map(match => match[1])
+    expect(exposed.sort()).toEqual(['desktopRecordings', 'desktopUpdates'])
     // 四成员窄接口
     for (const member of ['channel', 'checkForUpdates', 'downloadAndInstall', 'onUpdateEvent']) {
       expect(source).toContain(member)
