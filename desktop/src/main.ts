@@ -75,10 +75,12 @@ import {
   resolveUpdateChannel,
   resolveUpdateFeed,
   type DesktopUpdateEvent,
+  type DesktopUpdaterAdapter,
 } from './desktop-updates.js'
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
 import { registerUpdateIpc } from './update-ipc.js'
 import { registerArchiveIpc } from './archive-recording.js'
+import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution } from './portable-updater.js'
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
 const WINDOW_TITLE = 'K线训练器'
@@ -107,6 +109,8 @@ const updateChannelKind = resolveUpdateChannel({ isPackaged: app.isPackaged })
 let archiveDataDir: string | null = null
 /** 排空完成后待安装的新版（downloaded 事件置位；仅 exit 分支非 forced 路径消费） */
 let installPendingUpdate = false
+/** PORT-UPD-01：便携自更新 staging 所在数据目录（IPC 注册先于启动；bootServerAndOpen 解析后回填） */
+let portableUpdateDataDir: string | null = null
 /** 更新事件下发：窗口已销毁/未建时丢弃并日志（下载可在窗口生命周期外进行） */
 function sendUpdateEvent(event: DesktopUpdateEvent): void {
   const win = mainWindow
@@ -350,9 +354,24 @@ async function clearOwnTrainerState(): Promise<void> {
 let updateAdapterRef: { quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void } | null = null
 
 async function setupUpdateChannel(): Promise<void> {
-  const updater = await defaultDesktopUpdater()
-  const adapter = adaptElectronUpdater(updater)
-  adapter.setFeedURL(resolveUpdateFeed(process.env))
+  const feed = resolveUpdateFeed(process.env)
+  let adapter: DesktopUpdaterAdapter
+  if (updateChannelKind === 'packaged' && isPortableExecution(process.env)) {
+    // PORT-UPD-01：便携 exe（electron-updater 不支持 portable target 自更新）→ 自研替换式更新器；
+    // 适配器实现同一 DesktopUpdaterAdapter 面，controller/IPC/渲染端零改动。
+    adapter = createPortableUpdaterAdapter({
+      exePath: process.execPath,
+      getDataDir: () => portableUpdateDataDir,
+      getCurrentVersion: () => app.getVersion(),
+      quitApp: () => app.exit(0),
+      feed,
+    })
+    console.log(`[desktop] portable self-update channel active (exe: ${process.execPath})`)
+  } else {
+    const updater = await defaultDesktopUpdater()
+    adapter = adaptElectronUpdater(updater)
+    adapter.setFeedURL(feed)
+  }
   updateAdapterRef = adapter
   const controller = createDesktopUpdateController({
     adapter,
@@ -454,6 +473,10 @@ async function bootServerAndOpen(): Promise<void> {
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
   // DATA-ARCH-01：归档目录跟生效数据目录（复用/reuse 分支同样生效——config 在分支前已解析）
   archiveDataDir = config.dataDir
+  // PORT-UPD-01：数据目录就绪——回填便携自更新 staging 根＋清理上次更新残留
+  // （<dataDir>/update-staging 与 exe 旁 .old；非便携 no-op；失败不阻断启动）
+  portableUpdateDataDir = config.dataDir
+  await cleanupPortableUpdateLeftovers({ env: process.env, dataDir: config.dataDir, exePath: process.execPath })
 
   // ---- 端口决策（PORT-01/PORT-02 桌面版）：应答注入优先于 GUI 询问 ----
   const injectedAnswer = parseConflictAnswerEnv(process.env)
