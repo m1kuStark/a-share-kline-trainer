@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>训练录像迁移导出（v1.2.7 → v1.3.0）</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.65 "Microsoft YaHei", system-ui, sans-serif; background: #14161a; color: #d7dce3; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #8b93a1; margin: 0 0 20px; }
+  section { background: #1c1f26; border: 1px solid #2a2e38; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: #aeb7c4; }
+  dl { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; margin: 0; }
+  dt { color: #8b93a1; }
+  dd { margin: 0; word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #2a2e38; vertical-align: top; }
+  th { color: #8b93a1; font-weight: 600; white-space: nowrap; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+  .tag.local-compact { background: #16351f; color: #7ed491; }
+  .tag.local-legacy { background: #16351f; color: #7ed491; }
+  .tag.local-legacy-raw { background: #4a2b16; color: #f0b06a; }
+  .tag.imported { background: #1d2c4a; color: #8ab4f0; }
+  .tag.imported-raw { background: #4a2b16; color: #f0b06a; }
+  .note { color: #f0b06a; }
+  .fail { color: #e47777; }
+  button { font: inherit; border-radius: 7px; border: 1px solid #2a5b3f; padding: 8px 16px; cursor: pointer; background: #2a5b3f; color: #e8f5ec; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.secondary { background: #272c36; border-color: #3a4050; color: #cfd6e0; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .status { margin-top: 12px; padding: 10px 12px; border-radius: 7px; background: #101216; white-space: pre-wrap; word-break: break-all; }
+  .status.ok { border: 1px solid #2a5b3f; }
+  .status.err { border: 1px solid #6e3030; color: #e47777; }
+  .hint { color: #8b93a1; font-size: 13px; }
+  ul.hint { margin: 6px 0 0; padding-left: 20px; }
+  .radio { display: flex; flex-direction: column; gap: 6px; }
+  .radio label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>训练录像迁移导出</h1>
+  <p class="sub">把这台浏览器里保存的 v1.2.7 训练录像打包成一个文件，之后在 v1.3.0 的「训练录像」页导入。本页面只读取录像，不会修改或删除任何旧数据。</p>
+
+  <section id="detect">
+    <h2>一、检测结果</h2>
+    <dl id="detect-info"></dl>
+    <div id="detect-choice" style="display:none; margin-top:10px;">
+      <p style="margin:0 0 6px;">未从 v1.2.7 训练库读到录像库名（通常是数据目录未找到训练库文件）。当前浏览器地址下发现：</p>
+      <div class="radio" id="db-radios"></div>
+    </div>
+    <div id="detect-none" style="display:none;">
+      <p class="fail" style="margin:0 0 6px;">没有找到训练录像库（IndexedDB 为空）。</p>
+      <p class="hint" style="margin:0;">常见原因与对策：</p>
+      <ul class="hint">
+        <li>本页面不是平时使用 v1.2.7 的那个浏览器——请用当时的默认浏览器重新双击「导出训练录像.cmd」。</li>
+        <li>端口与旧训练器实际使用的不一致——重新打开一次旧训练器、正常退出后再运行本工具（工具会读取其记录的实际端口）。</li>
+        <li>仍不行时，改用工具文件夹里的「迁移兜底-浏览器控制台脚本.txt」：旧训练器正在运行时，在其页面按 F12 粘贴执行。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="list" style="display:none;">
+    <h2>二、录像清单</h2>
+    <table>
+      <thead><tr><th>来源</th><th>会话</th><th>训练关联</th><th>事件数</th><th>状态</th></tr></thead>
+      <tbody id="list-body"></tbody>
+    </table>
+    <p id="list-failures" class="fail" style="display:none;"></p>
+    <div class="actions">
+      <button id="export-btn" type="button">导出录像合并包</button>
+      <button id="sqlite-btn" type="button" class="secondary">打包 SQLite 训练库（可选）</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0;">「打包 SQLite 训练库」会把旧训练库文件（trainer.sqlite 及其 -wal/-shm）复制到旧版本文件夹下的「迁移导出-时间戳」文件夹。默认升级方式（把 v1.3.0 解压到旧文件夹）不需要这一步，新程序会自动沿用旧训练库；仅当你把 v1.3.0 解压到别处、或想留一份备份时使用。</p>
+    <div id="status" class="status" style="display:none;"></div>
+  </section>
+
+  <section id="done" style="display:none;">
+    <h2>三、下一步</h2>
+    <ol class="hint" style="margin:0; padding-left:20px; color:#d7dce3;">
+      <li>打开 v1.3.0 新版本，进入「训练录像」页。</li>
+      <li>点「导入录制」，选择刚下载的合并包文件（训练录像库-….trainer-recordings.json）。</li>
+      <li>提示「批量导入完成：成功 N」即迁移成功；录像可正常回放。</li>
+    </ol>
+    <div class="actions"><button id="shutdown-btn" type="button" class="secondary">完成并关闭工具</button></div>
+  </section>
+</div>
+<script>window.__V127_INFO__ = /*__V127_INFO__*/null;</script>
+<!--V127_PAGE_SCRIPT-->
+</body>
+</html>
