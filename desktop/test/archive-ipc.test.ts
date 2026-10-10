@@ -55,7 +55,7 @@ async function setup() {
 }
 
 describe('archive IPC 写入', () => {
-  it('ARCH-IPC-WRITE-ATOMIC：创建 recordings 目录并原子写入 gzip 字节，返回完整路径', async () => {
+  it('ARCH-IPC-WRITE-ATOMIC: 创建 recordings 目录并原子写入 gzip 字节，返回完整路径', async () => {
     const { root, dataDir, invoke } = await setup()
     try {
       const result = await invoke({ method: 'archive', fileName: NAME, bytes: GZ }) as { ok: boolean; path?: string }
@@ -68,7 +68,7 @@ describe('archive IPC 写入', () => {
     } finally { await rm(root, { recursive: true, force: true }) }
   })
 
-  it('ARCH-IPC-CONFLICT-SUFFIX：同名冲突依次 -2/-3，既有文件字节不被覆盖', async () => {
+  it('ARCH-IPC-CONFLICT-SUFFIX: 同名冲突依次 -2/-3，既有文件字节不被覆盖', async () => {
     const { root, dataDir, invoke } = await setup()
     try {
       const original = new Uint8Array([1, 2, 3])
@@ -84,7 +84,7 @@ describe('archive IPC 写入', () => {
     } finally { await rm(root, { recursive: true, force: true }) }
   })
 
-  it('ARCH-IPC-NAME-SANDBOX：拒绝路径穿越/分隔符/绝对路径/非字符串/超长文件名', async () => {
+  it('ARCH-IPC-NAME-SANDBOX: 拒绝路径穿越/分隔符/绝对路径/非字符串/超长文件名', async () => {
     const { root, invoke } = await setup()
     try {
       for (const fileName of ['../evil.gz', 'a/b.gz', 'a\\b.gz', 'C:\\x\\y.gz', '', 42, null, `${'x'.repeat(200)}.trainer-session.json.gz`]) {
@@ -105,7 +105,7 @@ describe('archive IPC 写入', () => {
     } finally { await rm(root, { recursive: true, force: true }) }
   })
 
-  it('ARCH-IPC-NOT-READY：数据目录未知（dev 窗口/未就绪）时返回可读错误，不抛异常', async () => {
+  it('ARCH-IPC-NOT-READY: 数据目录未知（dev 窗口/未就绪）时返回可读错误，不抛异常', async () => {
     const ipc = captureIpc()
     registerArchiveIpc({
       ipcMain: { handle: (channel, listener) => ipc.handlers.set(channel, listener) },
