@@ -2,9 +2,9 @@
 
 ```json
 {
-  "id": "RF", "title": "用户验收反馈修复与随机模式改造", "state": "active",
+  "id": "RF", "title": "用户验收反馈修复与随机模式改造", "state": "closed",
   "summary": "2026-10-08 用户验收 MA-01 与随机模式后提出四类问题：RF-01 权息 float32 浮点股数导致无法卖出（bug，已修复待复验）、RF-03 回放不能切周月线与异常提示（bug）、RF-02 条件单操作未录制进录像（功能缺口）、RF-04 随机时间复用经典周期选择、RF-05 随机信息隐藏改造（* 遮蔽+小眼睛+按维度隐藏+结束披露+回放去隐藏+随机 tag）。",
-  "next_action": "RF-01 已完成待用户复验；RF-03 修复中；RF-02/RF-04/RF-05 排队。",
+  "next_action": "全部任务用户验收通过（2026-10-11），见 docs/verification/2026-10/RF-user-acceptance/README.md。",
   "task_ids": ["RF-01", "RF-02", "RF-03", "RF-04", "RF-05"],
   "verification_refs": ["docs/verification/2026-10/RF-01/README.md"],
   "acceptance_ref": null
