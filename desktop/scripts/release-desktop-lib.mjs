@@ -11,7 +11,10 @@ const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/
 const CHECKSUMS_ASSET_NAME = 'SHA256SUMS-desktop.txt'
 
-/** 产物命名契约（派发简报设计决策 1；版本必须三段号，违约即 throw 不猜） */
+/** 产物命名契约（派发简报设计决策 1＋INSTALL-01；版本必须三段号，违约即 throw 不猜）。
+ *  portableExe：INSTALL-01 后 v1.3.0 不再产出便携 exe，命名保留两个消费方——发布脚本对
+ *  输出目录同名残留的 fail-closed 反向门（stale 检查）与存量便携 exe（≤v1.2.7）运行时
+ *  便携更新器的精确条目名（desktop/src/portable-updater.ts portableArtifactName）。 */
 export function desktopArtifactNames(version) {
   if (typeof version !== 'string' || !VERSION_PATTERN.test(version)) {
     throw new Error(`版本号必须是三段号（X.Y.Z），收到：${JSON.stringify(version)}`)
@@ -156,12 +159,14 @@ export async function verifyLatestYml({ text, expectedVersion, expectedFileName,
 }
 
 /**
- * 产物清单完整性＋校验和条目收集：必备项（portable exe＋setup exe＋latest.yml）缺任一即
- * throw（携带缺失名清单）；blockmap 存在才纳入。fs 注入（{ exists, readFile }）供测试替身。
+ * 产物清单完整性＋校验和条目收集：必备项（setup exe＋latest.yml；INSTALL-01 后便携 exe
+ * 不再是发布产物）缺任一即 throw（携带缺失名清单）；blockmap 存在才纳入。fs 注入
+ * （{ exists, readFile }）供测试替身；输出目录残留的便携产物不收集（发布脚本另有
+ * fail-closed 反向门拒跑）。
  */
 export async function collectChecksumEntries({ version, fs }) {
   const names = desktopArtifactNames(version)
-  const required = [names.portableExe, names.setupExe, names.latestYml]
+  const required = [names.setupExe, names.latestYml]
   const optional = [names.setupBlockmap]
   const missing = []
   for (const name of required) {

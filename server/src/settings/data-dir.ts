@@ -20,11 +20,19 @@ export interface DataDirSettingsView {
   effectiveDir: string
   /** 数据库文件名（数据目录下用于历史训练/排行/回放复盘的 SQLite 文件） */
   databaseFile: string
-  /** 启动器配置中显式保存的 dataDir（null＝未自定义，使用默认安装目录下 data） */
+  /** 启动器配置中显式保存的 dataDir（null＝未自定义，使用默认目录） */
   configuredDir: string | null
-  /** 默认数据目录（安装目录下 data；包内每个版本相互独立）；独立运行为 null */
-  defaultDir: string | null
-  /** 旧版本默认数据目录（用户主目录 ~/.a-share-kline-trainer）；仅供迁移提示 */
+  /**
+   * 默认数据目录。launcher/zip 形态＝安装目录（包根）下 data（V1.2.6 起冻结语义，随便携/
+   * zip 产物退役仅供存量形态）；独立/桌面（NSIS）形态＝唯一默认 %USERPROFILE%\.a-share-
+   * kline-trainer（INSTALL-01，2026-10-11 用户拍板：数据目录唯一默认主目录）。
+   */
+  defaultDir: string
+  /**
+   * 旧版本默认数据目录（迁移提示）。launcher/zip 形态＝用户主目录 ~/.a-share-kline-trainer
+   * （≤V1.2.5 旧库）；独立/桌面形态＝null——v1.2.7 旧数据（安装目录旁 data）的迁入唯一
+   * 入口＝迁移工具（migrate-v127），其位置本进程不可知，如实报 null 不猜。
+   */
   legacyDefaultDir: string | null
 }
 
@@ -74,8 +82,11 @@ async function writeLauncherConfig(configPath: string, config: Record<string, un
 
 export function registerDataDirSettingsRoutes(app: FastifyInstance, config: AppConfig): void {
   app.get('/api/settings/data-dir', async (): Promise<DataDirSettingsView> => {
-    // launcherConfigPath 即启动器配置文件所在；默认数据目录＝安装目录（包根）下 data
+    // launcherConfigPath 即启动器配置文件所在；launcher/zip 形态默认数据目录＝安装目录（包根）
+    // 下 data；独立/桌面（NSIS）形态无启动器配置——INSTALL-01 后唯一默认＝用户主目录
+    // legacy-home（server/src/config.ts 独立运行默认同源）。
     const packageRoot = config.launcherConfigPath ? dirname(config.launcherConfigPath) : null
+    const uniqueDefaultDir = join(homedir(), '.a-share-kline-trainer')
     let configuredDir: string | null = null
     if (config.launcherConfigPath) {
       const launcherConfig = await readLauncherConfig(config.launcherConfigPath)
@@ -86,8 +97,8 @@ export function registerDataDirSettingsRoutes(app: FastifyInstance, config: AppC
       effectiveDir: dirname(config.databasePath),
       databaseFile: config.databasePath.split(/[\\/]/).pop() ?? 'trainer.sqlite',
       configuredDir,
-      defaultDir: packageRoot ? join(packageRoot, 'data') : null,
-      legacyDefaultDir: join(homedir(), '.a-share-kline-trainer'),
+      defaultDir: packageRoot ? join(packageRoot, 'data') : uniqueDefaultDir,
+      legacyDefaultDir: packageRoot ? uniqueDefaultDir : null,
     }
   })
 

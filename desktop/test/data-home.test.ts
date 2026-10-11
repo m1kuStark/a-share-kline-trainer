@@ -1,7 +1,9 @@
-// PACK-03（DATA-DISCOVERY-ADOPT / DATA-MULTI-CANDIDATE-DIALOG / DATA-FRESH-DEFAULT /
-// DATA-ADOPT-IDEMPOTENT / CONFIG-LEGACY-ADOPT）：首启数据发现/采用决策层。
+// PACK-03（DATA-DISCOVERY-ADOPT / DATA-FRESH-DEFAULT / DATA-ADOPT-IDEMPOTENT /
+// CONFIG-LEGACY-ADOPT）＋INSTALL-01（2026-10-11 用户拍板：exe 旁 data/ 候选退役，
+// 数据目录唯一默认 %USERPROFILE%\.a-share-kline-trainer；矩阵行 INSTALL-NSIS-ASSISTED）。
 // oracle 独立性：期望值手写自 launcher.cjs resolveConfig（169-203）冻结语义＋PACK-03
-// 派发简报决策①②原文＋库识别判据（design.md §1.3：目录内存在 trainer.sqlite 文件）；
+// 派发简报决策①②原文＋库识别判据（design.md §1.3：目录内存在 trainer.sqlite 文件）＋
+// INSTALL-01 拍板原文（矩阵行 oracle：不再扫描 exe 旁 data/ 候选——v1.2.7 目录混放不再吸收旧库）；
 // 路径期望测试侧用 node:path join 独立拼出；探测/读取全部注入桩，不碰真实文件系统。
 import { describe, expect, it } from 'vitest'
 import { join } from 'node:path'
@@ -116,15 +118,18 @@ describe('adoption record shape (desktop-data-choice.json)', () => {
 })
 
 describe('candidate enumeration', () => {
-  it('DATA-DISCOVERY-ADOPT: candidates are enumerated in frozen order exe-data first, legacy home second', () => {
+  it('INSTALL-01: candidates contain only the legacy home (the exe-side data/ candidate is retired)', () => {
+    // oracle: 用户 2026-10-11 拍板（矩阵 INSTALL-NSIS-ASSISTED）——v1.3.0 不再扫描 exe 旁
+    // data/ 候选；数据目录唯一默认 %USERPROFILE%\.a-share-kline-trainer
     expect(enumerateDataHomeCandidates({ exeDir: EXE_DIR, homeDir: HOME_DIR })).toEqual([
-      { id: 'exe-data', path: EXE_DATA },
       { id: 'legacy-home', path: LEGACY_HOME },
     ])
   })
 })
 
 describe('parseDataHomeAnswerEnv (TRAINER_DESKTOP_DATA_ANSWER)', () => {
+  // INSTALL-01：双候选决策对话框已退役（唯一候选不可能双命中，ask 回调不再被调用）；
+  // 解析函数本身保留（便携遗产路径，回滚保护一个版本周期），断言继续锁定其严格语义
   it('DATA-MULTI-CANDIDATE-DIALOG: accepts exe|legacy|cancel, rejects anything else, null when unset', () => {
     expect(parseDataHomeAnswerEnv({})).toBeNull()
     expect(parseDataHomeAnswerEnv({ TRAINER_DESKTOP_DATA_ANSWER: '   ' })).toBeNull()
@@ -145,14 +150,14 @@ describe('parseSavedTdxChoice (SETUP-SAVE-01 shape mirror)', () => {
 })
 
 describe('savedChoiceSearchDir (saved-tdx-choice.json 搜索目录＝生效 dataDir)', () => {
-  it('DATA-SAVED-TDX-CHOICE-FOLLOW: env explicit TRAINER_DATA_DIR wins, then the resolved dataDir, then the portable default', () => {
+  it('DATA-SAVED-TDX-CHOICE-FOLLOW: env explicit TRAINER_DATA_DIR wins, then the resolved dataDir, then the unique legacy-home default', () => {
     const explicitEnv = { kind: 'explicit-env', dataDir: null, record: null, notice: null, probed: false } as const
-    // E0 显式 env：生效 dataDir＝env 目录（不是 exe/data）
-    expect(savedChoiceSearchDir({ TRAINER_DATA_DIR: join('D:', 'env-data') }, explicitEnv, EXE_DIR)).toBe(join('D:', 'env-data'))
-    // E0 只显式 TRAINER_DB：dataDir 仍＝便携默认（与 launcher/desktop-config 同语义——库可另置，dataDir 不随之漂移）
-    expect(savedChoiceSearchDir({ TRAINER_DB: join('D:', 'elsewhere', 'trainer.sqlite') }, explicitEnv, EXE_DIR)).toBe(EXE_DATA)
+    // E0 显式 env：生效 dataDir＝env 目录（不是唯一默认目录）
+    expect(savedChoiceSearchDir({ TRAINER_DATA_DIR: join('D:', 'env-data') }, explicitEnv, HOME_DIR)).toBe(join('D:', 'env-data'))
+    // E0 只显式 TRAINER_DB：dataDir 兜底＝唯一默认 legacy-home（INSTALL-01 收敛；库可另置，dataDir 不随之漂移）
+    expect(savedChoiceSearchDir({ TRAINER_DB: join('D:', 'elsewhere', 'trainer.sqlite') }, explicitEnv, HOME_DIR)).toBe(LEGACY_HOME)
     const legacy = { kind: 'discovery-legacy', dataDir: LEGACY_HOME, record: null, notice: null, probed: true } as const
-    expect(savedChoiceSearchDir({}, legacy, EXE_DIR)).toBe(LEGACY_HOME)
+    expect(savedChoiceSearchDir({}, legacy, HOME_DIR)).toBe(LEGACY_HOME)
   })
 })
 
@@ -199,26 +204,30 @@ describe('resolveDataHome decision tree', () => {
     expect(outcome.resolution.probed).toBe(true)
   })
 
-  it('DATA-DISCOVERY-ADOPT: exe placed inside an old zip folder (only exe-data has a library) keeps the portable default with a default-mode record', async () => {
-    const { deps } = depsOf({}, [EXE_DATA])
+  it('INSTALL-01: a v1.2.7 exe-side data/ library is NOT scanned or adopted; the unique default is the legacy home with a default-mode record', async () => {
+    // oracle: 矩阵 INSTALL-NSIS-ASSISTED——「不再扫描 exe 旁 data/ 候选——v1.2.7 目录混放
+    // 不再吸收旧库」；exe 旁有库与无库同落 discovery-default（唯一默认＝legacy-home）
+    const { deps, asked } = depsOf({}, [EXE_DATA])
     const outcome = await resolveDataHome(base, deps)
     expect(outcome.quit).toBe(false)
     if (outcome.quit) return
     expect(outcome.resolution.kind).toBe('discovery-default')
-    expect(outcome.resolution.dataDir).toBe(EXE_DATA)
-    // default 档不记绝对路径（保便携：exe 挪窝＝数据随目录走）
+    expect(outcome.resolution.dataDir).toBe(LEGACY_HOME)
+    // default 档不记绝对路径（唯一默认目录随 home 走）
     expect(outcome.resolution.record!.mode).toBe('default')
     expect(outcome.resolution.record!.dataDir).toBeNull()
     expect(outcome.resolution.notice).toBeNull()
+    // 双候选对话框不可能触发（无第二候选）
+    expect(asked).toEqual([])
   })
 
-  it('DATA-FRESH-DEFAULT: no candidate has a library -> fresh default dataDir (the only fresh-library scenario) with a default record', async () => {
+  it('DATA-FRESH-DEFAULT: no candidate has a library -> fresh default dataDir at the legacy home (the only fresh-library scenario) with a default record', async () => {
     const { deps } = depsOf({}, [])
     const outcome = await resolveDataHome(base, deps)
     expect(outcome.quit).toBe(false)
     if (outcome.quit) return
     expect(outcome.resolution.kind).toBe('discovery-default')
-    expect(outcome.resolution.dataDir).toBe(EXE_DATA)
+    expect(outcome.resolution.dataDir).toBe(LEGACY_HOME)
     expect(outcome.resolution.record!.mode).toBe('default')
   })
 
@@ -231,30 +240,19 @@ describe('resolveDataHome decision tree', () => {
     expect(outcome.resolution.kind).toBe('discovery-default')
   })
 
-  it('DATA-MULTI-CANDIDATE-DIALOG: both candidates have libraries -> user is asked; exe answer keeps the default, legacy answer adopts, cancel quits without touching data', async () => {
-    const exeAsk = depsOf({}, [EXE_DATA, LEGACY_HOME], ['exe'])
-    const exeOutcome = await resolveDataHome(base, exeAsk.deps)
-    expect(exeOutcome.quit).toBe(false)
-    if (!exeOutcome.quit) {
-      expect(exeOutcome.resolution.kind).toBe('discovery-default')
-      expect(exeOutcome.resolution.dataDir).toBe(EXE_DATA)
-      expect(exeOutcome.resolution.record!.mode).toBe('default')
-    }
-
-    const legacyAsk = depsOf({}, [EXE_DATA, LEGACY_HOME], ['legacy'])
-    const legacyOutcome = await resolveDataHome(base, legacyAsk.deps)
-    expect(legacyOutcome.quit).toBe(false)
-    if (!legacyOutcome.quit) {
-      expect(legacyOutcome.resolution.kind).toBe('discovery-legacy')
-      expect(legacyOutcome.resolution.dataDir).toBe(LEGACY_HOME)
-      expect(legacyOutcome.resolution.record!.mode).toBe('adopted')
-    }
-
-    const cancelAsk = depsOf({}, [EXE_DATA, LEGACY_HOME], ['cancel'])
-    const cancelOutcome = await resolveDataHome(base, cancelAsk.deps)
-    expect(cancelOutcome.quit).toBe(true)
-    if (!cancelOutcome.quit) return
-    expect(cancelOutcome.reason).toContain('cancel')
+  it('INSTALL-01: libraries at both old locations no longer open a dialog; the legacy home is adopted in place and exe-side data is ignored', async () => {
+    // oracle: 用户 2026-10-11 拍板——双候选决策对话框随 exe-data 候选退役（无第二候选
+    // 自然不触发）；两处旧库并存时唯一被探测的候选＝legacy-home，原地采用，绝不开口问
+    const bothLibraries = depsOf({}, [EXE_DATA, LEGACY_HOME])
+    const outcome = await resolveDataHome(base, bothLibraries.deps)
+    expect(outcome.quit).toBe(false)
+    if (outcome.quit) return
+    expect(outcome.resolution.kind).toBe('discovery-legacy')
+    expect(outcome.resolution.dataDir).toBe(LEGACY_HOME)
+    expect(outcome.resolution.record!.mode).toBe('adopted')
+    expect(outcome.resolution.notice).toContain('已沿用历史训练数据')
+    // 双候选对话框不再可能触发：ask 回调一次都不能被调用
+    expect(bothLibraries.asked).toEqual([])
   })
 
   it('DATA-ADOPT-IDEMPOTENT: a valid remembered record short-circuits discovery without probing candidates', async () => {
@@ -271,7 +269,7 @@ describe('resolveDataHome decision tree', () => {
     expect(outcome.resolution.record).toBeNull() // 不重写既有记录
   })
 
-  it('DATA-ADOPT-IDEMPOTENT: a default-mode remembered record uses the portable default without validation probing', async () => {
+  it('DATA-ADOPT-IDEMPOTENT: a default-mode remembered record resolves to the unique legacy-home default without validation probing', async () => {
     const { deps } = depsOf(
       { [join(EXE_DIR, 'desktop-data-choice.json')]: { version: 1, mode: 'default', dataDir: null, decidedAt: 't' } },
       [LEGACY_HOME], // legacy library exists, but the record already decided default
@@ -280,7 +278,7 @@ describe('resolveDataHome decision tree', () => {
     expect(outcome.quit).toBe(false)
     if (outcome.quit) return
     expect(outcome.resolution.kind).toBe('remembered')
-    expect(outcome.resolution.dataDir).toBe(EXE_DATA)
+    expect(outcome.resolution.dataDir).toBe(LEGACY_HOME)
     expect(outcome.resolution.probed).toBe(false)
   })
 
@@ -305,7 +303,8 @@ describe('resolveDataHome decision tree', () => {
   })
 
   it('DATA-ADOPT-IDEMPOTENT: an adopted record whose directory lost its library is discarded and discovery re-runs', async () => {
-    // record points at LEGACY_HOME but no library exists there anymore; exe-data HAS one now
+    // record points at LEGACY_HOME but no library exists there anymore; exe-data HAS one now —
+    // INSTALL-01 后 exe 旁库不再被吸收：重新发现落到唯一默认目录（legacy-home，全新库场景）
     const { deps } = depsOf(
       { [join(EXE_DIR, 'desktop-data-choice.json')]: { version: 1, mode: 'adopted', dataDir: LEGACY_HOME, decidedAt: 't' } },
       [EXE_DATA],
@@ -314,6 +313,7 @@ describe('resolveDataHome decision tree', () => {
     expect(outcome.quit).toBe(false)
     if (outcome.quit) return
     expect(outcome.resolution.kind).toBe('discovery-default')
+    expect(outcome.resolution.dataDir).toBe(LEGACY_HOME)
     expect(outcome.resolution.record!.mode).toBe('default')
   })
 

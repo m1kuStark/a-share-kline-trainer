@@ -50,13 +50,11 @@ import {
 import {
   createNodeDataHomeDeps,
   LIBRARY_FILE,
-  parseDataHomeAnswerEnv,
   parseSavedTdxChoice,
   persistDataChoiceRecord,
   resolveDataHome,
   savedChoiceSearchDir,
   SAVED_TDX_CHOICE_FILE,
-  type DataHomeAnswer,
 } from './data-home.js'
 import {
   acquireLaunchLock,
@@ -272,33 +270,8 @@ async function killTrainerOccupant(occupant: TrainerIdentity): Promise<{ exited:
   }
 }
 
-// ===== PACK-03 数据落点发现/采用＋共存防线（GUI 询问可注入，测试/冒烟不依赖 GUI） =====
-
-const DATA_HOME_DIALOG = {
-  title: '选择训练数据',
-  message: '发现了两份训练数据',
-  detail: (candidates: { exe: string; legacy: string }) =>
-    `exe 旁数据目录：\n${candidates.exe}\n\n历史主目录数据：\n${candidates.legacy}\n\n`
-    + '请选择本次及以后沿用的数据；「取消」＝退出且不做任何改动。',
-  buttons: ['使用 exe 旁数据', '使用历史主目录数据', '取消'],
-  defaultId: 0,
-  cancelId: 2,
-}
-
-async function askDataHomeDialog(candidates: { exe: string; legacy: string }): Promise<DataHomeAnswer> {
-  const choice = await dialog.showMessageBox({
-    type: 'question',
-    title: DATA_HOME_DIALOG.title,
-    message: DATA_HOME_DIALOG.message,
-    detail: DATA_HOME_DIALOG.detail(candidates),
-    buttons: DATA_HOME_DIALOG.buttons,
-    defaultId: DATA_HOME_DIALOG.defaultId,
-    cancelId: DATA_HOME_DIALOG.cancelId,
-    noLink: true,
-  })
-  // 按钮序即应答序：0=exe / 1=legacy / 2=cancel（Esc/关闭＝cancelId→cancel）
-  return (['exe', 'legacy', 'cancel'] as const)[choice.response]
-}
+// ===== PACK-03 数据落点发现/采用＋共存防线（INSTALL-01 收敛后唯一候选＝legacy-home，
+// 双候选决策对话框退役——data-home 决策层不再有询问路径；GUI 询问可注入仅余端口/共存冲突） =====
 
 /** launcher pidAlive 镜像：EPERM＝活（无权限发信号≠进程不存在） */
 function pidAlive(pid: number): boolean {
@@ -392,6 +365,11 @@ async function setupUpdateChannel(): Promise<void> {
   if (updateChannelKind === 'packaged' && isPortableExecution(process.env)) {
     // PORT-UPD-01：便携 exe（electron-updater 不支持 portable target 自更新）→ 自研替换式更新器；
     // 适配器实现同一 DesktopUpdaterAdapter 面，controller/IPC/渲染端零改动。
+    // @deprecated INSTALL-01（2026-10-11 用户拍板，矩阵行 INSTALL-NSIS-ASSISTED）：v1.3.0 起
+    // 便携产物退役、发布形态仅 NSIS 安装器——本分支仅供存量便携用户（≤v1.2.7 便携 exe）在
+    // 更新源尚含便携条目时续命一个版本周期，防发布回滚；激活门＝PORTABLE_EXECUTABLE_DIR
+    // （仅 electron-builder portable target 注入，NSIS/dev 形态该变量恒缺失→本分支不激活，
+    // 走 electron-updater NSIS 通道；isPortableExecution 语义由 portable-updater.test.ts 锁定）。
     // P0 修复：替换目标＝resolvePortableTargetExe 解析的用户实际启动 exe（PORTABLE_EXECUTABLE_FILE）；
     // process.execPath 只是 portable 壳解压到 %TEMP% 的临时副本，以它为目标＝更新无效（真机实证）。
     // 解析失败（便携形态却缺该变量）→ fail-closed 禁用便携更新通道并上报（绝回退临时副本），
@@ -467,14 +445,16 @@ registerArchiveIpc({
 async function bootServerAndOpen(): Promise<void> {
   // 便携 exe：electron-builder 注入 PORTABLE_EXECUTABLE_DIR＝exe 所在目录（用户选择的位置），
   // 与 zip「包根 data」语义对齐；开发/非便携回退 process.execPath 同级。
+  // @deprecated INSTALL-01：便携形态退役后该来源只服务存量便携 exe 的回滚保护；exeDir 本体
+  // 仍锚定采用记录 desktop-data-choice.json（dataDir 之外的固定点）与 appRoot 解析。
   const exeDir = process.env.PORTABLE_EXECUTABLE_DIR?.trim() || join(app.getAppPath(), '..', '..')
   const appRoot = app.getAppPath()
 
-  // ---- PACK-03 步骤 1：首启数据发现/采用（adopt-in-place；env 注入应答优先于 GUI 询问） ----
-  const injectedDataAnswer = parseDataHomeAnswerEnv(process.env)
+  // ---- PACK-03 步骤 1：首启数据发现/采用（INSTALL-01 收敛后唯一候选＝legacy-home，
+  // ---- 决策层无询问路径——双候选对话框与其 env 应答注入随 exe-data 候选退役） ----
   const dataHome = await resolveDataHome(
     { envExplicit: hasExplicitDataOverride(process.env), paths: { exeDir, homeDir: homedir() } },
-    createNodeDataHomeDeps({ ask: injectedDataAnswer ? async () => injectedDataAnswer : askDataHomeDialog }),
+    createNodeDataHomeDeps({}),
   )
   if (dataHome.quit) {
     console.log(`[desktop] ${dataHome.reason}`)
@@ -502,15 +482,15 @@ async function bootServerAndOpen(): Promise<void> {
   const tdxFromEnv = process.env.TDX_ROOT?.trim() || null
   const tdxFromLegacy = legacyConfig?.tdxRoot ?? null
   if (!tdxFromEnv && !tdxFromLegacy) {
-    // 搜索目录＝生效 dataDir（env 显式 TRAINER_DATA_DIR > 解析产物 > 便携默认；纯函数已测）
-    const effectiveDataDir = savedChoiceSearchDir(process.env, resolution, exeDir)
+    // 搜索目录＝生效 dataDir（env 显式 TRAINER_DATA_DIR > 解析产物 > 唯一默认 legacy-home；纯函数已测）
+    const effectiveDataDir = savedChoiceSearchDir(process.env, resolution, homedir())
     try {
       savedTdxRoot = parseSavedTdxChoice(JSON.parse(await readFile(join(effectiveDataDir, SAVED_TDX_CHOICE_FILE), 'utf8')))?.root ?? null
     } catch { savedTdxRoot = null }
   }
 
-  // ---- 配置合并：env 显式 > 发现/旧配置产物（defaults）> 便携默认 ----
-  const config: DesktopRuntimeConfig = resolveDesktopConfig(process.env, { exeDir, appRoot }, {
+  // ---- 配置合并：env 显式 > 发现/旧配置产物（defaults）> 唯一默认 legacy-home（INSTALL-01） ----
+  const config: DesktopRuntimeConfig = resolveDesktopConfig(process.env, { exeDir, appRoot, homeDir: homedir() }, {
     dataDir: resolution.dataDir ?? undefined,
     port: legacyConfig?.port,
     databasePath: legacyConfig?.databasePathExplicit

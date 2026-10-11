@@ -1,17 +1,19 @@
 // 注：无 shebang——本脚本仅经 `npm run release:desktop`（node desktop/scripts/release-desktop.mjs）
-// 调用；且 desktop/test/portable-updater-release.test.ts 直接 import 本文件的 PORT-UPD-01 导出，
+// 调用；且 desktop/test/portable-updater-release.test.ts 直接 import 本文件的导出，
 // shebang 会使 vitest（esbuild）解析报 Invalid token（repo 惯例＝可测代码放无 shebang 的文件）。
-// PACK-05 发布流水线编排（npm run release:desktop）：
-//   镜像 env → 预检 → electron-builder 双目标（nsis＋portable，--publish never 绝不触 GitHub）
-//   → fail-closed 核验链（app-update.yml 入包/双 exe 命名/latest.yml 版本+sha512+size/校验和资产名）
+// PACK-05＋INSTALL-01 发布流水线编排（npm run release:desktop）：
+//   镜像 env → 预检 → electron-builder 单目标（nsis，--publish never 绝不触 GitHub；
+//   portable 目标已随 INSTALL-01 退役——v1.3.0 发布形态仅 NSIS 向导式安装包，2026-10-11
+//   用户拍板，矩阵行 INSTALL-NSIS-ASSISTED；latest.yml 不再追加便携条目——原便携条目
+//   扩展函数已删除，存量便携 exe 检查更新将 fail-closed 拒装、提示改走安装器，符合拍板）
+//   → fail-closed 核验链（app-update.yml 入包/setup exe 命名/latest.yml 版本+sha512+size/
+//     陈旧便携产物不得混入/校验和资产名）
 //   → SHA256SUMS-desktop.txt → 产物目录打印。
-// PORT-UPD-01 追加：latest.yml 追加便携 exe 条目（sha512/size，便携自更新校验源）＋
-//   migrate-v127.zip（tools/migrate-v127/dist 打包，纯 Node STORE 型 zip 写入器，零新依赖）。
+// PORT-UPD-01 追加（INSTALL-01 后仅存 migrate 部分）：migrate-v127.zip（tools/migrate-v127/dist
+//   打包，纯 Node STORE 型 zip 写入器，零新依赖）——v1.2.7 数据迁入唯一入口，不动。
 // 可测纯函数在 release-desktop-lib.mjs（desktop/test/release-desktop-lib.test.ts 锁契约）；
-// 本文件 PORT-UPD-01 导出（extendLatestYmlWithPortable/buildStoredZip/collectMigrateZipEntries）
-// 由 desktop/test/portable-updater-release.test.ts 锁定——P0 修复（2026-10-11，用户验收发现
-// v1.2.7 latest.yml 非法 YAML）后 yml 扩展的 oracle 为 lib 形状解析器＋标准 js-yaml（独立于
-// 生成逻辑；自写解析器对乱序追加宽容，单独使用不构成独立 oracle）＋server UPD-01 zip 读取器。
+// 本文件导出（buildStoredZip/collectMigrateZipEntries）由 desktop/test/portable-updater-release.test.ts
+// 锁定，编排形态由同文件 INSTALL-01 源码契约锁定。
 // 绝不发布任何 GitHub Release/资产（上传由维护者按 docs/release/desktop-release-manual.md 手动进行）。
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -19,7 +21,6 @@ import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import yaml from 'js-yaml'
 import {
   desktopArtifactNames,
   assertChecksumsAssetName,
@@ -27,7 +28,6 @@ import {
   renderLatestYml,
   verifyLatestYml,
   collectChecksumEntries,
-  parseLatestYml,
 } from './release-desktop-lib.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -49,75 +49,6 @@ async function exists(path) {
   } catch {
     return false
   }
-}
-
-// ===== PORT-UPD-01：latest.yml 便携条目扩展（幂等；插入 files 序列内并以双解析器回读核验） =====
-
-/**
- * 标准 YAML（js-yaml）fail-closed 关卡：electron-updater 依赖标准解析，任何产物过不了
- * 这一关都不允许产出/放行（P0 教训：v1.2.7 便携条目追加到顶层 mapping 区，自写解析器
- * 读得出来、标准解析器直接拒绝，导致 NSIS 通道同样挂掉）。
- */
-function assertStandardYaml(text, fileName) {
-  let parsed
-  try {
-    parsed = yaml.load(text)
-  } catch (error) {
-    throw new Error(`latest.yml 未通过标准 YAML（js-yaml）解析（${fileName}）：${error instanceof Error ? error.message : error}`)
-  }
-  const files = parsed?.files
-  if (!Array.isArray(files) || !files.some(file => file?.url === fileName)) {
-    throw new Error(`latest.yml 标准 YAML 解析后 files 序列未含 ${fileName}`)
-  }
-}
-
-/**
- * 给 latest.yml 的 files 序列追加便携 exe 条目（url/sha512/size）——便携自更新
- * （desktop/src/portable-updater.ts）按该精确条目校验下载字节。条目插入 files 序列内
- * （最后一个既有条目之后、下一个顶层键之前），而非文本末尾——electron-builder 产出形状
- * 的 files 序列之后还有顶层键，追加到末尾会产生非法 YAML（P0 修复）。version/path/sha512/
- * releaseDate 等既有字段值原样保留（electron-updater NSIS 通道零影响）。幂等：输入已含该
- * 条目时原样返回——但已含条目而整体非法（v1.2.7 非法追加产物形状）时 fail-closed 抛错，
- * 绝不原样放行标准解析器读不了的文本。
- */
-export function extendLatestYmlWithPortable({ text, fileName, sha512Base64, size }) {
-  const baseline = parseLatestYml(text) // 先证基线可解析（自有形状）
-  if (baseline.files.some(file => file.url === fileName)) {
-    assertStandardYaml(text, fileName) // 幂等早退也要过标准 YAML 关
-    return text
-  }
-  const lines = text.replace(/\r?\n$/, '').split(/\r?\n/)
-  const filesHeaderIdx = lines.findIndex(line => /^files:\s*$/.test(line))
-  if (filesHeaderIdx === -1) {
-    throw new Error(`latest.yml 缺少顶层 files: 序列头，无法插入便携条目（${fileName}）`)
-  }
-  let lastEntryIdx = -1
-  for (let i = filesHeaderIdx + 1; i < lines.length; i++) {
-    const line = lines[i]
-    if (line.trim() === '') continue // 序列内空行不移动插入点
-    if (line.startsWith(' ') || line.startsWith('\t')) {
-      lastEntryIdx = i
-      continue
-    }
-    break // 零缩进顶层键 => files 序列结束
-  }
-  if (lastEntryIdx === -1) {
-    throw new Error(`latest.yml files 序列为空，无法插入便携条目（${fileName}）`)
-  }
-  const extended = [
-    ...lines.slice(0, lastEntryIdx + 1),
-    `  - url: ${fileName}`,
-    `    sha512: ${sha512Base64}`,
-    `    size: ${size}`,
-    ...lines.slice(lastEntryIdx + 1),
-  ].join('\n') + '\n'
-  const reparsed = parseLatestYml(extended)
-  const entry = reparsed.files.find(file => file.url === fileName)
-  if (!entry || entry.sha512 !== sha512Base64 || entry.size !== size) {
-    throw new Error(`latest.yml 便携条目插入后回读核验失败（${fileName}）`)
-  }
-  assertStandardYaml(extended, fileName)
-  return extended
 }
 
 // ===== PORT-UPD-01：migrate-v127.zip 纯 Node STORE 型 zip 写入器（零新依赖） =====
@@ -257,7 +188,7 @@ async function main() {
   assertChecksumsAssetName(names.checksums)
 
   const builderCli = join(ROOT, 'node_modules', 'electron-builder', 'cli.js')
-  const args = ['--config', 'desktop/electron-builder.yml', '--win', 'nsis', 'portable', '--publish', 'never']
+  const args = ['--config', 'desktop/electron-builder.yml', '--win', 'nsis', '--publish', 'never']
   if (process.env.TRAINER_RELEASE_OUT_DIR?.trim()) args.push('--config.directories.output=' + process.env.TRAINER_RELEASE_OUT_DIR.trim())
   console.log(`[release-desktop] version=${version}`)
   console.log(`[release-desktop] electron-builder ${args.join(' ')}`)
@@ -314,22 +245,14 @@ async function main() {
     console.log('[release-desktop] latest.yml generated explicitly (electron-builder did not emit it) and verified')
   }
 
-  // ② b PORT-UPD-01：latest.yml 追加便携 exe 条目（sha512/size 实测字节；幂等）——
-  //     便携自更新（desktop/src/portable-updater.ts）按该精确条目校验下载；setup/path 原样保留。
-  const portablePath = join(OUT_DIR, names.portableExe)
-  const portableBytes = await readFile(portablePath).catch(() => null)
-  if (portableBytes === null) {
-    console.error(`[release-desktop] FAIL: portable exe missing: ${names.portableExe}`)
+  // ② b INSTALL-01：便携产物退役——不再读取/核验便携 exe、不再给 latest.yml 追加便携条目。
+  //     fail-closed 反向门：输出目录残留同名便携产物（早期双目标运行的遗留）即判发布失败，
+  //     绝不让无清单覆盖的陈旧便携 exe 混在产物目录里冒充本版发布资产。
+  const stalePortablePath = join(OUT_DIR, names.portableExe)
+  if (await exists(stalePortablePath)) {
+    console.error(`[release-desktop] FAIL: stale portable artifact present: ${names.portableExe} (portable target retired by INSTALL-01; delete it from the output dir and re-run)`)
     process.exit(1)
   }
-  const extendedLatest = extendLatestYmlWithPortable({
-    text: await readFile(latestPath, 'utf8'),
-    fileName: names.portableExe,
-    sha512Base64: createHash('sha512').update(portableBytes).digest('base64'),
-    size: portableBytes.length,
-  })
-  await writeFile(latestPath, extendedLatest, 'utf8')
-  console.log(`[release-desktop] latest.yml extended with the portable exe entry (${names.portableExe}, sha512+size verified against its bytes)`)
 
   // ② c PORT-UPD-01（P3）：migrate-v127.zip——tools/migrate-v127/dist 打包，供 Release 附带
   const migrateDist = join(ROOT, 'tools', 'migrate-v127', 'dist', 'migrate-v127')

@@ -76,13 +76,17 @@ describe('GET /api/settings/data-dir', () => {
     database.close()
   })
 
-  it('独立运行（无启动器配置路径）不提供默认/自定义目录', async () => {
+  it('INSTALL-01: 独立/桌面形态（无启动器配置路径）默认目录＝唯一默认主目录，旧版提示不可知为 null', async () => {
+    // oracle: 用户 2026-10-11 拍板（矩阵行 INSTALL-NSIS-ASSISTED）——数据目录唯一默认
+    // %USERPROFILE%\.a-share-kline-trainer；「旧版本默认目录」（exe/包根旁 data）在无启动器
+    // 配置的形态里本进程不可知（v1.2.7 旧数据迁入唯一入口＝迁移工具），如实报 null
     const { app, database } = await createApp({ launcherConfigPath: null })
     const response = await app.inject({ method: 'GET', url: '/api/settings/data-dir' })
     expect(response.statusCode).toBe(200)
     const view = response.json()
     expect(view.configuredDir).toBeNull()
-    expect(view.defaultDir).toBeNull()
+    expect(view.defaultDir).toBe(join(homedir(), '.a-share-kline-trainer'))
+    expect(view.legacyDefaultDir).toBeNull()
     expect(view.effectiveDir).toContain('current-data')
     await app.close()
     database.close()

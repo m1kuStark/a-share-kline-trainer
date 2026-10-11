@@ -1,11 +1,14 @@
 // PACK-01 桌面主进程·纯函数配置层（不 import electron，vitest 可直接测）。
-// 口径来源＝scripts/release/launcher.cjs 冻结语义：
+// 口径来源＝scripts/release/launcher.cjs 冻结语义＋INSTALL-01（2026-10-11 用户拍板，
+// 矩阵行 INSTALL-NSIS-ASSISTED）：
 //   - env 覆盖优先于默认（TRAINER_DB / TRAINER_DATA_DIR / TDX_ROOT / PORT / TRAINER_CONTROL_TOKEN）
 //   - 绝对路径强制（相对值报错不猜，同 server/src/config.ts explicitAbsolutePath 口径）
-//   - 默认 dataDir＝便携包根 data（zip 形态 V1.2.6 起同一语义）
+//   - 内置兜底 dataDir＝唯一默认 <homeDir>/.a-share-kline-trainer（INSTALL-01 收敛：原
+//     「exe 同级 data/」便携默认退役；env TRAINER_DATA_DIR 注入缝保留，显式覆盖语义不变）
 //   - 隔离运行 env 注入清单与 launcher spawn 对齐（server 隔离模式三绝对路径全部给足）
 import { randomUUID } from 'node:crypto'
 import { isAbsolute, join, resolve } from 'node:path'
+import { LEGACY_HOME_DIR_NAME } from './data-home.js'
 
 export interface DesktopRuntimeConfig {
   port: number
@@ -54,15 +57,21 @@ function resolveTdxRoot(env: NodeJS.ProcessEnv): string | null {
   return resolve(value)
 }
 
-/** 解析桌面运行配置：env 显式值 > defaults（PACK-03 发现/采用与旧配置产物）> 便携默认（exe 同级 data/、app 包内 web/dist、端口 8787）。 */
+/**
+ * 解析桌面运行配置：env 显式值 > defaults（PACK-03 发现/采用与旧配置产物）> 内置默认
+ * （唯一默认 dataDir＝<homeDir>/.a-share-kline-trainer、app 包内 web/dist、端口 8787）。
+ * exeDir 参数保留但不再消费（INSTALL-01：exe 旁 data/ 兜底候选退役；签名稳定一个版本
+ * 周期供回滚，同 enumerateDataHomeCandidates 先例）。
+ */
 export function resolveDesktopConfig(
   env: NodeJS.ProcessEnv,
-  paths: { exeDir: string; appRoot: string },
+  paths: { exeDir: string; appRoot: string; homeDir: string },
   defaults?: DesktopConfigDefaults,
 ): DesktopRuntimeConfig {
+  void paths.exeDir
   const envDataDir = absoluteEnvPath(env, 'TRAINER_DATA_DIR')
   const envDatabase = absoluteEnvPath(env, 'TRAINER_DB')
-  const dataDir = envDataDir ?? defaults?.dataDir ?? join(paths.exeDir, 'data')
+  const dataDir = envDataDir ?? defaults?.dataDir ?? join(paths.homeDir, LEGACY_HOME_DIR_NAME)
   const databasePath = envDatabase ?? defaults?.databasePath ?? join(dataDir, 'trainer.sqlite')
   return {
     port: resolvePort(env, defaults?.port),
