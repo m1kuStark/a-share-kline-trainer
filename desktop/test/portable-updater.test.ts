@@ -16,6 +16,7 @@ import {
   parsePortableLatestYml,
   portableArtifactName,
   renderReplaceScript,
+  resolvePortableTargetExe,
   selectPortableEntry,
 } from '../src/portable-updater.js'
 
@@ -49,7 +50,8 @@ function latestYmlFixture(version: string, files: Array<{ url: string, sha512: s
 
 const NEW_EXE_BYTES = new Uint8Array([0x4d, 0x5a, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-/** 适配器依赖工厂：网络/spawn/quitApp 全注入；fs 走真实临时目录（仓库 server updater 测试先例） */
+/** 适配器依赖工厂：网络/spawn/quitApp/env 全注入；fs 走真实临时目录（仓库 server updater 测试先例）。
+ * env 缺省 {}（非便携，确定性：适配器目标回退 exePath，不受测试宿主环境影响）。 */
 function makeAdapterDeps(overrides: {
   fetchText?: (url: string) => Promise<string>
   downloadToFile?: (url: string, dest: string, onProgress: (transferred: number, total: number) => void) => Promise<void>
@@ -58,12 +60,14 @@ function makeAdapterDeps(overrides: {
   getCurrentVersion?: () => string | null
   dataDir?: string | null
   exePath?: string
+  env?: NodeJS.ProcessEnv
   onApplyFailure?: (message: string) => void
 } = {}) {
   const dataDir = overrides.dataDir === undefined ? null : overrides.dataDir
   const calls = { spawn: [] as Array<{ command: string, args: string[] }>, quitApp: 0, applyFailures: [] as string[] }
   const deps = {
     exePath: overrides.exePath ?? join(tmpdir(), 'apps', 'K线训练器.exe'),
+    env: overrides.env ?? {},
     getDataDir: () => dataDir,
     getCurrentVersion: overrides.getCurrentVersion ?? (() => '1.2.7'),
     fetchText: overrides.fetchText ?? (async () => { throw new Error('fetchText not configured') }),
@@ -94,6 +98,36 @@ describe('PORT-UPD-01 便携模式识别', () => {
     expect(isPortableExecution({ PORTABLE_EXECUTABLE_DIR: '   ' })).toBe(false)
     expect(isPortableExecution({})).toBe(false)
     expect(isPortableExecution({ PORTABLE_EXECUTABLE_DIR: '' })).toBe(false)
+  })
+})
+
+// P0 修复（PORT-UPD-01，用户真机验收发现）：electron-builder portable 壳把真实应用解压到
+// %TEMP%\{uuid}\，process.execPath 指向该临时副本；用户实际双击的 exe 由注入的
+// PORTABLE_EXECUTABLE_FILE 给出。替换目标必须取后者——替换临时副本＝更新无效。
+// oracle 独立性：USER_EXE/TEMP_COPY 路径为测试手写（electron-builder portable 运行时契约＋
+// 真机 replace.log 指向 %TEMP% 的验收证据），非实现回显。
+describe('PORT-UPD-01 替换目标解析 resolvePortableTargetExe（P0 绑定环境语义）', () => {
+  const USER_EXE = 'D:\\Tools\\K线训练器.exe'
+  const TEMP_COPY = 'C:\\Users\\u\\AppData\\Local\\Temp\\{b6b3f9e2-1111}\\K线训练器.exe'
+
+  it('便携形态 → 目标＝PORTABLE_EXECUTABLE_FILE（用户实际启动的 exe），绝不取 execPath 自解压临时副本', () => {
+    expect(resolvePortableTargetExe(
+      { PORTABLE_EXECUTABLE_DIR: 'D:\\Tools', PORTABLE_EXECUTABLE_FILE: USER_EXE },
+      TEMP_COPY,
+    )).toBe(USER_EXE)
+  })
+
+  it('非便携（无 PORTABLE_EXECUTABLE_DIR）→ 目标＝execPath 原语义（NSIS/dev 不受影响）', () => {
+    const nsisExe = 'C:\\Program Files\\K线训练器\\K线训练器.exe'
+    expect(resolvePortableTargetExe({}, nsisExe)).toBe(nsisExe)
+    // PORTABLE_EXECUTABLE_FILE 存在但形态非便携（无 DIR）→ 仍按非便携处理，execPath 原语义
+    expect(resolvePortableTargetExe({ PORTABLE_EXECUTABLE_FILE: 'D:\\x.exe' }, nsisExe)).toBe(nsisExe)
+  })
+
+  it('便携形态但 PORTABLE_EXECUTABLE_FILE 缺失/空白 → fail-closed throw（绝不回退 execPath 临时副本）', () => {
+    expect(() => resolvePortableTargetExe({ PORTABLE_EXECUTABLE_DIR: 'D:\\Tools' }, TEMP_COPY)).toThrow(/PORTABLE_EXECUTABLE_FILE/)
+    expect(() => resolvePortableTargetExe({ PORTABLE_EXECUTABLE_DIR: 'D:\\Tools', PORTABLE_EXECUTABLE_FILE: '' }, TEMP_COPY)).toThrow(/PORTABLE_EXECUTABLE_FILE/)
+    expect(() => resolvePortableTargetExe({ PORTABLE_EXECUTABLE_DIR: 'D:\\Tools', PORTABLE_EXECUTABLE_FILE: '   ' }, TEMP_COPY)).toThrow(/PORTABLE_EXECUTABLE_FILE/)
   })
 })
 
@@ -384,18 +418,68 @@ describe('PORT-UPD-01 适配器·应用（排空退出管线末端的 quitAndIns
   })
 })
 
+// P0 修复绑定语义锁定：适配器必须自己按 env 解析替换目标（main 绑定处的历史 bug 正是
+// exePath=process.execPath＝自解压临时副本）。oracle＝electron-builder portable 运行时契约
+// （PORTABLE_EXECUTABLE_FILE＝用户 exe）＋真机 replace.log 指向 %TEMP% 的验收证据。
+describe('PORT-UPD-01 适配器替换目标＝env 解析的用户 exe（P0 绑定语义）', () => {
+  const USER_EXE = 'D:\\Tools\\K线训练器.exe'
+  const TEMP_COPY = 'C:\\Users\\u\\AppData\\Local\\Temp\\{b6b3f9e2-1111}\\K线训练器.exe'
+
+  it('便携形态注入 PORTABLE_EXECUTABLE_FILE → apply 烘焙 EXE＝用户 exe、OLD_EXE＝其 .old（绝不为 execPath 临时副本）', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-p0-'))
+    try {
+      const dataDir = join(root, 'data')
+      const fixture = happyFixture()
+      const { deps, calls } = makeAdapterDeps({
+        dataDir,
+        exePath: TEMP_COPY,
+        env: { PORTABLE_EXECUTABLE_DIR: 'D:\\Tools', PORTABLE_EXECUTABLE_FILE: USER_EXE },
+        fetchText: async () => fixture.text,
+        downloadToFile: async (_url, dest) => { await writeFile(dest, NEW_EXE_BYTES) },
+      })
+      const adapter = createPortableUpdaterAdapter(deps)
+      await adapter.checkForUpdates()
+      await adapter.downloadUpdate()
+      adapter.quitAndInstall(true, true)
+      await until(() => calls.quitApp >= 1)
+      const script = await readFile(join(dataDir, 'update-staging', 'update-replace.cmd'), 'utf8')
+      expect(script).toContain(`set "EXE=${USER_EXE}"`)
+      expect(script).toContain(`set "OLD_EXE=${USER_EXE}.old"`)
+      expect(script).not.toContain(`set "EXE=${TEMP_COPY}"`)
+      expect(script).not.toContain(TEMP_COPY)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('便携形态缺 PORTABLE_EXECUTABLE_FILE → 适配器初始化 fail-closed（throw），不 spawn 不退出不触碰任何 exe', () => {
+    const { deps } = makeAdapterDeps({
+      exePath: TEMP_COPY,
+      env: { PORTABLE_EXECUTABLE_DIR: 'D:\\Tools' },
+    })
+    expect(() => createPortableUpdaterAdapter(deps)).toThrow(/PORTABLE_EXECUTABLE_FILE/)
+  })
+})
+
 describe('PORT-UPD-01 主进程粘合源码契约（main.ts；沿 PACK-04 源码契约先例）', () => {
-  it('setupUpdateChannel 以便携识别切换自研适配器；NSIS/dev 分支与排空 exit 分支原样保留', async () => {
+  it('setupUpdateChannel 以便携识别切换自研适配器（替换目标经 resolvePortableTargetExe 解析）；NSIS/dev 分支与排空 exit 分支原样保留', async () => {
     const source = await readFile(fileURLToPath(new URL('../src/main.ts', import.meta.url)), 'utf8')
-    // 便携分支：packaged 通道 ＋ isPortableExecution → createPortableUpdaterAdapter（exe=execPath、quitApp=exit）
+    // 便携分支：packaged 通道 ＋ isPortableExecution → createPortableUpdaterAdapter（quitApp=exit）
     expect(source).toMatch(/updateChannelKind === 'packaged'\s*&&\s*isPortableExecution\(process\.env\)/)
-    expect(source).toMatch(/createPortableUpdaterAdapter\(\{[\s\S]*?exePath:\s*process\.execPath/)
     expect(source).toMatch(/createPortableUpdaterAdapter\(\{[\s\S]*?quitApp:\s*\(\)\s*=>\s*app\.exit\(0\)/)
+    // P0 修复绑定契约：适配器与清理的替换目标都经 resolvePortableTargetExe(process.env, process.execPath)
+    // 解析（便携形态＝PORTABLE_EXECUTABLE_FILE＝用户 exe；绝不再以 process.execPath 直连 exePath）
+    expect(source).toMatch(/resolvePortableTargetExe\(process\.env,\s*process\.execPath\)/)
+    expect(source).toMatch(/createPortableUpdaterAdapter\(\{[\s\S]*?exePath:\s*portableTargetExe/)
+    expect(source).toMatch(/cleanupPortableUpdateLeftovers\(\{[\s\S]*?exePath:\s*portableTargetExe/)
+    // 日志打印解析后的目标（不再打印 process.execPath 临时副本）
+    expect(source).toMatch(/portable self-update channel active \(exe: \$\{portableTargetExe\}\)/)
+    // 解析失败 fail-closed：便携更新通道禁用并上报（createUnavailablePortableAdapter），不阻断启动
+    expect(source).toMatch(/createUnavailablePortableAdapter\(/)
     // electron-updater 仍保留于 else 分支（dev/NSIS 零回归）
     expect(source).toMatch(/else\s*\{\s*[\s\S]*?defaultDesktopUpdater\(\)/)
     // 启动清理接线：bootServerAndOpen 回填数据目录并清理残留
     expect(source).toMatch(/portableUpdateDataDir\s*=\s*config\.dataDir/)
-    expect(source).toMatch(/cleanupPortableUpdateLeftovers\(/)
     // 既有排空安装守卫未被触碰（UPD-DESKTOP-INSTALL-DRAINS-FIRST 源码契约仍成立）
     expect(source).toMatch(/quit-and-install[\s\S]{0,200}quitAndInstall/)
   })
@@ -412,11 +496,14 @@ describe('PORT-UPD-01 启动清理（数据保留＋残留清空）', () => {
       const exePath = join(root, 'apps', 'trainer.exe')
       await mkdir(join(root, 'apps'), { recursive: true })
       await writeFile(`${exePath}.old`, 'old-bytes')
-      await expect(cleanupPortableUpdateLeftovers({ env: { PORTABLE_EXECUTABLE_DIR: join(root, 'apps') }, dataDir, exePath })).resolves.toBeUndefined()
+      // P0 修复后 env 对齐真实注入契约：electron-builder portable 总是同时注入
+      // PORTABLE_EXECUTABLE_DIR 与 PORTABLE_EXECUTABLE_FILE（无 FILE 的分支由下方专测锁定）
+      const env = { PORTABLE_EXECUTABLE_DIR: join(root, 'apps'), PORTABLE_EXECUTABLE_FILE: exePath }
+      await expect(cleanupPortableUpdateLeftovers({ env, dataDir, exePath })).resolves.toBeUndefined()
       await expect(readdir(stagingDir)).rejects.toThrow()
       await expect(readFile(`${exePath}.old`)).rejects.toThrow()
       // 幂等：再来一次不抛
-      await expect(cleanupPortableUpdateLeftovers({ env: { PORTABLE_EXECUTABLE_DIR: join(root, 'apps') }, dataDir, exePath })).resolves.toBeUndefined()
+      await expect(cleanupPortableUpdateLeftovers({ env, dataDir, exePath })).resolves.toBeUndefined()
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -432,6 +519,54 @@ describe('PORT-UPD-01 启动清理（数据保留＋残留清空）', () => {
       const exePath = join(root, 'apps', 'trainer.exe')
       await expect(cleanupPortableUpdateLeftovers({ env: {}, dataDir, exePath })).resolves.toBeUndefined()
       expect(await readdir(stagingDir)).toContain('junk.exe')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('便携形态清理的是用户 exe（PORTABLE_EXECUTABLE_FILE）旁的 .old 与数据目录 staging；execPath 临时副本旁不动（P0）', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-p0-clean-'))
+    try {
+      const dataDir = join(root, 'data')
+      const stagingDir = join(dataDir, 'update-staging')
+      await mkdir(stagingDir, { recursive: true })
+      await writeFile(join(stagingDir, 'junk.exe'), 'junk')
+      const userExe = join(root, 'apps', 'K线训练器.exe')
+      const tempCopy = join(root, 'temp', '{uuid}', 'K线训练器.exe')
+      await mkdir(join(root, 'apps'), { recursive: true })
+      await mkdir(join(root, 'temp', '{uuid}'), { recursive: true })
+      await writeFile(`${userExe}.old`, 'old-bytes')
+      await writeFile(`${tempCopy}.old`, 'wrong-target-old')
+      await expect(cleanupPortableUpdateLeftovers({
+        env: { PORTABLE_EXECUTABLE_DIR: join(root, 'apps'), PORTABLE_EXECUTABLE_FILE: userExe },
+        dataDir,
+        exePath: tempCopy,
+      })).resolves.toBeUndefined()
+      await expect(readdir(stagingDir)).rejects.toThrow()
+      await expect(readFile(`${userExe}.old`)).rejects.toThrow()
+      expect(await readFile(`${tempCopy}.old`, 'utf8')).toBe('wrong-target-old')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('便携形态缺 PORTABLE_EXECUTABLE_FILE → staging 照清但绝不以 execPath 临时副本为目标删 .old（fail-closed 零误删）', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-p0-clean-'))
+    try {
+      const dataDir = join(root, 'data')
+      const stagingDir = join(dataDir, 'update-staging')
+      await mkdir(stagingDir, { recursive: true })
+      await writeFile(join(stagingDir, 'junk.exe'), 'junk')
+      const tempCopy = join(root, 'temp', '{uuid}', 'K线训练器.exe')
+      await mkdir(join(root, 'temp', '{uuid}'), { recursive: true })
+      await writeFile(`${tempCopy}.old`, 'wrong-target-old')
+      await expect(cleanupPortableUpdateLeftovers({
+        env: { PORTABLE_EXECUTABLE_DIR: join(root, 'apps') },
+        dataDir,
+        exePath: tempCopy,
+      })).resolves.toBeUndefined()
+      await expect(readdir(stagingDir)).rejects.toThrow()
+      expect(await readFile(`${tempCopy}.old`, 'utf8')).toBe('wrong-target-old')
     } finally {
       await rm(root, { recursive: true, force: true })
     }

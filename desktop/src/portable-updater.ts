@@ -36,6 +36,25 @@ export function isPortableExecution(env: NodeJS.ProcessEnv): boolean {
   return typeof env.PORTABLE_EXECUTABLE_DIR === 'string' && env.PORTABLE_EXECUTABLE_DIR.trim() !== ''
 }
 
+/**
+ * 便携自更新替换目标解析（P0 修复，PORT-UPD-01 真机验收发现）：
+ * electron-builder portable 壳启动时把真实应用解压到 %TEMP%\{uuid}\，process.execPath 指向
+ * 该临时副本；用户实际双击的 exe 由壳注入的 PORTABLE_EXECUTABLE_FILE 给出。替换目标必须
+ * 取后者——替换临时副本＝更新无效（replace.log 指向 %TEMP%、用户 exe 字节不变的实证）。
+ *   - 便携形态（PORTABLE_EXECUTABLE_DIR 非空白）且 PORTABLE_EXECUTABLE_FILE 非空白 → 返回后者；
+ *   - 非便携（NSIS/dev）→ 原样返回 execPath（原语义零改动）；
+ *   - 便携形态但 PORTABLE_EXECUTABLE_FILE 缺失/空白 → fail-closed throw：绝不回退 execPath
+ *     （会重现 P0），调用方视为初始化失败上报（与 sha512 校验 fail-closed 同哲学）。
+ */
+export function resolvePortableTargetExe(env: NodeJS.ProcessEnv, execPath: string): string {
+  if (!isPortableExecution(env)) return execPath
+  const target = env.PORTABLE_EXECUTABLE_FILE
+  if (typeof target !== 'string' || target.trim() === '') {
+    throw new Error('便携形态缺少 PORTABLE_EXECUTABLE_FILE（无法定位用户实际启动的 exe），已拒绝以自解压临时副本为替换目标')
+  }
+  return target
+}
+
 /** 便携产物名（PACK-05 desktopArtifactNames 冻结命名契约的运行时对应） */
 export function portableArtifactName(version: string): string {
   if (typeof version !== 'string' || !VERSION_PATTERN.test(version)) {
@@ -199,7 +218,9 @@ export function renderReplaceScript(input: RenderReplaceScriptInput): string {
 }
 
 /**
- * 便携启动清理：删除 <dataDir>/update-staging（含上次下载/脚本/日志）与 exe 旁 .old 残留。
+ * 便携启动清理：删除 <dataDir>/update-staging（含上次下载/脚本/日志）与用户 exe 旁 .old 残留。
+ * .old 目标＝resolvePortableTargetExe 解析结果（P0 修复：残留 beside 用户 exe，非 execPath
+ * 自解压临时副本）；便携形态解析失败 → staging 照清但 .old 零触碰（fail-closed 不猜目标）。
  * 非便携形态（无 PORTABLE_EXECUTABLE_DIR）no-op——NSIS/dev 零触碰；任何失败仅吞掉（不阻断启动）。
  */
 export async function cleanupPortableUpdateLeftovers(deps: {
@@ -212,8 +233,9 @@ export async function cleanupPortableUpdateLeftovers(deps: {
     await rm(join(deps.dataDir, PORTABLE_STAGING_DIR_NAME), { recursive: true, force: true })
   } catch { /* best-effort：残留清理失败不阻断启动，下次启动再试 */ }
   try {
-    await rm(`${deps.exePath}.old`, { force: true })
-  } catch { /* best-effort */ }
+    const targetExe = resolvePortableTargetExe(deps.env, deps.exePath)
+    await rm(`${targetExe}.old`, { force: true })
+  } catch { /* best-effort：.old 目标解析失败/删除失败都不阻断启动 */ }
 }
 
 // ===== 默认 IO 实现（可注入替换；测试注入 fetchText/downloadToFile/spawnDetached/quitApp） =====
@@ -270,8 +292,10 @@ function defaultSpawnDetached(command: string, args: string[]): void {
 }
 
 export interface PortableUpdaterDeps {
-  /** 当前便携 exe 全路径（process.execPath） */
+  /** 当前进程 exe 路径（process.execPath；便携形态下仅为解析回退，实际替换目标以 env 解析为准） */
   exePath: string
+  /** 进程环境（缺省 process.env；便携形态用 PORTABLE_EXECUTABLE_FILE 定位用户实际启动的 exe） */
+  env?: NodeJS.ProcessEnv
   /** staging 所在数据目录（bootServerAndOpen 解析后回填；null＝尚未就绪） */
   getDataDir: () => string | null
   /** 当前版本（app.getVersion()） */
@@ -298,6 +322,10 @@ interface PortableCheckCache {
 /** 便携自更新适配器：实现 DesktopUpdaterAdapter，controller（排空退出管线）零改动切换 */
 export function createPortableUpdaterAdapter(deps: PortableUpdaterDeps): DesktopUpdaterAdapter {
   const logger = deps.logger ?? console
+  // P0 修复：替换目标由 env 解析（便携形态＝PORTABLE_EXECUTABLE_FILE＝用户实际启动的 exe；
+  // process.execPath 只是自解压临时副本，替换它＝更新无效）。适配器初始化即解析——
+  // 便携形态拿不到该变量 → fail-closed throw（初始化失败，绝不回退临时副本），由调用方上报。
+  const targetExe = resolvePortableTargetExe(deps.env ?? process.env, deps.exePath)
   const fetchText = deps.fetchText ?? defaultFetchText
   const downloadToFile = deps.downloadToFile ?? defaultDownloadToFile
   const spawnDetached = deps.spawnDetached ?? defaultSpawnDetached
@@ -391,9 +419,9 @@ export function createPortableUpdaterAdapter(deps: PortableUpdaterDeps): Desktop
             throw new Error('待安装文件校验失败（sha512/size 与更新清单不符），已放弃本次安装')
           }
           const script = renderReplaceScript({
-            exePath: deps.exePath,
+            exePath: targetExe,
             stagingExe: target,
-            oldExe: `${deps.exePath}.old`,
+            oldExe: `${targetExe}.old`,
             logPath: join(stagingDir, REPLACE_LOG_NAME),
             pid: deps.pid ?? process.pid,
           })

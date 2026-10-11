@@ -10,9 +10,11 @@
 //      预置伪造历史库（真实迁移建库＋settled 训练行）→ 无 TRAINER_DATA_DIR/TRAINER_DB env 启动 →
 //      断言沿用该库（health＋/api/trainings/history 返回预置记录）＋exe 同级 data/ 未创建＋
 //      desktop-data-choice.json mode=adopted；二次启动幂等（仍沿用、仍不新建 data/）
-//   ⑧ PACK-04 更新通道（阶段 H）：本地 fixture HTTP 服务（latest.yml v9.9.9＋假安装器＋
-//      sha512）＋TRAINER_DESKTOP_UPDATE_FEED 注入＋boot check 可观测缝（只查不装）→断言
-//      packaged exe 通道=packaged 且 fixture 新版被真实检出（electron-updater 真实链路）。
+//   ⑧ PACK-04 更新通道（阶段 H）：本地 fixture HTTP 服务（latest.yml v9.9.9＋便携产物名假
+//      exe＋sha512——便携更新器按精确名选条目，fixture 名必须是
+//      kline-trainer-desktop-v{ver}-windows-x64.exe）＋TRAINER_DESKTOP_UPDATE_FEED 注入＋
+//      boot check 可观测缝（只查不装）→断言 packaged exe 通道=packaged 且 fixture 新版被
+//      真实检出（便携 exe 走自研便携更新链；真机替换环节由 portable-updater-smoke 冒烟锁定）。
 //   ⑦ PACK-03 同库共存防线（阶段 G）：dataDir 预置活 trainer-state.json（记录假训练器 pid/端口）→
 //      TRAINER_DESKTOP_CONFLICT_ANSWER=reuse 启动 → 假服务被健康探测＋exe 不启第二服务
 //      （自身端口未 bind）＋不新建库文件
@@ -205,15 +207,22 @@ async function runUpdateChild() {
   const { createServer } = await import('node:http')
 
   const FIXTURE_VERSION = '9.9.9'
+  // P0 修复后 fixture 对齐：便携更新器按精确名只认 kline-trainer-desktop-v{ver}-windows-x64.exe
+  // （portableArtifactName/selectPortableEntry），NSIS 风格 fake-installer 名会被 fail-closed 拒绝
+  // （检查即报「更新源未提供便携版产物」——旧 fixture 实跑实证）。条目名＝便携产物名，
+  // 冒烟才真正走到便携更新链。NSIS 通道的 fixture（fake-installer）见
+  // desktop/test/desktop-updates-fixture.test.ts（保持不动）。path 保留 setup 名以贴近
+  // release latest.yml 真实形状（extendLatestYmlWithPortable：setup 条目＋追加便携条目）。
+  const portableArtifact = `kline-trainer-desktop-v${FIXTURE_VERSION}-windows-x64.exe`
   const artifact = Buffer.concat([Buffer.from([0x4d, 0x5a]), randomBytes(600_000)])
   const sha512 = createHash('sha512').update(artifact).digest('base64')
   const latestYml = [
     `version: ${FIXTURE_VERSION}`,
-    `path: fake-installer-${FIXTURE_VERSION}.exe`,
+    `path: kline-trainer-desktop-setup-v${FIXTURE_VERSION}-windows-x64.exe`,
     `sha512: ${sha512}`,
     "releaseDate: '2026-10-05T00:00:00.000Z'",
     'files:',
-    `  - url: fake-installer-${FIXTURE_VERSION}.exe`,
+    `  - url: ${portableArtifact}`,
     `    sha512: ${sha512}`,
     `    size: ${artifact.length}`,
   ].join('\n')
@@ -226,7 +235,7 @@ async function runUpdateChild() {
       response.end(latestYml)
       return
     }
-    if (path === `/fake-installer-${FIXTURE_VERSION}.exe`) {
+    if (path === `/${portableArtifact}`) {
       response.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': artifact.length })
       response.end(artifact)
       return
