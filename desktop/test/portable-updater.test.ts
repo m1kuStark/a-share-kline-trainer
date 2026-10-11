@@ -189,10 +189,12 @@ describe('PORT-UPD-01 替换脚本渲染（规格第 4 条时序）', () => {
     expect(rendered).toContain('set "WAIT_PID=4242"')
   })
 
-  it('先轮询等待旧进程退出（tasklist 过滤＋findstr 字面匹配），超时不触碰 exe 直接退出', () => {
-    expect(rendered).toMatch(/tasklist \/FI "PID eq %WAIT_PID%" \/NH/)
-    expect(rendered).toContain('findstr /C:"%WAIT_PID%"')
-    expect(rendered).toMatch(/exit \/b 2/)
+  it('旧进程等待＝ping 固定延时（P0-6：tasklist 在 detached 隐藏 cmd 挂死，探活工具不可用）', () => {
+    // 固定延时秒数来自 REPLACE_WAIT_SECONDS（渲染值插值），不依赖任何进程查询工具
+    expect(rendered).not.toMatch(/tasklist \/FI/)
+    expect(rendered).toMatch(/ping -n \d+ 127\.0\.0\.1/)
+    // 退出码语义收敛：不再有 exit 2（超时零触碰）分支
+    expect(rendered).not.toMatch(/exit \/b 2/)
   })
 
   it('替换时序：旧 exe→.old → staging→原路径；失败回滚 .old→原路径；删 .old 不阻塞；启动新 exe', () => {

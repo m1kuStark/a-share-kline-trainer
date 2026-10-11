@@ -31,7 +31,7 @@ export const REPLACE_SCRIPT_NAME = 'update-replace.cmd'
 /** 替换日志名（脚本 append，诊断用） */
 export const REPLACE_LOG_NAME = 'replace.log'
 /** 等待旧进程退出的轮询次数上限（每轮约 1 秒） */
-export const REPLACE_WAIT_MAX_TRIES = 30
+export const REPLACE_WAIT_SECONDS = 30
 
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
 
@@ -157,22 +157,23 @@ export interface RenderReplaceScriptInput {
   logPath: string
   /** 等待退出的主进程 pid */
   pid: number
-  /** 轮询上限（每轮约 1 秒；默认 REPLACE_WAIT_MAX_TRIES） */
+  /** 旧进程退出固定等待秒数（默认 REPLACE_WAIT_SECONDS；P0-6 后语义＝ping 计时延时） */
   maxTries?: number
 }
 
 /**
  * 替换脚本渲染（规格第 4 条时序；ASCII＋CRLF；路径烘焙为引号变量，不经 argv——
  * 规避 cmd 引号歧义）。goto 分支而非括号块，规避 echo 文本中的括号陷阱。
- * pid 探活用 tasklist /NH 过滤＋findstr /C: 字面匹配——不用 find（Git Bash 环境 PATH
- * 会把 find 解析为 GNU find；findstr 为 System32 独有不被遮蔽）也不用 tasklist 退出码
- * （无匹配时 rc 亦为 0，实测不可判）。
- * 退出码：0 成功；2 旧进程超时未退（零触碰）；3 旧 exe 重命名失败（现场保留）；
- * 4 新 exe 移入失败（回滚 .old→原路径，旧 exe 可用）。
+ * 旧进程等待＝ping 计时固定延时（默认 REPLACE_WAIT_SECONDS 秒）：P0-6 真机实证（2026-10-11
+ * 最小复现）tasklist 在 detached+windowsHide 的 cmd 里挂死（stdio pipe/windowsHide:false/
+ * 非 detached 均不救；ping 正常）——探活工具不可用，改固定延时；异常情况下旧进程届时
+ * 仍存活由新实例的端口冲突处理（ask-on-conflict）兜底，替换仍零触碰回滚语义。
+ * 退出码：0 成功；3 旧 exe 重命名失败（现场保留）；4 新 exe 移入失败（回滚 .old→原路径，
+ * 旧 exe 可用）。
  */
 export function renderReplaceScript(input: RenderReplaceScriptInput): string {
-  const maxTries = input.maxTries ?? REPLACE_WAIT_MAX_TRIES
-  if (!Number.isInteger(maxTries) || maxTries < 1) throw new Error(`maxTries 必须为正整数：${maxTries}`)
+  const waitSeconds = input.maxTries ?? REPLACE_WAIT_SECONDS
+  if (!Number.isInteger(waitSeconds) || waitSeconds < 1) throw new Error(`waitSeconds 必须为正整数：${waitSeconds}`)
   const lines = [
     '@echo off',
     'rem PORT-UPD-01 portable self-update replace script - rendered per update, do not hand-edit.',
@@ -183,22 +184,8 @@ export function renderReplaceScript(input: RenderReplaceScriptInput): string {
     `set "LOG=${input.logPath}"`,
     `set "WAIT_PID=${input.pid}"`,
     '',
-    '>>"%LOG%" echo [%DATE% %TIME%] replace start pid=%WAIT_PID%',
-    'set /a TRIES=0',
-    '',
-    ':wait_pid',
-    'tasklist /FI "PID eq %WAIT_PID%" /NH 2>nul | findstr /C:"%WAIT_PID%" >nul 2>&1',
-    'if errorlevel 1 goto pid_gone',
-    'set /a TRIES+=1',
-    `if %TRIES% GEQ ${maxTries} goto pid_timeout`,
-    'ping -n 2 127.0.0.1 >nul 2>&1',
-    'goto wait_pid',
-    '',
-    ':pid_timeout',
-    '>>"%LOG%" echo [%DATE% %TIME%] old process %WAIT_PID% still alive after %TRIES% tries; nothing touched',
-    'exit /b 2',
-    '',
-    ':pid_gone',
+    `>>"%LOG%" echo [%DATE% %TIME%] replace start pid=%WAIT_PID%; fixed wait ${waitSeconds}s (tasklist hangs in detached hidden cmd, see P0-6)`,
+    `ping -n ${waitSeconds + 1} 127.0.0.1 >nul 2>&1`,
     'move /y "%EXE%" "%OLD_EXE%" >>"%LOG%" 2>&1',
     'if not errorlevel 1 goto renamed_ok',
     '>>"%LOG%" echo [%DATE% %TIME%] failed to rename current exe; keeping everything as-is',

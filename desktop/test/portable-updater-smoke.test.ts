@@ -55,6 +55,7 @@ describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
         exePath: targetExe, stagingExe,
         oldExe: `${targetExe}.old`,
         logPath: join(stagingDir, 'replace.log'),
+        maxTries: 1,
         pid: await deadPid(),
       }), 'utf8')
 
@@ -85,6 +86,7 @@ describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
         exePath, stagingExe,
         oldExe: `${exePath}.old`,
         logPath: join(stagingDir, 'replace.log'),
+        maxTries: 1,
         pid: await deadPid(),
       }), 'utf8')
 
@@ -114,6 +116,7 @@ describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
         exePath, stagingExe,
         oldExe: `${exePath}.old`,
         logPath: join(stagingDir, 'replace.log'),
+        maxTries: 1,
         pid: await deadPid(),
       }), 'utf8')
 
@@ -126,7 +129,7 @@ describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
     }
   }, 30_000)
 
-  it('旧进程未退出（超时）→ 零触碰（exit 2，exe 字节不变）', async () => {
+  it('固定等待后照常替换（P0-6：不再探活——等待期内旧进程退出与否不阻断，rename 运行中映像为 Windows 合法操作）', async () => {
     const root = await mkdtemp(join(tmpdir(), 'portable-smoke-'))
     let blocker: ReturnType<typeof spawn> | null = null
     try {
@@ -137,21 +140,23 @@ describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
       const oldBytes = '@echo off\r\nrem OLD EXE\r\nexit /b 0\r\n'
       await writeFile(exePath, oldBytes)
       await writeFile(stagingExe, newExeBatch(join(root, 'launched.flag')))
-      // 活进程：~10s 的 ping 占位（tasklist 可见其 pid）
+      // 活进程：等待期内仍在运行（旧语义探活会判活阻断；新语义固定延时后照常替换）
       blocker = spawn('cmd.exe', ['/d', '/c', 'ping -n 10 127.0.0.1 >nul'], { windowsHide: true })
       const scriptPath = join(stagingDir, 'update-replace.cmd')
       await writeFile(scriptPath, renderReplaceScript({
         exePath, stagingExe,
         oldExe: `${exePath}.old`,
         logPath: join(stagingDir, 'replace.log'),
+        maxTries: 1,
         pid: blocker.pid ?? -1,
         maxTries: 1,
       }), 'utf8')
 
       const { code } = await runScript(scriptPath)
-      expect(code).toBe(2)
-      expect(await readFile(exePath, 'utf8')).toBe(oldBytes)
-      expect(await readFile(stagingExe, 'utf8')).toContain('@echo off')
+      expect(code).toBe(0)
+      // 成功路径：新 exe 就位、.old 已删（旧进程届时若仍占端口由新实例 ask-on-conflict 兜底）
+      expect(await readFile(exePath, 'utf8')).toContain('launched.flag')
+      await expect(readFile(`${exePath}.old`)).rejects.toThrow()
     } finally {
       blocker?.kill()
       await rm(root, { recursive: true, force: true })
