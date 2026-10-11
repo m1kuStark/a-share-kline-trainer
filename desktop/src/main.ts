@@ -88,6 +88,22 @@ const WINDOW_STATE_FILE = 'window-state.json'
 // sandboxed preload 必须是 CJS（Electron ESM 文档）；src/preload.cts 编译产物为 dist/preload.cjs
 const PRELOAD_ENTRY = fileURLToPath(new URL('./preload.cjs', import.meta.url))
 
+// ===== P0-4（PORT-UPD-01）主进程异常兜底（最后防线；proposed_default 待用户追认） =====
+// 用户真机证据：undici（全局 fetch）内部 AssertionError [ERR_ASSERTION] assert(this.paused)
+// 从异步路径抛出，不经任何 try/catch，Electron 默认行为＝弹「A JavaScript error
+// occurred in the main process」崩溃窗（用户称启动后经常出现）。主进程网络层已整体
+// 换 Node 原生 http/https（server 侧 safe-http.ts＋desktop 侧 portable-updater.ts），
+// 本兜底确保任何残余异步异常（未知的第三方库内部断言等）只被完整记录、不再崩进程：
+//   - uncaughtException/unhandledRejection → console.error（时间＋堆栈）后不退出；
+//   - 不触碰正常退出管线（不调用 process.exit/app.exit/app.quit、不改 exitCode）；
+//   - 正常路径的错误仍由各调用点自身受控处理，本层不是错误处理的替代。
+process.on('uncaughtException', error => {
+  console.error(`[desktop] uncaught exception at ${new Date().toISOString()} (process kept alive):`, error)
+})
+process.on('unhandledRejection', reason => {
+  console.error(`[desktop] unhandled rejection at ${new Date().toISOString()} (process kept alive):`, reason)
+})
+
 type EmbeddedServer = {
   shutdown(): Promise<void>
   drain: {

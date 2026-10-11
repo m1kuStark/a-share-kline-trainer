@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AppConfig } from '../config.js'
 import { fetchUpdateManifest, resolveManifestUrl, type ManifestFetchText } from './manifest.js'
+import { safeGetText, safeRequest } from './safe-http.js'
 import { isBusyUpdateState, readUpdateStatus, reconcileUpdateStatus, writeUpdateStatus } from './status.js'
 import type { UpdatePlan } from './updater-core.js'
 import { APP_ROOT, compareVersions, serverVersion } from './version.js'
@@ -33,9 +34,9 @@ export interface DownloadResponseLike {
 export type DownloadFetch = (url: string) => Promise<DownloadResponseLike>
 
 export interface RegisterUpdateApiOptions {
-  /** 清单拉取器（返回清单文本；抛错＝网络失败）。默认真实 fetch（GitHub API UA＋15s 超时）。 */
+  /** 清单拉取器（返回清单文本；抛错＝网络失败）。默认 safe-http 原生层（GitHub API UA＋30 秒超时）。 */
   manifestFetch?: ManifestFetchText
-  /** 下载器（zip 与 SHA256SUMS 资产）。默认真实 fetch。 */
+  /** 下载器（zip 与 SHA256SUMS 资产）。默认 safe-http 原生层（900 秒总预算）。 */
   downloadFetch?: DownloadFetch
   /** 显式覆盖清单 URL（测试）；缺省按 env>config>release>默认 解析。 */
   manifestUrl?: string
@@ -88,21 +89,35 @@ export function parseSumsLine(sumsText: string, fileName: string): { ok: true, s
   return { ok: true, sha256: [...found][0] }
 }
 
+// P0-4：默认网络实现换 safe-http 原生层（主进程内嵌运行，全局 fetch/undici 的
+// 内部断言会在响应流截断时崩溃 Electron 主进程）；超时与语义保持原值。
 function defaultManifestFetch(url: string): Promise<string> {
-  return fetch(url, {
+  return safeGetText(url, {
     headers: { accept: 'application/vnd.github+json', 'user-agent': 'a-share-kline-trainer-updater' },
-    signal: AbortSignal.timeout(30_000),
-  }).then(async response => {
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    return response.text()
+    timeoutMs: 30_000,
+    timeoutMessage: '检查更新超时（30 秒）',
   })
 }
 
 async function defaultDownloadFetch(url: string): Promise<DownloadResponseLike> {
-  return await fetch(url, {
+  const response = await safeRequest(url, {
     headers: { 'user-agent': 'a-share-kline-trainer-updater' },
-    signal: AbortSignal.timeout(15 * 60_000),
+    timeoutMs: 15 * 60_000,
+    timeoutMessage: '下载超时（900 秒总预算）',
   })
+  return {
+    ok: response.ok,
+    status: response.status,
+    headers: response.headers,
+    text: () => response.text(),
+    arrayBuffer: async () => {
+      const buffer = await response.buffer()
+      return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer
+    },
+    // getReader 优先路径：增量 onProgress（downloadToBuffer 消费）；截断时 reader
+    // 以含已收/应收字节的人话 Error 拒绝（不产出 done）。
+    body: { getReader: () => response.reader() },
+  }
 }
 
 async function downloadToBuffer(url: string, fetcher: DownloadFetch, onProgress: (received: number, total: number | null) => Promise<void>): Promise<Buffer> {

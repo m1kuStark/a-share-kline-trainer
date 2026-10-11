@@ -1,11 +1,16 @@
 // PACK-02 端口决策层（DESKTOP-PORT-CONFLICT-FOREIGN-AUTOPICK / DESKTOP-PORT-CONFLICT-TRAINER-ASK）。
 // 口径镜像自 scripts/release/launcher.cjs 冻结语义（launcher 不入桌面包、禁改，故镜像重实现）：
 //   - isTrainerHealth 三字段身份：status==='ok' && typeof runId==='string' && Number.isInteger(pid)
-//   - probeHealth：仅 127.0.0.1、redirect:'error'、仅 HTTP 200 计身份
+//   - probeHealth：仅 127.0.0.1、重定向即拒（redirects:'error'）、仅 HTTP 200 计身份
 //   - PORT-01：bind 探测（EACCES→reserved，其他→occupied）＋preferred+1 起向上至多 40 次找首个可 bind
 //   - PORT-02：reuse＝复核存活后不启第二进程；restart＝复核 pid 一致才杀→等退出＋端口释放
 //   - 桌面第三应答 cancel（PACK-02 派发简报决策③）；应答可注入 env（对齐 launcher --conflict-answer）
+// P0-4（PORT-UPD-01）：probeHealthHttp 换 server 侧 safe-http 原生网络层产物（与
+// portable-updater.ts 引用 server/dist/update/version.js 同一 import 模式）——全局
+// fetch（undici）在响应流截断时以内部断言崩溃 Electron 主进程（用户真机弹窗证据），
+// 原生层把同类截断转为受控失败。
 import net from 'node:net'
+import { safeRequest } from '../../server/dist/update/safe-http.js'
 
 export const FALLBACK_ATTEMPTS = 40
 
@@ -147,21 +152,27 @@ export async function resolvePortPlan(desiredPort: number, deps: PortPlanDeps): 
 
 const HEALTH_TIMEOUT_MS = 1_200
 
-/** launcher probeHealth 镜像：127.0.0.1 专用、redirect:'error'、仅 200 计身份 */
+/** launcher probeHealth 镜像：127.0.0.1 专用、重定向即拒（redirects:'error'）、仅 200 计身份 */
 export async function probeHealthHttp(port: number): Promise<HealthProbe> {
-  const url = `http://127.0.0.1:${port}/api/health`
   try {
-    const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) })
+    const response = await safeRequest(`http://127.0.0.1:${port}/api/health`, {
+      timeoutMs: HEALTH_TIMEOUT_MS,
+      timeoutMessage: '健康探测超时（1.2 秒）',
+      redirects: 'error',
+    })
     let json: unknown = null
     if (response.status === 200) {
-      try { json = await response.json() } catch { json = null }
+      try { json = JSON.parse(await response.text()) } catch { json = null }
+    } else {
+      response.discard()
     }
     return { responded: true, refused: false, status: response.status, json }
   } catch (error) {
-    const cause = (error as { cause?: { code?: string } })?.cause?.code
+    // 原生层请求错误直接携带 code（fetch 时代在 cause 内）；连接拒绝＝端口空闲
+    const code = (error as NodeJS.ErrnoException)?.code
     return {
       responded: false,
-      refused: cause === 'ECONNREFUSED',
+      refused: code === 'ECONNREFUSED',
       status: null,
       json: null,
     }

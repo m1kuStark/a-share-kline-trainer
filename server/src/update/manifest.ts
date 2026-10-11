@@ -5,6 +5,7 @@
 // 任何测试不得访问 api.github.com。
 
 import { readFile } from 'node:fs/promises'
+import { safeGetText } from './safe-http.js'
 import { normalizeTagVersion } from './version.js'
 
 export const DEFAULT_REPO = 'm1kuStark/a-share-kline-trainer'
@@ -78,14 +79,15 @@ export async function resolveManifestUrl(options: {
   return { url: DEFAULT_MANIFEST_URL, source: 'default' }
 }
 
-/** 真实清单拉取（GitHub API 需要 User-Agent；15 秒超时）。 */
+/** 真实清单拉取（GitHub API 需要 User-Agent；15 秒超时）。P0-4：换 safe-http 原生
+ * 网络层——全局 fetch（undici）在响应流截断时从内部异步抛断言崩溃 Electron 主进程
+ * （server 内嵌于主进程运行），原生层把截断转为含已收/应收字节的人话 Error。 */
 async function defaultManifestFetch(url: string): Promise<string> {
-  const response = await fetch(url, {
+  return safeGetText(url, {
     headers: { accept: 'application/vnd.github+json', 'user-agent': 'a-share-kline-trainer-updater' },
-    signal: AbortSignal.timeout(15_000),
+    timeoutMs: 15_000,
+    timeoutMessage: '检查更新超时（15 秒）',
   })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
-  return await response.text()
 }
 
 function assetUrl(asset: unknown): string | null {

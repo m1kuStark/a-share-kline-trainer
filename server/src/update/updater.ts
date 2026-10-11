@@ -11,6 +11,7 @@ import { spawn } from 'node:child_process'
 import { readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { safeRequest } from './safe-http.js'
 import { writeUpdateStatus } from './status.js'
 import {
   backupPreserveFiles, performSwap, restorePreserveFromBackup, rollbackSwap, snapshotPreserved, verifyPreserved, walkFiles,
@@ -49,20 +50,34 @@ function pidAlive(pid: number): boolean {
   }
 }
 
+// P0-4：控制面与健康探测换 safe-http 原生层（本模块经 server/dist 拷贝进更新工作目录
+// 独立运行，同时 server 侧源码内嵌于 Electron 主进程——全局 fetch/undici 在响应流
+// 截断时会以内部断言崩溃主进程，原生层把截断转为含已收/应收字节的人话 Error）。
 async function postControl(plan: UpdatePlan, action: 'prepare' | 'shutdown'): Promise<{ ok: boolean, reason?: string }> {
   const token = process.env.TRAINER_CONTROL_TOKEN?.trim() ?? ''
   if (!token) return { ok: false, reason: '缺少控制令牌（TRAINER_CONTROL_TOKEN），无法执行受控退出' }
   try {
-    const response = await fetch(`http://127.0.0.1:${plan.serverPort}/api/setup/control/${action}`, {
+    const response = await safeRequest(`http://127.0.0.1:${plan.serverPort}/api/setup/control/${action}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-control-token': token },
       body: JSON.stringify({ runId: plan.runId, attemptId: plan.attemptId }),
-      signal: AbortSignal.timeout(20_000),
+      timeoutMs: 20_000,
+      timeoutMessage: '控制请求超时（20 秒）',
     })
-    if (response.status === 200 || response.status === 202) return { ok: true }
+    if (response.status === 200 || response.status === 202) {
+      response.discard()
+      return { ok: true }
+    }
     let code = `HTTP ${response.status}`
+    let bodyText: string
     try {
-      const body = JSON.parse(await response.text()) as { error?: string }
+      bodyText = await response.text()
+    } catch (error) {
+      // 错误体读失败（含截断）是传输层失败：如实上报（区别于下面的「非 JSON 体」）
+      return { ok: false, reason: messageOf(error) }
+    }
+    try {
+      const body = JSON.parse(bodyText) as { error?: string }
       if (body?.error) code = body.error
     } catch { /* 非 JSON 体按状态码报告 */ }
     return { ok: false, reason: code }
@@ -73,7 +88,9 @@ async function postControl(plan: UpdatePlan, action: 'prepare' | 'shutdown'): Pr
 
 const defaultDelay = (ms: number): Promise<void> => new Promise(resolveDelay => { setTimeout(resolveDelay, ms) })
 
-const defaultDeps: UpdaterDeps = {
+// 默认 IO 实现集合：P0-4 起网络环节（control/健康探测）走 safe-http 原生层；
+// 整体导出供 updater-network 测试直测默认实现（真实 node http server 入口）。
+export const defaultDeps: UpdaterDeps = {
   control: {
     prepare: plan => postControl(plan, 'prepare'),
     shutdown: plan => postControl(plan, 'shutdown'),
@@ -87,7 +104,13 @@ const defaultDeps: UpdaterDeps = {
     const drainDeadline = Date.now() + PORT_DRAIN_TIMEOUT_MS
     while (Date.now() < drainDeadline) {
       try {
-        await fetch(`http://127.0.0.1:${plan.serverPort}/api/health`, { signal: AbortSignal.timeout(500) })
+        // 任何响应（含非 2xx）＝端口仍有服务在答——继续等释放；只有请求级失败
+        // （拒绝/超时/重置）才算已释放（fetch 语义：HTTP 状态码不 reject）。
+        const probe = await safeRequest(`http://127.0.0.1:${plan.serverPort}/api/health`, {
+          timeoutMs: 500,
+          timeoutMessage: '端口释放探测超时（0.5 秒）',
+        })
+        probe.discard()
       } catch {
         return { ok: true }
       }
@@ -122,7 +145,10 @@ const defaultDeps: UpdaterDeps = {
     let lastReason = '未开始探测'
     while (Date.now() < deadline) {
       try {
-        const response = await fetch(`http://127.0.0.1:${plan.serverPort}/api/health`, { signal: AbortSignal.timeout(1_000) })
+        const response = await safeRequest(`http://127.0.0.1:${plan.serverPort}/api/health`, {
+          timeoutMs: 1_000,
+          timeoutMessage: '健康探测超时（1 秒）',
+        })
         if (response.status === 200) {
           const body = JSON.parse(await response.text()) as { currentVersion?: unknown, pid?: unknown }
           if (body?.currentVersion === expectedVersion) return { ok: true, version: expectedVersion }
@@ -131,6 +157,7 @@ const defaultDeps: UpdaterDeps = {
             lastReason = `服务已启动但版本为 ${String(body?.currentVersion ?? '未知')}（期望 ${expectedVersion}）`
           }
         } else {
+          response.discard()
           lastReason = `HTTP ${response.status}`
         }
       } catch (error) {
