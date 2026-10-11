@@ -31,7 +31,12 @@ import {
 } from './release-desktop-lib.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const OUT_DIR = join(ROOT, 'desktop', 'release')
+// TRAINER_RELEASE_OUT_DIR（相对 ROOT）：可选输出目录覆盖——默认 desktop/release。
+// 用途：默认目录被句柄占用（残留进程 cwd/杀毒扫描）时绕开锁定继续发布（2026-10-11
+// win-unpacked EBUSY 实例）；产物目录只是落点，latest.yml/sha 校验逻辑相对 OUT_DIR 不变。
+const OUT_DIR = process.env.TRAINER_RELEASE_OUT_DIR?.trim()
+  ? join(ROOT, process.env.TRAINER_RELEASE_OUT_DIR.trim())
+  : join(ROOT, 'desktop', 'release')
 
 // 与 package-desktop.mjs 同款国内镜像固化（NSIS 工具链下载走 electron-builder-binaries 镜像）
 process.env.ELECTRON_MIRROR ||= 'https://npmmirror.com/mirrors/electron/'
@@ -253,6 +258,7 @@ async function main() {
 
   const builderCli = join(ROOT, 'node_modules', 'electron-builder', 'cli.js')
   const args = ['--config', 'desktop/electron-builder.yml', '--win', 'nsis', 'portable', '--publish', 'never']
+  if (process.env.TRAINER_RELEASE_OUT_DIR?.trim()) args.push('--config.directories.output=' + process.env.TRAINER_RELEASE_OUT_DIR.trim())
   console.log(`[release-desktop] version=${version}`)
   console.log(`[release-desktop] electron-builder ${args.join(' ')}`)
   const code = await new Promise(resolve => {
