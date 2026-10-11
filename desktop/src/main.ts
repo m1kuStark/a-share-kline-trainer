@@ -75,6 +75,7 @@ import {
   resolveUpdateChannel,
   resolveUpdateFeed,
   type DesktopUpdateEvent,
+  type DesktopUpdateNotice,
   type DesktopUpdaterAdapter,
 } from './desktop-updates.js'
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
@@ -139,6 +140,17 @@ function sendUpdateEvent(event: DesktopUpdateEvent): void {
   } catch (error) {
     console.error('[desktop] update event send failed:', error)
   }
+}
+
+// ===== UPD-NOTIFY-01（v1.3.0）：boot 自动检查的新版通知投递 =====
+// 启动时序竞态兜底：自动检查可能在窗口创建/渲染端订阅完成之前结束（即时投递会被
+// sendUpdateEvent 丢弃或渲染端无人监听），故缓存通知，并在每次页面加载完成
+// （did-finish-load，渲染端 setup 期已订阅）后补投；检查晚于加载完成时由 onBootNotice
+// 即时投递。两条路径幂等（渲染端仅置内存态）。
+let bootUpdateNotice: DesktopUpdateNotice | null = null
+function deliverBootUpdateNotice(): void {
+  if (!bootUpdateNotice) return
+  sendUpdateEvent({ type: 'update-available-notice', ...bootUpdateNotice })
 }
 
 // ===== 窗口 =====
@@ -216,6 +228,9 @@ function createWindow(url: string, bounds: WindowBounds | null): BrowserWindow {
   win.on('page-title-updated', event => { event.preventDefault() })
   win.once('ready-to-show', () => { win.show() })
   win.on('close', () => { rememberWindowBounds() })
+  // UPD-NOTIFY-01：页面加载完成后补投 boot 检查发现的新版通知（渲染端 setup 期已订阅；
+  // 检查晚于加载完成时由 onBootNotice 即时投递，双路径幂等）
+  win.webContents.on('did-finish-load', () => { deliverBootUpdateNotice() })
   applyExternalLinkPolicy(win, new URL(url).origin)
   void win.loadURL(url)
   return win
@@ -441,6 +456,12 @@ async function setupUpdateChannel(): Promise<void> {
     bootCheckOutPath: updateChannelKind === 'packaged'
       ? (process.env.TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT?.trim() || null)
       : null,
+    // UPD-NOTIFY-01：boot 自动检查发现新版→缓存＋即时投递（加载完成前被丢时由
+    // did-finish-load 补投）
+    onBootNotice: notice => {
+      bootUpdateNotice = notice
+      deliverBootUpdateNotice()
+    },
     logger: console,
   })
 }

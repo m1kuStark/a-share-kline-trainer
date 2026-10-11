@@ -9,6 +9,7 @@ import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } fro
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
+import type { DesktopUpdatesApi } from './updateFlow'
 import { Moon, Sun } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
@@ -542,6 +543,12 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', onDataVisibilityChange)
   void checkDataStatus({ force: true })
   startStatusTicker()
+  // UPD-NOTIFY-01：App 级订阅 boot 更新通知（同步建立即可——仍远早于主进程 did-finish-load
+  // 补投；放在数据状态检查之后，不挤占 R1「启动即 force 检查」的既有契约位）
+  desktopNoticeUnsubscribe = desktopUpdatesHolder.desktopUpdates?.onUpdateEvent(event => {
+    const notice = parseUpdateNoticeEvent(event)
+    if (notice) updateNotice.value = notice
+  }) ?? null
   await reloadEnv()
   if (navigationVersion !== startupNavigationVersion) return
   // 退出协调会话：env 可达后注册并开始心跳（不可达时在退出流程内降级提示）
@@ -551,6 +558,7 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('focus', onDataFocus)
   document.removeEventListener('visibilitychange', onDataVisibilityChange)
+  desktopNoticeUnsubscribe?.()
   cancelDataWatchers()
   if (shakeTimer !== undefined) { clearInterval(shakeTimer); shakeTimer = undefined }
   stopHeartbeat()
@@ -560,6 +568,8 @@ onUnmounted(() => {
 // ===== 训练默认设置入口（返修 F3）：打开期间 rail 与 workspace 整体 inert（焦点+指针双隔离），
 // 关闭（含 Esc/遮罩/取消）后焦点返还设置按钮；Training/录像保持挂载。 =====
 const settingsButton = ref<HTMLElement | null>(null)
+/** 设置弹层打开时直入的分栏（UPD-NOTIFY-01 更新提示跳转传 'about'；手动入口保持默认分栏） */
+const requestedSettingsSection = ref<'defaults' | 'about'>('defaults')
 async function returnFocusToSettingsTrigger(): Promise<void> {
   await nextTick() // 等 inert 解除后再还焦点，否则 inert 容器内的元素不可聚焦
   settingsButton.value?.focus()
@@ -569,12 +579,40 @@ function onSettingsToggle(): void {
     closeTrainingSettings()
     void returnFocusToSettingsTrigger()
   } else {
+    requestedSettingsSection.value = 'defaults'
     openTrainingSettings()
   }
 }
 function onSettingsClose(): void {
   closeTrainingSettings()
+  requestedSettingsSection.value = 'defaults'
   void returnFocusToSettingsTrigger()
+}
+
+// ===== UPD-NOTIFY-01（v1.3.0）首页更新提示：主进程 boot 自动检查发现新版 → 事件通知 =====
+// 事件面 = 既有 desktopUpdates.onUpdateEvent（无新 IPC 面）；订阅建在 App 级——Launcher
+// 可能尚未挂载（启动 loading 态）而 boot 通知只投递一次（did-finish-load 后补投）。
+// 简单内存态（不持久化）：点击处理后本次会话视为已处理，不再打扰；无通知/检查失败
+// 则状态恒为 null——首页零打扰。
+interface UpdateNoticeInfo { latestVersion: string, releaseNotes: string | null }
+const desktopUpdatesHolder = window as unknown as { desktopUpdates?: DesktopUpdatesApi }
+const updateNotice = ref<UpdateNoticeInfo | null>(null)
+const updateNoticeHandled = ref(false)
+let desktopNoticeUnsubscribe: (() => void) | null = null
+
+/** boot 检查通知事件 → 首页提示载荷；其余更新事件（下载进度等）由设置面板自管，这里忽略 */
+function parseUpdateNoticeEvent(event: unknown): UpdateNoticeInfo | null {
+  if (typeof event !== 'object' || event === null) return null
+  const candidate = event as { type?: unknown, version?: unknown, releaseNotes?: unknown }
+  if (candidate.type !== 'update-available-notice' || typeof candidate.version !== 'string' || candidate.version === '') return null
+  return { latestVersion: candidate.version, releaseNotes: typeof candidate.releaseNotes === 'string' ? candidate.releaseNotes : null }
+}
+
+/** 首页提示点击：本次会话视为已处理（按钮收起），打开设置并直入「关于与更新」 */
+function onLauncherUpdateNotice(): void {
+  updateNoticeHandled.value = true
+  requestedSettingsSection.value = 'about'
+  openTrainingSettings()
 }
 function onTrainingEnded(): void {
   recordingOptions.value = { enabled: true }
@@ -661,7 +699,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
       <template v-if="view === 'launcher'">
         <p v-if="wizardError" class="setup-connection-error" role="alert">{{ wizardError }} <button class="data-reread-btn" @click="openWizard">重新选择目录</button></p>
         <p v-if="wizardNote" class="setup-connection-note" role="status">{{ wizardNote }}</p>
-        <Launcher @created="onCreated" />
+        <Launcher :update-notice="updateNotice && !updateNoticeHandled ? updateNotice : null" @created="onCreated" @open-update-settings="onLauncherUpdateNotice" />
       </template>
       <RecordingLibrary v-else-if="view === 'library'" :items="recentRecordings" :busy="recordingBusy" :error="recordingError" :active-session-ids="activeRecordingIds" @replay="openRecording" @import="importRecording" @remove="removeRecording" @clear="clearRecordings" @close="returnToTraining" />
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
@@ -673,7 +711,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 
     <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
          inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
-    <TrainingSettings v-if="trainingSettingsOpen" @close="onSettingsClose" />
+    <TrainingSettings v-if="trainingSettingsOpen" :initial-section="requestedSettingsSection" :seeded-update-notice="requestedSettingsSection === 'about' ? updateNotice : null" @close="onSettingsClose" />
 
     <!-- 保存并退出训练器（REL-LAUNCH-UX-01）：保存→协调→排空→端口不可达才算已退出 -->
     <div v-if="exitModalOpen" class="exit-overlay" role="dialog" aria-modal="true" aria-label="退出训练器">
