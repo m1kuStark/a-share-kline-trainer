@@ -13,9 +13,13 @@
 // 依赖全注入（网络/spawn/退出回调/版本/路径），纯逻辑 vitest 直测；替换脚本另有真实 spawn 冒烟。
 // 注意：latest.yml 解析器与 desktop/scripts/release-desktop-lib.mjs 同形状但独立实现——
 // 运行包只带 desktop/dist/**（lib 不入包），沿 server zip.ts「零依赖自实现」先例。
+// 网络层（P0-3）：Node 原生 http/https，绝不用全局 fetch（undici）——真机截断场景 undici
+// 内部断言经异步路径抛出不可捕获会崩主进程；截断/非 2xx/请求错误全部转人话 Error 冒泡。
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdir, rm, stat, writeFile } from 'node:fs/promises'
+import { request as httpRequest, type ClientRequest, type IncomingMessage } from 'node:http'
+import { request as httpsRequest } from 'node:https'
 import { join } from 'node:path'
 import { normalizeTagVersion, compareVersions } from '../../server/dist/update/version.js'
 import { normalizeUpdaterError, resolveUpdateFeed, type DesktopUpdaterAdapter, type UpdateFeed } from './desktop-updates.js'
@@ -240,13 +244,133 @@ export async function cleanupPortableUpdateLeftovers(deps: {
 
 // ===== 默认 IO 实现（可注入替换；测试注入 fetchText/downloadToFile/spawnDetached/quitApp） =====
 
-async function defaultFetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: { 'user-agent': 'a-share-kline-trainer-portable-updater' },
-    signal: AbortSignal.timeout(15_000),
+// P0-3 修复（PORT-UPD-01 真机崩溃）：默认网络层用 Node 原生 http/https，绝不用全局
+// fetch（undici）。用户真机（Electron 44）下载 117MB exe 时响应流被截断，undici 在
+// socket 异常结束路径从内部异步抛 AssertionError [ERR_ASSERTION] assert(this.paused)
+// （Parser.finish→Socket.onHttpSocketEnd）→ 主进程 uncaught exception 弹 Error 窗——
+// 该异常不经任何可 await 的路径，try/catch 不可拦。原生层把同类截断转为普通人话
+// Error（含已收/应收字节），请求错误原样冒泡（保留 ECONNREFUSED 等 code 供
+// normalizeUpdaterError 归类）。
+const UPDATER_USER_AGENT = 'a-share-kline-trainer-portable-updater'
+/** 跟随重定向上限（GitHub releases/latest/download → 签名 CDN 为一跳；防循环兜底） */
+const UPDATER_MAX_REDIRECTS = 5
+
+/** 按 URL protocol 选原生模块（http:// 本地验收 feed；https:// GitHub/CDN；其余 fail-closed） */
+function requestUpdaterUrl(url: string, callback: (res: IncomingMessage) => void): ClientRequest {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error(`更新源 URL 无法解析：${url}`)
+  }
+  const options = { headers: { 'user-agent': UPDATER_USER_AGENT } }
+  if (parsed.protocol === 'http:') return httpRequest(url, options, callback)
+  if (parsed.protocol === 'https:') return httpsRequest(url, options, callback)
+  throw new Error(`更新源协议不支持（仅 http/https）：${parsed.protocol}`)
+}
+
+/**
+ * 打开更新源响应（含 3xx 重定向跟随——全局 fetch 的默认语义，GitHub latest/download
+ * 302 → CDN 必需；原实现无此能力即回归）。resolve＝最终响应；reject＝请求错误（原样
+ * 冒泡保留 code）／重定向超限。destroyCurrent 供超时中止当前跳（总预算语义）。
+ */
+function openUpdaterResponse(url: string): {
+  promise: Promise<IncomingMessage>
+  destroyCurrent: (error: Error) => void
+} {
+  let currentReq: ClientRequest | null = null
+  const promise = new Promise<IncomingMessage>((resolve, reject) => {
+    let currentUrl = url
+    let remainingRedirects = UPDATER_MAX_REDIRECTS
+    let settled = false
+    const fail = (error: Error): void => {
+      if (!settled) {
+        settled = true
+        reject(error)
+      }
+    }
+    const attempt = (): void => {
+      let req: ClientRequest
+      try {
+        req = requestUpdaterUrl(currentUrl, res => {
+          const status = res.statusCode ?? 0
+          const location = res.headers.location
+          if (status >= 300 && status < 400 && typeof location === 'string' && location !== '') {
+            res.resume() // 排空 3xx 响应体再跳转，释放连接
+            if (remainingRedirects <= 0) {
+              req.destroy()
+              fail(new Error(`更新源重定向超过 ${UPDATER_MAX_REDIRECTS} 次（疑似循环），已拒绝`))
+              return
+            }
+            remainingRedirects -= 1
+            try {
+              currentUrl = new URL(location, currentUrl).toString()
+            } catch {
+              fail(new Error(`更新源重定向地址无法解析：${location}`))
+              return
+            }
+            attempt()
+            return
+          }
+          settled = true
+          resolve(res)
+        })
+      } catch (error) {
+        fail(error instanceof Error ? error : new Error(String(error)))
+        return
+      }
+      currentReq = req
+      req.on('error', error => { if (req === currentReq) fail(error) })
+      req.end()
+    }
+    attempt()
   })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
-  return await response.text()
+  return { promise, destroyCurrent: (error: Error) => { currentReq?.destroy(error) } }
+}
+
+/** 字节缺口人话描述（流提前结束/被重置→已收/应收；超时→超时消息优先） */
+function truncationError(received: number, total: number, cause: unknown, timedOut: boolean, timeoutError: Error): Error {
+  if (timedOut) return timeoutError
+  if (total > 0 && received < total) {
+    const detail = cause instanceof Error ? cause.message : String(cause)
+    return new Error(`下载中断：已收 ${received}/${total} 字节（${detail}）`)
+  }
+  return cause instanceof Error ? cause : new Error(String(cause))
+}
+
+async function defaultFetchText(url: string): Promise<string> {
+  const timeoutError = new Error('检查更新超时（15 秒）')
+  let timedOut = false
+  const opened = openUpdaterResponse(url)
+  const timer = setTimeout(() => {
+    timedOut = true
+    opened.destroyCurrent(timeoutError)
+  }, 15_000)
+  try {
+    const res = await opened.promise
+    const status = res.statusCode ?? 0
+    if (status < 200 || status >= 300) {
+      res.resume()
+      throw new Error(`HTTP ${status}`)
+    }
+    const total = Number(res.headers['content-length']) || 0
+    const chunks: Buffer[] = []
+    let received = 0
+    await new Promise<void>((resolve, reject) => {
+      res.on('data', (chunk: Buffer) => {
+        chunks.push(chunk)
+        received += chunk.length
+      })
+      res.on('error', cause => reject(truncationError(received, total, cause, timedOut, timeoutError)))
+      res.on('end', () => {
+        if (total > 0 && received < total) reject(new Error(`下载中断：已收 ${received}/${total} 字节（连接提前结束）`))
+        else resolve()
+      })
+    })
+    return Buffer.concat(chunks).toString('utf8')
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 async function defaultDownloadToFile(
@@ -254,25 +378,43 @@ async function defaultDownloadToFile(
   dest: string,
   onProgress: (transferred: number, total: number) => void,
 ): Promise<void> {
-  const response = await fetch(url, {
-    headers: { 'user-agent': 'a-share-kline-trainer-portable-updater' },
-    signal: AbortSignal.timeout(600_000),
-  })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
-  if (!response.body) throw new Error('下载响应没有内容')
-  const total = Number(response.headers.get('content-length')) || 0
-  const { createWriteStream } = await import('node:fs')
-  const { Transform } = await import('node:stream')
-  const { pipeline } = await import('node:stream/promises')
-  let transferred = 0
-  const counter = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      transferred += chunk.length
-      onProgress(transferred, total)
-      callback(null, chunk)
-    },
-  })
-  await pipeline(response.body, counter, createWriteStream(dest))
+  const timeoutError = new Error('下载超时（600 秒总预算）')
+  let timedOut = false
+  const opened = openUpdaterResponse(url)
+  const timer = setTimeout(() => {
+    timedOut = true
+    opened.destroyCurrent(timeoutError)
+  }, 600_000)
+  try {
+    const res = await opened.promise
+    const status = res.statusCode ?? 0
+    if (status < 200 || status >= 300) {
+      res.resume()
+      throw new Error(`HTTP ${status}`)
+    }
+    const total = Number(res.headers['content-length']) || 0
+    const { createWriteStream } = await import('node:fs')
+    const { Transform } = await import('node:stream')
+    const { pipeline } = await import('node:stream/promises')
+    let transferred = 0
+    const counter = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        transferred += chunk.length
+        onProgress(transferred, total)
+        callback(null, chunk)
+      },
+    })
+    try {
+      await pipeline(res, counter, createWriteStream(dest))
+    } catch (cause) {
+      throw truncationError(transferred, total, cause, timedOut, timeoutError)
+    }
+    if (total > 0 && transferred < total) {
+      throw new Error(`下载中断：已收 ${transferred}/${total} 字节（连接提前结束）`)
+    }
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 async function defaultSha512File(path: string): Promise<string> {
