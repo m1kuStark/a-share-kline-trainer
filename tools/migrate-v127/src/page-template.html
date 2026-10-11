@@ -43,7 +43,7 @@
 <body>
 <div class="wrap">
   <h1>训练录像迁移导出</h1>
-  <p class="sub">把这台浏览器里保存的 v1.2.7 训练录像打包成一个文件，之后在 v1.3.0 的「训练录像」页导入。本页面只读取录像，不会修改或删除任何旧数据。</p>
+  <p class="sub">把 v1.2.7 的训练录像与训练历史分别打包，之后在 v1.3.0 新版本导入。本页面只读取旧数据，不会修改或删除任何内容。</p>
 
   <section id="detect">
     <h2>一、检测结果</h2>
@@ -63,8 +63,18 @@
     </div>
   </section>
 
+  <section id="history">
+    <h2>二、训练历史（SQLite 训练记录）</h2>
+    <dl id="history-info"></dl>
+    <div class="actions">
+      <button id="history-export-btn" type="button">导出训练历史迁移包</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0;">「导出训练历史迁移包」会把旧训练库（trainer.sqlite）复制为自包含单文件，连同迁移清单一起放到旧版本文件夹下的「训练历史迁移-时间戳」文件夹。之后在 v1.3.0 新版本的「设置 → 从 v1.2.7 迁移」里选择该文件夹中的 迁移清单.json 完成导入。录像与历史的导出先后顺序随意，互不影响。</p>
+    <div id="history-status" class="status" style="display:none;"></div>
+  </section>
+
   <section id="list" style="display:none;">
-    <h2>二、录像清单</h2>
+    <h2>三、录像清单</h2>
     <table>
       <thead><tr><th>来源</th><th>会话</th><th>训练关联</th><th>事件数</th><th>状态</th></tr></thead>
       <tbody id="list-body"></tbody>
@@ -74,16 +84,16 @@
       <button id="export-btn" type="button">导出录像合并包</button>
       <button id="sqlite-btn" type="button" class="secondary">打包 SQLite 训练库（可选）</button>
     </div>
-    <p class="hint" style="margin:8px 0 0;">「打包 SQLite 训练库」会把旧训练库文件（trainer.sqlite 及其 -wal/-shm）复制到旧版本文件夹下的「迁移导出-时间戳」文件夹。默认升级方式（把 v1.3.0 解压到旧文件夹）不需要这一步，新程序会自动沿用旧训练库；仅当你把 v1.3.0 解压到别处、或想留一份备份时使用。</p>
+    <p class="hint" style="margin:8px 0 0;">「打包 SQLite 训练库」为原始备份用途：把旧训练库文件（trainer.sqlite 及其 -wal/-shm）原样复制到旧版本文件夹下的「迁移导出-时间戳」文件夹。要迁移训练历史到 v1.3.0 请使用上方「导出训练历史迁移包」（含校验与清单，v1.3.0 只认该迁移包）。</p>
     <div id="status" class="status" style="display:none;"></div>
   </section>
 
   <section id="done" style="display:none;">
-    <h2>三、下一步</h2>
+    <h2>四、下一步</h2>
     <ol class="hint" style="margin:0; padding-left:20px; color:#d7dce3;">
-      <li>打开 v1.3.0 新版本，进入「训练录像」页。</li>
-      <li>点「导入录制」，选择刚下载的合并包文件（训练录像库-….trainer-recordings.json）。</li>
-      <li>提示「批量导入完成：成功 N」即迁移成功；录像可正常回放。</li>
+      <li>录像：打开 v1.3.0 新版本，进入「训练录像」页，点「导入录制」，选择导出的合并包文件（训练录像库-….trainer-recordings.json），提示「批量导入完成：成功 N」即成功。</li>
+      <li>训练历史：在 v1.3.0 新版本进入「设置 → 从 v1.2.7 迁移」，选择「训练历史迁移-时间戳」文件夹中的 迁移清单.json，按提示导入并重启应用。</li>
+      <li>两步先后顺序随意；都完成后旧版本可留存备查，迁移不会修改或删除任何旧数据。</li>
     </ol>
     <div class="actions"><button id="shutdown-btn" type="button" class="secondary">完成并关闭工具</button></div>
   </section>

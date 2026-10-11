@@ -18,6 +18,7 @@ interface V127PageInfo {
   namespaceSource: 'sqlite-cache-meta' | 'none'
   dataDir: string | null
   databasePath: string | null
+  history?: { available: true, sqliteBytes: number, counts: Record<string, number> } | { available: false, reason: string } | null
 }
 
 declare global {
@@ -35,6 +36,62 @@ function showStatus(text: string, kind: 'ok' | 'err'): void {
   box.style.display = 'block'
   box.className = `status ${kind}`
   box.textContent = text
+}
+
+// ===== MIG-EXT-01 训练历史分节：检测结果渲染＋导出迁移包（与录像扫描互相独立） =====
+
+function showHistoryStatus(text: string, kind: 'ok' | 'err'): void {
+  const box = el<HTMLDivElement>('history-status')
+  box.style.display = 'block'
+  box.className = `status ${kind}`
+  box.textContent = text
+}
+
+function renderHistory(info: V127PageInfo | null): void {
+  const dl = el<HTMLDListElement>('history-info')
+  dl.textContent = ''
+  const history = info?.history ?? null
+  const rows: Array<[string, string]> = [
+    ['训练库文件', info?.databasePath ?? '（未检测到）'],
+    !history
+      ? ['训练历史', '（本工具版本未注入检测结果）']
+      : history.available
+        ? ['训练历史', `检测到 ${history.counts.trainings} 条训练 / ${history.counts.trades} 笔交易 / ${history.counts.equityCurve} 条权益记录（库大小 ${(history.sqliteBytes / 1024).toFixed(1)} KB）`]
+        : ['训练历史', `不可用——${history.reason}`],
+  ]
+  for (const [term, value] of rows) {
+    const dt = document.createElement('dt')
+    dt.textContent = term
+    const dd = document.createElement('dd')
+    dd.textContent = value
+    if (!history || !history.available) dd.className = 'fail'
+    dl.append(dt, dd)
+  }
+  const button = el<HTMLButtonElement>('history-export-btn')
+  button.disabled = !history?.available
+  if (history?.available) {
+    button.addEventListener('click', async () => {
+      button.disabled = true
+      showHistoryStatus('正在导出训练历史迁移包…', 'ok')
+      try {
+        const response = await fetch('/pack-history', { method: 'POST' })
+        const result = await response.json() as { ok?: boolean, folder?: string, manifest?: { counts?: Record<string, number>, sqliteSha256?: string }, error?: string }
+        if (!response.ok || !result.ok) throw new Error(result.error ?? `HTTP ${response.status}`)
+        const counts = result.manifest?.counts ?? {}
+        showHistoryStatus(
+          `训练历史迁移包已导出到：${result.folder}\n` +
+          `共 ${counts.trainings ?? '?'} 条训练 / ${counts.trades ?? '?'} 笔交易；文件校验和 SHA-256：${result.manifest?.sqliteSha256 ?? '?'}\n` +
+          '在 v1.3.0 新版本「设置 → 从 v1.2.7 迁移」中选择该文件夹内的 迁移清单.json 完成导入。',
+          'ok',
+        )
+        el('done').style.display = 'block'
+      } catch (error) {
+        showHistoryStatus(`导出失败：${error instanceof Error ? error.message : String(error)}`, 'err')
+      } finally {
+        button.disabled = false
+      }
+    })
+  }
 }
 
 const SOURCE_LABELS: Record<MigrationItemSummary['source'], string> = {
@@ -124,6 +181,7 @@ function detectRows(info: V127PageInfo | null, extra: Array<[string, string]> = 
 
 async function bootstrap(): Promise<void> {
   const info = window.__V127_INFO__
+  renderHistory(info) // 训练历史分节独立于录像扫描：无录像也要能导出历史
   const { names, discovered } = await resolveDbNames()
 
   if (!names && discovered.length !== 1) {

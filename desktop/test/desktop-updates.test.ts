@@ -211,8 +211,12 @@ describe('PACK-04 主进程粘合源码契约（main.ts / preload.cts）', () =>
     // archiveRecording，录像归档写入）。窄面精神不变——桥面为枚举式白名单，出现任何
     // 白名单外的 exposeInMainWorld 即违约；desktopUpdates 仍只暴露一次、四成员不变。
     expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopRecordings'/)
+    // MIG-EXT-01（2026-10-12 契约修订，用例名保持不变以免矩阵 ref 悬空）：新增第三个窄对象
+    // desktopMigration（三方法 pick/inspect/importHistory，v1.2.7 训练历史迁移；主进程实现于
+    // desktop/src/mig-import.ts）。白名单纪律同前：仅枚举授权对象。
+    expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopMigration'/)
     const exposed = [...source.matchAll(/exposeInMainWorld\(\s*'([^']+)'/g)].map(match => match[1])
-    expect(exposed.sort()).toEqual(['desktopRecordings', 'desktopUpdates'])
+    expect(exposed.sort()).toEqual(['desktopMigration', 'desktopRecordings', 'desktopUpdates'])
     // 四成员窄接口
     for (const member of ['channel', 'checkForUpdates', 'downloadAndInstall', 'onUpdateEvent']) {
       expect(source).toContain(member)
