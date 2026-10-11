@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-// PACK-01/02/03 便携 exe 打包冒烟（门禁判据；PACK-02 扩展生命周期断言；PACK-03 扩展数据防线断言）：
+// PACK-01/02/03 便携 exe 打包冒烟（PACK-02 扩展生命周期断言；PACK-03 扩展数据防线断言）：
+// 【INSTALL-01（2026-10-11 用户拍板，矩阵行 INSTALL-NSIS-ASSISTED）】便携产物退役——
+//   便携入口（--exe / --target portable，下述阶段 A–H）已从 CLI 退役，本脚本现役门禁仅
+//   --target nsis（阶段 N：NSIS 静默安装→运行→优雅退出→静默卸载→无残留）。便携阶段代码
+//   保留一个版本周期防回滚，回滚口径见参数解析处的退役守卫注释。
 //   ① 便携 exe → 复制到未跟踪临时目录 → 启动 → /api/health 200 且 currentVersion 存在
 //   ② web 首页 HTML 可达 → 窗口存在（标题「K线训练器」）
 //   ③ 第二实例：同 exe 再启动 → 限时自然退出（单实例锁）且首实例存活
@@ -31,7 +35,7 @@
 // 到临时 home（USERPROFILE/APPDATA/LOCALAPPDATA/TEMP 等一起搬，见 spawnAdoptExe 注释），
 // 绝不触碰真实用户数据（%USERPROFILE%\.a-share-kline-trainer 或任何既有 zip 包的 data/）；
 // TDX_ROOT 置空；全程动态/随机端口，绝不动 8787 真实占用者；CloseMainWindow 只发给我们进程树的子进程。
-// 用法：node desktop/scripts/smoke-desktop.mjs --exe <便携exe路径> [--keep]
+// 用法（INSTALL-01 后仅 NSIS 形态；便携入口已退役）：
 //       node desktop/scripts/smoke-desktop.mjs --target nsis --installer <NSIS安装器路径> [--keep]
 import { spawn, execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
@@ -54,8 +58,15 @@ if (targetArg !== 'portable' && targetArg !== 'nsis') {
   console.error(`usage: --target must be portable or nsis (received ${JSON.stringify(targetArg)})`)
   process.exit(1)
 }
-if (!isNsisChild && targetArg === 'portable' && !exeArg) {
-  console.error('usage: node desktop/scripts/smoke-desktop.mjs --exe <portable-exe-path> [--keep]')
+// INSTALL-01（2026-10-11 用户拍板，矩阵行 INSTALL-NSIS-ASSISTED）：便携产物退役——
+// 便携冒烟入口（--target portable / --exe，阶段 A–H）不再可用，门禁仅剩 NSIS 安装器
+// （--target nsis，阶段 N：静默安装→运行→优雅退出→静默卸载→无残留断言）。
+// 阶段 A–H 代码与 --adopt-child/--update-child 子模式保留一个版本周期（防发布回滚后
+// 重建便携冒烟），但 CLI 已不可达；回滚时恢复本块即可。子模式（--nsis-child 等）不经
+// 本守卫（再入调用不传 --target，targetArg 默认值不参与退役判定）。
+if (!isNsisChild && !args.includes('--adopt-child') && !args.includes('--update-child') && (targetArg === 'portable' || exeArg)) {
+  console.error('[smoke] portable smoke retired by INSTALL-01 (v1.3.0 ships the NSIS installer only).')
+  console.error('usage: node desktop/scripts/smoke-desktop.mjs --target nsis --installer <nsis-setup-exe-path> [--keep]')
   process.exit(1)
 }
 if (targetArg === 'nsis' && !installerArg) {
@@ -212,7 +223,8 @@ async function runUpdateChild() {
   // （检查即报「更新源未提供便携版产物」——旧 fixture 实跑实证）。条目名＝便携产物名，
   // 冒烟才真正走到便携更新链。NSIS 通道的 fixture（fake-installer）见
   // desktop/test/desktop-updates-fixture.test.ts（保持不动）。path 保留 setup 名以贴近
-  // release latest.yml 真实形状（extendLatestYmlWithPortable：setup 条目＋追加便携条目）。
+  // release latest.yml 真实形状（INSTALL-01 前的形状：setup 条目＋追加便携条目——
+  // extendLatestYmlWithPortable 已随便携条目退役删除，本阶段为不可达遗留代码）。
   const portableArtifact = `kline-trainer-desktop-v${FIXTURE_VERSION}-windows-x64.exe`
   const artifact = Buffer.concat([Buffer.from([0x4d, 0x5a]), randomBytes(600_000)])
   const sha512 = createHash('sha512').update(artifact).digest('base64')

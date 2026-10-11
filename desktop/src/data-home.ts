@@ -1,11 +1,16 @@
 // PACK-03 首启数据发现/采用决策层（DATA-DISCOVERY-ADOPT 等行为；纯函数＋注入 fs，vitest 直测）。
-// 口径来源＝scripts/release/launcher.cjs 冻结语义镜像＋PACK-03 派发简报决策①②：
+// 口径来源＝scripts/release/launcher.cjs 冻结语义镜像＋PACK-03 派发简报决策①②＋INSTALL-01
+// （用户 2026-10-11 拍板，矩阵行 INSTALL-NSIS-ASSISTED）：
 //   - 库识别判据（design.md §1.3 冻结）：候选目录存在 trainer.sqlite 文件即「有训练库」（含空库）
 //   - adopt-in-place：原地采用，不复制不迁移不删除任何既有文件（NO-DELETE-INVARIANT）
-//   - 候选序冻结：①exe 同级 data/（升级解压到旧 zip 目录场景）②<homeDir>/.a-share-kline-trainer（≤v1.2.5 zip 默认库）
-//   - 采用记录＝exe 同级 desktop-data-choice.json（dataDir 之外的固定点；default 档不记路径保便携）
+//   - 候选枚举（INSTALL-01 收敛）：唯一候选＝<homeDir>/.a-share-kline-trainer（≤v1.2.5 zip
+//     默认库目录，v1.3.0 唯一默认数据目录）；**exe 同级 data/ 候选已退役**——v1.2.7 目录混放
+//     不再吸收旧库，旧数据迁入唯一入口＝迁移工具（并行任务 MIG-EXT-01）
+//   - 采用记录＝exe 同级 desktop-data-choice.json（dataDir 之外的固定点；default 档不记路径）
 //   - trainer.config.json 解析镜像 launcher resolveConfig（169-203），差异一处：env 折叠不在此层
 //     （env 权威在 desktop-config.ts，避免双处折叠）
+//   - 双候选决策对话框（「发现两份训练数据」）随 exe-data 候选退役：唯一候选不可能双命中，
+//     ask 回调不再被调用；parseDataHomeAnswerEnv/ask 接口保留一个版本周期（便携遗产回滚保护）
 import { readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { isAbsolute, join, resolve } from 'node:path'
@@ -101,21 +106,31 @@ export function serializeDataChoiceRecord(record: DataChoiceRecord): string {
 // ===== 候选枚举与应答注入 =====
 
 export interface DataHomeCandidate {
+  /** 'exe-data'＝便携遗产候选，INSTALL-01 后不再由 enumerateDataHomeCandidates 产出（类型保留供回滚一个版本周期） */
   id: 'exe-data' | 'legacy-home'
   path: string
 }
 
-/** 候选序冻结：①exe-data（旧 zip 目录升级场景）先于 ②legacy-home（≤v1.2.5 主目录库） */
+/**
+ * 候选枚举（INSTALL-01 收敛，2026-10-11 用户拍板）：唯一候选＝legacy-home
+ * （<homeDir>/.a-share-kline-trainer，即 v1.3.0 唯一默认数据目录）。
+ * exe 同级 data/ 候选已退役——v1.2.7 目录混放不再吸收旧库（旧数据迁入唯一入口＝迁移工具）；
+ * exeDir 参数保留（签名稳定；本函数不再消费）。
+ */
 export function enumerateDataHomeCandidates(paths: { exeDir: string; homeDir: string }): DataHomeCandidate[] {
+  void paths.exeDir
   return [
-    { id: 'exe-data', path: join(paths.exeDir, 'data') },
     { id: 'legacy-home', path: join(paths.homeDir, LEGACY_HOME_DIR_NAME) },
   ]
 }
 
 export type DataHomeAnswer = 'exe' | 'legacy' | 'cancel'
 
-/** TRAINER_DESKTOP_DATA_ANSWER 严格解析：unset/空白→null；非法值报错不猜（parseConflictAnswerEnv 同口径） */
+/**
+ * TRAINER_DESKTOP_DATA_ANSWER 严格解析（unset/空白→null；非法值报错不猜）。
+ * @deprecated INSTALL-01（2026-10-11 用户拍板）：双候选决策对话框随 exe-data 候选退役，
+ * 本 env 注入口不再被启动路径消费；函数保留一个版本周期（便携遗产回滚保护），断言仍锁定语义。
+ */
 export function parseDataHomeAnswerEnv(env: NodeJS.ProcessEnv): DataHomeAnswer | null {
   const raw = env.TRAINER_DESKTOP_DATA_ANSWER?.trim()
   if (!raw) return null
@@ -141,17 +156,18 @@ export function parseSavedTdxChoice(raw: unknown): SavedTdxChoice | null {
 
 /**
  * saved-tdx-choice.json 的搜索目录＝「生效 dataDir」（矩阵 DATA-SAVED-TDX-CHOICE-FOLLOW）：
- * env 显式 TRAINER_DATA_DIR（E0，绝对性由 desktop-config 校验）> 解析产物 dataDir > 便携默认。
+ * env 显式 TRAINER_DATA_DIR（E0，绝对性由 desktop-config 校验）> 解析产物 dataDir > 唯一默认
+ * legacy-home（INSTALL-01 收敛；原便携默认 exe/data 已退役）。
  * 只显式 TRAINER_DB 不改 dataDir（与 launcher/desktop-config 同语义：库可另置，dataDir 不随之漂移）。
  */
 export function savedChoiceSearchDir(
   env: NodeJS.ProcessEnv,
   resolution: Pick<DataHomeResolution, 'kind' | 'dataDir'>,
-  exeDir: string,
+  homeDir: string,
 ): string {
   const envDataDir = env.TRAINER_DATA_DIR?.trim()
   if (envDataDir) return envDataDir
-  return resolution.dataDir ?? join(exeDir, 'data')
+  return resolution.dataDir ?? join(homeDir, LEGACY_HOME_DIR_NAME)
 }
 
 // ===== 发现/采用编排（纯决策＋注入 fs/ask） =====
@@ -171,7 +187,11 @@ export interface DataHomeDeps {
   /** 读 JSON 文件；缺失→{missing:true}；文件存在但内容非法由调用方在解析层报错 */
   readJsonFile: (path: string) => Promise<{ missing: true } | { missing: false; value: unknown }>
   fileExists: (path: string) => Promise<boolean>
-  ask: (candidates: { exe: string; legacy: string }) => Promise<DataHomeAnswer>
+  /**
+   * @deprecated INSTALL-01（2026-10-11 用户拍板）：唯一候选不可能双命中，双候选决策对话框
+   * 退役，本回调不再被 resolveDataHome 调用；接口保留一个版本周期（便携遗产回滚保护）。
+   */
+  ask?: (candidates: { exe: string; legacy: string }) => Promise<DataHomeAnswer>
   now?: () => string
 }
 
@@ -231,7 +251,7 @@ export async function resolveDataHome(
     console.warn(`[desktop] data choice record is invalid (missing library); re-running first-launch discovery`)
   }
 
-  // E3 首启发现（仅在无显式配置且无有效记录时到达；候选序冻结）
+  // E3 首启发现（仅在无显式配置且无有效记录时到达；唯一候选＝legacy-home，INSTALL-01）
   const hits: DataHomeCandidate[] = []
   for (const candidate of candidates) {
     if (await deps.fileExists(join(candidate.path, LIBRARY_FILE))) hits.push(candidate)
@@ -239,48 +259,25 @@ export async function resolveDataHome(
   if (hits.length === 0) {
     return { quit: false, legacyConfig, resolution: { kind: 'discovery-default', dataDir: candidates[0].path, record: defaultRecord(now), notice: null, probed: true } }
   }
-  if (hits.length === 1) {
-    const hit = hits[0]
-    if (hit.id === 'legacy-home') {
-      return {
-        quit: false,
-        legacyConfig,
-        resolution: {
-          kind: 'discovery-legacy',
-          dataDir: hit.path,
-          record: adoptedRecord(hit.path, now),
-          notice: `已沿用历史训练数据：${hit.path}`,
-          probed: true,
-        },
-      }
-    }
-    return { quit: false, legacyConfig, resolution: { kind: 'discovery-default', dataDir: hit.path, record: defaultRecord(now), notice: null, probed: true } }
+  // 单命中＝唯一候选命中（legacy-home）：原地采用＋提示＋adopted 记录。
+  // （INSTALL-01 后不可能双命中——双候选对话框分支已随 exe-data 候选移除，ask 不再被调用。）
+  const hit = hits[0]
+  return {
+    quit: false,
+    legacyConfig,
+    resolution: {
+      kind: 'discovery-legacy',
+      dataDir: hit.path,
+      record: adoptedRecord(hit.path, now),
+      notice: `已沿用历史训练数据：${hit.path}`,
+      probed: true,
+    },
   }
-
-  // 双命中：不替用户猜，对话框二选一（应答可注入供测试）
-  const answer = await deps.ask({ exe: candidates[0].path, legacy: candidates[1].path })
-  if (answer === 'cancel') {
-    return { quit: true, reason: 'data-home-cancel: user chose to exit without picking a data directory; nothing was touched' }
-  }
-  if (answer === 'legacy') {
-    return {
-      quit: false,
-      legacyConfig,
-      resolution: {
-        kind: 'discovery-legacy',
-        dataDir: candidates[1].path,
-        record: adoptedRecord(candidates[1].path, now),
-        notice: `已沿用历史训练数据：${candidates[1].path}`,
-        probed: true,
-      },
-    }
-  }
-  return { quit: false, legacyConfig, resolution: { kind: 'discovery-default', dataDir: candidates[0].path, record: defaultRecord(now), notice: null, probed: true } }
 }
 
 // ===== 真实 fs 适配（main.ts 粘合用；决策函数不依赖此处，单测全部注入桩） =====
 
-export function createNodeDataHomeDeps(options: { ask: DataHomeDeps['ask'] }): DataHomeDeps {
+export function createNodeDataHomeDeps(options: { ask?: DataHomeDeps['ask'] }): DataHomeDeps {
   return {
     ask: options.ask,
     readJsonFile: async path => {

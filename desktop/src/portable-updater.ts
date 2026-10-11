@@ -1,4 +1,11 @@
 // PORT-UPD-01 便携版自研 exe 替换式自更新（用户拍板方案 A，2026-10-11）。
+// @deprecated INSTALL-01（2026-10-11 用户拍板，矩阵行 INSTALL-NSIS-ASSISTED）：v1.3.0 起
+// 便携产物退役、发布形态仅 NSIS 安装器，release latest.yml 不再含便携条目——存量便携 exe
+// （≤v1.2.7）经本模块检查更新会因「更新源未提供便携版产物」fail-closed 拒装（用户按引导
+// 改走安装器，符合拍板③放弃便携版）。本模块整体保留一个版本周期（防发布回滚：回滚双目标
+// 构建并恢复 latest.yml 便携条目后即可原样激活）；激活门＝isPortableExecution
+// （PORTABLE_EXECUTABLE_DIR 仅由 electron-builder portable target 注入，NSIS/dev 形态恒
+// 缺失→本模块不激活，该语义由 portable-updater.test.ts 的 isPortableExecution 用例锁定）。
 // 背景：electron-updater 官方不支持 portable target 自更新——本模块在便携形态
 // （electron-builder 注入 PORTABLE_EXECUTABLE_DIR）下替换更新链后端：
 //   - 检查：拉取 latest.yml（feed 复用 UPD-DESKTOP-FEED-INJECTABLE 的 env 注入口径），

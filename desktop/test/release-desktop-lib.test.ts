@@ -167,7 +167,6 @@ describe('LATEST-YML-PRODUCED: latest.yml render / parse / verify against real b
 describe('RELEASE-SCRIPT-GATE: collectChecksumEntries assembles the complete artifact set or throws', () => {
   const version = '1.2.7'
   const names = desktopArtifactNames(version)
-  const portableBytes = new Uint8Array([1, 2, 3])
   const setupBytes = new Uint8Array([4, 5, 6, 7])
   const latestBytes = new TextEncoder().encode('version: 1.2.7\n')
 
@@ -176,27 +175,35 @@ describe('RELEASE-SCRIPT-GATE: collectChecksumEntries assembles the complete art
     readFile: async (name: string) => files[name],
   })
 
-  it('collects portable exe + setup exe + latest.yml with independent digests and sizes', async () => {
+  it('INSTALL-01: collects setup exe + latest.yml with independent digests and sizes (portable exe is not required)', async () => {
     const entries = await collectChecksumEntries({
       version,
-      fs: makeFs({ [names.portableExe]: portableBytes, [names.setupExe]: setupBytes, [names.latestYml]: latestBytes }),
+      fs: makeFs({ [names.setupExe]: setupBytes, [names.latestYml]: latestBytes }),
     })
-    expect(entries.map(entry => entry.name)).toEqual([names.latestYml, names.portableExe, names.setupExe].sort())
+    expect(entries.map(entry => entry.name)).toEqual([names.latestYml, names.setupExe].sort())
     const byName = new Map(entries.map(entry => [entry.name, entry]))
     expect(byName.get(names.setupExe)).toEqual({ name: names.setupExe, sha256Hex: sha256Of(setupBytes), size: setupBytes.length })
-    expect(byName.get(names.portableExe)).toEqual({ name: names.portableExe, sha256Hex: sha256Of(portableBytes), size: portableBytes.length })
     expect(byName.get(names.latestYml)).toEqual({ name: names.latestYml, sha256Hex: sha256Of(latestBytes), size: latestBytes.length })
+  })
+
+  it('INSTALL-01: a stray portable exe from an earlier run is NOT collected into the checksum manifest', async () => {
+    // 残留旧产物不得混入 v1.3.0 清单（SHA256SUMS 只覆盖本形态发布产物）
+    const entries = await collectChecksumEntries({
+      version,
+      fs: makeFs({ [names.setupExe]: setupBytes, [names.latestYml]: latestBytes, [names.portableExe]: new Uint8Array([1, 2, 3]) }),
+    })
+    expect(entries.map(entry => entry.name)).not.toContain(names.portableExe)
   })
 
   it('includes the blockmap when present and never requires it', async () => {
     const withBlockmap = await collectChecksumEntries({
       version,
-      fs: makeFs({ [names.portableExe]: portableBytes, [names.setupExe]: setupBytes, [names.latestYml]: latestBytes, [names.setupBlockmap]: new Uint8Array([9]) }),
+      fs: makeFs({ [names.setupExe]: setupBytes, [names.latestYml]: latestBytes, [names.setupBlockmap]: new Uint8Array([9]) }),
     })
     expect(withBlockmap.map(entry => entry.name)).toContain(names.setupBlockmap)
     const withoutBlockmap = await collectChecksumEntries({
       version,
-      fs: makeFs({ [names.portableExe]: portableBytes, [names.setupExe]: setupBytes, [names.latestYml]: latestBytes }),
+      fs: makeFs({ [names.setupExe]: setupBytes, [names.latestYml]: latestBytes }),
     })
     expect(withoutBlockmap.map(entry => entry.name)).not.toContain(names.setupBlockmap)
   })
@@ -204,30 +211,29 @@ describe('RELEASE-SCRIPT-GATE: collectChecksumEntries assembles the complete art
   it('throws with the missing artifact names when the release set is incomplete (fail-closed)', async () => {
     await expect(collectChecksumEntries({
       version,
-      fs: makeFs({ [names.portableExe]: portableBytes, [names.latestYml]: latestBytes }),
-    })).rejects.toThrow(new RegExp(names.setupExe))
+      fs: makeFs({ [names.latestYml]: latestBytes }),
+    })).rejects.toThrow(new RegExp(names.setupExe.replace(/\./g, '\\.')))
     await expect(collectChecksumEntries({
       version,
-      fs: makeFs({ [names.setupExe]: setupBytes, [names.latestYml]: latestBytes }),
-    })).rejects.toThrow(new RegExp(names.portableExe.replace(/\./g, '\\.')))
-    await expect(collectChecksumEntries({
-      version,
-      fs: makeFs({ [names.setupExe]: setupBytes, [names.portableExe]: portableBytes }),
+      fs: makeFs({ [names.setupExe]: setupBytes }),
     })).rejects.toThrow(/latest\.yml/)
   })
 })
 
 describe('NSIS-ARTIFACT-PRODUCED: electron-builder.yml source contract (wizard / per-user / setup naming)', () => {
-  it('declares the nsis win target with the frozen installer options', async () => {
+  it('INSTALL-01: declares the nsis-only win target with the frozen installer options and zh-CN installer language', async () => {
     // oracle: PACK-05 派发简报设计决策 1（one-click=false 向导式＋per-user＋允许自选安装目录＋setup 命名）
+    // ＋用户 2026-10-11 拍板（矩阵行 INSTALL-NSIS-ASSISTED）：便携产物退役，win 目标仅剩 nsis；
+    // 安装语言 zh_CN（electron-builder NsisOptions.installerLanguages，nsisLang.js 映射 SimpChinese）
     const yml = await readFile(join(repoRoot, 'desktop', 'electron-builder.yml'), 'utf8')
     expect(yml).toMatch(/target:\s*nsis/)
     expect(yml).toMatch(/oneClick:\s*false/)
     expect(yml).toMatch(/perMachine:\s*false/)
     expect(yml).toMatch(/allowToChangeInstallationDirectory:\s*true/)
+    expect(yml).toMatch(/installerLanguages:\s*\r?\n\s*-\s*zh_CN/)
     expect(yml).toMatch(/artifactName:\s*kline-trainer-desktop-setup-v\$\{version\}-windows-x64\.exe/)
-    // 便携目标与既有命名保留（零破坏）
-    expect(yml).toMatch(/target:\s*portable/)
-    expect(yml).toMatch(/artifactName:\s*kline-trainer-desktop-v\$\{version\}-windows-x64\.exe/)
+    // 便携目标退役（INSTALL-01）：win 目标列表与产物命名不再含 portable
+    expect(yml).not.toMatch(/target:\s*portable/)
+    expect(yml).not.toMatch(/artifactName:\s*kline-trainer-desktop-v\$\{version\}-windows-x64\.exe/)
   })
 })

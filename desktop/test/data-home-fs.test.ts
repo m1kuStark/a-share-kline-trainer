@@ -1,5 +1,7 @@
 // PACK-03 集成层：真实临时目录伪造候选布局（DATA-DISCOVERY-ADOPT / DATA-ADOPT-IDEMPOTENT /
-// NO-DELETE-INVARIANT）。库识别判据 oracle＝design.md §1.3（trainer.sqlite 文件存在）；
+// NO-DELETE-INVARIANT）＋INSTALL-01（2026-10-11 拍板：exe 旁 data/ 候选退役，唯一默认＝
+// %USERPROFILE%\.a-share-kline-trainer；矩阵行 INSTALL-NSIS-ASSISTED）。
+// 库识别判据 oracle＝design.md §1.3（trainer.sqlite 文件存在）；
 // 哈希不变量 oracle＝派发简报决策④「任何路径都不删除/覆盖既有库文件」——前后字节对照。
 import { describe, expect, it } from 'vitest'
 import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
@@ -78,7 +80,8 @@ describe('data-home on a real filesystem', () => {
       // 记录文件落在 exe 同级（dataDir 之外的固定点）
       await expect(stat(join(layout.exeDir, DATA_CHOICE_FILE))).resolves.toBeTruthy()
 
-      // 二次启动：即便 exe 同级后来也出现了库（双命中本应询问），remembered 短路不再探测
+      // 二次启动：即便 exe 同级后来也出现了库（INSTALL-01 后该库不再被扫描，更不可能
+      // 触发询问），remembered 短路不再探测
       await seedLibrary(layout.exeData)
       const second = await resolveDataHome({ envExplicit: false, paths }, deps)
       expect(second.quit).toBe(false)
@@ -119,17 +122,18 @@ describe('data-home on a real filesystem', () => {
       await rm(layout.legacyHome, { recursive: true, force: true })
       await seedLibrary(layout.exeData, 'fresh-exe-history')
 
+      // INSTALL-01：exe 旁新库不被吸收——重新发现落到唯一默认目录（legacy-home）
       const second = await resolveDataHome({ envExplicit: false, paths }, deps)
       expect(second.quit).toBe(false)
       if (second.quit) return
       expect(second.resolution.kind).toBe('discovery-default')
-      expect(second.resolution.dataDir).toBe(layout.exeData)
+      expect(second.resolution.dataDir).toBe(layout.legacyHome)
     } finally {
       await rm(layout.root, { recursive: true, force: true })
     }
   })
 
-  it('multi-candidate layout asks and honors the exe answer without deleting anything', async () => {
+  it('INSTALL-01: exe-side data/ is ignored when both old locations have libraries; the legacy home is adopted and no bytes change anywhere', async () => {
     const layout = await makeLayout()
     try {
       await seedLibrary(layout.exeData, 'exe-history')
@@ -137,13 +141,15 @@ describe('data-home on a real filesystem', () => {
       const exeBefore = await sha256(join(layout.exeData, LIBRARY_FILE))
       const legacyBefore = await sha256(join(layout.legacyHome, LIBRARY_FILE))
 
-      const deps = createNodeDataHomeDeps({ ask: async () => 'exe' })
+      // ask 不再提供（可选依赖）：双候选对话框已退役，绝无询问路径
+      const deps = createNodeDataHomeDeps({})
       const outcome = await resolveDataHome({ envExplicit: false, paths: { exeDir: layout.exeDir, homeDir: layout.homeDir } }, deps)
       expect(outcome.quit).toBe(false)
       if (outcome.quit) return
-      expect(outcome.resolution.kind).toBe('discovery-default')
-      expect(outcome.resolution.dataDir).toBe(layout.exeData)
+      expect(outcome.resolution.kind).toBe('discovery-legacy')
+      expect(outcome.resolution.dataDir).toBe(layout.legacyHome)
 
+      // NO-DELETE-INVARIANT：两侧既有库文件字节都不变（被忽略≠被动过）
       expect(await sha256(join(layout.exeData, LIBRARY_FILE))).toBe(exeBefore)
       expect(await sha256(join(layout.legacyHome, LIBRARY_FILE))).toBe(legacyBefore)
     } finally {
