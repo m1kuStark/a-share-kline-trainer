@@ -273,7 +273,8 @@ async function main() {
   // ===== fail-closed 核验链（任一失败即判发布失败，绝不产出不完整资产集） =====
 
   // ① PACK-04 回退方案：resources/app-update.yml 必须入包（downloadUpdate 硬依赖）
-  const appUpdateYml = join(ROOT, 'desktop', 'release', 'win-unpacked', 'resources', 'app-update.yml')
+  // 路径跟随 OUT_DIR（TRAINER_RELEASE_OUT_DIR 覆盖时核验同一输出目录，不回看默认目录）
+  const appUpdateYml = join(OUT_DIR, 'win-unpacked', 'resources', 'app-update.yml')
   if (!(await exists(appUpdateYml))) {
     console.error('[release-desktop] FAIL: resources/app-update.yml missing from the package (electron-updater hard dependency)')
     process.exit(1)
