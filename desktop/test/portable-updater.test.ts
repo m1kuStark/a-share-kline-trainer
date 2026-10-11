@@ -464,9 +464,11 @@ describe('PORT-UPD-01 适配器替换目标＝env 解析的用户 exe（P0 绑�
 describe('PORT-UPD-01 主进程粘合源码契约（main.ts；沿 PACK-04 源码契约先例）', () => {
   it('setupUpdateChannel 以便携识别切换自研适配器（替换目标经 resolvePortableTargetExe 解析）；NSIS/dev 分支与排空 exit 分支原样保留', async () => {
     const source = await readFile(fileURLToPath(new URL('../src/main.ts', import.meta.url)), 'utf8')
-    // 便携分支：packaged 通道 ＋ isPortableExecution → createPortableUpdaterAdapter（quitApp=exit）
+    // 便携分支：packaged 通道 ＋ isPortableExecution → createPortableUpdaterAdapter
+    // （quitApp=app.quit()：P0-5 真机实证 spawn 替换脚本后 app.exit(0) 进程挂起，
+    // GUI 优雅退出路径（quit 语义）两轮对照实验复现退净——2026-10-11）
     expect(source).toMatch(/updateChannelKind === 'packaged'\s*&&\s*isPortableExecution\(process\.env\)/)
-    expect(source).toMatch(/createPortableUpdaterAdapter\(\{[\s\S]*?quitApp:\s*\(\)\s*=>\s*app\.exit\(0\)/)
+    expect(source).toMatch(/createPortableUpdaterAdapter\(\{[\s\S]*?quitApp:\s*\(\)\s*=>\s*app\.quit\(\)/)
     // P0 修复绑定契约：适配器与清理的替换目标都经 resolvePortableTargetExe(process.env, process.execPath)
     // 解析（便携形态＝PORTABLE_EXECUTABLE_FILE＝用户 exe；绝不再以 process.execPath 直连 exePath）
     expect(source).toMatch(/resolvePortableTargetExe\(process\.env,\s*process\.execPath\)/)

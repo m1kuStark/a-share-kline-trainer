@@ -403,7 +403,11 @@ async function setupUpdateChannel(): Promise<void> {
         env: process.env,
         getDataDir: () => portableUpdateDataDir,
         getCurrentVersion: () => app.getVersion(),
-        quitApp: () => app.exit(0),
+        // P0-5 真机实证（2026-10-11 两轮）：spawn 替换脚本后 app.exit(0) 在部分环境进程挂起
+        // （server 已停、进程残留、脚本 60s 等不到 pid 超时零触碰）；GUI 正常退出路径
+        // （window-all-closed 优雅管线，同为 exit 收尾）复现退净——quit 语义走完整
+        // will-quit 清理（DevTools agent 等句柄释放）后再终止，稳定性更佳。
+        quitApp: () => app.quit(),
         feed,
       })
       console.log(`[desktop] portable self-update channel active (exe: ${portableTargetExe})`)
