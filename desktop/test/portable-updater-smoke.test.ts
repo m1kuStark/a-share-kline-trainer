@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { renderReplaceScript } from '../src/portable-updater.js'
+import { renderReplaceScript, resolvePortableTargetExe } from '../src/portable-updater.js'
 
 function runScript(scriptPath: string): Promise<{ code: number | null }> {
   return new Promise(resolve => {
@@ -30,6 +30,46 @@ function newExeBatch(markerPath: string): string {
 }
 
 describe('PORT-UPD-01 替换脚本·真实 spawn 冒烟（win32）', () => {
+  it('P0 绑定链：env 解析出的用户 exe 被字节级替换，execPath 临时副本零触碰', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'portable-smoke-p0-'))
+    try {
+      // 两个不同路径的假 exe：用户实际启动的（PORTABLE_EXECUTABLE_FILE）vs 自解压临时副本
+      // （execPath）。ASCII 文件名隔离编码变量（中文路径×cmd 代码页属另一独立问题，另行登记）。
+      const userExe = join(root, 'apps', 'user-portable-app.cmd')
+      const tempCopy = join(root, 'temp', '{uuid}', 'extracted-copy.cmd')
+      const stagingDir = join(root, 'data', 'update-staging')
+      const stagingExe = join(stagingDir, 'kline-trainer-desktop-v9.9.9-windows-x64.cmd')
+      const marker = join(root, 'launched.flag')
+      for (const dir of [join(root, 'apps'), join(root, 'temp', '{uuid}'), stagingDir]) await mkdir(dir, { recursive: true })
+      await writeFile(userExe, '@echo off\r\nrem OLD USER EXE\r\nexit /b 0\r\n')
+      await writeFile(tempCopy, '@echo off\r\nrem OLD TEMP COPY\r\nexit /b 0\r\n')
+      await writeFile(stagingExe, newExeBatch(marker))
+      // 绑定链入口：env（便携形态＋用户 exe）→ resolvePortableTargetExe → 脚本 EXE
+      const targetExe = resolvePortableTargetExe(
+        { PORTABLE_EXECUTABLE_DIR: join(root, 'apps'), PORTABLE_EXECUTABLE_FILE: userExe },
+        tempCopy,
+      )
+      expect(targetExe).toBe(userExe)
+      const scriptPath = join(stagingDir, 'update-replace.cmd')
+      await writeFile(scriptPath, renderReplaceScript({
+        exePath: targetExe, stagingExe,
+        oldExe: `${targetExe}.old`,
+        logPath: join(stagingDir, 'replace.log'),
+        pid: await deadPid(),
+      }), 'utf8')
+
+      const { code } = await runScript(scriptPath)
+      expect(code).toBe(0)
+      // 字节级替换落在用户 exe 上；临时副本原样；用户 exe 旁无 .old 残留
+      expect(await readFile(userExe, 'utf8')).toBe(newExeBatch(marker))
+      expect(await readFile(tempCopy, 'utf8')).toBe('@echo off\r\nrem OLD TEMP COPY\r\nexit /b 0\r\n')
+      await expect(readFile(`${userExe}.old`)).rejects.toThrow()
+      expect(await readFile(marker, 'utf8')).toBe('')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
   it('替换成功：旧 exe→.old→staging 就位→.old 清除→新 exe 启动（exit 0）', async () => {
     const root = await mkdtemp(join(tmpdir(), 'portable-smoke-'))
     try {
