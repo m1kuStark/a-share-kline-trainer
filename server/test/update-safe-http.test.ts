@@ -223,7 +223,7 @@ describe('safe-http: 状态码、完整响应与重定向', () => {
     }
   })
 
-  it('redirects:"error"（port-conflict 探测语义）→ 3xx 即拒绝（不跟随不猜测）', async () => {
+  it('redirects=error（port-conflict 探测语义）→ 3xx 即拒绝（不跟随不猜测）', async () => {
     const server = createServer((_req, res) => {
       res.writeHead(301, { location: '/elsewhere' })
       res.end()
