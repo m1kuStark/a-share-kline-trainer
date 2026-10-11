@@ -33,8 +33,6 @@ async function createTrainingFromForm(page: Page, code: string): Promise<number>
   await page.locator('.suggestions button').first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '3个月' }).click()
-await expect(page.locator(".suggestions button").first()).toBeVisible()
-await page.locator(".suggestions button").first().click()
   await page.locator('input[type="date"]').fill('2026-09-01')
   await startTrainingFromForm(page)
   await expect(page.locator('.training-meta')).toContainText('时长 3个月')
@@ -228,7 +226,8 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await report.getByRole('button', { name: '关闭成绩单' }).click()
   await expect(history).toBeVisible()
   await page.getByRole('button', { name: '训练录像' }).click()
-  await expect(page.getByRole('heading', { name: '训练录像' })).toBeVisible()
+  // REC-BULK 录像库改版后新增 h2「本机训练录像 (N)」含同子串——精确锁定页面 h1
+  await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
   await railTrainingButton(page).click()
   await expect(page.locator('.training-topbar')).toBeVisible()
   expect(errors).toEqual([])

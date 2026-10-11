@@ -220,6 +220,9 @@ test.describe('random mask axis and settle stock (RF2-02/03)', () => {
     await page.getByRole('tab', { name: '随机模式' }).click()
     await expect(page.getByText('随机维度')).toBeVisible()
     await page.getByRole('button', { name: '随机股票 · 我选时间段' }).click()
+    // RF2-01/RF3-01 后随机股票维度默认 3M 档仅单起始日输入；本用例的窗口语义＝起止范围（旧口径），
+    // 需先切「自定义范围」档让双日期输入出现（showRangeDates＝randomTier==='RANGE'）。
+    await page.getByRole('button', { name: '自定义范围' }).click()
     const dates = page.locator('input[type="date"]')
     await dates.nth(0).fill(windowStart)
     await dates.nth(1).fill(windowEnd)
