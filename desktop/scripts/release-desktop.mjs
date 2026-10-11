@@ -9,7 +9,9 @@
 //   migrate-v127.zip（tools/migrate-v127/dist 打包，纯 Node STORE 型 zip 写入器，零新依赖）。
 // 可测纯函数在 release-desktop-lib.mjs（desktop/test/release-desktop-lib.test.ts 锁契约）；
 // 本文件 PORT-UPD-01 导出（extendLatestYmlWithPortable/buildStoredZip/collectMigrateZipEntries）
-// 由 desktop/test/portable-updater-release.test.ts 以 lib 解析器＋server UPD-01 zip 读取器双独立 oracle 锁定。
+// 由 desktop/test/portable-updater-release.test.ts 锁定——P0 修复（2026-10-11，用户验收发现
+// v1.2.7 latest.yml 非法 YAML）后 yml 扩展的 oracle 为 lib 形状解析器＋标准 js-yaml（独立于
+// 生成逻辑；自写解析器对乱序追加宽容，单独使用不构成独立 oracle）＋server UPD-01 zip 读取器。
 // 绝不发布任何 GitHub Release/资产（上传由维护者按 docs/release/desktop-release-manual.md 手动进行）。
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -17,6 +19,7 @@ import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import yaml from 'js-yaml'
 import {
   desktopArtifactNames,
   assertChecksumsAssetName,
@@ -43,29 +46,73 @@ async function exists(path) {
   }
 }
 
-// ===== PORT-UPD-01：latest.yml 便携条目扩展（幂等；追加后以 lib 解析器回读核验） =====
+// ===== PORT-UPD-01：latest.yml 便携条目扩展（幂等；插入 files 序列内并以双解析器回读核验） =====
 
 /**
- * 给 latest.yml 追加便携 exe 的 files 条目（url/sha512/size）——便携自更新
- * （desktop/src/portable-updater.ts）按该精确条目校验下载字节。setup/path 与既有
- * 条目原样保留（electron-updater NSIS 通道零影响；条目形状与 blockmap 附加条目同构）。
+ * 标准 YAML（js-yaml）fail-closed 关卡：electron-updater 依赖标准解析，任何产物过不了
+ * 这一关都不允许产出/放行（P0 教训：v1.2.7 便携条目追加到顶层 mapping 区，自写解析器
+ * 读得出来、标准解析器直接拒绝，导致 NSIS 通道同样挂掉）。
+ */
+function assertStandardYaml(text, fileName) {
+  let parsed
+  try {
+    parsed = yaml.load(text)
+  } catch (error) {
+    throw new Error(`latest.yml 未通过标准 YAML（js-yaml）解析（${fileName}）：${error instanceof Error ? error.message : error}`)
+  }
+  const files = parsed?.files
+  if (!Array.isArray(files) || !files.some(file => file?.url === fileName)) {
+    throw new Error(`latest.yml 标准 YAML 解析后 files 序列未含 ${fileName}`)
+  }
+}
+
+/**
+ * 给 latest.yml 的 files 序列追加便携 exe 条目（url/sha512/size）——便携自更新
+ * （desktop/src/portable-updater.ts）按该精确条目校验下载字节。条目插入 files 序列内
+ * （最后一个既有条目之后、下一个顶层键之前），而非文本末尾——electron-builder 产出形状
+ * 的 files 序列之后还有顶层键，追加到末尾会产生非法 YAML（P0 修复）。version/path/sha512/
+ * releaseDate 等既有字段值原样保留（electron-updater NSIS 通道零影响）。幂等：输入已含该
+ * 条目时原样返回——但已含条目而整体非法（v1.2.7 非法追加产物形状）时 fail-closed 抛错，
+ * 绝不原样放行标准解析器读不了的文本。
  */
 export function extendLatestYmlWithPortable({ text, fileName, sha512Base64, size }) {
-  const baseline = parseLatestYml(text) // 先证基线可解析
-  if (baseline.files.some(file => file.url === fileName)) return text
-  const appended = [
-    text.replace(/\r?\n$/, ''),
+  const baseline = parseLatestYml(text) // 先证基线可解析（自有形状）
+  if (baseline.files.some(file => file.url === fileName)) {
+    assertStandardYaml(text, fileName) // 幂等早退也要过标准 YAML 关
+    return text
+  }
+  const lines = text.replace(/\r?\n$/, '').split(/\r?\n/)
+  const filesHeaderIdx = lines.findIndex(line => /^files:\s*$/.test(line))
+  if (filesHeaderIdx === -1) {
+    throw new Error(`latest.yml 缺少顶层 files: 序列头，无法插入便携条目（${fileName}）`)
+  }
+  let lastEntryIdx = -1
+  for (let i = filesHeaderIdx + 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.trim() === '') continue // 序列内空行不移动插入点
+    if (line.startsWith(' ') || line.startsWith('\t')) {
+      lastEntryIdx = i
+      continue
+    }
+    break // 零缩进顶层键 => files 序列结束
+  }
+  if (lastEntryIdx === -1) {
+    throw new Error(`latest.yml files 序列为空，无法插入便携条目（${fileName}）`)
+  }
+  const extended = [
+    ...lines.slice(0, lastEntryIdx + 1),
     `  - url: ${fileName}`,
     `    sha512: ${sha512Base64}`,
     `    size: ${size}`,
-    '',
-  ].join('\n')
-  const reparsed = parseLatestYml(appended)
+    ...lines.slice(lastEntryIdx + 1),
+  ].join('\n') + '\n'
+  const reparsed = parseLatestYml(extended)
   const entry = reparsed.files.find(file => file.url === fileName)
   if (!entry || entry.sha512 !== sha512Base64 || entry.size !== size) {
-    throw new Error(`latest.yml 便携条目追加后回读核验失败（${fileName}）`)
+    throw new Error(`latest.yml 便携条目插入后回读核验失败（${fileName}）`)
   }
-  return appended
+  assertStandardYaml(extended, fileName)
+  return extended
 }
 
 // ===== PORT-UPD-01：migrate-v127.zip 纯 Node STORE 型 zip 写入器（零新依赖） =====
