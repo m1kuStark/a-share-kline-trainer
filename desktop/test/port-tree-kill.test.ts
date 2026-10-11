@@ -70,9 +70,8 @@ describe('PORT-COEXIST-V127-NODE: killTrainerTree 注入桩（树终止＋有界
 })
 
 describe('PORT-COEXIST-V127-NODE: killTrainerTree 真实边界（真实两级进程树＋真实 taskkill）', () => {
-  it.skipIf(process.platform !== 'win32')(
-    'PORT-COEXIST-V127-NODE: taskkill terminates a real two-level node process tree including the grandchild',
-    async () => {
+  it('PORT-COEXIST-V127-NODE: taskkill terminates a real two-level node process tree including the grandchild', async () => {
+    if (process.platform !== 'win32') return // 本工程 Windows-only（CI 单矩阵）；非 win32 环境跳过真实树终止段
       // 父进程再 spawn 一个子进程（孙）：树终止必须两者皆死（单 PID kill 只死父）
       const parent = spawn(process.execPath, ['-e', [
         'const { spawn } = require("node:child_process")',
