@@ -20,13 +20,41 @@ const cp = require('node:child_process')
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
-const { copyFile, mkdir, readFile, rm, stat } = require('node:fs/promises')
+const { copyFile, mkdir, readFile, rm, stat, writeFile } = require('node:fs/promises')
 
 const TOOL_ID = 'migrate-v127'
 const STATE_FILE = 'trainer-state.json'
 const DB_FILE = 'trainer.sqlite'
 const LEGACY_HOME_DIR_NAME = '.a-share-kline-trainer'
 const EXPORT_FOLDER_PREFIX = '迁移导出-'
+// MIG-EXT-01 训练历史迁移包：文件夹「训练历史迁移-<时间戳>/」内 trainer.sqlite（自包含副本）
+// ＋迁移清单.json（中文文件名＋ASCII 键，P4 拍板风格）。
+const HISTORY_PACKAGE_PREFIX = '训练历史迁移-'
+const HISTORY_MANIFEST_FILE = '迁移清单.json'
+const HISTORY_SQLITE_FILE = 'trainer.sqlite'
+const HISTORY_MANIFEST_FORMAT = 'trainer-history-migration'
+const HISTORY_MANIFEST_VERSION = 1
+// v1.2.7 合法训练历史库契约：必备表＋关键列（宽容多余列；镜像常量在 desktop/src/mig-import.ts，
+// 两侧各有测试锁定）。表清单含 settings/cache_meta 作为训练器库身份标记。
+const HISTORY_REQUIRED_TABLES = ['trainings', 'trades', 'orders', 'equity_curve', 'position_events', 'drawings', 'trade_notes', 'settings', 'cache_meta']
+const HISTORY_REQUIRED_COLUMNS = {
+  trainings: ['id', 'tier', 'code', 'name', 'market', 'adjust_mode', 'start_date', 'planned_end', 'status', 'initial_cash', 'created_at'],
+  trades: ['id', 'training_id', 'seq', 'trade_date', 'side', 'price', 'shares', 'amount', 'fee', 'cash_after', 'shares_after', 'cost_after'],
+  orders: ['id', 'training_id', 'side', 'order_type', 'trigger_price_raw', 'shares', 'status', 'created_date', 'created_at'],
+  equity_curve: ['training_id', 'date', 'equity'],
+  position_events: ['training_id', 'seq', 'date', 'kind', 'shares_delta', 'cash_delta'],
+  drawings: ['training_id', 'payload'],
+  trade_notes: ['training_id', 'trade_seq', 'note'],
+}
+const HISTORY_COUNT_SOURCES = [
+  ['trainings', 'trainings'],
+  ['trades', 'trades'],
+  ['orders', 'orders'],
+  ['equity_curve', 'equityCurve'],
+  ['position_events', 'positionEvents'],
+  ['drawings', 'drawings'],
+  ['trade_notes', 'tradeNotes'],
+]
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 const NAMESPACE_PATTERN = /^[a-f0-9-]{36}$/i
 
@@ -252,6 +280,159 @@ async function packSqlite(databasePath, packageRoot, now = new Date()) {
   return { folder, copied }
 }
 
+// ===== 训练历史迁移包（MIG-EXT-01：只读源库，产出自包含单文件副本＋清单） =====
+
+/** v1.2.7 合法训练历史库校验：必备表存在＋关键列存在（宽容多余列） */
+function validateHistorySchema(database) {
+  const tables = new Set(database.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(row => row.name))
+  for (const table of HISTORY_REQUIRED_TABLES) {
+    if (!tables.has(table)) {
+      return { ok: false, error: `训练库缺少 v1.2.7 必备表 ${table}，不是有效的 v1.2.7 训练历史库，拒绝导出。` }
+    }
+  }
+  for (const [table, columns] of Object.entries(HISTORY_REQUIRED_COLUMNS)) {
+    const present = new Set(database.prepare(`PRAGMA table_info(${table})`).all().map(row => row.name))
+    for (const column of columns) {
+      if (!present.has(column)) {
+        return { ok: false, error: `训练库表 ${table} 缺少关键列 ${column}，不是有效的 v1.2.7 训练历史库，拒绝导出。` }
+      }
+    }
+  }
+  return { ok: true }
+}
+
+function readHistoryCounts(database) {
+  const counts = {}
+  for (const [table, key] of HISTORY_COUNT_SOURCES) {
+    counts[key] = (database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() || {}).count ?? 0
+  }
+  return counts
+}
+
+function loadSqliteModule() {
+  try {
+    return require('node:sqlite')
+  } catch {
+    return null
+  }
+}
+
+/** 只读摘要：复制三件套到临时目录后读（源库零写入）；供启动时注入导出页检测结果 */
+async function readHistorySummary(dbPath) {
+  if (!await fileExists(dbPath)) {
+    return { ok: false, error: `未找到训练库文件：${dbPath}` }
+  }
+  const sqlite = loadSqliteModule()
+  if (!sqlite) {
+    return { ok: false, error: '当前 Node 运行时不支持 node:sqlite，无法读取训练历史。' }
+  }
+  const tempDir = path.join(os.tmpdir(), `v127-hist-${crypto.randomUUID()}`)
+  await mkdir(tempDir, { recursive: true })
+  try {
+    const base = path.join(tempDir, DB_FILE)
+    await copyFile(dbPath, base)
+    for (const suffix of ['-wal', '-shm']) {
+      if (await fileExists(`${dbPath}${suffix}`)) await copyFile(`${dbPath}${suffix}`, `${base}${suffix}`)
+    }
+    let database
+    try {
+      database = new sqlite.DatabaseSync(base)
+    } catch (error) {
+      return { ok: false, error: `训练库无法读取（可能已损坏）：${error && error.message ? error.message : error}` }
+    }
+    try {
+      const validated = validateHistorySchema(database)
+      if (!validated.ok) return { ok: false, error: validated.error }
+      return { ok: true, sqliteBytes: (await stat(dbPath)).size, counts: readHistoryCounts(database) }
+    } catch (error) {
+      // 打开成功但首个查询即抛（如非 SQLite 格式：file is not a database）——同样按损坏拒绝
+      return { ok: false, error: `训练库无法读取（可能已损坏）：${error && error.message ? error.message : error}` }
+    } finally {
+      database.close()
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
+/**
+ * 产出训练历史迁移包：<packageRoot>/训练历史迁移-<时间戳>[-序号]/ 内含
+ * trainer.sqlite（WAL 折叠＋journal_mode=DELETE 的自包含副本，无 -wal/-shm 依赖）与
+ * 迁移清单.json（ASCII 键：format/version/exportedAt/sqliteFile/sqliteBytes/sqliteSha256/counts）。
+ * 源库只被 copyFile 读取（真实数据安全铁律）；schema 非法即拒绝（fail-closed，不产包）。
+ */
+async function buildHistoryPackage(databasePath, packageRoot, now = new Date()) {
+  if (!await fileExists(databasePath)) {
+    return { ok: false, error: `未找到训练库文件：${databasePath}` }
+  }
+  const sqlite = loadSqliteModule()
+  if (!sqlite) {
+    return { ok: false, error: '当前 Node 运行时不支持 node:sqlite，无法导出训练历史。' }
+  }
+  const tempDir = path.join(os.tmpdir(), `v127-pack-${crypto.randomUUID()}`)
+  await mkdir(tempDir, { recursive: true })
+  let staged = null
+  try {
+    const base = path.join(tempDir, DB_FILE)
+    await copyFile(databasePath, base)
+    for (const suffix of ['-wal', '-shm']) {
+      if (await fileExists(`${databasePath}${suffix}`)) await copyFile(`${databasePath}${suffix}`, `${base}${suffix}`)
+    }
+    let database
+    try {
+      database = new sqlite.DatabaseSync(base)
+    } catch (error) {
+      return { ok: false, error: `训练库无法读取（可能已损坏）：${error && error.message ? error.message : error}` }
+    }
+    let counts
+    try {
+      // WAL 折叠为自包含单文件：checkpoint 后切回 rollback journal（打开侧无需 -wal/-shm，
+      // 免疫只读打开 WAL 库的限制）；此处操作的是临时副本，源库零改动。
+      database.prepare('PRAGMA wal_checkpoint(TRUNCATE)').get()
+      database.prepare('PRAGMA journal_mode = DELETE').get()
+      const validated = validateHistorySchema(database)
+      if (!validated.ok) return { ok: false, error: validated.error }
+      counts = readHistoryCounts(database)
+    } catch (error) {
+      // 打开成功但读/写即抛（如非 SQLite 格式）——按损坏拒绝，不产出迁移包
+      return { ok: false, error: `训练库无法读取（可能已损坏）：${error && error.message ? error.message : error}` }
+    } finally {
+      database.close()
+    }
+    const bytes = await readFile(base)
+    const manifest = {
+      format: HISTORY_MANIFEST_FORMAT,
+      version: HISTORY_MANIFEST_VERSION,
+      exportedAt: now.toISOString(),
+      sourceApp: 'a-share-kline-trainer v1.2.7',
+      sqliteFile: HISTORY_SQLITE_FILE,
+      sqliteBytes: bytes.byteLength,
+      sqliteSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+      counts,
+    }
+    let folder = path.join(packageRoot, `${HISTORY_PACKAGE_PREFIX}${stampOf(now)}`)
+    for (let attempt = 1; await fileExists(folder); attempt++) folder = path.join(packageRoot, `${HISTORY_PACKAGE_PREFIX}${stampOf(now)}-${attempt}`)
+    await mkdir(folder, { recursive: true })
+    const sqliteTarget = path.join(folder, HISTORY_SQLITE_FILE)
+    const manifestTarget = path.join(folder, HISTORY_MANIFEST_FILE)
+    await copyFile(base, sqliteTarget)
+    const manifestText = `${JSON.stringify(manifest, null, 2)}\n`
+    await writeFile(manifestTarget, manifestText, 'utf8')
+    staged = {
+      ok: true,
+      folder,
+      files: [
+        { file: HISTORY_SQLITE_FILE, bytes: bytes.byteLength },
+        { file: HISTORY_MANIFEST_FILE, bytes: Buffer.byteLength(manifestText, 'utf8') },
+      ],
+      manifest,
+    }
+    return staged
+  } finally {
+    await rm(tempDir, { recursive: true, force: true }).catch(() => {})
+  }
+}
+
 // ===== 主流程 =====
 
 async function readJsonFile(target) {
@@ -270,6 +451,12 @@ function printPlan(layout) {
   console.log(`训练库文件　　：${layout.databasePath}`)
   console.log(`旧 origin 端口：${layout.port}（来源：${layout.portSource}）`)
   console.log(`录像命名空间　：${layout.namespace ? `${layout.namespace}（来源：训练库 cache_meta）` : `未知——${layout.namespaceReason}`}`)
+  if (layout.history.available) {
+    const counts = layout.history.counts
+    console.log(`训练历史　　　：检测到 ${counts.trainings} 条训练 / ${counts.trades} 笔交易（库大小 ${(layout.history.sqliteBytes / 1024).toFixed(1)} KB）`)
+  } else {
+    console.log(`训练历史　　　：不可用——${layout.history.reason}`)
+  }
   if (layout.portWarning) console.log(`⚠ ${layout.portWarning}`)
   console.log('──────────────────────────────────────────────')
 }
@@ -341,6 +528,8 @@ async function main() {
   }
 
   const namespaceRead = await readNamespaceFromSqlite(databasePath, dataDirChoice.dir)
+  // MIG-EXT-01：训练历史摘要（同源只读），注入导出页「训练历史」分节
+  const historyRead = await readHistorySummary(databasePath)
 
   const layout = {
     packageRoot,
@@ -352,6 +541,9 @@ async function main() {
     portWarning: portChoice.warning ?? null,
     namespace: namespaceRead.namespace,
     namespaceReason: namespaceRead.reason ?? null,
+    history: historyRead.ok
+      ? { available: true, sqliteBytes: historyRead.sqliteBytes, counts: historyRead.counts }
+      : { available: false, reason: historyRead.error },
   }
   printPlan(layout)
 
@@ -394,6 +586,7 @@ async function main() {
         namespaceSource: current.namespace ? 'sqlite-cache-meta' : 'none',
         dataDir: current.dataDir,
         databasePath: current.databasePath,
+        history: current.history,
       }
       const html = PAGE_TEMPLATE.split(PAGE_INFO_TOKEN).join(JSON.stringify(info))
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
@@ -410,6 +603,19 @@ async function main() {
       console.log(`[导出] SQLite 三件套已复制到 ${result.folder}（${result.copied.map(item => `${item.file} ${item.bytes}B`).join(', ')}）`)
       response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
       response.end(JSON.stringify({ ok: true, folder: result.folder, files: result.copied }))
+      return
+    }
+    if (request.method === 'POST' && url.pathname === '/pack-history') {
+      const result = await buildHistoryPackage(current.databasePath, current.packageRoot)
+      if (!result.ok) {
+        console.error(`[导出] 训练历史迁移包导出失败：${result.error}`)
+        response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+        response.end(JSON.stringify({ ok: false, error: result.error }))
+        return
+      }
+      console.log(`[导出] 训练历史迁移包已产出：${result.folder}（${result.files.map(item => `${item.file} ${item.bytes}B`).join(', ')}）`)
+      response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+      response.end(JSON.stringify({ ok: true, folder: result.folder, files: result.files, manifest: result.manifest }))
       return
     }
     if (request.method === 'POST' && url.pathname === '/shutdown') {
@@ -470,6 +676,9 @@ module.exports = {
   pidAlive,
   isTrainerHealth,
   stampOf,
+  readHistorySummary,
+  buildHistoryPackage,
+  validateHistorySchema,
   PAGE_INFO_TOKEN,
 }
 

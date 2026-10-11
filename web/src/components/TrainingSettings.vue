@@ -35,7 +35,7 @@ const emit = defineEmits<{ close: [] }>()
 // UPD-NOTIFY-01：首页更新提示跳转入口——打开即直入指定分栏，并（desktop 通道）以主进程
 // boot 自动检查的结果为初值呈现；两个 prop 均缺省时行为与既有打开完全一致（默认分栏＋手动检查）。
 const props = defineProps<{
-  initialSection?: 'defaults' | 'preferences' | 'animation' | 'data' | 'about'
+  initialSection?: 'defaults' | 'preferences' | 'animation' | 'data' | 'migration' | 'about'
   seededUpdateNotice?: { latestVersion: string, releaseNotes: string | null } | null
 }>()
 
@@ -49,7 +49,7 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
-const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>(props.initialSection ?? 'defaults')
+const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'migration' | 'about'>(props.initialSection ?? 'defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
@@ -378,6 +378,80 @@ const dataDirTouched = ref(false)
 const dataDirSaving = ref(false)
 const dataDirError = ref('')
 const dataDirSavedMessage = ref('')
+
+// ===== MIG-EXT-01 从 v1.2.7 迁移分栏：训练历史（SQLite）显式导入 =====
+// 用户拍板（2026-10-11）：v1.2.7 训练历史与录像都经迁移工具显式迁入，v1.3.0 不自动吸收。
+// 本分栏只做第二步（历史导入）：pick 选迁移清单.json → inspect 包体检计数 → import 暂存
+// （重启生效，主进程原子换库）；录像迁移走「训练录像」页导入合并包（两步顺序随意）。
+// 纯浏览器/dev 无 window.desktopMigration → 按钮禁用＋说明（fail-closed，不误报错误）。
+interface DesktopMigrationApi {
+  pick(): Promise<{ ok: true; manifestPath: string } | { ok: false; error: string }>
+  inspect(manifestPath: string): Promise<{ ok: true; counts: Record<string, number> } | { ok: false; error: string }>
+  importHistory(manifestPath: string): Promise<{ ok: true; requiresRestart: boolean; trainings: number } | { ok: false; error: string }>
+}
+const desktopMigrationApi = ((): DesktopMigrationApi | null => {
+  const holder = window as unknown as { desktopMigration?: DesktopMigrationApi }
+  return holder.desktopMigration ?? null
+})()
+const migrationManifestPath = ref('')
+const migrationCounts = ref<Record<string, number> | null>(null)
+const migrationBusy = ref(false)
+const migrationError = ref('')
+const migrationNotice = ref('')
+
+function migrationCountSummary(counts: Record<string, number> | null): string {
+  if (!counts) return ''
+  const parts: string[] = []
+  if (counts.trainings !== undefined) parts.push(`${counts.trainings} 条训练`)
+  if (counts.trades !== undefined) parts.push(`${counts.trades} 笔交易`)
+  if (counts.equityCurve !== undefined) parts.push(`${counts.equityCurve} 条权益记录`)
+  return parts.join('、')
+}
+
+async function pickMigrationManifest(): Promise<void> {
+  if (migrationBusy.value || !desktopMigrationApi) return
+  migrationBusy.value = true
+  migrationError.value = ''
+  migrationNotice.value = ''
+  migrationCounts.value = null
+  try {
+    const picked = await desktopMigrationApi.pick()
+    if (!picked.ok) {
+      migrationError.value = picked.error
+      return
+    }
+    migrationManifestPath.value = picked.manifestPath
+    const inspected = await desktopMigrationApi.inspect(picked.manifestPath)
+    if (!inspected.ok) {
+      migrationError.value = inspected.error
+      return
+    }
+    migrationCounts.value = inspected.counts
+  } catch (error) {
+    migrationError.value = error instanceof Error ? error.message : String(error)
+  } finally {
+    migrationBusy.value = false
+  }
+}
+
+async function importMigrationHistory(): Promise<void> {
+  if (migrationBusy.value || !desktopMigrationApi || !migrationManifestPath.value || !migrationCounts.value) return
+  migrationBusy.value = true
+  migrationError.value = ''
+  migrationNotice.value = ''
+  try {
+    const outcome = await desktopMigrationApi.importHistory(migrationManifestPath.value)
+    if (!outcome.ok) {
+      migrationError.value = outcome.error
+      return
+    }
+    migrationNotice.value = `已导入 ${outcome.trainings} 条训练记录，重启训练器后生效（原空库已自动备份保留）。`
+  } catch (error) {
+    migrationError.value = error instanceof Error ? error.message : String(error)
+  } finally {
+    migrationBusy.value = false
+  }
+}
 
 // ===== UPD-02 关于与更新分栏：在线版本更新（契约=docs/verification/2026-10/UPD-01/design.md §2） =====
 // 检查三态＋apply 守卫人话＋状态机轮询；决策核心在 ../updateFlow.ts（纯函数，单测锁定），
@@ -758,6 +832,7 @@ function close(): void {
           <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
           <button type="button" :class="{ selected: activeSection === 'animation' }" @click="activeSection = 'animation'">动画效果</button>
           <button type="button" :class="{ selected: activeSection === 'data' }" @click="activeSection = 'data'">数据目录</button>
+          <button type="button" :class="{ selected: activeSection === 'migration' }" @click="activeSection = 'migration'">从 v1.2.7 迁移</button>
           <button type="button" :class="{ selected: activeSection === 'about' }" @click="activeSection = 'about'">关于与更新</button>
         </nav>
         <div class="settings-content">
@@ -927,6 +1002,28 @@ function close(): void {
         <p v-if="tdxLoadError" class="error-text" role="alert">{{ tdxLoadError }}</p>
         <p v-if="tdxError" class="error-text" role="alert">{{ tdxError }}</p>
         <p v-if="tdxSavedMessage" class="settings-saved" role="status">{{ tdxSavedMessage }}</p>
+      </section>
+      <section v-if="activeSection === 'migration'" class="settings-section" aria-label="从 v1.2.7 迁移">
+        <h3>从 v1.2.7 迁移</h3>
+        <p class="settings-section-note">把旧版 v1.2.7 的训练数据迁到本应用，两步完成、顺序随意：</p>
+        <ol class="settings-section-note" style="margin:0 0 8px; padding-left:20px; text-align:left;">
+          <li>训练录像：在旧版安装文件夹运行迁移导出工具，导出「训练录像库-….trainer-recordings.json」，再到本应用的「训练录像」页点「导入录制」选择该文件。</li>
+          <li>训练历史：在同一工具页面点「导出训练历史迁移包」，得到「训练历史迁移-时间戳」文件夹；回到本页点下方按钮，选择该文件夹中的 迁移清单.json 完成导入。</li>
+        </ol>
+        <p class="settings-section-note">迁移不会修改或删除旧版本里的任何数据；训练历史只能导入到尚未使用的空训练库（当前库已有训练记录时会明确拒绝，不会合并）。导入完成后需重启本应用生效。</p>
+        <p v-if="!desktopMigrationApi" class="error-text" role="alert">此功能仅在桌面应用中可用（浏览器环境无本地文件访问）。</p>
+        <div class="settings-actions">
+          <button class="ghost-button" :disabled="migrationBusy || !desktopMigrationApi" @click="pickMigrationManifest">
+            {{ migrationBusy ? '处理中…' : '选择迁移清单…' }}
+          </button>
+          <button
+            class="trade-action buy" :disabled="migrationBusy || !desktopMigrationApi || !migrationCounts" @click="importMigrationHistory"
+          >导入训练历史</button>
+        </div>
+        <p v-if="migrationManifestPath" class="settings-section-note">已选择：{{ migrationManifestPath }}</p>
+        <p v-if="migrationCounts" class="settings-section-note" role="status">包体检通过，包含{{ migrationCountSummary(migrationCounts) }}。</p>
+        <p v-if="migrationError" class="error-text" role="alert">{{ migrationError }}</p>
+        <p v-if="migrationNotice" class="settings-saved" role="status">{{ migrationNotice }}</p>
       </section>
       <section v-if="activeSection === 'about'" class="settings-section" aria-label="关于与更新">
         <h3>关于与更新</h3>

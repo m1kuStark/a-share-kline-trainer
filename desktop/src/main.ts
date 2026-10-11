@@ -83,6 +83,7 @@ import {
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
 import { registerUpdateIpc } from './update-ipc.js'
 import { registerArchiveIpc } from './archive-recording.js'
+import { applyPendingHistoryAtBoot, registerMigrationIpc } from './mig-import.js'
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
@@ -126,6 +127,8 @@ let serverIdentity: { runId: string; pid: number; dataDir: string } | null = nul
 const updateChannelKind = resolveUpdateChannel({ isPackaged: app.isPackaged })
 // DATA-ARCH-01：录像归档目录的数据目录来源（bootServerAndOpen 解析后生效；dev 窗口保持 null）
 let archiveDataDir: string | null = null
+// MIG-EXT-01：v1.2.7 训练历史迁移的目标库路径（bootServerAndOpen 解析后生效；dev 窗口保持 null）
+let migrationDatabasePath: string | null = null
 /** 排空完成后待安装的新版（downloaded 事件置位；仅 exit 分支非 forced 路径消费） */
 let installPendingUpdate = false
 /** PORT-UPD-01：便携自更新 staging 所在数据目录（IPC 注册先于启动；bootServerAndOpen 解析后回填） */
@@ -476,6 +479,32 @@ registerArchiveIpc({
   logger: console,
 })
 
+// ===== MIG-EXT-01 v1.2.7 训练历史迁移 IPC（独立通道面；不触碰更新/归档绑定段） =====
+// 渲染端经 preload 的 desktopMigration（pick/inspect/importHistory）触发：pick 弹原生文件
+// 选择框选「训练历史迁移-…/迁移清单.json」；inspect 包体检；import 暂存 pending（重启生效）。
+// databasePath 惰性取值（bootServerAndOpen 设置 migrationDatabasePath 后才可用，dev 窗口/
+// 启动早期为 null → 结构化未就绪错误，渲染端如实呈现）。
+async function pickMigrationManifestFile(): Promise<string | null> {
+  const options = {
+    title: '选择 v1.2.7 训练历史迁移清单',
+    defaultPath: '迁移清单.json',
+    properties: ['openFile'] as Array<'openFile'>,
+    filters: [{ name: '迁移清单（迁移清单.json）', extensions: ['json'] }],
+  }
+  const result = mainWindow && !mainWindow.isDestroyed()
+    ? await dialog.showOpenDialog(mainWindow, options)
+    : await dialog.showOpenDialog(options)
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0] ?? null
+}
+
+registerMigrationIpc({
+  ipcMain,
+  pickManifestFile: pickMigrationManifestFile,
+  databasePath: () => migrationDatabasePath,
+  logger: console,
+})
+
 // ===== 启动 =====
 
 async function bootServerAndOpen(): Promise<void> {
@@ -536,6 +565,8 @@ async function bootServerAndOpen(): Promise<void> {
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
   // DATA-ARCH-01：归档目录跟生效数据目录（复用/reuse 分支同样生效——config 在分支前已解析）
   archiveDataDir = config.dataDir
+  // MIG-EXT-01：迁移目标库跟生效数据目录的库路径（reuse 分支同样生效——只影响 IPC 只读面）
+  migrationDatabasePath = config.databasePath
   // PORT-UPD-01：数据目录就绪——回填便携自更新 staging 根＋清理上次更新残留
   // （<dataDir>/update-staging 与用户 exe 旁 .old；非便携 no-op；失败不阻断启动）。
   // P0 修复：.old 残留 beside 用户实际启动的 exe（PORTABLE_EXECUTABLE_FILE），非 execPath
@@ -598,6 +629,16 @@ async function bootServerAndOpen(): Promise<void> {
 
     // proceed：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env。
     // runId 预生成：状态记录 trainer-state.json 与内嵌服务 health 上报同源。
+    // MIG-EXT-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史（原子换库：目标库为空
+    // 才采用，原库备份保留；失败/非空仅日志、pending 保留，下次启动自动重试——绝不阻断启动）。
+    try {
+      const applied = await applyPendingHistoryAtBoot(config.databasePath)
+      if (applied.applied) console.log('[desktop] v1.2.7 训练历史迁移已在启动时应用（原库已备份保留）')
+      else if (applied.error) console.error(`[desktop] v1.2.7 训练历史迁移暂缓（${applied.reason}）:`, applied.error)
+      else if (applied.reason !== 'none') console.log(`[desktop] v1.2.7 训练历史迁移暂缓：${applied.reason}`)
+    } catch (error) {
+      console.error('[desktop] v1.2.7 训练历史迁移应用异常（下次启动自动重试）:', error)
+    }
     const runId = `run-${randomUUID()}`
     const effectiveConfig: DesktopRuntimeConfig = { ...config, port: plan.port }
     process.env.TRAINER_PORT_FALLBACK = portFallbackEnvValue(plan.fallback)
