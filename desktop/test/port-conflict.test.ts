@@ -50,11 +50,16 @@ function makeDeps(overrides: DepOverrides = {}): PortPlanDeps & { boundPorts: nu
     boundPorts,
     asked,
     probeHealth: async () => probeQueue.shift() ?? refusedProbe(),
-    bindCheck: async (port: number) => {
-      boundPorts.push(port)
-      if (bindResults instanceof Map) return bindResults.get(port) ?? bindOk()
-      return bindResults
-    },
+    bindCheck: overrides.bindCheck
+      ? async (port: number) => {
+          deps.boundPorts.push(port)
+          return overrides.bindCheck!(port)
+        }
+      : async (port: number) => {
+          boundPorts.push(port)
+          if (bindResults instanceof Map) return bindResults.get(port) ?? bindOk()
+          return bindResults
+        },
     askConflict: async occupant => {
       deps.asked += 1
       return overrides.askConflict ? overrides.askConflict(occupant) : 'cancel'
@@ -250,5 +255,69 @@ describe('DESKTOP-PORT-CONFLICT-TRAINER-ASK：训练器占用三应答（PORT-02
     const plan = await resolvePortPlan(8787, deps)
     expect(plan).toEqual({ action: 'start', port: 8788, fallback: { from: 8787, reason: 'occupied' } })
     expect(deps.asked).toBe(0)
+  })
+})
+
+// PORT-COEXIST-V127-NODE（v1.3.0 与 v1.2.7 共存，2026-10-11 用户真机验收）：
+// oracle＝用户现象（选「关闭并重启」后 v1.2.7 端口似未关＋便携版退出被拖）＋矩阵行 SHALL
+// 「可靠终止 v1.2.7 服务进程（含其子进程树/监管者）并等端口真正释放再绑定；终止失败时
+// 人话呈现而非静默半途」。杀后端口释放存在真实时延（进程 teardown/AV/WFP），单次 bind
+// 裁决会静默换端口＝半途；必须轮询真释放，超限人话中止。
+describe('PORT-COEXIST-V127-NODE: 重启分支等端口真释放（杀后不静默换端口）', () => {
+  it('PORT-COEXIST-V127-NODE: restart polls until the killed port really releases and keeps the desired port', async () => {
+    // 端口释放慢：8787 前两次 bind 失败（EADDRINUSE，teardown 时延），第三次才可 bind
+    let bindAttempts = 0
+    const deps = makeDeps({
+      health: trainerProbe(),
+      rechecks: [trainerProbe()],
+      askConflict: async () => 'restart',
+      killOccupant: async () => ({ exited: true }),
+      bindCheck: async (port: number) => {
+        bindAttempts += 1
+        return port === 8787 && bindAttempts <= 2 ? bindBusy() : bindOk()
+      },
+      portReleaseWaitMs: 2_000,
+    })
+    const plan = await resolvePortPlan(8787, deps)
+    expect(plan).toEqual({ action: 'start', port: 8787, fallback: null })
+    // 必须轮询过（对 8787 的 bind 探测 ≥3 次），而不是探测一次就换端口
+    expect(deps.boundPorts.filter(port => port === 8787).length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('PORT-COEXIST-V127-NODE: restart quits with an explicit reason when the killed port never releases', async () => {
+    // 杀成功但端口始终被占（另一监听者/释放停滞）：必须人话中止，绝不静默换到 8788
+    const deps = makeDeps({
+      health: trainerProbe(),
+      rechecks: [trainerProbe()],
+      askConflict: async () => 'restart',
+      killOccupant: async () => ({ exited: true }),
+      bindResults: new Map<number, BindState>([[8787, bindBusy()], [8788, bindOk()]]),
+      portReleaseWaitMs: 60,
+    })
+    const plan = await resolvePortPlan(8787, deps)
+    expect(plan).toMatchObject({ action: 'quit' })
+    const reason = (plan as { reason: string }).reason
+    expect(reason).toContain('conflict-restart-port-held')
+    expect(reason).toContain('4321')
+    expect(reason).toContain('8787')
+    // 静默换端口的半途路径被禁止：绝不能返回 start on 8788
+    expect(plan).not.toMatchObject({ action: 'start', port: 8788 })
+  })
+
+  it('PORT-COEXIST-V127-NODE: a vanished occupant keeps the plain bind arbitration without the release wait', async () => {
+    // 占用者在应答期间自行消失（未被本进程杀）→ 不进入杀后释放等待：bind 裁决只探测一次
+    let bindCalls = 0
+    const deps = makeDeps({
+      health: trainerProbe(),
+      rechecks: [refusedProbe()],
+      askConflict: async () => 'restart',
+      bindCheck: async (port: number) => {
+        bindCalls += 1
+        return port === 8787 ? bindOk() : bindBusy()
+      },
+    })
+    const plan = await resolvePortPlan(8787, deps)
+    expect(plan).toEqual({ action: 'start', port: 8787, fallback: null })
+    expect(bindCalls).toBe(1)
   })
 })

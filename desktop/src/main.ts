@@ -30,10 +30,12 @@ import {
 import { planInstanceBoot } from './boot-plan.js'
 import {
   bindCheckTcp,
+  killTrainerTree,
   parseConflictAnswerEnv,
   portFallbackEnvValue,
   probeHealthHttp,
   resolvePortPlan,
+  taskkillTreeKillWindows,
   type ConflictAnswer,
   type PortPlan,
   type TrainerIdentity,
@@ -250,26 +252,17 @@ async function askConflictDialog(occupant: TrainerIdentity): Promise<ConflictAns
 }
 
 async function killTrainerOccupant(occupant: TrainerIdentity): Promise<{ exited: boolean; error?: string }> {
-  // PORT-02 口径：身份已复核（resolvePortPlan 内），这里只负责结束该 PID 并等退出。
-  // Windows 上 process.kill(pid)＝硬终止（与 launcher 对 node 服务的处理等量级）。
-  try {
-    process.kill(occupant.pid)
-  } catch (error) {
-    // ESRCH＝进程已消失＝目标达成；其他错误（EPERM 等）如实上报
-    if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
-      return { exited: false, error: String((error as Error)?.message ?? error) }
-    }
-  }
-  const deadline = Date.now() + 5_000
-  for (;;) {
-    try {
-      process.kill(occupant.pid, 0)
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EPERM') return { exited: true }
-    }
-    if (Date.now() > deadline) return { exited: false, error: `PID ${occupant.pid} did not exit within 5000ms` }
-    await new Promise(resolve => setTimeout(resolve, 150))
-  }
+  // PORT-02 口径：身份已复核（resolvePortPlan / decideCoexistence 内），这里只负责结束该
+  // 训练器并等退出。PORT-COEXIST-V127-NODE（2026-10-11 用户真机验收修复）：
+  //   - v1.2.7 zip 形态是 cmd 壳→launcher→detached node 服务链，另有 SETUP-01 受控重启
+  //     监管形态；单 PID process.kill 对带子进程/监管者的形态会留残余甚至被重启——改按
+  //     进程树终止（taskkill /PID <pid> /T /F，杀「该已验证训练器的 pid＋其后代」，
+  //     绝不向树外发信号，不明进程不杀的边界不变）；
+  //   - 杀后「等端口真正释放」由 resolvePortPlan 的释放轮询承载（这里只等进程退出）。
+  return killTrainerTree(occupant.pid, {
+    runTreeKill: taskkillTreeKillWindows,
+    pidAlive,
+  })
 }
 
 // ===== PACK-03 数据落点发现/采用＋共存防线（GUI 询问可注入，测试/冒烟不依赖 GUI） =====
