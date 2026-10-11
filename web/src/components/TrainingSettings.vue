@@ -32,6 +32,13 @@ import {
 
 const emit = defineEmits<{ close: [] }>()
 
+// UPD-NOTIFY-01：首页更新提示跳转入口——打开即直入指定分栏，并（desktop 通道）以主进程
+// boot 自动检查的结果为初值呈现；两个 prop 均缺省时行为与既有打开完全一致（默认分栏＋手动检查）。
+const props = defineProps<{
+  initialSection?: 'defaults' | 'preferences' | 'animation' | 'data' | 'about'
+  seededUpdateNotice?: { latestVersion: string, releaseNotes: string | null } | null
+}>()
+
 const panelRef = ref<HTMLElement | null>(null)
 const settings = ref<TrainingSettingsView | null>(null)
 const loadError = ref('')
@@ -42,7 +49,7 @@ const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
 const adjustMode = ref<'forward' | 'raw'>('forward')
-const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>('defaults')
+const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>(props.initialSection ?? 'defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
@@ -388,6 +395,13 @@ const updateVersion = ref<string | null>(null)
 const checkPhase = ref<'idle' | 'checking' | 'available' | 'latest' | 'error'>('idle')
 const checkErrorText = ref('')
 const updateAvailableInfo = ref<{ latestVersion: string, releaseNotes: string | null } | null>(null)
+// UPD-NOTIFY-01：经首页更新提示直入本分栏时，以主进程 boot 检查结果为初值——「发现新版本＋
+// 更新内容＋下载并更新」即刻呈现（boot 检查已把主进程侧 checked 置位，可直接下载安装）；
+// 仅 desktop 通道消费种子（http 通道的服务端不知道 boot 检查，预置可用态会造成假呈现）。
+if (props.initialSection === 'about' && updateChannel === 'desktop' && props.seededUpdateNotice) {
+  updateAvailableInfo.value = { ...props.seededUpdateNotice }
+  checkPhase.value = 'available'
+}
 const applyStarting = ref(false)
 /** 当前呈现的状态机态（''＝未在呈现）；'reconnecting' 仅为呈现哨兵，非契约态 */
 const applyPollState = ref('')
@@ -602,9 +616,11 @@ async function enterAboutSection(): Promise<void> {
   }
 }
 
+// UPD-NOTIFY-01：immediate——经首页更新提示直入 about 分栏（初始值即 about，无变化事件）
+// 时同样执行分栏激活逻辑（版本号加载＋进行中/终态更新恢复）。
 watch(activeSection, section => {
   if (section === 'about') void enterAboutSection()
-})
+}, { immediate: true })
 
 async function chooseDataDirDirectory(): Promise<void> {
   if (dataDirSaving.value) return

@@ -24,6 +24,31 @@ export type DesktopUpdateEvent =
   | { type: 'downloaded', version: string }
   | { type: 'installing' }
   | { type: 'error', message: string }
+  // UPD-NOTIFY-01（v1.3.0）：boot 自动检查发现新版本→渲染端首页提示（经既有
+  // 'desktop-update:event' 单向事件面，不新增 IPC 通道/preload 成员）
+  | { type: 'update-available-notice', version: string, releaseNotes: string | null }
+
+/** UPD-NOTIFY-01：首页更新提示载荷（boot 自动检查发现新版时经事件面下发） */
+export type DesktopUpdateNotice = { version: string, releaseNotes: string | null }
+
+/**
+ * boot 自动检查口径（UPD-NOTIFY-01，用户 2026-10-11 原话「每次启动都要进行一次版本更新
+ * 检查」）：仅 packaged 通道每次启动检查一次（不加间隔）；dev 形态跳过——开发窗口每次
+ * 启动都打更新源没有意义。
+ */
+export function shouldAutoCheckOnBoot(channelKind: DesktopUpdateChannelKind): boolean {
+  return channelKind === 'packaged'
+}
+
+/**
+ * boot 检查视图→首页提示载荷：只有干净的有新版视图才产生通知（失败/已是最新/坏视图
+ * 一律 null——零打扰，且不做部分判读，对齐 UPD-CHECK-OFFLINE 口径）。该视图同时会把
+ * controller 的 checked 置位（boot 检查算一次有效检查，跳转分栏后可直接「下载并更新」）。
+ */
+export function bootNoticeFromCheckView(view: DesktopUpdateCheckView): DesktopUpdateNotice | null {
+  if (view.error !== null || !view.updateAvailable || view.latestVersion === null) return null
+  return { version: view.latestVersion, releaseNotes: view.releaseNotes }
+}
 
 /** 缺省 GitHub provider（与 package.json repository 同源；PACK-05 落实发布资产） */
 export const DEFAULT_GITHUB_FEED = { provider: 'github', owner: 'm1kuStark', repo: 'a-share-kline-trainer' } as const

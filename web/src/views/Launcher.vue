@@ -5,7 +5,14 @@ import { minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { lastSavedSettings, settingsSavedVersion } from '../settingsPanel'
 
-const emit = defineEmits<{ created: [options: { enabled: boolean; params: Record<string, string | number | boolean | TrainingRangeRequest> }] }>()
+// UPD-NOTIFY-01（v1.3.0）：主进程 boot 自动检查发现新版时 App 传入的通知（null＝无新版/
+// 已处理——按钮不渲染，零打扰）；点击上抛 openUpdateSettings 由 App 打开设置并直入
+// 「关于与更新」分栏。
+defineProps<{ updateNotice?: { latestVersion: string; releaseNotes: string | null } | null }>()
+const emit = defineEmits<{
+  created: [options: { enabled: boolean; params: Record<string, string | number | boolean | TrainingRangeRequest> }]
+  openUpdateSettings: []
+}>()
 const recordingEnabled = ref(true)
 const clockMode = ref<'close_only' | 'open_close'>('close_only')
 const ordersEnabled = ref(false)
@@ -594,7 +601,11 @@ function randomCreateErrorMessage(error: unknown): string {
 <template>
   <div class="launcher">
     <header class="launcher-head">
-      <h1>创建训练</h1>
+      <div class="launcher-head-row">
+        <h1>创建训练</h1>
+        <!-- UPD-NOTIFY-01：首页左上角更新提示（boot 自动检查发现新版；点击跳转设置「关于与更新」） -->
+        <button v-if="updateNotice" type="button" class="update-notice-btn" title="查看新版本介绍并更新" @click="emit('openUpdateSettings')">⬆ 新版本 v{{ updateNotice.latestVersion }} 可更新</button>
+      </div>
       <p>{{ mode === 'random'
         ? '服务器随机选股或随机选时段，训练中隐藏对应信息，结算后揭晓。创建后复权方式锁定，训练中不可切换。'
         : '选一只股票、一个周期档和一个起始日，从起始日向前盲走训练。创建后复权方式锁定，训练中不可切换。' }}</p>
@@ -745,6 +756,12 @@ function randomCreateErrorMessage(error: unknown): string {
 </template>
 
 <style scoped>
+/* UPD-NOTIFY-01 首页左上角更新提示按钮：对齐顶栏 data-update-btn 胶囊风格（attention
+   琥珀色实底，与既有「更新日线」醒目口径同色系；双主题同值，沿用 attention 先例） */
+.launcher-head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.update-notice-btn { height: 24px; padding: 0 12px; border-radius: 12px; border: 1px solid #b45309; background: #b45309; color: #ffffff; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.update-notice-btn:hover { filter: brightness(1.08); }
+.update-notice-btn:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
 /* M7-02 模式标签：沿用训练页 timeframe-tabs 的下划线风格（双主题） */
 .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
 .mode-tabs button { border: 0; background: transparent; padding: 7px 16px; font-size: 14px; color: var(--text-secondary, #77869a); border-bottom: 2px solid transparent; cursor: pointer; }
