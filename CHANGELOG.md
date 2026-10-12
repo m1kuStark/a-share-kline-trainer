@@ -13,6 +13,14 @@
 - **其他**：自定义均线（MA-01）；账户权益/收益率数字滚动动效与应用级动画偏好（M6-05/06/07）；KDJ/VOL/MACD 副图开关迁至周期行（M6-01/04）；涨幅百分比随指针与悬浮信息卡（M6-02/03）；时间轴遮蔽联动与结算披露（RF2-02/03）。
 - **测试脚本对齐**（本轮验收发现，产品无回归）：random-mask-axis 补「自定义范围」档点击；m4-history 删除重复 suggestions 等待、录像库 heading 精确匹配。
 
+## 未发布（v1.3.0 第三轮：待拍板项落地，2026-10-12 待用户验收）
+
+- **历史训练记录↔录像关联（REC-HIST-LINK，用户拍板 S2 方案落地）**：历史页每行新增「播放录像」「导出录像」按钮——有录像可播可导出（导出 .trainer-session.json.gz）、无录像置灰并提示「该训练早于录像功能」；以 trainingKey 关联（迁移导入的 v1.2.7 录像自动挂回对应历史）；历史页顶部新增存储模型说明＋「本页 X/Y 局有本机录像」分界行；同一训练多份录像取最新（title 披露口径）。
+- **v1.2.7 遗留浏览器页不再拖慢退出（PORT-GHOST-SESSION-QUIT）**：v1.3.0 会话注册带代际标记（clientProtocol=2）；旧版页面向新服务注册被拒（426「请刷新本页」），退出排空不再被僵尸会话拖 120 秒（真实 HTTP 边界复现：修复前 awaiting 卡 120s→修复后 3ms）。
+- **更新退出 TypeError 崩溃窗根治加固（UPD-QUIT-TYPEERROR-GUARD）**：退出路径全部 error.message 读取点守卫化＋兜底 handler 注册提前至模块体首句＋quitAndInstall 调用点同步异常回落 app.quit；变异测试在单测层复现截图原句（语义级锁定）；根因定位为 Electron teardown 撕裂期 fatal 路径（详审计见验证记录）。
+- **测试机（gpu3060）NSIS 更新链预验证通过**：重装 1.3.0→本地 feed 8124→启动自动检查发现 9.9.10（boot-check.json：updateAvailable=true, error=null）＋feed 日志实证训练器进程 GET latest.yml（noCache 特征）。
+- journey 回归：m4-history 4/4＋archive-recording 1/1（含新历史页按钮的浏览器层回归）。
+
 ## 未发布（v1.3.0 第二轮验收修复：NSIS 形态转向＋共存修复＋迁移扩展＋更新通知，2026-10-12 待用户验收）
 
 - **发布形态转向 NSIS 向导式安装包（用户拍板放弃便携版）**：仅 setup exe（oneClick=false 允许自选安装目录、zh_CN）；数据目录唯一默认 %USERPROFILE%.a-share-kline-trainer（exe 旁 data/ 候选退役——v1.2.7 目录混放不再吸收旧库，真机两断言验证通过）；便携自研更新器退役保留一个版本周期。
