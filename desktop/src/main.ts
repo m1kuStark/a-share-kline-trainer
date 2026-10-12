@@ -84,13 +84,9 @@ import { registerArchiveIpc } from './archive-recording.js'
 import { applyPendingHistoryAtBoot, registerMigrationIpc } from './mig-import.js'
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
 
-const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
-const WINDOW_TITLE = 'K线训练器'
-const WINDOW_STATE_FILE = 'window-state.json'
-// sandboxed preload 必须是 CJS（Electron ESM 文档）；src/preload.cts 编译产物为 dist/preload.cjs
-const PRELOAD_ENTRY = fileURLToPath(new URL('./preload.cjs', import.meta.url))
-
-// ===== P0-4（PORT-UPD-01）主进程异常兜底（最后防线；proposed_default 待用户追认） =====
+// ===== P0-4（PORT-UPD-01）＋UPD-QUIT-TYPEERROR-GUARD：主进程异常兜底（最后防线） =====
+// 必须是模块体第一段语句（ESM import 无法前移，此处即注册可达的最早点）：晚于此的任何
+// 顶层语句抛错都会落进「兜底未注册」窗口（Electron 默认崩溃窗形态）。
 // 用户真机证据：undici（全局 fetch）内部 AssertionError [ERR_ASSERTION] assert(this.paused)
 // 从异步路径抛出，不经任何 try/catch，Electron 默认行为＝弹「A JavaScript error
 // occurred in the main process」崩溃窗（用户称启动后经常出现）。主进程网络层已整体
@@ -99,12 +95,37 @@ const PRELOAD_ENTRY = fileURLToPath(new URL('./preload.cjs', import.meta.url))
 //   - uncaughtException/unhandledRejection → console.error（时间＋堆栈）后不退出；
 //   - 不触碰正常退出管线（不调用 process.exit/app.exit/app.quit、不改 exitCode）；
 //   - 正常路径的错误仍由各调用点自身受控处理，本层不是错误处理的替代。
+// UPD-QUIT-TYPEERROR-GUARD（2026-10-11 用户真机第三形态）加固：
+//   - Electron 默认崩溃窗本身是一个 uncaughtException 监听器（lib/browser/init.ts），
+//     listenerCount>1 即自禁——兜底注册后正常存活期的进程级异常不会再弹窗；弹窗＝异常
+//     落入 JS 兜底失效的窗口（teardown 撕裂期 / 注册前），故 handler 自身绝不允许抛错
+//     （handler 内抛错＝Electron 对其仍走默认崩溃路径）；
+//   - 因此 reason/error 一律经 formatUnknownError 守卫格式化（undefined/非 Error/不可
+//     字符串化对象全容忍），处理体内不直接解引用 error 的任何属性。
+function formatUnknownError(error: unknown): string {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}\n${error.stack ?? '(no stack)'}`
+  }
+  try {
+    return String(error)
+  } catch {
+    // String() 对 Symbol.toPrimitive 抛错的对象自身可抛异常——兜底内部零信任
+    return '(unstringifiable error)'
+  }
+}
+
 process.on('uncaughtException', error => {
-  console.error(`[desktop] uncaught exception at ${new Date().toISOString()} (process kept alive):`, error)
+  console.error(`[desktop] uncaught exception at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(error))
 })
 process.on('unhandledRejection', reason => {
-  console.error(`[desktop] unhandled rejection at ${new Date().toISOString()} (process kept alive):`, reason)
+  console.error(`[desktop] unhandled rejection at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(reason))
 })
+
+const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
+const WINDOW_TITLE = 'K线训练器'
+const WINDOW_STATE_FILE = 'window-state.json'
+// sandboxed preload 必须是 CJS（Electron ESM 文档）；src/preload.cts 编译产物为 dist/preload.cjs
+const PRELOAD_ENTRY = fileURLToPath(new URL('./preload.cjs', import.meta.url))
 
 type EmbeddedServer = {
   shutdown(): Promise<void>
@@ -582,7 +603,7 @@ async function bootServerAndOpen(): Promise<void> {
   try {
     await mkdir(config.dataDir, { recursive: true })
   } catch (error) {
-    throw new Error(`数据目录不可用 / data directory is not usable: ${config.dataDir} (${(error as Error).message})`)
+    throw new Error(`数据目录不可用 / data directory is not usable: ${config.dataDir} (${error instanceof Error ? error.message : String(error)})`)
   }
   const lock = await acquireLaunchLock(launchLockPathOf(config.dataDir), nodeLaunchLockDeps())
   if (!lock.ok) throw new Error(lock.reason)
@@ -703,7 +724,15 @@ function dispatchQuitEvent(event: Parameters<typeof nextQuitState>[1]): void {
         installPendingUpdate = false
         sendUpdateEvent({ type: 'installing' })
         console.log('[desktop] drained; installing downloaded update (quitAndInstall)')
-        updateAdapterRef?.quitAndInstall(true, true)
+        // UPD-QUIT-TYPEERROR-GUARD：适配器/底层（electron-updater 等）同步抛错不得逃逸出
+        // exit 分支——逃逸＝异步链上的未捕获异常（teardown 窗口内即崩溃弹窗形态）或退出
+        // 悬挂。就地记录并回落普通退出（更新留缓存可重试），绝不带病悬挂。
+        try {
+          updateAdapterRef?.quitAndInstall(true, true)
+        } catch (error) {
+          console.error('[desktop] quitAndInstall threw synchronously; falling back to plain quit:', error instanceof Error ? error.message : String(error))
+          app.quit()
+        }
         return
       }
       if (action.forced) {

@@ -135,6 +135,20 @@ describe('UPD-BOOT-AUTO-CHECK: boot 自动检查编排（update-ipc 注入桩）
     expect(harness.logger.warn).toHaveBeenCalled()
   })
 
+  it('UPD-QUIT-TYPEERROR-GUARD: 检查 reject(undefined) 只 warn 一次且观测缝如实落盘 undefined 字符串', async () => {
+    // reject(undefined) 形态（EventEmitter error 无参 / 外部库 reject 非法值——用户 2026-10-11
+    // 真机 TypeError 崩溃窗的候选生成面）：boot 检查链零无守卫读取，失败视图如实字符串化。
+    const outPath = join(tmpdir(), `upd-quit-guard-${randomUUID()}.json`)
+    const harness = registerBootCheck({ channelKind: 'packaged', bootCheckOutPath: outPath })
+    harness.gate.reject(undefined)
+    await waitForFile(outPath)
+    const written = JSON.parse(await readFile(outPath, 'utf8')) as Record<string, unknown>
+    expect(written.channel).toBe('packaged')
+    expect(written.error).toBe('undefined')
+    expect(harness.logger.warn).toHaveBeenCalledTimes(1)
+    await rm(outPath, { force: true })
+  })
+
   it('UPD-BOOT-AUTO-CHECK: 已是最新版本不产生任何通知（零打扰）', async () => {
     const harness = registerBootCheck({ channelKind: 'packaged' })
     harness.gate.resolve(latestView)
