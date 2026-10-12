@@ -279,6 +279,27 @@ describe('PORT-UPD-01 适配器·下载与校验（fail-closed）', () => {
     }
   })
 
+  it('UPD-QUIT-TYPEERROR-GUARD: 下载 reject(undefined) 产出人话错误而非 TypeError', async () => {
+    // 外部库 reject(undefined) 形态（EventEmitter error 无参等——用户 2026-10-11 真机
+    // TypeError 崩溃窗的候选生成面）：便携通道同样零无守卫读取，失败＝人话 Error。
+    const root = await mkdtemp(join(tmpdir(), 'portable-upd-'))
+    try {
+      const dataDir = join(root, 'data')
+      await mkdir(dataDir, { recursive: true })
+      const fixture = happyFixture()
+      const { deps } = makeAdapterDeps({
+        dataDir,
+        fetchText: async () => fixture.text,
+        downloadToFile: async () => { throw undefined },
+      })
+      const adapter = createPortableUpdaterAdapter(deps)
+      await adapter.checkForUpdates()
+      await expect(adapter.downloadUpdate()).rejects.toThrow('下载新版本失败：undefined')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('sha512 不符 → 删除 staging 产物并拒绝（绝不应用）', async () => {
     const root = await mkdtemp(join(tmpdir(), 'portable-upd-'))
     try {

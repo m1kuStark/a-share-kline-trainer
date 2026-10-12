@@ -168,6 +168,34 @@ describe('PACK-04 desktop 更新通道', () => {
     expect((await first).ok).toBe(true)
   })
 
+  it('UPD-QUIT-TYPEERROR-GUARD: undefined 下载失败映射为字符串错误，绝不升级为 TypeError', async () => {
+    // reject(undefined) 形态（EventEmitter error 无参 / 外部库 reject 非法值——用户 2026-10-11
+    // 真机 TypeError 崩溃窗的候选生成面）：更新链路上的受控失败视图，不得抛 TypeError。
+    const adapter = fakeAdapter({
+      downloadUpdate: async () => { throw undefined },
+    })
+    const events: DesktopUpdateEvent[] = []
+    const drains: number[] = []
+    const controller = createDesktopUpdateController({
+      getCurrentVersion: () => '1.2.7',
+      adapter,
+      sendEvent: event => { events.push(event) },
+      requestInstallWithDrain: () => { drains.push(1) },
+      logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+    })
+    await controller.checkForUpdates()
+    const outcome = await controller.downloadAndInstall()
+    expect(outcome).toEqual({ ok: false, error: 'undefined' })
+    expect(events).toContainEqual({ type: 'error', message: 'undefined' })
+    expect(drains).toHaveLength(0)
+  })
+
+  it('UPD-QUIT-TYPEERROR-GUARD: normalizeUpdaterError 容忍 undefined 与非 Error 输入', () => {
+    expect(normalizeUpdaterError(undefined)).toBe('undefined')
+    expect(normalizeUpdaterError(null)).toBe('null')
+    expect(normalizeUpdaterError('boom')).toContain('boom')
+  })
+
   it('UPD-DESKTOP-CHANNEL-PACKAGED: check failures map to the human error view without throwing', async () => {
     const adapter = fakeAdapter({
       checkForUpdates: async () => { throw Object.assign(new Error('Cannot find latest.yml in the latest release artifacts (http://x/latest.yml): boom'), { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' }) },
