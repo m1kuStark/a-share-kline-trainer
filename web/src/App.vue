@@ -32,6 +32,10 @@ const env = ref<Awaited<ReturnType<typeof fetchEnv>> | null>(null)
 const envError = ref('')
 const recordingOptions = ref<{ enabled: boolean; params?: Record<string, unknown> }>({ enabled: true })
 const replay = shallowRef<CompactRecordingFile | null>(null)
+// REC-HIST-LINK：从历史行打开的回放关闭时回历史而非录像库；historyReplayError 把
+// openRecording 的失败信息带回历史页呈现（历史视图没有录像库的错误区域）。
+const replayReturnView = ref<'library' | 'history'>('library')
+const historyReplayError = ref('')
 const recentRecordings = ref<RecordingLibraryItem[]>([])
 const recordingError = ref('')
 const recordingBusy = ref(false)
@@ -147,6 +151,19 @@ async function openRecording(id: string, knownItem?: RecordingLibraryItem): Prom
     navigationVersion++
     view.value = 'replay'
   } catch (error) { recordingError.value = error instanceof Error ? error.message : '无法打开录制' }
+}
+// REC-HIST-LINK：历史行的「播放录像」入口——复用 openRecording（直传已知条目不重查），
+// 关闭回放时返回历史页；打开失败经 historyReplayError 在历史页内呈现。
+async function replayRecordingFromHistory(item: RecordingLibraryItem): Promise<void> {
+  replayReturnView.value = 'history'
+  historyReplayError.value = ''
+  await openRecording(item.sessionId, item)
+  if (view.value !== 'replay') historyReplayError.value = recordingError.value || '无法打开本局录像'
+}
+function closeReplay(): void {
+  view.value = replayReturnView.value
+  replay.value = null
+  replayReturnView.value = 'library'
 }
 async function removeRecordings(action: () => Promise<RecordingRemovalResult>): Promise<void> {
   if (recordingBusy.value) return
@@ -702,8 +719,8 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         <Launcher :update-notice="updateNotice && !updateNoticeHandled ? updateNotice : null" @created="onCreated" @open-update-settings="onLauncherUpdateNotice" />
       </template>
       <RecordingLibrary v-else-if="view === 'library'" :items="recentRecordings" :busy="recordingBusy" :error="recordingError" :active-session-ids="activeRecordingIds" @replay="openRecording" @import="importRecording" @remove="removeRecording" @clear="clearRecordings" @close="returnToTraining" />
-      <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="view = 'library'; replay = null" />
-      <History v-else-if="view === 'history'" @create="returnToTraining" />
+      <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="closeReplay" />
+      <History v-else-if="view === 'history'" :replay-error="historyReplayError" @create="returnToTraining" @replay-recording="replayRecordingFromHistory" />
       <Rankings v-else-if="view === 'rankings'" @create="returnToTraining" />
       <Training v-else-if="view === 'training' && snapshot" ref="trainingRef" :key="snapshot.training.id" :snapshot="snapshot" :recording-options="recordingOptions" @ended="onTrainingEnded" @open-history="showHistory" @retrained="onTrainingRetrained" />
       <div v-else class="boot-loading">正在连接本地服务…</div>

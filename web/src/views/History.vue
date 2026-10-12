@@ -5,8 +5,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { ApiError, deleteTrainingHistory, fetchTrainingHistory, type HistoryItem } from '../api'
 import HistoryReport from '../components/HistoryReport.vue'
+import { buildHistoryRecordingLinks, type HistoryRecordingLink } from '../recording/historyLink'
+import type { RecordingLibraryItem } from '../recording/libraryTypes'
+import { listRecordingLibrary, loadLibraryRecording } from '../recording/recordingRepository'
+import { writeRecordingFile } from '../recording/recordingFile'
+import { downloadRecording } from '../recording/useRecording'
 
-const emit = defineEmits<{ create: [] }>()
+const props = defineProps<{ replayError?: string }>()
+const emit = defineEmits<{ create: []; 'replay-recording': [item: RecordingLibraryItem] }>()
 
 const items = ref<HistoryItem[]>([])
 const total = ref(0)
@@ -104,6 +110,74 @@ async function removeHistory(ids: number | number[]): Promise<void> {
     errorMessage.value = error instanceof Error ? error.message : '删除历史记录失败'
   }
 }
+
+// REC-HIST-LINK：历史训练记录 ↔ 本机训练录像 关联呈现（用户 2026-10-12 拍板：
+// 有录像可播可导出、无录像置灰加说明）。关联键＝录像侧 trainingKey 的训练 id 段
+// （库主键，见 recording/historyLink.ts）；录像列表一次加载建 Map，行级渲染零查询。
+const recordingLinks = ref(new Map<number, HistoryRecordingLink>())
+const linksLoading = ref(false)
+const linksError = ref('')
+const exportingId = ref<number | null>(null)
+const exportError = ref('')
+// 壳层可能先于安装隔离初始化渲染（与 RecordingLibrary 同语义的短重试守卫）；
+// 其余错误原样呈现，不得把读取失败静默当成零录像。
+async function withNamespaceRetry<T>(action: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try { return await action() }
+    catch (error) {
+      if (attempt < 30 && error instanceof Error && error.message.includes('尚未完成安装隔离初始化')) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        continue
+      }
+      throw error
+    }
+  }
+}
+async function loadRecordingLinks(): Promise<void> {
+  linksLoading.value = true
+  linksError.value = ''
+  try {
+    recordingLinks.value = buildHistoryRecordingLinks(await withNamespaceRetry(listRecordingLibrary))
+  } catch (error) {
+    recordingLinks.value = new Map()
+    linksError.value = error instanceof Error ? error.message : '无法读取本机录像库'
+  } finally { linksLoading.value = false }
+}
+onMounted(() => { void loadRecordingLinks() })
+function recordingLinkOf(item: HistoryItem): HistoryRecordingLink | null {
+  return recordingLinks.value.get(item.id) ?? null
+}
+// 用户拍板口径的置灰说明：这些训练物理上早于录像功能，没有录像可放
+const NO_RECORDING_TITLE = '该训练早于录像功能，无录像'
+function replayTitle(item: HistoryItem): string {
+  if (linksLoading.value) return '正在读取本机录像库…'
+  const link = recordingLinkOf(item)
+  if (!link) return NO_RECORDING_TITLE
+  // 多会话分界披露：同一训练跨页面多次录制会有多份录像，播放/导出取最新一份
+  return link.count > 1 ? `该训练有 ${link.count} 份录像会话，播放/导出最新一份` : '播放/导出本局的录像'
+}
+function playRecording(item: HistoryItem): void {
+  const link = recordingLinkOf(item)
+  if (linksLoading.value || !link) return
+  emit('replay-recording', link.latest)
+}
+async function exportRecording(item: HistoryItem): Promise<void> {
+  if (exportingId.value !== null) return
+  const link = recordingLinkOf(item)
+  if (linksLoading.value || !link) return
+  exportingId.value = item.id
+  exportError.value = ''
+  try {
+    const file = await loadLibraryRecording(link.latest)
+    if (!file) throw new Error('找不到这份录像')
+    // 复用既有单条导出链路（writeRecordingFile gzip 封装），不另造格式
+    const blob = await writeRecordingFile(file, true)
+    downloadRecording(blob, `历史训练-${item.id}-录像.trainer-session.json.gz`)
+  } catch (error) {
+    exportError.value = error instanceof Error ? error.message : '无法导出本局录像'
+  } finally { exportingId.value = null }
+}
+const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(item) !== null).length)
 </script>
 
 <template>
@@ -112,6 +186,9 @@ async function removeHistory(ids: number | number[]): Promise<void> {
       <div>
         <h1>历史训练</h1>
         <p>只读事实成绩单：来自已结算训练的持久记录，不重算、不改动。</p>
+        <!-- REC-HIST-LINK 存储模型说明（proposed_default 文案）：历史与录像分处两库，
+             「条数对不上」要有解释，不能让用户误以为读错目录。 -->
+        <p class="history-storage-note">存储说明：训练历史保存在本机数据库，训练录像保存在浏览器的本地录像库，两者分开存储——历史条数多于录像条数属正常现象；有录像的训练行可直接播放或导出。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
@@ -132,6 +209,10 @@ async function removeHistory(ids: number | number[]): Promise<void> {
     <template v-else>
       <p v-if="!total" class="history-empty">暂无已结算训练</p>
       <div v-else class="history-content">
+        <p v-if="linksError" class="history-link-status" role="alert">本机录像库暂不可读：{{ linksError }}（录像关联暂不可用，不影响历史记录查看）</p>
+        <p v-else-if="!linksLoading && items.length" class="history-link-status" role="status">本页 {{ linkedOnPage }}/{{ items.length }} 局有本机录像；其余训练早于录像功能，或录像已删除/未保留。</p>
+        <p v-if="props.replayError" class="history-link-status" role="alert">{{ props.replayError }}</p>
+        <p v-if="exportError" class="history-link-status" role="alert">{{ exportError }}</p>
         <div v-if="items.length" class="history-batch-actions">
           <label class="history-select-all"><input type="checkbox" :checked="items.every(item => isSelected(item.id))" @change="togglePageSelection" />全选本页</label>
           <button class="danger-button" :disabled="!selectedIds.length" @click="removeHistory(selectedIds)">删除选中（{{ selectedIds.length }}）</button>
@@ -146,6 +227,8 @@ async function removeHistory(ids: number | number[]): Promise<void> {
           <span class="history-row-return" :class="{ up: (item.returnRate ?? 0) > 0, down: (item.returnRate ?? 0) < 0 }">{{ percentText(item) }}</span>
           <span class="history-row-count">{{ item.tradeCount }} 笔</span>
           <span v-if="item.integrity === 'unavailable'" class="history-row-integrity" :title="item.integrityReason">不可认证</span>
+          <button class="history-row-replay" type="button" :disabled="linksLoading || !recordingLinkOf(item)" :title="replayTitle(item)" :aria-label="`播放第 ${item.id} 局的录像`" @click.stop="playRecording(item)">播放录像</button>
+          <button class="history-row-export" type="button" :disabled="linksLoading || !recordingLinkOf(item) || exportingId === item.id" :title="replayTitle(item)" :aria-label="`导出第 ${item.id} 局的录像`" @click.stop="exportRecording(item)">{{ exportingId === item.id ? '导出中…' : '导出录像' }}</button>
           <button class="history-row-delete" type="button" title="删除训练记录" aria-label="删除训练记录" @click.stop="removeHistory(item.id)">删除</button>
         </div>
         </div>
@@ -169,4 +252,14 @@ async function removeHistory(ids: number | number[]): Promise<void> {
 /* RF-05 随机模式训练在历史列表中的 tag（胶囊形态区别于普通范围文字标签） */
 .random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
 :global(body.dark) .random-mode-tag { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+/* REC-HIST-LINK：存储模型说明与录像关联状态行 */
+.history-storage-note { margin: 6px 0 0; color: var(--text-secondary, #64748b); font-size: 12px; }
+.history-link-status { margin: 0 0 10px; color: var(--text-secondary, #64748b); font-size: 12px; }
+.history-link-status[role='alert'] { color: #a83535; }
+:global(body.dark) .history-link-status[role='alert'] { color: #ffaaaa; }
+/* 行级播放/导出按钮（样式对齐 history-row-delete 的轻量文字按钮；styles.css 不在本卡授权范围） */
+.history-row-replay, .history-row-export { border: 0; background: transparent; color: #3a6ea5; cursor: pointer; font-size: 12px; white-space: nowrap; padding: 4px 6px; }
+.history-row-replay:hover:not(:disabled), .history-row-export:hover:not(:disabled) { text-decoration: underline; }
+.history-row-replay:disabled, .history-row-export:disabled { color: var(--text-secondary, #94a3b8); cursor: not-allowed; opacity: .55; }
+:global(body.dark) .history-row-replay, :global(body.dark) .history-row-export { color: #7fa8d9; }
 </style>
