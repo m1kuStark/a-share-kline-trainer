@@ -646,6 +646,15 @@ export async function registerApi(
   const LIFECYCLE_FRESH_MS = 90_000
   // 其他页面确认限时：超时如实判失败，绝不转强制结束
   const LIFECYCLE_EXIT_TTL_MS = 120_000
+  // PORT-GHOST-SESSION-QUIT：注册代际标记。v1.3.0 客户端注册时携带 clientProtocol>=2；
+  // v1.2.7 页面（dist 实证：rc()＝POST /api/lifecycle/session，无 body 无任何版本字段）
+  // 在端口易主后于心跳 catch 里反复重注册为活跃会话，把页内退出协调拖进 awaiting 直到
+  // 120s TTL（S1 repro2，2026-10-11）。缺失标记＝旧代际客户端：拒绝注册（不进活跃集，
+  // 退出不再被僵尸会话拖拽）；旧页按其既有 catch 链收敛——重注册再失败即停心跳，
+  // 不再无限重试。协议不兼容变更时提升该值。
+  const LIFECYCLE_CLIENT_PROTOCOL = 2
+  const LIFECYCLE_UPGRADE_MESSAGE = '当前页面来自旧版本训练器：服务已更换或升级，请刷新本页（F5）后重试，或关闭后重新打开'
+  const LIFECYCLE_STALE_SESSION_MESSAGE = '页面会话已失效（训练器服务已重启或已升级）：请刷新本页（F5）后重试'
   interface LifecycleSession { id: string; token: string; createdAt: number; lastSeenAt: number }
   interface LifecycleExitRequest {
     id: string
@@ -793,6 +802,15 @@ export async function registerApi(
     if (!options.lifecycle) {
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
+    // PORT-GHOST-SESSION-QUIT：代际门——旧客户端（v1.2.7 遗留页等）注册不带 clientProtocol，
+    // 一律拒绝（426＋请刷新文案）。会话表在进程内存中，旧页因此永远无法进入活跃集，
+    // 退出协调的 live set 只含当前代际页面；对 v1.3.0 自身页面无影响（注册带标记）。
+    const rawBody = request.body
+    const record = rawBody && typeof rawBody === 'object' && !Array.isArray(rawBody) ? rawBody as Record<string, unknown> : null
+    const clientProtocol = record?.clientProtocol
+    if (typeof clientProtocol !== 'number' || !Number.isFinite(clientProtocol) || clientProtocol < LIFECYCLE_CLIENT_PROTOCOL) {
+      return reply.code(426).send({ error: 'CLIENT_UPGRADE_REQUIRED', message: LIFECYCLE_UPGRADE_MESSAGE })
+    }
     const now = lifecycleNow()
     lifecycleGcSessions(now)
     const session: LifecycleSession = {
@@ -818,7 +836,7 @@ export async function registerApi(
     }
     const body = lifecycleBody<{ sessionId: string; exitToken: string }>(request.body)
     const session = lifecycleAuth(body)
-    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID', message: LIFECYCLE_STALE_SESSION_MESSAGE })
     session.lastSeenAt = lifecycleNow()
     lifecycleGcSessions(session.lastSeenAt)
     const view = lifecycleView()
@@ -838,7 +856,7 @@ export async function registerApi(
     }
     const body = lifecycleBody<{ sessionId: string; exitToken: string }>(request.body)
     const session = lifecycleAuth(body)
-    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID', message: LIFECYCLE_STALE_SESSION_MESSAGE })
     const now = lifecycleNow()
     session.lastSeenAt = now
     lifecycleGcSessions(now)
@@ -877,9 +895,9 @@ export async function registerApi(
       return reply.code(503).send({ error: 'LIFECYCLE_UNAVAILABLE', message: '当前运行方式未启用生命周期管理' })
     }
     const body = lifecycleBody<{ sessionId: string; exitToken: string; requestId: string }>(request.body)
-    if (!body) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    if (!body) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID', message: LIFECYCLE_STALE_SESSION_MESSAGE })
     const session = lifecycleAuth(body)
-    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID', message: LIFECYCLE_STALE_SESSION_MESSAGE })
     session.lastSeenAt = lifecycleNow()
     if (lifecycleExit.phase !== 'awaiting' || !body.requestId || lifecycleExit.request.id !== body.requestId) {
       return { phase: lifecycleExit.phase === 'draining' ? 'draining' : 'idle' }
@@ -906,7 +924,7 @@ export async function registerApi(
     }
     const body = lifecycleBody<{ sessionId: string; exitToken: string; requestId: string }>(request.body)
     const session = lifecycleAuth(body)
-    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID' })
+    if (!session) return reply.code(403).send({ error: 'SESSION_TOKEN_INVALID', message: LIFECYCLE_STALE_SESSION_MESSAGE })
     session.lastSeenAt = lifecycleNow()
     if (lifecycleExit.phase !== 'awaiting') return { phase: lifecycleExit.phase }
     lifecycleExit = { phase: 'cancelled', request: null, reason: '有页面拒绝了退出，已停止本次退出（服务未停止）' }

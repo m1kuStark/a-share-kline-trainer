@@ -374,7 +374,12 @@ async function createLifecycleApp(spy: ControllerSpy, options: { now?: () => num
     database,
     setClock: (next: () => number) => { clock = next },
     async createSession(): Promise<{ sessionId: string, exitToken: string }> {
-      const response = await app.inject({ method: 'POST', url: '/api/lifecycle/session', headers: EXIT_HOST })
+      // PORT-GHOST-SESSION-QUIT：本 helper 代表 v1.3.0 客户端——注册时携带 clientProtocol
+      // （与 web/src/api.ts createLifecycleSession 同口径）；v1.2.7 旧页面不带该字段（repro 实证）。
+      const response = await app.inject({
+        method: 'POST', url: '/api/lifecycle/session', headers: EXIT_HOST,
+        payload: { clientProtocol: 2 },
+      })
       expect(response.statusCode).toBe(200)
       const body = response.json() as { sessionId: string, exitToken: string }
       return { sessionId: body.sessionId, exitToken: body.exitToken }
@@ -657,8 +662,10 @@ describe('lifecycle exit protocol (REL-LAUNCH-UX-01)', () => {
       const health = await fetch(`${origin}/api/health`)
       expect(health.status).toBe(200)
 
+      // PORT-GHOST-SESSION-QUIT：真实监听用例同样代表 v1.3.0 客户端（带代际标记注册）
       const sessionResponse = await fetch(`${origin}/api/lifecycle/session`, {
-        method: 'POST', headers: { origin },
+        method: 'POST', headers: { origin, 'content-type': 'application/json' },
+        body: JSON.stringify({ clientProtocol: 2 }),
       })
       expect(sessionResponse.status).toBe(200)
       const session = await sessionResponse.json() as { sessionId: string, exitToken: string }
@@ -686,5 +693,167 @@ describe('lifecycle exit protocol (REL-LAUNCH-UX-01)', () => {
       if (app.server.listening) await app.close()
       try { database.close() } catch { /* 已被退出路径关闭：这正是被验证的行为 */ }
     }
+  })
+})
+
+// ===== PORT-GHOST-SESSION-QUIT：v1.2.7 遗留浏览器标签页的僵尸会话治理 =====
+// 背景（S1 repro2 实证，2026-10-11）：v1.3.0 桌面接管 8787 后，v1.2.7 遗留页在其心跳
+// catch 里以 rc()（POST /api/lifecycle/session，无 body 无任何版本字段——v1.2.7 dist
+// 实证）反复重注册为活跃会话；页内退出协调因此冻结进 awaiting，僵尸页永不确认，
+// 120s TTL 失败才收场。用户 2026-10-12 拍板：退出不被拖拽；遗留页得到「请刷新」提示
+// 而非无限重试。修复面在 v1.3.0 server：注册代际门（缺 clientProtocol＝旧代际，拒绝
+// 入活跃集）＋陈旧凭证 403 附刷新提示 message（旧页 Ge 错误链 message??error 会显示）。
+describe('PORT-GHOST-SESSION-QUIT: v1.2.7 stale-tab zombie sessions', () => {
+  it('PORT-GHOST-SESSION-QUIT: a versionless v1.2.7-style registration is refused with a refresh-required answer and never joins the live set', async () => {
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      // v1.2.7 dist 的 rc() 不带 body；不带代际标记的注册＝旧代际客户端
+      const zombie = await app.inject({ method: 'POST', url: '/api/lifecycle/session', headers: EXIT_HOST })
+      expect(zombie.statusCode).toBe(426)
+      expect(zombie.json().error).toBe('CLIENT_UPGRADE_REQUIRED')
+      expect(String(zombie.json().message)).toContain('刷新')
+
+      // 僵尸从未进入活跃集：当前代际单页退出立即 draining（无 awaiting、无 120s TTL）
+      const session = await createSession()
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: session.sessionId, exitToken: session.exitToken },
+      })
+      expect(exit.statusCode).toBe(202)
+      expect(exit.json()).toMatchObject({ phase: 'draining', remaining: 0 })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.shutdownCalls).toBe(1)
+    } finally { await app.close() }
+  })
+
+  it('PORT-GHOST-SESSION-QUIT: stale pre-takeover credentials get 403 with a refresh hint instead of a bare code', async () => {
+    const spy = makeControllerSpy()
+    const { app } = await createLifecycleApp(spy)
+    try {
+      // 接管后僵尸页拿旧会话心跳：403 且 message 可读（v1.2.7 Ge 错误链 message??error）
+      const beat = await app.inject({
+        method: 'POST', url: '/api/lifecycle/heartbeat', headers: EXIT_HOST,
+        payload: { sessionId: 'leftover-from-v1.2.7', exitToken: 'gone-with-old-server' },
+      })
+      expect(beat.statusCode).toBe(403)
+      expect(beat.json().error).toBe('SESSION_TOKEN_INVALID')
+      expect(String(beat.json().message)).toContain('刷新')
+
+      // 旧页内发起退出同样得到 403＋刷新提示（旧页退出弹窗按 message 呈现）
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: 'leftover-from-v1.2.7', exitToken: 'gone-with-old-server' },
+      })
+      expect(exit.statusCode).toBe(403)
+      expect(exit.json().error).toBe('SESSION_TOKEN_INVALID')
+      expect(String(exit.json().message)).toContain('刷新')
+      expect(spy.prepareCalls).toEqual([])
+      expect(spy.shutdownCalls).toBe(0)
+    } finally { await app.close() }
+  })
+
+  it('PORT-GHOST-SESSION-QUIT: current-generation registrations keep the multi-tab confirm protocol intact', async () => {
+    // 守门不过度：带标记的多页协调语义与 REL-LAUNCH-UX-01 完全一致（防止把代际门做成一刀切拒绝）
+    const spy = makeControllerSpy()
+    const { app, createSession } = await createLifecycleApp(spy)
+    try {
+      const a = await createSession()
+      const b = await createSession()
+      const exit = await app.inject({
+        method: 'POST', url: '/api/lifecycle/exit', headers: EXIT_HOST,
+        payload: { sessionId: a.sessionId, exitToken: a.exitToken },
+      })
+      expect(exit.json()).toMatchObject({ phase: 'awaiting', remaining: 1 })
+      const confirm = await app.inject({
+        method: 'POST', url: '/api/lifecycle/confirm', headers: EXIT_HOST,
+        payload: { sessionId: b.sessionId, exitToken: b.exitToken, requestId: (exit.json() as { requestId: string }).requestId },
+      })
+      expect(confirm.json().phase).toBe('draining')
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(spy.shutdownCalls).toBe(1)
+    } finally { await app.close() }
+  })
+
+  it('PORT-GHOST-SESSION-QUIT: real listener exit is not dragged by a stale v1.2.7 tab that keeps polling', async () => {
+    // 真实 HTTP 边界（development-principles 4.2）：模拟僵尸页轮询循环与 v1.3.0 页退出并发，
+    // 断言 202 应答直接 draining（修复前为 awaiting、被拖到 120s TTL）
+    const spy = makeControllerSpy()
+    const database = new DatabaseSync(':memory:')
+    migrateDatabase(database)
+    const app = Fastify()
+    const config: AppConfig = { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null }
+    await registerApi(app, config, database, {
+      lifecycle: {
+        controller: spy.controller,
+        shutdown: async () => {
+          spy.shutdownCalls += 1
+          await app.close()
+          database.close()
+        },
+      },
+    })
+    app.get('/api/health', async () => ({ status: 'ok' }))
+    await app.listen({ port: 0, host: '127.0.0.1' })
+    const port = (app.server.address() as { port: number }).port
+    config.port = port // 与既有真实监听用例同型：origin 守卫按 config.host:config.port 比对
+    const origin = `http://127.0.0.1:${port}`
+    const zombieReregisterStatuses: number[] = []
+    const zombieHeartbeatStatuses: number[] = []
+    const unreachable = { count: 0 }
+    const safeStatus = async (url: string, init: RequestInit): Promise<number> => {
+      try {
+        const response = await fetch(url, init)
+        await response.json().catch(() => ({}))
+        return response.status
+      } catch {
+        unreachable.count += 1
+        return -1
+      }
+    }
+    // 僵尸循环＝v1.2.7 页面行为：旧凭证心跳（403 → catch）→ rc() 重注册（无 body）
+    const zombieLoop = (async () => {
+      for (let i = 0; i < 3; i++) {
+        zombieHeartbeatStatuses.push(await safeStatus(`${origin}/api/lifecycle/heartbeat`, {
+          method: 'POST', headers: { origin, 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionId: 'leftover-from-v1.2.7', exitToken: 'gone-with-old-server' }),
+        }))
+        zombieReregisterStatuses.push(await safeStatus(`${origin}/api/lifecycle/session`, {
+          method: 'POST', headers: { origin },
+        }))
+        await new Promise(resolve => setTimeout(resolve, 25))
+      }
+    })()
+    // 先让僵尸完成第一轮重注册尝试（修复前的活跃集污染时机），再发起当前代际退出
+    await new Promise(resolve => setTimeout(resolve, 10))
+    const exitStartedAt = Date.now()
+    const marked = await fetch(`${origin}/api/lifecycle/session`, {
+      method: 'POST', headers: { origin, 'content-type': 'application/json' },
+      body: JSON.stringify({ clientProtocol: 2 }),
+    })
+    expect(marked.status).toBe(200)
+    const session = await marked.json() as { sessionId: string, exitToken: string }
+    const exit = await fetch(`${origin}/api/lifecycle/exit`, {
+      method: 'POST', headers: { origin, 'content-type': 'application/json' },
+      body: JSON.stringify({ sessionId: session.sessionId, exitToken: session.exitToken }),
+    })
+    const exitBody = await exit.json() as { phase: string, remaining?: number }
+    expect(exit.status).toBe(202)
+    // 核心断言：僵尸重注册全部被拒 → 不进活跃集 → 退出直接 draining（修复前 awaiting remaining>=1）
+    expect(exitBody.phase).toBe('draining')
+    expect(Date.now() - exitStartedAt).toBeLessThan(5_000) // 宽松上限：远低于 120s TTL，防拖拽回归
+    for (let attempt = 0; attempt < 100 && spy.shutdownCalls === 0; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 20))
+    }
+    expect(spy.shutdownCalls).toBe(1)
+    await zombieLoop
+    // 心跳全部 403；重注册要么被 426 拒绝、要么发生在服务关闭后（-1），绝无 200
+    expect(zombieHeartbeatStatuses.every(status => status === 403 || status === -1)).toBe(true)
+    expect(zombieReregisterStatuses.every(status => status === 426 || status === -1)).toBe(true)
+    expect(zombieReregisterStatuses[0]).toBe(426)
+    try {
+      if (app.server.listening) await app.close()
+    } catch { /* 服务可能已被退出路径关闭 */ }
+    try { database.close() } catch { /* 已被退出路径关闭 */ }
   })
 })
