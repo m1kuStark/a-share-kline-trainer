@@ -343,8 +343,16 @@ export interface LifecycleSessionView {
   freshWindowMs: number
 }
 
+/** PORT-GHOST-SESSION-QUIT：当前代际注册标记。服务端拒绝缺失该字段的旧代际客户端
+ * （v1.2.7 遗留页），其重注册不再拖拽退出协调；协议不兼容变更时提升该值。 */
+const LIFECYCLE_CLIENT_PROTOCOL = 2
+
 export function createLifecycleSession(): Promise<LifecycleSessionView> {
-  return request('/api/lifecycle/session', { method: 'POST' })
+  return request('/api/lifecycle/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientProtocol: LIFECYCLE_CLIENT_PROTOCOL }),
+  })
 }
 
 export interface LifecyclePendingExit {
