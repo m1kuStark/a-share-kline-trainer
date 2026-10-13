@@ -615,6 +615,241 @@ export async function applyPendingHistoryAtBoot(targetPath: string, deps: { fs?:
   }
 }
 
+// ===== MIG-ONECLICK-01 一键迁移 boot 消费 =====
+// 一键工具（tools/migrate-v127「一键迁移.cmd」导入侧）把迁移产物暂存到
+// <dataDir>/migrate-v127-import/（manifest.json 最后落盘＝完成标记）。主进程消费：
+//   - 历史：consumeOneClickHistoryStaging（内嵌服务开库前）→ 复用 stageHistoryImport
+//     产 .v127-history-pending → 紧随其后的 applyPendingHistoryAtBoot 合并归位
+//     （备份先行＋单事务＋幂等跳过＋ns 保留，MIG-MERGE-01 既有语义零改动）；
+//   - 录像：渲染端 IndexedDB 无法从主进程直写 → 窗口加载完成后经 executeJavaScript
+//     注入暂存的导入器脚本（工具自带，与新版页面「导入录制」同链的仓库正源打包），
+//     成功后清理暂存；失败保留、下次启动自动重试（重复导入幂等，重试安全）。
+
+export const ONECLICK_STAGING_DIR = 'migrate-v127-import'
+export const ONECLICK_MANIFEST_FILE = 'manifest.json'
+const ONECLICK_MANIFEST_FORMAT = 'trainer-oneclick-import'
+const ONECLICK_MANIFEST_VERSION = 1
+
+export interface OneClickStagedHistory {
+  /** 暂存目录内迁移清单的相对路径（如 history/迁移清单.json；已防穿越校验） */
+  manifest: string
+  consumedAt?: string
+}
+
+export interface OneClickStagedRecordings {
+  file: string
+  importer: string
+  consumedAt?: string
+}
+
+export interface OneClickManifest {
+  format: string
+  version: number
+  stagedAt: string
+  history: OneClickStagedHistory | null
+  recordings: OneClickStagedRecordings | null
+}
+
+/** 暂存目录内相对路径校验：非空、非绝对、不含盘符、无 ./.. 段（防任意路径注入） */
+function isSafeRelativePath(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length === 0) return false
+  if (value.includes('\0')) return false
+  const normalized = value.replace(/\\/g, '/')
+  if (normalized.startsWith('/')) return false
+  if (/^[a-zA-Z]:/.test(normalized)) return false
+  return normalized.split('/').every(segment => segment !== '' && segment !== '.' && segment !== '..')
+}
+
+/** 一键迁移暂存清单契约解析（format/version/stagedAt＋history/recordings 可空条目＋防穿越路径） */
+export function parseOneClickManifest(raw: unknown): { ok: true, manifest: OneClickManifest } | { ok: false, error: string } {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, error: '一键迁移暂存清单不是合法的 JSON 对象。' }
+  }
+  const value = raw as Record<string, unknown>
+  if (value.format !== ONECLICK_MANIFEST_FORMAT) {
+    return { ok: false, error: `一键迁移暂存清单格式不对（format 应为 ${ONECLICK_MANIFEST_FORMAT}），已忽略。` }
+  }
+  if (value.version !== ONECLICK_MANIFEST_VERSION) {
+    return { ok: false, error: `一键迁移暂存清单版本不支持（version=${String(value.version)}）：请更新训练器后重试。` }
+  }
+  if (typeof value.stagedAt !== 'string' || value.stagedAt.length === 0) {
+    return { ok: false, error: '一键迁移暂存清单缺少 stagedAt。' }
+  }
+  let history: OneClickStagedHistory | null = null
+  if (value.history !== null && value.history !== undefined) {
+    if (typeof value.history !== 'object' || Array.isArray(value.history)) {
+      return { ok: false, error: '一键迁移暂存清单 history 条目不合法。' }
+    }
+    const fields = value.history as Record<string, unknown>
+    if (!isSafeRelativePath(fields.manifest)) {
+      return { ok: false, error: '一键迁移暂存清单 history.manifest 路径不合法（只接受暂存目录内的相对路径）。' }
+    }
+    if (fields.consumedAt !== undefined && typeof fields.consumedAt !== 'string') {
+      return { ok: false, error: '一键迁移暂存清单 history.consumedAt 不合法。' }
+    }
+    history = { manifest: fields.manifest, ...(typeof fields.consumedAt === 'string' ? { consumedAt: fields.consumedAt } : {}) }
+  }
+  let recordings: OneClickStagedRecordings | null = null
+  if (value.recordings !== null && value.recordings !== undefined) {
+    if (typeof value.recordings !== 'object' || Array.isArray(value.recordings)) {
+      return { ok: false, error: '一键迁移暂存清单 recordings 条目不合法。' }
+    }
+    const fields = value.recordings as Record<string, unknown>
+    if (!isSafeRelativePath(fields.file) || !isSafeRelativePath(fields.importer)) {
+      return { ok: false, error: '一键迁移暂存清单 recordings 路径不合法（只接受暂存目录内的相对路径）。' }
+    }
+    if (fields.consumedAt !== undefined && typeof fields.consumedAt !== 'string') {
+      return { ok: false, error: '一键迁移暂存清单 recordings.consumedAt 不合法。' }
+    }
+    recordings = {
+      file: fields.file,
+      importer: fields.importer,
+      ...(typeof fields.consumedAt === 'string' ? { consumedAt: fields.consumedAt } : {}),
+    }
+  }
+  return { ok: true, manifest: { format: value.format, version: value.version, stagedAt: value.stagedAt, history, recordings } }
+}
+
+export type OneClickHistoryConsume =
+  | { ran: false, ok?: undefined }
+  | { ran: true, ok: true, staged: StageOutcome }
+  | { ran: true, ok: false, error: string }
+
+/**
+ * 启动早期消费一键暂存的训练历史：manifest 在且 history 未消费 → 复用
+ * stageHistoryImport（包体检＋schema 升级＋pending 就位，任何失败零损伤）并把
+ * history.consumedAt 写回清单。无暂存/已消费/清单异常均不阻断启动；
+ * 失败保留暂存，下次启动自动重试。
+ */
+export async function consumeOneClickHistoryStaging(
+  dataDir: string,
+  databasePath: string,
+  deps: { fs?: Partial<MigrationFsDeps> } = {},
+): Promise<OneClickHistoryConsume> {
+  const stagingDir = join(dataDir, ONECLICK_STAGING_DIR)
+  const manifestPath = join(stagingDir, ONECLICK_MANIFEST_FILE)
+  let rawText: string
+  try {
+    rawText = await readFile(manifestPath, 'utf8')
+  } catch {
+    return { ran: false } // 无一键暂存＝常规启动
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(rawText)
+  } catch (error) {
+    return { ran: true, ok: false, error: `一键迁移暂存清单无法解析（暂存保留，下次启动重试）：${reason(error)}` }
+  }
+  const manifestResult = parseOneClickManifest(parsed)
+  if (!manifestResult.ok) return { ran: true, ok: false, error: manifestResult.error }
+  const manifest = manifestResult.manifest
+  if (!manifest.history || manifest.history.consumedAt) return { ran: false }
+  const staged = await stageHistoryImport(join(stagingDir, manifest.history.manifest), databasePath, deps)
+  if (!staged.ok) return { ran: true, ok: false, error: staged.error }
+  const next = JSON.parse(JSON.stringify(manifest)) as OneClickManifest
+  next.history = { ...next.history!, consumedAt: new Date().toISOString() }
+  try {
+    await writeFile(manifestPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8')
+  } catch (error) {
+    return { ran: true, ok: false, error: `训练历史已暂存为待合并（下次启动自动应用），但更新一键迁移清单失败：${reason(error)}` }
+  }
+  return { ran: true, ok: true, staged }
+}
+
+/**
+ * 组装录像导入注入脚本：执行暂存的导入器 IIFE（定义 window.__v127OneClickImport）后，
+ * 以 JS 字符串字面量原样传入合并包文本，结果 JSON 字符串化返回（异常也结构化，
+ * 绝不向主进程抛出）。executeJavaScript 会自动 await 返回的 Promise。
+ */
+export function buildRecordingImportScript(importerText: string, bundleText: string): string {
+  return `(async () => {
+  try {
+    ${importerText}
+    const outcome = await window.__v127OneClickImport(${JSON.stringify(bundleText)})
+    return JSON.stringify(outcome)
+  } catch (error) {
+    return JSON.stringify({ ok: false, error: error instanceof Error ? error.message : String(error) })
+  }
+})()`
+}
+
+export interface OneClickRecordingDeps {
+  readFileText?(path: string): Promise<string>
+  writeFile?(path: string, text: string): Promise<void>
+  removeFile?(path: string): Promise<void>
+}
+
+export type OneClickRecordingOutcome =
+  | { ran: false, ok?: undefined }
+  | { ran: true, ok: true, summary: { imported?: number, skipped?: number, failed?: number } }
+  | { ran: true, ok: false, error: string }
+
+/**
+ * 窗口加载完成后消费一键暂存的录像合并包：读取导入器＋合并包 → 注入渲染端执行 →
+ * 成功＝清单标记 recordings.consumedAt 并删除两个暂存文件（先标记后删文件：中断最坏
+ * 情形是文件残留但已标记，重跑工具整体重建暂存即可；重复导入本身幂等）。失败＝
+ * 暂存原样保留，下次启动自动重试。无暂存/已消费＝no-op（不触碰页面）。
+ */
+export async function runOneClickRecordingImport(
+  input: { dataDir: string, executeJavaScript(code: string): Promise<unknown> },
+  deps: OneClickRecordingDeps = {},
+): Promise<OneClickRecordingOutcome> {
+  const readText = deps.readFileText ?? (async path => readFile(path, 'utf8'))
+  const writeText = deps.writeFile ?? (async (path, text) => { await writeFile(path, text, 'utf8') })
+  const removeFile = deps.removeFile ?? (async path => { await rm(path, { force: true }) })
+  const stagingDir = join(input.dataDir, ONECLICK_STAGING_DIR)
+  const manifestPath = join(stagingDir, ONECLICK_MANIFEST_FILE)
+  let rawText: string
+  try {
+    rawText = await readText(manifestPath)
+  } catch {
+    return { ran: false }
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(rawText)
+  } catch (error) {
+    return { ran: true, ok: false, error: `一键迁移暂存清单无法解析（下次启动重试）：${reason(error)}` }
+  }
+  const manifestResult = parseOneClickManifest(parsed)
+  if (!manifestResult.ok) return { ran: true, ok: false, error: manifestResult.error }
+  const manifest = manifestResult.manifest
+  if (!manifest.recordings || manifest.recordings.consumedAt) return { ran: false }
+  let importerText: string
+  let bundleText: string
+  try {
+    importerText = await readText(join(stagingDir, manifest.recordings.importer))
+    bundleText = await readText(join(stagingDir, manifest.recordings.file))
+  } catch (error) {
+    return { ran: true, ok: false, error: `读取录像迁移暂存失败（下次启动重试）：${reason(error)}` }
+  }
+  let raw: unknown
+  try {
+    raw = await input.executeJavaScript(buildRecordingImportScript(importerText, bundleText))
+  } catch (error) {
+    return { ran: true, ok: false, error: `录像导入执行失败（下次启动重试）：${reason(error)}` }
+  }
+  let result: { ok?: unknown, imported?: number, skipped?: number, failed?: number, error?: unknown }
+  try {
+    result = JSON.parse(typeof raw === 'string' ? raw : JSON.stringify(raw)) as typeof result
+  } catch (error) {
+    return { ran: true, ok: false, error: `录像导入结果无法解析（下次启动重试）：${reason(error)}` }
+  }
+  if (!result || result.ok !== true) {
+    return { ran: true, ok: false, error: result && typeof result.error === 'string' && result.error ? result.error : '录像导入失败（页面未提供原因）' }
+  }
+  const next = JSON.parse(JSON.stringify(manifest)) as OneClickManifest
+  next.recordings = { ...next.recordings!, consumedAt: new Date().toISOString() }
+  try {
+    await writeText(manifestPath, `${JSON.stringify(next, null, 2)}\n`)
+  } catch (error) {
+    return { ran: true, ok: false, error: `录像已导入，但更新一键迁移清单失败（下次启动可能重复执行，重复条目会自动跳过）：${reason(error)}` }
+  }
+  await removeFile(join(stagingDir, manifest.recordings.file)).catch(() => { /* 已标记已消费；残留文件不再被执行 */ })
+  await removeFile(join(stagingDir, manifest.recordings.importer)).catch(() => { /* 同上 */ })
+  return { ran: true, ok: true, summary: { imported: result.imported, skipped: result.skipped, failed: result.failed } }
+}
+
 // ===== IPC（通道面：method 路由 pick/inspect/import；错误结构化返回，绝不向渲染端抛异常） =====
 
 export interface MigrationIpcDeps {

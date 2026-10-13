@@ -19,6 +19,10 @@ interface V127PageInfo {
   dataDir: string | null
   databasePath: string | null
   history?: { available: true, sqliteBytes: number, counts: Record<string, number> } | { available: false, reason: string } | null
+  /** MIG-ONECLICK-01：一键模式——页面自动扫描并上传录像合并包到工具文件夹 */
+  mode?: 'oneclick'
+  /** 一键模式下训练历史迁移包已由工具在 Node 侧直接生成的结果 */
+  historyExport?: { ok: true, folder: string } | { ok: false, error: string } | null
 }
 
 declare global {
@@ -68,6 +72,16 @@ function renderHistory(info: V127PageInfo | null): void {
     dl.append(dt, dd)
   }
   const button = el<HTMLButtonElement>('history-export-btn')
+  // MIG-ONECLICK-01：一键模式训练历史已由工具在 Node 侧直接生成，页面只呈现结果
+  if (info?.mode === 'oneclick' && info.historyExport) {
+    button.disabled = true
+    if (info.historyExport.ok) {
+      showHistoryStatus(`训练历史迁移包已由工具自动生成：${info.historyExport.folder}\n（生成在本工具文件夹内，将随工具文件夹一起搬到新版本目录，无需任何操作。）`, 'ok')
+    } else {
+      showHistoryStatus(`训练历史迁移包生成失败：${info.historyExport.error}\n（录像导出不受影响；处理完成后可在旧版本目录重新双击「一键迁移.cmd」重试训练历史部分。）`, 'err')
+    }
+    return
+  }
   button.disabled = !history?.available
   if (history?.available) {
     button.addEventListener('click', async () => {
@@ -179,8 +193,55 @@ function detectRows(info: V127PageInfo | null, extra: Array<[string, string]> = 
   }
 }
 
+// ===== MIG-ONECLICK-01 一键模式：自动上传＋自动收尾 =====
+
+async function finishTool(): Promise<void> {
+  el('done').style.display = 'block'
+  try {
+    await fetch('/shutdown', { method: 'POST' })
+  } catch { /* 工具已退出 */ }
+}
+
+/** 一键模式·无旧录像：如实跳过（训练历史迁移包不受影响）并自动收尾 */
+async function autoSkipNoRecordings(): Promise<void> {
+  showStatus('没有找到旧录像（录像部分已跳过；训练历史迁移包不受影响）。', 'ok')
+  try {
+    await fetch('/upload-bundle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ skipped: true }) })
+  } catch { /* 工具不可达时页面仍如实呈现 */ }
+  await finishTool()
+}
+
+/** 一键模式·自动导出：汇总→上传到工具文件夹→人话结果→自动关闭工具 */
+async function autoUpload(scan: MigrationScanOutcome): Promise<void> {
+  showStatus('正在汇总录像合并包并上传到工具文件夹…', 'ok')
+  try {
+    if (!scan.items.length) {
+      await autoSkipNoRecordings()
+      return
+    }
+    const bundle = buildMigrationBundle(scan.items)
+    const response = await fetch('/upload-bundle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ json: JSON.stringify(bundle) }),
+    })
+    const result = await response.json() as { ok?: boolean, file?: string, itemCount?: number, error?: string }
+    if (!response.ok || !result.ok) throw new Error(result.error ?? `HTTP ${response.status}`)
+    showStatus(
+      `录像合并包已生成：${result.file}\n` +
+      `共 ${result.itemCount} 条录像（损坏条目已原样入包，导入端会如实计失败，不会静默丢失）。\n` +
+      '工具即将自动关闭；下一步＝把整个工具文件夹拷贝/移动到新版本安装目录，再双击「一键迁移.cmd」。',
+      'ok',
+    )
+    await finishTool()
+  } catch (error) {
+    showStatus(`自动导出失败：${error instanceof Error ? error.message : String(error)}\n可改用下方「导出录像合并包」手动下载，或关闭本窗口重试。`, 'err')
+  }
+}
+
 async function bootstrap(): Promise<void> {
   const info = window.__V127_INFO__
+  const auto = info?.mode === 'oneclick'
   renderHistory(info) // 训练历史分节独立于录像扫描：无录像也要能导出历史
   const { names, discovered } = await resolveDbNames()
 
@@ -208,22 +269,23 @@ async function bootstrap(): Promise<void> {
       button.addEventListener('click', async () => {
         const checked = radios.querySelector<HTMLInputElement>('input:checked')
         if (!checked) { showStatus('请先选择一个录像库。', 'err'); return }
-        await proceed({ main: checked.value, imports: `${checked.value}.imports` })
+        await proceed({ main: checked.value, imports: `${checked.value}.imports` }, { auto })
       })
       wrap.appendChild(button)
       return
     }
     el('detect-none').style.display = 'block'
+    if (auto) await autoSkipNoRecordings()
     return
   }
 
   const chosen = names ?? discovered[0]!
-  await proceed(chosen)
+  await proceed(chosen, { auto })
 }
 
 let lastScan: MigrationScanOutcome | null = null
 
-async function proceed(dbNames: { main: string; imports: string }): Promise<void> {
+async function proceed(dbNames: { main: string; imports: string }, options: { auto?: boolean } = {}): Promise<void> {
   const info = window.__V127_INFO__
   const scan = await runScan(dbNames)
   if (!scan) {
@@ -238,6 +300,7 @@ async function proceed(dbNames: { main: string; imports: string }): Promise<void
     (scan.failures.length ? `；损坏 ${scan.failures.length} 场` : ''),
   ]])
   renderList(scan)
+  if (options.auto) await autoUpload(lastScan)
 
   el<HTMLButtonElement>('export-btn').addEventListener('click', () => {
     if (!lastScan || !lastScan.items.length) { showStatus('没有可导出的录像。', 'err'); return }

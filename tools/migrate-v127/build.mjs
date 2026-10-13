@@ -31,6 +31,8 @@ async function bundle(entry, define) {
 
 const pageScript = await bundle('export-page.ts')
 const consoleScript = await bundle('console-fallback.ts')
+// MIG-ONECLICK-01 导入侧注入脚本：渲染端录像导入器（与新版页面「导入录制」同链的仓库正源）
+const importInjectScript = await bundle('import-inject.ts')
 
 const template = await readFile(join(srcDir, 'page-template.html'), 'utf8')
 if (!template.includes('<!--V127_PAGE_SCRIPT-->')) throw new Error('page-template.html 缺少脚本注入标记')
@@ -68,6 +70,10 @@ const fallbackText = [
 await mkdir(distDir, { recursive: true })
 await writeFile(join(distDir, 'export-v127.cjs'), toolCjs, 'utf8')
 await writeFile(join(distDir, '迁移兜底-浏览器控制台脚本.txt'), fallbackText, 'utf8')
+// MIG-ONECLICK-01：一键迁移入口（同一文件两侧运行）＋导入器脚本（随工具暂存、主进程注入）
+await copyFile(join(srcDir, 'oneclick.cjs'), join(distDir, 'oneclick.cjs'))
+await writeFile(join(distDir, 'import-recordings.js'), importInjectScript, 'utf8')
+await copyFile(join(staticDir, '一键迁移.cmd'), join(distDir, '一键迁移.cmd'))
 await copyFile(join(staticDir, '导出训练录像.cmd'), join(distDir, '导出训练录像.cmd'))
 await copyFile(join(staticDir, '迁移说明.md'), join(distDir, '迁移说明.md'))
 
@@ -75,4 +81,6 @@ const kb = value => `${(Buffer.byteLength(value, 'utf8') / 1024).toFixed(1)} KB`
 console.log(`[build] dist/migrate-v127/`)
 console.log(`  export-v127.cjs                   ${kb(toolCjs)}（内嵌导出页）`)
 console.log(`  迁移兜底-浏览器控制台脚本.txt       ${kb(fallbackText)}`)
-console.log(`  导出训练录像.cmd / 迁移说明.md       已复制`)
+console.log(`  oneclick.cjs（一键迁移两侧入口）    已复制`)
+console.log(`  import-recordings.js              ${kb(importInjectScript)}（导入侧注入器）`)
+console.log(`  一键迁移.cmd / 导出训练录像.cmd / 迁移说明.md  已复制`)
