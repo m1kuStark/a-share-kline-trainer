@@ -79,6 +79,7 @@ import {
   type DesktopUpdaterAdapter,
 } from './desktop-updates.js'
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
+import { createFeedFallbackAdapter, readUpdateSourceSetting, resolveDesktopFeedPlan } from './cn-feed.js'
 import { registerUpdateIpc } from './update-ipc.js'
 import { registerArchiveIpc } from './archive-recording.js'
 import { applyPendingHistoryAtBoot, registerMigrationIpc } from './mig-import.js'
@@ -374,6 +375,9 @@ async function clearOwnTrainerState(): Promise<void> {
 
 let updateAdapterRef: { quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void } | null = null
 
+/** CN-FEED-01：回退适配器的逐源尝试记录出口（boot-check.json sources 观测缝；非回退通道为 null） */
+let updateFeedAttemptsRef: { lastAttempts(): unknown } | null = null
+
 /**
  * 便携更新通道不可用（替换目标解析失败）时的 fail-closed 适配器（P0 修复）：
  * 检查/下载一律抛人话错误（controller 转成 check view error 如实呈现给设置页），
@@ -428,8 +432,20 @@ async function setupUpdateChannel(): Promise<void> {
     }
   } else {
     const updater = await defaultDesktopUpdater()
-    adapter = adaptElectronUpdater(updater)
-    adapter.setFeedURL(feed)
+    // CN-FEED-01（UPD-CN-FALLBACK-DESKTOP）：electron-updater 链经回退适配器包装——每次
+    // 检查按 resolveDesktopFeedPlan 逐源 setFeedURL（env 注入单源不回退＞三态设置＞
+    // auto＝镜像 latest.yml 优先、失败回退 GitHub 一次）；计划在检查期重取（读最新
+    // update-source.json；portableUpdateDataDir 惰性取值＝config.dataDir，沿 archiveDataDir
+    // 先例——setupUpdateChannel 先于 bootServerAndOpen，boot 检查期读到 null＝auto 默认，
+    // 已知时序限制见 docs/verification/2026-10/CN-FEED-01/README.md §1.2）。
+    const inner = adaptElectronUpdater(updater)
+    const fallback = createFeedFallbackAdapter({
+      inner,
+      getPlan: async () => resolveDesktopFeedPlan(process.env, await readUpdateSourceSetting(portableUpdateDataDir)),
+      logger: console,
+    })
+    adapter = fallback
+    updateFeedAttemptsRef = fallback
   }
   updateAdapterRef = adapter
   const controller = createDesktopUpdateController({
@@ -451,6 +467,8 @@ async function setupUpdateChannel(): Promise<void> {
     bootCheckOutPath: updateChannelKind === 'packaged'
       ? (process.env.TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT?.trim() || null)
       : null,
+    // CN-FEED-01：boot 检查的逐源尝试记录（镜像/GitHub 哪个成功）落观测缝，W5 真机判断用
+    bootCheckSources: updateFeedAttemptsRef === null ? undefined : () => updateFeedAttemptsRef?.lastAttempts(),
     // UPD-NOTIFY-01：boot 自动检查发现新版→缓存＋即时投递（加载完成前被丢时由
     // did-finish-load 补投）
     onBootNotice: notice => {

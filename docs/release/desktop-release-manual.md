@@ -59,6 +59,20 @@
 - **zip**：历史用户与离线环境兜底；zip 内置的 HTTP 在线更新（UPD-01/02）语义不变，同 Release 共存。
 - **数据目录（INSTALL-01 收敛）**：唯一默认 `%USERPROFILE%\.a-share-kline-trainer`；不再扫描/吸收 exe 旁 `data/`（v1.2.7 目录混放旧库不迁走）。v1.2.7 历史训练与录像迁入唯一入口＝迁移工具（`migrate-v127.zip`）。
 
+## 四点五、国内镜像发布（CN-FEED-01，2026-10-13）
+
+> 依据：用户拍板「不能依赖 github 链接提供下载资源，应该提供纯国内网络也能正常更新的发布路径」（GPU3060-E2E-01 wave-e 实证 GitHub 直连间歇失败）。客户端（桌面 electron-updater 链＋zip HTTP 链）默认「自动」源＝镜像优先、失败回退 GitHub，**无需随镜像上线发版**——镜像 URL 常量填入并重建后，存量版本的自动源仍走 GitHub，首个含镜像常量的版本起镜像优先生效。
+
+1. **前置（一次性）**：镜像托管（CloudBase 静态托管，待用户授权后开通）就绪后，把真实 base URL 填入 `server/src/update/manifest.ts` 的 `CN_MIRROR_BASE` 常量（当前空串＝镜像未上线，两链自动退化为纯 GitHub——行为安全），跑 `npm run build:server`（desktop 链经编译产物 import 同一常量，一处填入两链生效），随下个版本发布。
+2. **每次正式发布后**：在 GitHub Release 完成第三节上传后，把双形态产物合并到一个目录（desktop/release 的 setup exe＋blockmap＋latest.yml＋migrate-v127.zip，加上 zip 发布物 `kline-trainer-v<版本>-windows-x64.zip`＋其 `SHA256SUMS`），执行：
+   ```
+   node desktop/scripts/sync-feed.mjs --release <产物目录> --mirror <镜像baseURL> --notes "<发布说明，可省>"
+   ```
+   产出 `<产物目录>/../dist-cn-feed/`：`latest.yml`（url/path 已改写为镜像绝对 URL）、`manifest.json`（zip HTTP 链清单，GitHub API 同形状）、setup exe/blockmap/zip/SHA256SUMS/migrate-v127.zip 原样复制。脚本自带 fail-closed 自校验（latest.yml/manifest 形状＋URL 前缀＋sha512/size 与实际字节一致＋复制文件与源逐字节一致），不触网、不需要任何凭证。
+3. **上传**：把 `dist-cn-feed/` 内全部文件**原样文件名**上传到镜像托管的该 base 路径下（托管控制台手动/CLI 均可；本脚本不管上传）。上传后自查：`<base>/latest.yml` 与 `<base>/manifest.json` 可直接 GET 到、版本号等于本次发布版本。
+4. **校验和资产名约束不变**：镜像目录里 zip 链的校验和文件必须叫 `SHA256SUMS`（与 desktop 的 `SHA256SUMS-desktop.txt` 异名共存，sync 脚本按原名复制，勿改名上传）。
+
+
 ## 五、常见问题
 
 | 现象 | 处置 |

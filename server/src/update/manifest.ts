@@ -3,13 +3,43 @@
 // update.manifest_url > release.json publicURL 推导的 GitHub latest API > 仓库常量。
 // 清单拉取器（fetchText）可整体注入——测试与离线场景指向本地 fixture，
 // 任何测试不得访问 api.github.com。
+// CN-FEED-01（2026-10-13）：新增 resolveManifestPlan 有序尝试计划（env/config 注入即单源
+// 不回退＞三态设置＞内置默认 auto＝国内镜像 manifest.json 优先、失败回退 GitHub）。
+// 清单 fetch 的逐源回退执行在 api.ts（check/apply 两处）。
 
 import { readFile } from 'node:fs/promises'
 import { safeGetText } from './safe-http.js'
 import { normalizeTagVersion } from './version.js'
+import type { UpdateSourceSetting } from './update-source.js'
 
 export const DEFAULT_REPO = 'm1kuStark/a-share-kline-trainer'
 export const DEFAULT_MANIFEST_URL = `https://api.github.com/repos/${DEFAULT_REPO}/releases/latest`
+
+/**
+ * 国内镜像 base URL（单一事实源；W4 国内托管上线后填入，例如
+ * 'https://<envId>.tcloudbaseapp.com/feed'）。空串＝镜像未上线：UPD-CN-FALLBACK-HTTP
+ * 的 auto 计划退化为纯 GitHub（行为安全）。desktop 链（desktop/src/cn-feed.ts）经
+ * 编译产物 import 同一常量——改这里＋重跑 npm run build:server 即两链同时生效；
+ * 产物文件名（manifest.json/latest.yml）由 desktop/scripts/sync-feed-lib.mjs 生成，
+ * desktop/scripts/sync-feed.mjs 是其发布侧对端。
+ */
+export const CN_MIRROR_BASE = ''
+
+/** 尾斜杠归一的 URL 拼接 */
+function joinUrl(base: string, fileName: string): string {
+  return `${base.replace(/\/+$/, '')}/${fileName}`
+}
+
+/** zip HTTP 链的镜像 manifest URL（<base>/manifest.json，与 sync 脚本产出文件名一致） */
+export function cnMirrorManifestUrl(base: string = CN_MIRROR_BASE): string {
+  return joinUrl(base, 'manifest.json')
+}
+
+/** 清单计划条目（按序尝试；url＝清单请求地址，source＝来源标签） */
+export interface ManifestPlanEntry {
+  url: string
+  source: 'env' | 'config' | 'custom' | 'official' | 'cn-mirror' | 'release' | 'default'
+}
 
 const ZIP_ASSET_PATTERN = /^kline-trainer-v\d+\.\d+\.\d+-windows-x64\.zip$/
 const GITHUB_PUBLIC_URL = /^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/
@@ -77,6 +107,40 @@ export async function resolveManifestUrl(options: {
     return { url: githubLatestApiUrl(publicURL), source: 'release' }
   }
   return { url: DEFAULT_MANIFEST_URL, source: 'default' }
+}
+
+/**
+ * CN-FEED-01 清单尝试计划（有序）：env 注入 → 单源不回退（UPD-MANIFEST-INJECTABLE
+ * 冻结口径零破坏）；trainer.config.json update.manifest_url → 单源不回退（同上）；
+ * 三态设置（UPD-FEED-SETTING）：custom → 单源、official → 仅 GitHub；其余（auto/未配置，
+ * 含设置文件损坏/非法的下落）→ 镜像 base 非空时 [镜像 manifest.json, GitHub 默认]
+ * （UPD-CN-FALLBACK-HTTP 镜像优先失败回退，回退一次、错误取最终源），空串＝未上线退化为
+ * 纯 GitHub 默认。GitHub 默认 URL＝既有 release publicURL 推导→repo 常量（同一实现）。
+ */
+export async function resolveManifestPlan(options: {
+  env?: Record<string, string | undefined>
+  launcherConfigPath?: string | null
+  releasePublicURL?: string | null
+  setting?: UpdateSourceSetting | null
+  mirrorBase?: string
+}): Promise<ManifestPlanEntry[]> {
+  const fromEnv = await resolveManifestUrl({ env: options.env, launcherConfigPath: null, releasePublicURL: null })
+  if (fromEnv.source === 'env') return [{ url: fromEnv.url, source: 'env' }]
+  const fromConfig = await resolveManifestUrl({ env: {}, launcherConfigPath: options.launcherConfigPath ?? null, releasePublicURL: null })
+  if (fromConfig.source === 'config') return [{ url: fromConfig.url, source: 'config' }]
+  const setting = options.setting ?? null
+  if (setting?.source === 'custom' && setting.customUrl !== null) {
+    return [{ url: setting.customUrl, source: 'custom' }]
+  }
+  const githubDefault = await resolveManifestUrl({ env: {}, launcherConfigPath: null, releasePublicURL: options.releasePublicURL ?? null })
+  if (setting?.source === 'official') {
+    return [{ url: githubDefault.url, source: 'official' }]
+  }
+  const mirrorBase = (options.mirrorBase ?? CN_MIRROR_BASE).trim()
+  if (mirrorBase !== '') {
+    return [{ url: cnMirrorManifestUrl(mirrorBase), source: 'cn-mirror' }, { url: githubDefault.url, source: githubDefault.source }]
+  }
+  return [{ url: githubDefault.url, source: githubDefault.source }]
 }
 
 /** 真实清单拉取（GitHub API 需要 User-Agent；15 秒超时）。P0-4：换 safe-http 原生
