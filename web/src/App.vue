@@ -369,6 +369,11 @@ async function saveAndApplyWizard(): Promise<void> {
 // 退出不结算、不放弃训练：先冲刷本页画线/录像保存，再经同源受保护协议协调其他
 // 页面确认，最后服务端排空、关闭 Fastify 与 SQLite 后进程自然退出；页面轮询到
 // 端口不可达才显示"已退出"。任何拒绝、超时或失败都如实呈现，绝不静默强制结束。
+// TDX-RECONNECT-01：设置分栏保存通达信目录并受控重启生效后，由 TrainingSettings
+// emit('tdx-connected') 通知此处刷新连接状态（数据状态由分栏经共享 store 直接刷新）。
+async function onTdxConnected(): Promise<void> {
+  await reloadEnv()
+}
 type ExitFlowStep = 'closed' | 'confirm' | 'saving' | 'coordinating' | 'exiting' | 'exited' | 'failed'
 const exitFlow = ref<ExitFlowStep>('closed')
 const exitReason = ref('')
@@ -728,7 +733,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 
     <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
          inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
-    <TrainingSettings v-if="trainingSettingsOpen" :initial-section="requestedSettingsSection" :seeded-update-notice="requestedSettingsSection === 'about' ? updateNotice : null" @close="onSettingsClose" />
+    <TrainingSettings v-if="trainingSettingsOpen" :initial-section="requestedSettingsSection" :seeded-update-notice="requestedSettingsSection === 'about' ? updateNotice : null" @tdx-connected="onTdxConnected" @close="onSettingsClose" />
 
     <!-- 保存并退出训练器（REL-LAUNCH-UX-01）：保存→协调→排空→端口不可达才算已退出 -->
     <div v-if="exitModalOpen" class="exit-overlay" role="dialog" aria-modal="true" aria-label="退出训练器">
