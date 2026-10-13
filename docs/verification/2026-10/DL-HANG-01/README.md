@@ -172,3 +172,12 @@ cancel 为尽力中止：electron-updater 链经 CancellationToken；若请求�
 1. **zip HTTP 链 900s 总预算≠进度看门狗**：server/src/update/api.ts zip 下载 `timeoutMs: 15*60_000`（已有超时覆盖——本任务诊断结论「已有覆盖」）；慢速 trickle 理论可占满 15 分钟才失败。若需对齐「无进度即停」语义，另开 server 侧任务（本轮矩阵行限 desktop 形态）。
 2. **check 环节 11 轮重试无退避上限**（w5 观察）：检查链用户可手动重试且有人话错误（体验合格），未在本任务范围。
 3. **渲染端死等 IPC invoke**：desktop 通道 `await downloadAndInstall()` 无独立超时——现由主进程看门狗保证 invoke 必然 settle（race 独立收敛），渲染端无需第二看门狗；若未来 controller 移出主进程需重新评估。
+
+## 七、发布记录（v1.3.2，2026-10-13）
+
+看门狗随 **v1.3.2** 正式发布（DL-HANG-01＋CN-FEED-01 镜像常量填入同版，发布提交 eb94f54＝tag v1.3.2）：
+
+- GitHub Release：https://github.com/m1kuStark/a-share-kline-trainer/releases/tag/v1.3.2（id=411567776，7 资产全 uploaded，latest 已翻页）。
+- 门禁与发布全收据：`ai-harness-lab/gpu3060-bench/reports/wc-release-v132.md`（发布执行者报告；desktop 全量 26 文件 257/257 全绿含本任务 7 用例）。
+- NSIS 安装器冒烟（等价 /currentuser 序列）：安装→health `currentVersion=1.3.2`→优雅退出→卸载→无残留全过；真实用户数据目录与用户 per-machine 安装（D:\K-line-trainer）前后 INTACT。
+- CHANGELOG v1.3.2 段含看门狗条目（proposed_default 文案）；设置页 UI 浏览器级呈现留待用户真机验收（沿 §5 绑定层次说明）。
