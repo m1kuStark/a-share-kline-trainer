@@ -28,6 +28,12 @@ export interface UpdateIpcDeps {
   /** boot 自动检查执行体（main 传 controller.checkForUpdates 的绑定） */
   runBootCheck: () => Promise<DesktopUpdateCheckView>
   bootCheckOutPath: string | null
+  /**
+   * CN-FEED-01 观测缝（off by default）：boot 检查的逐源尝试记录（镜像/GitHub 哪个
+   * 成功、失败原因）——main 侧绑回退适配器的 lastAttempts()；落盘 JSON 追加 sources
+   * 字段（字段名与形状＝proposed_default，W5 真机判断走了哪个源）。
+   */
+  bootCheckSources?: () => unknown
   /** UPD-NOTIFY-01：boot 自动检查发现新版时的通知出口（main 侧缓存并投递渲染端） */
   onBootNotice: (notice: DesktopUpdateNotice) => void
   logger: { error(...args: unknown[]): void, warn(...args: unknown[]): void }
@@ -57,8 +63,9 @@ export function registerUpdateIpc(deps: UpdateIpcDeps): void {
       }
       const outPath = deps.bootCheckOutPath
       if (outPath) {
+        const sources = deps.bootCheckSources?.()
         const temporary = `${outPath}.${randomUUID()}.tmp`
-        await writeFile(temporary, `${JSON.stringify({ channel: channelKind, ...view }, null, 2)}\n`, 'utf8')
+        await writeFile(temporary, `${JSON.stringify({ channel: channelKind, ...view, ...(sources !== undefined ? { sources } : {}) }, null, 2)}\n`, 'utf8')
         await rename(temporary, outPath)
       }
     })

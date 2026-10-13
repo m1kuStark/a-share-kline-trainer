@@ -13,7 +13,8 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AppConfig } from '../config.js'
-import { fetchUpdateManifest, resolveManifestUrl, type ManifestFetchText } from './manifest.js'
+import { CN_MIRROR_BASE, fetchUpdateManifest, resolveManifestPlan, resolveManifestUrl, type ManifestFetchText, type ManifestPlanEntry, type UpdateManifest } from './manifest.js'
+import { readUpdateSourceSetting, writeUpdateSourceSetting, parseUpdateSourceSetting } from './update-source.js'
 import { safeGetText, safeRequest } from './safe-http.js'
 import { isBusyUpdateState, readUpdateStatus, reconcileUpdateStatus, writeUpdateStatus } from './status.js'
 import type { UpdatePlan } from './updater-core.js'
@@ -40,6 +41,8 @@ export interface RegisterUpdateApiOptions {
   downloadFetch?: DownloadFetch
   /** 显式覆盖清单 URL（测试）；缺省按 env>config>release>默认 解析。 */
   manifestUrl?: string
+  /** CN-FEED-01：镜像 base（默认 CN_MIRROR_BASE 常量；测试注入 fixture 值） */
+  mirrorBase?: string
   /** 包根（含 package.json/release.json）；默认从本模块位置推导。 */
   packageRoot?: string
   env?: Record<string, string | undefined>
@@ -153,18 +156,44 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
   const downloadFetch = options.downloadFetch ?? defaultDownloadFetch
   const log = options.log ?? console
 
-  async function resolveUrl(): Promise<{ url: string, source: string }> {
-    if (options.manifestUrl) return { url: options.manifestUrl, source: 'override' }
+  async function resolvePlan(): Promise<ManifestPlanEntry[]> {
+    if (options.manifestUrl) return [{ url: options.manifestUrl, source: 'env' }]
     const release = await readCurrentRelease(packageRoot)
-    return resolveManifestUrl({ env, launcherConfigPath: config.launcherConfigPath ?? null, releasePublicURL: release?.publicURL ?? null })
+    const setting = await readUpdateSourceSetting(config.dataDir ?? null)
+    return resolveManifestPlan({
+      env,
+      launcherConfigPath: config.launcherConfigPath ?? null,
+      releasePublicURL: release?.publicURL ?? null,
+      setting,
+      ...(options.mirrorBase !== undefined ? { mirrorBase: options.mirrorBase } : {}),
+    })
+  }
+
+  /**
+   * CN-FEED-01 逐源清单获取（UPD-CN-FALLBACK-HTTP）：按计划顺序尝试，首个成功即用；
+   * 全部失败取最后一次尝试的错误（错误取最终源）。返回的 url＝实际成功（或最后尝试）
+   * 的清单地址，作为响应 manifestUrl（本次实际使用的清单源）。
+   */
+  async function fetchManifestWithFallback(entries: ManifestPlanEntry[]): Promise<
+    { ok: true, manifest: UpdateManifest, url: string }
+    | { ok: false, error: string, url: string }
+  > {
+    let lastUrl = entries.length > 0 ? entries[0].url : ''
+    let lastError = '没有可用的更新清单源'
+    for (const entry of entries) {
+      lastUrl = entry.url
+      const result = await fetchUpdateManifest(entry.url, manifestFetch)
+      if (result.ok) return { ok: true, manifest: result.manifest, url: entry.url }
+      lastError = result.error
+    }
+    return { ok: false, error: lastError, url: lastUrl }
   }
 
   // ===== GET /api/update/check =====
   app.get('/api/update/check', async () => {
     const currentVersion = serverVersion(packageRoot)
-    const resolved = await resolveUrl()
-    const result = await fetchUpdateManifest(resolved.url, manifestFetch)
-    if (!result.ok) {
+    const fetched = await fetchManifestWithFallback(await resolvePlan())
+    if (!fetched.ok) {
       return {
         currentVersion,
         latestVersion: null,
@@ -172,11 +201,11 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
         releaseNotes: null,
         downloadUrl: null,
         downloadSize: null,
-        manifestUrl: resolved.url,
-        error: result.error,
+        manifestUrl: fetched.url,
+        error: fetched.error,
       }
     }
-    const manifest = result.manifest
+    const manifest = fetched.manifest
     const available = currentVersion !== null && compareVersions(manifest.version, currentVersion) > 0
     return {
       currentVersion,
@@ -185,9 +214,51 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
       releaseNotes: manifest.notes,
       downloadUrl: available ? manifest.zip.url : null,
       downloadSize: available ? manifest.zip.size : null,
-      manifestUrl: resolved.url,
+      manifestUrl: fetched.url,
       error: null,
     }
+  })
+
+  // ===== GET/PUT /api/update/source（CN-FEED-01 / UPD-FEED-SETTING）=====
+  // 更新源三态设置（auto=镜像优先回退官方 / official / custom），落 <dataDir>/update-source.json；
+  // 优先级 env 注入 > 既有 trainer.config.json manifest_url 注入 > 本设置 > 内置默认（auto）。
+  // desktop 与 zip HTTP 链共用该口径：desktop 主进程读同一文件决定 electron-updater feed 计划。
+  app.get('/api/update/source', async () => {
+    const setting = await readUpdateSourceSetting(config.dataDir ?? null)
+    const fromEnv = await resolveManifestUrl({ env, launcherConfigPath: null, releasePublicURL: null })
+    const envDesktopFeed = typeof env.TRAINER_DESKTOP_UPDATE_FEED === 'string' ? env.TRAINER_DESKTOP_UPDATE_FEED.trim() : ''
+    const fromConfig = fromEnv.source === 'env'
+      ? null
+      : await resolveManifestUrl({ env: {}, launcherConfigPath: config.launcherConfigPath ?? null, releasePublicURL: null })
+    let origin: 'env' | 'config' | 'setting' | 'default' = 'default'
+    if (fromEnv.source === 'env' || envDesktopFeed !== '') origin = 'env'
+    else if (fromConfig?.source === 'config') origin = 'config'
+    else if (setting !== null) origin = 'setting'
+    return {
+      source: setting?.source ?? 'auto',
+      customUrl: setting?.customUrl ?? null,
+      origin,
+      mirrorConfigured: CN_MIRROR_BASE.trim() !== '',
+    }
+  })
+
+  app.put('/api/update/source', async (request, reply) => {
+    const setting = parseUpdateSourceSetting(request.body)
+    if (setting === null) {
+      return reply.code(400).send({
+        error: 'UPDATE_SOURCE_INVALID',
+        message: '更新源设置非法：source 必须为 auto/official/custom；custom 必须携带 http(s) 自定义 URL；auto/official 不得携带 customUrl',
+      })
+    }
+    if (!config.dataDir) {
+      return reply.code(409).send({ error: 'UPDATE_SOURCE_NO_DATA_DIR', message: '当前运行方式无法持久化更新源设置（未知数据目录）' })
+    }
+    try {
+      await writeUpdateSourceSetting(config.dataDir, setting)
+    } catch (error) {
+      return reply.code(500).send({ error: 'UPDATE_SOURCE_WRITE_FAILED', message: `保存失败（原设置未更改）：${messageOf(error)}` })
+    }
+    return { source: setting.source, customUrl: setting.customUrl, origin: 'setting', mirrorConfigured: CN_MIRROR_BASE.trim() !== '' }
   })
 
   // ===== GET /api/update/status =====
@@ -255,12 +326,11 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
     if (activeAttempt || (existing && isBusyUpdateState(existing.state))) {
       return reply.code(409).send({ error: 'UPDATE_IN_PROGRESS', message: '已有一个更新流程在进行中，请通过更新状态查看进度' })
     }
-    const resolved = await resolveUrl()
-    const result = await fetchUpdateManifest(resolved.url, manifestFetch)
-    if (!result.ok) {
-      return reply.code(502).send({ error: 'UPDATE_MANIFEST_FAILED', message: result.error })
+    const fetched = await fetchManifestWithFallback(await resolvePlan())
+    if (!fetched.ok) {
+      return reply.code(502).send({ error: 'UPDATE_MANIFEST_FAILED', message: fetched.error })
     }
-    const manifest = result.manifest
+    const manifest = fetched.manifest
     let newer: boolean
     try {
       newer = compareVersions(manifest.version, currentVersion) > 0

@@ -488,6 +488,65 @@ const applyReconnectAttempt = ref(0)
 const applyGuardMessage = ref('')
 const applyFailedReason = ref('')
 const applyCompletedVersion = ref<string | null>(null)
+
+// CN-FEED-01（UPD-FEED-SETTING）：更新源三态设置（自动＝镜像优先回退官方／官方 GitHub／
+// 自定义 URL）。持久化经 server 端点 GET/PUT /api/update/source 落 <dataDir>/update-source.json
+// （desktop 与 zip HTTP 链共用；优先级 env 注入 > 用户设置 > 内置默认 auto）。呈现文案为
+// proposed_default（含镜像未上线附注——GET mirrorConfigured 如实驱动）。
+const updateSourceDraft = ref<{ source: 'auto' | 'official' | 'custom', customUrl: string }>({ source: 'auto', customUrl: '' })
+const updateSourceOrigin = ref<'env' | 'config' | 'setting' | 'default'>('default')
+const updateSourceMirrorConfigured = ref(false)
+const updateSourceSaving = ref(false)
+const updateSourceSavedMessage = ref('')
+const updateSourceError = ref('')
+
+interface UpdateSourceView {
+  source: 'auto' | 'official' | 'custom'
+  customUrl: string | null
+  origin: 'env' | 'config' | 'setting' | 'default'
+  mirrorConfigured: boolean
+}
+
+async function loadUpdateSource(): Promise<void> {
+  try {
+    const response = await fetch('/api/update/source')
+    if (!response.ok) return
+    const view = await response.json() as UpdateSourceView
+    updateSourceDraft.value = { source: view.source, customUrl: view.customUrl ?? '' }
+    updateSourceOrigin.value = view.origin
+    updateSourceMirrorConfigured.value = view.mirrorConfigured
+  } catch {
+    // 服务不可达＝无设置可加载（保持默认呈现），静默
+  }
+}
+
+async function saveUpdateSource(): Promise<void> {
+  if (updateSourceSaving.value) return
+  updateSourceSaving.value = true
+  updateSourceSavedMessage.value = ''
+  updateSourceError.value = ''
+  try {
+    const payload = updateSourceDraft.value.source === 'custom'
+      ? { source: 'custom', customUrl: updateSourceDraft.value.customUrl.trim() }
+      : { source: updateSourceDraft.value.source }
+    const response = await fetch('/api/update/source', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({})) as { message?: string }
+      updateSourceError.value = detail.message ?? `保存失败（HTTP ${response.status}）`
+      return
+    }
+    updateSourceSavedMessage.value = '更新源已保存，下次检查更新生效'
+    await loadUpdateSource()
+  } catch (error) {
+    updateSourceError.value = `保存失败：${error instanceof Error ? error.message : String(error)}`
+  } finally {
+    updateSourceSaving.value = false
+  }
+}
 let updatePollTimer: ReturnType<typeof setTimeout> | undefined
 let updateFailedReconnects = 0
 /** 更新流程占线（POST 受理中或状态机轮询中）：禁用「下载并更新」防重复提交 */
@@ -673,6 +732,7 @@ async function startUpdateApply(): Promise<void> {
 /** 分栏激活：拉当前版本＋若服务端有进行中/终态更新则恢复呈现（更新跨重启窗口，用户可能关开面板） */
 async function enterAboutSection(): Promise<void> {
   await loadUpdateVersion()
+  void loadUpdateSource()
   try {
     const response = await fetch('/api/update/status')
     if (!response.ok) return
@@ -1032,6 +1092,27 @@ function close(): void {
         <h3>关于与更新</h3>
         <p class="settings-section-note">检查并安装训练器新版本；更新前会自动备份，历史训练数据保留在本地，更新完成后自动重启。</p>
         <p class="update-current-version">当前版本：{{ versionLabel(updateVersion) }}</p>
+        <div class="update-source-setting" role="group" aria-label="更新源">
+          <p class="update-source-label">更新源</p>
+          <label class="update-source-option"><input type="radio" value="auto" v-model="updateSourceDraft.source">自动（推荐）</label>
+          <p class="update-source-hint">{{ updateSourceMirrorConfigured ? '国内镜像优先，失败自动回退官方 GitHub' : '当前走官方 GitHub 源；国内镜像上线后自动启用镜像优先回退' }}</p>
+          <label class="update-source-option"><input type="radio" value="official" v-model="updateSourceDraft.source">官方 GitHub</label>
+          <label class="update-source-option"><input type="radio" value="custom" v-model="updateSourceDraft.source">自定义 URL</label>
+          <input
+            v-if="updateSourceDraft.source === 'custom'"
+            v-model="updateSourceDraft.customUrl"
+            class="update-source-url" type="text" placeholder="https://…/（latest.yml 所在目录）"
+            :disabled="updateSourceOrigin === 'env'"
+          >
+          <div class="settings-actions">
+            <button class="ghost-button" :disabled="updateSourceSaving || updateSourceOrigin === 'env'" @click="saveUpdateSource">
+              {{ updateSourceSaving ? '保存中…' : '保存更新源' }}
+            </button>
+          </div>
+          <p v-if="updateSourceOrigin === 'env'" class="update-source-origin" role="note">更新源已由环境变量注入，以上设置暂不生效（环境变量优先）</p>
+          <p v-if="updateSourceSavedMessage" class="settings-saved update-source-saved" role="status">{{ updateSourceSavedMessage }}</p>
+          <p v-if="updateSourceError" class="error-text update-source-error" role="alert">{{ updateSourceError }}</p>
+        </div>
         <div class="settings-actions">
           <button class="ghost-button" :disabled="checkPhase === 'checking'" @click="runCheckUpdate">
             {{ checkPhase === 'checking' ? '检查中…' : '检查更新' }}
@@ -1138,6 +1219,14 @@ function close(): void {
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 /* UPD-02 关于与更新分栏 */
 .update-current-version { margin: 0 0 4px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* CN-FEED-01 更新源三态设置 */
+.update-source-setting { margin: 8px 0 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; }
+.update-source-label { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+.update-source-option { display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: 13px; }
+.update-source-hint { margin: 0 0 4px 22px; font-size: 12px; color: var(--text-secondary, #51637a); }
+.update-source-url { width: 100%; box-sizing: border-box; margin: 4px 0; padding: 6px 8px; font-size: 13px; }
+.update-source-origin { margin: 6px 0 0; font-size: 12px; color: var(--text-secondary, #51637a); }
+.update-source-saved, .update-source-error { margin: 6px 0 0; font-size: 12px; }
 .update-check-result p { margin: 0 0 6px; font-size: 13px; }
 .update-release-notes { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; }
 .update-release-notes summary { cursor: pointer; color: var(--text-secondary, #51637a); }
