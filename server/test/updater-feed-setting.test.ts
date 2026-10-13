@@ -72,9 +72,12 @@ describe('CN-FEED-01 清单计划（resolveManifestPlan 纯函数）', () => {
   it('UPD-CN-FALLBACK-HTTP: 镜像未配置（空串）→ 计划退化为纯 GitHub 默认（镜像未上线行为安全）', async () => {
     expect(await resolveManifestPlan({ env: {}, launcherConfigPath: null, releasePublicURL: null, mirrorBase: '' }))
       .toEqual([{ url: GITHUB_LATEST, source: 'default' }])
-    // 未传 mirrorBase 使用内置常量（当前为空串）
+    // 未传 mirrorBase 使用内置常量（v1.3.2 起镜像已上线：常量非空，auto 计划＝镜像优先 GitHub 兜底）
     expect(await resolveManifestPlan({ env: {}, launcherConfigPath: null, releasePublicURL: null }))
-      .toEqual([{ url: GITHUB_LATEST, source: 'default' }])
+      .toEqual([
+        { url: 'https://k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com/feed/manifest.json', source: 'cn-mirror' },
+        { url: GITHUB_LATEST, source: 'default' },
+      ])
   })
 
   it('UPD-FEED-SETTING: 优先级 env > trainer.config manifest_url > 三态设置 > 内置默认（逐级断言）', async () => {
@@ -113,8 +116,8 @@ describe('CN-FEED-01 清单计划（resolveManifestPlan 纯函数）', () => {
   it('UPD-CN-FALLBACK-HTTP: cnMirrorManifestUrl 拼接（与 sync 脚本产出文件名一致）＋内置常量当前为空串', () => {
     expect(cnMirrorManifestUrl(MIRROR_BASE)).toBe(`${MIRROR_BASE}/manifest.json`)
     expect(cnMirrorManifestUrl(`${MIRROR_BASE}/`)).toBe(`${MIRROR_BASE}/manifest.json`)
-    // 镜像未上线：常量空串（W4 填入后本断言随常量更新——填入时需同步改此断言）
-    expect(CN_MIRROR_BASE).toBe('')
+    // 镜像已上线（v1.3.2 W4 填入 CloudBase 静态托管真实 URL；原"空串＝未上线"断言随常量同步更新）
+    expect(CN_MIRROR_BASE).toBe('https://k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com/feed')
   })
 })
 
@@ -194,7 +197,8 @@ describe('CN-FEED-01 更新源设置端点（GET/PUT /api/update/source；真实
     expect(viewBody.source).toBe('custom')
     expect(viewBody.customUrl).toBe(customUrl)
     expect(viewBody.origin).toBe('setting')
-    expect(viewBody.mirrorConfigured).toBe(false)
+    // v1.3.2 起常量已填入真实镜像 URL——mirrorConfigured 如实为 true
+    expect(viewBody.mirrorConfigured).toBe(true)
 
     // official / auto 同理落盘
     expect((await app.inject({ method: 'PUT', url: '/api/update/source', payload: { source: 'official' } })).statusCode).toBe(200)
@@ -224,7 +228,7 @@ describe('CN-FEED-01 更新源设置端点（GET/PUT /api/update/source；真实
     const app = await buildApp({}, { dataDir })
     const view = await app.inject({ method: 'GET', url: '/api/update/source' })
     expect(view.statusCode).toBe(200)
-    expect(view.json()).toEqual({ source: 'auto', customUrl: null, origin: 'default', mirrorConfigured: false })
+    expect(view.json()).toEqual({ source: 'auto', customUrl: null, origin: 'default', mirrorConfigured: true })
   })
 })
 

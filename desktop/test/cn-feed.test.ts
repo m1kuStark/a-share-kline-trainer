@@ -40,8 +40,11 @@ describe('CN-FEED-01 桌面更新源计划（resolveDesktopFeedPlan）', () => {
 
   it('UPD-CN-FALLBACK-DESKTOP: 镜像未配置（空串）→ auto 计划退化为纯 GitHub 单源（镜像未上线行为安全）', () => {
     expect(resolveDesktopFeedPlan({}, null, '')).toEqual([{ label: 'github', feed: EXPECTED_GITHUB_FEED }])
-    // 未传 mirrorBase 时使用内置常量（当前为空串＝未上线）
-    expect(resolveDesktopFeedPlan({}, null)).toEqual([{ label: 'github', feed: EXPECTED_GITHUB_FEED }])
+    // 未传 mirrorBase 时使用内置常量（v1.3.2 起镜像已上线：常量非空，auto 计划＝镜像优先 GitHub 兜底）
+    expect(resolveDesktopFeedPlan({}, null)).toEqual([
+      { label: 'cn-mirror', feed: { provider: 'generic', url: 'https://k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com/feed/latest.yml' } },
+      { label: 'github', feed: EXPECTED_GITHUB_FEED },
+    ])
   })
 
   it('UPD-CN-FALLBACK-DESKTOP: env 注入时不回退——计划仅含 env 单源，空串 env 视为未设置', () => {

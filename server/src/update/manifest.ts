@@ -16,14 +16,15 @@ export const DEFAULT_REPO = 'm1kuStark/a-share-kline-trainer'
 export const DEFAULT_MANIFEST_URL = `https://api.github.com/repos/${DEFAULT_REPO}/releases/latest`
 
 /**
- * 国内镜像 base URL（单一事实源；W4 国内托管上线后填入，例如
- * 'https://<envId>.tcloudbaseapp.com/feed'）。空串＝镜像未上线：UPD-CN-FALLBACK-HTTP
- * 的 auto 计划退化为纯 GitHub（行为安全）。desktop 链（desktop/src/cn-feed.ts）经
+ * 国内镜像 base URL（单一事实源；v1.3.2 起 W4 已填入——CloudBase 静态托管
+ * https://k-line-trainer-…-1505768275.tcloudbaseapp.com/feed，架构师 2026-10-13 上线）。
+ * 空串＝镜像未上线（UPD-CN-FALLBACK-HTTP 的 auto 计划退化为纯 GitHub，行为安全）。
+ * desktop 链（desktop/src/cn-feed.ts）经
  * 编译产物 import 同一常量——改这里＋重跑 npm run build:server 即两链同时生效；
  * 产物文件名（manifest.json/latest.yml）由 desktop/scripts/sync-feed-lib.mjs 生成，
  * desktop/scripts/sync-feed.mjs 是其发布侧对端。
  */
-export const CN_MIRROR_BASE = ''
+export const CN_MIRROR_BASE = 'https://k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com/feed'
 
 /** 尾斜杠归一的 URL 拼接 */
 function joinUrl(base: string, fileName: string): string {
