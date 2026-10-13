@@ -19,11 +19,14 @@ function blockOf(source: string, startMarker: string, endMarker: string): string
 describe('REC-CHART-B chart capture contract', () => {
   it('declares the chartCapture emit, captureState expose and optional replayView prop', async () => {
     const source = await readChart()
-    expect(source).toMatch(/import type \{ ChartCapture, ChartCaptureView \} from '\.\.\/recording\/types'/)
+    expect(source).toMatch(/import type \{ ChartCapture \} from '\.\.\/recording\/types'/)
     expect(source).toMatch(/import \{ VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar \} from '\.\.\/recording\/chartCapture'/)
+    // REPLAY-VIEWPORT-01：回放重挂视窗改用 ReplayViewport（extends ChartCaptureView，另带瞬态
+    // rightOffsetBars）；恢复算术经纯模块 replayViewport 接线。原 ChartCaptureView 导入随之收窄。
+    expect(source).toMatch(/import \{ nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport \} from '\.\.\/recording\/replayViewport'/)
     expect(source).toMatch(/chartCapture: \[ChartCapture\]/)
-    expect(source).toMatch(/replayView\?: ChartCaptureView/)
-    expect(source).toMatch(/defineExpose\(\{ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState \}\)/)
+    expect(source).toMatch(/replayView\?: ReplayViewport/)
+    expect(source).toMatch(/defineExpose\(\{ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView \}\)/)
   })
 
   it('feeds bars with original date and amount so captures restore them verbatim', async () => {

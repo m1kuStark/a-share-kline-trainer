@@ -10,12 +10,13 @@ import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
-import type { ChartCapture, ChartCaptureView } from '../recording/types'
+import type { ChartCapture } from '../recording/types'
 import type { Action, JsonValue } from '../recording/types'
 import { drawingOperationParams, hasUnreportedMove, markDrawingReported, syncReportedDrawings, type ReportedDrawings } from '../recording/drawingOperations'
 import { DRAW_TOOLS } from '../drawTools'
 import { loadToolStylePreferences } from '../toolFavorites'
-import { MAX_VISIBLE_BARS } from '../chartNavigation'
+import { MAX_VISIBLE_BARS, CHART_RIGHT_MARGIN_PX } from '../chartNavigation'
+import { nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport } from '../recording/replayViewport'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
 import MaSettingsDialog from './MaSettingsDialog.vue'
 import { appMaSettings, maWarmup } from '../maSettings'
@@ -51,8 +52,11 @@ const props = withDefaults(defineProps<{
   magnet?: 'normal' | 'weak_magnet' | 'strong_magnet'
   /** 只读展示（录制回放）：保存画线照常显示，但禁全部编辑写入口、右键菜单与图形拖动；平移/缩放/十字线不受影响 */
   readOnly?: boolean
-  /** 回放视窗（录制检查点）：feed 完成布局后按时间戳恢复右侧锚点、barSpace 与语义窗格高度 */
-  replayView?: ChartCaptureView
+  /** 回放视窗（录制检查点）：feed 完成布局后按时间戳恢复右侧锚点、barSpace 与语义窗格高度；
+   *  ReplayViewport 额外携带瞬态右侧空隔（rightOffsetBars）——重挂恢复不得丢掉重挂前的
+   *  右侧空白预留（REPLAY-VIEWPORT-01：scrollToTimestamp 只钉锚点到右缘会吃掉 80px 空白，
+   *  与普通跨日 init 重锚的实时位不一致，跨界即画面大平移＋空白突变） */
+  replayView?: ReplayViewport
   /** 画线前复权基准（已发生权息累计仿射变换，随 bars 同源到达）：缺省＝不启用基准投影（旧行为） */
   drawingPriceBasis?: DrawingPriceBasis | null
   /** 交易标记笔记的本轮训练隔离键 */
@@ -93,7 +97,7 @@ function applyMaSettings(): void {
 // 同屏最多840根，更早历史按需加载；窄窗口允许亚像素柱宽。
 const MIN_COUNT = 1
 const MAX_COUNT = MAX_VISIBLE_BARS
-const RIGHT_MARGIN = 80
+const RIGHT_MARGIN = CHART_RIGHT_MARGIN_PX
 // klinecharts 默认单根柱宽上限 50px（barSpaceLimit.max），框选少于约 18 根时请求的柱宽超限被静默忽略成平移；
 // 提高到 300 以支持"选中几根就放大到铺满"（依赖钉定的 klinecharts 10.0.3 内部结构，升级需复查）
 const BAR_SPACE_MAX = 300
@@ -511,6 +515,25 @@ function captureState(): ChartCapture {
   const view = captureView({ fromIndex: range.from, toIndex: range.to, data, barSpace: chart.getBarSpace().bar, paneHeights: semanticPaneHeights() })
   return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(data), drawings: drawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
 }
+/** 重挂前视窗捕获（REPLAY-VIEWPORT-01）：内容锚点与 captureState().view 同构，另带瞬态
+ *  右侧空隔（diff≥0 走 getOffsetRightDistance 精确值，历史位回落 realTo 反解）。
+ *  仅供只读回放重挂恢复传递，绝不进入录像/检查点（ChartCapture 记录格式不变）；失败返回 null */
+function captureReplayView(): ReplayViewport | null {
+  try {
+    const view = captureState().view
+    return {
+      ...view,
+      rightOffsetBars: replayRightOffsetBars({
+        offsetRightDistancePx: chart?.getOffsetRightDistance() ?? 0,
+        barSpace: chart?.getBarSpace().bar ?? 0,
+        realTo: chart?.getVisibleRange().realTo ?? 0,
+        dataCount: chart?.getDataList().length ?? 0,
+      }),
+    }
+  } catch {
+    return null
+  }
+}
 let captureTimer: ReturnType<typeof setTimeout> | null = null
 function cancelChartCapture(): void {
   if (captureTimer !== null) { clearTimeout(captureTimer); captureTimer = null }
@@ -552,9 +575,13 @@ function scheduleViewportOperation(): void {
 }
 // replayView 恢复：feed 完成布局后按时间戳重定位右侧锚点（不套旧 dataIndex）、恢复 barSpace
 // 与语义窗格高度；相同 view 不重复恢复，恢复期间静默捕获（库的视窗 action 为同步派发）。
+// REPLAY-VIEWPORT-01：scrollToTimestamp 终态把锚点根钉在绘图区右缘（diff=锚点-(N-1)≤0），
+// 重挂前的右侧空白预留（实时位 80px）会被整体左移吃掉——与普通跨日 init 重锚（实时位带
+// 空白）不一致，跨画线变化边界来回翻转即用户所见「画面大平移＋右侧空白突然出现/消失」。
+// 因此按捕获的 rightOffsetBars 在锚定后补一次修正滚动，把末根右侧空隔还原到重挂前值。
 let appliedReplayView: string | null = null
 let restoringView = false
-function applyReplayView(view: ChartCaptureView | undefined): void {
+function applyReplayView(view: ReplayViewport | undefined): void {
   if (!view || !chart || disposed || !loadedData.length) return
   const key = JSON.stringify(view)
   if (appliedReplayView === key) return
@@ -572,7 +599,12 @@ function applyReplayView(view: ChartCaptureView | undefined): void {
     }
     if (Number.isFinite(view.barSpace) && view.barSpace > 0) chart.setBarSpace(view.barSpace)
     const anchor = view.toTimestamp ?? view.fromTimestamp
-    if (anchor !== null && Number.isFinite(anchor)) chart.scrollToTimestamp(anchor)
+    if (anchor !== null && Number.isFinite(anchor)) {
+      chart.scrollToTimestamp(anchor)
+      const anchorIndex = nearestIndexByTimestamp(loadedData, anchor)
+      const correction = replayRestoreScrollDistance(anchorIndex, loadedData.length, chart.getBarSpace().bar, view.rightOffsetBars)
+      if (correction !== 0) chart.scrollByDistance(correction, 0)
+    }
   } finally {
     queueMicrotask(() => { restoringView = false })
   }
@@ -1570,7 +1602,7 @@ watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentP
 watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
 onMounted(applyMaSettings)
 watch(appMaSettings, applyMaSettings)
-defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState })
+defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView })
 </script>
 
 <template>

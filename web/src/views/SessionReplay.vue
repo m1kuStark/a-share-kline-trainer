@@ -3,8 +3,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 import KlineChart from '../components/KlineChart.vue'
 import type { Timeframe } from '../api'
-import type { ChartCaptureView, RecordingFile, RecordingGap } from '../recording/types'
+import type { RecordingFile, RecordingGap } from '../recording/types'
 import type { CompactRecordingFile } from '../recording/compactTypes'
+import type { ReplayViewport } from '../recording/replayViewport'
 import { compactRecording } from '../recording/compactCodec'
 import {
   DailyReplaySession,
@@ -45,7 +46,8 @@ const observationTf = ref<Timeframe>('1D')
 const windowAnchor = ref(0)
 /** 画线内容代数：仅当日画线集变化时递增，驱动图表重挂以还原该日最终画线 */
 const drawingEpoch = ref(0)
-const replayView = ref<ChartCaptureView | null>(null)
+/** 重挂前视窗（含瞬态右侧空隔，REPLAY-VIEWPORT-01）：重挂后按时间戳＋空隔恢复，空白预留不丢 */
+const replayView = ref<ReplayViewport | null>(null)
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
 let timer: ReturnType<typeof setTimeout> | undefined
 let replayViewClearFrame: number | null = null
@@ -254,9 +256,11 @@ watch(state, current => {
   }
 }, { immediate: true })
 
-function captureViewSafely(): ChartCaptureView | null {
+function captureViewSafely(): ReplayViewport | null {
+  // 重挂前视窗：captureReplayView 在 captureState().view 之上补瞬态右侧空隔
+  //（重挂恢复不得丢掉右侧空白预留）；组件未挂起/捕获失败时返回 null＝不恢复，保持旧行为
   try {
-    return chartRef.value?.captureState().view ?? null
+    return chartRef.value?.captureReplayView() ?? null
   } catch {
     return null
   }
