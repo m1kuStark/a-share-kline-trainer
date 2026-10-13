@@ -8,7 +8,7 @@
 // 镜像 latest.yml 与 zip 链 manifest.json 的产出侧＝desktop/scripts/sync-feed-lib.mjs。
 import { CN_MIRROR_BASE } from '../../server/dist/update/manifest.js'
 import { readUpdateSourceSetting, type UpdateSourceSetting } from '../../server/dist/update/update-source.js'
-import { DEFAULT_GITHUB_FEED, type DesktopUpdaterAdapter, type UpdateFeed } from './desktop-updates.js'
+import { DEFAULT_GITHUB_FEED, type DesktopUpdaterAdapter, type DownloadCancellation, type UpdateFeed } from './desktop-updates.js'
 
 export { CN_MIRROR_BASE }
 export type { UpdateSourceSetting }
@@ -127,8 +127,10 @@ export function createFeedFallbackAdapter(deps: FeedFallbackAdapterDeps): Deskto
       throw lastError
     },
 
-    async downloadUpdate() {
-      return await inner.downloadUpdate()
+    async downloadUpdate(cancellation?: DownloadCancellation) {
+      // DL-HANG-01：中止句柄透传（inner＝electron-updater 链转 CancellationToken）；
+      // 下载沿用最终 check 成功的源（同源冻结语义零变化）
+      return await inner.downloadUpdate(cancellation)
     },
 
     quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void {

@@ -27,6 +27,9 @@ export type DesktopUpdateEvent =
   // UPD-NOTIFY-01（v1.3.0）：boot 自动检查发现新版本→渲染端首页提示（经既有
   // 'desktop-update:event' 单向事件面，不新增 IPC 通道/preload 成员）
   | { type: 'update-available-notice', version: string, releaseNotes: string | null }
+  // DL-HANG-01（UPD-DL-START-CONFIRM）：downloadAndInstall 进入即发出——使「下载已触发」
+  // 对渲染端与日志观测缝立即可区分（真机 20 分钟死寂时无法区分未启动/卡住）
+  | { type: 'download-started' }
 
 /** UPD-NOTIFY-01：首页更新提示载荷（boot 自动检查发现新版时经事件面下发） */
 export type DesktopUpdateNotice = { version: string, releaseNotes: string | null }
@@ -129,10 +132,60 @@ export interface DesktopUpdaterAdapter {
   setFeedURL(feed: UpdateFeed): void
   /** 拒绝＝检查失败（网络/清单缺失等）；resolve 携带最新版本信息（update-not-available 也 resolve） */
   checkForUpdates(): Promise<{ updateAvailable: boolean, version: string, releaseNotes: string | null }>
-  /** 拒绝＝下载失败（渲染端可重试）；resolve＝下载完成 */
-  downloadUpdate(): Promise<{ version: string }>
+  /**
+   * 拒绝＝下载失败（渲染端可重试）；resolve＝下载完成。
+   * DL-HANG-01：可选中止句柄（尽力中止——electron-updater 链转 CancellationToken；
+   * 网络层挂死时底层可能不响应，看门狗在 controller 层独立收敛，不依赖本参数生效）。
+   */
+  downloadUpdate(cancellation?: DownloadCancellation): Promise<{ version: string }>
   quitAndInstall(isSilent: boolean, isForceRunAfter: boolean): void
   onDownloadProgress(callback: (progress: { percent: number, transferred: number, total: number, bytesPerSecond: number }) => void): void
+}
+
+/**
+ * DL-HANG-01（UPD-DL-WATCHDOG）：下载中止句柄——controller 看门狗触发时 cancel；
+ * 适配层消费 whenCancelled 转底层取消机制。cancelled 标志供各层快速判定。
+ */
+export interface DownloadCancellation {
+  readonly cancelled: boolean
+  readonly whenCancelled: Promise<void>
+  cancel(): void
+}
+
+export function createDownloadCancellation(): DownloadCancellation {
+  let resolveCancelled: () => void = () => {}
+  const whenCancelled = new Promise<void>(resolve => { resolveCancelled = resolve })
+  let cancelled = false
+  return {
+    get cancelled() { return cancelled },
+    whenCancelled,
+    cancel() {
+      if (cancelled) return
+      cancelled = true
+      resolveCancelled()
+    },
+  }
+}
+
+/** DL-HANG-01：停滞看门狗缺省阈值（90 秒无任何进度事件；proposed_default 待追认） */
+export const DOWNLOAD_STALL_TIMEOUT_MS = 90_000
+
+/**
+ * 阈值解析：env TRAINER_DESKTOP_DL_STALL_MS（正整数毫秒）可覆盖（测试/诊断注入小值）；
+ * 空/非数字/0/负一律回默认——坏 env 不允许关掉看门狗（fail-safe）。
+ */
+export function resolveDownloadStallTimeoutMs(env: NodeJS.ProcessEnv, defaultMs: number = DOWNLOAD_STALL_TIMEOUT_MS): number {
+  const raw = typeof env.TRAINER_DESKTOP_DL_STALL_MS === 'string' ? env.TRAINER_DESKTOP_DL_STALL_MS.trim() : ''
+  if (raw === '') return defaultMs
+  const parsed = Number(raw)
+  if (Number.isFinite(parsed) && parsed > 0) return parsed
+  return defaultMs
+}
+
+/** 停滞失败人话（含已等待总时长＋网络提示＋重试指引；文案＝proposed_default） */
+export function downloadStallMessage(waitedMs: number): string {
+  const seconds = Math.max(1, Math.ceil(waitedMs / 1000))
+  return `下载停滞：已等待 ${seconds} 秒没有任何进度。可能是网络不稳定或更新源暂时无法访问，请检查网络后重试`
 }
 
 export interface DesktopUpdateControllerDeps {
@@ -143,6 +196,22 @@ export interface DesktopUpdateControllerDeps {
   /** 下载完成后发起「排空→安装」请求（main 侧绑定退出管线；controller 绝不直接 quitAndInstall） */
   requestInstallWithDrain: () => void
   logger: { error(...args: unknown[]): void, warn(...args: unknown[]): void, info(...args: unknown[]): void }
+  /**
+   * DL-HANG-01（UPD-DL-WATCHDOG）：停滞看门狗阈值毫秒（缺省 resolveDownloadStallTimeoutMs
+   * ＝90s 或 env 覆盖；测试注入小值——时间可注入，不真等 90s）。
+   */
+  stallTimeoutMs?: number
+}
+
+/** 看门狗运行态（一次 downloadAndInstall 一份；progress 推进即重置定时器） */
+interface StallWatchdogState {
+  startedAt: number
+  lastActivityAt: number
+  timer: ReturnType<typeof setTimeout> | null
+  fired: boolean
+  rejectStall: ((error: Error) => void) | null
+  pendingDownload: Promise<{ version: string }> | null
+  cancellation: DownloadCancellation
 }
 
 export interface DesktopUpdateController {
@@ -157,11 +226,39 @@ export interface DesktopUpdateController {
  */
 export function createDesktopUpdateController(deps: DesktopUpdateControllerDeps): DesktopUpdateController {
   const { adapter, getCurrentVersion, sendEvent, requestInstallWithDrain, logger } = deps
+  const stallTimeoutMs = deps.stallTimeoutMs ?? DOWNLOAD_STALL_TIMEOUT_MS
   let checked = false
   let downloading = false
+  let watchdog: StallWatchdogState | null = null
+
+  function stopStallWatchdog(): void {
+    if (watchdog !== null && watchdog.timer !== null) {
+      clearTimeout(watchdog.timer)
+    }
+    watchdog = null
+  }
+
+  function fireStall(state: StallWatchdogState): void {
+    if (state.fired || watchdog !== state) return
+    state.fired = true
+    if (state.timer !== null) {
+      clearTimeout(state.timer)
+      state.timer = null
+    }
+    // 尽力中止底层下载（electron-updater 链经 cancellation→CancellationToken；网络层
+    // 挂死不响应时看门狗仍独立收敛——不依赖本调用生效）
+    state.cancellation.cancel()
+    state.rejectStall?.(new Error(downloadStallMessage(Date.now() - state.startedAt)))
+  }
 
   adapter.onDownloadProgress(progress => {
     sendEvent({ type: 'download-progress', ...progress })
+    // DL-HANG-01：进度推进即重置看门狗（字节在走＝没停滞）
+    if (watchdog !== null && !watchdog.fired && watchdog.timer !== null) {
+      watchdog.lastActivityAt = Date.now()
+      clearTimeout(watchdog.timer)
+      watchdog.timer = setTimeout(() => fireStall(watchdog as StallWatchdogState), stallTimeoutMs)
+    }
   })
 
   return {
@@ -187,17 +284,55 @@ export function createDesktopUpdateController(deps: DesktopUpdateControllerDeps)
       if (downloading) return { ok: false, error: '更新已在进行中' }
       if (!checked) return { ok: false, error: '请先检查更新' }
       downloading = true
+      // UPD-DL-RETRY-AFTER-STALL：清上一轮残留（定时器/中止句柄引用），重走完整链
+      stopStallWatchdog()
+      const cancellation = createDownloadCancellation()
+      const state: StallWatchdogState = {
+        startedAt: Date.now(),
+        lastActivityAt: Date.now(),
+        timer: null,
+        fired: false,
+        rejectStall: null,
+        pendingDownload: null,
+        cancellation,
+      }
+      watchdog = state
+      // UPD-DL-START-CONFIRM：进入即发启动事件＋日志观测缝（「下载未开始」可区分；
+      // 不等下载完成，事件毫秒级到达渲染端）
+      sendEvent({ type: 'download-started' })
+      logger.info(`[desktop-updates] download started (stall watchdog ${stallTimeoutMs}ms)`)
+      const stallPromise = new Promise<never>((_, reject) => { state.rejectStall = reject })
+      state.timer = setTimeout(() => fireStall(state), stallTimeoutMs)
       try {
-        const outcome = await adapter.downloadUpdate()
+        const downloadPromise = adapter.downloadUpdate(cancellation)
+        state.pendingDownload = downloadPromise
+        // 停滞已判后的晚到 settle 兜底吞掉＋记日志（绝不 unhandledRejection）
+        void downloadPromise.then(
+          outcome => {
+            if (state.fired) logger.warn(`[desktop-updates] stalled download settled late (version ${outcome.version}); result ignored`)
+          },
+          error => {
+            if (state.fired) logger.warn(`[desktop-updates] stalled download rejected late: ${error instanceof Error ? error.message : String(error)}`)
+          },
+        )
+        // 看门狗独立收敛：stall reject 不依赖 downloadUpdate settle（真机挂起形态的根治点）
+        const outcome = await Promise.race([downloadPromise, stallPromise])
         sendEvent({ type: 'downloaded', version: outcome.version })
         // 安装统一走排空退出管线（design §3.2）：controller 不直接 quitAndInstall
         requestInstallWithDrain()
         return { ok: true }
       } catch (error) {
+        if (state.fired) {
+          const message = error instanceof Error ? error.message : downloadStallMessage(Date.now() - state.startedAt)
+          sendEvent({ type: 'error', message: message.slice(0, 500) })
+          logger.error(`[desktop-updates] ${message}`)
+          return { ok: false, error: message.slice(0, 500) }
+        }
         const message = error instanceof Error ? error.message : String(error)
         sendEvent({ type: 'error', message: message.slice(0, 500) })
         return { ok: false, error: message.slice(0, 500) }
       } finally {
+        if (watchdog === state) stopStallWatchdog()
         downloading = false
       }
     },

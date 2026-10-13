@@ -4,7 +4,7 @@
 // 真实 NsisUpdater），因此可在 node 环境直接集成测试（design §1.2-6）。
 // 手动语义（design §1.2-8）：autoDownload=false（检查不自动下载）＋
 // autoInstallOnAppQuit=false（安装必经我们的排空退出管线，不被 Electron 退出钩子绕过）。
-import type { DesktopUpdaterAdapter, UpdateFeed } from './desktop-updates.js'
+import type { DesktopUpdaterAdapter, DownloadCancellation, UpdateFeed } from './desktop-updates.js'
 
 /** electron-updater AppUpdater 的结构子集（本适配层用到的面；测试以 NsisUpdater 实例满足） */
 export interface ElectronUpdaterLike {
@@ -15,7 +15,8 @@ export interface ElectronUpdaterLike {
     isUpdateAvailable: boolean
     updateInfo: { version: string, releaseNotes?: string | Array<{ note?: string }> | null }
   } | null>
-  downloadUpdate(): Promise<unknown>
+  /** electron-updater 接受 CancellationToken（结构子集：cancel()；cancelled 经事件语义表达） */
+  downloadUpdate(cancellationToken?: { cancel(): void }): Promise<unknown>
   quitAndInstall(isSilent?: boolean, isForceRunAfter?: boolean): void
   on(event: 'download-progress', listener: (progress: ProgressInfoLike) => void): unknown
 }
@@ -25,6 +26,25 @@ interface ProgressInfoLike {
   transferred: number
   total: number
   bytesPerSecond: number
+}
+
+/**
+ * electron-updater 同装的 CancellationToken 构造（builder-util-runtime；.cancel() 触发
+ * 下载任务取消——CancellationToken extends EventEmitter，cancelled 状态由 cancel 事件传播）。
+ * 取法沿本模块 defaultDesktopUpdater 的 CJS interop 实证模式（default 通道优先）；
+ * 惰性动态 import：纯决策层测试（不触碰 electron-updater 域）不加载该依赖。
+ */
+async function createCancellationToken(): Promise<{ cancel(): void }> {
+  const module = await import('builder-util-runtime')
+  const holder = (module as {
+    CancellationToken?: unknown
+    default?: { CancellationToken?: unknown }
+  }).default ?? module
+  const Token = (holder as { CancellationToken?: unknown }).CancellationToken
+  if (typeof Token !== 'function') {
+    throw new Error('builder-util-runtime CancellationToken 不可用（CJS interop 未能解析）')
+  }
+  return new (Token as new () => { cancel(): void })()
 }
 
 /** releaseNotes 归一：string 直传；GitHub fullChangelog 的分段数组拼接；缺省 null */
@@ -64,8 +84,16 @@ export function adaptElectronUpdater(updater: ElectronUpdaterLike): DesktopUpdat
       }
     },
 
-    async downloadUpdate() {
-      await updater.downloadUpdate()
+    async downloadUpdate(cancellation?: DownloadCancellation) {
+      // DL-HANG-01：controller 看门狗的尽力中止——转 electron-updater CancellationToken
+      // （cancel() 触发其下载任务中断/CancellationError；网络层挂死时不保证生效，
+      // controller 层看门狗独立收敛，不依赖此处）。
+      const token = await createCancellationToken()
+      if (cancellation !== undefined) {
+        if (cancellation.cancelled) token.cancel()
+        else void cancellation.whenCancelled.then(() => token.cancel())
+      }
+      await updater.downloadUpdate(token)
       // 下载的版本＝最近一次 check 的版本（controller 流程保证 download 必跟 check）
       const version = lastCheckedVersion ?? ''
       lastCheckedNotes = lastCheckedNotes // 保留给后续 check 呈现
