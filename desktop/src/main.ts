@@ -83,7 +83,12 @@ import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js
 import { createFeedFallbackAdapter, readUpdateSourceSetting, resolveDesktopFeedPlan } from './cn-feed.js'
 import { registerUpdateIpc } from './update-ipc.js'
 import { registerArchiveIpc } from './archive-recording.js'
-import { applyPendingHistoryAtBoot, registerMigrationIpc } from './mig-import.js'
+import {
+  applyPendingHistoryAtBoot,
+  consumeOneClickHistoryStaging,
+  registerMigrationIpc,
+  runOneClickRecordingImport,
+} from './mig-import.js'
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
 
 // ===== P0-4（PORT-UPD-01）＋UPD-QUIT-TYPEERROR-GUARD：主进程异常兜底（最后防线） =====
@@ -500,6 +505,10 @@ registerArchiveIpc({
 })
 
 // ===== MIG-EXT-01 v1.2.7 训练历史迁移 IPC（独立通道面；不触碰更新/归档绑定段） =====
+// MIG-ONECLICK-01（2026-10-13 用户拍板）：设置页「从 v1.2.7 迁移」分栏退役，渲染端已无
+// 调用方（preload 暴露面保留但无人 invoke）。底层 IPC 保留论证见
+// docs/verification/2026-10/MIG-ONECLICK-01/README.md：preload.cts 不在本任务可写范围、
+// 该通道有既有测试锁定且作为手动兜底无害。
 // 渲染端经 preload 的 desktopMigration（pick/inspect/importHistory）触发：pick 弹原生文件
 // 选择框选「训练历史迁移-…/迁移清单.json」；inspect 包体检；import 暂存 pending（重启生效）。
 // databasePath 惰性取值（bootServerAndOpen 设置 migrationDatabasePath 后才可用，dev 窗口/
@@ -651,6 +660,17 @@ async function bootServerAndOpen(): Promise<void> {
 
     // proceed：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env。
     // runId 预生成：状态记录 trainer-state.json 与内嵌服务 health 上报同源。
+    // MIG-ONECLICK-01：一键迁移工具已把 v1.2.7 产物暂存到 <dataDir>/migrate-v127-import/
+    // 时，先消费其训练历史半边（复用 stageHistoryImport 产 pending；失败保留暂存、
+    // 下次启动自动重试，绝不阻断启动）——必须先于 applyPendingHistoryAtBoot 才能在
+    // 本次启动完成归位。录像半边在窗口加载完成后注入（见下方 did-finish-load 接线）。
+    try {
+      const consumed = await consumeOneClickHistoryStaging(config.dataDir, config.databasePath)
+      if (consumed.ran && consumed.ok) console.log('[desktop] 一键迁移：v1.2.7 训练历史已暂存，本启动将合并应用（导入前自动备份）')
+      else if (consumed.ran) console.error('[desktop] 一键迁移：训练历史暂存失败（暂存保留，下次启动重试）:', consumed.error)
+    } catch (error) {
+      console.error('[desktop] 一键迁移训练历史消费异常（下次启动自动重试）:', error)
+    }
     // MIG-EXT-01 / MIG-MERGE-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史
     // （统一合并：目标不存在＝pending 就位；存在＝合并导入——备份先行＋单事务＋幂等
     // 跳过＋ns 保留；失败目标零损伤、pending 保留下次自动重试——绝不阻断启动）。
@@ -680,6 +700,29 @@ async function bootServerAndOpen(): Promise<void> {
       databasePath: config.databasePath,
     }))
     mainWindow = createWindow(buildAppUrl(started.port), await loadWindowBounds())
+    // MIG-ONECLICK-01：一键迁移录像半边——页面加载完成后注入暂存的导入器脚本，
+    // 在渲染端上下文把录像合并包写入本安装隔离的 IndexedDB（主进程无法直写；导入
+    // 器与新版页面「导入录制」同链）。成功清理暂存；失败保留下次启动重试（幂等）。
+    // 无一键暂存时 no-op，不触碰页面。did-finish-load 可能多次触发（刷新），runner
+    // 以 manifest consumedAt 门控幂等。
+    {
+      const oneClickWindow = mainWindow
+      oneClickWindow.webContents.on('did-finish-load', () => {
+        void runOneClickRecordingImport({
+          dataDir: config.dataDir,
+          executeJavaScript: code => oneClickWindow.webContents.executeJavaScript(code),
+        })
+          .then(outcome => {
+            if (!outcome.ran) return
+            if (outcome.ok) {
+              console.log(`[desktop] 一键迁移：录像导入完成（成功 ${outcome.summary.imported ?? '?'} / 跳过 ${outcome.summary.skipped ?? '?'} / 失败 ${outcome.summary.failed ?? 0}）`)
+            } else {
+              console.error('[desktop] 一键迁移：录像导入失败（暂存保留，下次启动重试）:', outcome.error)
+            }
+          })
+          .catch(error => console.error('[desktop] 一键迁移录像注入异常（下次启动重试）:', error))
+      })
+    }
   } finally {
     if (lockHeld) {
       lockHeld = false

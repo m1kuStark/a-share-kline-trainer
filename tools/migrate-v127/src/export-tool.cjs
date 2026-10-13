@@ -57,6 +57,9 @@ const HISTORY_COUNT_SOURCES = [
 ]
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 const NAMESPACE_PATTERN = /^[a-f0-9-]{36}$/i
+// MIG-ONECLICK-01：录像合并包格式标记（与 web/src/recording/bundle.ts 的
+// RECORDING_BUNDLE_FORMAT 一致；此处仅做结构识别，条目校验留给新版导入端逐条容错）。
+const RECORDINGS_BUNDLE_FORMAT = 'trainer-recordings-bundle'
 
 // 构建期注入（tools/migrate-v127/build.mjs）；模板态保持占位字符串，仅影响未构建直接运行的 / 页面
 const PAGE_TEMPLATE = "__V127_PAGE_HTML__"
@@ -433,6 +436,69 @@ async function buildHistoryPackage(databasePath, packageRoot, now = new Date()) 
   }
 }
 
+// ===== MIG-ONECLICK-01 一键导出侧辅助（产物全部生成于工具自身文件夹） =====
+
+/**
+ * 一键导出·训练历史：把训练历史迁移包直接生成到 outputDir（一键模式＝工具文件夹自身）。
+ * 返回附加人话 summary（控制台与导出页共用口径）。
+ */
+async function prepareOneClickHistory(databasePath, outputDir) {
+  const result = await buildHistoryPackage(databasePath, outputDir)
+  if (result.ok) {
+    const summary = `训练历史迁移包已生成：${result.folder}（${result.files.map(item => `${item.file} ${item.bytes}B`).join(', ')}）`
+    return { ...result, summary }
+  }
+  return { ok: false, error: result.error, summary: `训练历史迁移包导出失败：${result.error}` }
+}
+
+/**
+ * 一键导出·录像合并包落盘：校验上传内容是 REC-BULK 合并包后写入 outputDir
+ * （一键模式＝工具文件夹自身）。空录像列表＝skip 语义成功（不产文件）；
+ * 非合并包载荷拒绝且不落任何文件（fail-closed）。
+ */
+async function saveUploadedBundle(outputDir, jsonText, now = new Date()) {
+  let parsed
+  try {
+    parsed = JSON.parse(jsonText)
+  } catch (error) {
+    return { ok: false, error: `录像合并包内容不是合法 JSON：${error && error.message ? error.message : error}` }
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { ok: false, error: '录像合并包内容必须是 JSON 对象，拒绝保存。' }
+  }
+  if (parsed.format !== RECORDINGS_BUNDLE_FORMAT) {
+    return { ok: false, error: `上传内容不是训练录像合并包（缺少 format: ${RECORDINGS_BUNDLE_FORMAT}），拒绝保存。` }
+  }
+  if (!Array.isArray(parsed.items)) {
+    return { ok: false, error: '录像合并包缺少 items 数组，拒绝保存。' }
+  }
+  if (!parsed.items.length) return { ok: true, skipped: true }
+  await mkdir(outputDir, { recursive: true })
+  let file = path.join(outputDir, `训练录像库-${stampOf(now)}.trainer-recordings.json`)
+  for (let attempt = 1; await fileExists(file); attempt++) file = path.join(outputDir, `训练录像库-${stampOf(now)}-${attempt}.trainer-recordings.json`)
+  await writeFile(file, jsonText, 'utf8')
+  return { ok: true, file, bytes: Buffer.byteLength(jsonText, 'utf8'), itemCount: parsed.items.length }
+}
+
+/** 读取请求体（JSON 文本；上限 2GB 防御异常载荷） */
+function readBody(request, limitBytes = 2 * 1024 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    let total = 0
+    request.on('data', chunk => {
+      total += chunk.length
+      if (total > limitBytes) {
+        reject(new Error('上传内容超过 2GB 上限'))
+        request.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    request.on('error', reject)
+  })
+}
+
 // ===== 主流程 =====
 
 async function readJsonFile(target) {
@@ -473,6 +539,18 @@ async function main() {
     console.log(usage())
     return
   }
+  await runExportTool(args)
+}
+
+/**
+ * 导出工具主流程（手动模式＝既有「导出训练录像.cmd」行为不变；一键模式＝
+ * MIG-ONECLICK-01：训练历史迁移包先直接生成到 outputDir（工具文件夹），导出页注入
+ * mode=oneclick 自动扫描并上传录像合并包到 /upload-bundle，同样落工具文件夹，
+ * 完成后人话汇总并自动退出）。overrides：{ oneclick?: boolean, outputDir?: string }。
+ */
+async function runExportTool(args, overrides = {}) {
+  const oneclick = Boolean(overrides.oneclick)
+  const outputDir = overrides.outputDir ? path.resolve(overrides.outputDir) : null
 
   const packageRoot = args.packageRoot ? path.resolve(args.packageRoot) : path.dirname(path.dirname(__filename))
   const configRaw = await readJsonFile(path.join(packageRoot, 'trainer.config.json'))
@@ -531,6 +609,14 @@ async function main() {
   // MIG-EXT-01：训练历史摘要（同源只读），注入导出页「训练历史」分节
   const historyRead = await readHistorySummary(databasePath)
 
+  // MIG-ONECLICK-01：一键模式先把训练历史迁移包直接生成到工具文件夹（无需页面交互）
+  let oneclickHistory = null
+  if (oneclick) {
+    oneclickHistory = await prepareOneClickHistory(databasePath, outputDir)
+    console.log(`[一键] ${oneclickHistory.summary}`)
+    if (!oneclickHistory.ok) console.log('[一键] 训练历史导出失败不阻断录像导出；完成后请按页面/控制台提示处理。')
+  }
+
   const layout = {
     packageRoot,
     dataDir: dataDirChoice.dir,
@@ -544,8 +630,26 @@ async function main() {
     history: historyRead.ok
       ? { available: true, sqliteBytes: historyRead.sqliteBytes, counts: historyRead.counts }
       : { available: false, reason: historyRead.error },
+    oneclick,
+    outputDir,
+    oneclickHistory,
   }
   printPlan(layout)
+
+  let oneclickDone = false
+  function finalizeOneClick(recordingsNote) {
+    if (oneclickDone || !oneclick) return
+    oneclickDone = true
+    console.log('── 一键导出完成 ──────────────────────────────')
+    if (oneclickHistory) console.log(`训练历史：${oneclickHistory.ok ? oneclickHistory.folder : `失败——${oneclickHistory.error}`}`)
+    console.log(`训练录像：${recordingsNote}`)
+    console.log('──────────────────────────────────────────────')
+    console.log('下一步：把整个 migrate-v127 工具文件夹（含刚生成的数据文件）拷贝或移动到')
+    console.log('新版本（v1.3.x）安装目录内（与 K线训练器.exe 同一级），双击「一键迁移.cmd」')
+    console.log('完成自动导入。全程无需选择任何路径。')
+    if (oneclickHistory && !oneclickHistory.ok) process.exitCode = 2
+    setTimeout(() => process.exit(oneclickHistory && !oneclickHistory.ok ? 2 : 0), 1500)
+  }
 
   const server = http.createServer((request, response) => {
     void handleRequest(request, response, layout).catch(error => {
@@ -587,6 +691,14 @@ async function main() {
         dataDir: current.dataDir,
         databasePath: current.databasePath,
         history: current.history,
+        ...(current.oneclick ? {
+          mode: 'oneclick',
+          historyExport: current.oneclickHistory
+            ? (current.oneclickHistory.ok
+              ? { ok: true, folder: current.oneclickHistory.folder }
+              : { ok: false, error: current.oneclickHistory.error })
+            : null,
+        } : {}),
       }
       const html = PAGE_TEMPLATE.split(PAGE_INFO_TOKEN).join(JSON.stringify(info))
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
@@ -618,6 +730,43 @@ async function main() {
       response.end(JSON.stringify({ ok: true, folder: result.folder, files: result.files, manifest: result.manifest }))
       return
     }
+    // MIG-ONECLICK-01：一键模式页面自动上传录像合并包，工具写入工具文件夹（手动模式页面不调用）
+    if (request.method === 'POST' && url.pathname === '/upload-bundle') {
+      let payload = null
+      try {
+        payload = JSON.parse(await readBody(request))
+      } catch (error) {
+        const message = `上传内容无法解析：${error instanceof Error ? error.message : String(error)}`
+        console.error(`[一键] ${message}`)
+        response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+        response.end(JSON.stringify({ ok: false, error: message }))
+        return
+      }
+      if (payload && payload.skipped === true) {
+        console.log('[一键] 浏览器内没有旧录像（录像部分已跳过；训练历史迁移包不受影响）。')
+        response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+        response.end(JSON.stringify({ ok: true, skipped: true }))
+        finalizeOneClick('未发现旧录像（已跳过）')
+        return
+      }
+      if (!payload || typeof payload !== 'object' || typeof payload.json !== 'string') {
+        response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+        response.end(JSON.stringify({ ok: false, error: '缺少录像合并包内容（json 字段）。' }))
+        return
+      }
+      const saved = await saveUploadedBundle(current.outputDir ?? current.packageRoot, payload.json)
+      if (!saved.ok) {
+        console.error(`[一键] ${saved.error}`)
+        response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+        response.end(JSON.stringify({ ok: false, error: saved.error }))
+        return
+      }
+      console.log(`[一键] 录像合并包已生成：${saved.file}（${saved.itemCount} 条录像，${(saved.bytes / 1024).toFixed(1)} KB）`)
+      response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+      response.end(JSON.stringify({ ok: true, file: saved.file, itemCount: saved.itemCount }))
+      finalizeOneClick(`${saved.file}（${saved.itemCount} 条录像）`)
+      return
+    }
     if (request.method === 'POST' && url.pathname === '/shutdown') {
       response.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
       response.end(JSON.stringify({ ok: true }))
@@ -641,7 +790,11 @@ async function main() {
   } else {
     console.log('[提示] --no-open：请手动访问上面的地址（必须用平时使用旧训练器的浏览器）。')
   }
-  console.log('[提示] 导出完成后回到本窗口；页面点「完成并关闭工具」或按 Ctrl+C 退出。')
+  if (oneclick) {
+    console.log('[一键] 浏览器页面打开后会自动完成录像扫描与打包上传，无需任何点击；请稍候本窗口出现「一键导出完成」。')
+  } else {
+    console.log('[提示] 导出完成后回到本窗口；页面点「完成并关闭工具」或按 Ctrl+C 退出。')
+  }
 
   process.on('SIGINT', () => {
     console.log('\n[退出] 收到 Ctrl+C。旧数据未被修改。')
@@ -674,11 +827,15 @@ module.exports = {
   pickDataDir,
   resolvePort,
   pidAlive,
+  probeHealth,
   isTrainerHealth,
   stampOf,
   readHistorySummary,
   buildHistoryPackage,
   validateHistorySchema,
+  prepareOneClickHistory,
+  saveUploadedBundle,
+  runExportTool,
   PAGE_INFO_TOKEN,
 }
 
