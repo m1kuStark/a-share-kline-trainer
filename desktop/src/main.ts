@@ -71,6 +71,7 @@ import {
 } from './coexist-guard.js'
 import {
   createDesktopUpdateController,
+  resolveDownloadStallTimeoutMs,
   resolveInstallActionOnExit,
   resolveUpdateChannel,
   resolveUpdateFeed,
@@ -458,6 +459,8 @@ async function setupUpdateChannel(): Promise<void> {
       requestGracefulQuit()
     },
     logger: console,
+    // DL-HANG-01：下载停滞看门狗阈值（90s 缺省；env TRAINER_DESKTOP_DL_STALL_MS 可注入覆盖）
+    stallTimeoutMs: resolveDownloadStallTimeoutMs(process.env),
   })
   registerUpdateIpc({
     ipcMain,

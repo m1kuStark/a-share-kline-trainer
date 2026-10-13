@@ -131,6 +131,7 @@ export interface DesktopUpdatesApi {
 
 /** 主进程→渲染端更新事件（design §2.4 事件表） */
 export type DesktopUpdateEvent =
+  | { type: 'download-started' }
   | { type: 'download-progress', percent: number, transferred: number, total: number, bytesPerSecond: number }
   | { type: 'downloaded', version: string }
   | { type: 'installing' }
@@ -161,6 +162,11 @@ export type DesktopApplyView =
   | { state: 'failed', message: string }
 
 export function desktopEventToApplyView(event: DesktopUpdateEvent): DesktopApplyView {
+  // DL-HANG-01（UPD-DL-START-CONFIRM）：下载触发即进入可观测下载中呈现（0%）——
+  // 「下载未开始」与「下载卡住」对用户可区分（复用既有 downloading 态，非第二口径）
+  if (event.type === 'download-started') {
+    return { state: 'downloading', progressPercent: 0 }
+  }
   if (event.type === 'download-progress') {
     // electron-updater percent 为 0..100；归一到 0..1 走既有夹取管线（同一呈现粒度）
     return { state: 'downloading', progressPercent: updateProgressPercent(event.percent / 100) }
