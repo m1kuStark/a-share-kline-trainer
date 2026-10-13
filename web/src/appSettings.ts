@@ -38,12 +38,6 @@ export interface TdxCandidateCheckInfo {
   problems: string[]
 }
 
-export interface TdxPathSaveResult {
-  saved: SavedTdxChoiceInfo
-  effectiveRoot: string | null
-  restartRequired: true
-}
-
 export interface KeyboardShortcutsSettingsView {
   version: number
   shortcuts: KeyboardShortcutPreferences
@@ -232,7 +226,12 @@ export function setOdoMotion(enabled: boolean): void {
   } catch { /* 持久化失败不阻断会话内切换 */ }
 }
 
-// ===== TDX 数据目录：查看 / 校验 / 保存（保存后重启生效） =====
+// ===== TDX 数据目录：查看 / 校验 / 保存并受控重启生效 =====
+// TDX-RECONNECT-01（2026-10-13 用户验收驱动）：设置分栏保存语义升级——与首配向导
+// （App.vue saveAndApplyWizard，v1.2.7 起的体验基准）同一条受控重启链：
+// save-choice 保存→apply 受理→restart-status 轮询到 ready→自动刷新。
+// 旧的「PUT tdx-path 仅保存＋提示手动重启」客户端调用退役（服务端端点保留兼容）；
+// 编排收口为 runTdxApplyFlow 单一实现，供设置分栏调用（向导后续任务再收敛到同一函数）。
 
 export function fetchTdxPathSettings(): Promise<TdxPathSettingsView> {
   return request('/api/settings/tdx-path')
@@ -246,12 +245,52 @@ export function validateTdxPath(root: string): Promise<{ check: TdxCandidateChec
   })
 }
 
-export function putTdxPath(root: string): Promise<TdxPathSaveResult> {
-  return request('/api/settings/tdx-path', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ root }),
-  })
+/** 轮询节奏与向导逐字一致：700ms×120 轮（约 84s 上限） */
+export const TDX_APPLY_POLL_ATTEMPTS = 120
+export const TDX_APPLY_POLL_INTERVAL_MS = 700
+
+/** 受控重启编排的 IO 注入点（调用方传 api.ts 的 saveSetupChoice/applySetupChoice/fetchRestartStatus） */
+export interface TdxApplyFlowHooks {
+  saveChoice(root: string): Promise<{ apply: { available: boolean; reason?: string } }>
+  applyChoice(root: string, attemptId: string): Promise<unknown>
+  fetchStatus(): Promise<{ phase: string; reason: string | null; done: boolean }>
+  wait(ms: number): Promise<void>
+  newAttemptId(): string
+}
+
+export type TdxApplyFlowOutcome =
+  | { kind: 'saved-only'; reason?: string }
+  | { kind: 'ready' }
+  | { kind: 'restart-failed'; phase: string; reason: string | null }
+  | { kind: 'timeout' }
+  | { kind: 'error'; message: string }
+
+/**
+ * 设置分栏保存→受控重启→轮询生效的编排（与向导 saveAndApplyWizard 同语义）：
+ * 保存不可受理（手动/开发运行、显式来源、活动训练）→ saved-only 带原因；
+ * 受理后轮询 restart-status：done+ready → ready；done 非 ready → restart-failed
+ * （监管进程已回滚保存的选择，原因透传供 UI 呈现）；120 轮无终态 → timeout；
+ * 任一请求异常 → error（保存失败时服务端保留旧选择）。status 拉取瞬时失败
+ * （服务排空窗口）按无结论继续轮询，不中断。
+ */
+export async function runTdxApplyFlow(root: string, hooks: TdxApplyFlowHooks): Promise<TdxApplyFlowOutcome> {
+  try {
+    const saved = await hooks.saveChoice(root)
+    if (!saved.apply.available) return { kind: 'saved-only', reason: saved.apply.reason }
+    await hooks.applyChoice(root, hooks.newAttemptId())
+    for (let attempt = 0; attempt < TDX_APPLY_POLL_ATTEMPTS; attempt++) {
+      await hooks.wait(TDX_APPLY_POLL_INTERVAL_MS)
+      let status: Awaited<ReturnType<typeof hooks.fetchStatus>> | null = null
+      try { status = await hooks.fetchStatus() } catch { status = null }
+      if (status?.done) {
+        if (status.phase === 'ready') return { kind: 'ready' }
+        return { kind: 'restart-failed', phase: status.phase, reason: status.reason }
+      }
+    }
+    return { kind: 'timeout' }
+  } catch (error) {
+    return { kind: 'error', message: error instanceof Error ? error.message : '保存或生效失败' }
+  }
 }
 
 // ===== V1.2.6 训练数据目录：查看 / 保存（写回启动器配置，重启生效；独立运行 409） =====

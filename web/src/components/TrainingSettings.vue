@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { fetchTrainingSettings, putTrainingSettings, selectSetupDirectory, type TrainingSettingsView } from '../api'
+import { fetchTrainingSettings, putTrainingSettings, saveSetupChoice, applySetupChoice, fetchRestartStatus, selectSetupDirectory, type TrainingSettingsView } from '../api'
 import { notifySettingsSaved } from '../settingsPanel'
+import { checkDataStatus } from '../dataStatus'
 import {
   RECONNECT_MAX_ATTEMPTS, UPDATE_STATE_TEXT, decidePollStep, detectUpdateChannel, desktopEventToApplyView,
   DESKTOP_APPLY_STATE_TEXT, isBusyUpdatePhase, updateGuardText, versionLabel,
   type DesktopApplyState, type DesktopUpdatesApi, type UpdateFlowState,
 } from '../updateFlow'
 import {
-  fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath, putTdxPath,
+  fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath,
+  runTdxApplyFlow,
   fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
   fetchDataDirSettings, putDataDir, type DataDirSettingsView,
   appOdoMotion, setOdoMotion,
@@ -28,9 +30,10 @@ import {
 // 默认只影响之后新建的训练；本局规则在创建时冻结。弹层只保留标题栏关闭出口。
 // 损坏默认（409 TRAINING_DEFAULTS_UNREADABLE）不是死局：面板即修复入口，完整保存即可修复。
 // M5-01 新增两个区块：应用偏好（自动检查日线数据，即时保存即时生效）与
-// 数据目录（通达信）（查看/校验/保存，保存后需重启应用生效；失败保留原选择）。
+// 数据目录（通达信）（查看/校验/保存；TDX-RECONNECT-01 起保存即走与首配向导相同的
+// 受控重启链立即生效，不再要求手动重启应用；保存失败保留原选择、重启未达 ready 自动回滚并如实呈现）。
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; 'tdx-connected': [] }>()
 
 // UPD-NOTIFY-01：首页更新提示跳转入口——打开即直入指定分栏，并（desktop 通道）以主进程
 // boot 自动检查的结果为初值呈现；两个 prop 均缺省时行为与既有打开完全一致（默认分栏＋手动检查）。
@@ -358,7 +361,11 @@ function onOdoMotionChange(event: Event): void {
   setOdoMotion((event.target as HTMLInputElement).checked)
 }
 
-// ===== M5-01 数据目录（通达信）：查看 / 校验 / 保存（重启生效） =====
+// ===== M5-01 数据目录（通达信）：查看 / 校验 / 保存并受控重启生效 =====
+// TDX-RECONNECT-01（2026-10-13 用户验收驱动）：保存按钮不再「仅保存＋提示手动重启」，
+// 而是与首配向导（App.vue saveAndApplyWizard，v1.2.7 体验基准）同一条受控重启链：
+// 保存→服务受控重启（排空→优雅退出→拉起新服务，失败自动回滚）→轮询到 ready→
+// 自动刷新数据状态并通知父级刷新连接状态。用户全程无感，无需重启应用。
 const tdxView = ref<TdxPathSettingsView | null>(null)
 const tdxLoadError = ref('')
 const tdxPathInput = ref('')
@@ -367,6 +374,7 @@ const tdxChecking = ref(false)
 const tdxCheck = ref<TdxCandidateCheckInfo | null>(null)
 const tdxCheckError = ref('')
 const tdxSaving = ref(false)
+const tdxApplying = ref(false)
 const tdxError = ref('')
 const tdxSavedMessage = ref('')
 
@@ -791,7 +799,7 @@ async function saveDataDir(): Promise<void> {
 }
 
 async function checkTdxPath(): Promise<void> {
-  if (tdxChecking.value || tdxSaving.value) return
+  if (tdxChecking.value || tdxSaving.value || tdxApplying.value) return
   const root = tdxPathInput.value.trim()
   if (root === '') {
     tdxCheckError.value = '请先填写通达信安装根目录'
@@ -812,7 +820,7 @@ async function checkTdxPath(): Promise<void> {
 }
 
 async function saveTdxPath(): Promise<void> {
-  if (tdxSaving.value || tdxChecking.value) return
+  if (tdxSaving.value || tdxChecking.value || tdxApplying.value) return
   const root = tdxPathInput.value.trim()
   if (root === '') {
     tdxError.value = '请先填写通达信安装根目录'
@@ -821,23 +829,58 @@ async function saveTdxPath(): Promise<void> {
   tdxSaving.value = true
   tdxError.value = ''
   tdxSavedMessage.value = ''
+  tdxCheck.value = null
   try {
-    // 服务端保存前复验＋原子替换：失败 400 带可行动问题清单，已保存选择原样保留
-    const result = await putTdxPath(root)
-    tdxView.value = { effectiveRoot: result.effectiveRoot, savedChoice: result.saved }
-    tdxCheck.value = null
-    tdxSavedMessage.value = result.effectiveRoot === result.saved.root
-      ? '已保存：与当前生效目录一致，重启应用后按此目录读取'
-      : '已保存：重启应用后生效（当前会话仍使用原目录；离线导入回放不受影响）'
-  } catch (error) {
-    tdxError.value = error instanceof Error ? error.message : '保存失败，已保留原选择'
+    // TDX-RECONNECT-01：与向导同一条受控重启链（save-choice→apply→restart-status 轮询）。
+    // 保存失败（复验 400 等）由 error 分支呈现可行动 message，已保存选择原样保留；
+    // 重启未达 ready 由监管进程回滚保存的选择，restart-failed 分支如实呈现原因。
+    tdxApplying.value = true
+    const outcome = await runTdxApplyFlow(root, {
+      saveChoice: saveSetupChoice,
+      applyChoice: applySetupChoice,
+      fetchStatus: fetchRestartStatus,
+      wait: ms => new Promise(resolve => setTimeout(resolve, ms)),
+      newAttemptId: () => crypto.randomUUID(),
+    })
+    if (outcome.kind === 'ready') {
+      tdxSavedMessage.value = '已切换到新的通达信目录。'
+      await refreshTdxView()
+      // manual：用户显式保存动作链路，不受「自动检查日线数据」偏好门闩（M5-01 手动路径口径）
+      await checkDataStatus({ force: true, manual: true })
+      emit('tdx-connected')
+      return
+    }
+    if (outcome.kind === 'saved-only') {
+      tdxSavedMessage.value = `已保存：${outcome.reason ?? '将在下次启动服务时生效'}`
+      await refreshTdxView()
+      return
+    }
+    if (outcome.kind === 'restart-failed') {
+      tdxError.value = outcome.reason ?? `重启未完成（${outcome.phase}），保存的选择已回滚`
+      await refreshTdxView()
+      return
+    }
+    if (outcome.kind === 'timeout') {
+      tdxError.value = '重启确认超时：服务可能仍在切换，请稍后刷新页面查看连接状态'
+      await refreshTdxView()
+      return
+    }
+    tdxError.value = outcome.message
+    await refreshTdxView()
   } finally {
+    tdxApplying.value = false
     tdxSaving.value = false
   }
 }
 
+async function refreshTdxView(): Promise<void> {
+  try {
+    tdxView.value = await fetchTdxPathSettings()
+  } catch { /* 服务可能仍在切换窗口；下次打开分栏会重新读取 */ }
+}
+
 async function chooseTdxDirectory(): Promise<void> {
-  if (tdxChecking.value || tdxSaving.value) return
+  if (tdxChecking.value || tdxSaving.value || tdxApplying.value) return
   tdxCheckError.value = ''
   tdxError.value = ''
   tdxSavedMessage.value = ''
@@ -1034,7 +1077,7 @@ function close(): void {
         <h4 class="settings-subsection">数据目录（通达信）</h4>
         <p class="settings-section-note">
           <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code></span>
-          <span v-if="tdxView?.savedChoice">；已保存：<code>{{ tdxView.savedChoice.root }}</code><template v-if="tdxView.savedChoice.root !== tdxView.effectiveRoot">（与当前不同，重启后生效）</template></span>
+          <span v-if="tdxView?.savedChoice">；已保存：<code>{{ tdxView.savedChoice.root }}</code><template v-if="tdxView.savedChoice.root !== tdxView.effectiveRoot">（与当前不同，下次启动生效）</template></span>
           <span v-else>；尚未保存过选择</span>
         </p>
         <div class="settings-row settings-column">
@@ -1047,9 +1090,9 @@ function close(): void {
           <small>选择包含 vipdoc 与 T0002 的通达信根目录；保存前会重新校验，保存失败不会改动之前的选择。</small>
         </div>
         <div class="settings-actions">
-          <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="chooseTdxDirectory">选择文件夹…</button>
-          <button class="ghost-button" :disabled="tdxChecking || tdxSaving" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
-          <button class="trade-action buy" :disabled="tdxSaving || tdxChecking || tdxPathInput.trim() === ''" @click="saveTdxPath">{{ tdxSaving ? '保存中…' : '保存数据目录' }}</button>
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying" @click="chooseTdxDirectory">选择文件夹…</button>
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
+          <button class="trade-action buy" :disabled="tdxSaving || tdxChecking || tdxApplying || tdxPathInput.trim() === ''" @click="saveTdxPath">{{ tdxApplying ? '生效中…' : tdxSaving ? '保存中…' : '保存数据目录' }}</button>
         </div>
         <div v-if="tdxCheck" class="settings-tdx-check" role="status">
           <span>
