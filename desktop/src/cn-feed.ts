@@ -30,14 +30,20 @@ export interface FeedAttemptRecord {
   error: string | null
 }
 
-/** 尾斜杠归一的 URL 拼接（与 server 侧 cnMirrorManifestUrl 同口径） */
-function joinUrl(base: string, fileName: string): string {
-  return `${base.replace(/\/+$/, '')}/${fileName}`
-}
-
-/** electron-updater 镜像 feed 地址＝<base>/latest.yml（与 sync 脚本产出文件名一致） */
-export function cnMirrorLatestYmlUrl(mirrorBase: string = CN_MIRROR_BASE): string {
-  return joinUrl(mirrorBase, 'latest.yml')
+/**
+ * electron-updater 镜像 feed URL＝目录形态 <base>/（尾斜杠归一）。
+ * MIRROR-URL-FIX（v1.3.3）：electron-updater GenericProvider 把 configuration.url 作
+ * baseUrl 再拼 channel 文件（out/providers/GenericProvider.js:12
+ * `baseUrl = newBaseUrl(url)`（pathname 无尾斜杠则补）→ :25
+ * `newUrlFromBase(getChannelFilename('latest'), baseUrl)`）。全 URL …/feed/latest.yml
+ * 会被解析为 …/feed/latest.yml/latest.yml（双拼 404）。W-D 真机实证（2026-10-13）：
+ * 目录形态 2.3s 成功发现 v1.3.2（三次稳定）；全 URL 404。
+ * latest.yml 文件名由库向 <base>/latest.yml 请求——与 desktop/scripts/sync-feed-lib.mjs
+ * 产出文件名一致（原 cnMirrorLatestYmlUrl 更名：该名指称「latest.yml 文件 URL」正是
+ * v1.3.2 双拼缺陷的心智模型根源）。
+ */
+export function cnMirrorFeedUrl(mirrorBase: string = CN_MIRROR_BASE): string {
+  return `${mirrorBase.replace(/\/+$/, '')}/`
 }
 
 /**
@@ -62,7 +68,7 @@ export function resolveDesktopFeedPlan(
   const base = mirrorBase.trim()
   if (base !== '') {
     return [
-      { label: 'cn-mirror', feed: { provider: 'generic', url: cnMirrorLatestYmlUrl(base) } },
+      { label: 'cn-mirror', feed: { provider: 'generic', url: cnMirrorFeedUrl(base) } },
       { label: 'github', feed: { ...DEFAULT_GITHUB_FEED } },
     ]
   }

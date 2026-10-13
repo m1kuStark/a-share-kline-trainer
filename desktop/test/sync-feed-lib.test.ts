@@ -87,6 +87,30 @@ describe('RELEASE-CN-FEED-SYNC: latest.yml 镜像改写', () => {
   })
 })
 
+describe('MIRROR-URL-FIX: latest.yml releaseNotes 注入（RELEASE-CN-FEED-SYNC 行为增强，v1.3.3）', () => {
+  // desktop 链「更新内容」区来自 electron-updater UpdateInfo.releaseNotes——generic provider
+  // 把 latest.yml 顶层标量原样透传（desktop/src/update-adapter.ts normalizeReleaseNotes 消费
+  // string 形态）。GitHub 源的 notes 来自 Release body，镜像源此前无此字段导致「更新内容」
+  // 空——改写器补 releaseNotes（值=--notes 参数；无则空串）。
+  it('rewriteLatestYmlForMirror 注入 releaseNotes（notes 参数→单引号标量，缺省空串，幂等替换恰一行）', () => {
+    const setupBytes = Buffer.from('setup-bytes-notes')
+    const input = fixtureLatestYml(setupBytes)
+    const rewritten = rewriteLatestYmlForMirror(input, MIRROR_BASE, "v1.3.3 修复'默认镜像源'不生效")
+    // 单引号 YAML 标量：内部单引号加倍转义
+    expect(rewritten).toContain(`releaseNotes: 'v1.3.3 修复''默认镜像源''不生效'`)
+    // 行级幂等：已含 releaseNotes 的产物（本脚本输出）重跑替换为最新值，恰一行
+    const rerun = rewriteLatestYmlForMirror(rewritten, MIRROR_BASE, '更新说明 v2')
+    expect(rerun).toContain(`releaseNotes: '更新说明 v2'`)
+    expect(rerun.match(/releaseNotes:/g)).toHaveLength(1)
+    // 缺省 notes → 空串字段仍在位（字段自描述；electron-updater 归一为 null 呈现）
+    expect(rewriteLatestYmlForMirror(input, MIRROR_BASE)).toContain(`releaseNotes: ''`)
+    // 多行 notes 折叠为单行标量（YAML 单引号标量不含裸换行）
+    expect(rewriteLatestYmlForMirror(input, MIRROR_BASE, '第一行\n第二行')).toContain(`releaseNotes: '第一行 第二行'`)
+    // 既有改写义务不回归：path 仍改写为镜像绝对 URL
+    expect(parseLatestYml(rewriteLatestYmlForMirror(input, MIRROR_BASE, '说明')).path).toBe(`${MIRROR_BASE}/${SETUP_NAME}`)
+  })
+})
+
 describe('RELEASE-CN-FEED-SYNC: manifest.json 同形状（GitHub API 字段子集）', () => {
   it('tag_name 带版本、zip 资产按精确名、SHA256SUMS 资产在位、绝对 URL、按名排序', () => {
     const assets = [
@@ -125,10 +149,12 @@ describe('RELEASE-CN-FEED-SYNC: runCnFeedSync 真实 fs（产出＋自校验；�
       // 产物齐备：两个生成文件＋五个复制文件
       const files = (await readdir(outDir)).sort()
       expect(files).toEqual(['SHA256SUMS', 'latest.yml', 'manifest.json', MIGRATE_NAME, SETUP_NAME, BLOCKMAP_NAME, ZIP_NAME].sort())
-      // latest.yml 改写正确（独立重算 sha512）
-      const outYml = parseLatestYml(await readFile(join(outDir, 'latest.yml'), 'utf8'))
+      // latest.yml 改写正确（独立重算 sha512）；MIRROR-URL-FIX：notes 写入 releaseNotes 字段
+      const outYmlRaw = await readFile(join(outDir, 'latest.yml'), 'utf8')
+      const outYml = parseLatestYml(outYmlRaw)
       expect(outYml.path).toBe(`${MIRROR_BASE}/${SETUP_NAME}`)
       expect(outYml.files[0]?.sha512).toBe(sha512Base64Of(setupBytes))
+      expect(outYmlRaw).toContain(`releaseNotes: '镜像发布'`)
       // manifest.json 形状（zip 资产按精确名＋绝对 URL）
       const outManifest = JSON.parse(await readFile(join(outDir, 'manifest.json'), 'utf8')) as {
         tag_name: string

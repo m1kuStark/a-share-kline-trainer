@@ -6,7 +6,8 @@
 // blockmap/zip/SHA256SUMS/migrate-v127.zip；产出后自校验 fail-closed。
 // 零外部凭证依赖：本脚本不触网不上传（上传动作由 orchestrator 经托管控制台完成）。
 // 同步义务：manifest.json 文件名＝server/src/update/manifest.ts cnMirrorManifestUrl；
-// latest.yml 文件名＝desktop/src/cn-feed.ts cnMirrorLatestYmlUrl（改名需两处＋本脚本）。
+// latest.yml 文件名＝electron-updater GenericProvider 向镜像 feed URL（desktop/src/cn-feed.ts
+// cnMirrorFeedUrl，目录形态 <base>/）请求的 <base>/latest.yml（改名/移位需两处＋本脚本）。
 // 注：无 shebang——repo 惯例＝可测代码放无 shebang 的文件（vitest/esbuild 解析约束）。
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
@@ -56,11 +57,25 @@ async function pathExists(path) {
 }
 
 /**
+ * releaseNotes 行（MIRROR-URL-FIX v1.3.3 随热修带上，RELEASE-CN-FEED-SYNC 行为增强）：
+ * desktop 链「更新内容」区来自 electron-updater UpdateInfo.releaseNotes（generic provider
+ * 把 latest.yml 顶层标量透传，desktop/src/update-adapter.ts normalizeReleaseNotes 消费
+ * string 形态）；GitHub 源的 notes 来自 Release body，镜像源此前无此字段导致更新内容空。
+ * 值＝--notes 参数；无则空串（字段自描述）。单引号 YAML 标量：内部单引号加倍转义、
+ * 换行折叠为空格（单引号标量不含裸换行）。
+ */
+function releaseNotesLine(notes) {
+  const folded = String(notes ?? '').replace(/\r?\n/g, ' ')
+  return `releaseNotes: '${folded.replace(/'/g, "''")}'`
+}
+
+/**
  * latest.yml 镜像改写：`path:` 与 `files[].url:` 值改写为 <base>/<文件名> 绝对 URL；
- * 其余行（sha512/size/releaseDate 等）逐字保留（行级改写，不经解析重渲染，杜绝字段丢失）。
+ * 注入/替换顶层 `releaseNotes:`（见 releaseNotesLine）；其余行（sha512/size/releaseDate 等）
+ * 逐字保留（行级改写，不经解析重渲染，杜绝字段丢失）。
  * 先 parseLatestYml 校验输入合法（fail-closed）；已是绝对 URL 的行保持原样（幂等重跑）。
  */
-export function rewriteLatestYmlForMirror(text, mirrorBase) {
+export function rewriteLatestYmlForMirror(text, mirrorBase, notes = '') {
   const base = assertMirrorBase(mirrorBase)
   parseLatestYml(text) // 输入必须是可解析的 latest.yml，否则 throw
   const scalarValue = raw => {
@@ -75,16 +90,26 @@ export function rewriteLatestYmlForMirror(text, mirrorBase) {
     if (/^https?:\/\//.test(value)) return value // 已是绝对 URL（幂等）
     return joinUrl(base, value)
   }
-  return text
-    .split(/\r?\n/)
-    .map(line => {
-      const pathMatch = /^(\s*path:\s*)(.*)$/.exec(line)
-      if (pathMatch) return `${pathMatch[1]}${absolutize(pathMatch[2])}`
-      const urlMatch = /^(\s*-\s*url:\s*)(.*)$/.exec(line)
-      if (urlMatch) return `${urlMatch[1]}${absolutize(urlMatch[2])}`
-      return line
-    })
-    .join('\n')
+  const notesLine = releaseNotesLine(notes)
+  let notesEmitted = false
+  const lines = text.split(/\r?\n/).map(line => {
+    const pathMatch = /^(\s*path:\s*)(.*)$/.exec(line)
+    if (pathMatch) return `${pathMatch[1]}${absolutize(pathMatch[2])}`
+    const urlMatch = /^(\s*-\s*url:\s*)(.*)$/.exec(line)
+    if (urlMatch) return `${urlMatch[1]}${absolutize(urlMatch[2])}`
+    if (/^releaseNotes:\s/.test(line)) { // 已有顶层行 → 原位替换（幂等）
+      notesEmitted = true
+      return notesLine
+    }
+    return line
+  })
+  if (!notesEmitted) {
+    // 无既有行 → 插到顶层 version: 行之后（parseLatestYml 已保证 version 在，兜底 push 到末尾）
+    const versionIndex = lines.findIndex(line => /^version:\s/.test(line))
+    if (versionIndex >= 0) lines.splice(versionIndex + 1, 0, notesLine)
+    else lines.push(notesLine)
+  }
+  return lines.join('\n')
 }
 
 /**
@@ -165,7 +190,7 @@ export async function runCnFeedSync({ releaseDir, mirrorBase, notes = '', outDir
   }
   await mkdir(target, { recursive: true })
 
-  await writeFile(join(target, 'latest.yml'), rewriteLatestYmlForMirror(sourceYmlText, base), 'utf8')
+  await writeFile(join(target, 'latest.yml'), rewriteLatestYmlForMirror(sourceYmlText, base, notes), 'utf8')
   const assetSizes = []
   for (const name of copyNames) {
     await copyFile(join(releaseDir, name), join(target, name))
@@ -198,6 +223,10 @@ export async function verifyCnFeedOutput({ releaseDir, outDir, mirrorBase }) {
 
   if (!parsed.path.startsWith(`${base}/`)) {
     throw new Error(`输出 latest.yml path 未指向镜像前缀 ${base}/：${parsed.path}`)
+  }
+  // MIRROR-URL-FIX（v1.3.3）：releaseNotes 字段必须在位（desktop 链「更新内容」区消费）
+  if (!/^releaseNotes:/m.test(outYmlText)) {
+    throw new Error('输出 latest.yml 缺少 releaseNotes 字段（desktop 更新内容展示依赖）')
   }
   for (const file of parsed.files) {
     if (!file.url.startsWith(`${base}/`)) {
