@@ -1,0 +1,26 @@
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 12 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m导入暂存（stageHistoryImport）[2m > [22mstageHistoryImport: 目标库非空时不再拒绝（合并语义），预查跳过计数正确且目标原状
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m导入暂存（stageHistoryImport）[2m > [22mstageHistoryImport: 目标库不存在时按空库采用（首启干净场景）
+[31m[1mAssertionError[22m: expected undefined to be +0 // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mapplyPendingHistoryAtBoot: 目标存在且为空时合并导入并留备份（不再整库换入）
+[31m[1mAssertionError[22m: expected undefined to be 3 // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-NONEMPTY: 目标非空（用户已先训练）时合并导入，新旧训练并存且既有数据零损伤
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-ID-REMAP: 导入局 ID 与既有局冲突时分配新 ID 并全链重映射引用，不覆盖不丢弃
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-IDEMPOTENT: 同一迁移包二次导入按业务键跳过全部局且子表不重复
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-NS-PRESERVE: 空/非空目标合并后 recording_namespace 均不变，cache_meta 其他键仅缺失时带入
+[31m[1mAssertionError[22m: expected 'bbbbbbbb-bbbb-4bbb-8bbb-cccccccccccc' to be 'aaaaaaaa-aaaa-4aaa-8aaa-dddddddddddd' // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-SCHEMA-STAGE: 包库 schema 旧于当前，经暂存升级后合并入目标可读（rules_json 冻结、random_mode 列在）
+[31m[1mAssertionError[22m: expected undefined to be 2 // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-ATOMIC-RECOVER: 合并中断时目标库回导入前状态、pending 保留，修复后重试成功
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mMIG-MERGE-BACKUP: 合并前整库备份 .pre-migration-<时间戳>.bak 且内容为导入前状态
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）[2m > [22mapplyPendingHistoryAtBoot: 暂存后用户又新建训练（先训练后迁移场景）仍合并并存
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+[41m[1m FAIL [22m[49m desktop/test/mig-import.test.ts[2m > [22m迁移 IPC（registerMigrationIpc）[2m > [22mregisterMigrationIpc: pick→inspect→import 路由贯通（注入 picker，真实包）
+[31m[1mAssertionError[22m: expected undefined to be +0 // Object.is equality[39m
+[2m      Tests [22m [1m[31m12 failed[39m[22m[2m | [22m[1m[32m13 passed[39m[22m[90m (25)[39m

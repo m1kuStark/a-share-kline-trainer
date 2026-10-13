@@ -379,15 +379,16 @@ const dataDirSaving = ref(false)
 const dataDirError = ref('')
 const dataDirSavedMessage = ref('')
 
-// ===== MIG-EXT-01 从 v1.2.7 迁移分栏：训练历史（SQLite）显式导入 =====
+// ===== MIG-EXT-01 / MIG-MERGE-01 从 v1.2.7 迁移分栏：训练历史（SQLite）显式导入 =====
 // 用户拍板（2026-10-11）：v1.2.7 训练历史与录像都经迁移工具显式迁入，v1.3.0 不自动吸收。
 // 本分栏只做第二步（历史导入）：pick 选迁移清单.json → inspect 包体检计数 → import 暂存
-// （重启生效，主进程原子换库）；录像迁移走「训练录像」页导入合并包（两步顺序随意）。
+// （重启后主进程合并进当前库——空库/已有训练均支持，重复局按业务键跳过）；录像迁移走
+// 「训练录像」页导入合并包（两步顺序随意，迁移顺序不影响成功率——用户拍板 2026-10-13）。
 // 纯浏览器/dev 无 window.desktopMigration → 按钮禁用＋说明（fail-closed，不误报错误）。
 interface DesktopMigrationApi {
   pick(): Promise<{ ok: true; manifestPath: string } | { ok: false; error: string }>
   inspect(manifestPath: string): Promise<{ ok: true; counts: Record<string, number> } | { ok: false; error: string }>
-  importHistory(manifestPath: string): Promise<{ ok: true; requiresRestart: boolean; trainings: number } | { ok: false; error: string }>
+  importHistory(manifestPath: string): Promise<{ ok: true; requiresRestart: boolean; trainings: number; skipped: number; importing: number } | { ok: false; error: string }>
 }
 const desktopMigrationApi = ((): DesktopMigrationApi | null => {
   const holder = window as unknown as { desktopMigration?: DesktopMigrationApi }
@@ -445,7 +446,9 @@ async function importMigrationHistory(): Promise<void> {
       migrationError.value = outcome.error
       return
     }
-    migrationNotice.value = `已导入 ${outcome.trainings} 条训练记录，重启训练器后生效（原空库已自动备份保留）。`
+    migrationNotice.value = outcome.skipped > 0
+      ? `已准备合并 ${outcome.importing} 条训练记录（另有 ${outcome.skipped} 条已存在，导入时将自动跳过），重启训练器后生效；合并前会自动备份当前训练库。`
+      : `已准备导入 ${outcome.importing} 条训练记录，重启训练器后生效；合并前会自动备份当前训练库。`
   } catch (error) {
     migrationError.value = error instanceof Error ? error.message : String(error)
   } finally {
@@ -1010,7 +1013,7 @@ function close(): void {
           <li>训练录像：在旧版安装文件夹运行迁移导出工具，导出「训练录像库-….trainer-recordings.json」，再到本应用的「训练录像」页点「导入录制」选择该文件。</li>
           <li>训练历史：在同一工具页面点「导出训练历史迁移包」，得到「训练历史迁移-时间戳」文件夹；回到本页点下方按钮，选择该文件夹中的 迁移清单.json 完成导入。</li>
         </ol>
-        <p class="settings-section-note">迁移不会修改或删除旧版本里的任何数据；训练历史只能导入到尚未使用的空训练库（当前库已有训练记录时会明确拒绝，不会合并）。导入完成后需重启本应用生效。</p>
+        <p class="settings-section-note">迁移不会修改或删除旧版本里的任何数据；训练历史会合并进当前训练库，与已有的新训练记录并存（同一训练按业务键自动跳过、不重复导入），导入前会自动备份当前训练库。导入完成后需重启本应用生效。</p>
         <p v-if="!desktopMigrationApi" class="error-text" role="alert">此功能仅在桌面应用中可用（浏览器环境无本地文件访问）。</p>
         <div class="settings-actions">
           <button class="ghost-button" :disabled="migrationBusy || !desktopMigrationApi" @click="pickMigrationManifest">

@@ -6,17 +6,20 @@
 // 自包含副本＋迁移清单.json，中文文件名＋ASCII 键——P4 拍板风格）→ 本模块三段式：
 //   1. parseHistoryManifest/inspectHistoryPackage：清单契约解析＋包体检（sha256 与清单
 //      一致、库 schema 为合法 v1.2.7 形状、清单计数与包内实际计数一致）。
-//   2. stageHistoryImport（设置页「从 v1.2.7 迁移」触发）：fail-closed——目标库非空
-//      （7 张内容表任一有行）即人话拒绝合并；空库才采用：包内库拷到临时名→server
-//      migrateDatabase 升级为 v1.3.0 schema→rename 为 <库>.v127-history-pending（原子，
-//      中断不留残留、不动现有库）。
-//   3. applyPendingHistoryAtBoot（下次启动、内嵌服务开库前）：pending 就位且目标库仍为
-//      空→原库 rename 备份（pre-migration-<时间戳>.bak）→pending 换入；换库失败回滚
-//      恢复原库、pending 保留可重试；目标已变非空→暂缓保留 pending。
+//   2. stageHistoryImport（设置页「从 v1.2.7 迁移」触发）：包体检＋目标库可读性检查→
+//      包内库拷到临时名→server migrateDatabase 升级为 v1.3.0 schema→rename 为
+//      <库>.v127-history-pending（原子，中断不留残留、不动现有库）；同时只读预查
+//      幂等键命中数（向用户呈现将跳过多少局）。
+//   3. applyPendingHistoryAtBoot（下次启动、内嵌服务开库前）：目标库不存在＝pending
+//      直接 rename 就位；存在（空或非空）＝MIG-MERGE-01 统一合并导入——VACUUM INTO
+//      整库备份→单事务逐局 INSERT（幂等键 code+created_at 跳过已存在局、ID 重分配、
+//      子表引用重映射、recording_namespace 永不改动），失败 ROLLBACK 目标零损伤、
+//      pending 保留可重试。合并式导入使「先训练后迁移 / 先迁移后训练 / 先导录像后迁
+//      历史」顺序无关（用户拍板 2026-10-13：迁移顺序不应影响迁移成功率）。
 // schema 契约（必备表＋关键列）与 tools/migrate-v127/src/export-tool.cjs 互为镜像，
 // 两侧各有测试锁定（改一侧必须同步另一侧）。
 import { createHash } from 'node:crypto'
-import { statSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -29,6 +32,15 @@ export const PENDING_HISTORY_SUFFIX = '.v127-history-pending'
 const INCOMING_SUFFIX = '.mig-incoming'
 const MANIFEST_FORMAT = 'trainer-history-migration'
 const MANIFEST_VERSION = 1
+/** 合并幂等业务键中 code 与 created_at 的分隔符（两列均 TEXT NOT NULL，不含 NUL） */
+const KEY_SEPARATOR = '\u0000'
+/** node:sqlite 绑定值域（行原值经此归一：undefined→null，其余原样） */
+type SqlValue = null | number | bigint | string | Uint8Array
+function toSqlValue(value: unknown): SqlValue {
+  return value === null || value === undefined ? null : value as SqlValue
+}
+/** 合并导入涉及的训练内容表（trainings 之外的子表；settings/stocks 等配置缓存不并入） */
+const CHILD_TABLES = ['trades', 'orders', 'equity_curve', 'position_events', 'drawings', 'trade_notes'] as const
 
 // ===== v1.2.7 合法训练库契约（镜像 export-tool.cjs；表清单含 settings/cache_meta 作为训练器库身份标记） =====
 const REQUIRED_TABLES = ['trainings', 'trades', 'orders', 'equity_curve', 'position_events', 'drawings', 'trade_notes', 'settings', 'cache_meta'] as const
@@ -238,7 +250,7 @@ export async function inspectHistoryPackage(manifestPath: string): Promise<Inspe
   }
 }
 
-// ===== 目标库空态判定（fail-closed：判不了就拒绝） =====
+// ===== 目标库可读性判定（fail-closed：判不了就拒绝） =====
 
 type TargetEmptiness =
   | { kind: 'absent' }
@@ -246,7 +258,7 @@ type TargetEmptiness =
   | { kind: 'non-empty', trainings: number }
   | { kind: 'unreadable', error: string }
 
-/** 只读判定目标库是否已有训练历史：不存在＝absent；7 张内容表全部零行（或表未建）＝空；开不了库＝判不了 */
+/** 只读检查目标库状态（MIG-MERGE-01 后空/非空都走合并，此处主要识别 absent 与 unreadable） */
 function readTargetEmptiness(targetPath: string): TargetEmptiness {
   try {
     statSync(targetPath)
@@ -291,17 +303,48 @@ async function fileExists(fs: MigrationFsDeps, path: string): Promise<boolean> {
   }
 }
 
+/** pending 就位/删除后清掉其可能残留的 WAL sidecar（正常关闭会被 SQLite 回收，此处兜底防数据目录落垃圾） */
+async function removePendingSidecars(fs: MigrationFsDeps, pending: string): Promise<void> {
+  await fs.rm(`${pending}-wal`).catch(() => { /* 不存在即已清理 */ })
+  await fs.rm(`${pending}-shm`).catch(() => { /* 同上 */ })
+}
+
 // ===== 导入暂存（设置页触发） =====
 
 export type StageOutcome =
-  | { ok: true, requiresRestart: true, trainings: number, counts: HistoryCounts }
+  | { ok: true, requiresRestart: true, trainings: number, counts: HistoryCounts, skipped: number, importing: number }
   | { ok: false, error: string }
 
+/** 读库内全部训练的幂等业务键集合（code＋created_at） */
+function readTrainingKeys(databasePath: string, readOnly: boolean): Set<string> {
+  const database = readOnly
+    ? new DatabaseSync(databasePath, { readOnly: true })
+    : new DatabaseSync(databasePath)
+  try {
+    const rows = database.prepare('SELECT code, created_at FROM trainings').all() as Array<{ code: string, created_at: string }>
+    return new Set(rows.map(row => `${row.code}${KEY_SEPARATOR}${row.created_at}`))
+  } finally {
+    database.close()
+  }
+}
+
+/** 只读预查：包内多少局按幂等键已存在于目标（呈现用估计值；boot 合并以事务内活查为准） */
+function countSkippedTrainings(packageSqlitePath: string, targetPath: string): number {
+  const packageKeys = readTrainingKeys(packageSqlitePath, true)
+  const targetKeys = readTrainingKeys(targetPath, true)
+  let skipped = 0
+  for (const key of packageKeys) {
+    if (targetKeys.has(key)) skipped += 1
+  }
+  return skipped
+}
+
 /**
- * 把迁移包暂存为待应用库（不动现有库）：包体检全过＋目标库为空 → 包内库拷到
+ * 把迁移包暂存为待合并库（不动现有库）：包体检全过＋目标库可读 → 包内库拷到
  * <目标库>.mig-incoming → server migrateDatabase 升级为 v1.3.0 schema → rename 为
- * <目标库>.v127-history-pending（下次启动应用）。任何一步失败：清理临时文件、
- * 现有库与已有 pending 之外的任何状态零改动（可安全重试）。
+ * <目标库>.v127-history-pending（下次启动合并应用；目标空/非空均可，MIG-MERGE-01）。
+ * 同时只读预查幂等键命中数 skipped（向用户呈现将跳过多少局）。任何一步失败：清理
+ * 临时文件、现有库与已有 pending 之外的任何状态零改动（可安全重试）。
  */
 export async function stageHistoryImport(
   manifestPath: string,
@@ -315,12 +358,9 @@ export async function stageHistoryImport(
   if (emptiness.kind === 'unreadable') {
     return { ok: false, error: `无法确认当前训练库状态（${emptiness.error}），已取消导入；请先正常启动一次训练器后重试。` }
   }
-  if (emptiness.kind === 'non-empty') {
-    return {
-      ok: false,
-      error: `当前训练库已有训练历史（${emptiness.trainings} 条训练记录），为避免两份历史合并出错，本功能只支持导入到空训练库；`
-        + '如需改用 v1.2.7 历史，请先在「数据目录」分栏切换到新的空目录并重启，再重新导入。',
-    }
+  let skipped = 0
+  if (emptiness.kind !== 'absent') {
+    skipped = countSkippedTrainings(inspection.sqlitePath, targetPath)
   }
   const pending = `${targetPath}${PENDING_HISTORY_SUFFIX}`
   const incoming = `${targetPath}${INCOMING_SUFFIX}`
@@ -339,7 +379,14 @@ export async function stageHistoryImport(
     }
     if (await fileExists(fs, pending)) await fs.rm(pending) // 旧 pending（上次导入未应用）被本次导入取代
     await fs.rename(incoming, pending)
-    return { ok: true, requiresRestart: true, trainings: inspection.counts.trainings, counts: inspection.counts }
+    return {
+      ok: true,
+      requiresRestart: true,
+      trainings: inspection.counts.trainings,
+      counts: inspection.counts,
+      skipped,
+      importing: Math.max(0, inspection.counts.trainings - skipped),
+    }
   } catch (error) {
     return { ok: false, error: `导入训练历史失败（未改动现有数据，可重试）：${reason(error)}` }
   } finally {
@@ -347,58 +394,224 @@ export async function stageHistoryImport(
   }
 }
 
-// ===== 启动应用（下次启动、内嵌服务开库前调用） =====
+// ===== 合并导入（MIG-MERGE-01：boot 应用，目标存在时空/非空统一走合并） =====
 
 export type ApplyOutcome =
-  | { applied: true }
-  | { applied: false, reason: 'none' | 'target-not-empty' | 'target-unreadable' | 'swap-failed', error?: string }
+  | { applied: true, imported: number, skipped: number }
+  | { applied: false, reason: 'none' | 'target-unreadable' | 'merge-failed', error?: string }
 
 function backupStamp(date = new Date()): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
 }
 
+/** 备份路径唯一化：同秒内多次合并（重试/幂等重导）时序号后缀区分，绝不覆盖旧备份 */
+function uniqueBackupPath(targetPath: string): string {
+  const base = `${targetPath}.pre-migration-${backupStamp()}`
+  let candidate = `${base}.bak`
+  let sequence = 2
+  while (existsSync(candidate)) {
+    candidate = `${base}-${sequence}.bak`
+    sequence += 1
+  }
+  return candidate
+}
+
+interface PendingSnapshot {
+  /** 按旧 id 升序的全部导入局（row 含全部列原值） */
+  trainings: Array<{ oldId: number, code: string, createdAt: string, row: Record<string, unknown> }>
+  /** 子表行按所属局旧 id 分组 */
+  children: Map<string, Map<number, Array<Record<string, unknown>>>>
+  cacheMeta: Array<{ key: string, value: string }>
+  /** pending 侧各表列名（与目标取交集后 INSERT，schema 偏差优雅降级） */
+  columns: Map<string, string[]>
+}
+
+function tableColumnsOf(database: DatabaseSync, table: string): string[] {
+  return (database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(column => column.name)
+}
+
+/** 全量读出 pending（读写打开：pending 经 WAL 迁移可能有 sidecar，readOnly 恢复有风险） */
+function readPendingSnapshot(pendingPath: string): PendingSnapshot {
+  const database = new DatabaseSync(pendingPath)
+  try {
+    const columns = new Map<string, string[]>([['trainings', tableColumnsOf(database, 'trainings')]])
+    const trainings = (database.prepare('SELECT * FROM trainings ORDER BY id').all() as Array<Record<string, unknown>>)
+      .map(row => ({ oldId: Number(row.id), code: String(row.code), createdAt: String(row.created_at), row }))
+    const children = new Map<string, Map<number, Array<Record<string, unknown>>>>()
+    for (const table of CHILD_TABLES) {
+      columns.set(table, tableColumnsOf(database, table))
+      const byTraining = new Map<number, Array<Record<string, unknown>>>()
+      if (columns.get(table)?.includes('training_id')) {
+        for (const row of database.prepare(`SELECT * FROM ${table}`).all() as Array<Record<string, unknown>>) {
+          const trainingId = Number(row.training_id)
+          const list = byTraining.get(trainingId)
+          if (list) list.push(row)
+          else byTraining.set(trainingId, [row])
+        }
+      }
+      children.set(table, byTraining)
+    }
+    const cacheMeta = database.prepare('SELECT key, value FROM cache_meta').all() as Array<{ key: string, value: string }>
+    return { trainings, children, cacheMeta, columns }
+  } finally {
+    database.close()
+  }
+}
+
+/** 列交集 INSERT 一行子表（training_id 重映射为新局 id；返回自增新 id） */
+function insertChildRow(
+  target: DatabaseSync,
+  table: string,
+  pendingColumns: string[],
+  targetColumns: ReadonlySet<string>,
+  row: Record<string, unknown>,
+  newTrainingId: number,
+  options: { omit?: readonly string[], overrides?: Record<string, SqlValue> },
+): number {
+  const columns = pendingColumns.filter(column =>
+    column !== 'id' && column !== 'training_id'
+    && !(options.omit?.includes(column))
+    && targetColumns.has(column))
+  const names = ['training_id', ...columns]
+  const values: SqlValue[] = [newTrainingId]
+  for (const column of columns) {
+    values.push(options.overrides && column in options.overrides ? options.overrides[column] : toSqlValue(row[column]))
+  }
+  const result = target
+    .prepare(`INSERT INTO ${table} (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`)
+    .run(...values)
+  return Number(result.lastInsertRowid)
+}
+
 /**
- * 应用待导入历史库（原子换库）：无 pending＝no-op；目标库不存在＝pending 直接就位；
- * 目标库为空＝原库 rename 备份（.pre-migration-<时间戳>.bak）→pending 换入，换入失败
- * 回滚恢复原库（pending 保留，下次启动重试）；目标库非空＝暂缓保留 pending（绝不合并）。
+ * 合并导入 pending 到目标库（单事务）：
+ * 1. VACUUM INTO 整库备份（事务外、一致快照含 WAL 内容；失败即中止）；
+ * 2. BEGIN IMMEDIATE 后逐局处理——幂等键（code＋created_at）事务内活查，命中跳过
+ *    整棵子树；未命中按列交集 INSERT trainings（id 重分配），子表引用同步重映射：
+ *    orders 先插（filled_trade_id 置 NULL）→ trades 插入（order_id 经映射重写）→
+ *    回填 orders.filled_trade_id，两段式闭合 order↔trade 交叉引用；映射缺失的
+ *    非空引用置 NULL（绝不指向错误的复用 id）；
+ * 3. cache_meta：recording_namespace 无条件跳过（既有录像命名空间永不改动），
+ *    其余键仅目标缺失时带入（ON CONFLICT DO NOTHING）；
+ * 4. 任一步失败 ROLLBACK——目标库保持导入前状态（既有新数据零损伤）。
+ */
+function mergePendingIntoTarget(targetPath: string, pendingPath: string): { imported: number, skipped: number } {
+  const snapshot = readPendingSnapshot(pendingPath)
+  const target = new DatabaseSync(targetPath)
+  try {
+    const targetColumns = new Map<string, Set<string>>()
+    for (const table of ['trainings', ...CHILD_TABLES]) {
+      targetColumns.set(table, new Set(tableColumnsOf(target, table)))
+    }
+    if ((targetColumns.get('trainings')?.size ?? 0) === 0) {
+      throw new Error('目标库缺少 trainings 表（结构异常），请先正常启动一次训练器后重试。')
+    }
+    const backup = uniqueBackupPath(targetPath)
+    target.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`)
+    target.exec('BEGIN IMMEDIATE')
+    try {
+      let imported = 0
+      let skipped = 0
+      const duplicateProbe = target.prepare('SELECT 1 FROM trainings WHERE code = ? AND created_at = ? LIMIT 1')
+      const fillOrderLink = target.prepare('UPDATE orders SET filled_trade_id = ? WHERE id = ?')
+      for (const training of snapshot.trainings) {
+        if (duplicateProbe.get(training.code, training.createdAt)) {
+          skipped += 1
+          continue
+        }
+        const trainingColumns = (snapshot.columns.get('trainings') ?? [])
+          .filter(column => column !== 'id' && targetColumns.get('trainings')?.has(column))
+        const insertResult = target
+          .prepare(`INSERT INTO trainings (${trainingColumns.join(', ')}) VALUES (${trainingColumns.map(() => '?').join(', ')})`)
+          .run(...trainingColumns.map(column => toSqlValue(training.row[column])))
+        const newTrainingId = Number(insertResult.lastInsertRowid)
+        imported += 1
+        // orders 先插：filled_trade_id 暂置 NULL，成交关联在 trades 插入后回填
+        const orderIdMap = new Map<number, number>()
+        const orderRows = snapshot.children.get('orders')?.get(training.oldId) ?? []
+        for (const orderRow of orderRows) {
+          const newOrderId = insertChildRow(target, 'orders', snapshot.columns.get('orders') ?? [], targetColumns.get('orders') ?? new Set(), orderRow, newTrainingId, { omit: ['filled_trade_id'] })
+          orderIdMap.set(Number(orderRow.id), newOrderId)
+        }
+        // trades：order_id 经 orderIdMap 重映射（映射缺失的非空引用置 NULL）
+        const tradeIdMap = new Map<number, number>()
+        for (const tradeRow of snapshot.children.get('trades')?.get(training.oldId) ?? []) {
+          const orderReference = tradeRow.order_id == null
+            ? null
+            : orderIdMap.get(Number(tradeRow.order_id)) ?? null
+          const newTradeId = insertChildRow(target, 'trades', snapshot.columns.get('trades') ?? [], targetColumns.get('trades') ?? new Set(), tradeRow, newTrainingId, { overrides: { order_id: orderReference } })
+          tradeIdMap.set(Number(tradeRow.id), newTradeId)
+        }
+        for (const orderRow of orderRows) {
+          if (orderRow.filled_trade_id == null) continue
+          const mappedTradeId = tradeIdMap.get(Number(orderRow.filled_trade_id))
+          const mappedOrderId = orderIdMap.get(Number(orderRow.id))
+          if (mappedTradeId !== undefined && mappedOrderId !== undefined) {
+            fillOrderLink.run(mappedTradeId, mappedOrderId)
+          }
+        }
+        for (const table of ['equity_curve', 'position_events', 'drawings', 'trade_notes'] as const) {
+          for (const row of snapshot.children.get(table)?.get(training.oldId) ?? []) {
+            insertChildRow(target, table, snapshot.columns.get(table) ?? [], targetColumns.get(table) ?? new Set(), row, newTrainingId, {})
+          }
+        }
+      }
+      const metaInsert = target.prepare('INSERT INTO cache_meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING')
+      for (const entry of snapshot.cacheMeta) {
+        if (entry.key === 'recording_namespace') continue
+        metaInsert.run(entry.key, entry.value)
+      }
+      target.exec('COMMIT')
+      return { imported, skipped }
+    } catch (error) {
+      try { target.exec('ROLLBACK') } catch { /* 回滚失败仍有导入前 .bak 兜底；pending 保留 */ }
+      throw error
+    }
+  } finally {
+    target.close()
+  }
+}
+
+/**
+ * 应用待导入历史库（MIG-MERGE-01 统一合并）：无 pending＝no-op；目标库不存在＝pending
+ * rename 直接就位（无任何 v1.3.0 数据可保）；目标存在（空或非空）＝合并导入（备份先行、
+ * 单事务、幂等跳过、ns 保留）。合并成功后删除 pending；失败目标零损伤、pending 保留，
+ * 下次启动自动重试（重试幂等：已导入局按业务键全部跳过）。
  */
 export async function applyPendingHistoryAtBoot(targetPath: string, deps: { fs?: Partial<MigrationFsDeps> } = {}): Promise<ApplyOutcome> {
   const fs: MigrationFsDeps = { ...defaultMigrationFs, ...deps.fs }
   const pending = `${targetPath}${PENDING_HISTORY_SUFFIX}`
   if (!await fileExists(fs, pending)) return { applied: false, reason: 'none' }
   if (!await fileExists(fs, targetPath)) {
+    let imported = 0
+    try {
+      const database = new DatabaseSync(pending)
+      try {
+        imported = (database.prepare('SELECT COUNT(*) AS count FROM trainings').get() as { count: number }).count
+      } finally {
+        database.close()
+      }
+    } catch { /* 计数失败不阻断就位 */ }
     try {
       await fs.rename(pending, targetPath)
-      return { applied: true }
+      await removePendingSidecars(fs, pending)
+      return { applied: true, imported, skipped: 0 }
     } catch (error) {
-      return { applied: false, reason: 'swap-failed', error: `应用待导入训练历史失败（下次启动自动重试）：${reason(error)}` }
+      return { applied: false, reason: 'merge-failed', error: `应用待导入训练历史失败（下次启动自动重试）：${reason(error)}` }
     }
   }
   const emptiness = readTargetEmptiness(targetPath)
   if (emptiness.kind === 'unreadable') {
     return { applied: false, reason: 'target-unreadable', error: `无法确认现有训练库状态，保留待导入历史（下次启动重试）：${emptiness.error}` }
   }
-  if (emptiness.kind === 'non-empty') {
-    return { applied: false, reason: 'target-not-empty' }
-  }
-  const backup = `${targetPath}.pre-migration-${backupStamp()}.bak`
   try {
-    await fs.rename(targetPath, backup)
+    const merged = mergePendingIntoTarget(targetPath, pending)
+    await fs.rm(pending)
+    await removePendingSidecars(fs, pending)
+    return { applied: true, imported: merged.imported, skipped: merged.skipped }
   } catch (error) {
-    return { applied: false, reason: 'swap-failed', error: `备份现有训练库失败（未做任何改动，下次启动重试）：${reason(error)}` }
-  }
-  try {
-    await fs.rename(pending, targetPath)
-    return { applied: true }
-  } catch (error) {
-    const swapError = reason(error)
-    try {
-      await fs.rename(backup, targetPath) // 回滚：恢复原库
-    } catch (restoreError) {
-      return { applied: false, reason: 'swap-failed', error: `换入迁移历史失败且回滚失败（原库备份保留在 ${backup}）：${swapError} / ${reason(restoreError)}` }
-    }
-    return { applied: false, reason: 'swap-failed', error: `换入迁移历史失败（已恢复原库，下次启动自动重试）：${swapError}` }
+    return { applied: false, reason: 'merge-failed', error: `合并导入训练历史失败（目标库已恢复导入前状态，下次启动自动重试）：${reason(error)}` }
   }
 }
 

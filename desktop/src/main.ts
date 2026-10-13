@@ -630,11 +630,12 @@ async function bootServerAndOpen(): Promise<void> {
 
     // proceed：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env。
     // runId 预生成：状态记录 trainer-state.json 与内嵌服务 health 上报同源。
-    // MIG-EXT-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史（原子换库：目标库为空
-    // 才采用，原库备份保留；失败/非空仅日志、pending 保留，下次启动自动重试——绝不阻断启动）。
+    // MIG-EXT-01 / MIG-MERGE-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史
+    // （统一合并：目标不存在＝pending 就位；存在＝合并导入——备份先行＋单事务＋幂等
+    // 跳过＋ns 保留；失败目标零损伤、pending 保留下次自动重试——绝不阻断启动）。
     try {
       const applied = await applyPendingHistoryAtBoot(config.databasePath)
-      if (applied.applied) console.log('[desktop] v1.2.7 训练历史迁移已在启动时应用（原库已备份保留）')
+      if (applied.applied) console.log(`[desktop] v1.2.7 训练历史迁移已在启动时合并应用（导入 ${applied.imported} 条、跳过已存在 ${applied.skipped} 条；原库已备份保留）`)
       else if (applied.error) console.error(`[desktop] v1.2.7 训练历史迁移暂缓（${applied.reason}）:`, applied.error)
       else if (applied.reason !== 'none') console.log(`[desktop] v1.2.7 训练历史迁移暂缓：${applied.reason}`)
     } catch (error) {
