@@ -1,0 +1,48 @@
+schema_version: "harness-matrix-v1"
+module: "replay-period"
+spec_source: "RF-03 用户验收 bug（2026-10-08）＋回放与训练同级多周期能力（用户原话）；实现=62d0e08（rf03 分支合入 main）"
+note: "按日回放域首接入。根因（归因＝缺行）：REC-03 完整性门控假设『日线末根=当日』早于 open_close 时钟模式设计，开盘段检查点嵌入日线止于前一交易日（服务端 open 阶段 bar.date<current 截断）→ 开盘段被误判缺日线 → 周月按钮禁用+徽章。修复＝阶段感知门控（open 段按『止于前一交易日』口径判完整），周/月由嵌入日线经既有 aggregateDailyBars 聚合（与训练页/服务端同口径）。"
+axes:
+  clock_mode: ["open_close", "daily(默认)"]
+  phase: ["open", "close", "n/a(整日)"]
+  period: ["1D", "1W", "1M"]
+rows:
+  - id: "REPLAY-OPEN-PHASE-PERIODS"
+    ears: "WHEN 回放打开含开盘段检查点（training.clockMode=open_close 且 currentPhase=open）的录像且用户点周K/月K THE SYSTEM SHALL 按既有 aggregateDailyBars 从该段嵌入日线聚合渲染周/月K（末根止于前一交易日，不造未来数据），三周期全部可用且不显示缺日线徽章"
+    axes: {clock_mode: "open_close", phase: "open", period: "1D|1W|1M"}
+    oracle: "RF-03 用户原话「训练时用户可以随时查看不同周期级别的信息，但是使用回放功能观看录像时，就不能切了」；聚合口径复用服务端 aggregateDailyBars（不另造口径）；e2e 用真实 600519 open_close 训练本机录像"
+    test_ids:
+      - "server/test/recording-daily-replay.test.ts::开盘段四步：日0/日2 为开盘，日期与日线止点如实分层"
+      - "server/test/recording-daily-replay.test.ts::开盘段与训练页同级：日/周/月三周期都可用，不回落、不标缺日线"
+      - "server/test/recording-daily-replay.test.ts::开盘段周/月由已见日线聚合：口径与 aggregateDailyBars 一致"
+      - "e2e/replay-period.spec.ts::开盘训练回放：开盘段可切周K月K且不再提示缺日线"
+    status: "covered"
+  - id: "REPLAY-CLOSE-PHASE-UNCHANGED"
+    ears: "WHEN 回放收盘段检查点（日线含当日）THE SYSTEM SHALL 三周期可用性判断与修复前一致（末根=当日口径）"
+    axes: {clock_mode: "open_close", phase: "close", period: "1D|1W|1M"}
+    oracle: "既有行为锁定（回归保护，非新语义）"
+    test_ids:
+      - "server/test/recording-daily-replay.test.ts::收盘段行为不变：日线含当日，三周期可用"
+      - "server/test/recording-daily-replay.test.ts::旧快照无阶段字段：仍按收盘口径判完整，不因缺字段回落"
+    status: "covered"
+  - id: "REPLAY-LEGACY-SNAPSHOT-ONLY"
+    ears: "WHEN 旧录像整日仅有周/月快照而无日线 THE SYSTEM SHALL 只展示快照可用周期并保留缺日线徽章（不借用前一日日线伪造完整性）"
+    axes: {clock_mode: "daily(默认)", phase: "n/a(整日)", period: "快照可用集"}
+    oracle: "REC-03 既有返修回归（盲训缺日线日不得借用前一日日线）；e2e/recording-daily.spec.ts 既有锁定"
+    test_ids:
+      - "e2e/recording-daily.spec.ts::旧文件缺当日日线：首日即时回退唯一周期、明示缺日线、次日恢复偏好"
+    status: "covered"
+    binding_note: "该 spec 两项用例在 RF-03 改动后定向复跑 2/2 通过（收据=RF-03 验证记录）；负向语义『不借用前一日日线伪造完整性』由此用例锁死；另一项用例（按交易日回放）锁键盘步进与只读安全回归。"
+  - id: "REPLAY-VIEWPORT-STEADY-ADVANCE"
+    ears: "WHEN 回放按日推进/倒退（空格/PgUp/PgDn）且用户未主动缩放平移 THE SYSTEM SHALL 保持主图视口稳定（最新 K 线锚点与右侧空白预留连续变化，不发生整体大平移或右侧空白突变）；IF 当日画线变化触发图表重挂 THE SYSTEM SHALL 按时间戳恢复重挂前视窗"
+    axes: {clock_mode: "daily(默认)", phase: "n/a(整日)", period: "1D"}
+    oracle: "用户原话（2026-10-13 第五轮任务 2）：『按空格显示下一根 K 线……主图画面进行了大规模的移动……主图右侧的黑色空白空间突然出现（回退 9-14 空白消失，推进 9-16 空白又突然出现）……这是画面显示 bug』；v1.3.3 齐心集团录像 2026-9-15→9-16 实机现象"
+    test_ids:
+      - "server/test/recording-replay.test.ts::推进跨画线变化日重挂后右侧空白与重挂前一致，旧算术空白丢失即画面大平移（复现断言）"
+      - "server/test/recording-replay.test.ts::回退跨画线变化日（锚点时间戳不在新数据）最近根落位且空白保持"
+      - "server/test/recording-replay.test.ts::历史位视口（diff 为负、无右侧空白）恢复不引入空白"
+      - "server/test/recording-replay.test.ts::旧视口对象无 rightOffsetBars 时修正距离为 0，行为与旧实现一致"
+      - "server/test/recording-replay.test.ts::右侧空隔捕获取值（getOffsetRightDistance 精确优先，realTo 反解兜底±半根）"
+      - "server/test/recording-replay.test.ts::nearestIndexByTimestamp 与库 binarySearchNearest 同口径（命中取命中、未命中取最近）"
+    status: "covered"
+    binding_note: "REPLAY-VIEWPORT-01 预登记（orchestrator 2026-10-13）；subagent 收尾回填 test_ids。视口稳定的可断言形态（像素级/锚点位移量上限）由 subagent 在 RED 阶段定义并写进验证记录。"

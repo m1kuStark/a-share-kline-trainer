@@ -19,6 +19,13 @@ import {
   summarizeGaps,
 } from '../../web/src/recording/replay'
 import { validateRecording } from '../../web/src/recording/validation'
+import { CHART_RIGHT_MARGIN_PX } from '../../web/src/chartNavigation'
+import {
+  nearestIndexByTimestamp,
+  replayRestoreScrollDistance,
+  replayRightOffsetBars,
+  rightOffsetBarsFromRealTo,
+} from '../../web/src/recording/replayViewport'
 
 const CURRENT_DATE = '2026-03-31'
 
@@ -376,8 +383,91 @@ describe('真实 Recorder 缺口合同', () => {
     expect(file.events).toHaveLength(4)
     expect(file.gaps).toEqual([{ afterSeq: 4, resumedAtSeq: null }])
     expect(file.complete).toBe(false)
-    expect(gapCoveringSeq(file.gaps, 4)).toEqual(file.gaps[0]!)
-    expect(gapCoveringSeq(file.gaps, 5)).toEqual(file.gaps[0]!)
+    expect(gapCoveringSeq(file.gaps, 4)).toBe(file.gaps[0]!)
+    expect(gapCoveringSeq(file.gaps, 5)).toBe(file.gaps[0]!)
     expect(describeGap(file.gaps[0]!)).toBe('录制自第 4 个事件后暂停，此后未记录')
+  })
+})
+
+// ===== REPLAY-VIEWPORT-STEADY-ADVANCE（回放按日推进主图视口稳定，REPLAY-VIEWPORT-01） =====
+// 库语义冻结 oracle（klinecharts 10.0.3 dist 源码，与本模块实现相互独立、不共享代码）：
+// · loader 'init' 落账（StoreImp._addData case 'init' → setOffsetRightDistance(80px)）后
+//   _lastBarRightSideDiffBarCount = 80 / barSpace —— 每次喂新数据视口都重锚到「实时位」（右侧 80px 空白）
+// · scrollToTimestamp(ts) → scrollToDataIndex(binarySearchNearest(ts))，终态 diff = idx - (dataCount - 1)
+//   —— 锚点根被钉在绘图区右缘，任何右侧空白预留都被丢弃
+// · scrollByDistance(d)：diff' = diff - d / barSpace
+// · 可见区间 realTo = Math.round(diff + dataCount + 0.5)（不钳入数据长度）
+// · getOffsetRightDistance() = max(0, diff × barSpace)（负值历史位被钳 0）
+// 复现模型＝齐心集团 2026-9-15→9-16：用户未平移，视口停实时位（末根右侧 80px 空白预留），
+// 跨界那日画线内容变化触发图表重挂（SessionReplay drawingEpoch），重挂前捕获的 toTimestamp
+// 被 captureView 钳到推进前最后一根（9-15）。视口稳定断言形态：
+// A 空白连续性——恢复后末根右侧空隔像素＝重挂前空隔（±1 根＝realTo 反解最坏舍入）；
+// B 既有K线零位移——终态 diff 相等即所有既有K线 x 坐标不变；
+// 违反形态（复现）——旧算术（仅 scrollToTimestamp）终态 diff=锚点-(N-1)，空白 80px→0，
+// 画面整体平移 (空白+B) px，即用户所见「主图画面大规模移动＋右侧黑色空白突然出现」。
+describe('回放重挂视口恢复（REPLAY-VIEWPORT-STEADY-ADVANCE）', () => {
+  const B = 6.4 // 重挂前后同柱宽（barSpace 随视窗恢复）
+  const PRE_COUNT = 60 // 重挂前（9-15 收盘后）数据根数
+  const PRE_BLANK_BARS = CHART_RIGHT_MARGIN_PX / B // 实时位末根右侧空隔（bar 数）
+
+  it('推进跨画线变化日重挂后右侧空白与重挂前一致，旧算术空白丢失即画面大平移（复现断言）', () => {
+    const newCount = PRE_COUNT + 1 // 9-16 新增一根
+    const anchorIndex = PRE_COUNT - 1 // 捕获 toTimestamp＝9-15（推进前最后一根）
+    const distance = replayRestoreScrollDistance(anchorIndex, newCount, B, PRE_BLANK_BARS)
+    // scrollToTimestamp 终态 diff = anchorIndex-(newCount-1)=-1；修正滚动（库公式 diff'=diff-d/B）后：
+    const restoredDiff = (anchorIndex - (newCount - 1)) - distance / B
+    expect(restoredDiff).toBeCloseTo(PRE_BLANK_BARS, 6) // 形态A：空白=80px 原样保留
+    expect(restoredDiff * B).toBeCloseTo(CHART_RIGHT_MARGIN_PX, 4) // 形态B：既有K线零位移
+    // 复现（冻结库公式推演旧实现）：终态 diff=-1 → 空白 0px、9-16 新K线贴右缘，
+    // 相对重挂前整体平移 (12.5+1)×6.4=86.4px ＞ 80px 空白预留 —— 用户所见突变
+    const legacyDiff = anchorIndex - (newCount - 1)
+    expect(PRE_BLANK_BARS * B - legacyDiff * B).toBeGreaterThan(CHART_RIGHT_MARGIN_PX)
+  })
+
+  it('回退跨画线变化日（锚点时间戳不在新数据）最近根落位且空白保持', () => {
+    const newCount = PRE_COUNT - 1 // 回退到 9-15（数据少一根，9-16 锚点不在其中）
+    const anchorIndex = newCount - 1 // nearestIndexByTimestamp 落到新数据最后一根
+    const distance = replayRestoreScrollDistance(anchorIndex, newCount, B, PRE_BLANK_BARS)
+    const restoredDiff = (anchorIndex - (newCount - 1)) - distance / B
+    expect(restoredDiff).toBeCloseTo(PRE_BLANK_BARS, 6) // 空白保持，9-15 落在 9-16 原位置
+  })
+
+  it('历史位视口（diff 为负、无右侧空白）恢复不引入空白', () => {
+    const historyBars = -20 // 用户平移看历史：末根右缘外 20 根
+    const anchorIndex = 40 // 视口右缘贴第 40 根
+    const distance = replayRestoreScrollDistance(anchorIndex, PRE_COUNT, B, historyBars)
+    const restoredDiff = (anchorIndex - (PRE_COUNT - 1)) - distance / B
+    expect(restoredDiff).toBeCloseTo(historyBars, 6)
+    expect(restoredDiff).toBeLessThanOrEqual(0) // 不得凭空出现右侧空白
+  })
+
+  it('旧视口对象无 rightOffsetBars 时修正距离为 0，行为与旧实现一致', () => {
+    expect(replayRestoreScrollDistance(PRE_COUNT - 1, PRE_COUNT + 1, B, undefined)).toBe(0)
+    expect(replayRestoreScrollDistance(PRE_COUNT - 1, PRE_COUNT + 1, B, null)).toBe(0)
+  })
+
+  it('右侧空隔捕获取值（getOffsetRightDistance 精确优先，realTo 反解兜底±半根）', () => {
+    // 实时位（diff>0）：库 getOffsetRightDistance()＝diff×barSpace 精确无舍入
+    expect(replayRightOffsetBars({ offsetRightDistancePx: CHART_RIGHT_MARGIN_PX, barSpace: B, realTo: 73, dataCount: PRE_COUNT })).toBeCloseTo(PRE_BLANK_BARS, 10)
+    // 历史位（diff<0 被钳 0）：由库 realTo=round(diff+N+0.5) 反解，误差有界±半根
+    const historyBars = -20
+    const realTo = Math.round(historyBars + PRE_COUNT + 0.5)
+    const estimated = replayRightOffsetBars({ offsetRightDistancePx: 0, barSpace: B, realTo, dataCount: PRE_COUNT })
+    expect(Math.abs(estimated - historyBars)).toBeLessThanOrEqual(0.5)
+    // 半根反解对各类 diff（整数/小数/零）一律落在±半根内（库公式 round 的固有粒度）
+    for (const diff of [PRE_BLANK_BARS, 10, 0, -0.25, -20]) {
+      const back = rightOffsetBarsFromRealTo(Math.round(diff + PRE_COUNT + 0.5), PRE_COUNT)
+      expect(Math.abs(back - diff)).toBeLessThanOrEqual(0.5)
+    }
+  })
+
+  it('nearestIndexByTimestamp 与库 binarySearchNearest 同口径（命中取命中、未命中取最近）', () => {
+    const data = [1, 2, 3, 4, 5].map(day => ({ timestamp: day * 86_400_000 }))
+    expect(nearestIndexByTimestamp(data, 3 * 86_400_000)).toBe(2) // 命中
+    expect(nearestIndexByTimestamp(data, 3.4 * 86_400_000)).toBe(2) // 偏前最近
+    expect(nearestIndexByTimestamp(data, 3.6 * 86_400_000)).toBe(3) // 偏后最近
+    expect(nearestIndexByTimestamp(data, 0)).toBe(0) // 早于首根
+    expect(nearestIndexByTimestamp(data, 9 * 86_400_000)).toBe(4) // 晚于末根（回退日场景）
+    expect(nearestIndexByTimestamp([], 42)).toBe(-1)
   })
 })
