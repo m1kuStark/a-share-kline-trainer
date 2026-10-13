@@ -28,11 +28,16 @@
 5. （用户拍板后）发 v1.3.1 测试版验证 update 链（v1.3.0→v1.3.1 检查+下载+安装），测试＋用户验收通过后删除 v1.3.1。
 6. 已装 v1.3.3 的过渡期说明：v1.3.1/2/3 release 删除后其更新检查 404 属预期（定版发布后恢复）；用户本机与 3060 均以定版重装。
 
-## 3. 打包收据追记
+## 3. 打包收据
 
-（打包完成后回填：命令、退出码、产物清单与 hash。）
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `npm run build:desktop`（误跑） | 0 | 产出便携 exe「K线训练器 1.3.0.exe」——package-desktop.mjs 硬编码 --win portable（PACK-04 时代遗留）覆盖 yml 的 nsis target；**误产物已删除**，脚本漂移登记为相邻问题（见 §4） |
+| `npm run release:desktop`（正确发布命令） | 0 | NSIS 定版产物集 4 件＋校验和：kline-trainer-desktop-setup-v1.3.0-windows-x64.exe（111.8MB，sha256:984e630dd7c0…）＋blockmap＋latest.yml（electron-builder 产出并字节核验通过）＋migrate-v127.zip（7 entries，STORE）＋SHA256SUMS-desktop.txt；fail-closed 核验链全过（含便携残留反向门） |
 
 ## 4. 偏差与说明
 
 - v1.3.1/2/3 的 setup exe 本地无备份（仅 GitHub），删除即不可取回——评估为无保留价值（中间测试版，源码与 tag 引用均在 git 历史）。
 - 「触发本体的 update 功能」解读 A/B（INSTALLER-UPGRADE-01 呈报）不影响本任务执行。
+- **相邻问题登记（不本轮修）**：desktop/scripts/package-desktop.mjs 仍硬编码 --win portable（PACK-04 遗留），与 electron-builder.yml 的 nsis target 及 INSTALL-01 便携退役拍板漂移——日常 build:desktop 会打出退役形态产物并触发 release:desktop 的便携残留反向门。建议后续任务收口（改脚本 target 或退役该入口）。
+- 发布前核对项：v1.3.x 历史 release 含 kline-trainer-v1.3.x-windows-x64.zip（zip 兜底形态）与 SHA256SUMS（全量），本次 release:desktop 产物集无此二件——按 desktop-release-manual.md 产物集口径发布时核对是否需要补位。
