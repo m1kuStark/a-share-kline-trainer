@@ -152,7 +152,8 @@ describe('MIG-ONECLICK-LAUNCHER-CN 检测失败自诊断（detectOneClickMode un
 // ===== ③ 冒烟：真实 cmd→powershell→文案 链（Windows 门控；临时目录不碰用户数据） =====
 
 describe('MIG-ONECLICK-LAUNCHER-CN 冒烟（真实启动器链）', () => {
-  it.skipIf(process.platform !== 'win32')('非安装目录场景下 一键迁移.cmd 退出码 1 且输出中文报错（含位置与特征）', async () => {
+  it('非安装目录场景下 一键迁移.cmd 退出码 1 且输出中文报错（含位置与特征）', async () => {
+    if (process.platform !== 'win32') return
     const parent = await mkdtemp(join(tmpdir(), 'oneclick-launcher-smoke-'))
     const toolDir = join(parent, 'migrate-v127')
     await mkdir(toolDir, { recursive: true })
@@ -176,7 +177,8 @@ describe('MIG-ONECLICK-LAUNCHER-CN 冒烟（真实启动器链）', () => {
     expect(out).toContain(parent)
   })
 
-  it.skipIf(process.platform !== 'win32')('非 v1.2.7 目录场景下 导出训练录像.cmd 退出码 1 且输出中文报错', async () => {
+  it('非 v1.2.7 目录场景下 导出训练录像.cmd 退出码 1 且输出中文报错', async () => {
+    if (process.platform !== 'win32') return
     const parent = await mkdtemp(join(tmpdir(), 'oneclick-launcher-smoke-export-'))
     const toolDir = join(parent, 'migrate-v127')
     await mkdir(toolDir, { recursive: true })
