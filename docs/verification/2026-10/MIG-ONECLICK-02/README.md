@@ -111,8 +111,9 @@ L2 佐证：英文黑名单取用户截图原文；中文哨兵含临时目录�
 | GREEN 同 RED 命令（实现+修夹具后） | 0（10 passed） |
 | 回归 4 文件（oneclick/settings/tool/tool-history） | 0（44 passed） |
 | check-binding --strict --include-untracked | 3（15 covered 不变；2 open=既有 MIG-CONSOLE-FALLBACK＋本任务预登记行待回填，与基线同因） |
-| 变异 A 后形状+冒烟 | 预期失败（杀手测试击杀） |
-| 变异 B 后自诊断用例 | 预期失败（杀手测试击杀） |
+| 变异 A 后形状+冒烟（-t 过滤运行，退出码 1＝杀手击杀） | 1（击杀确认） |
+| 变异 B 后自诊断用例（-t unknown 过滤，退出码 1＝杀手击杀） | 1（击杀确认） |
+| 变异还原后最终复验（5 文件全量） | 0（54 passed） |
 
 ## 10. 范围合规
 
