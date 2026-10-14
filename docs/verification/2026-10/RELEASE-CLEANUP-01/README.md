@@ -17,7 +17,28 @@
 
 依赖关系遵守：四项修复（TDX-RECONNECT/REPLAY-VIEWPORT/MIG-ONECLICK/INSTALLER-UPGRADE）已全部合入 main（574591e）后才执行清理与定版准备。
 
-## 2. 待执行（等真机验证＋用户验收拍板后）
+## 2. 已执行·续（2026-10-14 用户拍板后）
+
+用户拍板（2026-10-14）：删旧 v1.3.0→tag 重发→CloudBase 镜像同步→发 v1.3.1 验证 update 链（仅镜像，不发 GitHub）；用户从 GitHub 下载 v1.3.0 测更新链路。
+
+| 动作 | 收据 |
+|---|---|
+| 删旧 v1.3.0 release（id=410826591）＋远端 tag | HTTP 204；远端 tag 经 API DELETE（git push 443 间歇抖动改走 API） |
+| 打 tag v1.3.0 → 65b7184（main HEAD） | API POST git/refs 成功 |
+| 建新 Release v1.3.0（id=412799304）＋上传 7 资产 | 6 中小资产 HTTP 201；setup 111.8MB HTTP 201（125s，--retry 3） |
+| 补产 zip 兜底形态 | release:windows（node v24.15.0 归档 SHA256 验证）→ zip 53MB＋SHA256SUMS |
+| CloudBase 镜像同步 v1.3.0 | sync-feed（绝对路径）→ 7 文件逐个 manageHosting upload（117MB COS 分片 ETag -112；目录模式 120s 超时→逐文件全通） |
+| v1.3.1 测试版 bump＋打包 | commit 964fb32 已推 main；release:desktop 首跑 EPERM（win-unpacked 句柄锁）→清目录重跑 exit 0；zip 补 build（no-clobber→独立 out 目录） |
+| v1.3.1 仅镜像发布 | 镜像 setup/blockmap/zip/SHA256SUMS/manifest.json/latest.yml 全传；GitHub 不建 v1.3.1 Release（用户指定） |
+| 镜像残留清理 | v1.3.2/3 的 6 文件＋v130-stage 全删；昨日旧 v1.3.1 blockmap 错配风险由当日新 blockmap 覆盖消除 |
+| 端到端验证 | CDN GET feed/latest.yml → version 1.3.1＋镜像 URL＋sha512/size 完整；setup/blockmap HEAD 200；feed/ 最终 10 文件 |
+
+## 2b. 待执行
+
+1. 用户从 GitHub 下载 v1.3.0 定版（releases/tag/v1.3.0）安装，设置页「关于与更新」检查更新——应经镜像发现 v1.3.1（releaseNotes 为测试版说明）→下载→安装→重启后版本 1.3.1。
+2. 测试＋用户验收通过后：镜像侧删 v1.3.1 文件＋latest.yml 切回 v1.3.0（sync-feed 重跑）；本地 tag 处置待拍板。
+
+## 3. 原待执行清单（历史保留）
 
 **发布节奏纪律（本轮确立）**：GitHub 发布是 outward-facing 动作，执行前须向用户呈报执行清单并获确认——不再连续自动发版。
 
