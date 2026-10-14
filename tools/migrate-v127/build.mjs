@@ -76,6 +76,9 @@ await writeFile(join(distDir, 'import-recordings.js'), importInjectScript, 'utf8
 await copyFile(join(staticDir, '一键迁移.cmd'), join(distDir, '一键迁移.cmd'))
 await copyFile(join(staticDir, '导出训练录像.cmd'), join(distDir, '导出训练录像.cmd'))
 await copyFile(join(staticDir, '迁移说明.md'), join(distDir, '迁移说明.md'))
+// MIG-ONECLICK-02：启动器中文报错文案＋ASCII 打印器（.cmd 报错经 PowerShell 通道输出）
+await copyFile(join(staticDir, 'launcher-messages.txt'), join(distDir, 'launcher-messages.txt'))
+await copyFile(join(staticDir, 'launcher-print.ps1'), join(distDir, 'launcher-print.ps1'))
 
 const kb = value => `${(Buffer.byteLength(value, 'utf8') / 1024).toFixed(1)} KB`
 console.log(`[build] dist/migrate-v127/`)
@@ -84,3 +87,4 @@ console.log(`  迁移兜底-浏览器控制台脚本.txt       ${kb(fallbackText
 console.log(`  oneclick.cjs（一键迁移两侧入口）    已复制`)
 console.log(`  import-recordings.js              ${kb(importInjectScript)}（导入侧注入器）`)
 console.log(`  一键迁移.cmd / 导出训练录像.cmd / 迁移说明.md  已复制`)
+console.log(`  launcher-print.ps1 / launcher-messages.txt  已复制（启动器中文报错）`)
