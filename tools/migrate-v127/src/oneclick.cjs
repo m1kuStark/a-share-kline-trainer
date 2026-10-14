@@ -76,9 +76,18 @@ async function detectOneClickMode(parentDir) {
   const preferred = exes.find(name => name.startsWith('K'))
   if (preferred) return { mode: 'import', exePath: path.join(parentDir, preferred) }
   if (exes.length) return { mode: 'import', exePath: path.join(parentDir, exes[0]) }
+  // MIG-ONECLICK-02 自诊断兜底：报错自带已检测特征清单＋父目录内容摘要（前 10 项，
+  // 超长截断），用户无需再猜触发链——现场触发原因未定论（结构复现失败），信息自足为先。
+  const sample = names.slice(0, 10).join('、')
+  const summary = names.length
+    ? `前 10 项${names.length > 10 ? `，共 ${names.length} 项` : ''}：${sample}`
+    : '（空目录或无法读取）'
   return {
     mode: 'unknown',
-    reason: `未在工具文件夹的上一级（${parentDir}）检测到 v1.2.7（应能看到 runtime\\node.exe）或 v1.3.x（应能看到 K线训练器.exe）的安装特征。请把整个 migrate-v127 工具文件夹放到旧版本或新版本安装目录内（与程序入口同一级），再双击「一键迁移.cmd」。`,
+    reason: `未在工具文件夹的上一级（${parentDir}）检测到 v1.2.7（应能看到 runtime\\node.exe）或 v1.3.x（应能看到 K线训练器.exe）的安装特征。`
+      + `已检测特征：runtime\\node.exe＝未找到；K*.exe（及其他非卸载程序 .exe）＝未找到。`
+      + `父目录内容摘要（${summary}）。`
+      + `请把整个 migrate-v127 工具文件夹放到旧版本或新版本安装目录内（与程序入口同一级），再双击「一键迁移.cmd」。`,
   }
 }
 
