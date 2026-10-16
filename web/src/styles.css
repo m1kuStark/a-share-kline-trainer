@@ -1,3 +1,5 @@
+/* UIUX-B1：设计 token 层先行载入（只定义不消费；分层与取值依据见 tokens.css 头注） */
+@import './tokens.css';
 :root { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f6f9; font-synthesis: none; --topbar-h: 28px; --chart-background: #ffffff; }
 * { box-sizing: border-box; }
 :root {

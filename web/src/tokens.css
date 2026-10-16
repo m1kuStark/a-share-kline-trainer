@@ -1,0 +1,97 @@
+/* =====================================================================
+   设计 token 层 —— UI/UX 重构 B1（2026-10-16，基线 67b759f）
+   分层：基础值（间距/圆角/字号/控件高度/字重）→ 语义角色（颜色/层级/焦点）。
+   纪律：
+   1) 本层只定义不消费——styles.css 与各 scoped 块的既有规则一律不动，
+      迁移在 B2+ 批次逐步进行（P09：token 名表达用途，值取自现状实测）。
+   2) 与既有 :root 变量（--surface 系、--text 系、--chart-background、
+      --topbar-h）命名不相交，零覆盖零冲突（2026-10-16 grep 实证）。
+   3) 暗色只翻转语义颜色层；基础层（间距/圆角/字号）双主题一致。
+   4) --z-* 是目标刻度：现状 z-index 散布 4/5/12/15/20/70/100 且
+      .report-modal-mask 双定义冲突（styles.css:356 z100 被 :408 z70 覆盖），
+      统一迁移在后续批次做层叠验证后再消费。
+   5) 涨跌两档语义：图表亮色（klinecharts 引擎同值，JS 侧镜像在
+      web/src/theme.ts 等 6 处，收敛另立任务）/ 面板哑色（文字与按钮，
+      低饱和保可读）。暗色第三套值并入两档的暗色映射。
+   6) 暗色 accent 家族现值＝中性灰（现状如此：下划线 #c4c4c4/焦点 #b8b8b8/
+      主按钮 #484848），是否给暗色引入真实主色属 B4 校准点，本层如实记录现状。
+   ===================================================================== */
+
+:root {
+  /* —— 基础层：字体（styles.css:1 现状） —— */
+  --font-family-ui: "Segoe UI", "Microsoft YaHei", sans-serif;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* —— 基础层：字号（收敛现状 10/11/12/13/14px 高频五档＋标题两档） —— */
+  --font-size-2xs: 10px;  /* 角标、辅助标注 */
+  --font-size-xs: 11px;   /* 次要说明、表头、状态条 */
+  --font-size-sm: 12px;   /* 正文/控件基准 */
+  --font-size-md: 13px;   /* 强调正文、输入框 */
+  --font-size-lg: 14px;   /* 区块标题 */
+  --font-size-xl: 16px;   /* 页面标题（training-topbar 现值） */
+  --font-size-2xl: 20px;  /* 大标题辅助档（>20px 的展示级数字如权益 25px 不设档，B4 拍板） */
+
+  /* —— 基础层：间距（4px 步进；编号×4px。奇数值 7/9/13/17/23 在消费时归档） —— */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* —— 基础层：圆角（收敛现状 1/2/3/4/5/6/8/10/12px 九档为四档） —— */
+  --radius-sm: 4px;      /* 小控件：按钮、输入框、tab */
+  --radius-md: 6px;      /* 面板、卡片、行容器 */
+  --radius-lg: 8px;      /* 弹层、大容器 */
+  --radius-pill: 999px;  /* 胶囊、徽标、分类标签 */
+
+  /* —— 基础层：控件高度（收敛现状 20~42px 十一档为四档；submit 42px 归 lg 属消费期决策） —— */
+  --control-h-xs: 22px;  /* 顶栏/状态条内嵌按钮（data-update-btn 现值） */
+  --control-h-sm: 26px;  /* 紧凑操作（training-actions 现值） */
+  --control-h-md: 30px;  /* 标准控件（icon-button/画线工具现值） */
+  --control-h-lg: 36px;  /* 输入框/主操作（form-field input 现值） */
+
+  /* —— 语义层：涨跌两档（待拍板项①：两档语义已在 B0 报告呈报） —— */
+  --color-up-chart: #ef4444;    /* 图表域亮红（蜡烛/涨幅，theme.ts 同值） */
+  --color-down-chart: #16a34a;  /* 图表域亮绿 */
+  --color-up-panel: #c95752;    /* 面板哑红（.up/买入按钮，低饱和可读） */
+  --color-down-panel: #31937b;  /* 面板哑绿 */
+
+  /* —— 语义层：危险操作（历史删除/批量删除现值 styles.css:382） —— */
+  --color-danger: #b64a4a;       /* 危险边框 */
+  --color-danger-text: #b64a4a;  /* 危险文字（浅色与边框同值） */
+
+  /* —— 语义层：交互主色家族（青蓝系；现状三近似值 #1f7a93/#2b8b99/#2e8191 按职责分档） —— */
+  --color-accent: #2b8b99;            /* 焦点环/激活描边（focus-visible 现值） */
+  --color-accent-indicator: #2e8191;  /* 选中指示（tab 下划线现值） */
+  --color-accent-text: #245a72;       /* 选中态文字 */
+  --color-accent-tint: #eaf5f6;       /* 选中/悬停浅底 */
+  --color-accent-fill: #24697a;       /* 主操作填充（submit-button 现值） */
+
+  /* —— 语义层：键盘焦点（现状 outline 2px solid） —— */
+  --focus-ring-color: #2b8b99;
+  --focus-ring-width: 2px;
+
+  /* —— 语义层：浮层层级目标刻度（消费时统一迁移并做层叠验证） —— */
+  --z-dropdown: 10;   /* 贴附下拉：搜索建议（现 4/5） */
+  --z-popover: 30;    /* 悬浮卡/警示气泡（现 12/15） */
+  --z-modal: 100;     /* 模态遮罩与弹层（现 20/70，mask 冲突终裁值） */
+}
+
+/* 暗色主题：仅翻转语义颜色；--color-up/down-chart 与基础层不翻转（现状图表涨跌色双主题同值） */
+body.dark {
+  --color-up-panel: #e08a80;
+  --color-down-panel: #52b394;
+  --color-danger: #dc7777;
+  --color-danger-text: #ffaaaa;
+  --color-accent: #b8b8b8;            /* 现状：暗色强调系＝中性灰（B4 校准点） */
+  --color-accent-indicator: #c4c4c4;
+  --color-accent-text: #ffffff;
+  --color-accent-tint: #414141;       /* 等值 --surface-selected 暗色档 */
+  --color-accent-fill: #484848;
+  --focus-ring-color: #b8b8b8;
+}
