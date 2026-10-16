@@ -16,6 +16,7 @@ const appPath = new URL('../../web/src/App.vue', import.meta.url)
 const launcherPath = new URL('../../web/src/views/Launcher.vue', import.meta.url)
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
 const stylesPath = new URL('../../web/src/styles.css', import.meta.url)
+const tokensPath = new URL('../../web/src/tokens.css', import.meta.url)
 
 describe('日线数据更新前端契约（R1）', () => {
   it('api 层暴露 fetchDataStatus/postDataRefresh，命中 /api/data/status 与 /api/data/refresh', async () => {
@@ -142,7 +143,10 @@ describe('日线数据更新前端契约（R1）', () => {
     const styles = await readFile(stylesPath, 'utf8')
     const app = await readFile(appPath, 'utf8')
     expect(styles).toMatch(/@keyframes data-shake \{[\s\S]*?translateX\(-3px\)[\s\S]*?translateX\(3px\)/)
-    expect(styles).toMatch(/\.data-update-btn\.shake \{ animation: data-shake 0\.3s ease-in-out 3; \}/)
+    expect(styles).toMatch(/\.data-update-btn\.shake \{ animation: data-shake var\(--motion-attention\) ease-in-out 3; \}/)
+    // UIUX-B6：时长参数迁入 token（锚点搬移非放宽）——0.3s 仍被钉死，钉在 tokens.css 定义处
+    const tokens = await readFile(tokensPath, 'utf8')
+    expect(tokens).toMatch(/--motion-attention: 0\.3s;/)
     expect(styles).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.data-update-btn\.shake \{ animation: none; \} \}/)
     // 12s 重触发：watch attention 状态挂 12_000ms 定时器换 key 重播
     expect(app).toMatch(/setInterval\(\(\) => \{ shakeTick\.value\+\+ \}, 12_000\)/)
