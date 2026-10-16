@@ -74,9 +74,11 @@
   --color-accent-tint: #eaf5f6;       /* 选中/悬停浅底 */
   --color-accent-fill: #24697a;       /* 主操作填充（submit-button 现值） */
 
-  /* —— 语义层：键盘焦点（现状 outline 2px solid） —— */
+  /* —— 语义层：键盘焦点（现状 outline 2px solid；输入框聚焦用更柔和的描边＋光环档） —— */
   --focus-ring-color: #2b8b99;
   --focus-ring-width: 2px;
+  --focus-input-border: #6d9aaf;
+  --focus-input-ring: #e0eff1;
 
   /* —— 语义层：表面（B3 新增；补齐既有 --surface-* 家族的卡片与画布两档） —— */
   --surface-card: #f7f9f8;   /* 卡片表面（表单/交易面板）：亮色比条栏表面略亮以示抬升；暗色与条栏同色 */
@@ -102,4 +104,6 @@ body.dark {
   --color-accent-tint: #414141;       /* 等值 --surface-selected 暗色档 */
   --color-accent-fill: #484848;
   --focus-ring-color: #b8b8b8;
+  --focus-input-border: #969696;
+  --focus-input-ring: #414141;
 }
