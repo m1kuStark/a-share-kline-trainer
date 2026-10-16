@@ -13,7 +13,7 @@
   --text-muted: #7c8b8b;
   --chart-background: #fbfcfb;
 }
-body { margin: 0; min-width: 720px; background: #edf2f0; color: var(--text-primary); }
+body { margin: 0; min-width: 720px; background: var(--surface-canvas); color: var(--text-primary); }
 button, input { font: inherit; }
 button { cursor: pointer; }
 .app-shell { display: flex; min-height: 100dvh; }
@@ -28,7 +28,7 @@ button { cursor: pointer; }
 .rail-item:hover { color: #fff; background: #20374b; }
 .rail-bottom { margin-top: auto; }
 .workspace { flex: 1; min-width: 0; }
-.topbar { height: var(--topbar-h); background: #fff; border-bottom: 1px solid #e1e6ec; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 12px; }
+.topbar { height: var(--topbar-h); background: var(--surface-background); border-bottom: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 12px; }
 .product-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .product-name { color: #5d7087; font-size: 11px; letter-spacing: 0; white-space: nowrap; }
 .product-heading .workspace-title { margin: 0; font-size: 12px; }
@@ -37,7 +37,7 @@ button { cursor: pointer; }
 .connection-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .connection-dot { width: 7px; height: 7px; border-radius: 50%; background: #2eaf7d; }.connection-dot.offline { background: #d7895b; }
 .blind-toggle { margin-left: 16px; padding: 8px 12px; color: #38596d; background: #edf5f6; border: 1px solid #c7e0e1; border-radius: 4px; font-size: 12px; }.blind-toggle:not(.on) { background: #f6f7f8; border-color: #dce2e8; color: #5d6877; }
-.toolbar { display: flex; align-items: center; height: 58px; padding: 0 30px; gap: 16px; background: #f8fafc; border-bottom: 1px solid #e4e9ef; }
+.toolbar { display: flex; align-items: center; height: 58px; padding: 0 30px; gap: 16px; background: var(--control-background); border-bottom: 1px solid var(--surface-border); }
 .stock-search { position: relative; width: 250px; }.search-icon { position: absolute; left: 11px; top: 7px; font-size: 21px; color: #8291a4; }.stock-search input { width: 100%; height: 34px; border: 1px solid #d5dde7; background: #fff; border-radius: 4px; padding: 0 12px 0 34px; color: #233044; outline: none; font-size: 13px; }.stock-search input:focus { border-color: #6d9aaf; box-shadow: 0 0 0 2px #e0eff1; }
 .suggestions { position: absolute; top: 39px; left: 0; width: 100%; z-index: 4; background: #fff; border: 1px solid #d5dde7; box-shadow: 0 8px 20px #1c2d3e1c; }.suggestions button { width: 100%; border: 0; border-bottom: 1px solid #eff2f5; background: #fff; text-align: left; display: grid; grid-template-columns: 65px 1fr 28px; gap: 8px; padding: 9px 11px; color: #243348; font-size: 12px; }.suggestions button:hover { background: #f4f8fa; }.suggestions small { color: #94a2b2; }
 /* UIUX-B2：下划线分段 tab 三处合一（timeframe/order/mode）——颜色语义统一走 token，
@@ -55,21 +55,21 @@ button { cursor: pointer; }
 body.dark .indicator-toggle { border-color: #2e8191; background: #1d3238; color: #9fd4de; }
 body.dark .indicator-toggle.off { border-color: var(--surface-border); background: transparent; color: var(--text-muted); }
 .toolbar-spacer { flex: 1; }.view-count { color: #8a98aa; font-size: 12px; }.icon-button { width: 30px; height: 30px; border: 1px solid #d8e0e8; background: #fff; color: #617286; border-radius: 4px; font-size: 18px; }.icon-button:hover { color: #1c6076; border-color: #94bec5; }
-.status-strip { height: 20px; flex: 0 0 20px; display: flex; align-items: center; gap: 10px; color: #8291a1; padding: 0 12px; font-size: 11px; background: #fff; border-bottom: 1px solid #e5e9ef; overflow: hidden; }.status-label { color: #2e7c8c; font-weight: 650; }.status-separator { color: #bbc4ce; }.loading-dot { color: #be7d3c; white-space: nowrap; }
+.status-strip { height: 20px; flex: 0 0 20px; display: flex; align-items: center; gap: 10px; color: #8291a1; padding: 0 12px; font-size: 11px; background: var(--surface-background); border-bottom: 1px solid var(--surface-border); overflow: hidden; }.status-label { color: #2e7c8c; font-weight: 650; }.status-separator { color: #bbc4ce; }.loading-dot { color: #be7d3c; white-space: nowrap; }
 .status-message { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status-strip .view-count { flex: 0 0 104px; text-align: right; white-space: nowrap; font-size: 11px; font-variant-numeric: tabular-nums; }
 .viewport-date { flex: 0 0 auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .latest-date { color: #957335; }
 .status-strip .error-text { font-size: 11px; }
 .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; padding: 18px 30px 30px; height: calc(100vh - 175px); min-height: 0; overflow: hidden; }.chart-panel { position: relative; background: #fff; border: 1px solid #dfe5eb; display: flex; flex-direction: column; min-width: 0; min-height: 0; }.chart-host { flex: 1; min-height: 0; }.chart-empty { position: absolute; inset: 0 0 34px; display: grid; place-content: center; justify-items: center; gap: 8px; background: #ffffffec; color: #64748a; }.chart-empty strong { color: #3c4d62; font-size: 14px; }.chart-empty span { font-size: 12px; color: #98a5b4; }.empty-icon { color: #9ebdc4; font-size: 38px; }.chart-footer { height: 34px; flex: 0 0 34px; display: flex; align-items: center; gap: 18px; border-top: 1px solid #e5eaf0; padding: 0 13px; font-size: 11px; color: #66829b; }.chart-footer span:nth-child(1) { color: #e09b43; }.chart-footer span:nth-child(2) { color: #3b9eaa; }.chart-footer span:nth-child(3) { color: #bd6b8a; }.volume-legend { color: #8291a1 !important; }
-.trade-panel { background: #fff; border: 1px solid #dfe5eb; padding: 20px 18px; color: #25364b; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }.console-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }.panel-heading, .order-heading { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 650; }.live-mark { color: #2e9e78; font-size: 11px; font-weight: 500; }.equity-block { padding: 23px 0 20px; border-bottom: 1px solid #eef1f4; }.equity-block span, .account-stats span { display: block; color: #8a98a9; font-size: 11px; }.equity-block strong { display: block; font-size: 25px; letter-spacing: 0.01em; margin: 5px 0 4px; }.equity-block em { color: #2d9a75; font-size: 12px; font-style: normal; }.account-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 17px 10px; padding: 18px 0; }.account-stats strong { display: block; margin-top: 4px; font-size: 13px; font-weight: 600; }.panel-divider { height: 1px; background: #e9edf2; margin: 1px 0 18px; }.order-heading small { font-size: 10px; color: #a1adba; font-weight: 400; }.weight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 17px 0 12px; }.weight-grid button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 7px 0; color: #5c7187; font-size: 11px; border-radius: 3px; }.weight-grid button:hover { border-color: #83b7bd; color: #2a7381; background: #eff8f8; }.trade-action { width: 100%; border: 0; height: 37px; border-radius: 3px; color: #fff; margin-top: 7px; font-size: 13px; font-weight: 600; }.trade-action.buy { background: var(--color-up-fill); }.trade-action.sell { background: var(--color-down-fill); }.trade-action:hover { filter: brightness(1.06); }.advance-action { width: 100%; display: flex; justify-content: space-between; align-items: center; height: 39px; margin-top: 18px; border: 1px solid #326f7c; color: #2e6979; background: #f1f8f8; border-radius: 3px; padding: 0 12px; font-size: 13px; font-weight: 600; }.advance-action span { font-size: 10px; font-weight: 400; color: #71939c; }
+.trade-panel { background: var(--surface-card); border: 1px solid var(--surface-border); padding: 20px 18px; color: #25364b; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }.console-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }.panel-heading, .order-heading { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 650; }.live-mark { color: #2e9e78; font-size: 11px; font-weight: 500; }.equity-block { padding: 23px 0 20px; border-bottom: 1px solid #eef1f4; }.equity-block span, .account-stats span { display: block; color: #8a98a9; font-size: 11px; }.equity-block strong { display: block; font-size: 25px; letter-spacing: 0.01em; margin: 5px 0 4px; }.equity-block em { color: #2d9a75; font-size: 12px; font-style: normal; }.account-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 17px 10px; padding: 18px 0; }.account-stats strong { display: block; margin-top: 4px; font-size: 13px; font-weight: 600; }.panel-divider { height: 1px; background: #e9edf2; margin: 1px 0 18px; }.order-heading small { font-size: 10px; color: #a1adba; font-weight: 400; }.weight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 17px 0 12px; }.weight-grid button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 7px 0; color: #5c7187; font-size: 11px; border-radius: 3px; }.weight-grid button:hover { border-color: #83b7bd; color: #2a7381; background: #eff8f8; }.trade-action { width: 100%; border: 0; height: 37px; border-radius: 3px; color: #fff; margin-top: 7px; font-size: 13px; font-weight: 600; }.trade-action.buy { background: var(--color-up-fill); }.trade-action.sell { background: var(--color-down-fill); }.trade-action:hover { filter: brightness(1.06); }.advance-action { width: 100%; display: flex; justify-content: space-between; align-items: center; height: 39px; margin-top: 18px; border: 1px solid #326f7c; color: #2e6979; background: #f1f8f8; border-radius: 3px; padding: 0 12px; font-size: 13px; font-weight: 600; }.advance-action span { font-size: 10px; font-weight: 400; color: #71939c; }
 /* ===== 训练视图 / 启动页（M2） ===== */
 .env-error { margin: 14px 30px 0; padding: 10px 14px; background: #fdf2ee; border: 1px solid #ecc9b8; color: #a2502e; font-size: 12px; border-radius: 4px; }
 .boot-loading { display: grid; place-items: center; height: 60vh; color: #7d8b9c; font-size: 13px; }
 .launcher { padding: 34px 40px; max-width: 860px; }
 .launcher-head h1 { margin: 0 0 8px; font-size: 22px; }
 .launcher-head p { margin: 0 0 24px; color: #71809287; color: #718092; font-size: 13px; }
-.launcher-form { background: #fff; border: 1px solid #dfe5eb; padding: 26px 26px 30px; display: grid; gap: 20px; }
+.launcher-form { background: var(--surface-card); border: 1px solid var(--surface-border); padding: 26px 26px 30px; display: grid; gap: 20px; }
 .form-field { display: flex; flex-direction: column; gap: 8px; position: relative; }
 .form-field.wide { grid-column: 1 / -1; }
 .form-field label { font-size: 12px; color: #62748a; font-weight: 600; }
@@ -88,7 +88,7 @@ body.dark .indicator-toggle.off { border-color: var(--surface-border); backgroun
 .error-text { color: #b3413a; font-size: 12px; margin: 0; }
 /* Header rows have fixed heights so transient status cannot shift the chart. */
 .training-shell { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h)); min-height: 0; }
-.training-topbar { background: #fff; border-bottom: 1px solid #e1e6ec; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 38px; flex: 0 0 38px; padding: 0 12px; }
+.training-topbar { background: var(--surface-background); border-bottom: 1px solid var(--surface-border); display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 38px; flex: 0 0 38px; padding: 0 12px; }
 .training-context { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .training-topbar .workspace-title { margin: 0; font-size: 16px; line-height: 22px; min-width: 0; max-width: 232px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .training-current-date { color: #718092; font-size: 12px; flex: 0 0 auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -112,7 +112,7 @@ body.dark .indicator-toggle.off { border-color: var(--surface-border); backgroun
 .advance-button { border: 1px solid #326f7c; color: #2e6979; background: #f1f8f8; border-radius: 3px; padding: 8px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
 .advance-button span { font-size: 10px; font-weight: 400; color: #71939c; }
 .advance-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.training-toolbar { display: flex; align-items: center; height: 50px; padding: 0 30px; gap: 16px; background: #f8fafc; border-bottom: 1px solid #e4e9ef; }
+.training-toolbar { display: flex; align-items: center; height: 50px; padding: 0 30px; gap: 16px; background: var(--control-background); border-bottom: 1px solid var(--surface-border); }
 .training-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; padding: 6px 12px; flex: 1; min-height: 0; overflow: hidden; }
 .chart-panel { position: relative; background: #fff; border: 1px solid #dfe5eb; min-width: 0; min-height: 0; }
 .trade-log { display: grid; gap: 6px; max-height: 180px; overflow-y: auto; font-size: 11px; color: #55677c; }
@@ -187,17 +187,15 @@ body.dark {
   --text-primary: #e4e4e4;
   --text-secondary: #b8b8b8;
   --text-muted: #9c9c9c;
-  background: #151515;
-  color: var(--text-primary);
   color-scheme: dark;
 }
 body.dark .rail { background: #1d1d1d; color: var(--text-secondary); }
 body.dark .brand-mark { border-color: #686868; color: var(--text-primary); }
 body.dark .rail-item.active { background: var(--surface-selected); color: #ffffff; }
 body.dark .rail-item:hover { background: var(--surface-hover); color: #ffffff; }
-body.dark .topbar, body.dark .status-strip, body.dark .trade-panel,
-body.dark .launcher-form, body.dark .settle-panel, body.dark .training-topbar { background: var(--surface-background); border-color: var(--surface-border); }
-body.dark .toolbar, body.dark .training-toolbar { background: #242424; border-color: var(--surface-border); }
+/* UIUX-B3：原 body.dark .topbar/.status-strip/.trade-panel/.launcher-form/.settle-panel/.training-topbar
+   与 body.dark .toolbar/.training-toolbar 两组表面补写已退役——基类改用 surface token 后暗色经翻转生效；
+   暗色 toolbar 底色 #242424→--control-background #2d2d2d 为白名单微差（见批次报告） */
 body.dark .product-name { color: var(--text-muted); }
 body.dark .workspace-title, body.dark .launcher-head h1 { color: #f1f1f1; }
 body.dark .connection-text, body.dark .training-meta, body.dark .status-strip, body.dark .view-count,
@@ -240,7 +238,6 @@ body.dark .trade-row { color: var(--text-secondary); }
 body.dark .settle-mask { background: #000000cc; }
 body.dark .settle-panel { background: var(--surface-background); border-color: var(--surface-border); color: var(--text-primary); box-shadow: 0 18px 48px rgba(0, 0, 0, .42); }
 body.dark .env-error { background: #33221c; border-color: #6b4230; color: #e0a18a; }
-body.dark .training-grid { background: #151515; }
 body.dark .chart-panel, body.dark .chart-wrap, body.dark .chart-host { background: var(--chart-background); border-color: #383838; }
 body.dark .chart-empty { background: #000000ec; color: var(--text-secondary); }
 body.dark .chart-empty strong { color: var(--text-primary); }
@@ -249,17 +246,10 @@ body.dark .chart-footer { background: var(--chart-background); border-color: #38
 body.dark .volume-legend { color: var(--text-secondary) !important; }
 body.dark .tool-list.accepting-drop { outline-color: #b8b8b8; }
 
-/* 浅色主题使用低对比灰绿底，长时间看盘时减少纯白大面积刺激。 */
-body:not(.dark) .topbar,
-body:not(.dark) .status-strip,
-body:not(.dark) .training-topbar { background: #f3f6f4; border-color: #d9e2df; }
-body:not(.dark) .toolbar,
-body:not(.dark) .training-toolbar { background: #edf2f0; border-color: #d9e2df; }
-body:not(.dark) .launcher-form,
-body:not(.dark) .chart-panel,
-body:not(.dark) .trade-panel { background: #f7f9f8; border-color: #d5dfdc; }
-body:not(.dark) .content-grid,
-body:not(.dark) .training-grid { background: #edf2f0; }
+/* 浅色主题使用低对比灰绿底，长时间看盘时减少纯白大面积刺激。
+   UIUX-B3：条栏/卡片/画布表面已收敛为 token（--surface-background/card/canvas），
+   本块仅保留图表族（chart-panel 浅色底＝图表表面）与输入族两组浅色特例。 */
+body:not(.dark) .chart-panel { background: #f7f9f8; border-color: #d5dfdc; }
 body:not(.dark) .stock-search input,
 body:not(.dark) .form-field input,
 body:not(.dark) .weight-grid input,

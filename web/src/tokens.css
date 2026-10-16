@@ -78,6 +78,10 @@
   --focus-ring-color: #2b8b99;
   --focus-ring-width: 2px;
 
+  /* —— 语义层：表面（B3 新增；补齐既有 --surface-* 家族的卡片与画布两档） —— */
+  --surface-card: #f7f9f8;   /* 卡片表面（表单/交易面板）：亮色比条栏表面略亮以示抬升；暗色与条栏同色 */
+  --surface-canvas: #edf2f0; /* 应用画布（body 底色） */
+
   /* —— 语义层：浮层层级目标刻度（消费时统一迁移并做层叠验证） —— */
   --z-dropdown: 10;   /* 贴附下拉：搜索建议（现 4/5） */
   --z-popover: 30;    /* 悬浮卡/警示气泡（现 12/15） */
@@ -86,6 +90,8 @@
 
 /* 暗色主题：仅翻转语义颜色；--color-up/down-chart 与基础层不翻转（现状图表涨跌色双主题同值） */
 body.dark {
+  --surface-card: #202020;
+  --surface-canvas: #151515;
   --color-up-panel: #e08a80;
   --color-down-panel: #52b394;
   --color-danger: #dc7777;
