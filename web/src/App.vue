@@ -821,37 +821,37 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .picker-blocker-panel h2 { margin: 0 0 10px; font-size: 17px; }
 .picker-blocker-panel p { margin: 6px 0; line-height: 1.6; color: var(--text-secondary, #51637a); }
 .picker-blocker-hint { display: block; margin-top: 12px; color: var(--text-muted, #7b8794); font-size: 12px; }
-:global(body.dark) .picker-blocker { background: rgba(0, 0, 0, .68); }
+:global(body.dark .picker-blocker){ background: rgba(0, 0, 0, .68); }
 
 /* SETUP-01 首次接入向导：跟随训练器面板风格（双主题，不引外部样式） */
 .setup-wizard { margin: 10px 28px 0; padding: 14px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
 .setup-wizard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .setup-wizard-head h2 { margin: 0; font-size: 15px; }
 .setup-wizard-sub { margin: 4px 0 8px; color: #64748b; }
-:global(body.dark) .setup-wizard-sub { color: #94a3b8; }
+:global(body.dark .setup-wizard-sub){ color: #94a3b8; }
 .setup-wizard-close { border: none; background: transparent; color: inherit; font-size: 13px; cursor: pointer; padding: 2px 6px; }
 .setup-wizard-error { border: 1px solid #e5b4b4; background: #fdf1f1; color: #a03030; border-radius: 4px; padding: 6px 10px; margin: 6px 0; }
-:global(body.dark) .setup-wizard-error { border-color: #6b2c2c; background: #2c1414; color: #e0a0a0; }
+:global(body.dark .setup-wizard-error){ border-color: #6b2c2c; background: #2c1414; color: #e0a0a0; }
 .setup-wizard-note { margin: 4px 0; color: #2b8b99; }
-:global(body.dark) .setup-wizard-note { color: #7ec8d8; }
+:global(body.dark .setup-wizard-note){ color: #7ec8d8; }
 .setup-wizard-found, .setup-wizard-candidate { display: flex; align-items: center; gap: 12px; border: 1px solid #bfe0d2; background: #f2faf6; border-radius: 6px; padding: 10px 12px; margin: 6px 0; }
-:global(body.dark) .setup-wizard-found, :global(body.dark) .setup-wizard-candidate { border-color: #2b5c49; background: #14271f; }
+:global(body.dark .setup-wizard-found), :global(body.dark .setup-wizard-candidate){ border-color: #2b5c49; background: #14271f; }
 .setup-wizard-ok-dot { width: 8px; height: 8px; border-radius: 50%; background: #1f9d61; flex: none; }
 .setup-wizard-found-text, .setup-wizard-candidate-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
 .setup-wizard-path { color: #64748b; word-break: break-all; font-variant-numeric: tabular-nums; }
-:global(body.dark) .setup-wizard-path { color: #94a3b8; }
+:global(body.dark .setup-wizard-path){ color: #94a3b8; }
 .setup-wizard-primary { border: 1px solid #1f7a93; background: #1f7a93; color: #fff; border-radius: 4px; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
 .setup-wizard-primary:disabled { opacity: 0.55; cursor: default; }
 .setup-wizard-secondary { border: 1px solid #94bec5; background: transparent; color: #1c6076; border-radius: 4px; padding: 6px 12px; cursor: pointer; }
 .setup-wizard-secondary:disabled { opacity: 0.55; cursor: default; }
-:global(body.dark) .setup-wizard-secondary { border-color: var(--surface-border); color: var(--text-secondary, #cbd5e1); }
+:global(body.dark .setup-wizard-secondary){ border-color: var(--surface-border); color: var(--text-secondary, #cbd5e1); }
 .setup-wizard-link { border: none; background: transparent; color: #2b8b99; cursor: pointer; padding: 2px 0; font-size: 12px; }
-:global(body.dark) .setup-wizard-link { color: #7ec8d8; }
+:global(body.dark .setup-wizard-link){ color: #7ec8d8; }
 .setup-wizard-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
 .setup-wizard-manual { display: flex; gap: 8px; margin: 8px 0; }
 .setup-wizard-manual input { flex: 1; min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font-size: 12px; }
 .setup-wizard-problems { margin: 6px 0; padding-left: 18px; color: #a03030; display: grid; gap: 2px; }
-:global(body.dark) .setup-wizard-problems { color: #e0a0a0; }
+:global(body.dark .setup-wizard-problems){ color: #e0a0a0; }
 .setup-wizard-suggestions { display: grid; gap: 6px; margin: 8px 0; }
 .setup-wizard-suggestion { text-align: left; border: 1px solid var(--surface-border, #dfe5eb); background: transparent; color: inherit; border-radius: 4px; padding: 8px 10px; cursor: pointer; word-break: break-all; }
 .setup-wizard-suggestion:hover { border-color: #94bec5; }
@@ -861,12 +861,12 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .data-status-unknown { display: inline-flex; align-items: center; gap: 5px; color: #8a6d1d; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* PORT-01：默认端口不可用自动改用邻近端口的常驻提示（双主题；信息级样式，非错误） */
 .port-fallback-note { margin: 12px 30px 0; padding: 8px 14px; background: #eef6fb; border: 1px solid #bcd8e8; color: #1c6076; font-size: 12px; border-radius: 4px; }
-:global(body.dark) .port-fallback-note { background: #1b2833; border-color: #2f4a5c; color: #9ec5da; }
-:global(body.dark) .data-status-unknown { color: #d9b45c; }
+:global(body.dark .port-fallback-note){ background: #1b2833; border-color: #2f4a5c; color: #9ec5da; }
+:global(body.dark .data-status-unknown){ color: #d9b45c; }
 .data-reread-btn { height: 22px; padding: 0 8px; border-radius: 3px; border: 1px solid #d8e0e8; background: transparent; color: #51637a; font-size: 11px; white-space: nowrap; cursor: pointer; }
 .data-reread-btn:hover { border-color: #94bec5; color: #1c6076; }
-:global(body.dark) .data-reread-btn { border-color: var(--surface-border); color: var(--text-secondary); }
-:global(body.dark) .data-reread-btn:hover { border-color: #969696; color: #ffffff; }
+:global(body.dark .data-reread-btn){ border-color: var(--surface-border); color: var(--text-secondary); }
+:global(body.dark .data-reread-btn:hover){ border-color: #969696; color: #ffffff; }
 
 .recording-library { margin: 10px 28px 0; padding: 10px 14px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 8px; font-size: 12px; }
 .recording-import { display: inline-flex; position: relative; align-items: center; border: 1px solid #94bec5; padding: 8px 12px; border-radius: 4px; cursor: pointer; color: #2b8b99; }

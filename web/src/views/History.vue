@@ -250,15 +250,15 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
 <style scoped>
 /* RF-05 随机模式训练在历史列表中的 tag（胶囊形态区别于普通范围文字标签） */
 .random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
-:global(body.dark) .random-mode-tag { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+:global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 /* REC-HIST-LINK：存储模型说明与录像关联状态行 */
 .history-storage-note { margin: 6px 0 0; color: var(--text-secondary, #64748b); font-size: 12px; }
 .history-link-status { margin: 0 0 10px; color: var(--text-secondary, #64748b); font-size: 12px; }
 .history-link-status[role='alert'] { color: #a83535; }
-:global(body.dark) .history-link-status[role='alert'] { color: #ffaaaa; }
+:global(body.dark .history-link-status[role='alert']){ color: #ffaaaa; }
 /* 行级播放/导出按钮（样式对齐 history-row-delete 的轻量文字按钮；styles.css 不在本卡授权范围） */
 .history-row-replay, .history-row-export { border: 0; background: transparent; color: #3a6ea5; cursor: pointer; font-size: 12px; white-space: nowrap; padding: 4px 6px; }
 .history-row-replay:hover:not(:disabled), .history-row-export:hover:not(:disabled) { text-decoration: underline; }
 .history-row-replay:disabled, .history-row-export:disabled { color: var(--text-secondary, #94a3b8); cursor: not-allowed; opacity: .55; }
-:global(body.dark) .history-row-replay, :global(body.dark) .history-row-export { color: #7fa8d9; }
+:global(body.dark .history-row-replay), :global(body.dark .history-row-export){ color: #7fa8d9; }
 </style>

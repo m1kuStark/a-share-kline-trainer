@@ -1121,12 +1121,12 @@ function close(): void {
 .settings-nav button { border: 1px solid transparent; border-radius: 5px; padding: 10px 12px; text-align: left; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; font-size: 13px; }
 .settings-nav button:hover { background: var(--surface-hover, #f2f5f7); color: var(--text-primary, #1c2733); }
 .settings-nav button.selected { border-color: var(--surface-border, #cdd7df); background: var(--surface-selected, #eaf5f6); color: #1f6978; font-weight: 650; }
-:global(body.dark) .settings-nav button.selected { color: #8fd9e3; background: rgba(73, 164, 178, .18); border-color: #3e8894; }
+:global(body.dark .settings-nav button.selected){ color: #8fd9e3; background: rgba(73, 164, 178, .18); border-color: #3e8894; }
 .settings-content { min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
 .settings-default-section { margin-top: 0; padding-top: 0; border-top: 0; }
 .settings-cancel-link { margin-top: 18px; border: 0; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; padding: 4px 0; }
 .settings-repair { margin: 0 0 14px; padding: 8px 10px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-:global(body.dark) .settings-repair { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
+:global(body.dark .settings-repair){ border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .settings-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-top: 1px solid var(--surface-border, #eef2f6); cursor: pointer; }
 .settings-row.settings-column { flex-direction: column; gap: 4px; cursor: default; }
 .settings-field-label { font-size: 13px; font-weight: 600; }
@@ -1135,7 +1135,7 @@ function close(): void {
 .settings-adjust-grid { display: flex; gap: 8px; }
 .settings-adjust-grid button { flex: 0 0 auto; padding: 5px 14px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
 .settings-adjust-grid button.selected { border-color: #2b8b99; color: #1c6076; background: rgba(43, 139, 153, 0.08); }
-:global(body.dark) .settings-adjust-grid button.selected { color: #7fd0dc; border-color: #2b8b99; }
+:global(body.dark .settings-adjust-grid button.selected){ color: #7fd0dc; border-color: #2b8b99; }
 .settings-fixed { margin-top: 10px; font-size: 11px; color: var(--text-secondary, #51637a); }
 .settings-section { margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--surface-border, #eef2f6); }
 .settings-section h3 { margin: 0 0 4px; font-size: 14px; }
@@ -1167,7 +1167,7 @@ function close(): void {
 .shortcut-binding.recording { border-color: #2b8b99; background: rgba(43, 139, 153, 0.15); color: #1f6978; }
 .shortcut-clear { border: 0; padding: 3px 4px; background: transparent; color: var(--text-secondary, #51637a); font-size: 10px; }
 .shortcut-clear:hover { color: #b3413a; }
-:global(body.dark) .shortcut-binding.recording { color: #9bdce3; }
+:global(body.dark .shortcut-binding.recording){ color: #9bdce3; }
 .settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: 12px; line-height: 1.6; }
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 /* UPD-02 关于与更新分栏 */
@@ -1185,9 +1185,9 @@ function close(): void {
 .update-release-notes summary { cursor: pointer; color: var(--text-secondary, #51637a); }
 .update-release-notes pre { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; line-height: 1.6; }
 .update-progress { margin-top: 10px; font-size: 13px; color: #1f6978; }
-:global(body.dark) .update-progress { color: #8fd9e3; }
+:global(body.dark .update-progress){ color: #8fd9e3; }
 .settings-saved { margin: 10px 0 0; font-size: 12px; color: #1d7a3d; }
-:global(body.dark) .settings-saved { color: #57bd7c; }
+:global(body.dark .settings-saved){ color: #57bd7c; }
 .settings-actions { display: flex; gap: 10px; margin-top: 14px; }
 @media (max-width: 640px) {
   .settings-panel { width: calc(100vw - 24px); height: min(680px, calc(100dvh - 24px)); min-height: min(520px, calc(100dvh - 24px)); padding: 14px; }

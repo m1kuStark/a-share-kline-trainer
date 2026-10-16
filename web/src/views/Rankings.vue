@@ -328,7 +328,7 @@ function daysText(item: RankingItem): string {
 <style scoped>
 /* RF-05 随机模式训练在排行中的 tag（信息隐藏仅限随机训练运行中） */
 .random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; vertical-align: middle; }
-:global(body.dark) .random-mode-tag { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+:global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .industry-picker { margin-top: 18px; }
 .industry-picker h2 { display: flex; align-items: baseline; gap: 10px; }
 .industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: 12px; font-weight: 500; }

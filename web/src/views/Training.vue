@@ -1181,7 +1181,7 @@ void load()
 .shortcut-hint { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 .keep-recording { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 14px; }
 .legacy-raw-banner { margin: 8px 16px 0; padding: 8px 12px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: 12px; line-height: 1.5; }
-:global(body.dark) .legacy-raw-banner { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
+:global(body.dark .legacy-raw-banner){ border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .legacy-drawing-notice { white-space: normal; line-height: 1.5; }
 .phase-tag { display: inline-flex; margin-left: 8px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-secondary, #51637a); font-size: 10px; }
 /* 统一下单面板：普通下单/条件单标签页（样式对齐 time-frame 标签）。
@@ -1198,8 +1198,8 @@ void load()
 .order-item-side { font-weight: 650; }
 .order-item-side.buy { color: #c95752; }
 .order-item-side.sell { color: #31937b; }
-:global(body.dark) .order-item-side.buy { color: #e08a80; }
-:global(body.dark) .order-item-side.sell { color: #52b394; }
+:global(body.dark .order-item-side.buy){ color: #e08a80; }
+:global(body.dark .order-item-side.sell){ color: #52b394; }
 .order-item-detail { font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .order-item-note { grid-column: 1 / -1; color: var(--text-muted, #a1adba); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .order-item .order-cancel { padding: 2px 8px; font-size: 11px; }
@@ -1209,6 +1209,6 @@ void load()
 .order-item-status { font-weight: 600; }
 .order-item-status.filled { color: #2e9e78; }
 .order-item-status.rejected { color: #b3413a; }
-:global(body.dark) .order-item-status.filled { color: #52b394; }
-:global(body.dark) .order-item-status.rejected { color: #e08a80; }
+:global(body.dark .order-item-status.filled){ color: #52b394; }
+:global(body.dark .order-item-status.rejected){ color: #e08a80; }
 </style>
