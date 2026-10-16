@@ -539,11 +539,11 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 .replay-title { min-width: 0; display: flex; align-items: baseline; gap: 10px; }
-.replay-title h2 { margin: 0; font-size: 14px; white-space: nowrap; }
+.replay-title h2 { margin: 0; font-size: var(--font-size-lg); white-space: nowrap; }
 /* RF-05 随机模式录像 tag（与训练页徽标同胶囊风格）；UIUX-B2：样式并入全局单一定义（styles.css） */
 .replay-meta {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--text-muted, #5d7087);
   white-space: nowrap;
   overflow: hidden;
@@ -554,7 +554,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   height: 28px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   border-radius: 4px;
   border: 1px solid var(--surface-border, #d8e0e8);
   background: var(--control-background, #ffffff);
@@ -571,9 +571,9 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   background: var(--surface-background, #ffffff);
   color: var(--text-secondary, #64748a);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
-.replay-empty strong { font-size: 14px; color: var(--text-primary, #3c4d62); }
+.replay-empty strong { font-size: var(--font-size-lg); color: var(--text-primary, #3c4d62); }
 .replay-body {
   flex: 1;
   min-height: 0;
@@ -588,7 +588,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   min-width: 0;
   overflow: hidden;
 }
@@ -597,7 +597,7 @@ onBeforeUnmount(() => {
 .replay-tabs button {
   height: 22px;
   padding: 0 8px;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   border: 1px solid var(--surface-border, #d8e0e8);
   border-radius: 4px;
   background: var(--control-background, #ffffff);
@@ -647,9 +647,9 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   justify-items: center;
   gap: 6px;
   color: var(--text-muted, #98a5b4);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
-.replay-chart-empty strong { font-size: 14px; color: var(--text-secondary, #3c4d62); }
+.replay-chart-empty strong { font-size: var(--font-size-lg); color: var(--text-secondary, #3c4d62); }
 .replay-controls {
   flex: 0 0 40px;
   display: flex;
@@ -661,7 +661,7 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
 .replay-controls > button {
   height: 30px;
   padding: 0 10px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   border-radius: 4px;
   border: 1px solid var(--surface-border, #d8e0e8);
   background: var(--control-background, #ffffff);
@@ -675,7 +675,7 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-muted, #5d7087);
   white-space: nowrap;
 }
@@ -685,13 +685,13 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   border-radius: 4px;
   background: var(--control-background, #ffffff);
   color: var(--text-primary, #233044);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   padding: 0 4px;
 }
 .replay-range { flex: 1 1 60px; min-width: 40px; accent-color: #2e8191; }
 .replay-hint {
   flex: 1 1 auto;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--text-muted, #8a98a9);
   white-space: nowrap;
   overflow: hidden;
@@ -709,12 +709,12 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   min-height: 0;
   overflow: hidden;
 }
-.replay-panel h3 { margin: 0 0 8px; font-size: 13px; }
-.replay-panel-empty { margin: 0; font-size: 12px; color: var(--text-muted, #94a2b2); }
-.replay-panel-note { margin: 8px 0 0; font-size: 11px; color: var(--text-muted, #8a98a9); }
+.replay-panel h3 { margin: 0 0 8px; font-size: var(--font-size-md); }
+.replay-panel-empty { margin: 0; font-size: var(--font-size-sm); color: var(--text-muted, #94a2b2); }
+.replay-panel-note { margin: 8px 0 0; font-size: var(--font-size-xs); color: var(--text-muted, #8a98a9); }
 .replay-account-title {
   margin: 0 0 8px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--text-secondary, #62748a);
   white-space: nowrap;
   overflow: hidden;
@@ -726,10 +726,10 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   grid-template-columns: 1fr 1fr;
   gap: 8px 10px;
 }
-.replay-account dt { font-size: 11px; color: var(--text-muted, #8a98a9); }
+.replay-account dt { font-size: var(--font-size-xs); color: var(--text-muted, #8a98a9); }
 .replay-account dd {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -751,7 +751,7 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   gap: 2px;
   height: 24px;
   padding: 0 8px;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   border-radius: 4px;
   border: 1px solid var(--surface-border, #d8e0e8);
   background: var(--control-background, #ffffff);
@@ -761,7 +761,7 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
 .replay-window-nav button:hover:not(:disabled) { border-color: #94bec5; color: var(--text-primary, #1c6076); }
 .replay-window-nav button:disabled { opacity: 0.45; cursor: not-allowed; }
 .replay-window-range {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--text-muted, #8a98a9);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -784,7 +784,7 @@ body.dark .replay-gap-summary { color: var(--text-muted, #8a98a9); background: r
   background: transparent;
   text-align: left;
   padding: 4px 6px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   border-radius: 3px;
   color: var(--text-secondary, #33455c);
   min-width: 0;

@@ -327,11 +327,11 @@ function daysText(item: RankingItem): string {
 
 <style scoped>
 /* RF-05 随机模式训练在排行中的 tag（信息隐藏仅限随机训练运行中） */
-.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; vertical-align: middle; }
+.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: var(--font-size-2xs); font-weight: 600; vertical-align: middle; }
 :global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .industry-picker { margin-top: 18px; }
 .industry-picker h2 { display: flex; align-items: baseline; gap: 10px; }
-.industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
+.industry-picker h2 small, .industry-result-heading h2 small { color: var(--text-secondary); font-size: var(--font-size-sm); font-weight: 500; }
 .industry-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .industry-picker-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 10px 12px; border: 1px solid var(--surface-border); border-radius: 8px; background: var(--surface-background); color: var(--text-primary); text-align: left; cursor: pointer; }
 .industry-picker-item:hover, .industry-picker-item:focus-visible { border-color: #2b8b99; background: var(--surface-hover); }

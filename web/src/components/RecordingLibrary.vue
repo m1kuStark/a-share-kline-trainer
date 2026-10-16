@@ -255,7 +255,7 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 .recording-history-open span { color: var(--text-secondary, #64748b); }
 /* RF-05 录像库标注：真实标的（斜体弱化）＋「随机模式」tag 胶囊 */
 .recording-item-brief { font-style: normal; margin-right: 6px; color: var(--text-primary, #25364b); }
-.random-mode-badge { display: inline-flex; margin-right: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
+.random-mode-badge { display: inline-flex; margin-right: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: var(--font-size-2xs); font-weight: 600; }
 :global(body.dark .random-mode-badge){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 .recording-delete, .danger-button { color: #e47777; }
 .recording-confirm-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / .55); z-index: 20; }

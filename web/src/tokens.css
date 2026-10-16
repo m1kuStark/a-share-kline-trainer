@@ -84,6 +84,12 @@
   --surface-card: #f7f9f8;   /* 卡片表面（表单/交易面板）：亮色比条栏表面略亮以示抬升；暗色与条栏同色 */
   --surface-canvas: #edf2f0; /* 应用画布（body 底色） */
 
+  /* —— 语义层：动效（B6 事件矩阵参数化；消费点仅 3 处，全部已有任务级调参与无障碍门控，见
+     uiux-refactor-lab/motion-event-matrix.md；纪律＝不为"更动"而加动效，交易态切换保持即时） —— */
+  --motion-fast: 80ms;          /* 数字滚动条带帧间过渡（M6-05 实调值；应用偏好 trainer_odo_motion 门控） */
+  --motion-attention: 0.3s;     /* 注意力摇晃单次时长（data-shake ×3；prefers-reduced-motion 关闭） */
+  --motion-progress: 1.2s;      /* 进行中省略号呼吸周期（data-ellipsis-blink；reduced-motion 降为静态） */
+
   /* —— 语义层：浮层层级目标刻度（消费时统一迁移并做层叠验证） —— */
   --z-dropdown: 10;   /* 贴附下拉：搜索建议（现 4/5） */
   --z-popover: 30;    /* 悬浮卡/警示气泡（现 12/15） */

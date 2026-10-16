@@ -288,11 +288,11 @@ body:not(.dark) .shares-row input { background: #f8faf9; border-color: #d1dcda; 
 .data-update-btn.running { background: #eef2f6; border-color: #cbd5df; color: #5d7087; cursor: default; }
 /* 待更新醒目：入场摇晃播 3 次（translateX 小幅），每约 12s 由组件换 key 重触发；尊重减弱动效偏好 */
 @keyframes data-shake { 0% { transform: translateX(0); } 25% { transform: translateX(-3px); } 50% { transform: translateX(3px); } 75% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
-.data-update-btn.shake { animation: data-shake 0.3s ease-in-out 3; }
+.data-update-btn.shake { animation: data-shake var(--motion-attention) ease-in-out 3; }
 @media (prefers-reduced-motion: reduce) { .data-update-btn.shake { animation: none; } }
 /* 更新中：克制的省略号点动画（仅透明度，不产生宽度抖动） */
 .data-ellipsis { display: inline-flex; gap: 2px; margin-left: 4px; }
-.data-ellipsis i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.25; animation: data-ellipsis-blink 1.2s infinite; }
+.data-ellipsis i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.25; animation: data-ellipsis-blink var(--motion-progress) infinite; }
 .data-ellipsis i:nth-child(2) { animation-delay: 0.2s; }
 .data-ellipsis i:nth-child(3) { animation-delay: 0.4s; }
 @keyframes data-ellipsis-blink { 0%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
@@ -372,6 +372,9 @@ body.dark .report-modal-mask { background: rgba(0, 0, 0, .68); }
 .history-error p { margin: 0; flex: 1; overflow-wrap: anywhere; }
 .history-empty, .history-loading { margin: 24px 0; color: var(--text-secondary, #51637a); }
 .history-list { display: grid; gap: 8px; }
+/* UIUX-B5：历史列头——复用数据行轨道模板，弱化为辅助文字层 */
+.history-list-header { display: grid; grid-template-columns: 22px minmax(140px, 1.4fr) minmax(150px, 1.2fr) minmax(70px, auto) minmax(110px, .9fr) 80px 56px 64px 70px 70px; gap: 10px; padding: 0 14px; color: var(--text-muted); font-size: var(--font-size-xs); }
+.history-list-header .num { text-align: right; }
 .history-content { display: grid; gap: 8px; }
 .history-batch-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin: 0 0 10px; }
 .history-select-all { display: flex; align-items: center; gap: 6px; margin-right: auto; color: var(--text-secondary, #51637a); font-size: var(--font-size-sm); }
@@ -448,7 +451,7 @@ body.dark .report-benchmark-status.unavailable { color: #e0a196; }
 .rankings-tab { padding: 6px 16px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: transparent; color: inherit; font-size: var(--font-size-sm); cursor: pointer; }
 .rankings-tab:hover { border-color: #94bec5; }
 /* UIUX-B2：排行 tab 选中态并入 accent 语义（原暗色为绿色系、与其余 tab 不一致，统一为中性指示） */
-.rankings-tab.active { border-color: var(--color-accent); color: var(--color-accent-text); font-weight: 700; background: var(--surface-hover, #f4f8fa); }
+.rankings-tab.active { border-color: var(--color-accent); color: var(--color-accent-text); font-weight: 700; background: var(--color-accent-tint); }
 .stock-ranking-picker { position: relative; max-width: 620px; margin: 8px 0 14px; display: grid; gap: 6px; }
 .stock-ranking-picker label { font-size: var(--font-size-sm); color: var(--text-secondary, #51637a); }
 .stock-ranking-picker input { width: 100%; max-width: 620px; box-sizing: border-box; }
@@ -500,7 +503,7 @@ body.dark .equity-block span.odo-wrap { color: inherit; }
 body.dark .equity-block span.odo-roll { color: inherit; font-variant-numeric: tabular-nums; }
 .equity-block span.odo-digit { display: inline-block; overflow: hidden; height: 1lh; vertical-align: top; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; font-variant-numeric: tabular-nums; }
 body.dark .equity-block span.odo-digit { color: inherit; font-variant-numeric: tabular-nums; }
-.equity-block span.odo-strip { display: block; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; transition: transform 80ms linear; will-change: transform; }
+.equity-block span.odo-strip { display: block; color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; transition: transform var(--motion-fast) linear; will-change: transform; }
 body.dark .equity-block span.odo-strip { color: inherit; }
 .equity-block .odo-strip i { display: block; font-style: normal; height: 1lh; }
 /* M6-05R：odo-roll 不再受 prefers-reduced-motion 抑制（动效门＝应用偏好 trainer_odo_motion，见

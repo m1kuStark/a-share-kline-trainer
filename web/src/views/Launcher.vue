@@ -760,11 +760,11 @@ function randomCreateErrorMessage(error: unknown): string {
 /* UPD-NOTIFY-01 首页左上角更新提示按钮：对齐顶栏 data-update-btn 胶囊风格（attention
    琥珀色实底，与既有「更新日线」醒目口径同色系；双主题同值，沿用 attention 先例） */
 .launcher-head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.update-notice-btn { height: 24px; padding: 0 12px; border-radius: 12px; border: 1px solid #b45309; background: #b45309; color: #ffffff; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.update-notice-btn { height: 24px; padding: 0 12px; border-radius: 12px; border: 1px solid #b45309; background: #b45309; color: #ffffff; font-size: var(--font-size-sm); font-weight: 600; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
 .update-notice-btn:hover { filter: brightness(1.08); }
 .update-notice-btn:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
 /* M7-02 模式标签：沿用训练页 timeframe-tabs 的下划线风格（双主题）。
    UIUX-B2：选中/焦点/暗色颜色并入全局下划线 tab 规则（styles.css 分组选择器），此处仅保留尺寸与容器线 */
 .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
-.mode-tabs button { padding: 7px 16px; font-size: 14px; cursor: pointer; }
+.mode-tabs button { padding: 7px 16px; font-size: var(--font-size-lg); cursor: pointer; }
 </style>

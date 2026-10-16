@@ -135,7 +135,7 @@ async function saveNote(): Promise<void> {
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, .14);
   color: var(--text-primary, #334155);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .details-head {
@@ -156,7 +156,7 @@ async function saveNote(): Promise<void> {
   color: inherit;
   border-radius: 4px;
   padding: 2px 8px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   cursor: pointer;
 }
 
@@ -168,7 +168,7 @@ async function saveNote(): Promise<void> {
 .details-tabs button { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-secondary, #64748b); padding: 5px 8px; font: inherit; cursor: pointer; }
 .details-tabs button.active { color: var(--text-primary, #334155); border-bottom-color: #2b8b99; font-weight: 650; }
 .details-note { display: grid; gap: 6px; }
-.details-note-error { margin: 0; color: #b3413a; font-size: 11px; }
+.details-note-error { margin: 0; color: #b3413a; font-size: var(--font-size-xs); }
 .details-note label { color: var(--text-secondary, #64748b); }
 .details-note textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 88px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 7px; background: var(--control-background, #fff); color: var(--text-primary, #334155); font: inherit; }
 .note-save { justify-self: end; border: 1px solid #2b8b99; border-radius: 4px; padding: 5px 10px; background: var(--surface-selected, #eaf5f6); color: var(--text-primary, #1c6076); cursor: pointer; }

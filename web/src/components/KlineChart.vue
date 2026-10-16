@@ -1664,19 +1664,19 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 </template>
 
 <style scoped>
-.ma-settings-trigger { position: absolute; top: 5px; right: 90px; z-index: 4; border: 1px solid var(--surface-border); border-radius: 4px; padding: 3px 8px; background: var(--control-background); color: var(--text-secondary); font-size: 11px; }
+.ma-settings-trigger { position: absolute; top: 5px; right: 90px; z-index: 4; border: 1px solid var(--surface-border); border-radius: 4px; padding: 3px 8px; background: var(--control-background); color: var(--text-secondary); font-size: var(--font-size-xs); }
 .ma-settings-trigger:disabled { opacity: .5; cursor: default; }
 .ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
-.ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: 12px; }
+.ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: var(--font-size-sm); }
 .chart-frame { display: grid; grid-template-rows: minmax(0, 1fr) 40px; height: 100%; min-height: 0; }
 .chart-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; }
 /* 挂单悬浮信息层：只引用全局已定义的设计令牌（--surface-*、--text-*），深浅主题随令牌自动切换。
    此前引用未定义的 --surface-raised 导致深色主题下回落到浅色（用户 1.2.3 反馈）；纯信息层不拦截指针。 */
-.order-tooltip { position: absolute; z-index: 20; max-width: 230px; white-space: pre-line; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: 11px; line-height: 1.5; pointer-events: none; }
+.order-tooltip { position: absolute; z-index: 20; max-width: 230px; white-space: pre-line; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: var(--font-size-xs); line-height: 1.5; pointer-events: none; }
 .chart-host { width: 100%; height: 100%; }
 /* M6-03 悬浮信息卡：日期＋开高低收＋涨幅；涨幅红涨/绿跌/零灰（冻结配色，与 phasePriceColor
    同约定）；背景随主题令牌（--surface-*），深浅主题均可见；纯信息层不拦截指针 */
-.hover-card { position: absolute; z-index: 7; width: 128px; box-sizing: content-box; padding: 7px 9px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: 11px; line-height: 16px; pointer-events: none; display: grid; gap: 1px; }
+.hover-card { position: absolute; z-index: 7; width: 128px; box-sizing: content-box; padding: 7px 9px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: var(--font-size-xs); line-height: 16px; pointer-events: none; display: grid; gap: 1px; }
 .hover-card-date { font-weight: 600; margin-bottom: 2px; }
 .hover-card-row { display: flex; justify-content: space-between; gap: 10px; }
 .hover-card-label { color: var(--text-secondary, #5c7187); }
@@ -1686,11 +1686,11 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 .hover-card-value.pct-flat { color: #94a3b8; font-weight: 600; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
 .ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }
-.ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: 12px; color: #334155; border-radius: 4px; }
+.ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: var(--font-size-sm); color: #334155; border-radius: 4px; }
 .ctx-menu button:hover { background: #eef2f7; }
-.overlay-edit-panel { position: absolute; z-index: 8; width: 208px; padding: 12px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); display: grid; gap: 8px; font-size: 12px; color: #334155; }
+.overlay-edit-panel { position: absolute; z-index: 8; width: 208px; padding: 12px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); display: grid; gap: 8px; font-size: var(--font-size-sm); color: #334155; }
 .overlay-edit-panel { max-height: calc(100% - 8px); overflow-y: auto; max-width: calc(100% - 8px); }
-.text-edit-panel { position: absolute; z-index: 9; width: 272px; max-width: calc(100% - 8px); max-height: calc(100% - 8px); overflow: auto; padding: 12px; display: grid; gap: 9px; border: 1px solid #94a3b8; border-radius: 6px; background: #ffffff; color: #334155; font-size: 12px; }
+.text-edit-panel { position: absolute; z-index: 9; width: 272px; max-width: calc(100% - 8px); max-height: calc(100% - 8px); overflow: auto; padding: 12px; display: grid; gap: 9px; border: 1px solid #94a3b8; border-radius: 6px; background: #ffffff; color: #334155; font-size: var(--font-size-sm); }
 .text-edit-panel textarea { resize: vertical; min-height: 60px; width: 100%; font: inherit; }
 .text-edit-panel label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .text-edit-panel input[type='number'] { width: 70px; }
@@ -1718,9 +1718,9 @@ body.dark .overlay-edit-panel .panel-actions button:first-child { background: va
 /* 多选成员锚点：黄芯白圈 18px，与库单选选中态锚点（activeRadius 7 + border 2）同视觉；随 updateAnchorDots 重算 */
 .anchor-dot { position: absolute; width: 18px; height: 18px; border: 2px solid #ffffff; border-radius: 50%; background: #f5c343; pointer-events: none; z-index: 6; box-sizing: border-box; }
 .edit-tabs { display: flex; flex-wrap: wrap; gap: 3px; }
-.edit-tabs button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 3px 8px; font-size: 11px; color: #5c7187; border-radius: 3px; }
+.edit-tabs button { border: 1px solid #d7dfe7; background: #fafcfd; padding: 3px 8px; font-size: var(--font-size-xs); color: #5c7187; border-radius: 3px; }
 .edit-tabs button.active { border-color: #2e8191; background: #eaf5f6; color: #245a72; font-weight: 600; }
-.panel-count { color: #8a98aa; font-size: 11px; font-weight: 400; }
+.panel-count { color: #8a98aa; font-size: var(--font-size-xs); font-weight: 400; }
 body.dark .edit-tabs button { background: var(--control-background); border-color: var(--surface-border); color: var(--text-secondary); }
 body.dark .edit-tabs button.active { background: var(--surface-selected); border-color: var(--surface-border); color: var(--text-primary); }
 body.dark .panel-count { color: var(--text-muted); }

@@ -218,6 +218,19 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
           <button class="danger-button" :disabled="!selectedIds.length" @click="removeHistory(selectedIds)">删除选中（{{ selectedIds.length }}）</button>
         </div>
         <div class="history-list">
+        <!-- UIUX-B5：列头（B0 审计 P2——资金/收益率/笔数含义此前只能靠猜；与数据行同网格轨道对齐，aria-hidden 不入无障碍树） -->
+        <div class="history-list-header" aria-hidden="true">
+          <span></span>
+          <span>标的</span>
+          <span>日期区间</span>
+          <span>分类</span>
+          <span class="num">最终权益</span>
+          <span class="num">收益率</span>
+          <span class="num">笔数</span>
+          <span></span>
+          <span></span>
+          <span>操作</span>
+        </div>
         <div v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" role="button" tabindex="0" @click="selectedId = item.id" @keydown.enter="selectedId = item.id">
           <input class="history-row-check" type="checkbox" :checked="isSelected(item.id)" :aria-label="`选择第 ${item.id} 局`" @click.stop @change="toggleSelected(item.id)" />
           <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small v-if="item.rangeMode !== 'random'" class="history-range-label">{{ tierText(item) }}</small><small v-else class="random-mode-tag" title="本局来自随机模式训练">{{ tierText(item) }}</small></span>
@@ -249,15 +262,15 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
 
 <style scoped>
 /* RF-05 随机模式训练在历史列表中的 tag（胶囊形态区别于普通范围文字标签） */
-.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
+.random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: var(--font-size-2xs); font-weight: 600; }
 :global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
 /* REC-HIST-LINK：存储模型说明与录像关联状态行 */
-.history-storage-note { margin: 6px 0 0; color: var(--text-secondary, #64748b); font-size: 12px; }
-.history-link-status { margin: 0 0 10px; color: var(--text-secondary, #64748b); font-size: 12px; }
+.history-storage-note { margin: 6px 0 0; color: var(--text-secondary, #64748b); font-size: var(--font-size-sm); }
+.history-link-status { margin: 0 0 10px; color: var(--text-secondary, #64748b); font-size: var(--font-size-sm); }
 .history-link-status[role='alert'] { color: #a83535; }
 :global(body.dark .history-link-status[role='alert']){ color: #ffaaaa; }
 /* 行级播放/导出按钮（样式对齐 history-row-delete 的轻量文字按钮；styles.css 不在本卡授权范围） */
-.history-row-replay, .history-row-export { border: 0; background: transparent; color: #3a6ea5; cursor: pointer; font-size: 12px; white-space: nowrap; padding: 4px 6px; }
+.history-row-replay, .history-row-export { border: 0; background: transparent; color: #3a6ea5; cursor: pointer; font-size: var(--font-size-sm); white-space: nowrap; padding: 4px 6px; }
 .history-row-replay:hover:not(:disabled), .history-row-export:hover:not(:disabled) { text-decoration: underline; }
 .history-row-replay:disabled, .history-row-export:disabled { color: var(--text-secondary, #94a3b8); cursor: not-allowed; opacity: .55; }
 :global(body.dark .history-row-replay), :global(body.dark .history-row-export){ color: #7fa8d9; }
