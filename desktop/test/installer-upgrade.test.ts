@@ -88,14 +88,63 @@ describe('INSTALLER-UPGRADE-DETECT: installer.nsh 升级检测源形状契约（
     expect(msgIdx).toBeGreaterThan(condIdx)
   })
 
-  it('INSTALL-UPGRADE：钩子零写指令——同位置升级与数据继承完全由 electron-builder 内建承担（不越位复刻）', async () => {
+  it('INSTALL-UPGRADE：钩子写面收敛——升级链由内建承担，唯一受控写＝幽灵自愈的两条登记清除（HKCU）', async () => {
     const code = stripNsisComments(await readInstallerNsh())
     // uninstallOldVersion（installUtil.nsh）已承担：静默卸旧（/KEEP_APP_DATA + --updated）→装新到同
-    // $INSTDIR。钩子出现任何删除/写注册/执行指令＝越位（数据继承链被绕过的风险面）。
-    expect(code).not.toMatch(/\bDelete\b|\bRMDir\b|\bDeleteRegKey\b|\bDeleteRegValue\b/)
+    // $INSTDIR。钩子的删除/写注册/执行指令＝越位（数据继承链被绕过的风险面）。
+    // 例外（INSTALL-GHOST-SELFHEAL，2026-10-17）：幽灵 InstallLocation 自愈允许且仅允许
+    // 两条受控登记清除（DeleteRegValue/DeleteRegKey，HKCU、守卫段内）——见幽灵自愈 describe。
+    expect((code.match(/\bDeleteRegValue\b/g) ?? []).length).toBe(1)
+    expect((code.match(/\bDeleteRegKey\b/g) ?? []).length).toBe(1)
+    expect(code).not.toMatch(/\bDelete\b|\bRMDir\b/)
     expect(code).not.toMatch(/\bWriteRegStr\b|\bWriteRegDWORD\b|\bExecWait\b|\bExec\b|\bSetOutPath\b|\bCreateDirectory\b/)
     // 安装器脚本不得知道数据目录路径（数据继承是结构性事实：数据不在安装目录）
     expect(code).not.toContain('.a-share-kline-trainer')
+  })
+})
+
+describe('INSTALL-GHOST-SELFHEAL: 幽灵 InstallLocation 自愈源形状契约（UIUX-RELEASE-FIX）', () => {
+  // oracle（独立于实现）：electron-builder v26.15.3 模板冻结契约＋ghost-sim 真机仿真实证——
+  // ① initMultiUser（.onInit，customInit 之前）把 HKLM/HKCU InstallLocation 读进
+  //   $perMachineInstallationFolder/$perUserInstallationFolder 并置 has*Installation 标志；
+  // ② customInit 之后 Section "install" 的静默分支再次消费 $hasPerMachineInstallation＝"1" →
+  //   setInstallModePerAllUsers 重读 HKLM InstallLocation 写回 $INSTDIR——customInit 内不重置
+  //   标志则守卫被二次翻转（F1–F3 三轮修复无效的根因，ghost-sim marker 实证）；
+  // ③ setInstallModePerUser 宏重读 HKCU InstallLocation（非空即继承）——不清键则重置空转。
+  // 用户报障（2026-10-16 msg 361）：安装向导默认路径指向已删除的冒烟临时目录＋异常升级弹窗。
+  function ghostGuardBody(code: string): string {
+    const start = code.indexOf('IfNot} ${FileExists} "$R9\\*.*"')
+    if (start === -1) return ''
+    const end = code.indexOf('${EndIf}', start)
+    return end === -1 ? '' : code.slice(start, end)
+  }
+
+  it('INSTALL-GHOST：幽灵 InstallLocation 自愈重置安装模式标志（hasPerMachine/hasPerUser 归零，阻断静默分支二次继承）', async () => {
+    const code = stripNsisComments(await readInstallerNsh())
+    const guard = ghostGuardBody(code)
+    expect(guard).not.toBe('')
+    // 死循环根因修复：Section install 静默分支消费 hasPerMachineInstallation 再调
+    // setInstallModePerAllUsers（重读 HKLM 幽灵写回 INSTDIR）——不归零则 customInit 的复位被翻转
+    expect(guard).toContain('StrCpy $hasPerMachineInstallation "0"')
+    expect(guard).toContain('StrCpy $hasPerUserInstallation "0"')
+    // 清 HKCU 键后经宏重置（宏重读 HKCU，空则落 $LocalAppData\Programs 默认目录）
+    expect(guard).toContain('DeleteRegValue HKCU "${INSTALL_REGISTRY_KEY}" "InstallLocation"')
+    expect(guard).toContain('DeleteRegKey HKCU "${UNINSTALL_REGISTRY_KEY}"')
+    expect(guard).toContain('!insertmacro setInstallModePerUser')
+  })
+
+  it('INSTALL-GHOST：自愈按全新安装呈现（清空升级话术变量，不弹升级窗）且仅清本用户登记（不触碰 HKLM）', async () => {
+    const code = stripNsisComments(await readInstallerNsh())
+    const guard = ghostGuardBody(code)
+    expect(guard).toContain('StrCpy $R8 ""')
+    expect(guard).toContain('StrCpy $R9 ""')
+    expect(guard).not.toMatch(/DeleteReg(Value|Key)? HKLM/)
+  })
+
+  it('INSTALL-GHOST：无运行时调试残留（marker 文件写入不进发布包）', async () => {
+    const code = stripNsisComments(await readInstallerNsh())
+    expect(code).not.toContain('uiux-ghost-guard')
+    expect(code).not.toMatch(/\bFileOpen\b|\bFileWrite\b|\bFileClose\b/)
   })
 })
 
