@@ -1173,8 +1173,7 @@ void load()
 .title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* RF-05 密码输入式遮蔽标题：等宽星号弱化长度侧信道 */
 .masked-title { font-variant-numeric: tabular-nums; letter-spacing: 1px; }
-.random-mode-badge { flex: none; display: inline-flex; padding: 2px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; }
-:global(body.dark) .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+/* UIUX-B2：random-mode-badge 样式并入全局单一定义（styles.css） */
 .recording-strip { position: relative; display: flex; align-items: center; gap: 8px; font-size: 11px; white-space: nowrap; }
 .recording-strip label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .recording-strip .ghost-button { padding: 2px 7px; font-size: 11px; }
@@ -1185,11 +1184,9 @@ void load()
 :global(body.dark) .legacy-raw-banner { border-color: #8a6d1d; background: #2e2612; color: #d9b45c; }
 .legacy-drawing-notice { white-space: normal; line-height: 1.5; }
 .phase-tag { display: inline-flex; margin-left: 8px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-secondary, #51637a); font-size: 10px; }
-/* 统一下单面板：普通下单/条件单标签页（样式对齐 time-frame 标签），仓位控件两页共享 */
-.order-tabs { display: flex; gap: 2px; }
-.order-tabs button { border: 0; background: transparent; padding: 3px 9px; font-size: 13px; color: var(--text-secondary, #77869a); border-bottom: 2px solid transparent; }
-.order-tabs button.selected { color: #245a72; border-bottom-color: #2e8191; font-weight: 600; }
-:global(body.dark) .order-tabs button.selected { color: #ffffff; border-bottom-color: #c4c4c4; }
+/* 统一下单面板：普通下单/条件单标签页（样式对齐 time-frame 标签）。
+   UIUX-B2：选中/暗色颜色并入全局下划线 tab 规则（styles.css 分组选择器），此处仅保留尺寸 */
+.order-tabs button { padding: 3px 9px; font-size: 13px; }
 .order-form { display: grid; gap: 7px; margin-top: 2px; }
 .order-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .order-form input, .order-form select { min-width: 0; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 4px; padding: 6px; background: var(--control-background, #fff); color: var(--text-primary, #25364b); font-size: 11px; }

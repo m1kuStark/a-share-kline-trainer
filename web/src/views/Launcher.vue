@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ArrowUp } from 'lucide-vue-next'
 import { ApiError, createRandomTraining, createTraining, fetchTrainingSettings, previewTrainingRange, searchStocks, type RandomDimension, type RandomTrainingRequest, type Stock, type Tier, type TrainingRangePreview, type TrainingRangeRequest, type TrainingSettingsView } from '../api'
 import { minusMonthsShanghai, shanghaiToday } from '../rangeDate'
 import { dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
@@ -604,7 +605,7 @@ function randomCreateErrorMessage(error: unknown): string {
       <div class="launcher-head-row">
         <h1>创建训练</h1>
         <!-- UPD-NOTIFY-01：首页左上角更新提示（boot 自动检查发现新版；点击跳转设置「关于与更新」） -->
-        <button v-if="updateNotice" type="button" class="update-notice-btn" title="查看新版本介绍并更新" @click="emit('openUpdateSettings')">⬆ 新版本 v{{ updateNotice.latestVersion }} 可更新</button>
+        <button v-if="updateNotice" type="button" class="update-notice-btn" title="查看新版本介绍并更新" @click="emit('openUpdateSettings')"><ArrowUp :size="14" aria-hidden="true" /> 新版本 v{{ updateNotice.latestVersion }} 可更新</button>
       </div>
       <p>{{ mode === 'random'
         ? '服务器随机选股或随机选时段，训练中隐藏对应信息，结算后揭晓。创建后复权方式锁定，训练中不可切换。'
@@ -762,10 +763,8 @@ function randomCreateErrorMessage(error: unknown): string {
 .update-notice-btn { height: 24px; padding: 0 12px; border-radius: 12px; border: 1px solid #b45309; background: #b45309; color: #ffffff; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
 .update-notice-btn:hover { filter: brightness(1.08); }
 .update-notice-btn:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
-/* M7-02 模式标签：沿用训练页 timeframe-tabs 的下划线风格（双主题） */
+/* M7-02 模式标签：沿用训练页 timeframe-tabs 的下划线风格（双主题）。
+   UIUX-B2：选中/焦点/暗色颜色并入全局下划线 tab 规则（styles.css 分组选择器），此处仅保留尺寸与容器线 */
 .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
-.mode-tabs button { border: 0; background: transparent; padding: 7px 16px; font-size: 14px; color: var(--text-secondary, #77869a); border-bottom: 2px solid transparent; cursor: pointer; }
-.mode-tabs button.selected { color: #245a72; border-bottom-color: #2e8191; font-weight: 600; }
-.mode-tabs button:focus-visible { outline: 2px solid #2e8191; outline-offset: -2px; }
-:global(body.dark) .mode-tabs button.selected { color: #ffffff; border-bottom-color: #c4c4c4; }
+.mode-tabs button { padding: 7px 16px; font-size: 14px; cursor: pointer; }
 </style>

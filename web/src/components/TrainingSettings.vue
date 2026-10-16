@@ -1095,7 +1095,8 @@ function close(): void {
         <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
         <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
         <div class="settings-actions">
-          <button class="trade-action buy" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
+          <!-- UIUX-B2：主操作脱离 trade-action.buy（下单买入按钮的涨色语义不再用于"保存"这类中性主操作，改 accent 填充） -->
+          <button class="settings-save" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
         </div>
       </template>
         </div>
@@ -1105,6 +1106,11 @@ function close(): void {
 </template>
 
 <style scoped>
+/* UIUX-B2：保存主按钮（原复用 .trade-action.buy——视觉上与危险操作同红系且跨主题语义错位）。
+   几何对齐原 trade-action（高 37/全宽/白字/600），颜色走 accent 填充 token（暗色自动翻转）。 */
+.settings-save { width: 100%; border: 0; height: 37px; border-radius: var(--radius-sm); color: #fff; margin-top: var(--space-2); font-size: var(--font-size-md); font-weight: var(--font-weight-semibold); background: var(--color-accent-fill); }
+.settings-save:hover { filter: brightness(1.06); }
+.settings-save:disabled { opacity: .5; cursor: not-allowed; }
 .settings-mask { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 32, 0.45); }
 .settings-panel { width: min(760px, calc(100vw - 40px)); height: min(680px, calc(100dvh - 44px)); min-height: min(560px, calc(100dvh - 44px)); overflow: hidden; display: flex; flex-direction: column; padding: 18px 20px; border-radius: 10px; background: var(--surface-background, #fff); border: 1px solid var(--surface-border, #dfe5eb); color: var(--text-primary, #1c2733); box-shadow: 0 18px 48px rgba(15, 23, 32, 0.25); outline: none; }
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; }

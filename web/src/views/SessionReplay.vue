@@ -540,9 +540,7 @@ onBeforeUnmount(() => {
 }
 .replay-title { min-width: 0; display: flex; align-items: baseline; gap: 10px; }
 .replay-title h2 { margin: 0; font-size: 14px; white-space: nowrap; }
-/* RF-05 随机模式录像 tag（与训练页徽标同胶囊风格） */
-.random-mode-badge { flex: none; align-self: center; display: inline-flex; padding: 2px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: 10px; font-weight: 600; white-space: nowrap; }
-body.dark .random-mode-badge { border-color: #2b5c49; background: #14271f; color: #7ec8a8; }
+/* RF-05 随机模式录像 tag（与训练页徽标同胶囊风格）；UIUX-B2：样式并入全局单一定义（styles.css） */
 .replay-meta {
   margin: 0;
   font-size: 11px;

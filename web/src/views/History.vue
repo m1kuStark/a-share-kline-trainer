@@ -222,11 +222,10 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
           <input class="history-row-check" type="checkbox" :checked="isSelected(item.id)" :aria-label="`选择第 ${item.id} 局`" @click.stop @change="toggleSelected(item.id)" />
           <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small v-if="item.rangeMode !== 'random'" class="history-range-label">{{ tierText(item) }}</small><small v-else class="random-mode-tag" title="本局来自随机模式训练">{{ tierText(item) }}</small></span>
           <span class="history-row-dates">{{ item.startDate }} ~ {{ item.settleDate ?? '未知' }}</span>
-          <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}</span>
+          <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}<span v-if="item.integrity === 'unavailable'" class="history-row-integrity" :title="item.integrityReason">不可认证</span></span>
           <span class="history-row-money">{{ money(item.finalEquity) }}</span>
           <span class="history-row-return" :class="{ up: (item.returnRate ?? 0) > 0, down: (item.returnRate ?? 0) < 0 }">{{ percentText(item) }}</span>
           <span class="history-row-count">{{ item.tradeCount }} 笔</span>
-          <span v-if="item.integrity === 'unavailable'" class="history-row-integrity" :title="item.integrityReason">不可认证</span>
           <button class="history-row-replay" type="button" :disabled="linksLoading || !recordingLinkOf(item)" :title="replayTitle(item)" :aria-label="`播放第 ${item.id} 局的录像`" @click.stop="playRecording(item)">播放录像</button>
           <button class="history-row-export" type="button" :disabled="linksLoading || !recordingLinkOf(item) || exportingId === item.id" :title="replayTitle(item)" :aria-label="`导出第 ${item.id} 局的录像`" @click.stop="exportRecording(item)">{{ exportingId === item.id ? '导出中…' : '导出录像' }}</button>
           <button class="history-row-delete" type="button" title="删除训练记录" aria-label="删除训练记录" @click.stop="removeHistory(item.id)">删除</button>

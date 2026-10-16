@@ -10,7 +10,7 @@ import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
 import type { DesktopUpdatesApi } from './updateFlow'
-import { Moon, Sun } from 'lucide-vue-next'
+import { ChartCandlestick, History as HistoryIcon, Moon, Power, Settings, Sun, Trophy, Video } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
 import Training from './views/Training.vue'
 import SessionReplay from './views/SessionReplay.vue'
@@ -652,13 +652,13 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
     <aside class="rail" aria-label="主导航" :inert="trainingSettingsOpen">
       <div class="brand-mark">K</div>
       <nav>
-        <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining">⌁<span>训练</span></button>
-        <button class="rail-item" :class="{ active: view === 'rankings' }" title="五档排行" aria-label="五档排行" @click="showRankings">▲<span>排行</span></button>
-        <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory">▤<span>历史</span></button>
-        <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary">◫<span>录像</span></button>
+        <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining"><ChartCandlestick aria-hidden="true" /><span>训练</span></button>
+        <button class="rail-item" :class="{ active: view === 'rankings' }" title="五档排行" aria-label="五档排行" @click="showRankings"><Trophy aria-hidden="true" /><span>排行</span></button>
+        <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory"><HistoryIcon aria-hidden="true" /><span>历史</span></button>
+        <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary"><Video aria-hidden="true" /><span>录像</span></button>
       </nav>
-      <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" :disabled="wizardBusy || wizardApplying || exitFlow !== 'closed'" @click="openExitFlow">⏻<span>退出</span></button>
-      <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle">⚙<span>设置</span></button>
+      <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" :disabled="wizardBusy || wizardApplying || exitFlow !== 'closed'" @click="openExitFlow"><Power aria-hidden="true" /><span>退出</span></button>
+      <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle"><Settings aria-hidden="true" /><span>设置</span></button>
     </aside>
 
     <main class="workspace" :inert="trainingSettingsOpen">

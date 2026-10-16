@@ -190,6 +190,14 @@ test('结算→按本局id定位历史行→事实成绩单→返回（深色144
   await expect(row).toBeVisible()
   await expect(row).toContainText('600519')
   await expect(row).toContainText('提前结算')
+  // UIUX-B2 回归（P1 修复）：行内"删除"按钮不得溢出到隐式第二行——
+  // 曾因 grid 9 轨道对 10 子元素，删除被挤进 22px 首列竖排断行、行高膨胀。
+  // 同行判定用与勾选框的 offsetTop 差（居中对齐下高度差一半以内，修复前实测为 +30）
+  const deleteButton = row.locator('.history-row-delete')
+  const deleteTopDelta = await deleteButton.evaluate((el) =>
+    el.offsetTop - el.closest('.history-row')!.querySelector('.history-row-check')!.offsetTop)
+  expect(Math.abs(deleteTopDelta)).toBeLessThanOrEqual(6)
+  expect(await deleteButton.evaluate((el) => el.getBoundingClientRect().width >= 30)).toBe(true)
   await expect(history.getByRole('button', { name: '上一页' })).toBeDisabled()
   const { total } = await fetchHistory(page)
   if (total <= 20) await expect(history.getByRole('button', { name: '下一页' })).toBeDisabled()
