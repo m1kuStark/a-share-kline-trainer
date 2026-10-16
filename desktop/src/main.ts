@@ -83,12 +83,8 @@ import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js
 import { createFeedFallbackAdapter, readUpdateSourceSetting, resolveDesktopFeedPlan } from './cn-feed.js'
 import { registerUpdateIpc } from './update-ipc.js'
 import { registerArchiveIpc } from './archive-recording.js'
-import {
-  applyPendingHistoryAtBoot,
-  consumeOneClickHistoryStaging,
-  registerMigrationIpc,
-  runOneClickRecordingImport,
-} from './mig-import.js'
+// UIUX-release 2026-10-16：v1.2.7 迁移能力整体退役（用户拍板——v1.2.7 已弃用；
+// mig-import.ts 及其三处启动接线/IPC/preload 通道随 tools/migrate-v127 一并移除）
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
 
 // ===== P0-4（PORT-UPD-01）＋UPD-QUIT-TYPEERROR-GUARD：主进程异常兜底（最后防线） =====
@@ -153,8 +149,6 @@ let serverIdentity: { runId: string; pid: number; dataDir: string } | null = nul
 const updateChannelKind = resolveUpdateChannel({ isPackaged: app.isPackaged })
 // DATA-ARCH-01：录像归档目录的数据目录来源（bootServerAndOpen 解析后生效；dev 窗口保持 null）
 let archiveDataDir: string | null = null
-// MIG-EXT-01：v1.2.7 训练历史迁移的目标库路径（bootServerAndOpen 解析后生效；dev 窗口保持 null）
-let migrationDatabasePath: string | null = null
 /** 排空完成后待安装的新版（downloaded 事件置位；仅 exit 分支非 forced 路径消费） */
 let installPendingUpdate = false
 /** PORT-UPD-01：便携自更新 staging 所在数据目录（IPC 注册先于启动；bootServerAndOpen 解析后回填） */
@@ -504,35 +498,8 @@ registerArchiveIpc({
   logger: console,
 })
 
-// ===== MIG-EXT-01 v1.2.7 训练历史迁移 IPC（独立通道面；不触碰更新/归档绑定段） =====
-// MIG-ONECLICK-01（2026-10-13 用户拍板）：设置页「从 v1.2.7 迁移」分栏退役，渲染端已无
-// 调用方（preload 暴露面保留但无人 invoke）。底层 IPC 保留论证见
-// docs/verification/2026-10/MIG-ONECLICK-01/README.md：preload.cts 不在本任务可写范围、
-// 该通道有既有测试锁定且作为手动兜底无害。
-// 渲染端经 preload 的 desktopMigration（pick/inspect/importHistory）触发：pick 弹原生文件
-// 选择框选「训练历史迁移-…/迁移清单.json」；inspect 包体检；import 暂存 pending（重启生效）。
-// databasePath 惰性取值（bootServerAndOpen 设置 migrationDatabasePath 后才可用，dev 窗口/
-// 启动早期为 null → 结构化未就绪错误，渲染端如实呈现）。
-async function pickMigrationManifestFile(): Promise<string | null> {
-  const options = {
-    title: '选择 v1.2.7 训练历史迁移清单',
-    defaultPath: '迁移清单.json',
-    properties: ['openFile'] as Array<'openFile'>,
-    filters: [{ name: '迁移清单（迁移清单.json）', extensions: ['json'] }],
-  }
-  const result = mainWindow && !mainWindow.isDestroyed()
-    ? await dialog.showOpenDialog(mainWindow, options)
-    : await dialog.showOpenDialog(options)
-  if (result.canceled || result.filePaths.length === 0) return null
-  return result.filePaths[0] ?? null
-}
-
-registerMigrationIpc({
-  ipcMain,
-  pickManifestFile: pickMigrationManifestFile,
-  databasePath: () => migrationDatabasePath,
-  logger: console,
-})
+// UIUX-release 2026-10-16：v1.2.7 训练历史迁移 IPC 面随迁移能力退役整体移除
+// （用户拍板 v1.2.7 弃用；原 MIG-EXT-01/MIG-ONECLICK-01 接线与手动兜底通道一并下线）。
 
 // ===== 启动 =====
 
@@ -596,8 +563,6 @@ async function bootServerAndOpen(): Promise<void> {
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
   // DATA-ARCH-01：归档目录跟生效数据目录（复用/reuse 分支同样生效——config 在分支前已解析）
   archiveDataDir = config.dataDir
-  // MIG-EXT-01：迁移目标库跟生效数据目录的库路径（reuse 分支同样生效——只影响 IPC 只读面）
-  migrationDatabasePath = config.databasePath
   // PORT-UPD-01：数据目录就绪——回填便携自更新 staging 根＋清理上次更新残留
   // （<dataDir>/update-staging 与用户 exe 旁 .old；非便携 no-op；失败不阻断启动）。
   // P0 修复：.old 残留 beside 用户实际启动的 exe（PORTABLE_EXECUTABLE_FILE），非 execPath
@@ -660,28 +625,6 @@ async function bootServerAndOpen(): Promise<void> {
 
     // proceed：注入 PORT-01 回退标记（页面常驻提示）＋实际端口，再组装隔离运行 env。
     // runId 预生成：状态记录 trainer-state.json 与内嵌服务 health 上报同源。
-    // MIG-ONECLICK-01：一键迁移工具已把 v1.2.7 产物暂存到 <dataDir>/migrate-v127-import/
-    // 时，先消费其训练历史半边（复用 stageHistoryImport 产 pending；失败保留暂存、
-    // 下次启动自动重试，绝不阻断启动）——必须先于 applyPendingHistoryAtBoot 才能在
-    // 本次启动完成归位。录像半边在窗口加载完成后注入（见下方 did-finish-load 接线）。
-    try {
-      const consumed = await consumeOneClickHistoryStaging(config.dataDir, config.databasePath)
-      if (consumed.ran && consumed.ok) console.log('[desktop] 一键迁移：v1.2.7 训练历史已暂存，本启动将合并应用（导入前自动备份）')
-      else if (consumed.ran) console.error('[desktop] 一键迁移：训练历史暂存失败（暂存保留，下次启动重试）:', consumed.error)
-    } catch (error) {
-      console.error('[desktop] 一键迁移训练历史消费异常（下次启动自动重试）:', error)
-    }
-    // MIG-EXT-01 / MIG-MERGE-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史
-    // （统一合并：目标不存在＝pending 就位；存在＝合并导入——备份先行＋单事务＋幂等
-    // 跳过＋ns 保留；失败目标零损伤、pending 保留下次自动重试——绝不阻断启动）。
-    try {
-      const applied = await applyPendingHistoryAtBoot(config.databasePath)
-      if (applied.applied) console.log(`[desktop] v1.2.7 训练历史迁移已在启动时合并应用（导入 ${applied.imported} 条、跳过已存在 ${applied.skipped} 条；原库已备份保留）`)
-      else if (applied.error) console.error(`[desktop] v1.2.7 训练历史迁移暂缓（${applied.reason}）:`, applied.error)
-      else if (applied.reason !== 'none') console.log(`[desktop] v1.2.7 训练历史迁移暂缓：${applied.reason}`)
-    } catch (error) {
-      console.error('[desktop] v1.2.7 训练历史迁移应用异常（下次启动自动重试）:', error)
-    }
     const runId = `run-${randomUUID()}`
     const effectiveConfig: DesktopRuntimeConfig = { ...config, port: plan.port }
     process.env.TRAINER_PORT_FALLBACK = portFallbackEnvValue(plan.fallback)
@@ -700,29 +643,6 @@ async function bootServerAndOpen(): Promise<void> {
       databasePath: config.databasePath,
     }))
     mainWindow = createWindow(buildAppUrl(started.port), await loadWindowBounds())
-    // MIG-ONECLICK-01：一键迁移录像半边——页面加载完成后注入暂存的导入器脚本，
-    // 在渲染端上下文把录像合并包写入本安装隔离的 IndexedDB（主进程无法直写；导入
-    // 器与新版页面「导入录制」同链）。成功清理暂存；失败保留下次启动重试（幂等）。
-    // 无一键暂存时 no-op，不触碰页面。did-finish-load 可能多次触发（刷新），runner
-    // 以 manifest consumedAt 门控幂等。
-    {
-      const oneClickWindow = mainWindow
-      oneClickWindow.webContents.on('did-finish-load', () => {
-        void runOneClickRecordingImport({
-          dataDir: config.dataDir,
-          executeJavaScript: code => oneClickWindow.webContents.executeJavaScript(code),
-        })
-          .then(outcome => {
-            if (!outcome.ran) return
-            if (outcome.ok) {
-              console.log(`[desktop] 一键迁移：录像导入完成（成功 ${outcome.summary.imported ?? '?'} / 跳过 ${outcome.summary.skipped ?? '?'} / 失败 ${outcome.summary.failed ?? 0}）`)
-            } else {
-              console.error('[desktop] 一键迁移：录像导入失败（暂存保留，下次启动重试）:', outcome.error)
-            }
-          })
-          .catch(error => console.error('[desktop] 一键迁移录像注入异常（下次启动重试）:', error))
-      })
-    }
   } finally {
     if (lockHeld) {
       lockHeld = false

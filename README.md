@@ -1,6 +1,6 @@
 # A股K线训练器（kline-trainer）
 
-离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的成绩与复盘。界面为中文，K线红涨绿跌。当前版本 **v1.2.7**。
+离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的成绩与复盘。界面为中文，K线红涨绿跌。当前版本 **v1.3.0**。
 
 [下载 Windows 版](https://github.com/m1kuStark/a-share-kline-trainer/releases/latest) · [使用指南](docs/user/README.md) · [反馈问题](https://github.com/m1kuStark/a-share-kline-trainer/issues/new/choose)
 
@@ -24,7 +24,7 @@
 
 ## 快速开始（Windows）
 
-1. 到 [Releases](https://github.com/m1kuStark/a-share-kline-trainer/releases) 下载最新版 `kline-trainer-v<版本>-windows-x64.zip`。安装包自带运行环境，**无需安装 Node、npm 或 Python，无需账号**。
+1. 到 [Releases](https://github.com/m1kuStark/a-share-kline-trainer/releases) 下载最新版安装器 `kline-trainer-desktop-setup-v<版本>-windows-x64.exe` 并运行（向导式安装、免管理员、可自选目录）。安装包自带运行环境，**无需安装 Node、npm 或 Python，无需账号**；另有 `kline-trainer-v<版本>-windows-x64.zip` 免安装兜底形态。
 2. 右键完整解压到一个固定文件夹（之后不要移动它）。
 3. 双击 `Start.cmd`，浏览器自动打开本机地址。首次使用按向导配置通达信安装目录，并在通达信里下载目标股票的日线数据。
 4. 选股票、选区间、开始训练：空格推进下一日，B/S 买卖，`[` `]` 切换周期，Home 回到最新。
