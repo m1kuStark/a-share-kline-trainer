@@ -56,6 +56,13 @@
         !insertmacro setInstallModePerUser
         StrCpy $hasPerMachineInstallation "0"
         StrCpy $hasPerUserInstallation "0"
+        ; V5（INSTALL-GHOST-FOLDERSNAPSHOT，用户 2026-10-17 报障）：initMultiUser 在
+        ; customInit 之前把 HKLM/HKCU InstallLocation 预读进快照变量
+        ; （assistedInstaller.nsh:112/117），向导模式页消费快照渲染「已存在安装（位置：…）」
+        ; （multiUserUi.nsh:203-216）、目录继承消费 $INSTDIR——V4 只归零 has* 标志，
+        ; 快照仍带幽灵路径。两变量由 multiUser.nsh 顶层 Var 声明，此处仅 StrCpy 清值。
+        StrCpy $perMachineInstallationFolder ""
+        StrCpy $perUserInstallationFolder ""
         StrCpy $R8 ""
         StrCpy $R9 ""
       ${EndIf}

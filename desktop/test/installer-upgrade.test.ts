@@ -148,6 +148,40 @@ describe('INSTALL-GHOST-SELFHEAL: 幽灵 InstallLocation 自愈源形状契约�
   })
 })
 
+describe('INSTALL-GHOST-FOLDERSNAPSHOT: 幽灵拦截清空 initMultiUser 预读目录快照（V5）', () => {
+  // oracle（矩阵行 INSTALL-GHOST-FOLDERSNAPSHOT，独立于实现）：
+  //   - 用户报障（2026-10-17 第八轮任务 1）：装完新版验收后，安装向导中仍出现
+  //     Temp\ghostsim-installed 幽灵路径——V4（9baae70）只归零 has* 标志未清 folder 快照。
+  //   - electron-builder v26.15.3 模板冻结契约（本轮侦察，模板原文）：
+  //     ① initMultiUser（assistedInstaller.nsh:112/117）在 customInit 之前把 HKLM/HKCU
+  //        InstallLocation 预读进 $perMachineInstallationFolder/$perUserInstallationFolder；
+  //     ② 向导模式页消费快照渲染（multiUserUi.nsh:203/205/214/216：
+  //        "$(perUserInstallExists)($perUserInstallationFolder)" 等「已存在安装（位置：…）」
+  //        文本，has* 标志门控）；目录页消费 $INSTDIR（setInstallModePerUser/PerAllUsers
+  //        内快照→INSTDIR 继承，multiUser.nsh:26-28/75-77）。
+  //   - 侦察结论（同类向导快照完备清单）：init 预读快照仅上述两个 folder 变量——
+  //     common.nsh:86/95 的 $oldShortcutName/$oldMenuDirectory 是安装期快捷方式修复的
+  //     惰性读取（消费时现读注册表，非 init 预读、不进向导页），不属于本清空面；
+  //     无 uninstall display name 类快照。
+  //   - NSIS 约束：两变量由 multiUser.nsh:19/60 顶层 Var 声明，宏体内只可 StrCpy 赋值。
+  function ghostGuardBodyV5(code: string): string {
+    const start = code.indexOf('IfNot} ${FileExists} "$R9\\*.*"')
+    if (start === -1) return ''
+    const end = code.indexOf('${EndIf}', start)
+    return end === -1 ? '' : code.slice(start, end)
+  }
+
+  it('INSTALL-GHOST：幽灵拦截同时清空 initMultiUser 预读的目录快照变量（perMachine/perUser folder 归空，向导模式页/目录页不再渲染幽灵路径）', async () => {
+    const code = stripNsisComments(await readInstallerNsh())
+    const guard = ghostGuardBodyV5(code)
+    expect(guard).not.toBe('')
+    // V5 根因：initMultiUser 在 customInit 之前预读 InstallLocation 进快照变量，向导页消费
+    // 快照渲染——V4 只归零 has* 标志，快照仍带幽灵值（用户 2026-10-17 报障实证）。
+    expect(guard).toContain('StrCpy $perMachineInstallationFolder ""')
+    expect(guard).toContain('StrCpy $perUserInstallationFolder ""')
+  })
+})
+
 describe('INSTALLER-UPGRADE-DETECT: electron-builder.yml 升级语义前提锁定（配置防回归）', () => {
   it('INSTALL-UPGRADE：不覆盖 nsis include（保持 buildResources/installer.nsh 默认捡拾）且不启用 deleteAppDataOnUninstall', async () => {
     const yml = await readFile(join(repoRoot, 'desktop', 'electron-builder.yml'), 'utf8')
