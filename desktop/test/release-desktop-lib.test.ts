@@ -237,3 +237,42 @@ describe('NSIS-ARTIFACT-PRODUCED: electron-builder.yml source contract (wizard /
     expect(yml).not.toMatch(/artifactName:\s*kline-trainer-desktop-v\$\{version\}-windows-x64\.exe/)
   })
 })
+
+// RELEASE-DIST-STALENESS（2026-10-17 第八轮用户验收实证）：existence 检查拦不住陈旧 dist——
+// 主仓 web/dist 停留 10-16 旧构建，release:desktop 静默把旧 UI 打进安装包，用户装机后
+// 随机面板布局重构"未生效"。oracle 独立性：期望来自事故时间线（source 新于 dist＝陈旧），
+// 夹具用真实临时目录＋utimes 控制 mtime（非 mock）。
+describe('RELEASE-DIST-STALENESS: findStaleBuildInputs refuses stale dist trees', () => {
+  it('findStaleBuildInputs 拒绝陈旧 dist＝source 新于 dist 或 dist 缺失判 stale，dist 较新放行', async () => {
+    const { findStaleBuildInputs } = await import('../scripts/release-desktop-lib.mjs')
+    const { mkdtemp, mkdir, writeFile, utimes } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const base = await mkdtemp(join(tmpdir(), 'stale-dist-'))
+    const base2 = await mkdtemp(join(tmpdir(), 'stale-dist-'))
+    const base3 = await mkdtemp(join(tmpdir(), 'stale-dist-'))
+    const now = Date.now() / 1000
+    // 域 A（陈旧）：source mtime=now+60s，dist mtime=now
+    await mkdir(join(base, 'src'), { recursive: true })
+    await mkdir(join(base, 'dist'), { recursive: true })
+    await writeFile(join(base, 'src', 'App.vue'), 'x')
+    await writeFile(join(base, 'dist', 'index.html'), 'x')
+    await utimes(join(base, 'src', 'App.vue'), now + 60, now + 60)
+    await utimes(join(base, 'dist', 'index.html'), now, now)
+    // 域 B（新鲜）：dist 晚于 source
+    await mkdir(join(base2, 'src'), { recursive: true })
+    await mkdir(join(base2, 'dist'), { recursive: true })
+    await writeFile(join(base2, 'src', 'main.ts'), 'x')
+    await writeFile(join(base2, 'dist', 'main.js'), 'x')
+    await utimes(join(base2, 'src', 'main.ts'), now, now)
+    await utimes(join(base2, 'dist', 'main.js'), now + 60, now + 60)
+    // 域 C（dist 缺失）：source 存在、dist 目录不存在
+    await mkdir(join(base3, 'src'), { recursive: true })
+    await writeFile(join(base3, 'src', 'index.ts'), 'x')
+    const stale = await findStaleBuildInputs([
+      { name: 'stale-domain', sourceDir: join(base, 'src'), artifactDir: join(base, 'dist') },
+      { name: 'fresh-domain', sourceDir: join(base2, 'src'), artifactDir: join(base2, 'dist') },
+      { name: 'missing-domain', sourceDir: join(base3, 'src'), artifactDir: join(base3, 'dist') },
+    ])
+    expect(stale).toEqual(['stale-domain', 'missing-domain'])
+  })
+})

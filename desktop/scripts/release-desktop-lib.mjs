@@ -187,3 +187,46 @@ export async function collectChecksumEntries({ version, fs }) {
   entries.sort((a, b) => a.name.localeCompare(b.name))
   return entries
 }
+
+/** RELEASE-DIST-STALENESS（2026-10-17 用户验收实证）：发布预检必须拦陈旧 dist。
+ *  existence 检查只证明"构建过"，不证明"构建的是当前源码"——第八轮事故＝主仓 web/dist
+ *  停留前一日构建，旧 UI 静默入包，用户装机后布局重构"未生效"。fail-closed 判据＝
+ *  每个域 source 树最新 mtime 晚于 dist 树最新 mtime（或 dist 树不存在）即判陈旧。
+ *  git checkout/cherry-pick 会刷新 source mtime，恰好覆盖"代码刚合入但没重建"的主事故形态；
+ *  假阳性（mtime 抖动误报）代价只是重跑一次构建，方向安全。 */
+export async function findStaleBuildInputs(pairs) {
+  const stale = []
+  for (const pair of pairs) {
+    const srcLatest = await latestTreeMtimeMs(pair.sourceDir)
+    if (srcLatest === null) continue // source 域缺失＝存在性检查的职责，不在此重复判
+    const artLatest = await latestTreeMtimeMs(pair.artifactDir)
+    if (artLatest === null || artLatest < srcLatest) stale.push(pair.name)
+  }
+  return stale
+}
+
+/** 目录树内文件最新 mtimeMs（递归，跳过符号链接防 junction 环）；目录不存在返回 null */
+async function latestTreeMtimeMs(dir) {
+  const { readdir } = await import('node:fs/promises')
+  const { join } = await import('node:path')
+  let latest = null
+  const walk = async (current) => {
+    let entries
+    try {
+      entries = await readdir(current, { withFileTypes: true })
+    } catch {
+      return // 目录不存在/不可读：视为空树
+    }
+    for (const entry of entries) {
+      const full = join(current, entry.name)
+      if (entry.isSymbolicLink()) continue
+      if (entry.isDirectory()) { await walk(full); continue }
+      if (!entry.isFile()) continue
+      const { stat } = await import('node:fs/promises')
+      const mtimeMs = (await stat(full)).mtimeMs
+      if (latest === null || mtimeMs > latest) latest = mtimeMs
+    }
+  }
+  await walk(dir)
+  return latest
+}

@@ -27,6 +27,7 @@ import {
   renderLatestYml,
   verifyLatestYml,
   collectChecksumEntries,
+  findStaleBuildInputs,
 } from './release-desktop-lib.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -63,6 +64,18 @@ async function main() {
   }
   if (missing.length) {
     console.error(`[release-desktop] missing build inputs: ${missing.join(', ')}; run npm run build:desktop first`)
+    process.exit(1)
+  }
+
+  // RELEASE-DIST-STALENESS（2026-10-17 用户验收实证）：existence 拦不住陈旧 dist——
+  // 旧构建静默入包，装机后 UI 改动"未生效"。任一域 source 新于 dist 即 fail-closed 拒打包。
+  const stale = await findStaleBuildInputs([
+    { name: 'web/dist（web/src 有更新）', sourceDir: join(ROOT, 'web', 'src'), artifactDir: join(ROOT, 'web', 'dist') },
+    { name: 'server/dist（server/src 有更新）', sourceDir: join(ROOT, 'server', 'src'), artifactDir: join(ROOT, 'server', 'dist') },
+    { name: 'desktop/dist（desktop/src 有更新）', sourceDir: join(ROOT, 'desktop', 'src'), artifactDir: join(ROOT, 'desktop', 'dist') },
+  ])
+  if (stale.length) {
+    console.error(`[release-desktop] FAIL: stale build inputs: ${stale.join(', ')}; rerun the corresponding build (npm run build:web / build:server / build:desktop:main) before packaging`)
     process.exit(1)
   }
 
