@@ -31,14 +31,14 @@ const RANDOM_DIMENSIONS: Array<{ value: RandomDimension; label: string; hint: st
   { value: 'random_both', label: '全随机', hint: '股票与时间段都由服务器随机，双重隐藏，结算后揭晓' },
 ]
 const dimensionHint = computed(() => RANDOM_DIMENSIONS.find(item => item.value === randomDimension.value)?.hint ?? '')
-/** 股票选择器：经典始终显示；随机模式仅 random_time（用户选股） */
-const showStockPicker = computed(() => mode.value === 'classic' || randomDimension.value === 'random_time')
-/** RF3-01 random_stock 档位（非自定义范围）起始日输入：完全照搬经典 preset start（同控件同行为，默认＝锚点回退档位月数、可改） */
+/** RF3-01 random_stock 档位（非自定义范围）起始日输入：完全照搬经典 preset start（同控件同行为，
+ * 默认＝锚点回退档位月数、可改）；RANDOM-PANEL-LAYOUT（第八轮 W2）起位于维度条件输入槽内 */
 const showRandomStockStart = computed(() => mode.value === 'random' && randomDimension.value === 'random_stock' && randomTier.value !== 'RANGE')
-/** 经典 preset 起始日＋行内初始资金（原布局）；RF3-01 起 random_stock 档位下同款起始日输入复用该行 */
-const showPresetStart = computed(() => (mode.value === 'classic' && tier.value !== 'RANGE') || showRandomStockStart.value)
-/** 起止日输入（复用 rangeStart/rangeEnd）：经典自定义范围｜随机 random_stock 的「自定义范围」档（RF2-01） */
-const showRangeDates = computed(() => mode.value === 'classic' ? tier.value === 'RANGE' : randomDimension.value === 'random_stock' && randomTier.value === 'RANGE')
+/** 经典 preset 起始日＋行内初始资金（原布局原样保留）；随机模式不再复用该拼行——
+ * 随机维度条件输入进维度条件槽、初始资金恒为独立字段行（RANDOM-PANEL-LAYOUT） */
+const classicPresetStart = computed(() => mode.value === 'classic' && tier.value !== 'RANGE')
+/** 起始日输入在场（经典 preset 档或随机 random_stock 档）：dataStatus 锚点联动重算的闸门 */
+const presetStartInputVisible = computed(() => classicPresetStart.value || showRandomStockStart.value)
 /** RF-04/RF2-01 随机训练周期档位网格：三种随机维度全部复用经典五档（random_stock 另配「自定义范围」档） */
 const showRandomPeriod = computed(() => mode.value === 'random')
 /** 训练窗口长度（根数输入）：随机模式下仅「自定义根数」档显示 */
@@ -152,7 +152,7 @@ const errorMessage = ref('')
 // 数据状态到达/变化后，手填过的起始日不覆盖；未动过则随最新锚点重算（选股、刷新不打扰）。
 // RF3-01：random_stock 档位起始日输入与经典同行为（同一 startDate 状态与 touched 标记复用）
 watch(dataStatus, () => {
-  if (!showPresetStart.value || startDateTouched.value) return
+  if (!presetStartInputVisible.value || startDateTouched.value) return
   const months = mode.value === 'classic'
     ? TIER_MONTHS[tier.value as Exclude<Tier, 'RANGE'>]
     : TIER_MONTHS[randomTier.value as Exclude<Tier, 'RANGE'>]
@@ -359,12 +359,14 @@ const randomStockPeriodOptions: Array<{ value: Tier | 'RANGE'; label: string }> 
   { value: 'RANGE', label: '自定义范围' },
 ]
 
-/** 当前维度的档位选项与网格提示（档位文案与经典完全一致） */
+/** 当前维度的档位选项与网格提示（档位文案与经典完全一致）。
+ * RANDOM-PANEL-LAYOUT：两段提示压成单行（≤50 字·726px 内容宽恒单行）——原 random_stock 版
+ * 会折两行而 time/both 版一行，是维度切换时公共区纵向跳变的偏移源之一；文案变更＝proposed_default */
 const activeRandomPeriodOptions = computed(() =>
   randomDimension.value === 'random_stock' ? randomStockPeriodOptions : randomPeriodOptions)
 const randomPeriodHint = computed(() => randomDimension.value === 'random_stock'
-  ? '与经典模式同一时间长度口径：窗口为最近所选档位的自然月数（以本地最新数据日为末锚），股票由服务器随机；「自定义范围」＝起止日期（旧口径）'
-  : '与经典模式同一时间长度口径：起点随机，窗口为所选档位的自然月跨度；「自定义根数」＝按 K 线根数随机（旧口径）')
+  ? '窗口＝所选档位的自然月数（自起始日起，默认锚点＝本地最新数据日）；「自定义范围」＝起止日期'
+  : '起点随机，窗口＝所选档位的自然月数；「自定义根数」＝按 K 线根数随机')
 
 function onRandomTierClick(value: Tier | 'WINDOW_BARS' | 'RANGE'): void {
   randomTier.value = value
@@ -619,7 +621,9 @@ function randomCreateErrorMessage(error: unknown): string {
     </div>
 
     <section class="launcher-form">
-      <div v-if="showStockPicker" class="form-field wide stock-field">
+      <!-- 经典选股器（表单顶部原位，RANDOM-PANEL-LAYOUT 零变化）；随机模式的选股输入
+           （random_time）移入下方维度条件输入槽——选维度在前、填条件在后，贴合操作顺序 -->
+      <div v-if="mode === 'classic'" class="form-field wide stock-field">
         <label>股票</label>
         <div class="stock-input-row">
           <input v-model="codeText" placeholder="股票代码，如 600519" aria-label="股票代码" @input="onCodeInput" />
@@ -645,6 +649,58 @@ function randomCreateErrorMessage(error: unknown): string {
         <small class="form-hint">{{ dimensionHint }}</small>
       </div>
 
+      <!-- RANDOM-PANEL-LAYOUT（第八轮 W2）维度条件输入槽：位于随机维度组正下方，三种维度的
+           条件输入在此切换（time=股票检索、stock=起始日/起止日期、both=占位说明行）。三分支同构
+           （label＋36px 控件＋单行 hint）⇒ 槽高天然一致，槽外公共设置纵向位置恒定不跳变；
+           经典模式不经此槽（经典表单布局原样保留）。 -->
+      <div v-if="mode === 'random'" class="dimension-slot" data-testid="random-dimension-slot">
+        <!-- random_time：股票检索输入对（与经典选股器共用同一状态与联动；经典副本在表单顶部，
+             两处实例互斥渲染，修改输入框/提示链时需同步两份） -->
+        <div v-if="randomDimension === 'random_time'" class="form-field wide stock-field">
+          <label>股票</label>
+          <div class="stock-input-row">
+            <input v-model="codeText" placeholder="股票代码，如 600519" aria-label="股票代码" @input="onCodeInput" />
+            <input v-model="nameText" placeholder="股票名称，如 贵州茅台（可用拼音首字母 GZMT）" aria-label="股票名称" @input="onNameInput" />
+            <div v-if="suggestions.length" class="suggestions">
+              <button v-for="stock in suggestions" :key="stock.code" @click="choose(stock)">
+                <strong>{{ stock.code }}</strong><span>{{ stock.name }}</span><small>{{ stock.market.toUpperCase() }}</small>
+              </button>
+            </div>
+          </div>
+          <small v-if="searching" class="form-hint" role="status">正在检索股票…</small>
+          <small v-else-if="matchHint" class="form-hint">{{ matchHint }}</small>
+          <small v-else-if="selected" class="form-hint">已选：{{ selected.name }}（{{ selected.code }}，数据截至 {{ selected.lastDate ?? 'N/A' }}）；重新选择请清空任一框</small>
+          <small v-else-if="suggestions.length" class="form-hint">请点击下方检索结果确认股票</small>
+          <small v-else class="form-hint">输入股票代码或名称（支持拼音首字母），点击检索结果确认选择</small>
+        </div>
+        <!-- random_stock：起始日输入（档位档，RF3-01 同款行为）｜起止日期对（「自定义范围」档） -->
+        <template v-else-if="randomDimension === 'random_stock'">
+          <div v-if="showRandomStockStart" class="form-field">
+            <label>起始日</label>
+            <input v-model="startDate" type="date" @input="startDateTouched = true" />
+            <small class="form-hint">起始日默认从最新数据日回退所选档位时长；窗口为起始日起所选档位的自然月数，股票由服务器在窗口内随机选取</small>
+          </div>
+          <div v-else class="form-row">
+            <div class="form-field">
+              <label>起始日</label>
+              <input v-model="rangeStart" type="date" @input="errorMessage = ''" />
+              <small class="form-hint">随机股票在此时间段内由服务器选取；起始日自动对齐到前方最近的交易日</small>
+            </div>
+            <div class="form-field">
+              <label>结束日</label>
+              <input v-model="rangeEnd" type="date" @input="errorMessage = ''" />
+              <small class="form-hint">数据需覆盖到结束日；窗口内至少包含 2 个交易日</small>
+            </div>
+          </div>
+        </template>
+        <!-- random_both：无需任何输入——占位说明行（文案 proposed_default，待用户确认） -->
+        <div v-else class="form-field">
+          <label>股票与时间段</label>
+          <div class="dimension-slot-empty" data-testid="random-both-placeholder">股票与时间段均由服务器随机，无需选择</div>
+          <small class="form-hint">创建后直接开始训练，结算时揭晓随机到的标的与时间区间</small>
+        </div>
+      </div>
+
       <div v-if="mode === 'classic'" class="form-field">
         <label>训练周期</label>
         <div class="tier-grid">
@@ -652,24 +708,25 @@ function randomCreateErrorMessage(error: unknown): string {
         </div>
       </div>
 
-      <div v-if="showPresetStart || showRangeDates" class="form-row">
+      <!-- 经典起始日＋行内初始资金（preset 档）／起止日期对（自定义范围档）：原布局原样保留。
+           随机模式的维度条件输入已移入上方维度条件槽、初始资金走下方独立行，不再共用本行
+           （RANDOM-PANEL-LAYOUT：经典模式布局零变化） -->
+      <div v-if="mode === 'classic'" class="form-row">
         <div class="form-field">
           <label>起始日</label>
-          <input v-if="showPresetStart" v-model="startDate" type="date" @input="startDateTouched = true" />
-          <input v-else v-model="rangeStart" type="date" @input="mode === 'classic' ? onRangeInputChanged() : (errorMessage = '')" />
-          <small v-if="showPresetStart" class="form-hint">{{ mode === 'classic'
-            ? '选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示'
-            : '起始日默认从最新数据日回退所选档位时长；窗口为起始日起所选档位的自然月数，股票由服务器在窗口内随机选取' }}</small>
-          <small v-else class="form-hint">{{ mode === 'classic' ? '自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）' : '随机股票在此时间段内由服务器选取；起始日自动对齐到前方最近的交易日' }}</small>
+          <input v-if="tier !== 'RANGE'" v-model="startDate" type="date" @input="startDateTouched = true" />
+          <input v-else v-model="rangeStart" type="date" @input="onRangeInputChanged()" />
+          <small v-if="tier !== 'RANGE'" class="form-hint">选择周期后自动从最新数据日回退对应时长；手动修改保留到下次切换周期。起始日之前最多 840 根 K 线同屏显示</small>
+          <small v-else class="form-hint">自定义起始日；默认从最新数据日回退 3 个自然月（月末自动对齐）</small>
         </div>
-        <div v-if="showPresetStart" class="form-field">
+        <div v-if="tier !== 'RANGE'" class="form-field">
           <label>初始资金</label>
           <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
         </div>
         <div v-else class="form-field">
           <label>结束日</label>
-          <input v-model="rangeEnd" type="date" @input="mode === 'classic' ? onRangeInputChanged() : (errorMessage = '')" />
-          <small class="form-hint">{{ mode === 'classic' ? '包含起止日期之间可用的交易日；不能选择未来日期' : '数据需覆盖到结束日；窗口内至少包含 2 个交易日' }}</small>
+          <input v-model="rangeEnd" type="date" @input="onRangeInputChanged()" />
+          <small class="form-hint">包含起止日期之间可用的交易日；不能选择未来日期</small>
         </div>
       </div>
 
@@ -690,7 +747,9 @@ function randomCreateErrorMessage(error: unknown): string {
         <small class="form-hint">默认 250，范围 20–2000；需保证所选股票（或本地数据）历史足够长</small>
       </div>
 
-      <div v-if="!showPresetStart" class="form-field">
+      <!-- 初始资金独立行：随机模式恒独立（不再与起始日拼行换列）；经典仅「自定义范围」档走本行
+           （经典 preset 档仍为上方行内初始资金，原布局保留）——RANDOM-PANEL-LAYOUT -->
+      <div v-if="!classicPresetStart" class="form-field">
         <label>初始资金</label>
         <input v-model.number="initialCash" type="number" min="10000" step="10000" @input="initialCashDirty = true" />
       </div>
@@ -767,4 +826,18 @@ function randomCreateErrorMessage(error: unknown): string {
    UIUX-B2：选中/焦点/暗色颜色并入全局下划线 tab 规则（styles.css 分组选择器），此处仅保留尺寸与容器线 */
 .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); }
 .mode-tabs button { padding: 7px 16px; font-size: var(--font-size-lg); cursor: pointer; }
+/* RANDOM-PANEL-LAYOUT 维度条件槽 random_both 占位说明行：与 .form-field input 同高（36px）同
+   padding，使三分支槽高天然一致；虚线边框传达「此处无需输入」（dashed 先例＝.indicator-toggle.off）。
+   颜色全部取既有语义 token（暗色随 token 层翻转），不新增自定义颜色字面量 */
+.dimension-slot-empty {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--surface-border, #d5dde7);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-muted, #94a2b2);
+  font-size: var(--font-size-sm);
+  background: transparent;
+}
 </style>
