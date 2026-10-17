@@ -35,8 +35,9 @@ async function openRankings(page: Page): Promise<void> {
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   await page.goto('/')
   await expect(page.getByRole('button', { name: '开始训练', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '五档排行', exact: true }).click()
-  await expect(page.getByRole('region', { name: '五档排行', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '历史排行', exact: true }).click()
+  await expect(page.getByRole('region', { name: '历史排行', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: '历史排行', exact: true })).toBeVisible()
 }
 
 test('自定义区间是训练周期的子列表，固定周期与区间成绩互不混入', async ({ page }) => {

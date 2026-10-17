@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// M4-01 五档排行：训练周期下包含 1M/3M/6M/1Y/2Y 与自定义区间子列表。
+// M4-01 历史排行（旧称五档排行）：训练周期下包含 1M/3M/6M/1Y/2Y 与自定义区间子列表。
 // 排序为服务端冻结链（roadmap §2.7）：完整组 收益率↓→最大回撤↑→胜率↓→稳定键；提前组 收益率↓＋实际天数。
 // 行级不可认证局不入榜，数量如实展示；运行中训练存在时服务端 409（同历史守卫）。
 // 请求版本守卫：切档迟到/失败响应不得覆盖新状态，也不得留下永续 loading（FM-014/FM-015 教训）。
@@ -148,10 +148,10 @@ function daysText(item: RankingItem): string {
 </script>
 
 <template>
-  <section class="rankings-page" aria-label="五档排行">
+  <section class="rankings-page" aria-label="历史排行">
     <header class="rankings-header">
       <div>
-        <h1>五档排行</h1>
+        <h1>历史排行</h1>
         <p>已结算训练按周期独立排行；固定周期与自定义区间分列，放弃局不入榜，行级不可认证局不计名次并如实计数。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>

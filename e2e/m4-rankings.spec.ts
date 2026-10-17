@@ -1,4 +1,4 @@
-// M4-01 五档排行 e2e：真实隔离服务＋真实样本数据（600519/300857）。
+// M4-01 历史排行（旧称五档排行）e2e：真实隔离服务＋真实样本数据（600519/300857）。
 // 覆盖（真实用户动作，不用 API 替代关键用户路径）：
 // 真实买入/卖出/结算两局 → 侧栏排行 → 切 3个月档 → 按本局 id 定位两行（提前结算组＋实际天数、
 // 指标列呈现：零卖出胜率/盈亏比 '--' 不冒充 0、已平仓胜率 100%）→ 点行打开成绩单 →
@@ -78,7 +78,7 @@ function railButton(page: Page, label: string): ReturnType<Page['locator']> {
 
 async function openRankings(page: Page): Promise<void> {
   await railButton(page, '排行').click()
-  await expect(page.getByRole('region', { name: '五档排行' })).toBeVisible()
+  await expect(page.getByRole('region', { name: '历史排行' })).toBeVisible()
 }
 
 test('结算两局→排行定位本局行→指标呈现→打开事实成绩单（深色1440）', async ({ page }) => {
@@ -106,7 +106,7 @@ test('结算两局→排行定位本局行→指标呈现→打开事实成绩�
   await openRankings(page)
   // 默认 1个月档为空或只有他局：切到 3个月档
   await page.getByRole('button', { name: '3个月' }).click()
-  const rankings = page.getByRole('region', { name: '五档排行' })
+  const rankings = page.getByRole('region', { name: '历史排行' })
   await expect(rankings.getByRole('heading', { name: /完整周期/ })).toBeVisible()
   await expect(rankings.getByRole('heading', { name: /提前结算/ })).toBeVisible()
 
@@ -143,7 +143,7 @@ test('结算两局→排行定位本局行→指标呈现→打开事实成绩�
   expect(reportText).not.toContain('undefined')
   await page.screenshot({ path: evidencePath('m4-review-readonly-dark-1440.png'), fullPage: true })
   await report.getByRole('button', { name: '关闭成绩单' }).click()
-  await expect(page.getByRole('region', { name: '五档排行' })).toBeVisible()
+  await expect(page.getByRole('region', { name: '历史排行' })).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -157,7 +157,7 @@ test('运行中守卫（排行关闭、零行）与放弃不入榜（浅色840�
   await page.getByRole('button', { name: '切换到浅色主题' }).click()
   await page.setViewportSize({ width: 840, height: 900 })
   await railButton(page, '排行').click()
-  const rankings = page.getByRole('region', { name: '五档排行' })
+  const rankings = page.getByRole('region', { name: '历史排行' })
   await expect(rankings).toBeVisible()
   await expect(rankings.getByText('结束当前训练后可查看排行')).toBeVisible()
   await expect(rankings.locator('.rankings-row')).toHaveCount(0)

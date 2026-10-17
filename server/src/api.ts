@@ -1126,7 +1126,7 @@ export async function registerApi(
     return { deleted: deleteSettledTrainings(database, [trainingId]) }
   })
 
-  // M4-01 五档排行：按档独立分组（完整/提前结算），放弃与 RANGE 不入榜；
+  // M4-01 历史排行（旧称五档排行）：按档独立分组（完整/提前结算），放弃与 RANGE 不入榜；
   // 行级不可认证（坏规则/legacy-raw/结算点缺失）不入榜并如实计数。守卫与历史同一口径：
   // 存在 running 训练时 409 拒答（防旧局记录泄漏当前局未来），并在异步基准读取后复守卫。
   app.get('/api/rankings', async request => {

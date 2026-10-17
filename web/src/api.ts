@@ -673,7 +673,7 @@ export function fetchEquityComparison(id: number, benchmarks: string[] = []): Pr
   return request(`/api/trainings/${id}/equity-comparison${query}`)
 }
 
-// ===== 五档排行（M4-01）：1M/3M/6M/1Y/2Y 独立分组；放弃与自定义范围不入榜 =====
+// ===== 历史排行（旧称五档排行，M4-01）：1M/3M/6M/1Y/2Y 独立分组；放弃与自定义范围不入榜 =====
 
 export type RankingClassification = 'complete' | 'early-settled'
 

@@ -7,7 +7,7 @@ import { maxDrawdownOf, profitLossRatioOf, realizedSellResults, winRateOf } from
 import { benchmarkReturnOf, loadBenchmarkSeries } from './benchmark.js'
 import { industryByCode, loadIndustryCatalog } from '../tdx/industry.js'
 
-// M4-01 五档排行：1M/3M/6M/1Y/2Y 独立分组排行，纯只读查询。
+// M4-01 历史排行（旧称五档排行）：1M/3M/6M/1Y/2Y 独立分组排行，纯只读查询。
 // 范围（roadmap §2.7 冻结）：RANGE 训练不混入五档；放弃不入榜；完整周期与提前结算分组。
 // 排序（roadmap §2.7 冻结）：完整组 收益率降序→最大回撤升序→胜率降序→稳定键 id 降序；
 // 提前结算组 收益率降序→稳定键 id 降序，展示实际天数（＝区间内持久权益点数）。

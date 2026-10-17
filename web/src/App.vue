@@ -105,7 +105,7 @@ async function showHistory(): Promise<void> {
   }
   view.value = 'history'
 }
-// 五档排行（M4-01）：同一条离开协议；运行中训练存在时由服务端 409 守卫并说明。
+// 历史排行（旧称五档排行，M4-01）：同一条离开协议；运行中训练存在时由服务端 409 守卫并说明。
 async function showRankings(): Promise<void> {
   navigationVersion++
   if (view.value === 'training') {
@@ -653,7 +653,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
       <div class="brand-mark">K</div>
       <nav>
         <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining"><ChartCandlestick aria-hidden="true" /><span>训练</span></button>
-        <button class="rail-item" :class="{ active: view === 'rankings' }" title="五档排行" aria-label="五档排行" @click="showRankings"><Trophy aria-hidden="true" /><span>排行</span></button>
+        <button class="rail-item" :class="{ active: view === 'rankings' }" title="历史排行" aria-label="历史排行" @click="showRankings"><Trophy aria-hidden="true" /><span>排行</span></button>
         <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory"><HistoryIcon aria-hidden="true" /><span>历史</span></button>
         <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary"><Video aria-hidden="true" /><span>录像</span></button>
       </nav>
