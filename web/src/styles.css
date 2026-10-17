@@ -17,14 +17,15 @@ body { margin: 0; min-width: 720px; background: var(--surface-canvas); color: va
 button, input { font: inherit; }
 button { cursor: pointer; }
 .app-shell { display: flex; min-height: 100dvh; }
-.rail { width: 76px; flex: 0 0 76px; background: #152233; color: #aebdcd; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 18px; }
-.brand-mark { width: 38px; height: 38px; border: 1px solid #4c8ba7; color: #a3d4df; display: grid; place-items: center; font-weight: 700; font-size: 21px; margin-bottom: 40px; }
-.rail nav { display: grid; gap: 18px; }
-.rail-item { width: 54px; height: 58px; border: 0; background: transparent; color: inherit; display: grid; place-items: center; gap: 3px; font-size: 19px; border-radius: 6px; }
+.rail { width: 76px; flex: 0 0 76px; height: 100dvh; position: sticky; top: 0; background: #152233; color: #aebdcd; display: flex; flex-direction: column; align-items: center; padding: 20px 10px 18px; }
+.brand-mark { width: 38px; height: 38px; border: 1px solid #4c8ba7; border-radius: 10px; color: #a3d4df; display: grid; place-items: center; font-weight: 700; font-size: 21px; margin-bottom: 26px; }
+.rail nav { display: grid; gap: 10px; margin-bottom: 14px; }
+.rail-item { position: relative; width: 54px; height: 58px; border: 0; background: transparent; color: inherit; display: grid; place-items: center; align-content: center; gap: 6px; font-size: 19px; border-radius: 8px; }
 .rail-item span { font-size: var(--font-size-xs); }
 /* UIUX-B2：rail 图标由 Unicode 字符换 lucide 矢量（与顶栏/工具图标同一体系）；svg 尺寸锚定原字符视觉重量 */
 .rail-item svg { width: 20px; height: 20px; }
 .rail-item.active { background: #24415a; color: #d9f1f3; }
+.rail-item.active::before { content: ''; position: absolute; left: -10px; top: 18px; width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: currentColor; }
 .rail-item:hover { color: #fff; background: #20374b; }
 .rail-bottom { margin-top: auto; }
 .workspace { flex: 1; min-width: 0; }
@@ -509,3 +510,24 @@ body.dark .equity-block span.odo-strip { color: inherit; }
 /* M6-05R：odo-roll 不再受 prefers-reduced-motion 抑制（动效门＝应用偏好 trainer_odo_motion，见
    appSettings.ts 与 Training.vue beginRoll）；用户唯一真实环境该媒体查询恒为 true，一票否决＝核心
    反馈不可见。上方其余通用 reduce 规则（shake/ellipsis）与本块无关，保持不动。 */
+
+/* UIUX-REFINE-01: entrance only. No outgoing component is kept alive and no
+   transition hook participates in saving, cancellation, or navigation. */
+@keyframes workbench-enter { from { opacity: .2; } to { opacity: 1; } }
+@keyframes workbench-panel-enter { from { opacity: .2; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.workspace > :is(.launcher, .history-page, .rankings-page, .recording-library-page),
+.settings-mask, .report-modal-mask, .exit-overlay {
+  animation: workbench-enter var(--motion-ui-enter) var(--motion-ui-ease);
+}
+.settings-mask > .settings-panel, .exit-overlay > .exit-panel {
+  animation: workbench-panel-enter var(--motion-ui-enter) var(--motion-ui-ease);
+}
+.rail-item, .tier-grid button, .mode-tabs button, .ghost-button, .theme-toggle {
+  transition: color var(--motion-ui-fast) ease, background-color var(--motion-ui-fast) ease, border-color var(--motion-ui-fast) ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace > :is(.launcher, .history-page, .rankings-page, .recording-library-page),
+  .settings-mask, .report-modal-mask, .exit-overlay,
+  .settings-mask > .settings-panel, .exit-overlay > .exit-panel { animation: none; }
+  .rail-item, .tier-grid button, .mode-tabs button, .ghost-button, .theme-toggle { transition: none; }
+}

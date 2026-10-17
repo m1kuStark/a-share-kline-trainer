@@ -1,0 +1,45 @@
+{
+  "native_exits": {
+    "npm_test": 0,
+    "build": 0,
+    "build_desktop_main": 0,
+    "release_desktop": 0,
+    "full_journey": 1,
+    "followup_45": 1,
+    "final_records_shell_12": 1,
+    "final_ranking_r2": 1,
+    "final_ranking_r3": 1,
+    "final_ranking_r4": 1,
+    "final_ranking_r5": 0,
+    "binding_strict": 0,
+    "skill_document_validation": 0,
+    "workflow_first": 1,
+    "workflow_corrected": 0,
+    "docs_check": 1,
+    "docs_impact": 1,
+    "docs_status": 1,
+    "docs_status_check": 1
+  },
+  "unit": {
+    "server": 1671,
+    "desktop": 241
+  },
+  "new_uiux_unique_passed_across_runs": 22,
+  "full_original": {
+    "passed": 151,
+    "failed": 30,
+    "skipped": 1
+  },
+  "original_failures_closed_by_targeted_followup": 13,
+  "original_failures_remaining": 17,
+  "docs_baseline_errors_unchanged": 17,
+  "uiux_matrix": {
+    "covered": 7,
+    "open": 0,
+    "red": 0
+  },
+  "status_generation": "blocked by 16 existing task metadata errors; docs/status.md unchanged",
+  "user_acceptance": "pending",
+  "installed": false,
+  "published": false
+}

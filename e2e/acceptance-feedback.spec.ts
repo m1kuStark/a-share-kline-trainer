@@ -1,8 +1,17 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { evidencePath } from './runtime'
 import { startTrainingFromForm } from './training-flow'
 import { readRecordingArtifact } from './recording-file'
 import { CompactReader } from '../web/src/recording/compactCodec'
+
+async function expectEmptyLocalRecordings(page: Page): Promise<void> {
+  const library = page.getByRole('region', { name: '训练录像库', exact: true })
+  await expect(library.getByLabel('导入录制', { exact: true })).toBeEnabled({ timeout: 15_000 })
+  const local = library.locator('[data-recording-source="local"]')
+  await expect(local).toBeVisible()
+  await expect(local.locator('.recording-history-item')).toHaveCount(0)
+  await expect(local.getByText('还没有保存的本机训练录像', { exact: true })).toBeVisible()
+}
 
 test('用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户', async ({ page }) => {
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
@@ -14,7 +23,7 @@ test('用户能找到录像入口，往返录像库保持训练，顶部显示�
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
   await expect(page.getByLabel('导入录制', { exact: true })).toBeAttached()
-  await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
+  await expectEmptyLocalRecordings(page)
   await page.getByRole('button', { name: '返回训练', exact: true }).click()
   await page.getByPlaceholder('股票代码，如 600519').fill('600519')
 await expect(page.locator(".suggestions button").first()).toBeVisible()
@@ -113,7 +122,7 @@ await page.locator(".suggestions button").first().click()
   expect((await (await page.request.get(`/api/trainings/${id}/drawings`)).json()).drawings).toHaveLength(1)
   await page.reload()
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
-  await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
+  await expectEmptyLocalRecordings(page)
   await page.getByRole('button', { name: '返回训练', exact: true }).click()
   await start()
   await page.getByRole('button', { name: '买入', exact: true }).click()
@@ -144,5 +153,5 @@ test('结算确认时丢弃立即生效，刷新已结束训练不重新创建�
   await expect(page.locator('.training-topbar')).toBeVisible()
   await page.getByRole('button', { name: '返回首页', exact: true }).click()
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
-  await expect(page.getByText('还没有保存的训练录像')).toBeVisible()
+  await expectEmptyLocalRecordings(page)
 })

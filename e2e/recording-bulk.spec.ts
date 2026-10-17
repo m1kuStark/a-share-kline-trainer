@@ -24,6 +24,7 @@ async function cleanActive(page: Page) {
 async function openLibrary(page: Page) {
   await page.getByRole('button', { name: '训练录像', exact: true }).click()
   await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
+  await expect(page.getByLabel('导入录制', { exact: true })).toBeEnabled({ timeout: 15_000 })
 }
 
 test('全部导出为合并包，并在新安装环境批量导入恢复且回放可用', async ({ page }) => {

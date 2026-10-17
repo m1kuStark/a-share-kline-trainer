@@ -185,10 +185,10 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
     <header class="history-header">
       <div>
         <h1>历史训练</h1>
-        <p>只读事实成绩单：来自已结算训练的持久记录，不重算、不改动。</p>
+        <p>回看已结算训练，对照成绩与操作记录。</p>
         <!-- REC-HIST-LINK 存储模型说明（proposed_default 文案）：历史与录像分处两库，
              「条数对不上」要有解释，不能让用户误以为读错目录。 -->
-        <p class="history-storage-note">存储说明：训练历史保存在本机数据库，训练录像保存在浏览器的本地录像库，两者分开存储——历史条数多于录像条数属正常现象；有录像的训练行可直接播放或导出。</p>
+        <p class="history-storage-note">训练历史保存在本机数据库，训练录像保存在浏览器的本地录像库，两者分开存储。历史条数多于录像条数属正常现象；没有录像也可查看成绩，有录像的训练可直接播放或导出。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
@@ -207,7 +207,7 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
     <p v-else-if="loading" class="history-loading" role="status">加载中…</p>
 
     <template v-else>
-      <p v-if="!total" class="history-empty">暂无已结算训练</p>
+      <p v-if="!total" class="history-empty" role="status"><strong>暂无已结算训练</strong><span>完成并结算一轮训练后，可在这里查看成绩单与对应录像。</span></p>
       <div v-else class="history-content">
         <p v-if="linksError" class="history-link-status" role="alert">本机录像库暂不可读：{{ linksError }}（录像关联暂不可用，不影响历史记录查看）</p>
         <p v-else-if="!linksLoading && items.length" class="history-link-status" role="status">本页 {{ linkedOnPage }}/{{ items.length }} 局有本机录像；其余训练早于录像功能，或录像已删除/未保留。</p>
@@ -231,13 +231,13 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
           <span></span>
           <span>操作</span>
         </div>
-        <div v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" role="button" tabindex="0" @click="selectedId = item.id" @keydown.enter="selectedId = item.id">
+        <div v-for="item in items" :key="item.id" class="history-row" :class="{ unavailable: item.integrity === 'unavailable' }" :data-training-id="item.id" @click="selectedId = item.id">
           <input class="history-row-check" type="checkbox" :checked="isSelected(item.id)" :aria-label="`选择第 ${item.id} 局`" @click.stop @change="toggleSelected(item.id)" />
-          <span class="history-row-title"><strong>{{ item.code }}</strong> {{ item.name }}<small v-if="item.rangeMode !== 'random'" class="history-range-label">{{ tierText(item) }}</small><small v-else class="random-mode-tag" title="本局来自随机模式训练">{{ tierText(item) }}</small></span>
+          <span class="history-row-title"><button type="button" class="history-report-entry" :aria-label="`${item.code} ${item.name}，查看第 ${item.id} 局成绩单`" @click.stop="selectedId = item.id"><strong>{{ item.code }}</strong><span>{{ item.name }}</span></button><small v-if="item.rangeMode !== 'random'" class="history-range-label">{{ tierText(item) }}</small><small v-else class="random-mode-tag" title="本局来自随机模式训练">{{ tierText(item) }}</small></span>
           <span class="history-row-dates">{{ item.startDate }} ~ {{ item.settleDate ?? '未知' }}</span>
           <span class="history-row-classification" :class="item.classification">{{ classificationText(item) }}<span v-if="item.integrity === 'unavailable'" class="history-row-integrity" :title="item.integrityReason">不可认证</span></span>
-          <span class="history-row-money">{{ money(item.finalEquity) }}</span>
-          <span class="history-row-return" :class="{ up: (item.returnRate ?? 0) > 0, down: (item.returnRate ?? 0) < 0 }">{{ percentText(item) }}</span>
+          <span class="history-row-money" data-label="最终权益">{{ money(item.finalEquity) }}</span>
+          <span class="history-row-return" data-label="收益率" :class="{ up: (item.returnRate ?? 0) > 0, down: (item.returnRate ?? 0) < 0 }">{{ percentText(item) }}</span>
           <span class="history-row-count">{{ item.tradeCount }} 笔</span>
           <button class="history-row-replay" type="button" :disabled="linksLoading || !recordingLinkOf(item)" :title="replayTitle(item)" :aria-label="`播放第 ${item.id} 局的录像`" @click.stop="playRecording(item)">播放录像</button>
           <button class="history-row-export" type="button" :disabled="linksLoading || !recordingLinkOf(item) || exportingId === item.id" :title="replayTitle(item)" :aria-label="`导出第 ${item.id} 局的录像`" @click.stop="exportRecording(item)">{{ exportingId === item.id ? '导出中…' : '导出录像' }}</button>
@@ -261,6 +261,34 @@ const linkedOnPage = computed(() => items.value.filter(item => recordingLinkOf(i
 </template>
 
 <style scoped>
+.history-header { align-items: flex-start; gap: 24px; }
+.history-header > div { max-width: 800px; }
+.history-header > button { flex-shrink: 0; }
+.history-header h1 { font-size: 24px; letter-spacing: -.02em; }
+.history-empty { display: grid; justify-items: center; gap: 8px; padding: 48px 24px; line-height: 1.6; }
+.history-empty strong { color: var(--text-primary); font-size: var(--font-size-lg); }
+.history-row-title { flex-wrap: wrap; row-gap: 4px; }
+.history-report-entry { display: grid; gap: 3px; padding: 2px 0; min-width: 0; border: 0; background: transparent; color: inherit; text-align: left; line-height: 1.5; cursor: pointer; }
+.history-report-entry span { overflow-wrap: anywhere; }
+.history-report-entry:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.history-report-entry:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 3px; border-radius: 3px; }
+.history-row { transition: background-color var(--motion-ui-fast), border-color var(--motion-ui-fast); }
+@media (prefers-reduced-motion: reduce) { .history-row { transition: none; } }
+@media (max-width: 1250px) {
+  .history-list-header { display: none; }
+  .history-row { grid-template-columns: 22px minmax(180px, 1fr) minmax(135px, .8fr) 84px 74px 64px; gap: 10px 12px; padding: 14px; }
+  .history-row-check { grid-column: 1; grid-row: 1 / 3; align-self: start; margin-top: 5px; }
+  .history-row-title { grid-column: 2; grid-row: 1 / 3; align-self: start; }
+  .history-row-dates { grid-column: 3 / 5; grid-row: 1; }
+  .history-row-classification { grid-column: 5 / 7; grid-row: 1; justify-self: end; }
+  .history-row-money { grid-column: 3; grid-row: 2; text-align: left; }
+  .history-row-return { grid-column: 4; grid-row: 2; }
+  .history-row [data-label]::before { display: block; margin-bottom: 3px; content: attr(data-label); color: var(--text-secondary); font-size: var(--font-size-xs); font-weight: 400; }
+  .history-row-count { grid-column: 5 / 7; grid-row: 2; }
+  .history-row-replay { grid-column: 3; grid-row: 3; justify-self: start; }
+  .history-row-export { grid-column: 4 / 6; grid-row: 3; justify-self: start; }
+  .history-row-delete { grid-column: 6; grid-row: 3; justify-self: end; }
+}
 /* RF-05 随机模式训练在历史列表中的 tag（胶囊形态区别于普通范围文字标签） */
 .random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: var(--font-size-2xs); font-weight: 600; }
 :global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }

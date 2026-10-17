@@ -1,0 +1,71 @@
+{
+  "time": "2026-10-17T14:01:49.981Z",
+  "pid": 42620,
+  "exe": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\output\\uiux-package-final\\desktop\\release\\win-unpacked\\K线训练器.exe",
+  "database": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\output\\uiux-unpacked-final\\data\\trainer.sqlite",
+  "url": "http://127.0.0.1:5125/",
+  "viewport": {
+    "width": 1008,
+    "height": 641,
+    "outerWidth": 1024,
+    "outerHeight": 680,
+    "dpr": 1,
+    "scale": 1
+  },
+  "assets": [
+    {
+      "asset": "/assets/index-CSX4vFR9.js",
+      "sha256": "c6b0ca241f8637d8d5737739ebd953850cb9b48753561242f155ce802a4dcde4"
+    },
+    {
+      "asset": "/assets/index-CNAQcMgs.css",
+      "sha256": "6ed2ab330f187bff734ddb4b0e73fa22d2e4f72547face805afeddff2d317732"
+    }
+  ],
+  "themes": [
+    {
+      "theme": "dark",
+      "controls": [
+        {
+          "label": "买入",
+          "bottom": 426,
+          "consoleBottom": 430,
+          "contained": true,
+          "hit": true
+        },
+        {
+          "label": "卖出",
+          "bottom": 426,
+          "consoleBottom": 430,
+          "contained": true,
+          "hit": true
+        }
+      ],
+      "buyStatus": 200
+    },
+    {
+      "theme": "light",
+      "controls": [
+        {
+          "label": "买入",
+          "bottom": 426,
+          "consoleBottom": 430,
+          "contained": true,
+          "hit": true
+        },
+        {
+          "label": "卖出",
+          "bottom": 426,
+          "consoleBottom": 430,
+          "contained": true,
+          "hit": true
+        }
+      ],
+      "buyStatus": 200
+    }
+  ],
+  "pageerrors": [],
+  "installed": false,
+  "installerJourney": "not run",
+  "exitFlow": "not certified; lifecycle HOST_MISMATCH403 retained"
+}

@@ -48,11 +48,18 @@ test('刷新读取新增本地行情但不越过推进日，日期可见且可�
   const actual = (await (await page.request.get(url)).json())
   expect(actual.bars.at(-1).date).toBe('2026-09-11')
   expect(actual.bars.at(-1).close).toBe(261)
-  await page.route(`**${url}`, route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ...actual, bars: actual.bars.filter((bar: any) => bar.date <= '2026-08-04') }) }))
+  // Match the endpoint and timeframe while allowing the production warmup parameter.
+  const initialBars = (requestUrl: URL) => requestUrl.pathname === `/api/trainings/${id}/bars` && requestUrl.searchParams.get('tf') === '1D'
+  let intercepted = 0
+  await page.route(initialBars, route => {
+    intercepted++
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ...actual, bars: actual.bars.filter((bar: any) => bar.date <= '2026-08-04') }) })
+  })
   await page.goto('/')
-  await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
+  await expect(page.locator('.drawing-save-status')).toHaveText('已保存', { timeout: 15_000 })
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.bars().at(-1).date)).toBe('2026-08-04')
-  await page.unroute(`**${url}`)
+  expect(intercepted, 'initial stale-data fixture must reach the chart').toBeGreaterThan(0)
+  await page.unroute(initialBars)
   await page.getByRole('button', { name: '刷新图表', exact: true }).click()
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.bars().at(-1).date)).toBe('2026-09-11')
   await expect(page.locator('.chart-date-status')).toContainText('2026-09-11')

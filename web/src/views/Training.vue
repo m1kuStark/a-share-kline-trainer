@@ -1169,6 +1169,35 @@ void load()
 </template>
 
 <style scoped>
+/* Keep the account, trade controls and drawing tools visible together at short desktop heights. */
+.trade-panel { padding: 16px; }
+.equity-block { padding: 16px 0; }
+.account-stats { gap: 12px 10px; padding: 14px 0; }
+.panel-divider { margin-bottom: 12px; }
+.weight-grid { margin-top: 12px; }
+@media (max-height: 780px) {
+  .trade-panel { padding: 10px 12px; }
+  .equity-block { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 8px; padding: 8px 0; }
+  .equity-block > span { grid-column: 1 / -1; }
+  .equity-block strong { margin: 3px 0; font-size: 23px; }
+  .account-stats { gap: 6px 10px; padding: 8px 0; }
+  .account-stats strong { margin-top: 2px; }
+  .panel-divider { margin: 0 0 8px; }
+  .weight-grid { margin: 7px 0 6px; gap: 4px; }
+  .weight-grid button { padding: 4px 0; }
+  .shares-row { margin-bottom: 5px; }
+  .draw-toolbar:not(.is-collapsed):not(.has-other-tools) { height: 192px; }
+  .draw-toolbar { margin-top: 8px; }
+}
+@media (max-height: 680px) {
+  .trade-panel { padding-top: 8px; padding-bottom: 8px; }
+  .equity-block { padding-top: 4px; padding-bottom: 4px; }
+  .account-stats { row-gap: 4px; padding-top: 4px; padding-bottom: 4px; }
+  .panel-divider { margin-bottom: 4px; }
+  .weight-grid { margin-top: 4px; margin-bottom: 4px; }
+  .shares-row { margin-bottom: 3px; }
+  .draw-toolbar { margin-top: 4px; }
+}
 /* M7-02 随机模式：标题行（标题＋徽标）与徽标样式（双主题，沿 phase-tag 胶囊风格） */
 .title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* RF-05 密码输入式遮蔽标题：等宽星号弱化长度侧信道 */

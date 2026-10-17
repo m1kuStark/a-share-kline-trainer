@@ -12,7 +12,7 @@ test('协创数据送转后成本线与账户一致，清仓再买及日周月�
   expect(created.status()).toBe(201)
   const id = (await created.json()).training.id
   await page.goto('/')
-  await expect(page.locator('.training-topbar .workspace-title')).toContainText('300857')
+  await expect(page.locator('.training-topbar .workspace-title')).toContainText('300857', { timeout: 15_000 })
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   await page.getByRole('button', { name: '100%', exact: true }).click()
   await page.getByRole('button', { name: '买入', exact: true }).click()

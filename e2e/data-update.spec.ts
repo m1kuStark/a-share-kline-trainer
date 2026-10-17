@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import type { EnvView } from '../web/src/api'
 
 // 日线数据更新 e2e：全部 /api/data/* 用 page.route mock（不依赖服务端真实实现），
 // /api/env、/api/trainings/active、/api/stocks、POST /api/trainings 一并 mock 保证与
@@ -57,7 +58,13 @@ function statusPayload(overrides: Record<string, unknown> = {}, fresh: Record<st
 async function installBaseMocks(page: Page): Promise<void> {
   await page.route('**/api/env', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify({ status: 'ok', tdxRoot: 'C:/new_tdx', dataCutoff: '2026-09-15', stockCount: 5321, capabilities: {}, activeTrainingId: null }),
+    body: JSON.stringify({
+      status: 'ok',
+      recordingNamespace: 'e2e-data-update',
+      tdx: { connected: true, source: 'explicit-config' },
+      launcher: { port: Number(new URL(route.request().url()).port), fallbackFrom: null, fallbackReason: null },
+      dataCutoff: '2026-09-15', stockCount: 5321, capabilities: {}, activeTrainingId: null,
+    } satisfies EnvView),
   }))
   await page.route('**/api/trainings/active', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ training: null }),

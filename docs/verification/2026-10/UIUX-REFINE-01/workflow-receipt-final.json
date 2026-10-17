@@ -1,0 +1,11 @@
+{
+  "state_revision": 75,
+  "active_task": "UIUX-REFINE-01",
+  "next_action": "用户体验验收UIUX候选；按regression-debt.md关闭回归债和安装退出路径后再评估发布。",
+  "task": {
+    "status": "review",
+    "owner": "codex:root",
+    "summary": "UIUX候选22项定向组合通过、单测1912通过、NSIS隔离包已生成；全量仍17项失败待关闭，未发布。",
+    "updated_at": "2026-10-17T14:26:42.375Z"
+  }
+}

@@ -648,14 +648,14 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :data-view="view">
     <aside class="rail" aria-label="主导航" :inert="trainingSettingsOpen">
       <div class="brand-mark">K</div>
       <nav>
-        <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" title="训练" @click="returnToTraining"><ChartCandlestick aria-hidden="true" /><span>训练</span></button>
-        <button class="rail-item" :class="{ active: view === 'rankings' }" title="历史排行" aria-label="历史排行" @click="showRankings"><Trophy aria-hidden="true" /><span>排行</span></button>
-        <button class="rail-item" :class="{ active: view === 'history' }" title="历史训练" aria-label="历史训练" @click="showHistory"><HistoryIcon aria-hidden="true" /><span>历史</span></button>
-        <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary"><Video aria-hidden="true" /><span>录像</span></button>
+        <button class="rail-item" :class="{ active: view === 'training' || view === 'launcher' }" :aria-current="view === 'training' || view === 'launcher' ? 'page' : undefined" title="训练" @click="returnToTraining"><ChartCandlestick aria-hidden="true" /><span>训练</span></button>
+        <button class="rail-item" :class="{ active: view === 'rankings' }" :aria-current="view === 'rankings' ? 'page' : undefined" title="历史排行" aria-label="历史排行" @click="showRankings"><Trophy aria-hidden="true" /><span>排行</span></button>
+        <button class="rail-item" :class="{ active: view === 'history' }" :aria-current="view === 'history' ? 'page' : undefined" title="历史训练" aria-label="历史训练" @click="showHistory"><HistoryIcon aria-hidden="true" /><span>历史</span></button>
+        <button class="rail-item" :class="{ active: view === 'library' || view === 'replay' }" :aria-current="view === 'library' || view === 'replay' ? 'page' : undefined" title="训练录像" aria-label="训练录像" :disabled="libraryBusy" @click="showLibrary"><Video aria-hidden="true" /><span>录像</span></button>
       </nav>
       <button class="rail-item" title="保存并退出训练器" aria-label="保存并退出训练器" :disabled="wizardBusy || wizardApplying || exitFlow !== 'closed'" @click="openExitFlow"><Power aria-hidden="true" /><span>退出</span></button>
       <button ref="settingsButton" class="rail-item rail-bottom" :class="{ active: trainingSettingsOpen }" title="训练默认设置" aria-label="训练默认设置" @click="onSettingsToggle"><Settings aria-hidden="true" /><span>设置</span></button>
@@ -723,7 +723,7 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         <p v-if="wizardNote" class="setup-connection-note" role="status">{{ wizardNote }}</p>
         <Launcher :update-notice="updateNotice && !updateNoticeHandled ? updateNotice : null" @created="onCreated" @open-update-settings="onLauncherUpdateNotice" />
       </template>
-      <RecordingLibrary v-else-if="view === 'library'" :items="recentRecordings" :busy="recordingBusy" :error="recordingError" :active-session-ids="activeRecordingIds" @replay="openRecording" @import="importRecording" @remove="removeRecording" @clear="clearRecordings" @close="returnToTraining" />
+      <RecordingLibrary v-else-if="view === 'library'" :items="recentRecordings" :busy="recordingBusy || libraryBusy || !recordingNamespaceReady" :initializing="!recordingNamespaceReady" :error="recordingError" :active-session-ids="activeRecordingIds" @replay="openRecording" @import="importRecording" @remove="removeRecording" @clear="clearRecordings" @close="returnToTraining" />
       <SessionReplay v-else-if="view === 'replay' && replay" :recording="replay" @close="closeReplay" />
       <History v-else-if="view === 'history'" :replay-error="historyReplayError" @create="returnToTraining" @replay-recording="replayRecordingFromHistory" />
       <Rankings v-else-if="view === 'rankings'" @create="returnToTraining" />

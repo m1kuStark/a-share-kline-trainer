@@ -1,0 +1,26 @@
+{
+  "base_commit": "6d557a12f400ce45b50418b8556f943d39fef754",
+  "manifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\.runs\\run-f684d935-b37c-4eaa-9236-22835dd94056\\manifest.json",
+  "database": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\.runs\\run-f684d935-b37c-4eaa-9236-22835dd94056\\trainer.sqlite",
+  "tdx": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-45d87c82-6bad-4b8e-800e-f36bd8940f64\\tdx-snapshot",
+  "url": "http://127.0.0.1:13311",
+  "assets": [
+    {
+      "asset": "/assets/favicon-R5ncF9Bv.svg",
+      "sha256": "3A1E1CC588CF4B85A24A89E203E62382B46399A48781D69DD9D64FFBF89D94F8",
+      "matches": true
+    },
+    {
+      "asset": "/assets/index-jzxL9bOK.js",
+      "sha256": "C1DF5C7636CFF65F45C4628BCCE9D37FB85AE76DE405DE5FDEF5EA661A04B835",
+      "matches": true
+    },
+    {
+      "asset": "/assets/index-BAidixDQ.css",
+      "sha256": "7122F02516E9E184D54E2A5AB800136420EACD07EFBA83794BDDC2196FBBE67E",
+      "matches": true
+    }
+  ],
+  "scope": "baseline production preview; product code still base 6d557a12",
+  "console": "lifecycle/session HTTP403 in isolated preview; not a pageerror; exit flow not certified by preview"
+}

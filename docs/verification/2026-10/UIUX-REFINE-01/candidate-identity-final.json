@@ -1,0 +1,77 @@
+{
+  "verifiedAt": "2026-10-17T13:56:16.732Z",
+  "preview": "http://127.0.0.1:9238",
+  "manifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\.runs\\run-7848f005-d069-431d-93e3-178252adda2d\\manifest.json",
+  "database": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\.runs\\run-7848f005-d069-431d-93e3-178252adda2d\\trainer.sqlite",
+  "assets": [
+    {
+      "asset": "/index.html",
+      "bytes": 499,
+      "sha256": "d653ac589b7e0da831885c2d5e03d477c5b2fbe740ccea0a0f89043ab6253144",
+      "httpEqualsPreviewEqualsProductionEqualsAsar": true
+    },
+    {
+      "asset": "/assets/favicon-R5ncF9Bv.svg",
+      "bytes": 199,
+      "sha256": "3a1e1cc588cf4b85a24a89e203e62382b46399a48781d69dd9d64ffbf89d94f8",
+      "httpEqualsPreviewEqualsProductionEqualsAsar": true
+    },
+    {
+      "asset": "/assets/index-CSX4vFR9.js",
+      "bytes": 688293,
+      "sha256": "c6b0ca241f8637d8d5737739ebd953850cb9b48753561242f155ce802a4dcde4",
+      "httpEqualsPreviewEqualsProductionEqualsAsar": true
+    },
+    {
+      "asset": "/assets/index-CNAQcMgs.css",
+      "bytes": 109833,
+      "sha256": "6ed2ab330f187bff734ddb4b0e73fa22d2e4f72547face805afeddff2d317732",
+      "httpEqualsPreviewEqualsProductionEqualsAsar": true
+    }
+  ],
+  "sources": [
+    {
+      "file": "web/src/App.vue",
+      "sha256": "553fa2307d5640f6a7cd181912ed3dc040899ebd4199ba5bd45e1d6e79450805"
+    },
+    {
+      "file": "web/src/styles.css",
+      "sha256": "017630266bb8d453782b4c53c2ca1eacc61c0017ebbc5d947347bfd66b8c6772"
+    },
+    {
+      "file": "web/src/tokens.css",
+      "sha256": "550b3696b29bd0b123f66750d20b735e43a089b0c0d174f3d92259b699db9a86"
+    },
+    {
+      "file": "web/src/views/Launcher.vue",
+      "sha256": "0d85f6747b641fde85d7fbfd3d3c819a745464c43428aa79266de79c598c5d0a"
+    },
+    {
+      "file": "web/src/views/History.vue",
+      "sha256": "3930c5c1ebfbcc8dc0f28012fd34045c4c05c48c4e768b3f52f1e2afea7b8012"
+    },
+    {
+      "file": "web/src/views/Rankings.vue",
+      "sha256": "4745f1fe8efee51a39d9d1927367799b0ecb1bf85f103c3cc1197125df29a17d"
+    },
+    {
+      "file": "web/src/views/Training.vue",
+      "sha256": "b20464d5fbf4f5b859331b5153f63c2de9372e79afc6331823b23892ebdbd243"
+    },
+    {
+      "file": "web/src/components/RecordingLibrary.vue",
+      "sha256": "6c423337aca10835b240f46cbfee75441d5c2e9be32970df672693806cf4a9c3"
+    },
+    {
+      "file": "web/src/components/TrainingSettings.vue",
+      "sha256": "e32d5b1f03112ce96c1a7c0bfdb728a02dc75f483cfd07e6f9a047102446943e"
+    }
+  ],
+  "sourceDigest": "f0dd15e269f7e3ac88358c36d8f055ae36e08856c0d7d6f77d312991f6d221f2",
+  "setup": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\output\\uiux-package-final\\desktop\\release\\kline-trainer-desktop-setup-v1.3.0-windows-x64.exe",
+  "setupSha256": "00e742f1fb9c13ed844cd797ad2823c26ee3187a18271ff82e82c185a75d2b39",
+  "setupBytes": 117241530,
+  "asarSha256": "958301cd90b46d6f83ac157a1bfe551359d1cda1684f8bb30ffc856e7971e1d7",
+  "installed": false,
+  "published": false
+}

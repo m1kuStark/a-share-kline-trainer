@@ -10,9 +10,10 @@ import type { RecordingLibraryItem, RecordingSource } from '../recording/recordi
 const props = withDefaults(defineProps<{
   items: RecordingLibraryItem[]
   busy?: boolean
+  initializing?: boolean
   error?: string
   activeSessionIds?: string[]
-}>(), { busy: false, error: '', activeSessionIds: () => [] })
+}>(), { busy: false, initializing: false, error: '', activeSessionIds: () => [] })
 
 // RF-05：随机模式录像要在录像库可见「随机模式」tag 与真实标的。标注按 trainingKey 前缀
 // （＝训练 id）经 GET /api/trainings/:id 读取训练快照派生，best-effort——训练已删除或服务
@@ -172,7 +173,8 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
         <input type="file" accept=".json,.gz,.trainer-session" aria-label="导入录制" multiple :disabled="busy || bulkBusy" @change="onImport" />
       </label>
       <button type="button" class="recording-import" :disabled="busy || bulkBusy || !displayItems.length" @click="exportAll"><Download :size="15" />全部导出</button>
-      <span v-if="busy || bulkBusy" role="status">正在处理录像…</span>
+      <span v-if="initializing" role="status">正在准备录像库，就绪后可导入与管理录像…</span>
+      <span v-else-if="busy || bulkBusy" role="status">正在处理录像…</span>
       <p v-if="bulkNotice" :class="bulkNoticeIsError ? 'error-text' : ''" :role="bulkNoticeIsError ? 'alert' : 'status'">{{ bulkNotice }}</p>
       <p v-if="error" class="error-text" role="alert">{{ error }}</p>
     </div>
@@ -183,7 +185,7 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
           <h2 id="local-recordings-heading">本机训练录像 <span>({{ localItems.length }})</span></h2>
           <button type="button" class="ghost-button danger-button" :disabled="!localItems.length || busy" @click="askClear('local', localItems.length)">清空本机录像</button>
         </div>
-        <p v-if="!localItems.length" class="recording-library-empty">还没有保存的本机训练录像。</p>
+        <p v-if="!localItems.length" class="recording-library-empty" role="status"><strong>还没有保存的本机训练录像</strong><span>训练时开启「记录操作」，结束后选择保留，即可在这里回放。</span></p>
         <ul v-else class="recording-history-list">
           <li v-for="item in localItems" :key="item.sessionId" class="recording-history-item">
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
@@ -204,7 +206,7 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
           <h2 id="imported-recordings-heading">导入的分享录像 <span>({{ importedItems.length }})</span></h2>
           <button type="button" class="ghost-button danger-button" :disabled="!importedItems.length || busy" @click="askClear('imported', importedItems.length)">清空导入录像</button>
         </div>
-        <p v-if="!importedItems.length" class="recording-library-empty">还没有导入分享录像。</p>
+        <p v-if="!importedItems.length" class="recording-library-empty" role="status"><strong>还没有导入分享录像</strong><span>使用上方「导入分享的录像」，打开收到的录像文件。</span></p>
         <ul v-else class="recording-history-list">
           <li v-for="item in importedItems" :key="item.sessionId" class="recording-history-item">
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
@@ -236,11 +238,16 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 
 <style scoped>
 .recording-library-page { padding: 24px; }
+.recording-library-header { align-items: flex-start; }
+.recording-library-header h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: -.02em; }
+.recording-library-header p { margin: 0; color: var(--text-secondary); line-height: 1.6; }
+.recording-library-header > button { flex-shrink: 0; }
 .recording-library-header, .recording-library-column-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.recording-library-actions { display: flex; align-items: center; gap: 14px; margin: 18px 0; }
+.recording-library-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 24px 0; }
 .recording-import, .icon-text-button { display: inline-flex; align-items: center; gap: 7px; }
 .recording-import { position: relative; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; padding: 8px 12px; color: inherit; cursor: pointer; }
 .recording-import input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.recording-import:focus-within { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 3px; }
 .icon-button { display: inline-grid; place-items: center; min-width: 30px; min-height: 30px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; }
 .icon-button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 12%, transparent); }
 .icon-button:disabled { opacity: .45; cursor: not-allowed; }
@@ -248,10 +255,11 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 .recording-library-column { min-width: 0; padding: 16px; }
 .recording-library-column h2 { margin: 0; font-size: 1rem; }
 .recording-library-column h2 span { color: var(--text-secondary, #64748b); font-weight: 400; }
-.recording-library-empty { color: var(--text-secondary, #64748b); }
+.recording-library-empty { display: grid; gap: 8px; padding: 28px 0; color: var(--text-secondary, #64748b); line-height: 1.7; }
+.recording-library-empty strong { color: var(--text-primary); font-weight: 500; }
 .recording-history-list { display: grid; gap: 8px; list-style: none; padding: 0; margin: 14px 0 0; }
 .recording-history-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; padding: 8px 10px; }
-.recording-history-open { flex: 1; min-width: 0; display: flex; justify-content: space-between; gap: 12px; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; }
+.recording-history-open { flex: 1; min-width: 0; display: grid; gap: 6px; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; overflow-wrap: anywhere; line-height: 1.6; }
 .recording-history-open span { color: var(--text-secondary, #64748b); }
 /* RF-05 录像库标注：真实标的（斜体弱化）＋「随机模式」tag 胶囊 */
 .recording-item-brief { font-style: normal; margin-right: 6px; color: var(--text-primary, #25364b); }

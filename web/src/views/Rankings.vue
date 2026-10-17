@@ -152,7 +152,7 @@ function daysText(item: RankingItem): string {
     <header class="rankings-header">
       <div>
         <h1>历史排行</h1>
-        <p>已结算训练按周期独立排行；固定周期与自定义区间分列，放弃局不入榜，行级不可认证局不计名次并如实计数。</p>
+        <p>按周期、行业或股票对照已结算训练，查看每一局的成绩。</p><p class="rankings-scope-note">固定周期与自定义区间分列。放弃局不入榜，不可认证的记录不计名次。</p>
       </div>
       <button class="ghost-button" @click="emit('create')">返回创建训练</button>
     </header>
@@ -201,17 +201,17 @@ function daysText(item: RankingItem): string {
     <p v-else-if="loading" class="history-loading" role="status">加载中…</p>
 
     <template v-else-if="groups && mode === 'range'">
-      <p v-if="!groups.rangeGroups?.length" class="history-empty">暂无自定义区间成绩</p>
+      <p v-if="!groups.rangeGroups?.length" class="history-empty" role="status"><strong>暂无自定义区间成绩</strong><span>完成并结算自定义区间训练后，成绩会按相同区间分组展示。</span></p>
       <section v-for="group in groups.rangeGroups" :key="group.key" aria-label="自定义区间排行">
         <h2>{{ group.startDate }} ~ {{ group.endDate }}</h2>
         <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
-          <tbody><tr v-for="(item, index) in [...group.complete, ...group.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+          <tbody><tr v-for="(item, index) in [...group.complete, ...group.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><button type="button" class="ranking-report-entry" :aria-label="`${item.code} ${item.name}，查看第 ${item.id} 局成绩单`" @click.stop="selectedId = item.id"><strong>{{ item.code }}</strong><span>{{ item.name }}</span></button> <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
       </section>
     </template>
     <template v-else-if="groups && mode === 'industry'">
       <p v-if="groups.industry?.status === 'unavailable'" class="history-error" role="alert">行业排行暂不可用：{{ groups.industry.reason }}</p>
-      <p v-else-if="!groups.industry?.entries?.length" class="history-empty">暂无行业排行数据</p>
+      <p v-else-if="!groups.industry?.entries?.length" class="history-empty" role="status"><strong>暂无行业排行数据</strong><span>先完成并结算一轮训练，再按行业对照成绩。</span></p>
       <template v-else-if="!industrySelection">
         <section class="industry-picker" aria-label="选择行业板块">
           <h2>选择行业板块 <small>共 {{ groups.industry?.entries?.length ?? 0 }} 个</small></h2>
@@ -226,29 +226,29 @@ function daysText(item: RankingItem): string {
       <section v-else v-for="entry in groups.industry?.entries" :key="entry.id" aria-label="行业排行">
         <div class="industry-result-heading"><h2>{{ entry.name }}</h2><button class="ghost-button" type="button" @click="clearIndustrySelection">返回行业列表</button></div>
         <table class="rankings-table"><thead><tr><th>名次</th><th>标的</th><th>收益率</th><th>结算日</th></tr></thead>
-          <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><strong>{{ item.code }}</strong> {{ item.name }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
+          <tbody><tr v-for="(item, index) in [...entry.complete, ...entry.earlySettled]" :key="item.id" class="rankings-row" @click="selectedId = item.id"><td>{{ rank(index) }}</td><td><button type="button" class="ranking-report-entry" :aria-label="`${item.code} ${item.name}，查看第 ${item.id} 局成绩单`" @click.stop="selectedId = item.id"><strong>{{ item.code }}</strong><span>{{ item.name }}</span></button> <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ item.settleDate ?? '--' }}</td></tr></tbody>
         </table>
-        <p v-if="!entry.complete.length && !entry.earlySettled.length" class="history-empty">该行业暂无已结算训练成绩</p>
+        <p v-if="!entry.complete.length && !entry.earlySettled.length" class="history-empty" role="status"><strong>该行业暂无已结算训练成绩</strong><span>可返回行业列表查看其他板块。</span></p>
       </section>
     </template>
     <template v-else-if="groups && mode === 'stock'">
-      <p v-if="groups.stock?.status === 'empty'" class="history-empty">{{ groups.stock.code }} 暂无已结算训练成绩</p>
+      <p v-if="groups.stock?.status === 'empty'" class="history-empty" role="status"><strong>{{ groups.stock.code }} 暂无已结算训练成绩</strong><span>选择其他股票，或完成该股票的训练后再来查看。</span></p>
       <template v-else>
         <h2>{{ groups.stock?.name || groups.stock?.code }} <small>同一股票的已结算训练</small></h2>
         <table v-if="groups.stock?.complete.length || groups.stock?.earlySettled.length" class="rankings-table">
           <thead><tr><th>名次</th><th>周期</th><th>区间</th><th>收益率</th><th>最大回撤</th><th>交易笔数</th><th>结算日</th></tr></thead>
           <tbody>
             <tr v-for="(item, index) in [...(groups.stock?.complete || []), ...(groups.stock?.earlySettled || [])]" :key="item.id" class="rankings-row" :data-training-id="item.id" @click="selectedId = item.id">
-              <td>{{ rank(index) }}</td><td>{{ item.tier }} <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
+              <td>{{ rank(index) }}</td><td><button type="button" class="ranking-report-entry" :aria-label="`${item.tier} 成绩单，查看第 ${item.id} 局`" @click.stop="selectedId = item.id">{{ item.tier }} 成绩单</button> <span v-if="item.rangeMode === 'random'" class="random-mode-tag" title="本局来自随机模式训练">随机模式</span></td><td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
               <td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td><td>{{ ratioPercent(item.maxDrawdown) }}</td><td>{{ item.tradeCount }}</td><td>{{ item.settleDate ?? '--' }}</td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="history-empty">暂无可认证成绩</p>
+        <p v-else class="history-empty" role="status"><strong>暂无可认证成绩</strong><span>可在历史训练中查看已有记录与不可认证原因。</span></p>
       </template>
     </template>
     <template v-else-if="groups">
-      <p v-if="!groups.complete.length && !groups.earlySettled.length" class="history-empty">该周期暂无入榜成绩</p>
+      <p v-if="!groups.complete.length && !groups.earlySettled.length" class="history-empty" role="status"><strong>该周期暂无入榜成绩</strong><span>切换周期查看其他训练，或完成一轮训练后再来对照。</span></p>
       <template v-else>
         <section aria-label="完整周期排行">
           <h2>完整周期 <small>收益率 ↓ → 最大回撤 ↑ → 胜率 ↓</small></h2>
@@ -262,7 +262,7 @@ function daysText(item: RankingItem): string {
             <tbody>
               <tr v-for="(item, index) in groups.complete" :key="item.id" class="rankings-row" :data-training-id="item.id" @click="selectedId = item.id">
                 <td>{{ rank(index) }}</td>
-                <td><strong>{{ item.code }}</strong> {{ item.name }}</td>
+                <td><button type="button" class="ranking-report-entry" :aria-label="`${item.code} ${item.name}，查看第 ${item.id} 局成绩单`" @click.stop="selectedId = item.id"><strong>{{ item.code }}</strong><span>{{ item.name }}</span></button></td>
                 <td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
                 <td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td>
                 <td>{{ ratioPercent(item.maxDrawdown) }}</td>
@@ -292,7 +292,7 @@ function daysText(item: RankingItem): string {
             <tbody>
               <tr v-for="(item, index) in groups.earlySettled" :key="item.id" class="rankings-row" :data-training-id="item.id" @click="selectedId = item.id">
                 <td>{{ rank(index) }}</td>
-                <td><strong>{{ item.code }}</strong> {{ item.name }}</td>
+                <td><button type="button" class="ranking-report-entry" :aria-label="`${item.code} ${item.name}，查看第 ${item.id} 局成绩单`" @click.stop="selectedId = item.id"><strong>{{ item.code }}</strong><span>{{ item.name }}</span></button></td>
                 <td>{{ item.startDate }} ~ {{ item.settleDate ?? '--' }}</td>
                 <td :class="{ up: item.returnRate > 0, down: item.returnRate < 0 }">{{ percent(item.returnRate) }}</td>
                 <td>{{ ratioPercent(item.maxDrawdown) }}</td>
@@ -326,6 +326,22 @@ function daysText(item: RankingItem): string {
 </template>
 
 <style scoped>
+.rankings-header { align-items: flex-start; gap: 24px; }
+.rankings-header > button { flex-shrink: 0; }
+.rankings-header h1 { font-size: 24px; letter-spacing: -.02em; }
+.rankings-scope-note { font-size: var(--font-size-sm); color: var(--text-secondary); }
+.history-empty { display: grid; justify-items: center; gap: 8px; padding: 48px 24px; line-height: 1.6; }
+.history-empty strong { color: var(--text-primary); font-size: var(--font-size-lg); }
+.ranking-report-entry { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; max-width: 230px; padding: 3px 0; border: 0; background: transparent; color: inherit; text-align: left; white-space: normal; line-height: 1.5; cursor: pointer; }
+.ranking-report-entry span { overflow-wrap: anywhere; }
+.ranking-report-entry:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ranking-report-entry:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 3px; border-radius: 3px; }
+.rankings-table { display: block; overflow-x: auto; max-width: 100%; scrollbar-gutter: stable; }
+.rankings-table th { padding-top: 12px; padding-bottom: 12px; }
+.rankings-table td { padding-top: 12px; padding-bottom: 12px; }
+.rankings-table tbody tr { transition: background-color var(--motion-ui-fast); }
+@media (prefers-reduced-motion: reduce) { .rankings-table tbody tr { transition: none; } }
+
 /* RF-05 随机模式训练在排行中的 tag（信息隐藏仅限随机训练运行中） */
 .random-mode-tag { display: inline-flex; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid #b7d9d0; background: #eef8f4; color: #1f7a5c; font-size: var(--font-size-2xs); font-weight: 600; vertical-align: middle; }
 :global(body.dark .random-mode-tag){ border-color: #2b5c49; background: #14271f; color: #7ec8a8; }

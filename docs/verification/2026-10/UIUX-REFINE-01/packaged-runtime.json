@@ -1,0 +1,21 @@
+{
+  "time": "2026-10-17T13:13:16.112Z",
+  "pid": 56788,
+  "database": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\output\\uiux-unpacked-smoke\\data\\trainer.sqlite",
+  "executable": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\output\\uiux-package-stage\\desktop\\release\\win-unpacked\\K线训练器.exe",
+  "url": "http://127.0.0.1:4148/",
+  "assets": [
+    "/assets/index-BEHhKD0G.js",
+    "/assets/index-DUxQfQ46.css"
+  ],
+  "viewport": {
+    "width": 1008,
+    "height": 641,
+    "dpr": 1
+  },
+  "newWorkspaces": 1,
+  "source": "unpacked Electron from NSIS package staging",
+  "installed": false,
+  "installerJourney": "not run",
+  "errors": "Lifecycle session HTTP403 observed in stdout; packaged exit flow not certified"
+}

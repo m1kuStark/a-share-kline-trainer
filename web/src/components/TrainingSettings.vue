@@ -859,7 +859,7 @@ function close(): void {
       </header>
       <p class="settings-note">这里的默认只影响新训练；进行中的训练按创建时冻结的规则继续。</p>
       <p v-if="loadError" class="settings-repair" role="alert">{{ loadError }}：核对以下表单并重新保存即可修复。</p>
-      <div class="settings-layout">
+      <div class="settings-layout" :class="{ 'has-save-footer': activeSection === 'defaults' }">
         <nav class="settings-nav" aria-label="设置类别">
           <button type="button" :class="{ selected: activeSection === 'defaults' }" @click="activeSection = 'defaults'">默认设置</button>
           <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
@@ -1090,16 +1090,18 @@ function close(): void {
         <p v-if="applyCompletedVersion !== null" class="settings-saved" role="status">已更新到 {{ versionLabel(applyCompletedVersion) }}</p>
         <p v-if="applyFailedReason" class="error-text" role="alert">更新失败：{{ applyFailedReason }}</p>
       </section>
-      <template v-if="activeSection === 'defaults'">
+        </div>
+      <footer v-if="activeSection === 'defaults'" class="settings-save-footer">
+        <div class="settings-save-feedback" aria-live="polite">
         <p v-if="initialCashInvalid()" class="error-text" role="alert">初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数</p>
         <p v-if="saveError" class="error-text" role="alert">{{ saveError }}</p>
         <p v-if="saveSuccess" class="settings-saved" role="status">{{ saveSuccess }}</p>
+        </div>
         <div class="settings-actions">
           <!-- UIUX-B2：主操作脱离 trade-action.buy（下单买入按钮的涨色语义不再用于"保存"这类中性主操作，改 accent 填充） -->
           <button class="settings-save" :disabled="saving || initialCashInvalid()" @click="save">{{ saving ? '保存中…' : '保存设置' }}</button>
         </div>
-      </template>
-        </div>
+      </footer>
       </div>
     </div>
   </div>
@@ -1116,13 +1118,20 @@ function close(): void {
 .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; }
 .settings-head h2 { margin: 0; font-size: 17px; }
 .settings-note { margin: 0 0 14px; font-size: var(--font-size-sm); color: var(--text-secondary, #51637a); }
-.settings-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: 142px minmax(0, 1fr); gap: 18px; align-items: stretch; }
-.settings-nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; }
+.settings-layout { min-height: 0; flex: 1; display: grid; grid-template-columns: 142px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 0 18px; align-items: stretch; }
+.settings-layout.has-save-footer { grid-template-rows: minmax(0, 1fr) auto; }
+.settings-nav { display: flex; flex-direction: column; gap: 4px; grid-column: 1; grid-row: 1 / -1; min-height: 0; overflow-y: auto; align-self: stretch; padding-right: 4px; }
 .settings-nav button { border: 1px solid transparent; border-radius: 5px; padding: 10px 12px; text-align: left; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; font-size: var(--font-size-md); }
 .settings-nav button:hover { background: var(--surface-hover, #f2f5f7); color: var(--text-primary, #1c2733); }
 .settings-nav button.selected { border-color: var(--surface-border, #cdd7df); background: var(--surface-selected, #eaf5f6); color: #1f6978; font-weight: 650; }
 :global(body.dark .settings-nav button.selected){ color: #8fd9e3; background: rgba(73, 164, 178, .18); border-color: #3e8894; }
-.settings-content { min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.settings-content { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; overflow-y: auto; padding-right: 4px; scrollbar-gutter: stable; }
+.settings-save-footer { grid-column: 2; grid-row: 2; border-top: 1px solid var(--surface-border); padding-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr) 172px; align-items: center; gap: 14px; }
+.settings-save-feedback { height: 48px; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; justify-content: safe center; }
+.settings-save-feedback p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.settings-save-footer .settings-actions { margin: 0; }
+.settings-save-footer .settings-save { margin: 0; height: 38px; }
+.settings-nav button, .settings-adjust-grid button { transition: color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease), background-color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease), border-color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease); }
 .settings-default-section { margin-top: 0; padding-top: 0; border-top: 0; }
 .settings-cancel-link { margin-top: 18px; border: 0; background: transparent; color: var(--text-secondary, #51637a); cursor: pointer; padding: 4px 0; }
 .settings-repair { margin: 0 0 14px; padding: 8px 10px; border: 1px solid #e0b44c; border-radius: 6px; background: #fdf6e3; color: #7a5b12; font-size: var(--font-size-sm); line-height: 1.5; overflow-wrap: anywhere; }
@@ -1191,11 +1200,17 @@ function close(): void {
 .settings-actions { display: flex; gap: 10px; margin-top: 14px; }
 @media (max-width: 640px) {
   .settings-panel { width: calc(100vw - 24px); height: min(680px, calc(100dvh - 24px)); min-height: min(520px, calc(100dvh - 24px)); padding: 14px; }
-  .settings-layout { grid-template-columns: 1fr; gap: 10px; }
-  .settings-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: static; }
+  .settings-layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
+  .settings-layout.has-save-footer { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .settings-nav { grid-column: 1; grid-row: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: static; }
+  .settings-content { grid-column: 1; grid-row: 2; }
+  .settings-save-footer { grid-column: 1; grid-row: 3; grid-template-columns: minmax(0, 1fr) 140px; }
   .settings-nav button { text-align: center; padding: 8px 5px; }
   .tool-preference-list, .tool-style-editor { grid-template-columns: 1fr; }
   .tool-style-editor strong, .tool-style-editor button { grid-column: auto; }
   .shortcut-row { grid-template-columns: 1fr; gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-nav button, .settings-adjust-grid button { transition: none; }
 }
 </style>

@@ -89,6 +89,11 @@
   --motion-fast: 80ms;          /* 数字滚动条带帧间过渡（M6-05 实调值；应用偏好 trainer_odo_motion 门控） */
   --motion-attention: 0.3s;     /* 注意力摇晃单次时长（data-shake ×3；prefers-reduced-motion 关闭） */
   --motion-progress: 1.2s;      /* 进行中省略号呼吸周期（data-ellipsis-blink；reduced-motion 降为静态） */
+  /* UIUX-REFINE-01: navigation and panels have a separate vocabulary. These
+     values never gate trading, chart updates, or the existing Odometer. */
+  --motion-ui-fast: 120ms;
+  --motion-ui-enter: 180ms;
+  --motion-ui-ease: cubic-bezier(.2, .7, .2, 1);
 
   /* —— 语义层：浮层层级目标刻度（消费时统一迁移并做层叠验证） —— */
   --z-dropdown: 10;   /* 贴附下拉：搜索建议（现 4/5） */

@@ -360,13 +360,16 @@ const randomStockPeriodOptions: Array<{ value: Tier | 'RANGE'; label: string }> 
 ]
 
 /** 当前维度的档位选项与网格提示（档位文案与经典完全一致）。
- * RANDOM-PANEL-LAYOUT：两段提示压成单行（≤50 字·726px 内容宽恒单行）——原 random_stock 版
- * 会折两行而 time/both 版一行，是维度切换时公共区纵向跳变的偏移源之一；文案变更＝proposed_default */
+ * 各种提示同格占位，按当前宽度的最长文案预留高度，避免换行引起公共控件位移。 */
 const activeRandomPeriodOptions = computed(() =>
   randomDimension.value === 'random_stock' ? randomStockPeriodOptions : randomPeriodOptions)
+const randomPeriodHints = [
+  '窗口＝所选档位的自然月数（自起始日起，默认锚点＝本地最新数据日）；「自定义范围」＝起止日期',
+  '起点随机，窗口＝所选档位的自然月数；「自定义根数」＝按 K 线根数随机',
+]
 const randomPeriodHint = computed(() => randomDimension.value === 'random_stock'
-  ? '窗口＝所选档位的自然月数（自起始日起，默认锚点＝本地最新数据日）；「自定义范围」＝起止日期'
-  : '起点随机，窗口＝所选档位的自然月数；「自定义根数」＝按 K 线根数随机')
+  ? randomPeriodHints[0]
+  : randomPeriodHints[1])
 
 function onRandomTierClick(value: Tier | 'WINDOW_BARS' | 'RANGE'): void {
   randomTier.value = value
@@ -620,7 +623,13 @@ function randomCreateErrorMessage(error: unknown): string {
       <button role="tab" :aria-selected="mode === 'random'" :class="{ selected: mode === 'random' }" @click="setMode('random')">随机模式</button>
     </div>
 
-    <section class="launcher-form">
+    <section class="launcher-form" aria-label="训练配置">
+      <div class="launcher-workbench">
+      <section class="launcher-subject" aria-labelledby="launcher-subject-title">
+        <header class="configuration-heading">
+          <h2 id="launcher-subject-title">标的与时间</h2>
+          <span>确定这一局的练习范围</span>
+        </header>
       <!-- 经典选股器（表单顶部原位，RANDOM-PANEL-LAYOUT 零变化）；随机模式的选股输入
            （random_time）移入下方维度条件输入槽——选维度在前、填条件在后，贴合操作顺序 -->
       <div v-if="mode === 'classic'" class="form-field wide stock-field">
@@ -646,7 +655,10 @@ function randomCreateErrorMessage(error: unknown): string {
         <div class="tier-grid" role="group" aria-label="随机维度">
           <button v-for="item in RANDOM_DIMENSIONS" :key="item.value" :class="{ selected: randomDimension === item.value }" @click="onDimensionClick(item.value)">{{ item.label }}</button>
         </div>
-        <small class="form-hint">{{ dimensionHint }}</small>
+        <div class="stable-hint">
+          <small class="form-hint">{{ dimensionHint }}</small>
+          <span v-for="item in RANDOM_DIMENSIONS" :key="item.value" class="hint-sizing" aria-hidden="true">{{ item.hint }}</span>
+        </div>
       </div>
 
       <!-- RANDOM-PANEL-LAYOUT（第八轮 W2）维度条件输入槽：位于随机维度组正下方，三种维度的
@@ -737,7 +749,10 @@ function randomCreateErrorMessage(error: unknown): string {
         <div class="tier-grid">
           <button v-for="item in activeRandomPeriodOptions" :key="item.value" :class="{ selected: randomTier === item.value }" @click="onRandomTierClick(item.value)">{{ item.label }}</button>
         </div>
-        <small class="form-hint">{{ randomPeriodHint }}</small>
+        <div class="stable-hint">
+          <small class="form-hint">{{ randomPeriodHint }}</small>
+          <span v-for="hint in randomPeriodHints" :key="hint" class="hint-sizing" aria-hidden="true">{{ hint }}</span>
+        </div>
       </div>
 
       <!-- 训练窗口长度（仅随机「自定义根数」档；默认 250，范围 20–2000） -->
@@ -764,6 +779,12 @@ function randomCreateErrorMessage(error: unknown): string {
         <div v-else-if="previewing" class="form-hint">范围校验生成中…</div>
       </div>
 
+      </section>
+      <section class="launcher-rules" aria-labelledby="launcher-rules-title">
+        <header class="configuration-heading">
+          <h2 id="launcher-rules-title">本局规则</h2>
+          <span>创建后按以下设置训练</span>
+        </header>
       <!-- 经典双盲遮蔽已从 V1 移除（股票由用户手动选定，隐藏名称无意义）；
            随机隐藏已由 M7 随机模式承接（服务端 API 级隐藏，见 POST /api/trainings/random） -->
       <div class="form-field">
@@ -782,11 +803,18 @@ function randomCreateErrorMessage(error: unknown): string {
         </div>
         <small class="form-hint">开盘 + 收盘会把每个交易日拆成两个阶段；阶段和成交价在创建后锁定。</small>
       </div>
-      <label class="recording-choice"><input v-model="ordersEnabled" type="checkbox" />启用条件单</label>
-      <small v-if="ordersEnabled" class="form-hint">本局最多一个待触发条件单，支持限价/止损，按日线 OHLC 近似撮合。</small>
-
-      <label class="recording-choice"><input v-model="recordingEnabled" type="checkbox" aria-label="记录操作" />记录操作</label>
-      <small class="form-hint">建议保持开启，方便复盘、分享操作和排查问题。记录保存在本机浏览器，可随时暂停。</small>
+      <div class="rule-choice">
+        <label class="recording-choice"><input v-model="ordersEnabled" type="checkbox" />启用条件单</label>
+        <small class="form-hint rule-choice-hint" :class="{ 'is-placeholder': !ordersEnabled }" :aria-hidden="!ordersEnabled">本局最多一个待触发条件单，支持限价/止损，按日线 OHLC 近似撮合。</small>
+      </div>
+      <div class="rule-choice">
+        <label class="recording-choice"><input v-model="recordingEnabled" type="checkbox" aria-label="记录操作" />记录操作</label>
+        <small class="form-hint">建议保持开启，方便复盘、分享操作和排查问题。记录保存在本机浏览器，可随时暂停。</small>
+      </div>
+      </section>
+      </div>
+      <footer class="launcher-submit-region">
+      <div class="launcher-submit-feedback" aria-live="polite">
       <p v-if="customNotice" class="form-hint" role="status">{{ customNotice }}</p>
       <p v-if="defaultsState === 'error'" class="error-text" role="alert">
         {{ defaultsError || '无法读取训练默认设置' }}
@@ -794,7 +822,10 @@ function randomCreateErrorMessage(error: unknown): string {
       </p>
       <p v-if="defaultsState === 'loading'" class="form-hint">正在读取训练默认设置…</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+      <p v-if="!customNotice && defaultsState === 'ready' && !errorMessage" class="form-hint">确认配置后开始。训练进度会保留在本机。</p>
+      </div>
       <button class="submit-button" :disabled="submitting || defaultsState !== 'ready'" :title="defaultsState !== 'ready' ? '训练默认设置读取完成后可开始训练' : ''" @click="submit">{{ submitting ? '创建中…' : '开始训练' }}</button>
+      </footer>
     </section>
 
     <!-- 建议先更新日线数据：复用结算面板的模态风格（settle-mask/settle-panel） -->
@@ -816,6 +847,61 @@ function randomCreateErrorMessage(error: unknown): string {
 </template>
 
 <style scoped>
+.launcher { width: 100%; max-width: 1440px; height: calc(100dvh - var(--topbar-h)); margin: 0 auto; padding: 30px 32px 24px; display: flex; flex-direction: column; min-height: 0; }
+.launcher-head { flex: 0 0 auto; }
+.launcher-head h1 { font-size: 25px; line-height: 1.35; letter-spacing: -.4px; }
+.launcher-head p { margin-bottom: 20px; max-width: 880px; font-size: var(--font-size-md); line-height: 1.65; color: var(--text-secondary); }
+.launcher-form { flex: 1; min-height: 0; padding: 0; gap: 0; grid-template-rows: minmax(0, 1fr) auto; border-radius: var(--radius-lg); overflow: hidden; }
+.launcher-workbench { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr); min-height: 0; }
+.launcher-subject, .launcher-rules { display: flex; flex-direction: column; align-items: stretch; gap: 22px; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 24px 26px; }
+.launcher-rules { border-left: 1px solid var(--surface-border); background: var(--surface-background); }
+.configuration-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; padding-bottom: 15px; border-bottom: 1px solid var(--surface-border); }
+.configuration-heading h2 { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); }
+.configuration-heading span { color: var(--text-muted); font-size: var(--font-size-xs); }
+.launcher-form .form-field { gap: 8px; flex: 0 0 auto; }
+.launcher-form .form-field label { color: var(--text-secondary); font-weight: var(--font-weight-medium); }
+.launcher-form .form-field input { width: 100%; min-width: 0; }
+.launcher-form .form-hint { line-height: 1.6; color: var(--text-muted); }
+.stable-hint { display: grid; }
+.stable-hint > * { grid-area: 1 / 1; font-size: var(--font-size-xs); line-height: 1.6; }
+.stable-hint .hint-sizing { visibility: hidden; pointer-events: none; }
+.launcher-form .form-row { align-items: start; gap: 18px; }
+.launcher-form .tier-grid { gap: 6px; }
+.launcher-form .tier-grid button { padding: 8px 12px; }
+.launcher-form .stock-input-row { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+.launcher-form .stock-field { min-height: 91px; }
+.launcher-form .stock-field > .form-hint { margin: 0; }
+.dimension-slot { min-height: 118px; flex: 0 0 118px; }
+.dimension-slot .form-hint { display: block; }
+.dimension-slot .stock-field { min-height: 0; }
+.rule-choice { display: grid; gap: 8px; }
+.rule-choice .recording-choice { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--font-size-md); color: var(--text-primary); }
+.rule-choice input { margin: 0; accent-color: var(--color-accent-fill); }
+.rule-choice .form-hint { padding-left: 21px; }
+.rule-choice-hint.is-placeholder { visibility: hidden; }
+.launcher-submit-region { display: flex; align-items: center; justify-content: space-between; gap: 24px; border-top: 1px solid var(--surface-border); padding: 16px 26px; background: var(--surface-card); }
+.launcher-submit-feedback { flex: 1; min-width: 0; max-height: 52px; overflow-y: auto; }
+.launcher-submit-feedback p { margin: 0; line-height: 1.5; }
+.launcher-submit-region .submit-button { flex: 0 0 210px; width: auto; margin: 0; height: 42px; border-radius: var(--radius-sm); }
+.launcher-form button, .mode-tabs button { transition: background-color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease), border-color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease), color var(--motion-ui-fast, 120ms) var(--motion-ui-ease, ease); }
+@media (max-width: 1180px), (max-height: 780px) {
+  .launcher { padding: 20px 24px 16px; }
+  .launcher-head h1 { font-size: 22px; }
+  .launcher-head p { margin-bottom: 12px; }
+  .launcher-subject, .launcher-rules { padding: 18px; gap: 18px; }
+  .launcher-submit-region { padding: 12px 18px; }
+  .launcher-form .tier-grid button { padding: 7px 9px; }
+}
+@media (max-width: 900px) {
+  .launcher { height: auto; min-height: calc(100dvh - var(--topbar-h)); }
+  .launcher-workbench { grid-template-columns: minmax(0, 1fr); }
+  .launcher-subject, .launcher-rules { overflow: visible; }
+  .launcher-rules { border-left: 0; border-top: 1px solid var(--surface-border); }
+  .launcher-submit-region { position: sticky; bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .launcher-form button, .mode-tabs button { transition: none; }
+}
 /* UPD-NOTIFY-01 首页左上角更新提示按钮：对齐顶栏 data-update-btn 胶囊风格（attention
    琥珀色实底，与既有「更新日线」醒目口径同色系；双主题同值，沿用 attention 先例） */
 .launcher-head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

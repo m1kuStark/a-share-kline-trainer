@@ -3,17 +3,19 @@
 // 未发生回退时不得出现提示条。全部走路由 mock，不依赖真实后端与真实端口。
 // 端口选择/报错文案的服务端行为见 server/test/release-launcher.test.ts PORT-01 组。
 import { expect, test } from '@playwright/test'
+import type { EnvView } from '../web/src/api'
 
-function envBody(launcher: Record<string, unknown> | null) {
+function envBody(launcher: EnvView['launcher']) {
   return JSON.stringify({
     status: 'ok',
+    recordingNamespace: 'e2e-port-fallback',
     tdx: { connected: true, source: 'saved-choice' },
-    ...(launcher === null ? {} : { launcher }),
+    launcher,
     dataCutoff: '2026-09-28',
     stockCount: 5321,
     capabilities: {},
     activeTrainingId: null,
-  })
+  } satisfies EnvView)
 }
 
 async function installMocks(page: import('@playwright/test').Page, env: string) {
@@ -43,9 +45,17 @@ async function installMocks(page: import('@playwright/test').Page, env: string) 
   }))
 }
 
+async function expectLauncherReady(page: import('@playwright/test').Page) {
+  // 先证明环境初始化和首页加载完成，避免提示条缺席因启动失败而假通过。
+  await expect(page.getByRole('heading', { name: '创建训练', exact: true })).toBeVisible()
+  await expect(page.locator('.data-status-ok')).toContainText('数据已最新 · 截止 2026-09-28')
+  await expect(page.locator('.env-error')).toHaveCount(0)
+}
+
 test('a) 发生回退：常驻提示实际端口、原因与固定端口方法', async ({ page }) => {
   await installMocks(page, envBody({ port: 8789, fallbackFrom: 8787, fallbackReason: 'reserved' }))
   await page.goto('/')
+  await expectLauncherReady(page)
   const note = page.locator('.port-fallback-note')
   await expect(note).toBeVisible()
   await expect(note).toContainText('端口 8789')
@@ -59,6 +69,7 @@ test('a) 发生回退：常驻提示实际端口、原因与固定端口方法',
 test('b) 发生回退（被占用原因）：文案区分"被其他程序占用"', async ({ page }) => {
   await installMocks(page, envBody({ port: 8790, fallbackFrom: 8787, fallbackReason: 'occupied' }))
   await page.goto('/')
+  await expectLauncherReady(page)
   const note = page.locator('.port-fallback-note')
   await expect(note).toBeVisible()
   await expect(note).toContainText('端口 8790')
@@ -68,5 +79,6 @@ test('b) 发生回退（被占用原因）：文案区分"被其他程序占用"
 test('c) 未发生回退：不出现端口提示条', async ({ page }) => {
   await installMocks(page, envBody({ port: 8787, fallbackFrom: null, fallbackReason: null }))
   await page.goto('/')
+  await expectLauncherReady(page)
   await expect(page.locator('.port-fallback-note')).toHaveCount(0)
 })

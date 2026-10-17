@@ -1,0 +1,87 @@
+{
+  "sourceDigest": "f0dd15e269f7e3ac88358c36d8f055ae36e08856c0d7d6f77d312991f6d221f2",
+  "setupSha256": "00e742f1fb9c13ed844cd797ad2823c26ee3187a18271ff82e82c185a75d2b39",
+  "base": "6d557a12f400ce45b50418b8556f943d39fef754",
+  "files": [
+    {
+      "path": "e2e/acceptance-feedback.spec.ts",
+      "sha256": "836a613e9eed16c816b556d23ffec9e2600dbdd317d838aaf76c369ea62722bb"
+    },
+    {
+      "path": "e2e/compact-chart.spec.ts",
+      "sha256": "d17eacef77ae68255066592a5bc9b95b5af4305ec2c958b64f2dc79b9fc5d0ff"
+    },
+    {
+      "path": "e2e/cost-basis.spec.ts",
+      "sha256": "2a3cc95dded112897ccd5e44d55876e0b3cfacf6303fc9efb014047bfd5e4fb9"
+    },
+    {
+      "path": "e2e/data-update.spec.ts",
+      "sha256": "529b34e023e37f8969eb12e91cbe511cd7c6e0b31e6b59e5738031e1e988d56d"
+    },
+    {
+      "path": "e2e/port-fallback.spec.ts",
+      "sha256": "067a7c47c5db31742870c6529f61a996e1c2f0b9d39ce775c6afab6a0dac7d30"
+    },
+    {
+      "path": "e2e/recording-bulk.spec.ts",
+      "sha256": "debddebc78624e2b587c81ec09bb90854610059ce3be576f221ad874dd8eb939"
+    },
+    {
+      "path": "e2e/uiux-launcher.spec.ts",
+      "sha256": "a887ed7d0051a5cbfa44880d68fec7a41cd58a1bcc06ca5b8abdc70f876d6248"
+    },
+    {
+      "path": "e2e/uiux-records.spec.ts",
+      "sha256": "d03b58e166a26e781f1525d1cc853066f8d8b7ab2d10086a8bff03f2bd312f94"
+    },
+    {
+      "path": "e2e/uiux-settings.spec.ts",
+      "sha256": "87f4fafbe71b997c100b14a44fbee1e68ad01ddc2eb347c3527e6ea1b85177f2"
+    },
+    {
+      "path": "e2e/uiux-shell.spec.ts",
+      "sha256": "25316ea4598c40538567846be3bdf4b5cc05818b8a4589d499c28ea8f61fc345"
+    },
+    {
+      "path": "e2e/uiux-training.spec.ts",
+      "sha256": "298e0ef808a1a2513acd0cda468707e07ad59b3c53fa9f4112f922b0c93663b9"
+    },
+    {
+      "path": "web/src/App.vue",
+      "sha256": "553fa2307d5640f6a7cd181912ed3dc040899ebd4199ba5bd45e1d6e79450805"
+    },
+    {
+      "path": "web/src/components/RecordingLibrary.vue",
+      "sha256": "6c423337aca10835b240f46cbfee75441d5c2e9be32970df672693806cf4a9c3"
+    },
+    {
+      "path": "web/src/components/TrainingSettings.vue",
+      "sha256": "e32d5b1f03112ce96c1a7c0bfdb728a02dc75f483cfd07e6f9a047102446943e"
+    },
+    {
+      "path": "web/src/styles.css",
+      "sha256": "017630266bb8d453782b4c53c2ca1eacc61c0017ebbc5d947347bfd66b8c6772"
+    },
+    {
+      "path": "web/src/tokens.css",
+      "sha256": "550b3696b29bd0b123f66750d20b735e43a089b0c0d174f3d92259b699db9a86"
+    },
+    {
+      "path": "web/src/views/History.vue",
+      "sha256": "3930c5c1ebfbcc8dc0f28012fd34045c4c05c48c4e768b3f52f1e2afea7b8012"
+    },
+    {
+      "path": "web/src/views/Launcher.vue",
+      "sha256": "0d85f6747b641fde85d7fbfd3d3c819a745464c43428aa79266de79c598c5d0a"
+    },
+    {
+      "path": "web/src/views/Rankings.vue",
+      "sha256": "4745f1fe8efee51a39d9d1927367799b0ecb1bf85f103c3cc1197125df29a17d"
+    },
+    {
+      "path": "web/src/views/Training.vue",
+      "sha256": "b20464d5fbf4f5b859331b5153f63c2de9372e79afc6331823b23892ebdbd243"
+    }
+  ]
+}
