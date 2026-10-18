@@ -21,6 +21,8 @@
 // （release-desktop-lib.test.ts NSIS-ARTIFACT-PRODUCED／portable-updater-release.test.ts
 // INSTALL-01 源码契约）采用「源形状契约测试」：读文件断言关键指令存在＋防破坏约束；
 // 行为级验证（真机重复安装）留集成阶段（本任务纪律 6 不真实打包安装）。
+// 2026-10-17 第九轮扩展（UNINSTALL-DATA-ASK）：卸载侧 customUnInstall 宏源形状契约
+// （交互式卸载询问删/留训练数据目录）＋写面收敛断言随 oracle 收窄到 customInit 宏体。
 import { describe, expect, it } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
@@ -42,6 +44,14 @@ function stripNsisComments(source: string): string {
 
 async function readInstallerNsh(): Promise<string> {
   return readFile(NSH_PATH, 'utf8')
+}
+
+/** 截取指定宏（!macro <name> … !macroend）的源体（含宏定义行）；宏不存在返回 '' */
+function macroBody(source: string, name: string): string {
+  const start = source.search(new RegExp(`!macro\\s+${name}\\b`))
+  if (start === -1) return ''
+  const end = source.indexOf('!macroend', start)
+  return end === -1 ? '' : source.slice(start, end)
 }
 
 describe('INSTALLER-UPGRADE-DETECT: installer.nsh 升级检测源形状契约（检测已装版本与位置）', () => {
@@ -90,16 +100,24 @@ describe('INSTALLER-UPGRADE-DETECT: installer.nsh 升级检测源形状契约（
 
   it('INSTALL-UPGRADE：钩子写面收敛——升级链由内建承担，唯一受控写＝幽灵自愈的两条登记清除（HKCU）', async () => {
     const code = stripNsisComments(await readInstallerNsh())
-    // uninstallOldVersion（installUtil.nsh）已承担：静默卸旧（/KEEP_APP_DATA + --updated）→装新到同
-    // $INSTDIR。钩子的删除/写注册/执行指令＝越位（数据继承链被绕过的风险面）。
+    // 写面收敛的 oracle 对象＝安装侧钩子 customInit：uninstallOldVersion（installUtil.nsh）
+    // 已承担静默卸旧（/KEEP_APP_DATA + --updated）→装新到同 $INSTDIR，安装钩子的删除/写注册/
+    // 执行指令＝越位（数据继承链被绕过的风险面）。
     // 例外（INSTALL-GHOST-SELFHEAL，2026-10-17）：幽灵 InstallLocation 自愈允许且仅允许
     // 两条受控登记清除（DeleteRegValue/DeleteRegKey，HKCU、守卫段内）——见幽灵自愈 describe。
-    expect((code.match(/\bDeleteRegValue\b/g) ?? []).length).toBe(1)
-    expect((code.match(/\bDeleteRegKey\b/g) ?? []).length).toBe(1)
-    expect(code).not.toMatch(/\bDelete\b|\bRMDir\b/)
-    expect(code).not.toMatch(/\bWriteRegStr\b|\bWriteRegDWORD\b|\bExecWait\b|\bExec\b|\bSetOutPath\b|\bCreateDirectory\b/)
-    // 安装器脚本不得知道数据目录路径（数据继承是结构性事实：数据不在安装目录）
-    expect(code).not.toContain('.a-share-kline-trainer')
+    // 范围修订（2026-10-17 第九轮，UNINSTALL-DATA-ASK）：用户拍板卸载侧新增 customUnInstall
+    // 宏（受控 RMDir 数据目录，询问式删除）——本用例断言自「全文件」收窄到 customInit 宏体，
+    // 非放宽：卸载侧 RMDir 的全文件围栏（唯一目标＝数据目录、唯一位置＝customUnInstall 宏体）
+    // 由 UNINSTALL-DATA-ASK describe 单独锁定。
+    const init = macroBody(code, 'customInit')
+    expect(init).not.toBe('')
+    expect((init.match(/\bDeleteRegValue\b/g) ?? []).length).toBe(1)
+    expect((init.match(/\bDeleteRegKey\b/g) ?? []).length).toBe(1)
+    expect(init).not.toMatch(/\bDelete\b|\bRMDir\b/)
+    expect(init).not.toMatch(/\bWriteRegStr\b|\bWriteRegDWORD\b|\bExecWait\b|\bExec\b|\bSetOutPath\b|\bCreateDirectory\b/)
+    // 安装钩子不得知道数据目录路径（数据继承是结构性事实：数据不在安装目录）；
+    // 卸载钩子对数据目录的知识属 UNINSTALL-DATA-ASK 授权面，由该 describe 围栏。
+    expect(init).not.toContain('.a-share-kline-trainer')
   })
 })
 
@@ -191,5 +209,86 @@ describe('INSTALLER-UPGRADE-DETECT: electron-builder.yml 升级语义前提锁�
     // 升级链双保险之外再加一道门：即便内建 uninstallOldVersion 对升级场景强制 --updated
     // （installUtil.nsh 注释原文：user data will be not removed），也永不配置卸载删数据
     expect(yml).not.toContain('deleteAppDataOnUninstall')
+  })
+})
+
+describe('UNINSTALL-DATA-ASK: 卸载询问式数据目录清理源形状契约（customUnInstall 宏）', () => {
+  // oracle（独立于实现，不从实现反推）：
+  //   - 用户 2026-10-17 原话（第九轮）：「C:\Users\…\.a-share-kline-trainer 我注意到执行
+  //     卸载程序时，这个数据目录不会跟着卸载干净，建议改为询问式，用户在卸载时可以自己
+  //     决定要不要保留这些数据」——交互式卸载须询问删/留；选是删、选否完整保留不再打扰。
+  //   - 数据目录口径＝desktop/src/data-home.ts 唯一默认 <homeDir>/.a-share-kline-trainer
+  //     （os.homedir()＝%USERPROFILE%，NSIS 侧＝$PROFILE）。
+  //   - electron-builder v26.15.3 模板冻结契约（侦察实证）：customUnInstall 宏在
+  //     uninstaller.nsh 卸载 Section "un.Uninstall" 开头展开（:156-157），先于安装文件
+  //     删除；内建 RMDir（:237）只删 $APPDATA\{APP_FILENAME}，够不到数据目录——必须自定义宏。
+  //   - 升级链隔离＝静默守卫：installSection.nsh 调 uninstallOldVersion（installUtil.nsh）
+  //     以 /S 静默运行卸载器（命令行固定 /KEEP_APP_DATA --updated＝升级强制保留数据），
+  //     un.onInit 解析到 /S 即 SetSilent silent（uninstaller.nsh:15-19）——
+  //     ${IfNot} ${Silent} 即可隔离升级链（模板同构造先例＝uninstaller.nsh:149）。
+  //   - NSIS 编译红线：宏体在 Section 内展开不得含 Var 声明（编译错）。
+  //   - 呈现形态 proposed_default（提验）：MessageBox MB_YESNO|MB_ICONQUESTION＋文案要点
+  //     （删的是什么/选否完整保留）；具体措辞允许微调——断言只锁语义关键词，不锁整句。
+  async function unInstallBody(): Promise<string> {
+    const code = stripNsisComments(await readInstallerNsh())
+    return macroBody(code, 'customUnInstall')
+  }
+
+  it('UNINSTALL-ASK：定义 customUnInstall 宏（卸载钩子存在）且宏体不含 Var 声明（Section 内展开编译红线）', async () => {
+    const body = await unInstallBody()
+    expect(body).not.toBe('')
+    // 宏体在卸载 Section 内展开：Var 声明只能出现在顶层（NSIS 编译错红线，同 customInit 约定）
+    expect(body).not.toMatch(/(^|\n)\s*Var\s/)
+  })
+
+  it('UNINSTALL-ASK：${IfNot} ${Silent} 守卫在外层包住询问与删除（静默/升级链一律不弹窗不删数据）', async () => {
+    const body = await unInstallBody()
+    expect(body).not.toBe('')
+    expect(body).toContain('${IfNot} ${Silent}')
+    // 守卫必须先于询问与删除（外层包住：MessageBox 与 RMDir 均在守卫之后）
+    const guardIdx = body.indexOf('${IfNot} ${Silent}')
+    expect(body.indexOf('MessageBox')).toBeGreaterThan(guardIdx)
+    expect(body.indexOf('RMDir')).toBeGreaterThan(guardIdx)
+  })
+
+  it('UNINSTALL-ASK：目录存在才询问——${If} ${FileExists} 数据目录通配守卫先于 MessageBox（目录不存在不打扰）', async () => {
+    const body = await unInstallBody()
+    expect(body).not.toBe('')
+    // 目录存在性判定用目录通配（IfFileExists "dir\*.*" 是 NSIS 目录存在惯用形，同 customInit 幽灵守卫）
+    expect(body).toContain('${If} ${FileExists} "$PROFILE\\.a-share-kline-trainer\\*.*"')
+    expect(body.indexOf('${If} ${FileExists}')).toBeLessThan(body.indexOf('MessageBox'))
+  })
+
+  it('UNINSTALL-ASK：询问＝MessageBox MB_YESNO|MB_ICONQUESTION，文案说清删的是什么与选否保留（proposed_default，锁语义不锁整句）', async () => {
+    const body = await unInstallBody()
+    expect(body).toMatch(/MessageBox\s+MB_YESNO\|MB_ICONQUESTION/)
+    // 文案语义（用户原话：可以自己决定要不要保留）：删的内容含训练数据语义＋选否完整保留语义
+    expect(body).toMatch(/训练/)
+    expect(body).toMatch(/保留/)
+  })
+
+  it('UNINSTALL-ASK：选是 RMDir /r 数据目录、选否仅绕过——全文件 RMDir 围栏（唯一目标＝数据目录，唯一位置＝customUnInstall 宏体）', async () => {
+    const code = stripNsisComments(await readInstallerNsh())
+    const body = await unInstallBody()
+    expect(body).toContain('RMDir /r "$PROFILE\\.a-share-kline-trainer"')
+    // 全文件围栏：RMDir 只允许出现在 customUnInstall 宏体且仅此一处（安装钩子/其他位置零删除指令）
+    const bodyRmDir = (body.match(/\bRMDir\b/g) ?? []).length
+    const totalRmDir = (code.match(/\bRMDir\b/g) ?? []).length
+    expect(bodyRmDir).toBe(1)
+    expect(totalRmDir).toBe(bodyRmDir)
+    // 分支语义（EARS：选是删除、选否则完整保留）——P4 变异抽检补强：
+    // YES 落删除：MessageBox 的 IDYES 目标标签定义必须先于 RMDir（选『是』才执行删除）；
+    // NO 绕过删除：询问与删除之间必须存在无条件 Goto（选『否』落 Goto 绕开 RMDir——
+    // 删掉 Goto＝NO 路径直落删除＝无论选什么都删，此断言即杀手）。
+    const idyes = body.match(/MessageBox\s+MB_YESNO\|MB_ICONQUESTION[^\r\n]*\bIDYES\s+(\S+)/)
+    expect(idyes).not.toBeNull()
+    const yesLabel = idyes![1]
+    const yesLabelDef = body.indexOf(`${yesLabel}:`)
+    expect(yesLabelDef).toBeGreaterThan(-1)
+    expect(yesLabelDef).toBeLessThan(body.indexOf('RMDir'))
+    const gotoIdx = body.indexOf('Goto')
+    const msgIdx = body.indexOf('MessageBox')
+    expect(gotoIdx).toBeGreaterThan(msgIdx)
+    expect(gotoIdx).toBeLessThan(body.indexOf('RMDir'))
   })
 })

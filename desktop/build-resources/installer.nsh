@@ -76,3 +76,41 @@
     ${EndIf}
   ${EndIf}
 !macroend
+
+; ============================================================================
+; UNINSTALL-DATA-ASK（2026-10-17 第九轮，矩阵行 UNINSTALL-DATA-ASK）：交互式卸载询问
+; 是否同时删除默认训练数据目录。用户原话：「C:\Users\…\.a-share-kline-trainer 我注意到
+; 执行卸载程序时，这个数据目录不会跟着卸载干净，建议改为询问式，用户在卸载时可以自己
+; 决定要不要保留这些数据」。
+;
+; 机制依据（electron-builder v26.15.3 模板实证）：
+;   - customUnInstall 宏由 uninstaller.nsh 卸载 Section "un.Uninstall" 开头展开
+;     （uninstaller.nsh:156-157），先于安装文件删除；内建数据清理 RMDir（:237）只删
+;     $APPDATA\{APP_FILENAME}，够不到 %USERPROFILE%\.a-share-kline-trainer（数据目录口径
+;     ＝desktop/src/data-home.ts 唯一默认 <homeDir>/.a-share-kline-trainer；NSIS $PROFILE
+;     ＝%USERPROFILE%＝os.homedir()）——必须自定义宏补齐，内建不可达。
+;   - 静默守卫＝升级链隔离（KEEP_APP_DATA 语义）：installSection.nsh 调 uninstallOldVersion
+;     （installUtil.nsh）以 /S 静默运行本卸载器（命令行固定 /S /KEEP_APP_DATA --updated，
+;     语义＝升级一律保留用户数据不弹窗），un.onInit 解析到 /S 即 SetSilent silent
+;     （uninstaller.nsh:15-19）——${IfNot} ${Silent} 使升级链与静默卸载一律不弹窗不删数据；
+;     模板同构造先例＝uninstaller.nsh:149。
+;   - 目录存在才询问：IfFileExists "dir\*.*" 是 NSIS 目录存在惯用形（同上方 customInit
+;     幽灵守卫），目录不存在（从未运行过应用）就不打扰。
+;   - 已知限制（模板级，非本宏缺陷）：per-machine 提权卸载时 $PROFILE＝提权过程用户的
+;     档案目录——同用户自提权（UAC 同账户确认）场景正确；跨用户装/卸（A 装 B 卸）会指向
+;     B 的档案目录，属 electron-builder per-machine 安装数据目录口径的已知限制；本产品
+;     perMachine=false 默认按用户安装，正常链路不触发该场景。
+;   - NSIS 约束：宏体在 Section 内展开，不得含 Var 声明（编译红线，本宏零变量零 StrCpy）；
+;     跳转用唯一命名 label（模板裸 label 先例＝uninstaller.nsh:47 起），不用 +N 相对跳转
+;     计数——宏在 LogicLib 块内展开时相对计数易碎。
+!macro customUnInstall
+  ${IfNot} ${Silent}
+    ${If} ${FileExists} "$PROFILE\.a-share-kline-trainer\*.*"
+      MessageBox MB_YESNO|MB_ICONQUESTION "是否同时删除训练数据目录？$\r$\n$\r$\n目录：$PROFILE\.a-share-kline-trainer$\r$\n$\r$\n包含：训练记录与排行（trainer.sqlite）、应用设置、日线数据缓存。$\r$\n$\r$\n选『是』：永久删除以上全部数据；选『否』：完整保留该目录，重新安装后数据原样可用。" IDYES uninst_data_ask_del
+      Goto uninst_data_ask_done
+      uninst_data_ask_del:
+        RMDir /r "$PROFILE\.a-share-kline-trainer"
+      uninst_data_ask_done:
+    ${EndIf}
+  ${EndIf}
+!macroend
