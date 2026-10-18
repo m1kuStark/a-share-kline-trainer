@@ -21,3 +21,4 @@ tools/diagnostics/**/Kline-Diagnostic-*.txt
 .control/
 desktop/release2/
 output-*/
+dist-cn-feed/
