@@ -1,0 +1,59 @@
+# MIG-ONECLICK-02 启动器中文报错文案（UTF-8；由 launcher-print.ps1 按场景拼装打印）。
+# [方括号] 行是节标记（仅作分隔，不打印）；{TOOL_DIR} 会被替换为工具文件夹实际路径。
+
+[oneclick-title]
+[错误] 迁移工具没有找到能运行它的环境（需要旧版本或新版本安装目录）。
+
+[feature-title]
+已检测（以下路径相对工具文件夹的上一级目录）：
+
+[feat-rt-found]
+  - 旧版 v1.2.7 特征 runtime\node.exe：找到
+
+[feat-rt-missing]
+  - 旧版 v1.2.7 特征 runtime\node.exe：未找到
+
+[feat-exe-found]
+  - 新版 v1.3.x 特征 K线训练器.exe（或同目录其他程序 .exe）：找到
+
+[feat-exe-missing]
+  - 新版 v1.3.x 特征 K*.exe：未找到
+
+[feat-cjs-missing]
+  - 工具入口 oneclick.cjs：未找到（工具文件夹不完整）
+
+[oneclick-guide]
+当前工具文件夹：{TOOL_DIR}
+请把整个 migrate-v127 文件夹移动或复制到：
+  - 旧版本 v1.2.7 解压目录里（与 Start.cmd、runtime 文件夹同级），或
+  - 新版本 v1.3.x 安装目录里（与 K线训练器.exe 同级）；
+然后再双击「一键迁移.cmd」。
+
+[oneclick-incomplete-title]
+[错误] 迁移工具文件夹不完整，无法启动。
+
+[oneclick-incomplete-guide]
+当前工具文件夹：{TOOL_DIR}
+请重新获取完整的 migrate-v127 工具文件夹（至少应包含 一键迁移.cmd、
+oneclick.cjs、launcher-print.ps1、launcher-messages.txt 四个文件），
+放到旧版本或新版本安装目录后再双击「一键迁移.cmd」。
+
+[oneclick-runfail]
+[错误] 一键迁移没有完成。请查看上方提示，按提示处理后重新双击「一键迁移.cmd」重试。
+
+[export-title]
+[错误] 导出工具不完整或位置不对，无法启动。
+
+[feat-exportcjs-found]
+  - 工具入口 export-v127.cjs：找到
+
+[feat-exportcjs-missing]
+  - 工具入口 export-v127.cjs：未找到（工具文件夹不完整）
+
+[export-guide]
+当前工具文件夹：{TOOL_DIR}
+请把整个 migrate-v127 文件夹移动或复制到旧版本 v1.2.7 解压目录里
+（与 Start.cmd、runtime 文件夹同级），然后再双击「导出训练录像.cmd」。
+
+[export-runfail]
+[错误] 录像导出没有完成。请查看上方提示，按提示处理后重新双击「导出训练录像.cmd」重试。

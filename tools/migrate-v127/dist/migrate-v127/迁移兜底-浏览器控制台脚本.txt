@@ -1,0 +1,1882 @@
+════════════════════════════════════════════════════════════════════
+ 迁移兜底：v1.2.7 训练录像导出（浏览器控制台脚本）
+════════════════════════════════════════════════════════════════════
+
+适用场景：「导出训练录像.cmd」打不开、端口被占、或页面提示找不到录像库时使用。
+
+使用步骤：
+  1. 正常启动旧版训练器（Start.cmd），等页面完全打开；
+  2. 在训练器页面上按 F12（或右键→检查）打开开发者工具，切到「控制台 / Console」；
+  3. 复制本文件分隔线以下的【全部内容】粘贴进控制台，回车执行；
+  4. 浏览器会自动下载「训练录像库-….trainer-recordings.json」，即迁移合并包；
+  5. 打开 v1.3.0 →「训练录像」→「导入录制」，选择该文件完成迁移。
+
+说明：脚本只读取录像、不修改不删除任何旧数据；导出后控制台会逐条列出结果。
+
+────────────────── 以下为脚本内容，复制到控制台 ──────────────────
+
+"use strict";
+(() => {
+  // web/src/recording/compactCodec.ts
+  var MAX_DELTA_CHAIN = 31;
+  var READER_CACHE_LIMIT = 8;
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+  function canonicalJson(value) {
+    if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+    if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+    const entries = Object.entries(value).filter(([, v]) => v !== void 0);
+    entries.sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+  }
+  function fingerprint(canonical) {
+    let hash = 2166136261;
+    for (let i = 0; i < canonical.length; i += 1) {
+      hash ^= canonical.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `${(hash >>> 0).toString(16)}:${canonical.length}`;
+  }
+  function applyDelta(base, upsert, remove, keyOf) {
+    const result = base.slice();
+    const indexByKey = /* @__PURE__ */ new Map();
+    result.forEach((item, i) => indexByKey.set(keyOf(item), i));
+    for (const item of upsert) {
+      const key = keyOf(item);
+      const at = indexByKey.get(key);
+      if (at === void 0) {
+        indexByKey.set(key, result.length);
+        result.push(item);
+      } else {
+        result[at] = item;
+      }
+    }
+    if (remove.length) {
+      const drop = new Set(remove);
+      return result.filter((item) => !drop.has(keyOf(item)));
+    }
+    return result;
+  }
+  function sameKeySequence(items, keys, keyOf) {
+    if (items.length !== keys.length) return false;
+    for (let i = 0; i < items.length; i += 1) {
+      if (keyOf(items[i]) !== keys[i]) return false;
+    }
+    return true;
+  }
+  function sortedByDrawId(items) {
+    return items.slice().sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  }
+  function deriveAsOf(checkpoint) {
+    const training = checkpoint.training;
+    if (!training) return null;
+    if (training.training.currentDate !== null) return training.training.currentDate;
+    return training.training.blind ? null : training.training.startDate;
+  }
+  function buildState(items, keyOf) {
+    return { items, index: new Map(items.map((item, i) => [keyOf(item), i])) };
+  }
+  function expandVersionChain(id, byId, label, cache, materializeBase, applyVersion) {
+    const cached = cache.get(id);
+    if (cached !== void 0) return cached;
+    const chain = [];
+    const seen = /* @__PURE__ */ new Set();
+    let current = byId.get(id);
+    if (!current) throw new Error(`checkpoint\u5F15\u7528\u7684${label}\u7248\u672C ${id} \u4E0D\u5B58\u5728\uFF0C\u6587\u4EF6\u53EF\u80FD\u635F\u574F`);
+    for (; ; ) {
+      if (seen.has(current.id)) throw new Error(`${label}\u57FA\u7840\u94FE\u5B58\u5728\u5FAA\u73AF\u5F15\u7528\uFF1A${current.id}`);
+      seen.add(current.id);
+      chain.push(current);
+      if (current.base === null) break;
+      const next = byId.get(current.base);
+      if (!next) throw new Error(`${label}\u7248\u672C ${current.id} \u5F15\u7528\u7684\u57FA\u7840\u7248\u672C ${current.base} \u4E0D\u5B58\u5728\uFF0C\u6587\u4EF6\u53EF\u80FD\u635F\u574F`);
+      current = next;
+    }
+    chain.reverse();
+    let start = 0;
+    let hit;
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+      const ancestor = cache.get(chain[i].id);
+      if (ancestor !== void 0) {
+        hit = ancestor;
+        start = i + 1;
+        break;
+      }
+    }
+    let items;
+    if (hit !== void 0) {
+      items = hit;
+    } else {
+      const root = chain[0];
+      items = materializeBase(root);
+      cache.set(root.id, items);
+      start = 1;
+    }
+    for (let i = start; i < chain.length; i += 1) {
+      const version = chain[i];
+      items = version.base === null ? materializeBase(version) : applyVersion(items, version);
+      cache.set(version.id, items);
+    }
+    return items;
+  }
+  var CompactBuilder = class {
+    resources;
+    checkpointCount;
+    seriesIds = /* @__PURE__ */ new Map();
+    seriesHeads = /* @__PURE__ */ new Map();
+    seriesStates = /* @__PURE__ */ new Map();
+    seriesDeltaCounts = /* @__PURE__ */ new Map();
+    /** 周期 → 指纹 → 版本id（历史内容复用查找；仅存id不存展开内容） */
+    seriesFpIndex = /* @__PURE__ */ new Map();
+    drawingsById = /* @__PURE__ */ new Map();
+    drawingsHead = null;
+    drawingsState = null;
+    drawingsDeltaCount = 0;
+    drawingsFpIndex = /* @__PURE__ */ new Map();
+    /** 历史复用比对时的临时展开缓存（有界，不作为持久索引） */
+    seriesReconstructCache = new LruCache(READER_CACHE_LIMIT);
+    drawingsReconstructCache = new LruCache(READER_CACHE_LIMIT);
+    nextSeriesId = 1;
+    nextDrawingId = 1;
+    metaTable;
+    accountTable;
+    tradeTable;
+    contextTable;
+    constructor(resources, checkpointCount = 0) {
+      this.resources = resources ? clone(resources) : { series: [], drawings: [], trainingMeta: [], accounts: [], trades: [], contexts: [] };
+      this.checkpointCount = checkpointCount;
+      for (const version of this.resources.series) this.indexRestoredSeries(version);
+      for (const version of this.resources.drawings) {
+        if (this.drawingsById.has(version.id)) throw new Error(`\u753B\u7EBF\u7248\u672Cid\u91CD\u590D\uFF1A${version.id}`);
+        this.drawingsById.set(version.id, version);
+      }
+      if (this.resources.drawings.length) {
+        this.drawingsHead = this.resources.drawings[this.resources.drawings.length - 1].id;
+        this.drawingsDeltaCount = this.walkDeltaCount(this.drawingsHead, "drawings");
+      }
+      for (const headId of this.seriesHeads.values()) this.seriesDepth(headId);
+      for (const version of this.resources.series) {
+        const numbered = version.id.match(/^s(\d+)$/);
+        if (numbered) this.nextSeriesId = Math.max(this.nextSeriesId, Number(numbered[1]) + 1);
+      }
+      for (const version of this.resources.drawings) {
+        const numbered = version.id.match(/^dw(\d+)$/);
+        if (numbered) this.nextDrawingId = Math.max(this.nextDrawingId, Number(numbered[1]) + 1);
+      }
+      this.metaTable = this.restoreTable("m", this.resources.trainingMeta);
+      this.accountTable = this.restoreTable("a", this.resources.accounts);
+      this.tradeTable = this.restoreTable("t", this.resources.trades);
+      this.contextTable = this.restoreTable("x", this.resources.contexts);
+      this.rebuildContentIndexes();
+    }
+    indexRestoredSeries(version) {
+      if (this.seriesIds.has(version.id)) throw new Error(`\u884C\u60C5\u7248\u672Cid\u91CD\u590D\uFF1A${version.id}`);
+      this.seriesIds.set(version.id, version);
+      this.seriesHeads.set(version.timeframe, version.id);
+    }
+    restoreTable(prefix, entries) {
+      const table = {
+        prefix,
+        entries,
+        ids: /* @__PURE__ */ new Set(),
+        nextId: 1,
+        byId: /* @__PURE__ */ new Map(),
+        byFingerprint: /* @__PURE__ */ new Map()
+      };
+      for (const entry of entries) {
+        if (!entry.id || table.ids.has(entry.id)) throw new Error(`\u8D44\u6E90id\u4E3A\u7A7A\u6216\u91CD\u590D\uFF1A${entry.id}`);
+        table.ids.add(entry.id);
+        table.byId.set(entry.id, entry);
+        const fp = fingerprint(canonicalJson(entry.value));
+        const bucket = table.byFingerprint.get(fp);
+        if (bucket) bucket.push(entry.id);
+        else table.byFingerprint.set(fp, [entry.id]);
+        const numbered = entry.id.match(/^([a-z]+)(\d+)$/);
+        if (numbered && numbered[1] === prefix) table.nextId = Math.max(table.nextId, Number(numbered[2]) + 1);
+      }
+      return table;
+    }
+    /** 计算某版本所在链的增量层数（带缓存） */
+    walkDeltaCount(leafId, kind) {
+      let count = 0;
+      const seen = /* @__PURE__ */ new Set();
+      let current = leafId;
+      for (; ; ) {
+        if (seen.has(current)) throw new Error(`${kind === "series" ? "\u884C\u60C5" : "\u753B\u7EBF"}\u57FA\u7840\u94FE\u5B58\u5728\u5FAA\u73AF\u5F15\u7528\uFF1A${current}`);
+        seen.add(current);
+        const version = kind === "series" ? this.seriesIds.get(current) : this.drawingsById.get(current);
+        if (!version) throw new Error(`${kind === "series" ? "\u884C\u60C5" : "\u753B\u7EBF"}\u7248\u672C\u5F15\u7528\u7684\u57FA\u7840\u7248\u672C\u4E0D\u5B58\u5728\uFF1A${current}`);
+        if (version.base === null) break;
+        count += 1;
+        current = version.base;
+      }
+      return count;
+    }
+    seriesDepth(id) {
+      const known = this.seriesDeltaCounts.get(id);
+      if (known !== void 0) return known;
+      const depth = this.walkDeltaCount(id, "series");
+      this.seriesDeltaCounts.set(id, depth);
+      return depth;
+    }
+    /** 恢复后按追加序滚动重建内容指纹索引：每版本规范化一次即弃，不保留展开历史 */
+    rebuildContentIndexes() {
+      const rollingItems = /* @__PURE__ */ new Map();
+      const rollingHead = /* @__PURE__ */ new Map();
+      for (const version of this.resources.series) {
+        let items;
+        const prevHead = rollingHead.get(version.timeframe);
+        if (version.base === null) {
+          items = version.bars.slice();
+        } else if (prevHead === version.base) {
+          items = applyDelta(rollingItems.get(version.timeframe), version.upsert, version.remove, (bar) => bar.date);
+        } else {
+          items = this.expandSeriesVersion(version.id);
+        }
+        this.pushSeriesFingerprint(version.timeframe, fingerprint(arrayCanonical(items)), version.id);
+        rollingItems.set(version.timeframe, items);
+        rollingHead.set(version.timeframe, version.id);
+      }
+      let prevDrawingsHead = null;
+      let drawingsItems = [];
+      for (const version of this.resources.drawings) {
+        if (version.base === null) {
+          drawingsItems = version.items.slice();
+        } else if (prevDrawingsHead === version.base) {
+          drawingsItems = sortedByDrawId(
+            applyDelta(drawingsItems, version.upsert, version.remove, (drawing) => drawing.id)
+          );
+        } else {
+          drawingsItems = this.expandDrawingsVersion(version.id);
+        }
+        this.pushDrawingsFingerprint(fingerprint(arrayCanonical(drawingsItems)), version.id);
+        prevDrawingsHead = version.id;
+      }
+    }
+    capture(checkpoint) {
+      const index = this.checkpointCount;
+      this.checkpointCount += 1;
+      const training = checkpoint.training ? {
+        metaRef: this.intern(this.metaTable, clone(checkpoint.training.training)),
+        accountRef: this.intern(this.accountTable, clone(checkpoint.training.account)),
+        tradeRefs: checkpoint.training.trades.map((trade) => this.intern(this.tradeTable, clone(trade)))
+      } : null;
+      const chart = checkpoint.chart ? {
+        timeframe: checkpoint.chart.timeframe,
+        seriesRef: this.internSeries(checkpoint.chart.timeframe, clone(checkpoint.chart.bars), deriveAsOf(checkpoint), index),
+        drawingsRef: this.internDrawings(clone(checkpoint.chart.drawings)),
+        view: { ...checkpoint.chart.view, paneHeights: { ...checkpoint.chart.view.paneHeights } },
+        costPrice: checkpoint.chart.costPrice
+      } : null;
+      const contextRef = checkpoint.context === null ? null : this.intern(this.contextTable, clone(checkpoint.context));
+      return {
+        id: checkpoint.id,
+        afterSeq: checkpoint.afterSeq,
+        segmentId: checkpoint.segmentId,
+        capturedAt: checkpoint.capturedAt,
+        ui: { ...checkpoint.ui },
+        training,
+        chart,
+        contextRef
+      };
+    }
+    /** 只读视图：调用方不得修改（存储任务按追加条目增量读取） */
+    getResources() {
+      return this.resources;
+    }
+    // ---- 内容去重表：指纹只是索引（只存id），命中后临时规范化比较完整内容 ----
+    intern(table, value) {
+      const canonical = canonicalJson(value);
+      const bucket = table.byFingerprint.get(fingerprint(canonical));
+      if (bucket) {
+        for (const id2 of bucket) {
+          const entry = table.byId.get(id2);
+          if (entry && canonicalJson(entry.value) === canonical) return id2;
+        }
+      }
+      let id = `${table.prefix}${table.nextId}`;
+      while (table.ids.has(id)) {
+        table.nextId += 1;
+        id = `${table.prefix}${table.nextId}`;
+      }
+      table.nextId += 1;
+      table.ids.add(id);
+      table.entries.push({ id, value });
+      table.byId.set(id, table.entries[table.entries.length - 1]);
+      const updated = bucket ?? [];
+      updated.push(id);
+      table.byFingerprint.set(fingerprint(canonical), updated);
+      return id;
+    }
+    // ---- series：同周期线性链，31层增量上限，历史同内容复用，空增量用于标注新asOf ----
+    internSeries(timeframe, bars, asOf, index) {
+      const headId = this.seriesHeads.get(timeframe);
+      const incomingCanon = bars.map((bar) => canonicalJson(bar));
+      const fullCanon = arrayCanonicalFrom(incomingCanon);
+      const fp = fingerprint(fullCanon);
+      if (headId === void 0) return this.appendSeriesBase(timeframe, bars, asOf, index, fp);
+      const head = this.seriesIds.get(headId);
+      const state = this.seriesState(timeframe, headId);
+      const keys = bars.map((bar) => bar.date);
+      const upsert = [];
+      const upsertCanon = [];
+      for (const [i, bar] of bars.entries()) {
+        const at = state.index.get(bar.date);
+        if (at === void 0 || canonicalJson(state.items[at]) !== incomingCanon[i]) {
+          upsert.push(bar);
+          upsertCanon.push(incomingCanon[i]);
+        }
+      }
+      const keySet = new Set(keys);
+      const remove = [];
+      for (const key of state.index.keys()) {
+        if (!keySet.has(key)) remove.push(key);
+      }
+      const predicted = applyDelta(state.items, upsert, remove, (bar) => bar.date);
+      const orderMatches = sameKeySequence(predicted, keys, (bar) => bar.date);
+      const identical = upsert.length === 0 && remove.length === 0 && orderMatches;
+      if (identical) {
+        if (asOf === null) return headId;
+        if (head.asOf !== null && head.asOf <= asOf) return headId;
+        const reused2 = this.findSeriesReuse(timeframe, fp, fullCanon, asOf, headId);
+        if (reused2 !== null) return reused2;
+        if (head.asOf === null && this.seriesDepth(headId) < MAX_DELTA_CHAIN) {
+          return this.appendSeriesDelta(timeframe, headId, [], [], asOf, index, fp);
+        }
+        return this.appendSeriesBase(timeframe, bars, asOf, index, fp);
+      }
+      const reused = this.findSeriesReuse(timeframe, fp, fullCanon, asOf, headId);
+      if (reused !== null) return reused;
+      const baseAsOfBlocksDelta = asOf !== null && head.asOf !== null && head.asOf > asOf;
+      const deltaBytes = upsertCanon.reduce((n, canon) => n + canon.length + 1, 0) + remove.reduce((n, key) => n + JSON.stringify(key).length + 1, 0);
+      const deltaViable = orderMatches && deltaBytes < fullCanon.length && this.seriesDepth(headId) < MAX_DELTA_CHAIN && !baseAsOfBlocksDelta;
+      if (deltaViable) return this.appendSeriesDelta(timeframe, headId, upsert, remove, asOf, index, fp);
+      return this.appendSeriesBase(timeframe, bars, asOf, index, fp);
+    }
+    /** 历史同内容版本复用：指纹桶新→旧探测，asOf许可 + 临时展开规范化比对（防碰撞） */
+    findSeriesReuse(timeframe, fp, fullCanon, asOf, excludeId) {
+      const bucket = this.seriesFpIndex.get(timeframe)?.get(fp);
+      if (!bucket) return null;
+      for (let i = bucket.length - 1; i >= 0; i -= 1) {
+        const id = bucket[i];
+        if (id === excludeId) continue;
+        const version = this.seriesIds.get(id);
+        if (asOf !== null && (version.asOf === null || version.asOf > asOf)) continue;
+        const items = this.expandSeriesVersion(id);
+        if (arrayCanonical(items) === fullCanon) return id;
+      }
+      return null;
+    }
+    expandSeriesVersion(id) {
+      return expandVersionChain(
+        id,
+        this.seriesIds,
+        "\u884C\u60C5",
+        this.seriesReconstructCache,
+        (version) => version.bars.slice(),
+        (items, version) => applyDelta(items, version.upsert, version.remove, (bar) => bar.date)
+      );
+    }
+    expandDrawingsVersion(id) {
+      return expandVersionChain(
+        id,
+        this.drawingsById,
+        "\u753B\u7EBF",
+        this.drawingsReconstructCache,
+        (version) => version.items.slice(),
+        (items, version) => sortedByDrawId(applyDelta(items, version.upsert, version.remove, (drawing) => drawing.id))
+      );
+    }
+    pushSeriesFingerprint(timeframe, fp, id) {
+      let byFp = this.seriesFpIndex.get(timeframe);
+      if (!byFp) {
+        byFp = /* @__PURE__ */ new Map();
+        this.seriesFpIndex.set(timeframe, byFp);
+      }
+      const bucket = byFp.get(fp);
+      if (bucket) bucket.push(id);
+      else byFp.set(fp, [id]);
+    }
+    pushDrawingsFingerprint(fp, id) {
+      const bucket = this.drawingsFpIndex.get(fp);
+      if (bucket) bucket.push(id);
+      else this.drawingsFpIndex.set(fp, [id]);
+    }
+    seriesState(timeframe, headId) {
+      const existing = this.seriesStates.get(timeframe);
+      if (existing) return existing;
+      const items = this.expandSeriesVersion(headId);
+      const state = buildState(items, (bar) => bar.date);
+      this.seriesStates.set(timeframe, state);
+      return state;
+    }
+    appendSeriesBase(timeframe, bars, asOf, index, contentFp) {
+      const id = `s${this.nextSeriesId}`;
+      this.nextSeriesId += 1;
+      const version = { id, timeframe, asOf, firstCheckpoint: index, base: null, bars };
+      this.resources.series.push(version);
+      this.seriesIds.set(id, version);
+      this.seriesHeads.set(timeframe, id);
+      this.seriesStates.set(timeframe, buildState(bars.slice(), (bar) => bar.date));
+      this.seriesDeltaCounts.set(id, 0);
+      this.pushSeriesFingerprint(timeframe, contentFp, id);
+      return id;
+    }
+    appendSeriesDelta(timeframe, headId, upsert, remove, asOf, index, contentFp) {
+      const id = `s${this.nextSeriesId}`;
+      this.nextSeriesId += 1;
+      const version = { id, timeframe, asOf, firstCheckpoint: index, base: headId, upsert, remove };
+      this.resources.series.push(version);
+      this.seriesIds.set(id, version);
+      this.seriesHeads.set(timeframe, id);
+      const state = this.seriesState(timeframe, headId);
+      const items = applyDelta(state.items, upsert, remove, (bar) => bar.date);
+      this.seriesStates.set(timeframe, buildState(items, (bar) => bar.date));
+      this.seriesDeltaCounts.set(id, this.seriesDepth(headId) + 1);
+      this.pushSeriesFingerprint(timeframe, contentFp, id);
+      return id;
+    }
+    // ---- drawings：单链，按id增量；重构造按id规范序，工具/窗格/点/样式/文字原值保留 ----
+    /** 恢复会话后惰性重建头部展开态：base原样、delta按id规范序 */
+    ensureDrawingsState() {
+      if (this.drawingsState) return this.drawingsState;
+      if (this.drawingsHead === null) return null;
+      this.drawingsState = buildState(this.expandDrawingsVersion(this.drawingsHead), (drawing) => drawing.id);
+      return this.drawingsState;
+    }
+    internDrawings(items) {
+      const incomingCanon = items.map((drawing) => canonicalJson(drawing));
+      const fullCanon = arrayCanonicalFrom(incomingCanon);
+      const fp = fingerprint(fullCanon);
+      const state = this.ensureDrawingsState();
+      if (!state || this.drawingsHead === null) return this.appendDrawingsBase(items, fp);
+      const keys = items.map((drawing) => drawing.id);
+      const upsert = [];
+      const upsertCanon = [];
+      for (const [i, drawing] of items.entries()) {
+        const at = state.index.get(drawing.id);
+        if (at === void 0 || canonicalJson(state.items[at]) !== incomingCanon[i]) {
+          upsert.push(drawing);
+          upsertCanon.push(incomingCanon[i]);
+        }
+      }
+      const keySet = new Set(keys);
+      const remove = [];
+      for (const key of state.index.keys()) {
+        if (!keySet.has(key)) remove.push(key);
+      }
+      const predicted = sortedByDrawId(applyDelta(state.items, upsert, remove, (drawing) => drawing.id));
+      const orderMatches = sameKeySequence(predicted, keys, (drawing) => drawing.id);
+      const identical = upsert.length === 0 && remove.length === 0 && orderMatches;
+      if (identical) return this.drawingsHead;
+      const reused = this.findDrawingsReuse(fp, fullCanon);
+      if (reused !== null) return reused;
+      const deltaBytes = upsertCanon.reduce((n, canon) => n + canon.length + 1, 0) + remove.reduce((n, key) => n + JSON.stringify(key).length + 1, 0);
+      const deltaViable = orderMatches && deltaBytes < fullCanon.length && this.drawingsDeltaCount < MAX_DELTA_CHAIN;
+      const id = `dw${this.nextDrawingId}`;
+      this.nextDrawingId += 1;
+      const version = deltaViable ? { id, base: this.drawingsHead, upsert, remove } : { id, base: null, items };
+      this.resources.drawings.push(version);
+      this.drawingsById.set(id, version);
+      this.drawingsHead = id;
+      this.pushDrawingsFingerprint(fp, id);
+      this.drawingsState = buildState(deltaViable ? predicted : items.slice(), (drawing) => drawing.id);
+      this.drawingsDeltaCount = deltaViable ? this.drawingsDeltaCount + 1 : 0;
+      return id;
+    }
+    findDrawingsReuse(fp, fullCanon) {
+      const bucket = this.drawingsFpIndex.get(fp);
+      if (!bucket) return null;
+      for (let i = bucket.length - 1; i >= 0; i -= 1) {
+        const id = bucket[i];
+        if (id === this.drawingsHead) continue;
+        const items = this.expandDrawingsVersion(id);
+        if (arrayCanonical(items) === fullCanon) return id;
+      }
+      return null;
+    }
+    appendDrawingsBase(items, contentFp) {
+      const id = `dw${this.nextDrawingId}`;
+      this.nextDrawingId += 1;
+      const version = { id, base: null, items };
+      this.resources.drawings.push(version);
+      this.drawingsById.set(id, version);
+      this.drawingsHead = id;
+      this.drawingsState = buildState(items.slice(), (drawing) => drawing.id);
+      this.drawingsDeltaCount = 0;
+      this.pushDrawingsFingerprint(contentFp, id);
+      return id;
+    }
+  };
+  function arrayCanonical(items) {
+    return `[${items.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+  function arrayCanonicalFrom(canonicalItems) {
+    return `[${canonicalItems.join(",")}]`;
+  }
+  function compactRecording(file) {
+    const builder = new CompactBuilder();
+    const checkpoints = file.checkpoints.map((checkpoint) => builder.capture(checkpoint));
+    return {
+      format: file.format,
+      schemaVersion: 2,
+      sessionId: file.sessionId,
+      createdAt: file.createdAt,
+      app: { ...file.app },
+      environment: { ...file.environment, viewport: { ...file.environment.viewport } },
+      trainingKey: file.trainingKey,
+      events: [...file.events],
+      checkpoints,
+      gaps: file.gaps.map((gap) => ({ ...gap })),
+      complete: file.complete,
+      resources: builder.getResources()
+    };
+  }
+  var LruCache = class {
+    constructor(limit) {
+      this.limit = limit;
+    }
+    limit;
+    map = /* @__PURE__ */ new Map();
+    get(key) {
+      const value = this.map.get(key);
+      if (value !== void 0) {
+        this.map.delete(key);
+        this.map.set(key, value);
+      }
+      return value;
+    }
+    set(key, value) {
+      this.map.delete(key);
+      this.map.set(key, value);
+      while (this.map.size > this.limit) {
+        const oldest = this.map.keys().next();
+        if (oldest.done) break;
+        this.map.delete(oldest.value);
+      }
+    }
+  };
+
+  // web/src/recording/types.ts
+  var ACTIONS = [
+    "training.create",
+    "training.advance",
+    "training.trade",
+    "training.order.create",
+    "training.order.cancel",
+    "training.settle",
+    "training.abandon",
+    "chart.load",
+    "chart.timeframe",
+    "chart.viewport",
+    "chart.tool",
+    "chart.drawing.create",
+    "chart.drawing.edit",
+    "chart.drawing.move",
+    "chart.drawing.delete",
+    "chart.drawing.undo",
+    "chart.drawing.redo",
+    "chart.drawing.cancel",
+    "chart.drawing.clear",
+    "drawings.save",
+    "ui.theme",
+    "recording.pause",
+    "recording.resume",
+    "session.interrupted"
+  ];
+
+  // web/src/drawTools.ts
+  var DRAW_TOOLS = [
+    { name: "segment", label: "\u7EBF\u6BB5" },
+    { name: "rayLine", label: "\u5C04\u7EBF" },
+    { name: "straightLine", label: "\u76F4\u7EBF" },
+    { name: "horizontalStraightLine", label: "\u6C34\u5E73\u76F4\u7EBF" },
+    { name: "horizontalSegment", label: "\u6C34\u5E73\u7EBF\u6BB5" },
+    { name: "horizontalRayLine", label: "\u6C34\u5E73\u5C04\u7EBF" },
+    { name: "verticalStraightLine", label: "\u5782\u76F4\u76F4\u7EBF" },
+    { name: "verticalSegment", label: "\u5782\u76F4\u7EBF\u6BB5" },
+    { name: "verticalRayLine", label: "\u5782\u76F4\u5C04\u7EBF" },
+    { name: "parallelStraightLine", label: "\u5E73\u884C\u76F4\u7EBF" },
+    { name: "priceChannelLine", label: "\u4EF7\u683C\u901A\u9053\u7EBF" },
+    { name: "fibonacciLine", label: "\u6590\u6CE2\u90A3\u5951\u7EBF" },
+    { name: "polyline", label: "\u753B\u7B14" },
+    { name: "priceLine", label: "\u4EF7\u4F4D\u7EBF" },
+    { name: "rectangle", label: "\u77E9\u5F62" },
+    { name: "circle", label: "\u5706\u5708" },
+    { name: "arc", label: "\u5706\u5F27" },
+    { name: "arrowLine", label: "\u7BAD\u5934\u7EBF" },
+    { name: "bullArrow", label: "\u770B\u6DA8\u7BAD\u5934" },
+    { name: "bearArrow", label: "\u770B\u8DCC\u7BAD\u5934" },
+    { name: "percentageLine", label: "\u767E\u5206\u6BD4\u7EBF" },
+    { name: "curseLine", label: "\u8BC5\u5492\u7EBF" },
+    { name: "textAnnotation", label: "\u6587\u672C" }
+  ];
+
+  // web/src/recording/validation.ts
+  var MAX_BYTES = 25 * 1024 * 1024;
+  var MAX_EVENTS = 5e4;
+  var MAX_CHECKPOINTS = 2e3;
+  var MAX_DEPTH = 40;
+  var MAX_DRAWINGS = 500;
+  var MAX_DRAWING_POINTS = 256;
+  var ACTION_SET = new Set(ACTIONS);
+  var DRAWING_NAMES = new Set(DRAW_TOOLS.map((tool) => tool.name));
+  var DRAWING_PANES = /* @__PURE__ */ new Set(["candle_pane", "VOL", "MACD", "KDJ"]);
+  var PHASES = /* @__PURE__ */ new Set(["started", "finished"]);
+  var SOURCES = /* @__PURE__ */ new Set(["ui", "keyboard", "chart", "system"]);
+  var OUTCOMES = /* @__PURE__ */ new Set(["accepted", "rejected", "failed", "cancelled", "interrupted", "unknown"]);
+  var TIMEFRAMES = /* @__PURE__ */ new Set(["1D", "1W", "1M"]);
+  var TIERS = /* @__PURE__ */ new Set(["1M", "3M", "6M", "1Y", "2Y"]);
+  var TRAINING_STATUS = /* @__PURE__ */ new Set(["running", "settled", "abandoned"]);
+  var ADJUST_MODES = /* @__PURE__ */ new Set(["forward", "raw"]);
+  var TRADE_SIDES = /* @__PURE__ */ new Set(["buy", "sell"]);
+  var RANGE_MODES = /* @__PURE__ */ new Set(["preset", "latest", "bars", "random"]);
+  var DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+  var MONTH_PATTERN = /^\d{4}-\d{2}$/;
+  var OHLC_KEYS = ["open", "high", "low", "close", "volume", "amount"];
+  var ACCOUNT_KEYS = ["cash", "shares", "availableShares", "marketValue", "equity"];
+  function fail(field, reason) {
+    throw new Error(`\u5F55\u5236\u6587\u4EF6\u6821\u9A8C\u5931\u8D25\uFF1A${field ? `${field} ` : ""}${reason}`);
+  }
+  function isRecord(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+  }
+  function joinField(field, key) {
+    return field ? `${field}.${key}` : key;
+  }
+  function assertJson(value, field, depth) {
+    if (depth > MAX_DEPTH) fail(field, `\u5D4C\u5957\u6DF1\u5EA6\u8D85\u8FC7 ${MAX_DEPTH} \u5C42`);
+    switch (typeof value) {
+      case "string":
+      case "boolean":
+        return;
+      case "number":
+        if (!Number.isFinite(value)) {
+          fail(field, "\u6570\u503C\u5FC5\u987B\u6709\u9650\uFF08NaN/Infinity \u65E0\u6CD5\u88AB JSON \u5B89\u5168\u5E8F\u5217\u5316\uFF0CJSON.stringify \u4F1A\u9759\u9ED8\u5199\u6210 null\uFF09");
+        }
+        return;
+      case "object":
+        if (value === null) return;
+        if (Array.isArray(value)) {
+          value.forEach((item, index) => assertJson(item, `${field}[${index}]`, depth + 1));
+          return;
+        }
+        if (isRecord(value)) {
+          for (const [key, item] of Object.entries(value)) assertJson(item, joinField(field, key), depth + 1);
+          return;
+        }
+        fail(field, `\u4EC5\u652F\u6301\u7EAF JSON \u5BF9\u8C61/\u6570\u7EC4\uFF08\u6536\u5230 ${value.constructor?.name ?? "\u672A\u77E5\u5BF9\u8C61"}\uFF09`);
+        return;
+      case "undefined":
+        fail(field, "\u542B undefined\uFF0C\u65E0\u6CD5\u88AB JSON \u5B89\u5168\u5E8F\u5217\u5316\uFF08JSON.stringify \u4F1A\u9759\u9ED8\u4E22\u5F03\u8BE5\u503C\uFF09");
+        return;
+      default:
+        fail(field, `\u7C7B\u578B ${typeof value} \u4E0D\u80FD\u88AB JSON \u5E8F\u5217\u5316`);
+    }
+  }
+  function assertRecord(value, field) {
+    if (!isRecord(value)) fail(field, "\u5FC5\u987B\u662F JSON \u5BF9\u8C61");
+    return value;
+  }
+  function assertArray(value, field) {
+    if (!Array.isArray(value)) fail(field, "\u5FC5\u987B\u662F\u6570\u7EC4");
+    return value;
+  }
+  function assertString(value, field) {
+    if (typeof value !== "string" || value.length === 0) fail(field, "\u5FC5\u987B\u662F\u975E\u7A7A\u5B57\u7B26\u4E32");
+    return value;
+  }
+  function assertStringOrNull(value, field) {
+    if (value === null) return null;
+    return assertString(value, field);
+  }
+  function assertBoolean(value, field) {
+    if (typeof value !== "boolean") fail(field, "\u5FC5\u987B\u662F\u5E03\u5C14\u503C");
+    return value;
+  }
+  function assertFinite(value, field) {
+    if (typeof value !== "number" || !Number.isFinite(value)) fail(field, "\u5FC5\u987B\u662F\u6709\u9650\u6570\u503C");
+    return value;
+  }
+  function assertNumberOrNull(value, field) {
+    if (value === null) return null;
+    return assertFinite(value, field);
+  }
+  function assertInteger(value, field) {
+    if (typeof value !== "number" || !Number.isInteger(value)) fail(field, "\u5FC5\u987B\u662F\u6574\u6570");
+    return value;
+  }
+  function assertPositive(value, field) {
+    const number = assertFinite(value, field);
+    if (number <= 0) fail(field, `\u5FC5\u987B\u662F\u6B63\u6570\uFF08\u6536\u5230 ${number}\uFF09`);
+    return number;
+  }
+  function assertEnum(value, field, allowed) {
+    if (typeof value !== "string" || !allowed.has(value)) {
+      fail(field, `\u5FC5\u987B\u662F ${[...allowed].join("/")} \u4E4B\u4E00\uFF08\u6536\u5230 ${JSON.stringify(value)}\uFF09`);
+    }
+    return value;
+  }
+  function assertDate(value, field) {
+    const text = assertString(value, field);
+    if (!DATE_PATTERN.test(text)) fail(field, `\u65E5\u671F\u987B\u4E3A YYYY-MM-DD \u683C\u5F0F\uFF08\u6536\u5230 ${JSON.stringify(text)}\uFF09`);
+    const [year, month, day] = text.split("-").map(Number);
+    const utc = new Date(Date.UTC(year, month - 1, day));
+    if (utc.getUTCFullYear() !== year || utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) {
+      fail(field, `\u4E0D\u662F\u6709\u6548\u7684\u65E5\u5386\u65E5\u671F\uFF08${text}\uFF09`);
+    }
+    return text;
+  }
+  function assertDateOrNull(value, field) {
+    if (value === null) return null;
+    return assertDate(value, field);
+  }
+  function assertBarDate(value, field, timeframe) {
+    if (typeof value === "string" && timeframe === "1M" && MONTH_PATTERN.test(value)) {
+      const month = Number(value.slice(5, 7));
+      if (month >= 1 && month <= 12) return `${value}-01`;
+      fail(field, `\u4E0D\u662F\u6709\u6548\u7684\u6708\u4EFD\uFF08${value}\uFF09`);
+    }
+    return assertDate(value, field);
+  }
+  function assertTimestamp(value, field) {
+    const text = assertString(value, field);
+    if (Number.isNaN(Date.parse(text))) fail(field, `\u65F6\u95F4\u987B\u4E3A\u53EF\u89E3\u6790\u7684\u65E5\u671F\u65F6\u95F4\u5B57\u7B26\u4E32\uFF08\u6536\u5230 ${JSON.stringify(text)}\uFF09`);
+    return text;
+  }
+  function assertEvent(raw, field, index) {
+    const event = assertRecord(raw, field);
+    assertInteger(event.seq, `${field}.seq`);
+    if (event.seq !== index + 1) {
+      fail(`${field}.seq`, `\u5FC5\u987B\u4ECE 1 \u8FDE\u7EED\u9012\u589E\uFF08\u4F4D\u7F6E ${index} \u671F\u671B ${index + 1}\uFF0C\u5B9E\u9645 ${JSON.stringify(event.seq)}\uFF09`);
+    }
+    assertString(event.opId, `${field}.opId`);
+    const segmentId = assertString(event.segmentId, `${field}.segmentId`);
+    const elapsedMs = assertFinite(event.elapsedMs, `${field}.elapsedMs`);
+    if (elapsedMs < 0) fail(`${field}.elapsedMs`, "\u4E0D\u80FD\u4E3A\u8D1F\u6570");
+    const phase = assertEnum(event.phase, `${field}.phase`, PHASES);
+    if (typeof event.action !== "string" || !ACTION_SET.has(event.action)) {
+      fail(`${field}.action`, `\u4E0D\u5728\u52A8\u4F5C\u767D\u540D\u5355\u5185\uFF08\u6536\u5230 ${JSON.stringify(event.action)}\uFF09`);
+    }
+    assertEnum(event.source, `${field}.source`, SOURCES);
+    if (phase === "started") {
+      if (event.outcome !== void 0) fail(`${field}.outcome`, "started \u4E8B\u4EF6\u4E0D\u5F97\u643A\u5E26 outcome");
+    } else if (event.outcome === void 0) {
+      fail(`${field}.outcome`, "finished \u4E8B\u4EF6\u5FC5\u987B\u643A\u5E26 outcome");
+    } else {
+      assertEnum(event.outcome, `${field}.outcome`, OUTCOMES);
+    }
+    const checkpointId = event.checkpointId === void 0 ? void 0 : assertString(event.checkpointId, `${field}.checkpointId`);
+    return { segmentId, checkpointId, elapsedMs };
+  }
+  function assertEventPairing(events, complete) {
+    const started = /* @__PURE__ */ new Map();
+    const finished = /* @__PURE__ */ new Set();
+    events.forEach((raw, index) => {
+      const event = raw;
+      const field = `events[${index}].opId`;
+      if (event.phase === "started") {
+        if (started.has(event.opId)) fail(field, `started \u91CD\u590D\uFF08opId ${event.opId}\uFF09`);
+        started.set(event.opId, { action: event.action, source: event.source, segmentId: event.segmentId });
+        return;
+      }
+      const opened = started.get(event.opId);
+      if (!opened) fail(field, `finished \u7F3A\u5C11\u914D\u5BF9\u7684 started\uFF08opId ${event.opId}\uFF09`);
+      if (finished.has(event.opId)) fail(field, `finished \u91CD\u590D\uFF08opId ${event.opId}\uFF09`);
+      if (opened && (opened.action !== event.action || opened.source !== event.source || opened.segmentId !== event.segmentId)) {
+        fail(field, `finished \u4E0E started \u7684 action/source/segmentId \u5FC5\u987B\u4E00\u81F4\uFF08opId ${event.opId}\uFF09`);
+      }
+      finished.add(event.opId);
+    });
+    const dangling = [...started.keys()].filter((opId) => !finished.has(opId));
+    if (dangling.length > 0 && complete) {
+      fail("complete", `\u5B58\u5728\u672A\u95ED\u5408\u7684 started \u64CD\u4F5C\uFF08opId ${dangling.join("\u3001")}\uFF09\uFF0C\u4E2D\u65AD\u5C3E\u6BB5\u672A\u95ED\u5408\u65F6 complete \u4E0D\u80FD\u4E3A true`);
+    }
+  }
+  function assertBar(raw, field, timeframe) {
+    const bar = assertRecord(raw, field);
+    const date = assertBarDate(bar.date, `${field}.date`, timeframe);
+    for (const key of OHLC_KEYS) assertFinite(bar[key], `${field}.${key}`);
+    return date;
+  }
+  function assertDrawing(raw, field, drawingIds) {
+    const drawing = assertRecord(raw, field);
+    const id = assertString(drawing.id, `${field}.id`);
+    if (drawingIds.has(id)) fail(`${field}.id`, `\u753B\u7EBF id \u91CD\u590D\uFF08${id}\uFF09`);
+    drawingIds.add(id);
+    const name = assertString(drawing.name, `${field}.name`);
+    if (!DRAWING_NAMES.has(name)) {
+      fail(`${field}.name`, `\u4E0D\u5728 drawTools \u6CE8\u518C\u96C6\u5408\u5185\uFF08\u6536\u5230 ${name}\uFF0C\u5F15\u64CE\u5185\u7F6E bsMark/costLine \u4E0D\u5F97\u8FDB\u5165\u5F55\u5236\uFF09`);
+    }
+    const paneId = assertString(drawing.paneId, `${field}.paneId`);
+    if (!DRAWING_PANES.has(paneId)) {
+      fail(`${field}.paneId`, `\u4EC5\u5141\u8BB8 candle_pane/VOL/MACD/KDJ\uFF08\u6536\u5230 ${paneId}\uFF09`);
+    }
+    const points = assertArray(drawing.points, `${field}.points`);
+    if (points.length > MAX_DRAWING_POINTS) {
+      fail(`${field}.points`, `\u5355\u6761\u753B\u7EBF\u70B9\u6570 ${points.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DRAWING_POINTS}`);
+    }
+    points.forEach((point, index) => {
+      const item = assertRecord(point, `${field}.points[${index}]`);
+      assertFinite(item.timestamp, `${field}.points[${index}].timestamp`);
+      assertFinite(item.value, `${field}.points[${index}].value`);
+    });
+    if (drawing.styles !== void 0 && !isRecord(drawing.styles)) {
+      fail(`${field}.styles`, "\u5FC5\u987B\u662F JSON \u5BF9\u8C61");
+    }
+  }
+  function assertChartView(view, field) {
+    const record = assertRecord(view, field);
+    assertNumberOrNull(record.fromTimestamp, `${field}.fromTimestamp`);
+    assertNumberOrNull(record.toTimestamp, `${field}.toTimestamp`);
+    assertPositive(record.barSpace, `${field}.barSpace`);
+    const paneHeights = assertRecord(record.paneHeights, `${field}.paneHeights`);
+    for (const [key, height] of Object.entries(paneHeights)) {
+      assertPositive(height, `${field}.paneHeights.${key}`);
+    }
+  }
+  function assertChartCapture(raw, field) {
+    const chart = assertRecord(raw, field);
+    const timeframe = assertEnum(chart.timeframe, `${field}.timeframe`, TIMEFRAMES);
+    const barDates = assertArray(chart.bars, `${field}.bars`).map(
+      (bar, index) => assertBar(bar, `${field}.bars[${index}]`, timeframe)
+    );
+    barDates.forEach((date, index) => {
+      if (index > 0 && date <= barDates[index - 1]) {
+        fail(`${field}.bars[${index}].date`, `\u5FC5\u987B\u4E25\u683C\u6309\u65E5\u671F\u9012\u589E\uFF08\u524D\u503C ${barDates[index - 1]}\uFF0C\u6536\u5230 ${date}\uFF09`);
+      }
+    });
+    const drawings = assertArray(chart.drawings, `${field}.drawings`);
+    if (drawings.length > MAX_DRAWINGS) {
+      fail(`${field}.drawings`, `\u753B\u7EBF\u6570\u91CF ${drawings.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DRAWINGS}`);
+    }
+    const drawingIds = /* @__PURE__ */ new Set();
+    drawings.forEach((drawing, index) => {
+      assertDrawing(drawing, `${field}.drawings[${index}]`, drawingIds);
+    });
+    assertChartView(chart.view, `${field}.view`);
+    assertNumberOrNull(chart.costPrice, `${field}.costPrice`);
+    return barDates;
+  }
+  function assertTrade(raw, field) {
+    const trade = assertRecord(raw, field);
+    assertInteger(trade.seq, `${field}.seq`);
+    assertDate(trade.date, `${field}.date`);
+    assertEnum(trade.side, `${field}.side`, TRADE_SIDES);
+    assertFinite(trade.price, `${field}.price`);
+    assertFinite(trade.shares, `${field}.shares`);
+    assertFinite(trade.amount, `${field}.amount`);
+    assertFinite(trade.fee, `${field}.fee`);
+    if (trade.chartPrice !== void 0) assertFinite(trade.chartPrice, `${field}.chartPrice`);
+    if (trade.blindIndex !== void 0) assertInteger(trade.blindIndex, `${field}.blindIndex`);
+    if (trade.blindLabel !== void 0) assertString(trade.blindLabel, `${field}.blindLabel`);
+  }
+  function assertTrainingRangeMeta(raw, field, training) {
+    const range = assertRecord(raw, field);
+    if (range.version !== 1) fail(`${field}.version`, `\u5FC5\u987B\u662F 1\uFF08\u6536\u5230 ${JSON.stringify(range.version)}\uFF09`);
+    assertEnum(range.mode, `${field}.mode`, RANGE_MODES);
+    assertDate(range.requestedStart, `${field}.requestedStart`);
+    assertDateOrNull(range.requestedEnd, `${field}.requestedEnd`);
+    assertDate(range.startDate, `${field}.startDate`);
+    assertDate(range.endDate, `${field}.endDate`);
+    if (typeof range.barCount !== "number" || !Number.isSafeInteger(range.barCount) || range.barCount <= 0) {
+      fail(`${field}.barCount`, `\u5FC5\u987B\u662F\u6B63\u5B89\u5168\u6574\u6570\uFF08\u6536\u5230 ${JSON.stringify(range.barCount)}\uFF09`);
+    }
+    if (typeof range.sourceFingerprint !== "string" || !range.sourceFingerprint) {
+      fail(`${field}.sourceFingerprint`, "\u5FC5\u987B\u662F\u975E\u7A7A\u5B57\u7B26\u4E32");
+    }
+    if (!Array.isArray(range.notes) || !range.notes.every((note) => typeof note === "string")) {
+      fail(`${field}.notes`, "\u5FC5\u987B\u662F\u5B57\u7B26\u4E32\u6570\u7EC4");
+    }
+    if (range.startDate !== training.startDate) {
+      fail(`${field}.startDate`, `\u5FC5\u987B\u4E0E\u8BAD\u7EC3 startDate\uFF08${JSON.stringify(training.startDate)}\uFF09\u4E00\u81F4`);
+    }
+    if (range.endDate !== training.plannedEnd) {
+      fail(`${field}.endDate`, `\u5FC5\u987B\u4E0E\u8BAD\u7EC3 plannedEnd\uFF08${JSON.stringify(training.plannedEnd)}\uFF09\u4E00\u81F4`);
+    }
+  }
+  function assertTrainingMeta(raw, field, options) {
+    const meta = assertRecord(raw, field);
+    assertInteger(meta.id, `${field}.id`);
+    if (options?.allowRange && meta.tier === "RANGE") {
+      if (!isRecord(meta.range)) fail(`${field}.range`, "RANGE \u8BAD\u7EC3\u5FC5\u987B\u643A\u5E26\u5408\u89C4\u7684\u8303\u56F4\u5143\u6570\u636E\u5BF9\u8C61");
+      assertTrainingRangeMeta(meta.range, `${field}.range`, meta);
+    } else {
+      assertEnum(meta.tier, `${field}.tier`, TIERS);
+      if ("range" in meta) {
+        fail(`${field}.range`, "\u65E7\u4E94\u6863 tier \u4E0D\u5F97\u643A\u5E26\u8303\u56F4\u5143\u6570\u636E");
+      }
+    }
+    assertStringOrNull(meta.code, `${field}.code`);
+    assertStringOrNull(meta.name, `${field}.name`);
+    assertString(meta.market, `${field}.market`);
+    assertDate(meta.startDate, `${field}.startDate`);
+    assertDate(meta.plannedEnd, `${field}.plannedEnd`);
+    assertDateOrNull(meta.currentDate, `${field}.currentDate`);
+    assertEnum(meta.status, `${field}.status`, TRAINING_STATUS);
+    assertDateOrNull(meta.settleDate, `${field}.settleDate`);
+    assertBoolean(meta.earlySettle, `${field}.earlySettle`);
+    assertBoolean(meta.blind, `${field}.blind`);
+    assertEnum(meta.adjustMode, `${field}.adjustMode`, ADJUST_MODES);
+    assertFinite(meta.initialCash, `${field}.initialCash`);
+    assertTimestamp(meta.createdAt, `${field}.createdAt`);
+  }
+  function assertAccountView(raw, field) {
+    const account = assertRecord(raw, field);
+    for (const key of ACCOUNT_KEYS) assertFinite(account[key], `${field}.${key}`);
+    assertNumberOrNull(account.costPrice, `${field}.costPrice`);
+  }
+  function assertTrainingSnapshot(raw, field) {
+    const snapshot = assertRecord(raw, field);
+    assertTrainingMeta(snapshot.training, `${field}.training`);
+    assertAccountView(snapshot.account, `${field}.account`);
+    assertArray(snapshot.trades, `${field}.trades`).forEach((trade, index) => {
+      assertTrade(trade, `${field}.trades[${index}]`);
+    });
+  }
+  function assertCheckpoint(raw, field, eventCount, segmentIds, checkpointIds) {
+    const checkpoint = assertRecord(raw, field);
+    const id = assertString(checkpoint.id, `${field}.id`);
+    if (checkpointIds.has(id)) fail(`${field}.id`, `\u68C0\u67E5\u70B9 id \u91CD\u590D\uFF08${id}\uFF09`);
+    const afterSeq = assertInteger(checkpoint.afterSeq, `${field}.afterSeq`);
+    if (afterSeq < 0 || afterSeq > eventCount) {
+      fail(`${field}.afterSeq`, `\u987B\u5728 0..${eventCount} \u8303\u56F4\u5185\uFF08\u6536\u5230 ${afterSeq}\uFF09`);
+    }
+    checkpointIds.set(id, afterSeq);
+    const segmentId = assertString(checkpoint.segmentId, `${field}.segmentId`);
+    if (afterSeq > 0 && !segmentIds.has(segmentId)) {
+      fail(`${field}.segmentId`, `\u672A\u51FA\u73B0\u5728\u4EFB\u4F55\u4E8B\u4EF6\u4E2D\uFF08${segmentId}\uFF09`);
+    }
+    assertTimestamp(checkpoint.capturedAt, `${field}.capturedAt`);
+    const training = checkpoint.training === null ? null : (assertTrainingSnapshot(checkpoint.training, `${field}.training`), checkpoint.training);
+    let chart = null;
+    let barDates = [];
+    if (checkpoint.chart !== null) {
+      barDates = assertChartCapture(checkpoint.chart, `${field}.chart`);
+      chart = checkpoint.chart;
+    }
+    const ui = assertRecord(checkpoint.ui, `${field}.ui`);
+    assertString(ui.theme, `${field}.ui.theme`);
+    assertStringOrNull(ui.tool, `${field}.ui.tool`);
+    assertString(ui.magnet, `${field}.ui.magnet`);
+    assertBoolean(ui.multiSelect, `${field}.ui.multiSelect`);
+    return { afterSeq, training, chart, barDates };
+  }
+  function validateRecording(value, options) {
+    const maxCheckpoints = options?.maxCheckpoints ?? MAX_CHECKPOINTS;
+    if (!isRecord(value)) fail("\u9876\u5C42", "\u5FC5\u987B\u662F JSON \u5BF9\u8C61");
+    assertJson(value, "", 1);
+    if (value.format !== "trainer-session") {
+      fail("format", `\u5FC5\u987B\u662F 'trainer-session'\uFF08\u6536\u5230 ${JSON.stringify(value.format)}\uFF09`);
+    }
+    if (value.schemaVersion !== 1) {
+      fail("schemaVersion", `\u5FC5\u987B\u662F 1\uFF08\u6536\u5230 ${JSON.stringify(value.schemaVersion)}\uFF09`);
+    }
+    assertString(value.sessionId, "sessionId");
+    assertTimestamp(value.createdAt, "createdAt");
+    const app = assertRecord(value.app, "app");
+    assertString(app.version, "app.version");
+    assertString(app.gitCommit, "app.gitCommit");
+    assertBoolean(app.dirty, "app.dirty");
+    assertString(app.chartLibrary, "app.chartLibrary");
+    const environment = assertRecord(value.environment, "environment");
+    assertString(environment.timezone, "environment.timezone");
+    const viewport = assertRecord(environment.viewport, "environment.viewport");
+    assertPositive(viewport.width, "environment.viewport.width");
+    assertPositive(viewport.height, "environment.viewport.height");
+    assertPositive(environment.dpr, "environment.dpr");
+    assertStringOrNull(value.trainingKey, "trainingKey");
+    assertBoolean(value.complete, "complete");
+    const events = assertArray(value.events, "events");
+    if (events.length > MAX_EVENTS) fail("events", `\u4E8B\u4EF6\u6570\u91CF ${events.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_EVENTS}`);
+    const checkpoints = assertArray(value.checkpoints, "checkpoints");
+    if (checkpoints.length > maxCheckpoints) {
+      fail("checkpoints", `\u68C0\u67E5\u70B9\u6570\u91CF ${checkpoints.length} \u8D85\u8FC7\u4E0A\u9650 ${maxCheckpoints}`);
+    }
+    const gaps = assertArray(value.gaps, "gaps");
+    const segmentIds = /* @__PURE__ */ new Set();
+    const checkpointRefs = [];
+    let lastElapsedMs = Number.NEGATIVE_INFINITY;
+    events.forEach((raw, index) => {
+      const checked = assertEvent(raw, `events[${index}]`, index);
+      if (checked.elapsedMs < lastElapsedMs) {
+        fail(`events[${index}].elapsedMs`, `\u987B\u5168\u5C40\u5355\u8C03\u4E0D\u51CF\uFF08\u524D\u4E00\u4E8B\u4EF6 ${lastElapsedMs}\uFF0C\u672C\u4E8B\u4EF6 ${checked.elapsedMs}\uFF09`);
+      }
+      lastElapsedMs = checked.elapsedMs;
+      segmentIds.add(checked.segmentId);
+      checkpointRefs.push({ checkpointId: checked.checkpointId, seq: index + 1 });
+    });
+    assertEventPairing(events, value.complete);
+    const checkpointIds = /* @__PURE__ */ new Map();
+    const checkedCheckpoints = [];
+    let previousCheckpointAfterSeq = 0;
+    checkpoints.forEach((raw, index) => {
+      const checked = assertCheckpoint(raw, `checkpoints[${index}]`, events.length, segmentIds, checkpointIds);
+      if (checked.afterSeq < previousCheckpointAfterSeq) {
+        fail(`checkpoints[${index}].afterSeq`, `\u987B\u6309 afterSeq \u975E\u9012\u51CF\uFF08\u524D\u503C ${previousCheckpointAfterSeq}\uFF0C\u6536\u5230 ${checked.afterSeq}\uFF09\uFF0C\u540C seq \u5141\u8BB8\u591A\u4E2A\u66F4\u5B8C\u6574\u72B6\u6001`);
+      }
+      previousCheckpointAfterSeq = checked.afterSeq;
+      checkedCheckpoints.push(checked);
+    });
+    checkpointRefs.forEach(({ checkpointId, seq }, index) => {
+      if (checkpointId === void 0) return;
+      const afterSeq = checkpointIds.get(checkpointId);
+      if (afterSeq === void 0) {
+        fail(`events[${index}].checkpointId`, `\u5F15\u7528\u4E86\u4E0D\u5B58\u5728\u7684\u68C0\u67E5\u70B9 id\uFF08${checkpointId}\uFF09`);
+      }
+      if (afterSeq > seq) {
+        fail(`events[${index}].checkpointId`, `\u6307\u5411\u672A\u6765\u5FEB\u7167\uFF08\u68C0\u67E5\u70B9 afterSeq=${afterSeq} \u665A\u4E8E\u4E8B\u4EF6 seq=${seq}\uFF09`);
+      }
+    });
+    checkedCheckpoints.forEach((checked, index) => {
+      const cutoff = checked.training === null ? null : checked.training.training.currentDate ?? checked.training.training.startDate;
+      if (cutoff === null || checked.chart === null) return;
+      checked.barDates.forEach((date, barIndex) => {
+        if (date > cutoff) {
+          fail(`checkpoints[${index}].chart.bars[${barIndex}].date`, `\u665A\u4E8E\u884C\u60C5\u622A\u6B62\uFF08\u622A\u6B62 ${cutoff}\uFF0CcurrentDate \u4E3A null \u65F6\u6309 startDate \u6BD4\u8F83\uFF09\uFF0C\u4E0D\u5F97\u5305\u542B\u672A\u6765\u6570\u636E`);
+        }
+      });
+    });
+    let previousGapAfterSeq = -1;
+    let hasOpenGap = false;
+    gaps.forEach((raw, index) => {
+      const gap = assertRecord(raw, `gaps[${index}]`);
+      const field = `gaps[${index}]`;
+      const afterSeq = assertInteger(gap.afterSeq, `${field}.afterSeq`);
+      if (afterSeq < 0 || afterSeq > events.length) {
+        fail(`${field}.afterSeq`, `\u987B\u5728 0..${events.length} \u8303\u56F4\u5185\uFF080 \u8868\u793A\u81EA\u5F00\u59CB\u672A\u5F55\u5236\uFF0C\u6536\u5230 ${afterSeq}\uFF09`);
+      }
+      if (afterSeq <= previousGapAfterSeq) {
+        fail(`${field}.afterSeq`, `gaps \u987B\u6309 afterSeq \u4E25\u683C\u9012\u589E\uFF08\u524D\u503C ${previousGapAfterSeq}\uFF0C\u6536\u5230 ${afterSeq}\uFF09\uFF0CafterSeq=0 \u4EC5\u5141\u8BB8\u7528\u4E8E\u9996\u4E2A gap`);
+      }
+      if (hasOpenGap) fail(field, "\u672A\u95ED\u5408 gap\uFF08resumedAtSeq=null\uFF09\u5FC5\u987B\u4F4D\u4E8E\u672B\u5C3E\uFF0C\u5176\u540E\u4E0D\u5F97\u518D\u6709 gap");
+      if (gap.resumedAtSeq === null) {
+        hasOpenGap = true;
+      } else {
+        const resumedAtSeq = assertInteger(gap.resumedAtSeq, `${field}.resumedAtSeq`);
+        if (resumedAtSeq <= afterSeq) fail(`${field}.resumedAtSeq`, `\u5FC5\u987B\u5927\u4E8E afterSeq\uFF08${afterSeq}\uFF09`);
+        if (resumedAtSeq > events.length) {
+          fail(`${field}.resumedAtSeq`, `\u8D85\u51FA\u4E8B\u4EF6\u8303\u56F4\uFF08\u6700\u5927 ${events.length}\uFF0C\u6536\u5230 ${resumedAtSeq}\uFF09`);
+        }
+        const previous = gaps[index - 1];
+        if (index > 0 && typeof previous?.resumedAtSeq === "number" && previous.resumedAtSeq > afterSeq) {
+          fail(`${field}.afterSeq`, `\u4E0E\u524D\u4E00\u4E2A gap \u91CD\u53E0\uFF08\u524D\u4E00 gap \u6062\u590D\u4E8E seq ${previous.resumedAtSeq}\uFF0C\u672C gap \u5F00\u59CB\u4E8E seq ${afterSeq}\uFF09`);
+        }
+      }
+      previousGapAfterSeq = afterSeq;
+    });
+    if (hasOpenGap && value.complete) {
+      fail("complete", "\u5B58\u5728\u672A\u95ED\u5408\u7684 gap\uFF08resumedAtSeq=null\uFF0C\u5F55\u5236\u81EA\u8BE5\u5904\u505C\u6B62\uFF09\uFF0Ccomplete \u4E0D\u80FD\u4E3A true");
+    }
+    return value;
+  }
+
+  // web/src/recording/compactValidation.ts
+  var MAX_CHECKPOINTS2 = 2e4;
+  var MAX_SERIES_BARS = 2e4;
+  var MAX_RESOURCE_BARS = 1e6;
+  var MAX_RESTORE_BARS = 5e6;
+  var MAX_DELTA_CHAIN2 = 31;
+  var MAX_DRAWING_ITEMS = 500;
+  function deriveCutoff(meta) {
+    if (meta.currentDate !== null) return meta.currentDate;
+    return meta.blind ? null : meta.startDate;
+  }
+  function assertAppAndEnvironment(value) {
+    const app = assertRecord(value.app, "app");
+    assertString(app.version, "app.version");
+    assertString(app.gitCommit, "app.gitCommit");
+    assertBoolean(app.dirty, "app.dirty");
+    assertString(app.chartLibrary, "app.chartLibrary");
+    const environment = assertRecord(value.environment, "environment");
+    assertString(environment.timezone, "environment.timezone");
+    const viewport = assertRecord(environment.viewport, "environment.viewport");
+    assertPositive(viewport.width, "environment.viewport.width");
+    assertPositive(viewport.height, "environment.viewport.height");
+    assertPositive(environment.dpr, "environment.dpr");
+  }
+  function assertEvents(value) {
+    const events = assertArray(value.events, "events");
+    if (events.length > MAX_EVENTS) fail("events", `\u4E8B\u4EF6\u6570\u91CF ${events.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_EVENTS}`);
+    const refs = [];
+    const segmentIds = /* @__PURE__ */ new Set();
+    let lastElapsedMs = Number.NEGATIVE_INFINITY;
+    events.forEach((raw, index) => {
+      const checked = assertEvent(raw, `events[${index}]`, index);
+      if (checked.elapsedMs < lastElapsedMs) {
+        fail(`events[${index}].elapsedMs`, `\u987B\u5168\u5C40\u5355\u8C03\u4E0D\u51CF\uFF08\u524D\u4E00\u4E8B\u4EF6 ${lastElapsedMs}\uFF0C\u672C\u4E8B\u4EF6 ${checked.elapsedMs}\uFF09`);
+      }
+      lastElapsedMs = checked.elapsedMs;
+      segmentIds.add(checked.segmentId);
+      refs.push({ segmentId: checked.segmentId, checkpointId: checked.checkpointId });
+    });
+    assertEventPairing(events, value.complete);
+    return { events, refs, segmentIds };
+  }
+  function assertCompactCheckpoint(raw, field, eventCount, segmentIds, checkpointIds) {
+    const checkpoint = assertRecord(raw, field);
+    const id = assertString(checkpoint.id, `${field}.id`);
+    if (checkpointIds.has(id)) fail(`${field}.id`, `\u68C0\u67E5\u70B9 id \u91CD\u590D\uFF08${id}\uFF09`);
+    const afterSeq = assertInteger(checkpoint.afterSeq, `${field}.afterSeq`);
+    if (afterSeq < 0 || afterSeq > eventCount) {
+      fail(`${field}.afterSeq`, `\u987B\u5728 0..${eventCount} \u8303\u56F4\u5185\uFF08\u6536\u5230 ${afterSeq}\uFF09`);
+    }
+    checkpointIds.set(id, afterSeq);
+    const segmentId = assertString(checkpoint.segmentId, `${field}.segmentId`);
+    if (afterSeq > 0 && !segmentIds.has(segmentId)) {
+      fail(`${field}.segmentId`, `\u672A\u51FA\u73B0\u5728\u4EFB\u4F55\u4E8B\u4EF6\u4E2D\uFF08${segmentId}\uFF09`);
+    }
+    assertTimestamp(checkpoint.capturedAt, `${field}.capturedAt`);
+    const ui = assertRecord(checkpoint.ui, `${field}.ui`);
+    assertString(ui.theme, `${field}.ui.theme`);
+    assertStringOrNull(ui.tool, `${field}.ui.tool`);
+    assertString(ui.magnet, `${field}.ui.magnet`);
+    assertBoolean(ui.multiSelect, `${field}.ui.multiSelect`);
+    if (checkpoint.training !== null) {
+      const training = assertRecord(checkpoint.training, `${field}.training`);
+      assertString(training.metaRef, `${field}.training.metaRef`);
+      assertString(training.accountRef, `${field}.training.accountRef`);
+      const tradeRefs = assertArray(training.tradeRefs, `${field}.training.tradeRefs`);
+      tradeRefs.forEach((ref, index) => assertString(ref, `${field}.training.tradeRefs[${index}]`));
+    }
+    if (checkpoint.chart !== null) {
+      const chart = assertRecord(checkpoint.chart, `${field}.chart`);
+      assertEnum(chart.timeframe, `${field}.chart.timeframe`, TIMEFRAMES);
+      assertString(chart.seriesRef, `${field}.chart.seriesRef`);
+      assertString(chart.drawingsRef, `${field}.chart.drawingsRef`);
+      assertChartView(chart.view, `${field}.chart.view`);
+      assertNumberOrNull(chart.costPrice, `${field}.chart.costPrice`);
+    }
+    if (checkpoint.contextRef !== null) assertString(checkpoint.contextRef, `${field}.contextRef`);
+    return afterSeq;
+  }
+  function assertCompactCheckpoints(value, eventCount, segmentIds) {
+    const checkpoints = assertArray(value.checkpoints, "checkpoints");
+    if (checkpoints.length > MAX_CHECKPOINTS2) {
+      fail("checkpoints", `\u68C0\u67E5\u70B9\u6570\u91CF ${checkpoints.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_CHECKPOINTS2}`);
+    }
+    const checkpointIds = /* @__PURE__ */ new Map();
+    let previousAfterSeq = 0;
+    checkpoints.forEach((raw, index) => {
+      const field = `checkpoints[${index}]`;
+      const afterSeq = assertCompactCheckpoint(raw, field, eventCount, segmentIds, checkpointIds);
+      if (afterSeq < previousAfterSeq) {
+        fail(`${field}.afterSeq`, `\u987B\u6309 afterSeq \u975E\u9012\u51CF\uFF08\u524D\u503C ${previousAfterSeq}\uFF0C\u6536\u5230 ${afterSeq}\uFF09\uFF0C\u540C seq \u5141\u8BB8\u591A\u4E2A\u66F4\u5B8C\u6574\u72B6\u6001`);
+      }
+      previousAfterSeq = afterSeq;
+    });
+    return checkpointIds;
+  }
+  function assertEventCheckpointRefs(refs, checkpointIds) {
+    refs.forEach(({ checkpointId }, index) => {
+      if (checkpointId === void 0) return;
+      const afterSeq = checkpointIds.get(checkpointId);
+      if (afterSeq === void 0) {
+        fail(`events[${index}].checkpointId`, `\u5F15\u7528\u4E86\u4E0D\u5B58\u5728\u7684\u68C0\u67E5\u70B9 id\uFF08${checkpointId}\uFF09`);
+      }
+      if (afterSeq !== void 0 && afterSeq > index + 1) {
+        fail(`events[${index}].checkpointId`, `\u6307\u5411\u672A\u6765\u5FEB\u7167\uFF08\u68C0\u67E5\u70B9 afterSeq=${afterSeq} \u665A\u4E8E\u4E8B\u4EF6 seq=${index + 1}\uFF09`);
+      }
+    });
+  }
+  function assertGaps(value, eventCount) {
+    const gaps = assertArray(value.gaps, "gaps");
+    let previousGapAfterSeq = -1;
+    let hasOpenGap = false;
+    gaps.forEach((raw, index) => {
+      const gap = assertRecord(raw, `gaps[${index}]`);
+      const field = `gaps[${index}]`;
+      const afterSeq = assertInteger(gap.afterSeq, `${field}.afterSeq`);
+      if (afterSeq < 0 || afterSeq > eventCount) {
+        fail(`${field}.afterSeq`, `\u987B\u5728 0..${eventCount} \u8303\u56F4\u5185\uFF080 \u8868\u793A\u81EA\u5F00\u59CB\u672A\u5F55\u5236\uFF0C\u6536\u5230 ${afterSeq}\uFF09`);
+      }
+      if (afterSeq <= previousGapAfterSeq) {
+        fail(`${field}.afterSeq`, `gaps \u987B\u6309 afterSeq \u4E25\u683C\u9012\u589E\uFF08\u524D\u503C ${previousGapAfterSeq}\uFF0C\u6536\u5230 ${afterSeq}\uFF09\uFF0CafterSeq=0 \u4EC5\u5141\u8BB8\u7528\u4E8E\u9996\u4E2A gap`);
+      }
+      if (hasOpenGap) fail(field, "\u672A\u95ED\u5408 gap\uFF08resumedAtSeq=null\uFF09\u5FC5\u987B\u4F4D\u4E8E\u672B\u5C3E\uFF0C\u5176\u540E\u4E0D\u5F97\u518D\u6709 gap");
+      if (gap.resumedAtSeq === null) {
+        hasOpenGap = true;
+      } else {
+        const resumedAtSeq = assertInteger(gap.resumedAtSeq, `${field}.resumedAtSeq`);
+        if (resumedAtSeq <= afterSeq) fail(`${field}.resumedAtSeq`, `\u5FC5\u987B\u5927\u4E8E afterSeq\uFF08${afterSeq}\uFF09`);
+        if (resumedAtSeq > eventCount) {
+          fail(`${field}.resumedAtSeq`, `\u8D85\u51FA\u4E8B\u4EF6\u8303\u56F4\uFF08\u6700\u5927 ${eventCount}\uFF0C\u6536\u5230 ${resumedAtSeq}\uFF09`);
+        }
+        const previous = gaps[index - 1];
+        if (index > 0 && typeof previous?.resumedAtSeq === "number" && previous.resumedAtSeq > afterSeq) {
+          fail(`${field}.afterSeq`, `\u4E0E\u524D\u4E00\u4E2A gap \u91CD\u53E0\uFF08\u524D\u4E00 gap \u6062\u590D\u4E8E seq ${previous.resumedAtSeq}\uFF0C\u672C gap \u5F00\u59CB\u4E8E seq ${afterSeq}\uFF09`);
+        }
+      }
+      previousGapAfterSeq = afterSeq;
+    });
+    if (hasOpenGap && value.complete) {
+      fail("complete", "\u5B58\u5728\u672A\u95ED\u5408\u7684 gap\uFF08resumedAtSeq=null\uFF0C\u5F55\u5236\u81EA\u8BE5\u5904\u505C\u6B62\uFF09\uFF0Ccomplete \u4E0D\u80FD\u4E3A true");
+    }
+  }
+  function assertValueTable(raw, field, validateValue) {
+    const entries = assertArray(raw, field);
+    const ids = /* @__PURE__ */ new Set();
+    entries.forEach((entryRaw, index) => {
+      const entryField = `${field}[${index}]`;
+      const entry = assertRecord(entryRaw, entryField);
+      const id = assertString(entry.id, `${entryField}.id`);
+      if (ids.has(id)) fail(`${entryField}.id`, `\u8D44\u6E90id\u91CD\u590D\uFF08${id}\uFF09`);
+      ids.add(id);
+      validateValue(entry.value, `${entryField}.value`);
+    });
+    return ids;
+  }
+  function planSeries(resources, checkpointCount) {
+    const series = assertArray(resources.series, "resources.series");
+    const plans = [];
+    const indexById = /* @__PURE__ */ new Map();
+    series.forEach((raw, index) => {
+      const field = `resources.series[${index}]`;
+      const version = assertRecord(raw, field);
+      const id = assertString(version.id, `${field}.id`);
+      if (indexById.has(id)) fail(`${field}.id`, `\u884C\u60C5\u7248\u672Cid\u91CD\u590D\uFF08${id}\uFF09`);
+      indexById.set(id, index);
+      const timeframe = assertEnum(version.timeframe, `${field}.timeframe`, TIMEFRAMES);
+      const asOf = assertDateOrNull(version.asOf, `${field}.asOf`);
+      const firstCheckpoint = assertInteger(version.firstCheckpoint, `${field}.firstCheckpoint`);
+      if (firstCheckpoint < 0 || firstCheckpoint >= checkpointCount) {
+        fail(`${field}.firstCheckpoint`, `\u987B\u662F\u68C0\u67E5\u70B9\u6570\u7EC4\u4E0B\u6807\uFF080..${checkpointCount - 1}\uFF0C\u6536\u5230 ${firstCheckpoint}\uFF09`);
+      }
+      plans.push({ id, field, timeframe, asOf, firstCheckpoint, baseIndex: null, raw: version });
+    });
+    const depths = new Array(plans.length).fill(0);
+    plans.forEach((plan, index) => {
+      if (plan.raw.base === null) return;
+      const baseId = assertString(plan.raw.base, `${plan.field}.base`);
+      const baseIndex = indexById.get(baseId);
+      if (baseIndex === void 0) fail(`${plan.field}.base`, `\u5F15\u7528\u7684\u57FA\u7840\u7248\u672C\u4E0D\u5B58\u5728\uFF08${baseId}\uFF09`);
+      if (baseIndex >= index) fail(`${plan.field}.base`, `\u57FA\u7840\u7248\u672C\u5FC5\u987B\u5148\u51FA\u73B0\uFF08${baseId} \u5728\u4E0B\u6807 ${baseIndex}\uFF0C\u5F53\u524D\u7248\u672C\u5728\u4E0B\u6807 ${index}\uFF09`);
+      plan.baseIndex = baseIndex;
+      const base = plans[baseIndex];
+      if (base.timeframe !== plan.timeframe) {
+        fail(`${plan.field}.base`, `\u57FA\u7840\u7248\u672C\u5468\u671F\u5FC5\u987B\u4E00\u81F4\uFF08base ${base.timeframe}\uFF0C\u5F53\u524D ${plan.timeframe}\uFF09`);
+      }
+      if (base.firstCheckpoint > plan.firstCheckpoint) {
+        fail(
+          `${plan.field}.firstCheckpoint`,
+          `\u57FA\u7840\u7248\u672CfirstCheckpoint\uFF08${base.firstCheckpoint}\uFF09\u4E0D\u5F97\u665A\u4E8E\u6D3E\u751F\uFF08${plan.firstCheckpoint}\uFF09\uFF0C\u6D3E\u751F\u8FD8\u539F\u5305\u542B\u57FA\u7840\u5185\u5BB9`
+        );
+      }
+      depths[index] = depths[baseIndex] + 1;
+      if (depths[index] > MAX_DELTA_CHAIN2) {
+        fail(`${plan.field}.base`, `\u589E\u91CF\u94FE\u6DF1 ${depths[index]} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DELTA_CHAIN2} \u5C42\uFF0C\u5FC5\u987B\u6539\u5B58\u65B0\u5168\u91CF\u57FA\u7840`);
+      }
+      if (base.asOf !== null && plan.asOf !== null && base.asOf > plan.asOf) {
+        fail(`${plan.field}.asOf`, `\u57FA\u7840\u5DF2\u77E5asOf\u4E0D\u5F97\u665A\u4E8E\u6D3E\u751F\uFF08base ${base.asOf}\uFF0C\u5F53\u524D ${plan.asOf}\uFF09`);
+      }
+    });
+    return plans;
+  }
+  function buildSeriesBaseState(plan, restoreBars) {
+    const bars = assertArray(plan.raw.bars, `${plan.field}.bars`);
+    if (bars.length > MAX_SERIES_BARS) {
+      fail(`${plan.field}.bars`, `bar\u6570\u91CF ${bars.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_SERIES_BARS}`);
+    }
+    const dates = [];
+    const posByKey = /* @__PURE__ */ new Map();
+    bars.forEach((raw, index) => {
+      const date = assertBar(raw, `${plan.field}.bars[${index}]`, plan.timeframe);
+      if (index > 0 && date <= dates[index - 1]) {
+        fail(`${plan.field}.bars[${index}].date`, `\u5FC5\u987B\u4E25\u683C\u6309\u65E5\u671F\u9012\u589E\uFF08\u524D\u503C ${dates[index - 1]}\uFF0C\u6536\u5230 ${date}\uFF09`);
+      }
+      posByKey.set(raw.date, index);
+      dates.push(date);
+    });
+    restoreBars.count += dates.length;
+    return { dates, posByKey };
+  }
+  function applySeriesDelta(plan, parent, restoreBars) {
+    const upsert = assertArray(plan.raw.upsert, `${plan.field}.upsert`);
+    if (upsert.length > MAX_SERIES_BARS) {
+      fail(`${plan.field}.upsert`, `upsert bar\u6570\u91CF ${upsert.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_SERIES_BARS}`);
+    }
+    const removes = assertArray(plan.raw.remove, `${plan.field}.remove`);
+    const dates = parent.dates.slice();
+    const posByKey = new Map(parent.posByKey);
+    upsert.forEach((raw, index) => {
+      const date = assertBar(raw, `${plan.field}.upsert[${index}]`, plan.timeframe);
+      const key = raw.date;
+      const at = posByKey.get(key);
+      if (at === void 0) {
+        posByKey.set(key, dates.length);
+        dates.push(date);
+      } else {
+        dates[at] = date;
+      }
+    });
+    if (removes.length > 0) {
+      const drop = /* @__PURE__ */ new Set();
+      removes.forEach((key, index) => {
+        const text = assertString(key, `${plan.field}.remove[${index}]`);
+        if (drop.has(text)) fail(`${plan.field}.remove[${index}]`, `\u91CD\u590D\u7684\u79FB\u9664\u952E\uFF08${text}\uFF09`);
+        drop.add(text);
+      });
+      const keptDates = [];
+      const keptPos = /* @__PURE__ */ new Map();
+      for (const [key, at] of posByKey) {
+        if (!drop.has(key)) {
+          keptPos.set(key, keptDates.length);
+          keptDates.push(dates[at]);
+        }
+      }
+      dates.length = 0;
+      dates.push(...keptDates);
+      posByKey.clear();
+      for (const [key, at] of keptPos) posByKey.set(key, at);
+    }
+    if (dates.length > MAX_SERIES_BARS) {
+      fail(plan.field, `\u8FD8\u539F\u540Ebar\u6570\u91CF ${dates.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_SERIES_BARS}`);
+    }
+    restoreBars.count += dates.length + upsert.length + removes.length;
+    dates.forEach((date, index) => {
+      if (index > 0 && date <= dates[index - 1]) {
+        fail(`${plan.field}`, `\u8FD8\u539F\u540Ebar\u65E5\u671F\u5FC5\u987B\u4E25\u683C\u9012\u589E\uFF08\u4F4D\u7F6E ${index - 1} \u4E3A ${dates[index - 1]}\uFF0C\u4F4D\u7F6E ${index} \u4E3A ${date}\uFF09`);
+      }
+    });
+    return { dates, posByKey };
+  }
+  function resolveSeries(plans, resourceBars) {
+    const restoreBars = { count: 0 };
+    const pendingUses = /* @__PURE__ */ new Map();
+    plans.forEach((plan) => {
+      if (plan.baseIndex !== null) pendingUses.set(plan.baseIndex, (pendingUses.get(plan.baseIndex) ?? 0) + 1);
+    });
+    const states = /* @__PURE__ */ new Map();
+    const summaries = /* @__PURE__ */ new Map();
+    plans.forEach((plan, index) => {
+      let state;
+      if (plan.baseIndex === null) {
+        state = buildSeriesBaseState(plan, restoreBars);
+        resourceBars.count += plan.raw.bars.length;
+      } else {
+        const parent = states.get(plan.baseIndex);
+        if (!parent) fail(plan.field, "\u5185\u90E8\u9519\u8BEF\uFF1A\u57FA\u7840\u7248\u672C\u72B6\u6001\u7F3A\u5931");
+        state = applySeriesDelta(plan, parent, restoreBars);
+        resourceBars.count += plan.raw.upsert.length;
+        const used = (pendingUses.get(plan.baseIndex) ?? 1) - 1;
+        if (used <= 0) {
+          pendingUses.delete(plan.baseIndex);
+          states.delete(plan.baseIndex);
+        } else {
+          pendingUses.set(plan.baseIndex, used);
+        }
+      }
+      if (resourceBars.count > MAX_RESOURCE_BARS) {
+        fail("resources.series", `\u5168\u8D44\u6E90Bar\u6761\u76EE ${resourceBars.count} \u8D85\u8FC7\u4E0A\u9650 ${MAX_RESOURCE_BARS}`);
+      }
+      if (restoreBars.count > MAX_RESTORE_BARS) {
+        fail("resources.series", `\u6821\u9A8C\u671F\u7D2F\u8BA1\u8FD8\u539F ${restoreBars.count} \u6761Bar\u8D85\u8FC7\u9884\u7B97 ${MAX_RESTORE_BARS}\uFF08\u6309\u552F\u4E00\u7248\u672C\u8BA1\u8D39\uFF09`);
+      }
+      const asOf = plan.asOf;
+      if (asOf !== null) {
+        state.dates.forEach((date, position) => {
+          if (date > asOf) {
+            fail(`${plan.field}`, `\u8FD8\u539F\u540E\u5305\u542B\u665A\u4E8EasOf\uFF08${asOf}\uFF09\u7684bar\uFF08\u4F4D\u7F6E ${position} \u65E5\u671F ${date}\uFF09\uFF0C\u4E0D\u5F97\u56DE\u586B\u672A\u6765\u884C\u60C5`);
+          }
+        });
+      }
+      if (pendingUses.has(index)) states.set(index, state);
+      summaries.set(plan.id, { timeframe: plan.timeframe, asOf: plan.asOf, firstCheckpoint: plan.firstCheckpoint });
+    });
+    return { summaries, restoreBars: restoreBars.count };
+  }
+  function planDrawings(resources) {
+    const drawings = assertArray(resources.drawings, "resources.drawings");
+    const indexById = /* @__PURE__ */ new Map();
+    const plans = [];
+    drawings.forEach((raw, index) => {
+      const field = `resources.drawings[${index}]`;
+      const version = assertRecord(raw, field);
+      const id = assertString(version.id, `${field}.id`);
+      if (indexById.has(id)) fail(`${field}.id`, `\u753B\u7EBF\u7248\u672Cid\u91CD\u590D\uFF08${id}\uFF09`);
+      indexById.set(id, index);
+      let ownIds;
+      let removes;
+      if (version.base === null) {
+        const items = assertArray(version.items, `${field}.items`);
+        if (items.length > MAX_DRAWING_ITEMS) {
+          fail(`${field}.items`, `\u753B\u7EBF\u6570\u91CF ${items.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DRAWING_ITEMS}`);
+        }
+        ownIds = /* @__PURE__ */ new Set();
+        items.forEach((item, itemIndex) => assertDrawing(item, `${field}.items[${itemIndex}]`, ownIds));
+        removes = /* @__PURE__ */ new Set();
+      } else {
+        const upsert = assertArray(version.upsert, `${field}.upsert`);
+        if (upsert.length > MAX_DRAWING_ITEMS) {
+          fail(`${field}.upsert`, `upsert\u753B\u7EBF\u6570\u91CF ${upsert.length} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DRAWING_ITEMS}`);
+        }
+        ownIds = /* @__PURE__ */ new Set();
+        upsert.forEach((item, itemIndex) => assertDrawing(item, `${field}.upsert[${itemIndex}]`, ownIds));
+        removes = /* @__PURE__ */ new Set();
+        const removeKeys = assertArray(version.remove, `${field}.remove`);
+        removeKeys.forEach((key, keyIndex) => {
+          const text = assertString(key, `${field}.remove[${keyIndex}]`);
+          if (removes.has(text)) fail(`${field}.remove[${keyIndex}]`, `\u91CD\u590D\u7684\u79FB\u9664\u952E\uFF08${text}\uFF09`);
+          removes.add(text);
+        });
+      }
+      plans.push({ id, field, baseIndex: null, ownIds, removes, raw: version });
+    });
+    const depths = new Array(plans.length).fill(0);
+    const restoredSets = /* @__PURE__ */ new Map();
+    const pendingUses = /* @__PURE__ */ new Map();
+    plans.forEach((plan) => {
+      if (typeof plan.raw.base !== "string") return;
+      const baseIndex = indexById.get(plan.raw.base);
+      if (baseIndex === void 0) return;
+      pendingUses.set(baseIndex, (pendingUses.get(baseIndex) ?? 0) + 1);
+    });
+    plans.forEach((plan, index) => {
+      let restored;
+      if (plan.raw.base === null) {
+        restored = plan.ownIds;
+      } else {
+        const baseId = assertString(plan.raw.base, `${plan.field}.base`);
+        const baseIndex = indexById.get(baseId);
+        if (baseIndex === void 0) fail(`${plan.field}.base`, `\u5F15\u7528\u7684\u57FA\u7840\u7248\u672C\u4E0D\u5B58\u5728\uFF08${baseId}\uFF09`);
+        if (baseIndex >= index) fail(`${plan.field}.base`, `\u57FA\u7840\u7248\u672C\u5FC5\u987B\u5148\u51FA\u73B0\uFF08${baseId} \u5728\u4E0B\u6807 ${baseIndex}\uFF0C\u5F53\u524D\u7248\u672C\u5728\u4E0B\u6807 ${index}\uFF09`);
+        plan.baseIndex = baseIndex;
+        depths[index] = depths[baseIndex] + 1;
+        if (depths[index] > MAX_DELTA_CHAIN2) {
+          fail(`${plan.field}.base`, `\u589E\u91CF\u94FE\u6DF1 ${depths[index]} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DELTA_CHAIN2} \u5C42\uFF0C\u5FC5\u987B\u6539\u5B58\u65B0\u5168\u91CF\u57FA\u7840`);
+        }
+        const parent = restoredSets.get(baseIndex);
+        if (!parent) fail(plan.field, "\u5185\u90E8\u9519\u8BEF\uFF1A\u57FA\u7840\u753B\u7EBF\u96C6\u5408\u7F3A\u5931");
+        restored = new Set(parent);
+        plan.removes.forEach((key) => restored.delete(key));
+        plan.ownIds.forEach((owned) => restored.add(owned));
+        if (restored.size > MAX_DRAWING_ITEMS) {
+          fail(plan.field, `\u8FD8\u539F\u540E\u753B\u7EBF\u6570\u91CF ${restored.size} \u8D85\u8FC7\u4E0A\u9650 ${MAX_DRAWING_ITEMS}`);
+        }
+        const used = (pendingUses.get(baseIndex) ?? 1) - 1;
+        if (used <= 0) {
+          pendingUses.delete(baseIndex);
+          restoredSets.delete(baseIndex);
+        } else {
+          pendingUses.set(baseIndex, used);
+        }
+      }
+      if (pendingUses.has(index)) restoredSets.set(index, restored);
+    });
+    return indexById;
+  }
+  function validateCompactRecording(value) {
+    if (!isRecord(value)) fail("\u9876\u5C42", "\u5FC5\u987B\u662F JSON \u5BF9\u8C61");
+    assertJson(value, "", 1);
+    if (value.format !== "trainer-session") {
+      fail("format", `\u5FC5\u987B\u662F 'trainer-session'\uFF08\u6536\u5230 ${JSON.stringify(value.format)}\uFF09`);
+    }
+    const allowRange = value.schemaVersion === 3;
+    if (value.schemaVersion !== 2 && value.schemaVersion !== 3) {
+      fail("schemaVersion", `\u5FC5\u987B\u662F 2 \u6216 3\uFF08\u6536\u5230 ${JSON.stringify(value.schemaVersion)}\uFF09`);
+    }
+    assertString(value.sessionId, "sessionId");
+    assertTimestamp(value.createdAt, "createdAt");
+    assertAppAndEnvironment(value);
+    assertStringOrNull(value.trainingKey, "trainingKey");
+    assertBoolean(value.complete, "complete");
+    const { events, refs, segmentIds } = assertEvents(value);
+    const checkpointIds = assertCompactCheckpoints(value, events.length, segmentIds);
+    assertEventCheckpointRefs(refs, checkpointIds);
+    assertGaps(value, events.length);
+    const resourcesRaw = assertRecord(value.resources, "resources");
+    const checkpoints = value.checkpoints;
+    const metaIds = assertValueTable(resourcesRaw.trainingMeta, "resources.trainingMeta", (meta, field) => {
+      assertTrainingMeta(meta, field, { allowRange });
+    });
+    const accountIds = assertValueTable(resourcesRaw.accounts, "resources.accounts", (account, field) => {
+      assertAccountView(account, field);
+    });
+    const tradeIds = assertValueTable(resourcesRaw.trades, "resources.trades", (trade, field) => {
+      assertTrade(trade, field);
+    });
+    const contextIds = assertValueTable(resourcesRaw.contexts, "resources.contexts", () => {
+    });
+    const metaCutoffs = /* @__PURE__ */ new Map();
+    resourcesRaw.trainingMeta.forEach((entryRaw) => {
+      const entry = entryRaw;
+      const meta = entry.value;
+      metaCutoffs.set(entry.id, {
+        currentDate: meta.currentDate ?? null,
+        blind: Boolean(meta.blind),
+        startDate: meta.startDate
+      });
+    });
+    const seriesPlans = planSeries(resourcesRaw, checkpoints.length);
+    const drawingIds = planDrawings(resourcesRaw);
+    const resourceBars = { count: 0 };
+    const { summaries } = resolveSeries(seriesPlans, resourceBars);
+    checkpoints.forEach((raw, index) => {
+      const checkpoint = raw;
+      if (checkpoint.training !== null) {
+        const training = checkpoint.training;
+        if (!metaIds.has(training.metaRef)) {
+          fail(`checkpoints[${index}].training.metaRef`, `\u5F15\u7528\u7684\u8BAD\u7EC3\u5143\u6570\u636E ${training.metaRef} \u4E0D\u5B58\u5728`);
+        }
+        if (!accountIds.has(training.accountRef)) {
+          fail(`checkpoints[${index}].training.accountRef`, `\u5F15\u7528\u7684\u8D26\u6237\u89C6\u56FE ${training.accountRef} \u4E0D\u5B58\u5728`);
+        }
+        training.tradeRefs.forEach((ref, tradeIndex) => {
+          if (!tradeIds.has(ref)) {
+            fail(`checkpoints[${index}].training.tradeRefs[${tradeIndex}]`, `\u5F15\u7528\u7684\u6210\u4EA4\u89C6\u56FE ${ref} \u4E0D\u5B58\u5728`);
+          }
+        });
+      }
+      if (checkpoint.chart !== null) {
+        const chart = checkpoint.chart;
+        const summary = summaries.get(chart.seriesRef);
+        if (!summary) {
+          fail(`checkpoints[${index}].chart.seriesRef`, `\u5F15\u7528\u7684\u884C\u60C5\u7248\u672C ${chart.seriesRef} \u4E0D\u5B58\u5728`);
+        } else {
+          if (chart.timeframe !== summary.timeframe) {
+            fail(
+              `checkpoints[${index}].chart.timeframe`,
+              `\u5468\u671F\u987B\u4E0E\u5F15\u7528\u7684\u884C\u60C5\u7248\u672C\u4E00\u81F4\uFF08chart ${String(chart.timeframe)}\uFF0C\u7248\u672C ${summary.timeframe}\uFF09`
+            );
+          }
+          if (index < summary.firstCheckpoint) {
+            fail(
+              `checkpoints[${index}].chart.seriesRef`,
+              `\u5F15\u7528\u7684\u884C\u60C5\u7248\u672C firstCheckpoint=${summary.firstCheckpoint} \u665A\u4E8E\u5F53\u524D\u68C0\u67E5\u70B9\u4E0B\u6807 ${index}\uFF0C\u4E0D\u5F97\u56DE\u586B\u672A\u6765\u6B65\u9AA4`
+            );
+          }
+          if (checkpoint.training !== null) {
+            const training = checkpoint.training;
+            const meta = metaCutoffs.get(training.metaRef);
+            if (meta) {
+              const cutoff = deriveCutoff(meta);
+              if (cutoff !== null) {
+                if (summary.asOf === null) {
+                  fail(`checkpoints[${index}].chart.seriesRef`, `\u5DF2\u77E5\u622A\u6B62\uFF08${cutoff}\uFF09\u7684\u68C0\u67E5\u70B9\u4E0D\u5F97\u5F15\u7528asOf=null\u7684\u884C\u60C5\u7248\u672C ${chart.seriesRef}`);
+                } else if (summary.asOf > cutoff) {
+                  fail(`checkpoints[${index}].chart.seriesRef`, `\u884C\u60C5\u7248\u672CasOf\uFF08${summary.asOf}\uFF09\u665A\u4E8E\u68C0\u67E5\u70B9\u622A\u6B62\uFF08${cutoff}\uFF09\uFF0C\u4E0D\u5F97\u5F15\u7528\u672A\u6765\u884C\u60C5`);
+                }
+              }
+            }
+          }
+        }
+        if (!drawingIds.has(chart.drawingsRef)) {
+          fail(`checkpoints[${index}].chart.drawingsRef`, `\u5F15\u7528\u7684\u753B\u7EBF\u7248\u672C ${chart.drawingsRef} \u4E0D\u5B58\u5728`);
+        }
+      }
+      if (checkpoint.contextRef !== null) {
+        const contextRef = checkpoint.contextRef;
+        if (!contextIds.has(contextRef)) {
+          fail(`checkpoints[${index}].contextRef`, `\u5F15\u7528\u7684\u8BAD\u7EC3context ${contextRef} \u4E0D\u5B58\u5728`);
+        }
+      }
+    });
+    return value;
+  }
+
+  // web/src/recording/storage.ts
+  var RECORDING_DB_NAME = "trainer-recordings";
+  var recordingDbName = RECORDING_DB_NAME;
+  function configureRecordingDbNamespace(namespace) {
+    const value = namespace.trim();
+    if (!value) throw new Error("\u5F55\u50CF\u5E93\u547D\u540D\u7A7A\u95F4\u4E3A\u7A7A\uFF0C\u62D2\u7EDD\u8BBF\u95EE\u672A\u9694\u79BB\u7684\u672C\u673A\u5F55\u50CF");
+    const safe = value.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 96);
+    recordingDbName = `${RECORDING_DB_NAME}.${safe}`;
+  }
+  function getRecordingDbName() {
+    return recordingDbName;
+  }
+
+  // tools/migrate-v127/src/export-core.ts
+  var LEGACY_MAX_CHECKPOINTS = 2e4;
+  var MIGRATION_BUNDLE_FORMAT = "trainer-recordings-bundle";
+  var MIGRATION_BUNDLE_VERSION = 1;
+  var RESOURCE_KINDS = ["series", "drawings", "trainingMeta", "accounts", "trades", "contexts"];
+  var RECORD_KINDS = ["event", "checkpoint", ...RESOURCE_KINDS];
+  function entryIdentityOf(kind, value) {
+    if (!value || typeof value !== "object") return null;
+    const id = value[kind === "event" ? "opId" : "id"];
+    return typeof id === "string" && id !== "" ? id : null;
+  }
+  function countsKeyOf(kind) {
+    return kind === "event" ? "events" : kind === "checkpoint" ? "checkpoints" : kind;
+  }
+  function assembleCompactSession(header, rows) {
+    const sessionId = String(header.sessionId ?? "");
+    const counts = header.counts ?? {};
+    const byKind = new Map(RECORD_KINDS.map((kind) => [kind, /* @__PURE__ */ new Map()]));
+    for (const row of rows) {
+      const kind = row.kind;
+      const bucket = byKind.get(kind);
+      if (!bucket) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A\u5B58\u5728\u672A\u77E5 kind\u300C${String(row.kind)}\u300D\u7684\u8BB0\u5F55\u884C\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      if (entryIdentityOf(kind, row.value) === null) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A${kind} #${String(row.index)} \u7684\u6761\u76EE\u7F3A\u5C11\u5408\u6CD5 id/opId\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      const index = row.index;
+      if (!Number.isSafeInteger(index) || index < 0) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A${kind} \u884C\u4E0B\u6807 ${String(row.index)} \u975E\u6CD5\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      if (bucket.has(index)) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A${kind} #${index} \u51FA\u73B0\u91CD\u590D\u884C\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      bucket.set(index, row.value);
+    }
+    for (const kind of RECORD_KINDS) {
+      const bucket = byKind.get(kind);
+      const count = counts[countsKeyOf(kind)];
+      if (!Number.isSafeInteger(count) || count < 0) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1Aheader.counts.${countsKeyOf(kind)} \u975E\u6CD5\uFF08${String(count)}\uFF09\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      if (bucket.size !== count) {
+        throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A${kind} \u884C\u6570 ${bucket.size} \u4E0E header.counts ${count} \u4E0D\u4E00\u81F4\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+      }
+      for (let index = 0; index < count; index++) {
+        if (!bucket.has(index)) {
+          throw new Error(`\u4F1A\u8BDD ${sessionId} \u6301\u4E45\u8BB0\u5F55\u635F\u574F\uFF1A${kind} \u7F3A\u5C11\u4E0B\u6807 ${index} \u7684\u8BB0\u5F55\u884C\uFF08counts=${count}\uFF09\uFF0C\u62D2\u7EDD\u52A0\u8F7D\u3002`);
+        }
+      }
+    }
+    const resources = {};
+    for (const kind of RESOURCE_KINDS) {
+      const list = [];
+      const bucket = byKind.get(kind);
+      const count = counts[kind];
+      for (let index = 0; index < count; index++) list.push(bucket.get(index));
+      resources[kind] = list;
+    }
+    const events = [];
+    for (let index = 0; index < counts.events; index++) events.push(byKind.get("event").get(index));
+    const checkpoints = [];
+    for (let index = 0; index < counts.checkpoints; index++) checkpoints.push(byKind.get("checkpoint").get(index));
+    return {
+      format: "trainer-session",
+      schemaVersion: header.schemaVersion,
+      sessionId,
+      createdAt: header.createdAt,
+      app: header.app,
+      environment: header.environment,
+      trainingKey: header.trainingKey ?? null,
+      events,
+      checkpoints,
+      gaps: header.gaps,
+      complete: header.complete,
+      resources
+    };
+  }
+  function convertLegacySession(raw) {
+    try {
+      const legacy = validateRecording(raw, { maxCheckpoints: LEGACY_MAX_CHECKPOINTS });
+      const migrated = compactRecording(legacy);
+      return { ok: true, file: validateCompactRecording(migrated) };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  }
+  function idb() {
+    const scope = globalThis;
+    if (!scope.indexedDB) throw new Error("\u5F53\u524D\u73AF\u5883\u4E0D\u652F\u6301 IndexedDB\uFF0C\u65E0\u6CD5\u8BFB\u53D6\u8BAD\u7EC3\u5F55\u50CF\u3002");
+    return scope.indexedDB;
+  }
+  function trainerDbNameFor(namespace) {
+    configureRecordingDbNamespace(namespace);
+    return getRecordingDbName();
+  }
+  function openExistingDatabase(name) {
+    return new Promise((resolve) => {
+      let request;
+      try {
+        request = idb().open(name);
+      } catch {
+        resolve(null);
+        return;
+      }
+      request.onsuccess = () => {
+        const db = request.result;
+        if (db.version === 1 && db.objectStoreNames.length === 0) {
+          db.close();
+          try {
+            void idb().deleteDatabase(name);
+          } catch {
+          }
+          resolve(null);
+          return;
+        }
+        resolve({ db, version: db.version, storeNames: [...db.objectStoreNames] });
+      };
+      request.onerror = () => resolve(null);
+    });
+  }
+  function waitRequest(request) {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error("IndexedDB \u8BF7\u6C42\u5931\u8D25"));
+    });
+  }
+  function waitTransaction(tx) {
+    return new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB \u4E8B\u52A1\u5931\u8D25"));
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB \u4E8B\u52A1\u5DF2\u4E2D\u6B62"));
+    });
+  }
+  async function readAll(db, storeName, range) {
+    const tx = db.transaction([storeName], "readonly");
+    const pending = waitRequest(tx.objectStore(storeName).getAll(range));
+    await waitTransaction(tx);
+    return pending;
+  }
+  function sessionRange(sessionId) {
+    return IDBKeyRange.bound([sessionId, ""], [sessionId, "\uFFFF"]);
+  }
+  function summaryOf(payload, source, note) {
+    return {
+      sessionId: String(payload.sessionId ?? "(\u672A\u77E5)"),
+      source,
+      eventCount: Array.isArray(payload.events) ? payload.events.length : 0,
+      createdAt: payload.createdAt ?? "",
+      trainingKey: typeof payload.trainingKey === "string" ? payload.trainingKey : null,
+      note
+    };
+  }
+  async function collectMigrationItems(main, imports) {
+    const outcome = { items: [], summaries: [], failures: [] };
+    const has = (opened, store) => opened.storeNames.includes(store);
+    const headers = has(main, "compactSessions") ? await readAll(main.db, "compactSessions") : [];
+    const legacyFiles = has(main, "sessions") ? await readAll(main.db, "sessions") : [];
+    const compactIds = new Set(headers.map((header) => String(header.sessionId)));
+    for (const header of headers) {
+      const sessionId = String(header.sessionId ?? "");
+      try {
+        const rows = has(main, "compactRecords") ? await readAll(main.db, "compactRecords", sessionId ? sessionRange(sessionId) : void 0) : [];
+        const assembled = assembleCompactSession(header, rows);
+        try {
+          outcome.items.push(validateCompactRecording(assembled));
+          outcome.summaries.push(summaryOf(assembled, "local-compact"));
+        } catch (error) {
+          outcome.items.push(assembled);
+          outcome.summaries.push(summaryOf(assembled, "local-compact", `\u6821\u9A8C\u5931\u8D25\u539F\u6837\u5165\u5305\uFF1A${error instanceof Error ? error.message : String(error)}`));
+        }
+      } catch (error) {
+        outcome.failures.push({ sessionId, reason: error instanceof Error ? error.message : String(error) });
+      }
+    }
+    for (const legacy of legacyFiles) {
+      const sessionId = String(legacy.sessionId ?? "");
+      if (compactIds.has(sessionId)) continue;
+      const converted = convertLegacySession(legacy);
+      if (converted.ok) {
+        outcome.items.push(converted.file);
+        outcome.summaries.push(summaryOf(converted.file, "local-legacy", "\u65E7 v1 \u683C\u5F0F\u5DF2\u8F6C\u6362\u4E3A v2"));
+      } else {
+        outcome.items.push(legacy);
+        outcome.summaries.push(summaryOf(legacy, "local-legacy-raw", `\u8F6C\u6362\u5931\u8D25\u539F\u6837\u5165\u5305\uFF1A${converted.error}`));
+      }
+    }
+    if (imports) {
+      if (has(imports, "recordings")) {
+        const stored = await readAll(imports.db, "recordings");
+        for (const recording of stored) {
+          try {
+            outcome.items.push(validateCompactRecording(recording));
+            outcome.summaries.push(summaryOf(recording, "imported"));
+          } catch (error) {
+            outcome.items.push(recording);
+            outcome.summaries.push(summaryOf(recording, "imported-raw", `\u6821\u9A8C\u5931\u8D25\u539F\u6837\u5165\u5305\uFF1A${error instanceof Error ? error.message : String(error)}`));
+          }
+        }
+      } else if (has(imports, "imports")) {
+        const entries = await readAll(imports.db, "imports");
+        for (const entry of entries) {
+          const recording = entry.recording;
+          if (!recording || typeof recording !== "object") {
+            outcome.failures.push({ sessionId: String(entry.sessionId ?? "(\u672A\u77E5)"), reason: "\u65E7\u5BFC\u5165\u8BB0\u5F55\u7F3A\u5C11 recording \u8F7D\u8377" });
+            continue;
+          }
+          try {
+            outcome.items.push(validateCompactRecording(recording));
+            outcome.summaries.push(summaryOf(recording, "imported"));
+          } catch (error) {
+            outcome.items.push(recording);
+            outcome.summaries.push(summaryOf(recording, "imported-raw", `\u6821\u9A8C\u5931\u8D25\u539F\u6837\u5165\u5305\uFF1A${error instanceof Error ? error.message : String(error)}`));
+          }
+        }
+      }
+    }
+    outcome.summaries.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    return outcome;
+  }
+  function buildMigrationBundle(items, now = /* @__PURE__ */ new Date()) {
+    if (!items.length) throw new Error("\u5E93\u4E2D\u6CA1\u6709\u5F55\u50CF\uFF0C\u65E0\u6CD5\u5BFC\u51FA\u5408\u5E76\u5305");
+    return {
+      format: MIGRATION_BUNDLE_FORMAT,
+      version: MIGRATION_BUNDLE_VERSION,
+      exportedAt: now.toISOString(),
+      items
+    };
+  }
+  function migrationBundleFileName(now = /* @__PURE__ */ new Date()) {
+    const pad = (value) => String(value).padStart(2, "0");
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`;
+    return `\u8BAD\u7EC3\u5F55\u50CF\u5E93-${stamp}.trainer-recordings.json`;
+  }
+  function downloadMigrationBundle(bundle) {
+    const blob = new Blob([JSON.stringify(bundle)], { type: "application/json" });
+    const fileName = migrationBundleFileName();
+    const anchor = document.createElement("a");
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 6e4);
+    return { blob, fileName };
+  }
+
+  // tools/migrate-v127/src/console-fallback.ts
+  function log(text) {
+    console.log(`[\u5F55\u50CF\u8FC1\u79FB] ${text}`);
+  }
+  async function run() {
+    const response = await fetch("/api/env");
+    if (!response.ok) throw new Error(`\u8BFB\u53D6 /api/env \u5931\u8D25\uFF08HTTP ${response.status}\uFF09\u2014\u2014\u8BF7\u786E\u8BA4\u672C\u9875\u9762\u5C31\u662F\u6B63\u5728\u8FD0\u884C\u7684\u65E7\u8BAD\u7EC3\u5668\u9875\u9762`);
+    const env = await response.json();
+    if (!env.recordingNamespace) throw new Error("/api/env \u672A\u8FD4\u56DE recordingNamespace\uFF0C\u65E0\u6CD5\u5B9A\u4F4D\u5F55\u50CF\u5E93");
+    const dbName = trainerDbNameFor(env.recordingNamespace);
+    const main = await openExistingDatabase(dbName);
+    if (!main) throw new Error(`\u672A\u627E\u5230\u5F55\u50CF\u5E93 ${dbName}\u2014\u2014\u672C\u6D4F\u89C8\u5668\u5730\u5740\u4E0B\u6CA1\u6709\u65E7\u5F55\u50CF\uFF0C\u8BF7\u786E\u8BA4\u7528\u7684\u662F\u5F53\u65F6\u7684\u6D4F\u89C8\u5668`);
+    const imports = await openExistingDatabase(`${dbName}.imports`);
+    try {
+      log(`\u8BFB\u53D6\u5F55\u50CF\u5E93 ${dbName}\uFF08\u7248\u672C ${main.version}\uFF09\u2026`);
+      const scan = await collectMigrationItems(main, imports);
+      if (!scan.items.length) {
+        log("\u5F55\u50CF\u5E93\u4E3A\u7A7A\uFF0C\u6CA1\u6709\u53EF\u5BFC\u51FA\u7684\u8BAD\u7EC3\u5F55\u50CF\u3002");
+        return;
+      }
+      const bundle = buildMigrationBundle(scan.items);
+      const { blob, fileName } = downloadMigrationBundle(bundle);
+      log(`\u5DF2\u89E6\u53D1\u4E0B\u8F7D\uFF1A${fileName}\uFF08${(blob.size / 1024).toFixed(1)} KB\uFF0C\u5171 ${scan.items.length} \u6761\u5F55\u50CF\uFF09\u3002`);
+      for (const row of scan.summaries) {
+        log(`\xB7 ${row.sessionId} \u4E8B\u4EF6 ${row.eventCount}${row.note ? `\uFF08${row.note}\uFF09` : ""}`);
+      }
+      if (scan.failures.length) {
+        console.warn(`[\u5F55\u50CF\u8FC1\u79FB] ${scan.failures.length} \u573A\u5B58\u50A8\u635F\u574F\u65E0\u6CD5\u5BFC\u51FA\uFF1A`);
+        for (const failure of scan.failures) console.warn(`[\u5F55\u50CF\u8FC1\u79FB] \xB7 ${failure.sessionId}\uFF1A${failure.reason}`);
+      }
+      log("\u4E0B\u4E00\u6B65\uFF1A\u6253\u5F00 v1.3.0 \u2192\u300C\u8BAD\u7EC3\u5F55\u50CF\u300D\u2192\u300C\u5BFC\u5165\u5F55\u5236\u300D\uFF0C\u9009\u62E9\u521A\u4E0B\u8F7D\u7684\u5408\u5E76\u5305\u6587\u4EF6\u3002");
+    } finally {
+      main.db.close();
+      imports?.db.close();
+    }
+  }
+  void run().catch((error) => {
+    console.error(`[\u5F55\u50CF\u8FC1\u79FB] \u5BFC\u51FA\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`);
+  });
+})();
+
+
+────────────────── 脚本内容结束 ──────────────────

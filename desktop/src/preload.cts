@@ -47,4 +47,18 @@ contextBridge.exposeInMainWorld('desktopRecordings', {
   }) as Promise<{ ok: true; path: string } | { ok: false; error: string }>,
 })
 
-// UIUX-release 2026-10-16：v1.2.7 迁移通道（desktopMigration 三方法）随迁移能力退役移除。
+// MIG-EXT-01 v1.2.7 训练历史迁移窄接口（三方法；主进程实现于 desktop/src/mig-import.ts）：
+// pick＝原生文件选择迁移清单.json；inspect＝包体检读计数；importHistory＝暂存导入（重启后
+// 合并生效，MIG-MERGE-01；skipped＝按业务键预查将跳过的局数，importing＝将新导入局数）。
+// 与归档同一纪律：结果结构化返回（ok:false 带中文原因），绝不向渲染端抛异常。
+contextBridge.exposeInMainWorld('desktopMigration', {
+  pick: () => ipcRenderer.invoke('desktop-migration:invoke', { method: 'pick' }) as Promise<
+    { ok: true; manifestPath: string } | { ok: false; error: string }
+  >,
+  inspect: (manifestPath: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inspect', manifestPath }) as Promise<
+    { ok: true; counts: Record<string, number>; sqlitePath: string } | { ok: false; error: string }
+  >,
+  importHistory: (manifestPath: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'import', manifestPath }) as Promise<
+    { ok: true; requiresRestart: boolean; trainings: number; skipped: number; importing: number } | { ok: false; error: string }
+  >,
+})

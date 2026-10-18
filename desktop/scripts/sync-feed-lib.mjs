@@ -21,6 +21,7 @@ const VERSION_PATTERN = /^\d+\.\d+\.\d+$/
 export const CN_FEED_MANIFEST_NAME = 'manifest.json'
 export const CN_FEED_OUTPUT_DIR_NAME = 'dist-cn-feed'
 const ZIP_CHECKSUMS_NAME = 'SHA256SUMS'
+const MIGRATE_NAME = 'migrate-v127.zip'
 
 /** 镜像 base 校验：http(s) URL、无查询串/锚点；返回尾斜杠归一值（违约即 throw 不猜） */
 export function assertMirrorBase(url) {
@@ -144,6 +145,7 @@ function cnFeedAssetNames(version) {
     setupBlockmap: desktop.setupBlockmap,
     zip: `kline-trainer-v${version}-windows-x64.zip`,
     checksums: ZIP_CHECKSUMS_NAME,
+    migrate: MIGRATE_NAME,
     latestYml: 'latest.yml',
     manifest: CN_FEED_MANIFEST_NAME,
   }
@@ -152,7 +154,7 @@ function cnFeedAssetNames(version) {
 /**
  * 产出国内发布目录（编排）：
  * ① 校验镜像 base＋解析源 latest.yml（版本真相源）→ 资产名；
- * ② fail-closed 必备检查（setup exe/zip/SHA256SUMS；blockmap 存在才纳入；migrate-v127.zip 已随 v1.2.7 迁移退役移除）；
+ * ② fail-closed 必备检查（setup exe/zip/SHA256SUMS；blockmap/migrate 存在才纳入）；
  * ③ 输出目录安全（不存在→建；空或本脚本产物 latest.yml→清空重产；非本脚本产物→拒绝）；
  * ④ 写改写版 latest.yml＋manifest.json＋复制资产；
  * ⑤ 自校验 verifyCnFeedOutput。
@@ -165,7 +167,7 @@ export async function runCnFeedSync({ releaseDir, mirrorBase, notes = '', outDir
   const names = cnFeedAssetNames(parsed.version)
 
   const required = [names.setupExe, names.zip, names.checksums]
-  const optional = [names.setupBlockmap]
+  const optional = [names.setupBlockmap, names.migrate]
   const missing = []
   for (const name of required) {
     if (!(await pathExists(join(releaseDir, name)))) missing.push(name)
@@ -269,7 +271,7 @@ export async function verifyCnFeedOutput({ releaseDir, outDir, mirrorBase }) {
   }
 
   // 复制文件与源逐字节一致（校验和与源一致）
-  for (const name of [names.setupExe, names.zip, names.checksums, names.setupBlockmap]) {
+  for (const name of [names.setupExe, names.zip, names.checksums, names.setupBlockmap, names.migrate]) {
     const source = join(releaseDir, name)
     if (!(await pathExists(source))) continue
     const sourceHash = await hashFile(source, 'sha256')

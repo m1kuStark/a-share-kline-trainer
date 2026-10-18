@@ -24,6 +24,7 @@ const VERSION = '1.3.1'
 const SETUP_NAME = `kline-trainer-desktop-setup-v${VERSION}-windows-x64.exe`
 const BLOCKMAP_NAME = `${SETUP_NAME}.blockmap`
 const ZIP_NAME = `kline-trainer-v${VERSION}-windows-x64.zip`
+const MIGRATE_NAME = 'migrate-v127.zip'
 
 const sha256Of = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
 const sha512Base64Of = (bytes: Uint8Array) => createHash('sha512').update(bytes).digest('base64')
@@ -54,6 +55,7 @@ async function buildReleaseDir(): Promise<{ releaseDir: string, setupBytes: Buff
   await writeFile(join(releaseDir, BLOCKMAP_NAME), Buffer.from('blockmap-bytes'))
   await writeFile(join(releaseDir, ZIP_NAME), zipBytes)
   await writeFile(join(releaseDir, 'SHA256SUMS'), `${sha256Of(zipBytes)}  ${ZIP_NAME}\n`, 'utf8')
+  await writeFile(join(releaseDir, MIGRATE_NAME), Buffer.from('migrate-bytes'))
   return { releaseDir, setupBytes, zipBytes }
 }
 
@@ -115,6 +117,7 @@ describe('RELEASE-CN-FEED-SYNC: manifest.json 同形状（GitHub API 字段子�
       { name: ZIP_NAME, size: 4096 },
       { name: 'SHA256SUMS', size: 96 },
       { name: SETUP_NAME, size: 2048 },
+      { name: MIGRATE_NAME, size: 128 },
     ]
     const text = renderCnManifestJson({ version: VERSION, notes: '国内镜像发布说明', mirrorBase: MIRROR_BASE, assets })
     const parsed = JSON.parse(text) as {
@@ -126,7 +129,7 @@ describe('RELEASE-CN-FEED-SYNC: manifest.json 同形状（GitHub API 字段子�
     expect(parsed.tag_name).toBe(`v${VERSION}`)
     expect(parsed.body).toBe('国内镜像发布说明')
     // 资产按名排序（确定性输出）
-    expect(parsed.assets.map(asset => asset.name)).toEqual(['SHA256SUMS', SETUP_NAME, ZIP_NAME].sort())
+    expect(parsed.assets.map(asset => asset.name)).toEqual([MIGRATE_NAME, 'SHA256SUMS', SETUP_NAME, ZIP_NAME].sort())
     const zipAsset = parsed.assets.find(asset => asset.name === ZIP_NAME)
     expect(zipAsset?.browser_download_url).toBe(`${MIRROR_BASE}/${ZIP_NAME}`)
     expect(zipAsset?.size).toBe(4096)
@@ -145,7 +148,7 @@ describe('RELEASE-CN-FEED-SYNC: runCnFeedSync 真实 fs（产出＋自校验；�
       expect(result.outDir).toBe(outDir)
       // 产物齐备：两个生成文件＋五个复制文件
       const files = (await readdir(outDir)).sort()
-      expect(files).toEqual(['SHA256SUMS', 'latest.yml', 'manifest.json', SETUP_NAME, BLOCKMAP_NAME, ZIP_NAME].sort())
+      expect(files).toEqual(['SHA256SUMS', 'latest.yml', 'manifest.json', MIGRATE_NAME, SETUP_NAME, BLOCKMAP_NAME, ZIP_NAME].sort())
       // latest.yml 改写正确（独立重算 sha512）；MIRROR-URL-FIX：notes 写入 releaseNotes 字段
       const outYmlRaw = await readFile(join(outDir, 'latest.yml'), 'utf8')
       const outYml = parseLatestYml(outYmlRaw)

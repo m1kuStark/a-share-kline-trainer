@@ -1,15 +1,18 @@
 // INSTALL-01（2026-10-11 用户拍板，矩阵行 INSTALL-NSIS-ASSISTED）发布管线单测：
-//   release-desktop.mjs 编排源码契约——便携产物退役：electron-builder 仅 nsis 目标、
-//   latest.yml 不再追加便携条目（extendLatestYmlWithPortable 已随调用点删除——原
-//   PORT-UPD-01 便携条目扩展行为整体退役，锁行为两段用例随之退役，双向留痕见任务收尾报告；
-//   便携 exe 的运行时自更新模块 portable-updater.ts 本体保留一个版本周期防回滚）。
-// UIUX-release（2026-10-16 用户拍板 v1.2.7 弃用）：PORT-UPD-01 的 migrate-v127.zip 写入器/
-//   目录收集两段用例随产物退役移除（buildStoredZip/collectMigrateZipEntries 已从
-//   release-desktop.mjs 删除；server UPD-01 zip 读取器由 server 侧自身用例覆盖）。
+//   ① release-desktop.mjs 编排源码契约——便携产物退役：electron-builder 仅 nsis 目标、
+//     latest.yml 不再追加便携条目（extendLatestYmlWithPortable 已随调用点删除——原
+//     PORT-UPD-01 便携条目扩展行为整体退役，锁行为两段用例随之退役，双向留痕见任务收尾报告；
+//     便携 exe 的运行时自更新模块 portable-updater.ts 本体保留一个版本周期防回滚）；
+//   ② migrate-v127.zip 纯 Node STORE 型 zip 写入器（buildStoredZip）——oracle＝server
+//     UPD-01 zip 读取器（listZipEntries/readZipEntry，CRC 与条目字节独立校验）；
+//   ③ collectMigrateZipEntries 目录收集——oracle＝测试自建临时树。
 import { describe, expect, it } from 'vitest'
-import { readFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildStoredZip, collectMigrateZipEntries } from '../scripts/release-desktop.mjs'
+import { listZipEntries, readZipEntry } from '../../server/src/update/zip.ts'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
@@ -24,12 +27,59 @@ describe('INSTALL-01: release-desktop.mjs orchestration (source contract)', () =
     // 便携产物 fail-closed 存在性检查已退役：脚本不得再因缺便携 exe 而失败
     expect(source).not.toMatch(/portable exe missing/)
   })
+})
 
-  it('UIUX-release：migrate-v127 产物已退役——脚本不再产出/引用迁移 zip 与其构建输入', async () => {
-    const source = await readFile(join(repoRoot, 'desktop', 'scripts', 'release-desktop.mjs'), 'utf8')
-    expect(source).not.toMatch(/migrate-v127\.zip/)
-    expect(source).not.toMatch(/buildStoredZip/)
-    expect(source).not.toMatch(/collectMigrateZipEntries/)
-    expect(source).not.toMatch(/tools\/migrate-v127/)
+
+
+describe('PORT-UPD-01 migrate-v127.zip 纯 Node zip 写入器', () => {
+  it('STORE 型 zip 可被 UPD-01 读取器解析：条目名/字节逐一吻合（CRC 由读取器强制校验）', () => {
+    const entries = [
+      { name: 'migrate-v127/export-v127.cjs', data: Buffer.from('console.log("v127")\n'.repeat(50)) },
+      { name: 'migrate-v127/迁移说明.md', data: Buffer.from('# 迁移说明\n中文内容。\n') },
+      { name: 'migrate-v127/导出训练录像.cmd', data: Buffer.from('@echo off\r\n') },
+    ]
+    const zip = buildStoredZip(entries)
+    const parsed = listZipEntries(Buffer.from(zip))
+    expect(parsed.map(entry => entry.name).sort()).toEqual(entries.map(entry => entry.name).sort())
+    for (const entry of entries) {
+      const zipEntry = parsed.find(candidate => candidate.name === entry.name)
+      expect(zipEntry).toBeDefined()
+      expect(readZipEntry(Buffer.from(zip), zipEntry!).equals(entry.data)).toBe(true)
+    }
+  })
+
+  it('确定性：同一输入两次构建字节一致（可复现发布产物）', () => {
+    const entries = [{ name: 'migrate-v127/a.txt', data: Buffer.from('same bytes') }]
+    expect(Buffer.compare(buildStoredZip(entries), buildStoredZip(entries))).toBe(0)
+  })
+
+  it('非法条目名（反斜杠/遍历）拒绝（安全门，对齐 safeArchiveEntryName 口径）', () => {
+    expect(() => buildStoredZip([{ name: 'migrate-v127\\a.txt', data: Buffer.from('x') }])).toThrow()
+    expect(() => buildStoredZip([{ name: '../escape.txt', data: Buffer.from('x') }])).toThrow()
+  })
+})
+
+describe('PORT-UPD-01 migrate-v127 目录收集', () => {
+  it('按 migrate-v127/<相对路径>（正斜杠）收集全部文件，内容逐字节等于源文件', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'migrate-zip-'))
+    try {
+      const dist = join(root, 'dist', 'migrate-v127')
+      await mkdir(join(dist, 'nested'), { recursive: true })
+      await writeFile(join(dist, 'export-v127.cjs'), 'BUNDLED-TOOL')
+      await writeFile(join(dist, '迁移说明.md'), '迁移说明内容')
+      await writeFile(join(dist, 'nested', 'deep.txt'), 'deep')
+      const entries = await collectMigrateZipEntries(dist)
+      expect(entries.map(entry => entry.name).sort()).toEqual([
+        'migrate-v127/export-v127.cjs',
+        'migrate-v127/nested/deep.txt',
+        'migrate-v127/迁移说明.md',
+      ])
+      const byName = new Map(entries.map(entry => [entry.name, entry.data]))
+      expect(byName.get('migrate-v127/export-v127.cjs')!.toString()).toBe('BUNDLED-TOOL')
+      expect(byName.get('migrate-v127/迁移说明.md')!.toString()).toBe('迁移说明内容')
+      expect(byName.get('migrate-v127/nested/deep.txt')!.toString()).toBe('deep')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })

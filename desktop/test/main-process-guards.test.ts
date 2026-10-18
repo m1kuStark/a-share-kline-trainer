@@ -87,7 +87,7 @@ describe('UPD-QUIT-TYPEERROR-GUARD: 退出路径 undefined error 形态守卫（
     for (const marker of [
       'const DEV_WINDOW_URL',
       'registerArchiveIpc(',
-      // UIUX-release 2026-10-16：registerMigrationIpc( 已随 v1.2.7 迁移退役移除，不再列入标记
+      'registerMigrationIpc(',
       'app.requestSingleInstanceLock',
       'app.whenReady',
     ]) {
