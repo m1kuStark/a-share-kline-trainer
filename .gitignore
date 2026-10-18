@@ -20,3 +20,4 @@ desktop/release/
 tools/diagnostics/**/Kline-Diagnostic-*.txt
 .control/
 desktop/release2/
+output-*/
