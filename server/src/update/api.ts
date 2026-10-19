@@ -16,7 +16,7 @@ import type { AppConfig } from '../config.js'
 import { CN_MIRROR_BASE, fetchUpdateManifest, resolveManifestPlan, resolveManifestUrl, type ManifestFetchText, type ManifestPlanEntry, type UpdateManifest } from './manifest.js'
 import { readUpdateSourceSetting, writeUpdateSourceSetting, parseUpdateSourceSetting } from './update-source.js'
 import { safeGetText, safeRequest } from './safe-http.js'
-import { isBusyUpdateState, readUpdateStatus, reconcileUpdateStatus, writeUpdateStatus } from './status.js'
+import { isBusyUpdateState, readUpdateStatus, reconcileUpdateStatus, resolveStaleBusyMs, writeUpdateStatus } from './status.js'
 import type { UpdatePlan } from './updater-core.js'
 import { APP_ROOT, compareVersions, serverVersion } from './version.js'
 import { verifyZipArtifact } from './zip.js'
@@ -155,6 +155,8 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
   const manifestFetch = options.manifestFetch ?? defaultManifestFetch
   const downloadFetch = options.downloadFetch ?? defaultDownloadFetch
   const log = options.log ?? console
+  // UPD-BUSY-HEAL-01：陈旧 busy 判定阈值（env 可覆盖，非法值回默认——fail-closed）
+  const staleBusyMs = resolveStaleBusyMs(env)
 
   async function resolvePlan(): Promise<ManifestPlanEntry[]> {
     if (options.manifestUrl) return [{ url: options.manifestUrl, source: 'env' }]
@@ -264,7 +266,9 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
   // ===== GET /api/update/status =====
   app.get('/api/update/status', async () => {
     const currentVersion = serverVersion(packageRoot)
-    const record = await reconcileUpdateStatus(config.dataDir, currentVersion)
+    // UPD-BUSY-HEAL-01：读即 reconcile——陈旧 busy（更新器被杀/断电残留）就地复位 failed，
+    // 轮询方看到人话原因而非永远卡在进行中；新鲜 busy 原样返回。
+    const record = await reconcileUpdateStatus(config.dataDir, currentVersion, { staleBusyMs, log })
     if (!record) {
       return { state: 'idle' as const, progress: null, error: null, attemptId: null, fromVersion: null, targetVersion: null, updatedAt: null }
     }
@@ -322,7 +326,12 @@ export async function registerUpdateApi(app: FastifyInstance, config: AppConfig,
     if (options.getActiveTraining?.()) {
       return reply.code(409).send({ error: 'ACTIVE_TRAINING', message: '有进行中的训练，结束训练（结算或放弃）后再更新' })
     }
-    const existing = await reconcileUpdateStatus(config.dataDir, currentVersion)
+    // UPD-BUSY-HEAL-01（UPD-STALE-BUSY-SELFHEAL）：reconcile 先判陈旧——busy 态且
+    // updatedAt 超阈值（无活跃 attempt：activeAttempt 内存守卫在前覆盖本进程内进行中
+    // 的下载/校验）→ 就地复位 failed（人话原因落日志），本请求继续走正常受理流程
+    // （同一请求内自动重试放行，用户看到 202 而非 409）；存活到这里的 busy＝新鲜
+    // 真 busy，仍按 UPDATE_IN_PROGRESS 守卫拒绝。
+    const existing = await reconcileUpdateStatus(config.dataDir, currentVersion, { staleBusyMs, log })
     if (activeAttempt || (existing && isBusyUpdateState(existing.state))) {
       return reply.code(409).send({ error: 'UPDATE_IN_PROGRESS', message: '已有一个更新流程在进行中，请通过更新状态查看进度' })
     }
