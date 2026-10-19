@@ -75,10 +75,21 @@ import {
   resolveInstallActionOnExit,
   resolveUpdateChannel,
   resolveUpdateFeed,
+  type DesktopUpdateController,
   type DesktopUpdateEvent,
   type DesktopUpdateNotice,
   type DesktopUpdaterAdapter,
 } from './desktop-updates.js'
+import {
+  buildInstallIntentMarker,
+  clearUpdateIntentMarker,
+  persistUpdateIntentMarker,
+  persistUpdateIntentMarkerSync,
+  readUpdateIntentMarker,
+  readUpdateIntentMarkerSync,
+  runUpdateIntentBootValidation,
+  updateIntentNoUpdateMessage,
+} from './update-intent.js'
 import { adaptElectronUpdater, defaultDesktopUpdater } from './update-adapter.js'
 import { createFeedFallbackAdapter, readUpdateSourceSetting, resolveDesktopFeedPlan } from './cn-feed.js'
 import { registerUpdateIpc } from './update-ipc.js'
@@ -219,6 +230,15 @@ let migrationDatabasePath: string | null = null
 let installPendingUpdate = false
 /** PORT-UPD-01：便携自更新 staging 所在数据目录（IPC 注册先于启动；bootServerAndOpen 解析后回填） */
 let portableUpdateDataDir: string | null = null
+// UPD-NSIS-INTENT-RETRY（冷审 P1-2）：更新意图标记（<dataDir>/update-intent.json）所在数据
+// 目录——bootServerAndOpen 解析后回填（先于启动校验消费）。
+let updateIntentDataDir: string | null = null
+/** UPD-NSIS-INTENT-RETRY：排空安装分支写标记的目标版本（controller downloaded 事件捕获） */
+let pendingInstallVersion: string | null = null
+/** UPD-NSIS-INTENT-RETRY：自愈重走链单发守卫（同一启动只重触发一次，不与 boot 检查叠加重复） */
+let updateIntentRetryTriggered = false
+/** UPD-NSIS-INTENT-RETRY：更新控制器引用（setupUpdateChannel 创建；启动校验静默重走链复用既有编排） */
+let updateControllerRef: DesktopUpdateController | null = null
 /** 更新事件下发：窗口已销毁/未建时丢弃并日志（下载可在窗口生命周期外进行） */
 function sendUpdateEvent(event: DesktopUpdateEvent): void {
   const win = mainWindow
@@ -517,7 +537,11 @@ async function setupUpdateChannel(): Promise<void> {
   const controller = createDesktopUpdateController({
     adapter,
     getCurrentVersion: () => app.getVersion(),
-    sendEvent: sendUpdateEvent,
+    // UPD-NSIS-INTENT-RETRY：捕获 downloaded 目标版本——排空安装分支写标记的目标来自此处
+    sendEvent: event => {
+      if (event.type === 'downloaded') pendingInstallVersion = event.version
+      sendUpdateEvent(event)
+    },
     // 下载完成 → 排空退出管线（drain.prepare(allowActiveTraining:true)→shutdown→exit 分支安装）
     requestInstallWithDrain: () => {
       installPendingUpdate = true
@@ -527,6 +551,8 @@ async function setupUpdateChannel(): Promise<void> {
     // DL-HANG-01：下载停滞看门狗阈值（90s 缺省；env TRAINER_DESKTOP_DL_STALL_MS 可注入覆盖）
     stallTimeoutMs: resolveDownloadStallTimeoutMs(process.env),
   })
+  // UPD-NSIS-INTENT-RETRY：暴露控制器引用给启动校验的静默重走链（复用既有编排与守卫）
+  updateControllerRef = controller
   registerUpdateIpc({
     ipcMain,
     controller,
@@ -553,8 +579,9 @@ async function setupUpdateChannel(): Promise<void> {
     // CN-FEED-01：boot 检查的逐源尝试记录（镜像/GitHub 哪个成功）落观测缝，W5 真机判断用
     bootCheckSources: updateFeedAttemptsRef === null ? undefined : () => updateFeedAttemptsRef?.lastAttempts(),
     // UPD-NOTIFY-01：boot 自动检查发现新版→缓存＋即时投递（加载完成前被丢时由
-    // did-finish-load 补投）
+    // did-finish-load 补投）；UPD-NSIS-INTENT-RETRY：自愈重走进行中不再重复呈现更新提示
     onBootNotice: notice => {
+      if (updateIntentRetryTriggered) return
       bootUpdateNotice = notice
       deliverBootUpdateNotice()
     },
@@ -692,6 +719,8 @@ async function bootServerAndOpen(): Promise<void> {
   // 临时副本旁——传入解析后的目标（cleanup 内部还会按 env fail-closed 复核）；
   // 解析失败仅记日志跳过清理（残留留待下次启动），绝不阻断启动。
   portableUpdateDataDir = config.dataDir
+  // UPD-NSIS-INTENT-RETRY：意图标记落点跟生效数据目录（proceed 路径尾的启动校验消费）
+  updateIntentDataDir = config.dataDir
   try {
     const portableTargetExe = resolvePortableTargetExe(process.env, process.execPath)
     await cleanupPortableUpdateLeftovers({ env: process.env, dataDir: config.dataDir, exePath: portableTargetExe })
@@ -811,6 +840,10 @@ async function bootServerAndOpen(): Promise<void> {
           .catch(error => mainLog.error('[desktop] 一键迁移录像注入异常（下次启动重试）:', error))
       })
     }
+    // UPD-NSIS-INTENT-RETRY：启动校验（NSIS 静默安装中断自愈）——proceed 路径至此服务已起、
+    // 窗口已建（reuse 提前返回路径不经手：另一实例在跑，更新退出语义不属本进程）；fire-and-forget，
+    // 内部全捕获绝不阻断启动。
+    runNsisIntentBootValidation()
   } finally {
     if (lockHeld) {
       lockHeld = false
@@ -837,6 +870,85 @@ async function bootstrap(): Promise<void> {
     dialog.showErrorBox('K线训练器启动失败', `${error instanceof Error ? error.message : String(error)}\n\n详细信息见控制台输出。`)
     app.quit()
   }
+}
+
+// ===== UPD-NSIS-INTENT-RETRY（冷审 P1-2，用户 2026-10-19 批复 2）：NSIS 安装中断自愈 =====
+// 现状缺口（冷审 A6/A7）：NSIS 静默安装中断后应用停在旧版本且无人知晓——repo 无观测无恢复。
+// 修复面：quitAndInstall 发起前落意图标记；下次启动三分支校验（无标记照旧／版本符清标记／
+// 版本不符静默重走更新链，有界重试 3 次后呈现人话指引）。决策与编排全在 update-intent.ts
+// （vitest 直测）；本段只做 Electron/主进程粘合。
+
+/**
+ * 排空安装分支的标记写入（quitAndInstall 发起前同步原子落盘——进程随即退出，异步写不
+ * 保证完成）。目标版本来自 controller downloaded 事件捕获；同目标续装保留计数（防无限
+ * 循环）。标记是自愈保护面不是安装前置：写失败仅降级日志，绝不阻断安装。
+ */
+function writeInstallIntentMarker(): void {
+  const dataDir = updateIntentDataDir
+  const target = pendingInstallVersion
+  if (!dataDir || !target) {
+    mainLog.warn(`[desktop] update intent marker skipped (dataDir ${dataDir ? 'ok' : 'missing'}, target ${target ?? 'missing'}); self-heal degraded for this install`)
+    return
+  }
+  try {
+    const previous = readUpdateIntentMarkerSync(dataDir)
+    persistUpdateIntentMarkerSync(dataDir, buildInstallIntentMarker({
+      fromVersion: app.getVersion(),
+      toVersion: target,
+      startedAt: new Date().toISOString(),
+      previous,
+    }))
+  } catch (error) {
+    mainLog.error('[desktop] update intent marker write failed (self-heal degraded):', error instanceof Error ? error.message : String(error))
+  }
+}
+
+/**
+ * 静默重走更新链：复用既有 controller 编排（checkForUpdates→downloadAndInstall——后者内含
+ * checked 守卫、停滞看门狗、下载完成→排空退出管线，安装仍必经 resolveInstallActionOnExit）。
+ * 单发守卫＋清缓存通知＝与 UPD-BOOT-AUTO-CHECK 叠加时同一启动只重触发一次、不重复弹更新
+ * 流程。链内失败经既有 error 事件面呈现（不改诊断按钮冻结字段集）；标记计数保留，下轮启动
+ * 按预算续试直至上界。
+ */
+async function runSilentUpdateRetryChain(): Promise<void> {
+  if (updateIntentRetryTriggered) return
+  const controller = updateControllerRef
+  if (!controller) return
+  updateIntentRetryTriggered = true
+  bootUpdateNotice = null
+  const view = await controller.checkForUpdates()
+  if (view.error !== null) {
+    sendUpdateEvent({ type: 'error', message: view.error })
+    return
+  }
+  if (!view.updateAvailable) {
+    // 目标版本已被更新源撤下等：人话说明后停手（计数已在标记内，下轮启动按预算裁决）
+    sendUpdateEvent({ type: 'error', message: updateIntentNoUpdateMessage() })
+    return
+  }
+  const outcome = await controller.downloadAndInstall()
+  if (!outcome.ok) {
+    mainLog.error('[desktop] silent update retry download failed (bounded retries continue on next launch):', outcome.error)
+  }
+}
+
+/**
+ * 启动校验粘合：仅 packaged 通道放行（dev 不打更新源自愈，与 shouldAutoCheckOnBoot 同口径）；
+ * fire-and-forget（runUpdateIntentBootValidation 内部全捕获，绝不阻断启动）。
+ */
+function runNsisIntentBootValidation(): void {
+  if (updateChannelKind !== 'packaged') return
+  const dataDir = updateIntentDataDir
+  if (!dataDir) return
+  void runUpdateIntentBootValidation({
+    readMarker: () => readUpdateIntentMarker(dataDir),
+    persistMarker: marker => persistUpdateIntentMarker(dataDir, marker),
+    clearMarker: () => clearUpdateIntentMarker(dataDir),
+    getCurrentVersion: () => app.getVersion(),
+    runUpdateChain: runSilentUpdateRetryChain,
+    sendEvent: message => sendUpdateEvent({ type: 'error', message }),
+    logger: mainLog,
+  })
 }
 
 // ===== 优雅退出（DESKTOP-GRACEFUL-QUIT-DRAIN / DRAIN-TIMEOUT-FORCE / QUIT-NO-ORPHAN） =====
@@ -877,6 +989,9 @@ function dispatchQuitEvent(event: Parameters<typeof nextQuitState>[1]): void {
         installPendingUpdate = false
         sendUpdateEvent({ type: 'installing' })
         mainLog.log('[desktop] drained; installing downloaded update (quitAndInstall)')
+        // UPD-NSIS-INTENT-RETRY：quitAndInstall 发起前落更新意图标记（同步原子写）——中断后
+        // 下次启动据此自愈重走更新链（用户无感）。
+        writeInstallIntentMarker()
         // UPD-QUIT-TYPEERROR-GUARD：适配器/底层（electron-updater 等）同步抛错不得逃逸出
         // exit 分支——逃逸＝异步链上的未捕获异常（teardown 窗口内即崩溃弹窗形态）或退出
         // 悬挂。就地记录并回落普通退出（更新留缓存可重试），绝不带病悬挂。
