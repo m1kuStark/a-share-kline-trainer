@@ -2,6 +2,8 @@
 
 Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装在 [src/api.ts](./src/api.ts)，训练交易和防未来口径由 [训练规格](../docs/specs/training/rules.md) 定义。
 
+成绩单的逐笔成交表由 [HistoryReport.vue](src/components/HistoryReport.vue) 展示；窄窗时仅表格区域横向滚动，保留全部列，可聚焦后用方向键查看，不能靠裁掉数值消除页面溢出。
+
 ```json
 {"kind":"module","source_paths":["web/**"],"canonical_docs":["web/README.md","web/src/components/README.md","web/src/views/README.md"]}
 ```

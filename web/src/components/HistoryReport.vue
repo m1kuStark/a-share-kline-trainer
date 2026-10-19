@@ -245,7 +245,8 @@ function sideText(side: 'buy' | 'sell'): string {
       <span class="report-curve-refresh" :class="{ pending: comparisonLoading && chartModel }" role="status">{{ comparisonLoading && chartModel ? '更新同期指数…' : '' }}</span>
 
       <h2>逐笔成交</h2>
-      <table v-if="report.trades.length" class="report-trades">
+      <div v-if="report.trades.length" class="report-trades-scroll" role="region" aria-label="逐笔成交明细" tabindex="0">
+      <table class="report-trades">
         <thead>
           <tr><th>序号</th><th>日期</th><th>买卖</th><th>价格</th><th>股数</th><th>金额</th><th>费用</th></tr>
         </thead>
@@ -261,6 +262,7 @@ function sideText(side: 'buy' | 'sell'): string {
           </tr>
         </tbody>
       </table>
+      </div>
       <p v-else class="report-empty">零成交：初始资金按结算日持久权益原样呈现，未虚构平仓。</p>
 
     </template>

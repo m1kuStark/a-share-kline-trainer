@@ -1,0 +1,364 @@
+{
+  "count": 89,
+  "matched": true,
+  "scope": "Runtime JS/CJS/JSON and web assets; type declarations and source maps not required for runtime packaging",
+  "nonRuntimeCount": 130,
+  "files": [
+    {
+      "path": "web\\dist\\assets\\favicon-R5ncF9Bv.svg",
+      "sha256": "3a1e1cc588cf4b85a24a89e203e62382b46399a48781d69dd9d64ffbf89d94f8"
+    },
+    {
+      "path": "web\\dist\\assets\\index-BM24MDXJ.css",
+      "sha256": "07430eaace14d6f2338179171102a6bf84fcec6f074df42a69453ac708cdd554"
+    },
+    {
+      "path": "web\\dist\\assets\\index-BOnC5nmk.js",
+      "sha256": "8b19d828eee0dc18029bf0d7903aae145fbb63c6daf52bad3d0604df307d80fe"
+    },
+    {
+      "path": "web\\dist\\index.html",
+      "sha256": "b3c08bc610b09f5578b656b5f47974d3c2f744345b7a73868faf60179a83fe84"
+    },
+    {
+      "path": "server\\dist\\api.js",
+      "sha256": "f8371ad1e6f949ac51e198d020d1e9eb431fd09907f58bf07b03007d646317fe"
+    },
+    {
+      "path": "server\\dist\\config.js",
+      "sha256": "7e7a870c400c7ab4bc945f84ab45337b5473ef6266c6f1a8cef7a4f945dd175d"
+    },
+    {
+      "path": "server\\dist\\data\\calendar.js",
+      "sha256": "dae64bd338314306c330b23a9b0386261b1942858f9bdf8b091de6ed92f5069a"
+    },
+    {
+      "path": "server\\dist\\data\\freshness.js",
+      "sha256": "007631cef61e39f25241b91121258a9840062578a298af480f05d115e459534c"
+    },
+    {
+      "path": "server\\dist\\data\\history\\fingerprint.js",
+      "sha256": "7e74c5f4eef045cfcd9a9a24bba55e18ab7a3c9371b112ec39d5d32183153655"
+    },
+    {
+      "path": "server\\dist\\data\\history\\protect.js",
+      "sha256": "93ca4818b1fbf9aee701a866c8953a6cbe7f7d1d7ef9c0187a1af5a2a7026b27"
+    },
+    {
+      "path": "server\\dist\\data\\history\\store.js",
+      "sha256": "07d9b2d93dab971c6f40cb7a93a5b0ad4c2262b5844e64222193f5eb4ae170d9"
+    },
+    {
+      "path": "server\\dist\\data\\reader.js",
+      "sha256": "abcf9e63aaebd7e11078a355c6c2d788d10991c63e361d2ffd1c74c3f672dc11"
+    },
+    {
+      "path": "server\\dist\\data\\refresh.js",
+      "sha256": "442d7b3bfadeaeba73092cd91db286252d28ac9782b20c40b0d7726da7b3094f"
+    },
+    {
+      "path": "server\\dist\\data\\selection.js",
+      "sha256": "292a8e9675cc918a8afdf8f2740f3722c7c6f31e573f22f99e56195a5b31658d"
+    },
+    {
+      "path": "server\\dist\\data\\snapshot.js",
+      "sha256": "62b1fdec2bc24bc1f5fc0c2893c097b34912466149ece1cbb81b15adaba4658d"
+    },
+    {
+      "path": "server\\dist\\data\\source.js",
+      "sha256": "892b7a25766706d4e28b3f9155a95d9e00f754e0d5c23dc4fa0c298fb5284c36"
+    },
+    {
+      "path": "server\\dist\\data\\tdxSource.js",
+      "sha256": "6cbfe3de62989ce28ae097049ecd65e3a9381fd4e4113c46b97eddb14ce65ee7"
+    },
+    {
+      "path": "server\\dist\\db.js",
+      "sha256": "db15fdb42f73537305f23254d4d93557d272ec30e0972eb13ee8ad448e9ecba1"
+    },
+    {
+      "path": "server\\dist\\drawings.js",
+      "sha256": "705a36b80d837345590c149c94054fb9818ff8c7227b52336b6edebdcfcffd22"
+    },
+    {
+      "path": "server\\dist\\index.js",
+      "sha256": "8b16c47695bb55c34178d004d7e0eeea276d763f774e879e5925f1e9c4d39e69"
+    },
+    {
+      "path": "server\\dist\\recording-context.js",
+      "sha256": "85d72bde0f9b544a35c0fd2837b3282109da3360355fff8f4d057071d2501e6e"
+    },
+    {
+      "path": "server\\dist\\settings\\app.js",
+      "sha256": "08e74fc1535713d7501e73765e045cc88057121dd95ab455f850fba67bdba865"
+    },
+    {
+      "path": "server\\dist\\settings\\creation-defaults.js",
+      "sha256": "321606a6c92ab61e14caa5aae5f35a7d1e5b56964f1967e4bcbea057d2a1fd88"
+    },
+    {
+      "path": "server\\dist\\settings\\data-dir.js",
+      "sha256": "73f7d8c8eaaba9b936016341c35021f2a15da6264a62bee3c3ad607cfe5fff03"
+    },
+    {
+      "path": "server\\dist\\settings\\shortcuts.js",
+      "sha256": "b566636121fdcf2ed6a884696392e33f4998eb591f072701f5f00548b9efba0d"
+    },
+    {
+      "path": "server\\dist\\settings\\tdx-path.js",
+      "sha256": "401ef78345a56523005bac39dec5f8ca3725fdbb6925cee41ca3079486986869"
+    },
+    {
+      "path": "server\\dist\\settings\\training.js",
+      "sha256": "fd3ecaf3b4bb06084a3edff90e75962a7fddce6ea0185301fed143f92877c60c"
+    },
+    {
+      "path": "server\\dist\\setup\\control-api.js",
+      "sha256": "fd3098720ce8f4c48c4fecc0286cd39711a5fce93178370c6def5984bf3ed481"
+    },
+    {
+      "path": "server\\dist\\setup\\control-guard.js",
+      "sha256": "f6ddb236fba6c283fb52c864197c916de07780398ac7c286cbc9edd5e1e68a5a"
+    },
+    {
+      "path": "server\\dist\\setup\\drain-controller.js",
+      "sha256": "95fde1f31ced5205a29846914d13f34e0605d44b76a3c6502dcd9d06548f2cfe"
+    },
+    {
+      "path": "server\\dist\\setup\\restart-plan.js",
+      "sha256": "27e1b0b593e2ffa3b3b5b21280db640b72be6603fe936d333cd3c67adff4a346"
+    },
+    {
+      "path": "server\\dist\\setup\\saved-choice.js",
+      "sha256": "2758742e2abdc9e791bc6f0b66eff80ffc6456b43801319a1ed174e99892c61c"
+    },
+    {
+      "path": "server\\dist\\tdx\\adjustment-cache.js",
+      "sha256": "dec49bbe62d4cb19ae38f661fb2d331d2ee233769a65999b96ad66c078c2021e"
+    },
+    {
+      "path": "server\\dist\\tdx\\candidate-diagnostics.js",
+      "sha256": "ea33f4492333ab181f46f3d1412403367babdee210b4ff62240143227b2903de"
+    },
+    {
+      "path": "server\\dist\\tdx\\catalog.js",
+      "sha256": "fcd64899b9f5274faa31d9103116edb6c4ec1f3a63a6dd70adb3f7aa6096973d"
+    },
+    {
+      "path": "server\\dist\\tdx\\dayfile.js",
+      "sha256": "138435e3a5d61d6780f9b66594ebc34018fa5b8b15a5156473766b4b000194ee"
+    },
+    {
+      "path": "server\\dist\\tdx\\discover.js",
+      "sha256": "ad146a2fdb44c7efc1105b4a41a04904516c3ed3d3e5a704679b2932c24f2618"
+    },
+    {
+      "path": "server\\dist\\tdx\\gbbq.js",
+      "sha256": "e045b461017e2fb338c36ee775fca54b8cbd9207599bf01cf5ddbc5249e02ef0"
+    },
+    {
+      "path": "server\\dist\\tdx\\industry.js",
+      "sha256": "ec8244111cfcf397fab2d1f78acb9ac86f57b72a59d72cea0c5a93fdbc384818"
+    },
+    {
+      "path": "server\\dist\\tdx\\inspect.js",
+      "sha256": "5b8cc45776e1952809f9658ff063f1ea7097dd1c1418bf2ba4773a4895bdf6b6"
+    },
+    {
+      "path": "server\\dist\\tdx\\kline.js",
+      "sha256": "2c45df9f7a48f7673b89702467ec858a5a921f100db77622205832cffd8b785b"
+    },
+    {
+      "path": "server\\dist\\tdx\\names.js",
+      "sha256": "dbe3731862f5348d73165776773876a65683dd457aa8236ec7308d41e4098f1f"
+    },
+    {
+      "path": "server\\dist\\tdx\\process-clues.js",
+      "sha256": "9125e14939fe117cc26607ac1c0e205a98a4d8cb079e17258c730b654aa14a9b"
+    },
+    {
+      "path": "server\\dist\\tdx\\stock-search.js",
+      "sha256": "5a6d2a2b2e41edee2561c62555bf3ed839d6799c1eef45b09d59d9bf96e4855b"
+    },
+    {
+      "path": "server\\dist\\tdx\\stocks.js",
+      "sha256": "0657e5ac5fd303c1acb6775a81b0bbcc5d603c8a999995ef9b3e3b240ffc3358"
+    },
+    {
+      "path": "server\\dist\\tdx\\symbol.js",
+      "sha256": "9999db4c8408605089de3e8147e1aaa62f3b915128eebae2f670f5cfa07f0fef"
+    },
+    {
+      "path": "server\\dist\\train\\account.js",
+      "sha256": "77aee0925f758f95110d05c1a50ea75c6ee48ec21152e9fb8039a7e3c65dda9d"
+    },
+    {
+      "path": "server\\dist\\train\\benchmark.js",
+      "sha256": "5e3ca7dd36cfb13e1afaa2f5212d3ed2246f8b3de2663ed190f9531c418d7411"
+    },
+    {
+      "path": "server\\dist\\train\\drawing-price-basis.js",
+      "sha256": "4ff360884ad9cf924985e934b2c48c236ea97823bad3f5a033f9ba8ff5a672fe"
+    },
+    {
+      "path": "server\\dist\\train\\engine.js",
+      "sha256": "784ed4c289807ef6c766d15a30e64d55c085ca6a0791aa9d65cdd3b80dcaac82"
+    },
+    {
+      "path": "server\\dist\\train\\equity-comparison.js",
+      "sha256": "f3138356f1a3569244d84055efdae1835340212da8664ee1200535065e3216c7"
+    },
+    {
+      "path": "server\\dist\\train\\history-delete.js",
+      "sha256": "d0865c868541cdeb23cda6485ee623898fbffd06e75828c6642c905743e4989b"
+    },
+    {
+      "path": "server\\dist\\train\\history-report.js",
+      "sha256": "87698757e7d893230f98745d26bd01df26b34c900c5dd357b3cbf746280cf173"
+    },
+    {
+      "path": "server\\dist\\train\\metrics.js",
+      "sha256": "0d67a0385eae6be38f39ced0ad3bc350ca92bcca126104f3c2ab0390b042166c"
+    },
+    {
+      "path": "server\\dist\\train\\random-mode.js",
+      "sha256": "a9d68bcbb06ab28012e27e25b791b42a5046f99c80ad6e6b123c32b7f603a32f"
+    },
+    {
+      "path": "server\\dist\\train\\range.js",
+      "sha256": "6a950debe841e4e62e5f9f71186417861a3075b2b7cf95062b106d56433c5cb4"
+    },
+    {
+      "path": "server\\dist\\train\\rankings.js",
+      "sha256": "36042482d30cf84d231da17a7223785465f96a761439e9dfafb4da81cd9fa9a1"
+    },
+    {
+      "path": "server\\dist\\train\\rules.js",
+      "sha256": "d17c186212b9fac1612292a9b8785a1f2c4212d29254e171b2d5bffc68d25cde"
+    },
+    {
+      "path": "server\\dist\\train\\trade-notes.js",
+      "sha256": "fa1572238b5574821a15d13da61ca901b8b85dea90d699b6a484f12ca37b6e36"
+    },
+    {
+      "path": "server\\dist\\update\\api.js",
+      "sha256": "1d426bc35321fa3598b12b55dd53290abe85808c7c42ab6b9b269a9e332faf36"
+    },
+    {
+      "path": "server\\dist\\update\\manifest.js",
+      "sha256": "d4613e174c3182567777e6092a0f721843c088c64feb2b62796da9f97d1d48cb"
+    },
+    {
+      "path": "server\\dist\\update\\safe-http.js",
+      "sha256": "581bdcdacc49dd6ef2af0a7a36988b2f15f53eda240ab7a887b4b1a2191b8d80"
+    },
+    {
+      "path": "server\\dist\\update\\status.js",
+      "sha256": "e148741478f0058541ad8629aff64eea6366407429c3222ce7bd7c850fcc5fc0"
+    },
+    {
+      "path": "server\\dist\\update\\update-source.js",
+      "sha256": "f0e03aa3847aa97b5f855af6c3f2e8fd312edc894e60d1cb4d54941ae388ef9e"
+    },
+    {
+      "path": "server\\dist\\update\\updater-core.js",
+      "sha256": "7d91052b4986bbcf9283cc9065613065a9fb11f8c0f42390965cf91d34728a1d"
+    },
+    {
+      "path": "server\\dist\\update\\updater.js",
+      "sha256": "93cf02f32457aacc8ef148c475c53d88c421de27caede6ce2da081343e8787d0"
+    },
+    {
+      "path": "server\\dist\\update\\version.js",
+      "sha256": "93306d7dd90d2173f62490d1f730e5456edd3f785ed338cffaff044b495b29b8"
+    },
+    {
+      "path": "server\\dist\\update\\zip.js",
+      "sha256": "d66619e42a49b7bbf5edfccc27a67294a404c18620eb707c4963ce708097c346"
+    },
+    {
+      "path": "server\\dist\\verification.js",
+      "sha256": "fbd4f7ceb63c4b5483b9f300ace4191144a54eda14e6c4e0cba9c49bad52d5d2"
+    },
+    {
+      "path": "desktop\\dist\\archive-recording.js",
+      "sha256": "4fe475bbf20d98ef2450572c4193af2d8f753bec4d1dcecfc8c11bdd71d22d47"
+    },
+    {
+      "path": "desktop\\dist\\boot-plan.js",
+      "sha256": "517241d844d5282179569d1b90d512b8470647b5cf63dcec247b654d70f21185"
+    },
+    {
+      "path": "desktop\\dist\\cn-feed.js",
+      "sha256": "076df6becc422dbdace51894da37f4928824dbbc4d61fc0be0a351b971cf4ca0"
+    },
+    {
+      "path": "desktop\\dist\\coexist-guard.js",
+      "sha256": "2338c4856bf077fb1543399f32d68dc5d2c0b61ac3ca6b35b25974be82348313"
+    },
+    {
+      "path": "desktop\\dist\\data-home.js",
+      "sha256": "286f9f6cb9d5e06c28d9353bdcd76161896dd437eaea9cdade488a135f5a486e"
+    },
+    {
+      "path": "desktop\\dist\\desktop-config.js",
+      "sha256": "da99c1b9419513b1d2b74bb047e0e36c8f9768f7c81a0173f374c8e715431e42"
+    },
+    {
+      "path": "desktop\\dist\\desktop-updates.js",
+      "sha256": "b877831781434342faa9ae2e10ddb678618b72522a639a5ba9163bb9ebb7ab6d"
+    },
+    {
+      "path": "desktop\\dist\\diag-log.js",
+      "sha256": "b9919e715201567b9b2bc3814cd1835ced3f681242570c97867a8363ad4eb045"
+    },
+    {
+      "path": "desktop\\dist\\diagnostics.js",
+      "sha256": "39d057902686eb270008c6a85f0c0a6389c3a3df38fbd38e784cf6abc96e43b7"
+    },
+    {
+      "path": "desktop\\dist\\external-links.js",
+      "sha256": "0131384760a7e0729362c6ad7f9e4b40502014923c2c60f7712e0163d31e85c0"
+    },
+    {
+      "path": "desktop\\dist\\main.js",
+      "sha256": "feabfb977b2469ae02837ec5a740416f0331e8b001b5e4557645534d22d3c71a"
+    },
+    {
+      "path": "desktop\\dist\\mig-import.js",
+      "sha256": "00ba2b8922fe96db17c7251aea09b866e275dfb79efe0599316ba1505bc8e766"
+    },
+    {
+      "path": "desktop\\dist\\port-conflict.js",
+      "sha256": "5468909c1ac922f4db45c51ed0ba465210a524ebabb4c3019213e98c6f662b18"
+    },
+    {
+      "path": "desktop\\dist\\portable-updater.js",
+      "sha256": "083c98eaf680e2c43bfa6effb2d28d853569ad9ff4aa10ca81ef4449de50a553"
+    },
+    {
+      "path": "desktop\\dist\\preload.cjs",
+      "sha256": "88ffd0f39dd59b13c8b0bb5c2d9df59f3a04d004cbc6dc6e473a2e60ac3f0e51"
+    },
+    {
+      "path": "desktop\\dist\\quit-state.js",
+      "sha256": "f793898824319ab361f3fdcfa6394f4d7cd83f6d5d0177e99ef9c2ce12f8e7c3"
+    },
+    {
+      "path": "desktop\\dist\\update-adapter.js",
+      "sha256": "caa78c4a99eb5ee46e79c72af99a1520dd5f2cfcd6ea25cc5b873d60a69185ac"
+    },
+    {
+      "path": "desktop\\dist\\update-intent.js",
+      "sha256": "2d6b261b110b9092b9b4d56a15391fe56557860b3c8de8f7b45b29388a02b7cc"
+    },
+    {
+      "path": "desktop\\dist\\update-ipc.js",
+      "sha256": "de0cfafdc3ec97554b0f70eaa7c536df72e8fe117bb24178e17a524d27289964"
+    },
+    {
+      "path": "desktop\\dist\\window-bounds.js",
+      "sha256": "bc93ab3ae4e612d6a2f4d302fd8d9acc6185f88cec887260045c068f8cd2ef8c"
+    }
+  ]
+}

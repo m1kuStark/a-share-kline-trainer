@@ -1,0 +1,77 @@
+{
+  "time": "2026-10-19T16:39:56.094Z",
+  "workspace": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\history-v127-jIiNqW",
+  "oldRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\builder-accept-old-v127\\kline-trainer-v1.2.7-windows-x64",
+  "tdxRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\run-54e0a9b3-4665-42f9-968a-a4eb5b78f13b\\tdx-snapshot",
+  "source": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\history-v127-jIiNqW\\old-data\\trainer.sqlite",
+  "target": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\history-v127-jIiNqW\\new-data\\trainer.sqlite",
+  "manifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\history-v127-jIiNqW\\训练历史迁移-20261020-003944\\迁移清单.json",
+  "sourceSha256": "a609e2856a4b943932f24fbecb378f21421eefbb97746455daef13464e806d18",
+  "oldId": 1,
+  "existingId": 1,
+  "importedId": 2,
+  "oldCounts": {
+    "trainings": 1,
+    "trades": 2,
+    "orders": 0,
+    "equityCurve": 2,
+    "positionEvents": 0,
+    "drawings": 1,
+    "tradeNotes": 1
+  },
+  "staged": {
+    "ok": true,
+    "requiresRestart": true,
+    "trainings": 1,
+    "counts": {
+      "trainings": 1,
+      "trades": 2,
+      "orders": 0,
+      "equityCurve": 2,
+      "positionEvents": 0,
+      "drawings": 1,
+      "tradeNotes": 1
+    },
+    "skipped": 0,
+    "importing": 1
+  },
+  "applied": {
+    "applied": true,
+    "imported": 1,
+    "skipped": 0
+  },
+  "repeatStage": {
+    "ok": true,
+    "requiresRestart": true,
+    "trainings": 1,
+    "counts": {
+      "trainings": 1,
+      "trades": 2,
+      "orders": 0,
+      "equityCurve": 2,
+      "positionEvents": 0,
+      "drawings": 1,
+      "tradeNotes": 1
+    },
+    "skipped": 1,
+    "importing": 0
+  },
+  "repeated": {
+    "applied": true,
+    "imported": 0,
+    "skipped": 1
+  },
+  "checks": [
+    "old API created settled training with buy/sell, note, drawing",
+    "source database unchanged",
+    "existing target rows and recording namespace preserved",
+    "imported training and children match original fields",
+    "repeat import adds zero records",
+    "current API reads migrated report, note and drawing"
+  ],
+  "backups": [
+    "trainer.sqlite.pre-migration-20261020-003955-2.bak",
+    "trainer.sqlite.pre-migration-20261020-003955.bak"
+  ],
+  "scope": "Real v1.2.7 binary + real exporter + production desktop migration functions + current API; packaged Electron verification is a separate receipt."
+}

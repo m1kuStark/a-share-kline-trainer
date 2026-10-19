@@ -421,7 +421,9 @@ body.dark .history-error { border-color: #8a6d1d; background: #2e2612; color: #d
 .report-grid strong { font-size: var(--font-size-lg); font-variant-numeric: tabular-nums; }
 .report-rule-tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
 .report-rule-tag { padding: 4px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: var(--surface-hover, #f4f8fa); color: var(--text-secondary, #51637a); font-size: var(--font-size-sm); }
-.report-trades { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.report-trades-scroll { max-width: 100%; overflow-x: auto; }
+.report-trades-scroll:focus-visible { outline: 2px solid var(--color-focus-ring, #5b72c9); outline-offset: 2px; }
+.report-trades { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .report-trades th, .report-trades td { padding: 7px 10px; border-bottom: 1px solid var(--surface-border, #dfe5eb); text-align: right; }
 .report-trades th:nth-child(-n+3), .report-trades td:nth-child(-n+3) { text-align: left; }
 .report-trades th { font-size: var(--font-size-xs); font-weight: 600; color: var(--text-secondary, #51637a); }

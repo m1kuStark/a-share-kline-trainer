@@ -16,11 +16,11 @@ NSIS候选：`output/uiux-package-final/desktop/release/kline-trainer-desktop-se
 
 | 层级 | 收据与结果 |
 |---|---|
-| 单元测试 | `npm test` 原生0，server1671+desktop241；[完整日志](unit-delivery.log)。首次旧进程异常等早期日志均保留。 |
-| 构建 | `npm run build`、`build:desktop:main`、`release:desktop`均原生0；[web](build-final.log)、[desktop](build-desktop-final.log)、本地`output/package-final.log`。 |
+| 单元测试 | `npm test` 原生0，server1671+desktop241；[完整日志](original-logs.zip)。首次旧进程异常等早期日志均保留。 |
+| 构建 | `npm run build`、`build:desktop:main`、`release:desktop`均原生0；[web](original-logs.zip)、[desktop](original-logs.zip)、本地`output/package-final.log`。 |
 | 业务API补验 | M2脚本24项检查0，见[M2报告](M2-e2e-report.md)；不替代全量journey。 |
 | 新UIUX 22项 | 最终源码上：e091的launcher4/settings4/training2；2bdcae9c的records8/shell3；8dbfff05的排行1。相应测试未漂移部分组成22项通过收据；不是一次全量22项绿色运行。 |
-| 矩阵与L2 | UIUX矩阵7行，covered7/open0/RED0，strict原生0；[绑定](binding-final.log)、[独立逐断言复核](L2-final.md)。核心变异仅paper_only；其他模块整表open未关闭。 |
+| 矩阵与L2 | UIUX矩阵7行，covered7/open0/RED0，strict原生0；[绑定](original-logs.zip)、[独立逐断言复核](L2-final.md)。核心变异仅paper_only；其他模块整表open未关闭。 |
 | root真实UI/包内渲染 | [主代理验收](root-validation.md)、[unpacked运行](packaged-runtime-final.json)；HTTP/preview/dist/asar四资源一致，实际最小内容1008×641。 |
 | 全量journey | 151过/30败/1跳过，native1；后续关闭13个原失败，仍17项未关闭。详见[回归债务](regression-debt.md)，不报告整版通过。 |
 | Skill文档 | 9份文档38链接校验0，正式Harness四源未变；[监督](supervision.md)。候选目录保留完整差异、来源与独立情境，未安装。 |
@@ -33,3 +33,7 @@ NSIS候选：`output/uiux-package-final/desktop/release/kline-trainer-desktop-se
 - 完整journey日志和trace位于各`.runs/run-<id>/artifacts`，wrapper日志在本目录。可视图片在`output/playwright/uiux-final-*`。不删除首次RED与准备失败。
 
 下一步由用户体验创建、训练、历史/排行与录像路径，确认呈现取舍；回归债务、安装/退出路径另行关闭后才具备发布条件。屏幕阅读器、Windows缩放、全应用200%文字、全WCAG符合未认证。
+
+## 2026-10-20 原始日志补存
+
+上表日志链接指向 `original-logs.zip`，内含原名 `unit-delivery.log`、`build-final.log`、`build-desktop-final.log`、`binding-final.log`。从原 UIUX 工作树逐字节归档，SHA256 见[补存收据](../BUILDER-ACCEPT-01/docs-repair-receipt.json)。这只恢复证据可达性，未重跑或改写 2026-10-17 结论。

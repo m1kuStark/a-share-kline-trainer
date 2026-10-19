@@ -1,0 +1,9 @@
+[
+  {
+    "path": "D:/tmp/wt-m2rand",
+    "branch": "refs/heads/task/M2-RANDOM-AXIS-01",
+    "unique_changes": [
+      "df6819e fix(random): M2-RANDOM-AXIS-01 揭示日期以真实 bar 交易日为锚（外推刻度不显示日期），纯函数抽出单元锁定（root 接手限额中断的 worker 收尾）"
+    ]
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "width": 368,
+  "scrollWidth": 368,
+  "overflowing": [
+    {
+      "tag": "TABLE",
+      "class": "report-trades",
+      "text": "序号日期买卖价格股数金额费用12026-09-01买入1299.56300¥389,868.00¥0.00",
+      "width": 421,
+      "scrollWidth": 421
+    },
+    {
+      "tag": "THEAD",
+      "class": "",
+      "text": "序号日期买卖价格股数金额费用",
+      "width": 421,
+      "scrollWidth": 421
+    },
+    {
+      "tag": "TR",
+      "class": "",
+      "text": "序号日期买卖价格股数金额费用",
+      "width": 421,
+      "scrollWidth": 421
+    },
+    {
+      "tag": "TH",
+      "class": "",
+      "text": "金额",
+      "width": 89,
+      "scrollWidth": 89
+    },
+    {
+      "tag": "TH",
+      "class": "",
+      "text": "费用",
+      "width": 51,
+      "scrollWidth": 51
+    },
+    {
+      "tag": "TBODY",
+      "class": "",
+      "text": "12026-09-01买入1299.56300¥389,868.00¥0.00",
+      "width": 421,
+      "scrollWidth": 421
+    },
+    {
+      "tag": "TR",
+      "class": "report-trade-row",
+      "text": "12026-09-01买入1299.56300¥389,868.00¥0.00",
+      "width": 421,
+      "scrollWidth": 421
+    },
+    {
+      "tag": "TD",
+      "class": "",
+      "text": "¥389,868.00",
+      "width": 89,
+      "scrollWidth": 89
+    },
+    {
+      "tag": "TD",
+      "class": "",
+      "text": "¥0.00",
+      "width": 51,
+      "scrollWidth": 51
+    }
+  ]
+}
