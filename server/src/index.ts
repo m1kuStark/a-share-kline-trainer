@@ -8,6 +8,7 @@ import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
 import { registerUpdateApi } from './update/api.js'
+import { reconcileUpdateStatus, resolveStaleBusyMs } from './update/status.js'
 import { serverVersion } from './update/version.js'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -57,6 +58,12 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   })
   // UPD-01 在线更新端点（check/apply/status）；活跃训练查询复用业务口径
   await registerUpdateApi(app, config, { getActiveTraining: () => getActiveTraining(database) })
+  // UPD-BUSY-HEAL-01：启动期 reconcile——上次更新流程被杀（杀软误杀 detached 更新器、
+  // 断电等已知根因）残留的陈旧 busy 状态就地复位 failed（人话原因落日志），在线更新
+  // 通道不再自锁；restarting→completed 既有路径在 reconcile 内先行，不受影响。
+  // best-effort：复位失败不阻断启动（apply/status 读路径会再次尝试自愈）。
+  await reconcileUpdateStatus(config.dataDir, serverVersion(), { staleBusyMs: resolveStaleBusyMs(process.env), log: console })
+    .catch(error => { console.error(`[update] 启动期陈旧 busy 自愈失败（忽略，启动继续）：${error instanceof Error ? error.message : String(error)}`) })
   await registerSetupControlApi(app, {
     controller: drainController,
     config,
