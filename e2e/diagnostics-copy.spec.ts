@@ -65,7 +65,8 @@ test('diagnostics copy rounds the stubbed bridge: 已复制 feedback fades and t
   // 成功：role=status 已复制反馈出现
   await button.click()
   await expect(dialog.locator('.diag-copy-result')).toHaveText('已复制，可粘贴到问题反馈')
-  await expect(page.evaluate(() => (window as unknown as { __diagStubCalls?: string[] }).__diagStubCalls)).toEqual(['copy'])
+  const stubCalls = await page.evaluate(() => (window as unknown as { __diagStubCalls?: string[] }).__diagStubCalls)
+  expect(stubCalls).toEqual(['copy'])
   // 反馈按 DIAG_FEEDBACK_MS（3 秒，容差上限 10 秒）自动消失
   await expect(dialog.locator('.diag-copy-result')).toHaveCount(0, { timeout: 10_000 })
 

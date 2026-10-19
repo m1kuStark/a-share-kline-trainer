@@ -130,5 +130,5 @@
 - RED 三连先行（exit=1×3，原因均＝缺功能），随后 GREEN；门禁：desktop 全量 299/299 exit=0、`build:desktop:main` exit=0、`typecheck:web` exit=0、server diagnostics-ui 2/2 exit=0；变异抽检 M1（降级→重抛）/M2（删剪贴板写入）均被杀手用例击杀（exit=1）并已还原复绿。
 - needs_user_decision 清单（更新）：**空**——原第 1 项已按 root 裁定 2 处置为 proposed_default。
 - proposed_default 清单（更新）：在阶段0 六项基础上追加 7. 「最近错误」＝主进程口径（renderer 错误不采集；root 裁定，最终由用户验收拍板）。
-- e2e/diagnostics-copy.spec.ts 已写**未运行**（root 硬约束：另一 worker 独占浏览器；待 root 串行通知）。真机验收与 dev 形态 Electron 冒烟 deferred（理由见验证记录）。
+- e2e/diagnostics-copy.spec.ts **已运行 2/2 通过**（root 通知浏览器让出后；首轮 1 例挂＝测试代码缺 await 的准备失败，非产品 RED，修复后重跑 exit=0）；UI/UX skill 自审（root 补课）无 P1 缺陷、两条 proposed_default 微调——均见验证记录。真机验收与 dev 形态 Electron 冒烟 deferred（理由见验证记录）。
 - root 指令勘误：批准令第 3 条「三者白名单」与仓库现实冲突（desktopMigration 为既有第四绑定对象），按矩阵优先取四对象精确集合，详见验证记录末节。

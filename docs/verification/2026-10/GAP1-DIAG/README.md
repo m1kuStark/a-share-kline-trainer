@@ -104,8 +104,8 @@ DESKTOP-DIAG-CLIPBOARD：
 - desktop/test/diagnostics.test.ts::diagnostics.ts stays a pure assembler with no database or server surface（负向：源码零数据面引用）
 - server/test/diagnostics-ui.test.ts::detectDesktopDiagnostics accepts only the copyDiagnostics function shape (fail-closed)
 - server/test/diagnostics-ui.test.ts::freezes the proposed_default copy feedback constants
-- e2e/diagnostics-copy.spec.ts::diagnostics copy stays hidden in the pure browser form (DESKTOP-DIAG-CLIPBOARD fail-closed gating)（**未运行**）
-- e2e/diagnostics-copy.spec.ts::diagnostics copy rounds the stubbed bridge: 已复制 feedback fades and the failure path stays retryable (DESKTOP-DIAG-CLIPBOARD)（**未运行**）
+- e2e/diagnostics-copy.spec.ts::diagnostics copy stays hidden in the pure browser form (DESKTOP-DIAG-CLIPBOARD fail-closed gating)（已运行通过，收据见 e2e 节）
+- e2e/diagnostics-copy.spec.ts::diagnostics copy rounds the stubbed bridge: 已复制 feedback fades and the failure path stays retryable (DESKTOP-DIAG-CLIPBOARD)（已运行通过，收据见 e2e 节）
 
 DESKTOP-DIAG-IPC：
 - desktop/test/desktop-updates.test.ts::UPD-DESKTOP-IPC-MINIMAL: preload exposes exactly the allow-listed contextBridge objects (desktopUpdates + DATA-ARCH-01 desktopRecordings) and nothing else（四对象精确集合，用例名保持不变防矩阵 ref 悬空）
@@ -118,3 +118,33 @@ desktopDiagnostics 三者且无其他」，与仓库现实冲突——preload �
 desktopMigration（MIG-EXT-01，manual 兜底通道，其删除会破坏迁移功能与既有绑定）；按矩阵/既有
 冻结契约优先，实现取**四对象**精确集合（desktopDiagnostics/desktopMigration/desktopRecordings/
 desktopUpdates），用例断言原文见上。
+
+## e2e 运行收据（2026-10-19，root 通知浏览器让出后）
+
+- 命令：`TDX_ROOT=D:\MySoftWares\TDX npm run journey -- e2e/diagnostics-copy.spec.ts --retries=0`（worktree 内串行单跑）。
+- **首轮 exit=1**：例 1（无桥 gating）过；例 2 挂在 :68——判定＝**测试准备失败（测试代码缺陷）非产品 RED**：`expect(page.evaluate(...))` 内层缺 `await`（Received: Promise {}），而产品链路本身已被 :66-67 真实断言验证（点击→`.diag-copy-result` 文本「已复制，可粘贴到问题反馈」）。修复＝补 await（断言语义不变：桩恰被调用一次 ['copy']），**非为绿改断言**。
+- **重跑 exit=0：2/2 通过**（1.1s＋7.5s，run-a8ecb512-df1e-4377-9e6e-6e557fe8526f）；证据截图 `diagnostics-copy-hidden.png`／`diagnostics-copy-feedback.png` 留存于该 run 的 artifacts/screenshots。
+- 上文 test_ids 清单中两条 e2e 条目的「**未运行**」标注自本节起失效（已运行并通过）。
+
+## UI/UX skill 自审（2026-10-19，root 补课派发）
+
+> 依据：`D:\Superlinear_Academy\UI-UX-Design\skills\uiux-design-core\SKILL.md` v0.4.1（Work at the appropriate level→Implementation/Review＋Essential constraints 1/2/7）。审查对象＝TrainingSettings.vue about 分栏诊断动作区（ghost-button＋role=status/alert 反馈＋无桥 gating 隐藏）。证据行号＝当前 worktree 文件行号。
+
+### 已满足（逐条证据）
+
+1. **状态与后果可理解（constraint 1）**：busy 态按钮文案「复制中…」＋`:disabled`（:1135-1136）；成功反馈含后果指引「已复制，可粘贴到问题反馈」（:1139）；失败如实呈现主进程结构化原因（:1140，role=alert），绝不假称成功；重入守卫（:453）防重复提交；`finally` 恢复可点（:470）＝失败可恢复。成功语义只声明剪贴板已写入（主进程 `{ok:true}` 仅在 clipboard.writeText 之后返回）——无「本地动作冒充远端完成」形态。
+2. **语义控件与可访问性（constraint 2）**：原生 `<button>`（:1135），自动落入弹层 Tab 焦点陷阱（trapFocus 选择器 `button:not([disabled])`，:859-861）；成功＝role=status（polite）、失败＝role=alert（assertive），与既有 update-check-result/update-check-error 同一语义分工；文本走既有类（settings-section-note/settings-saved/error-text＝`var(--font-size-*)` token），字体放大可重排；零新增动效＝reduced-motion 无新增负担；复用项目组件（ghost-button/settings-actions），零新样式体系（仅一条区块间距 :1235）。
+3. **反馈不破坏操作几何（constraint 7）**：反馈文本在按钮下方文档流出现（:1139-1140），不移动按钮与其上方任何控件；区块位于 about 分栏末尾，反馈出现仅向下扩展弹层滚动区，无无关区域共享高度/滚动条耦合；busy 期 label 切换与本弹层既有状态词汇一致（「保存中…/保存设置」:1104、「检查中…/检查更新」:1065）——coherent vocabulary。
+4. **键盘可达**：原生 button＋焦点陷阱回绕＋Esc 关闭（trapFocus :855-866）；busy 时 `:disabled` 移出 tab 序（标准异步反馈形态）；Enter/Space 原生激活。
+
+**证据强度声明（constraint 6）**：以上＝源码级检查＋e2e 真实浏览器点击/反馈断言（2/2，收据见上节）；键盘陷阱为构造性证据（既有选择器含本按钮），**真实屏幕阅读器行为未实测（unverified，留真机验收）**；截图不证明键盘/SR 行为。
+
+### 建议微调（proposed_default，不改码，用户验收一并拍板）
+
+1. **按钮宽度稳定性**：「复制中…」（4 字）与「复制诊断信息」（6 字）内容宽不同，busy 切换时按钮宽度微变——与本弹层既有按钮状态词汇一致故不算违约；如需几何完全稳定可给 `.diag-copy` 按钮加 `min-width`（约 8em），属可选精修。
+2. **无桥形态的知晓性**：纯浏览器形态整块隐藏（fail-closed gating，proposed_default #2 已登记）；若浏览器用户需要知晓功能存在，可改为置灰＋「仅桌面版可用」说明——取宽改动，留用户拍板。
+
+### 真缺陷
+
+无（未发现 P1 级呈现缺陷）。
+
