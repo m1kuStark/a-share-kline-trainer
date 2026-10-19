@@ -277,6 +277,20 @@ describe('VERIFY-RELEASE-ASSETS: fail-closed defect detection', () => {
     expect(codesOf(notFound)).toContain('release-fetch')
   })
 
+  it('release fetch failure reports the fetch defect without cascading asset-missing noise', async () => {
+    // 线上实证（2026-10-19 匿名限额 403）：release 载荷没拿到时，下游 latest.yml/校验和
+    // 检查会对着空资产表误报「缺失」，掩盖真正的故障源（拉取失败）。修复口径：Release
+    // 载荷缺失时跳过资产级核对，只报 release-fetch/release-missing——噪声即误导。
+    const scenario = makeScenario()
+    const result = await run(makeNet(scenario, { networkFail: [new RegExp(`/releases/tags/${TAG}$`)] }))
+    expect(result.ok).toBe(false)
+    const codes = codesOf(result)
+    expect(codes).toContain('release-fetch')
+    expect(codes).not.toContain('latest-yml-missing')
+    expect(codes).not.toContain('checksums-missing')
+    expect(codes).not.toContain('asset-missing')
+  })
+
   it('stray extra asset (e.g. retired portable exe) violates the name-set equality as asset-extra', async () => {
     const scenario = makeScenario()
     const strayName = `kline-trainer-desktop-v${VERSION}-windows-x64.exe`

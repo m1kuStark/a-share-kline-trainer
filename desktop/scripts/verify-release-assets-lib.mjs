@@ -147,13 +147,15 @@ export async function verifyReleaseAssets({
   }
   const assetByName = new Map(assets.map(asset => [asset?.name, asset]))
 
-  // ② latest.yml：版本/文件名/size 与实际一致、sha512 合法 base64（--deep 才下字节）
+  // ② latest.yml：版本/文件名/size 与实际一致、sha512 合法 base64（--deep 才下字节）。
+  //    线上实证（2026-10-19 匿名限额 403）：Release 载荷没拿到时不得对着空资产表
+  //    误报「latest.yml 缺失」——资产级核对整体以 release 载荷在位为前提。
   let latestParsed = null
-  const latestYmlAsset = assetByName.get('latest.yml')
-  if (!latestYmlAsset) {
+  const latestYmlAsset = release ? assetByName.get('latest.yml') : null
+  if (release && !latestYmlAsset) {
     pushDefect('asset-missing', 'latest.yml（更新源元数据资产）缺失于 Release')
     pushDefect('latest-yml-missing', 'Release 缺少 latest.yml 资产，无法核验更新源元数据')
-  } else {
+  } else if (latestYmlAsset) {
     try {
       const { status, text } = await fetchText(latestYmlAsset.browser_download_url)
       if (status !== 200) {
@@ -194,13 +196,14 @@ export async function verifyReleaseAssets({
     }
   }
 
-  // ③ 校验和资产（desktop 必备；zip 链 SHA256SUMS 存在才核对）——列出的资产逐条对表
+  // ③ 校验和资产（desktop 必备；zip 链 SHA256SUMS 存在才核对）——列出的资产逐条对表；
+  //    同 ② 前提：release 载荷在位才核对（缺载荷＝拉取失败已报，不叠资产噪声）
   const sumsReferences = []
-  const desktopSumsAsset = assetByName.get('SHA256SUMS-desktop.txt')
-  if (!desktopSumsAsset) {
+  const desktopSumsAsset = release ? assetByName.get('SHA256SUMS-desktop.txt') : null
+  if (release && !desktopSumsAsset) {
     pushDefect('asset-missing', 'SHA256SUMS-desktop.txt（desktop 校验和资产）缺失于 Release')
     pushDefect('checksums-missing', 'Release 缺少 SHA256SUMS-desktop.txt，无法核验 desktop 产物校验和')
-  } else {
+  } else if (desktopSumsAsset) {
     try {
       const { status, text } = await fetchText(desktopSumsAsset.browser_download_url)
       if (status !== 200) {
