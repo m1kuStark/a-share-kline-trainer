@@ -38,7 +38,7 @@
 
 | 任务 | 状态 / 负责人 | 摘要 | 验证记录 | 集成引用 | 用户验收记录 |
 |---|---|---|---|---|---|
-| [BUILDER-ACCEPT-01](<work-items/tasks/BUILDER-ACCEPT-01.md>) | active / integrator | 成绩单回归已通过；文档错误修复；真实旧包迁移与独立验收包验证进行中。 | 未记录 | codex/builder-review-followup（隔离候选） | 未记录 |
+| [BUILDER-ACCEPT-01](<work-items/tasks/BUILDER-ACCEPT-01.md>) | review / integrator | 成绩单与文档错误修复；单测 1750+357、M2 24、完整 Journey 196/196 通过。真实 v1.2.7 历史/录像迁入实际桌面、独立 ZIP 全新解压启动已验证；待用户验收，未发布。 | [证据1](<verification/2026-10/BUILDER-ACCEPT-01/README.md>) | codex/builder-review-followup（隔离候选） | 未记录 |
 | [BUILDER-REVIEW-01](<work-items/tasks/BUILDER-REVIEW-01.md>) | review / integrator | 候选 81558ad 已保存，工作树干净；本地访问守卫、恢复验证、画线日期修复与说明已落实。单测 1750+357、build、M2 24 项通过。 | [证据1](<verification/2026-10/BUILDER-REVIEW-01/README.md>) | codex/builder-review-followup（隔离候选，未合主仓库） | 未记录 |
 | [CAND-01](<work-items/tasks/CAND-01.md>) | review / GLM-5.3-Flash | 对账性收编（docs-only，不合码）：核实 integration/product-integration-20260926（3f8c612）为 main 祖先且 DATA-05/TRAIN-02/SETUP-CLUES-01/SETUP-DRAIN-01 四卡内容已在基线 5bf4484；回填 DATA-05/TRAIN-02/SETUP-CLUES-01 集成引用至各片最终代码提交，修正 DATA-05 隔离保留与 TRAIN-02 提升后关闭两条过时卡注；SETUP-DRAIN-01 经核实基线已在册，无需取回。 | 未记录 | integration/product-integration-20260926@3f8c61246d5c057743fc312b07ebdd704d23658a | 未记录 |
 | [CAND-02](<work-items/tasks/CAND-02.md>) | review / GLM-5.3-Flash | 对账性收编（docs-only，不合码）：实测 SETUP-AUTH-01/SETUP-CLUES-02/SETUP-API-01/SETUP-SAVE-01 四片代码提交均为基线 5bf4484 祖先，回填各片最终代码提交至 integration_ref，并按对账结论将四卡随基线收编关闭（工程门禁以卡内记录为据，用户验收尚未记录）；不改产品代码，本卡随 S1 收口即关闭。 | [证据1](<verification/2026-09/CAND-02-gate-flake/report.md>) | main@5bf4484a37a5a233ff12524cafd0166390cb274b | 未记录 |

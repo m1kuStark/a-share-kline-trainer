@@ -53,6 +53,7 @@ test('带真实成交的成绩单在窄窗不溢出且所有成交列可访问',
         const fee = await report.locator('.report-trades th').last().boundingBox()
         const region = await tableRegion.boundingBox()
         expect(fee!.x + fee!.width).toBeLessThanOrEqual(region!.x + region!.width + 1)
+        await page.screenshot({ path: evidencePath(`report-narrow-${theme}-390-trades.png`) })
       }
       await report.getByRole('button', { name: '关闭成绩单' }).scrollIntoViewIfNeeded()
       await expect(report.getByRole('button', { name: '关闭成绩单' })).toBeInViewport()

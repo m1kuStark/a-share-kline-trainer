@@ -1,0 +1,358 @@
+{
+  "archive": "evidence-logs.zip",
+  "sha256": "2e7f2210e7de2df93843a3a4379004ec2dc15c484390c48126dc25267165dd43",
+  "fileCount": 70,
+  "scope": "Original retained logs and complete selected browser reports, including failed attempts. Final full Journey/docs gates are archived separately after completion. Expired exitToken already redacted in packaged-main.log before this archive; all stored log bytes preserved.",
+  "files": [
+    {
+      "path": "binding-drawing-persistence.log",
+      "bytes": 205,
+      "sha256": "3db143fb8f82610313b5010f5b752dd49dc3cf671a06caa6a5b0da11416f69cf"
+    },
+    {
+      "path": "binding-local-http-origin.log",
+      "bytes": 205,
+      "sha256": "3db143fb8f82610313b5010f5b752dd49dc3cf671a06caa6a5b0da11416f69cf"
+    },
+    {
+      "path": "binding-migration-tool-v127.log",
+      "bytes": 207,
+      "sha256": "57b476b75a5c651ed3998b823dd5291b15b78ec35b15aec63f50934ab2df0e00"
+    },
+    {
+      "path": "binding-random-training-mode.log",
+      "bytes": 207,
+      "sha256": "defc9be891247ae77d8b3bb3831a32901455350b23b7641a2b490bcd1f358ff4"
+    },
+    {
+      "path": "binding-rankings.log",
+      "bytes": 205,
+      "sha256": "1d1e864fcd7bc3ffae5dd198cebe33811aa646b6d9131a7be5ed7c1809483242"
+    },
+    {
+      "path": "binding-report-final.log",
+      "bytes": 202,
+      "sha256": "73d1114b35aec73cc2860415fed3359b9a42eb1c4e2ca339c7804cabb126d44e"
+    },
+    {
+      "path": "binding-report-layout.log",
+      "bytes": 202,
+      "sha256": "73d1114b35aec73cc2860415fed3359b9a42eb1c4e2ca339c7804cabb126d44e"
+    },
+    {
+      "path": "build-desktop-main.log",
+      "bytes": 86,
+      "sha256": "c3cdab465524b71e67e43de1a14c80dbe5b09d116b4ba0e4c90dfbd39d7ded9d"
+    },
+    {
+      "path": "build.log",
+      "bytes": 1136,
+      "sha256": "d8503bdb991017b77d01b12d8aa5d233ade84252c581e1b565f6aef67b26b1c3"
+    },
+    {
+      "path": "docs-check-precommit.log",
+      "bytes": 15761,
+      "sha256": "cacb6701d5a2d4f6106cf4dde2ce558db3772b2c42c0b8f6c13a38d742b571c1"
+    },
+    {
+      "path": "docs-check.log",
+      "bytes": 15761,
+      "sha256": "cacb6701d5a2d4f6106cf4dde2ce558db3772b2c42c0b8f6c13a38d742b571c1"
+    },
+    {
+      "path": "docs-impact-precommit.log",
+      "bytes": 467,
+      "sha256": "794dd8a2ca7a0a67deadab458fa5400793b08ae8a945a4477dbb40b1a8879275"
+    },
+    {
+      "path": "docs-repaired.log",
+      "bytes": 15900,
+      "sha256": "71b3ea6524d6a52fd34d3dbabaf26cfb028f2e5f2028b0981170e805eb3dfb29"
+    },
+    {
+      "path": "docs-status-precommit.log",
+      "bytes": 146,
+      "sha256": "bbd9a909ba1ff451d01463ce5d6b332bfdd72116c57ad6f399a1645fba86de49"
+    },
+    {
+      "path": "docs-status.log",
+      "bytes": 146,
+      "sha256": "bbd9a909ba1ff451d01463ce5d6b332bfdd72116c57ad6f399a1645fba86de49"
+    },
+    {
+      "path": "history-migration-native-crash.log",
+      "bytes": 827,
+      "sha256": "ceb688b0dc7b6861499622d58d911afde40dbe1cae436cc1324b55a6eea2e75f"
+    },
+    {
+      "path": "history-migration-preparation-failure.log",
+      "bytes": 2154,
+      "sha256": "0b65745140e71c55757b953df51da3ffaad5883a5c170ecd1327de79f0e760a0"
+    },
+    {
+      "path": "history-migration-real.log",
+      "bytes": 6179,
+      "sha256": "6f1fcd0d42fe3efceaee33aae3b5ba761f7467fba93c4fef835d84a80b6811f0"
+    },
+    {
+      "path": "journey-failure-triage.log",
+      "bytes": 525,
+      "sha256": "dcbcd4a88ec81221a51980780489e8a000e9a298291642b6baeb43aec20e51a5"
+    },
+    {
+      "path": "journey-full.log",
+      "bytes": 623,
+      "sha256": "bf1af0b8390ea61190286c096783f3e5aad401172573862f8e63dafdf7c318bd"
+    },
+    {
+      "path": "journey-triage-fixed.log",
+      "bytes": 525,
+      "sha256": "a2c942da1144367c0bdf4a588a41a27cafe5b13ed63c3d8b9f342c53eefec656"
+    },
+    {
+      "path": "m2.log",
+      "bytes": 272,
+      "sha256": "60ea8b8d4f5e71c9ce5dcded8830223127491b266889d22ba115fa1205fb202f"
+    },
+    {
+      "path": "manifest-expanded.log",
+      "bytes": 2494,
+      "sha256": "5d415c78fc31f5901d5f9ad81dbfbaa6edf8cc1f6032b13f9be51871c0fe2a2a"
+    },
+    {
+      "path": "migration-real-detail.log",
+      "bytes": 3178,
+      "sha256": "cd3cde5aba47b057572916cf023d40ee566134a0788a7c51adc6f667c66786eb"
+    },
+    {
+      "path": "migration-real.log",
+      "bytes": 471,
+      "sha256": "0d9fff0eb53eeb0fd20f16bb4882eed2cd957047a464268e299b876863a0d440"
+    },
+    {
+      "path": "migration-tool-build.log",
+      "bytes": 441,
+      "sha256": "424401b8e86d3509575a6c46054a6806bddce6f587c0fcdf69d4c7c9f4bb20ac"
+    },
+    {
+      "path": "old-ui-cold-start.log",
+      "bytes": 5808,
+      "sha256": "7d7ae5ee4248ce00afc8e34f2134e2245c0b4e8aadb928232ce50ace6faab8fd"
+    },
+    {
+      "path": "old-ui-packaged-main.log",
+      "bytes": 606,
+      "sha256": "a9fdab844ef913465f80fb0cc56958d501c588abba1a8aac5533d8f0e83cee59"
+    },
+    {
+      "path": "old-ui-preparation.log",
+      "bytes": 3617,
+      "sha256": "aeb682ad3a55eba29c7ec8c578051b6e11ac78c8e5a7d7c05112ea7d3f14d33e"
+    },
+    {
+      "path": "old-ui-to-packaged.log",
+      "bytes": 2936,
+      "sha256": "768d375aa50a67045798dd447dd740b7c5ac6a67e9ca4b7d60e6b883065f16e1"
+    },
+    {
+      "path": "package-build-desktop.log",
+      "bytes": 86,
+      "sha256": "c3cdab465524b71e67e43de1a14c80dbe5b09d116b4ba0e4c90dfbd39d7ded9d"
+    },
+    {
+      "path": "package-build.log",
+      "bytes": 1136,
+      "sha256": "2dcaec81808a0f25ac5ec10d23ea92e58f519c0dbcbcb0e0f5e4b74ef2ee0120"
+    },
+    {
+      "path": "package-desktop-built.log",
+      "bytes": 4170,
+      "sha256": "96aab40e1d7aaeeb8a55ab0fd7315324cabdeadf8a3b82c2a4ed8e873eaac11c"
+    },
+    {
+      "path": "package-desktop-final.log",
+      "bytes": 3613,
+      "sha256": "f45d9046f3caa1bc68e84ac69d304fad9fd0531ba1744398c3a09b33852752fb"
+    },
+    {
+      "path": "package-desktop-retry.log",
+      "bytes": 4050,
+      "sha256": "2dc304dc23a7c9a0263c3c1202c177a10cf7f3c14569d46cb4416b1c37661df9"
+    },
+    {
+      "path": "package-desktop.log",
+      "bytes": 3940,
+      "sha256": "3298feda3e3a92a5d990f13fc0ac2c1caa202416109852625600cf5be9e4407b"
+    },
+    {
+      "path": "package-migration-build.log",
+      "bytes": 441,
+      "sha256": "424401b8e86d3509575a6c46054a6806bddce6f587c0fcdf69d4c7c9f4bb20ac"
+    },
+    {
+      "path": "package-npm-ci.log",
+      "bytes": 847,
+      "sha256": "86f870cbe1fdf52442fef49cecd1f91418f5a671a9126607d0350cff11b27387"
+    },
+    {
+      "path": "packaged-acceptance.log",
+      "bytes": 1683,
+      "sha256": "42d256bcb35fe29d944b48a70fd6d4d965015188ff947c89df34f68f5e90e636"
+    },
+    {
+      "path": "packaged-exit-probe.log",
+      "bytes": 823,
+      "sha256": "7a1e9f6762941c16f6d54e0cf73a6ee8de18088420373d18d2c1d84c2533c77b"
+    },
+    {
+      "path": "packaged-main.log",
+      "bytes": 893,
+      "sha256": "b24d97cee12ea141b99e096f5300dff0ff4b4c519b3567ce25a6ca135c5c6080"
+    },
+    {
+      "path": "packaged-preparation-failure.log",
+      "bytes": 670,
+      "sha256": "a08f4838d07ba45638ff546b805df9bec549738c5913cc57bfb443ed10c98904"
+    },
+    {
+      "path": "report-green-final-detail.log",
+      "bytes": 449,
+      "sha256": "2b45d13b0e2a609391adcdf7ff902c37ebf171f31659a144f2a33ce1b683e8b0"
+    },
+    {
+      "path": "report-green-final.log",
+      "bytes": 498,
+      "sha256": "7ab243675c7b8863072ee2177cdea9b5aaa2d919666f37d4241d5120917a8864"
+    },
+    {
+      "path": "report-green-preparation-detail.log",
+      "bytes": 3982,
+      "sha256": "b3d24a5f8418d6a6cf66e2bc335b8c51855755648f0fb42b2369b01fda3f81b1"
+    },
+    {
+      "path": "report-green.log",
+      "bytes": 677,
+      "sha256": "1d6ed346751ff85da8a828e724d515d0cf5168b8847e78db9ee9e2309c82e18f"
+    },
+    {
+      "path": "report-red-detail.log",
+      "bytes": 4252,
+      "sha256": "63e57f8f12bbf49252667da7618454514da5dc5c3d7ccf6b5709d3004632acb1"
+    },
+    {
+      "path": "report-red.log",
+      "bytes": 649,
+      "sha256": "36da083eb7bf9be8c65b660170d5277edcde39853dace8d4b8c3060861c87e9f"
+    },
+    {
+      "path": "unit-clean-install.log",
+      "bytes": 16963,
+      "sha256": "9bb81e3130619c964acac62f0de4d72f0622020721f27015772bc0f5f4550eab"
+    },
+    {
+      "path": "unit-final.log",
+      "bytes": 15125,
+      "sha256": "6e88d5c9bde47261ad9f360c1ec0430ed37889d0a46c2e928aa68da01c50c385"
+    },
+    {
+      "path": "unit-server-retry.log",
+      "bytes": 100,
+      "sha256": "261591599c357f7d53d796588804210152b1e0cd94fe2a521d379bbc6832c559"
+    },
+    {
+      "path": "unit.log",
+      "bytes": 211,
+      "sha256": "5fde220c93bab350b57f5a76902f20f2da9802f3eef74349561d7b9845faf790"
+    },
+    {
+      "path": "workflow-active.log",
+      "bytes": 26706,
+      "sha256": "668d3a81e636d2bf168481c59f069d70dc13cee46925381bf05a7a9c2c44f502"
+    },
+    {
+      "path": "zip-launcher-first-stdout.log",
+      "bytes": 190,
+      "sha256": "22beb288025499156e7dd89b13e5f60e8bffdf479880955ee349ab7cb4ff32d0"
+    },
+    {
+      "path": "zip-launcher-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "zip-launcher-stdout.log",
+      "bytes": 190,
+      "sha256": "c32b09f4f7bdfd85a815d99fe5fa212b8124aadfc82469b85715eab7a384a278"
+    },
+    {
+      "path": "zip-smoke-preparation-failure.log",
+      "bytes": 547,
+      "sha256": "db7ef11a124da401954b01638cdaad0a9fc2dca23c7d499856d4df57546f4480"
+    },
+    {
+      "path": "zip-smoke.log",
+      "bytes": 2046,
+      "sha256": "ee93664f3efeffde54695d4d8c34fe695b05b065d7ec0e68763077a20d4cc8b6"
+    },
+    {
+      "path": "migration-real/manifest.json",
+      "bytes": 1650,
+      "sha256": "aee498097b6cdb14958a9383bb1ebba028c4127a78a9bbad976dbd9365333f13"
+    },
+    {
+      "path": "migration-real/artifacts/browser-results.json",
+      "bytes": 7511,
+      "sha256": "13deb1e56820d491c6ac0e97e296c4dec8b123596910a066650fcd0deb533fa3"
+    },
+    {
+      "path": "migration-real/artifacts/journey.log",
+      "bytes": 3178,
+      "sha256": "cd3cde5aba47b057572916cf023d40ee566134a0788a7c51adc6f667c66786eb"
+    },
+    {
+      "path": "report-green/manifest.json",
+      "bytes": 1650,
+      "sha256": "5feb8977a6b43bf32420e70cdcc3594a1c8c0feeb2c5b664ed61d2c408172cbc"
+    },
+    {
+      "path": "report-green/artifacts/browser-results.json",
+      "bytes": 5026,
+      "sha256": "16e5a5578252c0a3a462f5d6a1328aabd3ae545debb176d781147ab2ca705866"
+    },
+    {
+      "path": "report-green/artifacts/journey.log",
+      "bytes": 449,
+      "sha256": "2b45d13b0e2a609391adcdf7ff902c37ebf171f31659a144f2a33ce1b683e8b0"
+    },
+    {
+      "path": "triage-fixed/manifest.json",
+      "bytes": 1650,
+      "sha256": "8e87cf386ffdc992f09c12748973eb5154087468b838308589f21024870c741a"
+    },
+    {
+      "path": "triage-fixed/artifacts/browser-results.json",
+      "bytes": 32621,
+      "sha256": "4698af783e89a15947b3b3ff98e0d941d6da7d9bccfaede37ec113521bc599fb"
+    },
+    {
+      "path": "triage-fixed/artifacts/journey.log",
+      "bytes": 3688,
+      "sha256": "cecf9a84006b39a7e3d5f90d6df5f5d573be5d50bcf624d5de21b6b9b4aa06b1"
+    },
+    {
+      "path": "triage-unchanged/manifest.json",
+      "bytes": 1650,
+      "sha256": "5059bb9d025ee94a0c37d108aa194e04a2a509e634b8252f94eb8d71f218f23c"
+    },
+    {
+      "path": "triage-unchanged/artifacts/browser-results.json",
+      "bytes": 31167,
+      "sha256": "e54913f53d928fb2528aa6cbe5bdfa764dec1c96d53b15e7db0d5b754d3b153e"
+    },
+    {
+      "path": "triage-unchanged/artifacts/journey.log",
+      "bytes": 3688,
+      "sha256": "f6b20a1064ada173ec9eab9aab43cb14413a6fc796dedffbd128f1049be6899b"
+    }
+  ]
+}

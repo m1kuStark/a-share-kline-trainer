@@ -1,0 +1,242 @@
+{
+  "runId": "run-3cf042ee-172f-4fda-87e4-27b3cf05bf7a",
+  "runCreatedAt": "2026-10-19T17:16:05.659Z",
+  "manifestCommit": "8d08a5a0920abb04964f1e6f68fd20291db55ce7",
+  "runtimeSourceCommit": "8d08a5a0920abb04964f1e6f68fd20291db55ce7",
+  "testInputsSha256": "0e126d5d7e7c466e6bb1c68069ac891ff6041dc96ada150eae6d591da595aa4e",
+  "testInputs": [
+    {
+      "path": "e2e/acceptance-feedback.spec.ts",
+      "sha256": "836a613e9eed16c816b556d23ffec9e2600dbdd317d838aaf76c369ea62722bb"
+    },
+    {
+      "path": "e2e/animation-settings.spec.ts",
+      "sha256": "9f3c7058586e131aeec3728bf1cf013755a28197cc2ab491d5e4f90cd08e65ff"
+    },
+    {
+      "path": "e2e/archive-recording.spec.ts",
+      "sha256": "d6356f04a0eff670047c043486bfa7dcd57aad3dad7a7f2948da5619e98c997f"
+    },
+    {
+      "path": "e2e/backup-restore.spec.ts",
+      "sha256": "b4abd887a1b6d37319139757660b77664dbe6c09a8b590a98744122199655e96"
+    },
+    {
+      "path": "e2e/chart-toggles.spec.ts",
+      "sha256": "af50aba16159285a7ec56a1020aa20d39ef21f6df5bbd32061c817628cfc8b56"
+    },
+    {
+      "path": "e2e/compact-chart.spec.ts",
+      "sha256": "d17eacef77ae68255066592a5bc9b95b5af4305ec2c958b64f2dc79b9fc5d0ff"
+    },
+    {
+      "path": "e2e/cost-basis.spec.ts",
+      "sha256": "2a3cc95dded112897ccd5e44d55876e0b3cfacf6303fc9efb014047bfd5e4fb9"
+    },
+    {
+      "path": "e2e/data-update-feedback.spec.ts",
+      "sha256": "74bea535d484d7db7d3a96c1341d1b2d04141349f0c9af59ace339b2b743edd8"
+    },
+    {
+      "path": "e2e/data-update.spec.ts",
+      "sha256": "ae0f0d27ee18afe6b8f88f2b26dfc37899780d10edb74263c37a6c5b3b06656c"
+    },
+    {
+      "path": "e2e/diagnostics-copy.spec.ts",
+      "sha256": "a1cf86c96bc3bed9fb378ac96451742a74a6ad4cb06268ff9083b2a215d58d35"
+    },
+    {
+      "path": "e2e/drawing-basis.spec.ts",
+      "sha256": "b516bfc526c2ec131b7129e706e5a82b521ac366ed91c4248d55ea3ef3c7c5c8"
+    },
+    {
+      "path": "e2e/exit-flow.spec.ts",
+      "sha256": "ff377c36da166a0a9ca9151c3adb0494901f88ac2bc2dca20320fb2efa8bb62e"
+    },
+    {
+      "path": "e2e/global-setup.ts",
+      "sha256": "0d35b7ce11aecb5df9c1e0845ca93821753f4ae64731022c20b686fea038fe5a"
+    },
+    {
+      "path": "e2e/journey.spec.ts",
+      "sha256": "8dcce59b945602f4236d1a28c2b2db2fbfbe5eeec95e3a6c5595512dcd773743"
+    },
+    {
+      "path": "e2e/kdj-indicator.spec.ts",
+      "sha256": "2b78ce9ae23dab3f1be0d4bf1c517eb254209d003f7cded209496731bf66244e"
+    },
+    {
+      "path": "e2e/local-origin.spec.ts",
+      "sha256": "1d9bd0cbe64a5ce74a6ac8ea83a3e5b47cb4d6e6212336f6a489a455c2c370a4"
+    },
+    {
+      "path": "e2e/m3-feedback.spec.ts",
+      "sha256": "bf5662a8edf42d99c1b161f60dbc6acec1bf52ca574cdbedac46af8878fff8d6"
+    },
+    {
+      "path": "e2e/m3-round3.spec.ts",
+      "sha256": "26fefdd770b5a12000379af79789c3a87a52b1bc6e18e78ea6e413c0ce928787"
+    },
+    {
+      "path": "e2e/m3-tools.spec.ts",
+      "sha256": "efb3c76a97702c984b21b0b876ad458443870e1de81e68835c6954e3f443f4ac"
+    },
+    {
+      "path": "e2e/m4-history.spec.ts",
+      "sha256": "a9417e25a3e9fa270b2c90c1c53995a3f1490aa7c919a152ab80799370d44830"
+    },
+    {
+      "path": "e2e/m4-rankings.spec.ts",
+      "sha256": "d07ba86bfbe2bba5f10d64d376aab021d9faa54777a7be9e2e72617f0576ef0e"
+    },
+    {
+      "path": "e2e/ma-settings.spec.ts",
+      "sha256": "cbb2c6b15e20fb73a4576de26bba1dd9c3ba821d3bf5a9f6a1143e40e3146b2f"
+    },
+    {
+      "path": "e2e/migration-v127.spec.ts",
+      "sha256": "7ea05ebc6ccc7bd7026d2bcc77b3d64752d8cfbd49dca02f7e6122a441cddadf"
+    },
+    {
+      "path": "e2e/odometer.spec.ts",
+      "sha256": "882bb25c7a0184b914d9dcde9ee13d4e6e5fcc341e74840513ebd33c0d97a3f5"
+    },
+    {
+      "path": "e2e/order-panel.spec.ts",
+      "sha256": "525af267ac4314a2e10dc3f7e3601bcf2e2b6a13cf2a3ea00c1cf639b3c0133f"
+    },
+    {
+      "path": "e2e/pane-resize.spec.ts",
+      "sha256": "c9c302644bd0a579c06b18228abf285345d09b83b44a73c9efec81db651f5c78"
+    },
+    {
+      "path": "e2e/percent-hover.spec.ts",
+      "sha256": "8250186de3a1d76c5518e4927e3e74e90d512e8e573cdad9cba3439c8f14d726"
+    },
+    {
+      "path": "e2e/phase-price-line.spec.ts",
+      "sha256": "8ce50334a38c2f51d038ba7717826aee000ce14da9a4d232b1da33d1affca2e4"
+    },
+    {
+      "path": "e2e/port-fallback.spec.ts",
+      "sha256": "067a7c47c5db31742870c6529f61a996e1c2f0b9d39ce775c6afab6a0dac7d30"
+    },
+    {
+      "path": "e2e/random-mask-axis.spec.ts",
+      "sha256": "3cbd1e2476212a5170e3731d84de32605e570b9567596dc1029d8529c4788f76"
+    },
+    {
+      "path": "e2e/random-mode.spec.ts",
+      "sha256": "62231f8a665dc88e63e55ce73db6c6871c9dc3d011a54fca18a63d0ec2500a76"
+    },
+    {
+      "path": "e2e/random-panel-stability.spec.ts",
+      "sha256": "a221a1152adb750a0827c6852978366c34ec1e78a8ba42dced648537f67f963e"
+    },
+    {
+      "path": "e2e/rankings-navigation.spec.ts",
+      "sha256": "15f714d9797447ea4d1147767648a98743b4c153e725446723fe71af35d040f4"
+    },
+    {
+      "path": "e2e/recording-bulk.spec.ts",
+      "sha256": "debddebc78624e2b587c81ec09bb90854610059ce3be576f221ad874dd8eb939"
+    },
+    {
+      "path": "e2e/recording-daily.spec.ts",
+      "sha256": "856b22a50ff47bef5cc2b44e16fc9b6ed62272998157a4a03d0d041a9e649a6a"
+    },
+    {
+      "path": "e2e/recording-file.ts",
+      "sha256": "10e8ffc6fd424ed98e4d1e81f63596b96ebf332ebe25bd0532c8acf414cb1c67"
+    },
+    {
+      "path": "e2e/recording-library.spec.ts",
+      "sha256": "0ca84dbc4c03ade063fef76740c9811f58d7b9c8cc2282d974ba9e45725ec1b9"
+    },
+    {
+      "path": "e2e/recording-long.spec.ts",
+      "sha256": "7adbb0ee10c1483d792ebf84e94a8a1e616670f8b584b01979218c33f5f96cfc"
+    },
+    {
+      "path": "e2e/recording-migration.spec.ts",
+      "sha256": "67fa95383b573b94a78ccf3ac264e719100b82ff7d10dd88b4c4adad40768446"
+    },
+    {
+      "path": "e2e/recording-orders.spec.ts",
+      "sha256": "0241d34439bc238f0a5be673600526bfad528f3da5f06d5b3537b4d6179f8712"
+    },
+    {
+      "path": "e2e/recording.spec.ts",
+      "sha256": "d47590ad57ca9138bd56d927daf7e3b560cfbeeb64a4a5ae6fcfc954cae43b75"
+    },
+    {
+      "path": "e2e/replay-period.spec.ts",
+      "sha256": "1128e508747aa7f1407f5a139bdb412bd6b4c70d1c690aa6978587669b04eef2"
+    },
+    {
+      "path": "e2e/report-feedback.spec.ts",
+      "sha256": "8e2124a351a53b3720bf4fb366550d5f340f657adc79ab8064732de63248e956"
+    },
+    {
+      "path": "e2e/report-narrow.spec.ts",
+      "sha256": "c13c195e245dbfe3144cea990ec96cf9b17c289c94a12effec400d75f2d9f9c7"
+    },
+    {
+      "path": "e2e/runtime.ts",
+      "sha256": "b521ac6018a808b91e2e05acbfe19cfd6bfdb9213b751959a8a466564693c5a6"
+    },
+    {
+      "path": "e2e/trade-marker-details.spec.ts",
+      "sha256": "5f68de3de6ddb8a5f1240715ae4649dc99453b7c48cbc7a0ff46efc6e6238970"
+    },
+    {
+      "path": "e2e/training-defaults.spec.ts",
+      "sha256": "f357d51a093ec0d9e23791ba6ca676830d3222ca5e5d83c83db203153e67d3c3"
+    },
+    {
+      "path": "e2e/training-flow.ts",
+      "sha256": "172eed8086b1da55b4213ae05c2061fe64c23d0da7dbc3e0940b187b019683ad"
+    },
+    {
+      "path": "e2e/training-range.spec.ts",
+      "sha256": "783485eda14fd0be01d076926785dbc3448ef3ba4c19e017bfc05f8418c06f84"
+    },
+    {
+      "path": "e2e/training-rules.spec.ts",
+      "sha256": "c288872d041ce1904bf43c034c69ca9985be9884443656d588e961dd25961471"
+    },
+    {
+      "path": "e2e/uiux-launcher.spec.ts",
+      "sha256": "b91d432072a4a784328e780ab4cbd8c9b1272ce76be1c64b0a2291ab7d589b12"
+    },
+    {
+      "path": "e2e/uiux-records.spec.ts",
+      "sha256": "363e67a86afa9a3445931092ea7bd9f3a4fc2829fa11bb88996264261470498d"
+    },
+    {
+      "path": "e2e/uiux-settings.spec.ts",
+      "sha256": "7d68c7919a98d28361f94fdac873fc62cdaf96303a258634da354e984f68bd1a"
+    },
+    {
+      "path": "e2e/uiux-shell.spec.ts",
+      "sha256": "6d302a1960c6a79c8ba76ef6fc76dd016e11efcde84d6ba2c7b8011f381539eb"
+    },
+    {
+      "path": "e2e/uiux-training.spec.ts",
+      "sha256": "90692164d045357ee46ad544d3ff0e78993c1db8ad9f4e27df7481b265309d10"
+    },
+    {
+      "path": "e2e/update-settings.spec.ts",
+      "sha256": "436148835b4fcb4bff19095a828afaf2f72f4969c774a065be70e9fdaefcfb1a"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "1d2c38c846165cfd5781edd0e4903d6bc6e02e7fe5d2ad87d569edec0e5f772e"
+    },
+    {
+      "path": "scripts/runtime.ts",
+      "sha256": "86a716b325890a1ac4c802fcce4fb9449690ac9c5ed62ea37222b7bf4f9cb7c5"
+    }
+  ],
+  "scope": "All E2E TS/JSON plus Playwright config and runtime entry; final full run began after these test changes. Only docs/evidence/standalone packaging smoke are edited while it runs."
+}

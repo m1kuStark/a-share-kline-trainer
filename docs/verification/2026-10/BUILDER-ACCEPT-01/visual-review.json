@@ -1,0 +1,33 @@
+{
+  "reviewedAt": "2026-10-19T17:41:09.840279+00:00",
+  "reviewer": "Codex primary agent",
+  "method": "Read actual browser/Electron screenshots with view_image; combine with interaction and geometry assertions, not screenshots alone.",
+  "observations": [
+    "390px dark/light: trade table remains within dialog; horizontally scrolled right shows fee column, keyboard focus outline visible; left columns remain accessible by reverse scroll.",
+    "1024px packaged light: all seven columns fit, table text legible and dialog scroll stays internal.",
+    "Real old UI recording imported in packaged Electron: stock/date, buy operation and chart are shown; migration notification reports success 1, skipped 0."
+  ],
+  "limits": [
+    "390px view is desktop browser emulation, not a mobile product acceptance.",
+    "Single-day flat-return chart has sparse plotted content; this inspection does not assert multi-day return mathematics.",
+    "NSIS installation/upgrade and human user acceptance remain pending."
+  ],
+  "files": [
+    {
+      "path": "report-narrow-dark-390-trades.png",
+      "sha256": "82ce858e11dc4dcc96081e867f45745571b61dafc348f5d007bbd00e603967af"
+    },
+    {
+      "path": "report-narrow-light-390-trades.png",
+      "sha256": "4fe0e0d11b35574c7bb9c3c38ee2cbb15612a1f7cfd26ed02aec713c7ee655b1"
+    },
+    {
+      "path": "packaged-report-light-1024.png",
+      "sha256": "1cb72e8aeed330471e04ff797111abca2289080e77990adffd2fa6d9224110fa"
+    },
+    {
+      "path": "packaged-actual-old-replay.png",
+      "sha256": "1f931e33d1d0b395dc4567cb9aadc399f520a53b7ba0771764d4df48a907cf6d"
+    }
+  ]
+}

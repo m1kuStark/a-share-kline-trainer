@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-10-19T17:46:56.371710+00:00",
+  "command": "npm run journey -- --retries=0",
+  "nativeExit": 0,
+  "runId": "run-3cf042ee-172f-4fda-87e4-27b3cf05bf7a",
+  "stats": {
+    "startTime": "2026-10-19T17:16:13.203Z",
+    "duration": 1813405.162,
+    "expected": 196,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "topLevelErrors": [],
+  "tdxRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\run-3cf042ee-172f-4fda-87e4-27b3cf05bf7a\\tdx-snapshot",
+  "oldPackage": "verified v1.2.7 release enabled via MIG_V127_PACKAGE; migration test executed, no skip",
+  "testInputsSha256": "0e126d5d7e7c466e6bb1c68069ac891ff6041dc96ada150eae6d591da595aa4e",
+  "productionInputSha256": "20c3805ac8be253d346309557bec845a7e13de75678be739d32a6512bc9713b7",
+  "drift": [],
+  "evidenceArchive": "journey-final-evidence.zip",
+  "evidenceArchiveSha256": "cdd91bfe2322e770972c8ac4a5bd50ee5367481af54dbbeb223d4c2e5833f001",
+  "files": [
+    {
+      "path": "manifest.json",
+      "sha256": "b4b50147af4b65656f6045861faa527a428d4f44dafa4f6d2e78e956172e3f7a",
+      "bytes": 1652
+    },
+    {
+      "path": "artifacts/browser-results.json",
+      "sha256": "dadcdc2c898ffa4d384085d5451342d632f4eafbffcc01497a5691b522c17257",
+      "bytes": 273318
+    },
+    {
+      "path": "artifacts/journey.log",
+      "sha256": "f878fb171d4de38c933e767295ae6052df7be0c26bb57cddfa1caf20e9f4fd10",
+      "bytes": 29621
+    },
+    {
+      "path": "artifacts/build-server.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "artifacts/build-web.log",
+      "sha256": "120272480ea366a51c6e2e1982beb920ee1868dc5b18dfef34bd92461ec17c2f",
+      "bytes": 947
+    },
+    {
+      "path": "artifacts/test-results/.last-run.json",
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "bytes": 45
+    }
+  ]
+}

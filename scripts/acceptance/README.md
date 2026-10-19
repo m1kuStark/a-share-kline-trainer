@@ -6,4 +6,6 @@
 
 `packaged.mjs` 对交付目录运行真实 Electron，核对 userData/appData、买入结算、双主题报告、旧历史合并、重复导入和正常退出。`old-ui-to-electron.mjs` 进一步通过真实 v1.2.7 UI 生成录像，在同浏览器 origin 导出，再经交付的一键暂存函数由实际桌面启动消费历史与录像。原生工具文件选择和 NSIS 安装界面不在脚本覆盖内。
 
+`zip-smoke.ps1 -ExtractedPackage <path>` 只允许 `.runs/` 下的全新解压目录。经真实 `Start-Acceptance.cmd` 启动，核对可见窗口、进程/health 身份、数据库与 Chromium profile 路径，再原生关窗验证进程退出，写独立收据。它不覆盖已有验收数据。
+
 验收详情见[任务证据](../../docs/verification/2026-10/BUILDER-ACCEPT-01/README.md)。

@@ -1,0 +1,15 @@
+{
+  "time": "2026-10-19T17:19:50.781245+00:00",
+  "archive": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\Kline-Trainer-BUILDER-ACCEPT-01-20261020.zip",
+  "archiveBytes": 172677423,
+  "archiveSha256": "54ec4f78273de6a1a9ae0d748e876052be2486728c01f051aee4cf8d7f32d85e",
+  "fileCount": 99,
+  "uncompressedBytes": 468157914,
+  "crc": "all entries passed",
+  "fileManifest": "all entries SHA256 matched",
+  "reparsePoints": 0,
+  "testDataIncluded": false,
+  "sourceCommit": "8d08a5a0920abb04964f1e6f68fd20291db55ce7",
+  "manifestSha256": "87c72ecbde9a11031c20896d187264f0ae60df144a479f236e57ab80c7f34802",
+  "note": "Portable isolated acceptance wrapper over win-unpacked; no NSIS installation, no online publication."
+}

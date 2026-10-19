@@ -1,0 +1,32 @@
+[
+  {
+    "matrix": "report-layout",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-report-layout.log"
+  },
+  {
+    "matrix": "local-http-origin",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-local-http-origin.log"
+  },
+  {
+    "matrix": "drawing-persistence",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-drawing-persistence.log"
+  },
+  {
+    "matrix": "random-training-mode",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-random-training-mode.log"
+  },
+  {
+    "matrix": "migration-tool-v127",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-migration-tool-v127.log"
+  },
+  {
+    "matrix": "rankings",
+    "native_exit": 0,
+    "log": "docs\\verification\\2026-10\\BUILDER-ACCEPT-01\\binding-rankings.log"
+  }
+]

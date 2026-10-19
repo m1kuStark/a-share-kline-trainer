@@ -13,6 +13,10 @@
 // oracle 独立性：期望文案来自用户原话/派发简报字面量（不从 DOM 抄回）；遮蔽/揭晓期望来自
 // M7-01 契约（运行中 code/name=null、结束态真实值、非零常量偏移）与 reveal 端点响应。
 import { expect, test, type Page } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { runtime } from './runtime'
 
 const CODE_INPUT = '股票代码，如 600519'
 
@@ -254,7 +258,7 @@ test.describe('random mode (M7-02)', () => {
   })
 
   // RF-04 真实创建：档位网格与经典同文案（五档＋自定义根数），选 3个月真实创建成功
-  test('random period grid: tier options mirror classic and real creation with 3M succeeds', async ({ page }) => {
+  test('random period grid: tier options mirror classic and real creation with 3M succeeds', async ({ page }, testInfo) => {
     const search = await searchRealStocks(page, '600519')
     expect(search.length, '真实目录应能检索到 600519').toBeGreaterThan(0)
     const code = search[0].code
@@ -275,23 +279,65 @@ test.describe('random mode (M7-02)', () => {
     await page.locator('.suggestions button').first().click()
     await expect(page.getByText(/已选：/)).toBeVisible()
 
+    const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/trainings/random' && response.request().method() === 'POST')
     await page.getByRole('button', { name: '开始训练', exact: true }).click()
+    const creation = await created
+    expect(creation.status()).toBe(201)
+    expect(creation.request().postDataJSON()).toMatchObject({ dimension: 'random_time', code, window_months: 3 })
+    expect(creation.request().postDataJSON().window_bars).toBeUndefined()
     await waitTrainingInteractive(page)
 
     const active = await (await page.request.get('/api/trainings/active')).json() as {
       training: {
+        id: number
         tier: string
         random: { dimension: string; hideStock: boolean; hideTime: boolean }
-        range: { mode: string; barCount: number }
+        range: { mode: string; barCount: number; startDate: string; endDate: string }
       }
     }
     expect(active.training.random).toEqual({ dimension: 'random_time', hideStock: false, hideTime: true, remainingBars: expect.any(Number) })
     // 录制契约冻结：随机训练 tier 恒 RANGE 哨兵（档位口径进 range.notes）
     expect(active.training.tier).toBe('RANGE')
     expect(active.training.range.mode).toBe('random')
-    // 3 个自然月 ≈ 40–70 个交易日（真实数据容差口径）
-    expect(active.training.range.barCount).toBeGreaterThanOrEqual(40)
-    expect(active.training.range.barCount).toBeLessThanOrEqual(70)
+    // 独立 oracle：三个自然月内的实际原始日线，停牌/缺口不能套固定根数容差。
+    // 只读本 run 的数据库取得随机起点；不用被测解析器、选窗器或偏移日期计算月跨度。
+    const run = runtime()
+    expect(run.tdxRoot).toBeTruthy()
+    const database = new DatabaseSync(run.databasePath, { readOnly: true })
+    let stored: { market: string; code: string; range_start: string; range_end: string; random_time_offset_days: number }
+    try {
+      stored = database.prepare('SELECT market, code, range_start, range_end, random_time_offset_days FROM trainings WHERE id = ?')
+        .get(active.training.id) as typeof stored
+    } finally { database.close() }
+    expect(stored.code).toBe(code)
+    const raw = await readFile(join(run.tdxRoot!, 'vipdoc', stored.market, 'lday', `${stored.market}${code}.day`))
+    expect(raw.length % 32).toBe(0)
+    const dates: string[] = []
+    for (let offset = 0; offset < raw.length; offset += 32) {
+      const day = String(raw.readUInt32LE(offset))
+      dates.push(`${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`)
+    }
+    const end = new Date(`${stored.range_start}T00:00:00Z`)
+    const startDay = end.getUTCDate()
+    end.setUTCDate(1)
+    end.setUTCMonth(end.getUTCMonth() + 3)
+    const lastDay = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0)).getUTCDate()
+    end.setUTCDate(Math.min(startDay, lastDay))
+    const calendarEnd = isoDay(end)
+    const expectedDates = dates.filter(day => day >= stored.range_start && day <= calendarEnd)
+    expect(dates.indexOf(stored.range_start)).toBeGreaterThanOrEqual(200)
+    expect(calendarEnd <= dates[dates.length - 1], '三个自然月完整落在原始数据内').toBe(true)
+    expect(expectedDates.length).toBeGreaterThanOrEqual(2)
+    expect(stored.range_end).toBe(expectedDates[expectedDates.length - 1])
+    expect(active.training.range.barCount).toBe(expectedDates.length)
+    expect(stored.random_time_offset_days).not.toBe(0)
+    const masked = (day: string) => isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + stored.random_time_offset_days * 86_400_000))
+    expect(active.training.range.startDate).toBe(masked(expectedDates[0]))
+    expect(active.training.range.endDate).toBe(masked(expectedDates[expectedDates.length - 1]))
+    await testInfo.attach('three-calendar-months-oracle', {
+      body: JSON.stringify({ code, realStart: stored.range_start, calendarEnd, expectedDates, actualCount: active.training.range.barCount }),
+      contentType: 'application/json',
+    })
   })
 
   // RF2-01 真实创建：random_stock 档位网格与经典同文案（五档＋自定义范围，无自定义根数档），

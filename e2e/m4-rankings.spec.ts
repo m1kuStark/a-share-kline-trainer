@@ -16,8 +16,9 @@ test.use({ viewport: { width: 1440, height: 940 } })
 async function resetToLauncher(page: Page): Promise<void> {
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  const environment = page.waitForResponse(response => new URL(response.url()).pathname === '/api/env')
   await page.goto('/')
-  await page.waitForTimeout(400)
+  expect((await environment).ok()).toBe(true)
   await expect(page.getByRole('button', { name: '开始训练' })).toBeVisible()
 }
 

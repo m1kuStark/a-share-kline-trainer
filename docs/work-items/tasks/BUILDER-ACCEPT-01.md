@@ -5,11 +5,11 @@
   "id": "BUILDER-ACCEPT-01",
   "title": "关闭复盘候选剩余失败并生成独立本地验收包",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "M5",
   "base_commit": "81558ad3b176c07e1f368ef3ea2fdd2fb5da82ed",
-  "summary": "用户 2026-10-20 明确授权处理成绩单与文档检查错误、补真实旧包迁移验证、生成独立验收包；暂不发布。接续 builder-review-followup 候选，不改个人训练数据。",
-  "next_action": "定位并锁定有成交成绩单的窄窗溢出；修复文档元数据及恢复缺失证据；校验真实 v1.2.7 包后执行迁移；全量门禁与独立本地打包。",
+  "summary": "成绩单窄窗与 20 个文档错误已修复。单测 server 1750 + desktop 357、M2 24、完整 Journey 196/196 通过，无跳过。真实 v1.2.7 历史/旧 UI 录像迁入实际 Electron 并回放；独立 ZIP 全新解压启动、隔离数据与正常退出通过。待用户验收，未发布。",
+  "next_action": "用户按 docs/release/builder-accept-01.md 解压并运行独立验收包；NSIS 安装/覆盖升级未实测，暂不发布。",
   "allowed_paths": [
     "web/src/components/HistoryReport.vue",
     "web/src/styles.css",
@@ -28,14 +28,25 @@
     "docs/status.md",
     "docs/release/**",
     "docs/user/desktop-upgrade.md",
-    "tools/migrate-v127/**"
+    "tools/migrate-v127/**",
+    "e2e/m4-rankings.spec.ts",
+    "e2e/random-mode.spec.ts",
+    "e2e/trade-marker-details.spec.ts"
   ],
-  "depends_on": ["BUILDER-REVIEW-01"],
+  "depends_on": [
+    "BUILDER-REVIEW-01"
+  ],
   "docs_impact": {
-    "update": ["web/README.md", "e2e/README.md", "docs/work-items/tasks/BUILDER-ACCEPT-01.md"],
+    "update": [
+      "web/README.md",
+      "e2e/README.md",
+      "docs/work-items/tasks/BUILDER-ACCEPT-01.md"
+    ],
     "reason": "成绩单窄窗行为修复及回归入口；旧文档事实修复不虚构验收；真实包与本地验收包收据。"
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-10/BUILDER-ACCEPT-01/README.md"
+  ],
   "integration_ref": "codex/builder-review-followup（隔离候选）",
   "acceptance_ref": null
 }
