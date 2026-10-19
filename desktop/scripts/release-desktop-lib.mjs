@@ -188,6 +188,40 @@ export async function collectChecksumEntries({ version, fs }) {
   return entries
 }
 
+/**
+ * GAP2-RELCHECK（2026-10-19 复盘缺口 G2）：release-manifest.json 文档渲染——
+ * 发布产物就绪后随产物目录一起落盘的机器可读清单（版本号＋每个资产的
+ * 文件名/字节数/sha256），供上传后 verify-release-assets.mjs 对表与人工审计。
+ * 形状冻结：{ version, generatedAt, assets: [{ name, bytes, sha256 }] }，
+ * assets 按文件名字节序排序（ICU 无关，确定性输出）；条目校验 fail-closed
+ * （版本三段号、非空清单、64 位小写 hex、bytes 非负整数），JSON＋尾换行。
+ * 清单自身不列入自身（自指无意义）；校验和资产（SHA256SUMS-desktop.txt）由
+ * 编排层作为普通条目传入——它是上传资产集的一员。
+ */
+export function renderReleaseManifest({ version, entries, generatedAt }) {
+  if (typeof version !== 'string' || !VERSION_PATTERN.test(version)) {
+    throw new Error(`release-manifest 版本必须是三段号（X.Y.Z），收到：${JSON.stringify(version)}`)
+  }
+  if (typeof generatedAt !== 'string' || generatedAt.length === 0) {
+    throw new Error('release-manifest 缺少 generatedAt（ISO 时间戳）')
+  }
+  if (!Array.isArray(entries) || entries.length === 0) throw new Error('release-manifest 资产清单不能为空')
+  for (const entry of entries) {
+    if (!entry || typeof entry.name !== 'string' || entry.name.length === 0) throw new Error('release-manifest 条目缺少文件名')
+    if (!Number.isInteger(entry.size) || entry.size < 0) throw new Error(`release-manifest 条目 ${entry.name} 的 bytes 必须为非负整数`)
+    if (typeof entry.sha256Hex !== 'string' || !SHA256_HEX_PATTERN.test(entry.sha256Hex)) {
+      throw new Error(`release-manifest 条目 ${entry.name} 的 sha256 不是 64 位小写十六进制`)
+    }
+  }
+  const sorted = [...entries].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+  const manifest = {
+    version,
+    generatedAt,
+    assets: sorted.map(entry => ({ name: entry.name, bytes: entry.size, sha256: entry.sha256Hex })),
+  }
+  return `${JSON.stringify(manifest, null, 2)}\n`
+}
+
 /** RELEASE-DIST-STALENESS（2026-10-17 用户验收实证）：发布预检必须拦陈旧 dist。
  *  existence 检查只证明"构建过"，不证明"构建的是当前源码"——第八轮事故＝主仓 web/dist
  *  停留前一日构建，旧 UI 静默入包，用户装机后布局重构"未生效"。fail-closed 判据＝
