@@ -10,6 +10,7 @@ import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
+import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
 import type { Action, JsonValue } from '../recording/types'
 import { drawingOperationParams, hasUnreportedMove, markDrawingReported, syncReportedDrawings, type ReportedDrawings } from '../recording/drawingOperations'
@@ -171,26 +172,25 @@ function cancelHoverTimer(): void {
 // 遮蔽符（与 RF-05 星号遮蔽同语言）；shiftDays≠0：时间戳/日期串按会话常量差换算成真实日期
 // 再呈现（先例＝SessionReplay.realDateOf 的「偏移起始日↔真实起始日」常量差）。经 klinecharts
 // setFormatter 注入（Chart 侧 setFormatter 走 _setOptions 全量 layout，含 X 轴刻度重建）。
-const MS_PER_DAY = 86_400_000
-const MASKED_DATE_TEXT = '******'
+// 纯函数自 ../randomDatePresentation 引入（M2-RANDOM-AXIS-01 抽出以便单元层锁定语义）。
 const datePresentation = { hidden: false, shiftDays: 0 }
-function presentableTimestamp(timestamp: number): number {
-  return datePresentation.shiftDays === 0 ? timestamp : timestamp + datePresentation.shiftDays * MS_PER_DAY
-}
-/** 呈现层日期字符串换算：支持完整日期与月键（周/月观察周期的 bar.date 形态）；未知形态原样 */
-function presentableDateString(date: string): string {
-  if (datePresentation.hidden) return MASKED_DATE_TEXT
-  if (datePresentation.shiftDays === 0) return date
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 10)
-  if (/^\d{4}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}-01T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 7)
-  return date
+// M2-RANDOM-AXIS-01 真实数据锚：已加载 K 线（呈现空间）时间戳集合——揭示态轴刻度只有命中
+// 真实 bar 才换算呈现（该 bar 的真实交易日）；klinecharts 对右侧空白越界 dataIndex 的日历日
+// 外推刻度无 bar 可锚，不呈现日期（null → 空文本），杜绝揭示出周末/节假日假日期。
+let barTimestamps: ReadonlySet<number> = new Set()
+function rebuildBarTimestamps(): void {
+  barTimestamps = new Set(loadedData.map(bar => bar.timestamp))
 }
 function applyDateFormatter(): void {
-  // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径
+  // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径。
+  // 揭示态换算入口 revealedTickTimestamp：非 bar 锚刻度返回 null → 空文本（不造日期）；
+  // 遮蔽态（hidden）与经典态（shiftDays=0）行为与本修复前完全一致。
   chart?.setFormatter({
     formatDate: ({ dateTimeFormat, timestamp, template, type }) => {
       if (datePresentation.hidden) return type === 'xAxis' ? '' : MASKED_DATE_TEXT
-      return utils.formatDate(dateTimeFormat, presentableTimestamp(timestamp), template)
+      const revealed = revealedTickTimestamp(timestamp, barTimestamps, datePresentation.shiftDays)
+      if (revealed === null) return ''
+      return utils.formatDate(dateTimeFormat, revealed, template)
     },
   })
 }
@@ -211,7 +211,7 @@ function buildHoverModel(dataIndex: number): HoverCardModel | null {
   const bar = list[dataIndex]
   if (!bar) return null
   return formatHoverCard(
-    { ...bar, date: typeof bar.date === 'string' ? presentableDateString(bar.date) : bar.date },
+    { ...bar, date: typeof bar.date === 'string' ? (datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date, datePresentation.shiftDays)) : bar.date },
     dataIndex > 0 ? list[dataIndex - 1]?.close ?? null : null,
   )
 }
@@ -447,7 +447,7 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
     const result = await props.fetchEarlier(first.date, forMa ? Math.min(1000, maHistoryMissing()) : LOAD_CHUNK_BARS)
     if (disposed || version !== dataVersion) return
     const older = result.bars.map(toK)
-    if (older.length) loadedData = [...older, ...loadedData]
+    if (older.length) { loadedData = [...older, ...loadedData]; rebuildBarTimestamps() }
     result.hasMore = result.hasMore && older.length > 0
     hasMoreForward = result.hasMore
     callback(older, { forward: result.hasMore })
@@ -490,6 +490,7 @@ function feedData(): void {
   loadingForward = false
   chart.setPeriod({ type: props.timeframe === '1W' ? 'week' : props.timeframe === '1M' ? 'month' : 'day', span: 1 })
   loadedData = props.bars.map(toK)
+  rebuildBarTimestamps()
   hasMoreForward = props.hasMoreBars
   chart.setDataLoader({
     getBars: ({ type, callback }) => {
