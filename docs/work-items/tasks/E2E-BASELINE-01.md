@@ -5,10 +5,10 @@
   "id": "E2E-BASELINE-01",
   "title": "存量浏览器回归失败清偿：分类、修复或显式豁免",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "M5",
-  "summary": "全套 journey 自 v1.2.0 起因 13 处 spec 文件损坏从未完整运行（V1.2.3 已修复损坏使全套可解析）；2026-10-02 首次完整运行 89/108，19 项失败经 stash 基线复跑证实全部为 v1.2.2 树上已存在的存量失败，尚未归因；2026-10-04 GITHUB-HEALTH-01 CI 双轮全量（各 125 项）均为 93 通过/29 失败/3 未运行且两轮逐项一致，为当前清偿基线。",
-  "next_action": "以 GITHUB-HEALTH-01 双轮 125 项（93/29/3）为当前基线，对照 2026-10-02 旧清单逐项归因 29 项失败（真缺陷 / 断言过期 / mock 缺录像 namespace / 夹具环境），真缺陷按域拆返修，过期断言更新并登记原因；vitest 存量环境抖动（db-migration/recording/data-refresh 域约 10 项）一并复核。",
+  "summary": "全套 journey 自 v1.2.0 起因 13 处 spec 文件损坏从未完整运行（V1.2.3 已修复损坏使全套可解析）；2026-10-02 首次完整运行 89/108，19 项失败经 stash 基线复跑证实全部为 v1.2.2 树上已存在的存量失败，尚未归因；2026-10-04 GITHUB-HEALTH-01 CI 双轮全量（各 125 项）均为 93 通过/29 失败/3 未运行且两轮逐项一致；2026-10-19 E2E-BASELINE-01 分类轮（提交 6533196，run-9db67e72，TDX_ROOT 按授权注入）：191 项＝171 过/18 败/2 跳过（exit 1），CI 基线 29 败中 12 项已自然修复、17 项仍在、新增 1 项；18 项全部归因——桶A 真bug 8 项（4 个根因：推进清空撤销历史、restoreDrawings 丢弃逐画线样式、画线按周期过滤不可见、周期过滤渗入录制捕获致回放丢画线）、桶B spec过时 9 项（v1.0.3~v1.1.1 UI 演进未回写断言，逐条呈报清单见验证报告第五节）、待复核 1 项（random-mask-axis 窗口相关）、设计内跳过 1 项（migration-v127 环境门控）。逐例证据与探针复现实录见 docs/verification/2026-10/E2E-BASELINE-01/README.md。",
+  "next_action": "分类完成，进入清偿：① 桶A 按根因立 4 张修复卡（撤销历史 feedData 重置 / restoreDrawings 样式覆盖 / 跨周期画线可见性（修复方向待用户拍板：恢复跨周期 vs 确认按周期隔离并同步 spec+interaction.md）/ 录制捕获取全量画线）；② 桶B 9 项已逐条呈报（验证报告第五节），待用户逐条拍板更新断言或删例后清偿；③ 待复核 1 项（random-mask-axis）定向复现定桶；④ 桶C 登记 known（migration-v127 环境门控，非缺陷）；⑤ 'e2e 纳入发布门禁必过链'（用户拍板 6）的前置＝桶A 清零＋桶C 登记完成——当前事实：CI 仅 build+单测、发布链只扫 journey 标记剥离、journey 仅在 verify:candidate 人工步骤中，18 项失败不会被任何自动门禁拦截（报告第六节，供 G5 接线任务引用）。",
   "allowed_paths": [
     "e2e/**",
     "server/test/**",
@@ -36,6 +36,10 @@
 [GITHUB-HEALTH-01 报告](../../verification/2026-10/GITHUB-HEALTH-01/report.md)在 CI 提交 `0715a0a` 上完成两轮全量 Journey：每轮 125 项，均为 **93 通过、29 失败、3 未运行**，两轮逐项状态与报错一致（无轮间漂移）。套件项数较 2026-10-02 的 108 项增加，源于其间新增 spec（条件单创建回归、退出双主题断言、录像库隔离等）；29 项与旧清单 19 项的交集与差异需对照归因，不能把两份数字互相替代。
 
 初步分类方向（引自报告）：旧页面定位器、缺少录像 namespace 的 mock、夹具/环境问题、真实画线恢复等产品缺陷。
+
+## 分类轮结果（2026-10-19，run-9db67e72）
+
+191 项＝171 通过/18 失败/2 跳过（exit 1）。三桶：**A 真bug 8 项（4 根因）**、**B spec过时 9 项（已逐条呈报）**、**待复核 1 项**、**设计内跳过 1 项**。逐例证据、桶B呈报清单、门禁拦截现状结论见 [验证报告](../../verification/2026-10/E2E-BASELINE-01/README.md)。桶A 根因速记：① `feedData()` 每次推进无条件 `drawingHistory.reset([])`（违背 drawing-persistence.md「推进不清撤销历史」）；② `restoreDrawings()` 以 `configuredOverlayStyle` 覆盖 `item.styles`，编辑过的画线样式刷新/撤销重做后丢失；③ 画线按周期过滤（a71139a）致周/月视图不可见；④ 同过滤渗入 `captureState()` 使录像检查点丢日K画线、回放为空。
 
 ## 失败清单（2026-10-02 全套运行，run-5522d19a；stash 基线复跑同清单复现；历史事实保留）
 
