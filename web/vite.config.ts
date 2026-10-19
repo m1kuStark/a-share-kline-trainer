@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: Number(process.env.VITE_PORT ?? 5173),
     strictPort: true,
-    proxy: { '/api': process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8787' },
+    // Keep browser Host and Origin aligned for the backend's same-origin guard.
+    proxy: { '/api': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8787', changeOrigin: false } },
   },
   build: { outDir: process.env.TRAINER_STATIC_DIR || (mode === 'journey' ? 'dist-journey' : 'dist'), emptyOutDir: true },
 }))

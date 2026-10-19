@@ -137,7 +137,7 @@ setup exe＋migrate-v127.zip＋元数据资产）有单测锁定（`desktop/test
 
 > 依据：用户拍板「不能依赖 github 链接提供下载资源，应该提供纯国内网络也能正常更新的发布路径」（GPU3060-E2E-01 wave-e 实证 GitHub 直连间歇失败）。客户端（桌面 electron-updater 链＋zip HTTP 链）默认「自动」源＝镜像优先、失败回退 GitHub，**无需随镜像上线发版**——镜像 URL 常量填入并重建后，存量版本的自动源仍走 GitHub，首个含镜像常量的版本起镜像优先生效。
 
-1. **前置（一次性）**：镜像托管（CloudBase 静态托管，待用户授权后开通）就绪后，把真实 base URL 填入 `server/src/update/manifest.ts` 的 `CN_MIRROR_BASE` 常量（当前空串＝镜像未上线，两链自动退化为纯 GitHub——行为安全），跑 `npm run build:server`（desktop 链经编译产物 import 同一常量，一处填入两链生效），随下个版本发布。
+1. **现有配置**：CloudBase 静态托管已接入，`server/src/update/manifest.ts` 的 `CN_MIRROR_BASE` 为 `https://k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com/feed`。desktop 链经服务端编译产物复用同一常量。修改镜像地址需重建并随版本发布；上传前先确认管理登录和目标环境。使用 CloudBase MCP 时，在同一连接先调用 `auth(action=status)` 加载已有授权与环境，再查询托管；单独调用托管工具可能返回 `AUTH_REQUIRED`，不能直接判定凭证过期。已有用户设备授权；仅在状态确认失效后重新认证，不在文档或仓库保存令牌。核对见[Builder 验证记录](../verification/2026-10/BUILDER-REVIEW-01/README.md)。
 2. **每次正式发布后**：在 GitHub Release 完成第三节上传后，把双形态产物合并到一个目录（desktop/release 的 setup exe＋blockmap＋latest.yml＋migrate-v127.zip，加上 zip 发布物 `kline-trainer-v<版本>-windows-x64.zip`＋其 `SHA256SUMS`），执行：
    ```
    node desktop/scripts/sync-feed.mjs --release <产物目录> --mirror <镜像baseURL> --notes "<发布说明，可省>"

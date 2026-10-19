@@ -1,0 +1,23 @@
+{
+  "base_commit": "a91bad2",
+  "candidate_head": "6251f4bdd77cd8ecf354ecd6cb4e7fd4a9680e61",
+  "hash_kind": "SHA256 raw working-tree bytes before candidate commit",
+  "files": {
+    "e2e/README.md": "48219cda7a6b119f706e2f9b1c359db745fffe45b75b2d9f3368f8647ccc2985",
+    "e2e/backup-restore.spec.ts": "b4abd887a1b6d37319139757660b77664dbe6c09a8b590a98744122199655e96",
+    "e2e/drawing-basis.spec.ts": "b516bfc526c2ec131b7129e706e5a82b521ac366ed91c4248d55ea3ef3c7c5c8",
+    "e2e/local-origin.spec.ts": "1d9bd0cbe64a5ce74a6ac8ea83a3e5b47cb4d6e6212336f6a489a455c2c370a4",
+    "server/README.md": "ce9d115920a9a3061f8ebec28cdae2b214bd57071c351fdd6a546161bc22246f",
+    "server/src/index.ts": "6a9c5699d78975f9953a45b4bb7c78e4d90e433011c546bb66c2ebd3a6d9626e",
+    "server/test/drawing-persistence-contract.test.ts": "5d74c9231f400139c1a1fc46f325575ea37e82d2ba3461d9390065717eb7d2a1",
+    "server/test/local-request-guard.test.ts": "8df10f8cf3616f73363e790e16781ef5a3aea127290297fd6c54c6c08a968711",
+    "server/test/random-reveal-trading-day.test.ts": "089bc0a7b7f953b92716eba81436bc1faa6a8fdcda35231e58fde3a80fa36b76",
+    "server/test/recording-chart-capture.test.ts": "6077bfc6e6af41d460d7d2db71c005e6e6bc52fd12a54414656deabe1c276bc1",
+    "web/README.md": "af9449348cf52f33f7eaf47072d1c0403af21db5ff2eab2311c872b28dbb2aae",
+    "web/src/components/KlineChart.vue": "381dce1dbc8f83d2f08884ee655a574567141a1504b45e1c488217ffe38f04d7",
+    "web/src/randomDatePresentation.ts": "2f2c7b3029b05d8b7d6f090d1b0c043f6a5457964a0fe6c6d52d8190cd7c9781",
+    "web/src/recording/chartCapture.ts": "4e6d6f2f6921c34b8cb70bbd4c074181077b29f70ae4bf049450d6b16a85b497",
+    "web/src/views/Training.vue": "80a6ddcb916c802809a1454e3cb9fbe4464da50728464a69f7047fd5c53a4c18",
+    "web/vite.config.ts": "e12707dbb31b78f0c7937f099a382fb53ed647a622b8bb11da0e7b3290d6d3f5"
+  }
+}

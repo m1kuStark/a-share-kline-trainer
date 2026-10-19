@@ -1,0 +1,16 @@
+{
+  "sourceRun": "run-d21a1ec2-b38a-4045-97e7-0ac9fde7b427",
+  "restoredRun": "run-fd7643ae-5688-4d6c-bcb1-355174aaed3e",
+  "trainingId": 1,
+  "database": "consistent SQLite snapshot copied into independent directory",
+  "matched": [
+    "training",
+    "trades",
+    "drawings",
+    "report"
+  ],
+  "recording": "exported gzip imported into empty browser context",
+  "replayDrawings": true,
+  "replayReadOnly": true,
+  "desktopAutomaticArchive": "not exercised"
+}

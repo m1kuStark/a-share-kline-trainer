@@ -1,0 +1,55 @@
+{
+  "auth_status": "READY",
+  "environment": "k-line-trainer-d9gbbg6il6bf8c320",
+  "hosting_status": "online",
+  "domain": "k-line-trainer-d9gbbg6il6bf8c320-1505768275.tcloudbaseapp.com",
+  "feed_files": [
+    {
+      "key": "feed/SHA256SUMS",
+      "size": 103
+    },
+    {
+      "key": "feed/kline-trainer-desktop-setup-v1.3.0-windows-x64.exe",
+      "size": 117251283
+    },
+    {
+      "key": "feed/kline-trainer-desktop-setup-v1.3.0-windows-x64.exe.blockmap",
+      "size": 122386
+    },
+    {
+      "key": "feed/kline-trainer-desktop-setup-v1.3.1-windows-x64.exe",
+      "size": 117249767
+    },
+    {
+      "key": "feed/kline-trainer-desktop-setup-v1.3.1-windows-x64.exe.blockmap",
+      "size": 122331
+    },
+    {
+      "key": "feed/kline-trainer-v1.3.0-windows-x64.zip",
+      "size": 55649542
+    },
+    {
+      "key": "feed/kline-trainer-v1.3.1-windows-x64.zip",
+      "size": 55649546
+    },
+    {
+      "key": "feed/latest.yml",
+      "size": 828
+    },
+    {
+      "key": "feed/manifest.json",
+      "size": 1492
+    },
+    {
+      "key": "feed/migrate-v127.zip",
+      "size": 418801
+    }
+  ],
+  "objects_count": 10,
+  "limitations": [
+    "read-only access verified; no write/upload/delete performed",
+    "MCP findFiles summary says zero but raw Contents contains the listed objects",
+    "initial AUTH_REQUIRED was resolved by auth status in the same MCP connection; not expired credentials",
+    "account publishing permissions/CAM least privilege not fully audited"
+  ]
+}

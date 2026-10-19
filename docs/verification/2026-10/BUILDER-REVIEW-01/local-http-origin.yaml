@@ -1,0 +1,34 @@
+schema_version: "harness-matrix-v1"
+module: "local-http-origin"
+spec_source: "BUILDER-REVIEW-01; 用户 2026-10-19 授权按复盘建议补本地 API 来源边界；SECURITY.md 单用户本机信任模型"
+note: "服务入口统一拦截。保留同源应用、Vite 同源反向代理及无浏览器来源头的本机脚本；既有控制令牌防护继续生效。"
+index_dirs: ["server/test", "e2e"]
+axes:
+  caller: ["same-origin", "foreign-origin", "opaque-origin", "cross-site-no-origin", "local-script", "foreign-host"]
+rows:
+  - id: "LOCAL-HTTP-ORIGIN"
+    ears: "WHEN 普通 API 请求携带外站或 opaque Origin THE SYSTEM SHALL 在读取或写入用户数据前返回 403 且不授予跨站读取权限"
+    axes: {caller: "foreign-origin|opaque-origin"}
+    oracle: "本轮用户批准建议③；隔离临时数据库读取历史和修改设置的 RED；与产品实现独立的拒绝访问预期"
+    test_ids:
+      - "server/test/local-request-guard.test.ts::rejects foreign and opaque origins before reading or writing local records"
+      - "server/test/local-request-guard.test.ts::rejects foreign preflight and forged same-origin metadata without mutating preferences"
+      - "e2e/local-origin.spec.ts::本机页面正常读写，其他站点无法读取历史或修改设置"
+    status: "covered"
+  - id: "LOCAL-HTTP-METADATA-HOST"
+    ears: "WHEN 请求来自跨站浏览器上下文或 Host 不是明确的本机回环主机 THE SYSTEM SHALL 返回 403 且不执行业务操作"
+    axes: {caller: "cross-site-no-origin|foreign-host"}
+    oracle: "单用户本机信任模型；外站不得绕过 Origin 缺席路径，DNS 域名不得作为本机 Host"
+    test_ids:
+      - "server/test/local-request-guard.test.ts::rejects cross-site metadata even when Origin is absent"
+      - "server/test/local-request-guard.test.ts::rejects non-loopback Host including an attacker origin matching that Host"
+    status: "covered"
+  - id: "LOCAL-HTTP-COMPATIBILITY"
+    ears: "WHEN 本机同源应用或无浏览器来源头的本地脚本访问 THE SYSTEM SHALL 保持正常读写并保留 setup/control 令牌鉴权；Vite 同源代理保持可用"
+    axes: {caller: "same-origin|local-script"}
+    oracle: "本轮用户批准建议③应用正常读写；既有启动器与控制守卫兼容合同"
+    test_ids:
+      - "server/test/local-request-guard.test.ts::keeps real loopback requests and same-origin writes working without weakening control tokens"
+      - "server/test/local-request-guard.test.ts::preserves browser Origin and Host through the actual Vite proxy for same-origin writes"
+      - "e2e/local-origin.spec.ts::本机页面正常读写，其他站点无法读取历史或修改设置"
+    status: "covered"

@@ -6,6 +6,8 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [local-origin](local-origin.spec.ts) | 应用同源读写成功；另一站点的真实浏览器读取和写入被拒，偏好保持不变 |
+| [backup-restore](backup-restore.spec.ts) | 独立 SQLite 一致快照恢复训练/成交/画线/报告，空浏览器导入录像并只读回放；不覆盖桌面安装和自动归档 |
 | [ma-settings](ma-settings.spec.ts) | 八条MA参数、草稿/取消/校验、颜色和持久化、周期共用、1000周期预热、视窗画线保留及双主题尺寸 |
 | [acceptance-feedback](acceptance-feedback.spec.ts) | 录像入口、活动训练往返、快捷键与顶部空间 |
 | [drawing-basis](drawing-basis.spec.ts) | 除权推进/轴缩放/撤销刷新时画线锚点对齐 |

@@ -1,0 +1,2757 @@
+{
+  "command": "npm run journey -- --retries=0",
+  "native_exit_code": 1,
+  "context": "Full isolated candidate suite; no retry. Exits captured during execution before interruption.",
+  "run_id": "run-54e0a9b3-4665-42f9-968a-a4eb5b78f13b",
+  "source_result_sha256": "43418283e693adf487ae45b737650b98d30369887458920bad623bdfcc869a41",
+  "source_result_path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\run-54e0a9b3-4665-42f9-968a-a4eb5b78f13b\\artifacts\\browser-results.json",
+  "stats": {
+    "startTime": "2026-10-19T15:13:19.695Z",
+    "duration": 1927025.02,
+    "expected": 193,
+    "skipped": 1,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "file": "acceptance-feedback.spec.ts",
+      "line": 16,
+      "title": "用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 14162,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "acceptance-feedback.spec.ts",
+      "line": 59,
+      "title": "周月观察时仍记录同期日线，界面和开关操作不增加业务计数",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10163,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "acceptance-feedback.spec.ts",
+      "line": 93,
+      "title": "放弃可丢弃录像但保留训练与画线，结算默认保存且可从历史回放",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 26523,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "acceptance-feedback.spec.ts",
+      "line": 141,
+      "title": "结算确认时丢弃立即生效，刷新已结束训练不重新创建录像",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10858,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "animation-settings.spec.ts",
+      "line": 67,
+      "title": "animation settings section owns the odometer motion switch: instant effect, persisted key, topbar capsule removed (M6-07)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9503,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "archive-recording.spec.ts",
+      "line": 11,
+      "title": "训练结束后自动归档：浏览器环境降级为控制台提示，手动导出链不受影响",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8171,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "backup-restore.spec.ts",
+      "line": 10,
+      "title": "独立数据库和全新浏览器可恢复训练事实并导入带画线录像",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 18272,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "chart-toggles.spec.ts",
+      "line": 48,
+      "title": "the three indicator toggles sit in the period row with aria-pressed and no topbar KDJ button",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6970,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "chart-toggles.spec.ts",
+      "line": 69,
+      "title": "toggling each indicator removes and restores its pane immediately with independent persistence",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9690,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "chart-toggles.spec.ts",
+      "line": 111,
+      "title": "box select, dbl-click maximize and drawing save/restore keep their semantics with some subcharts off",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12050,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "compact-chart.spec.ts",
+      "line": 5,
+      "title": "紧凑行情栏释放主图高度，详情覆盖显示不挤动图表",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8447,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "compact-chart.spec.ts",
+      "line": 41,
+      "title": "刷新读取新增本地行情但不越过推进日，日期可见且可回到最新",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7347,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "cost-basis.spec.ts",
+      "line": 5,
+      "title": "协创数据送转后成本线与账户一致，清仓再买及日周月不残留旧成本",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11233,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update-feedback.spec.ts",
+      "line": 54,
+      "title": "训练页以 freshness 为准：current 即使 needsUpdate=true 也不显示黄色提醒",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10407,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update-feedback.spec.ts",
+      "line": 76,
+      "title": "训练页显示 unchanged 扫描完成及 stale 下一步提示",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10539,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update-feedback.spec.ts",
+      "line": 96,
+      "title": "训练页将 409 更新失败展示在固定反馈区",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6181,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update-feedback.spec.ts",
+      "line": 106,
+      "title": "无变化更新不改布局，随后推进恢复训练状态反馈",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7827,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 87,
+      "title": "a) freshness stale 时顶栏出现摇晃的\"更新日线\"醒目按钮＋截止日小字＋通达信盘后指引，窄屏不横向溢出",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 497,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 111,
+      "title": "b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → updated 后显示\"数据已最新\"，醒目按钮消失且常驻手动入口仍在",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 2699,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 152,
+      "title": "c) 已最新（freshness current）初始态：绿点＋\"数据已最新 · 截止\"一行小字，无醒目按钮，手动重新读取入口常驻",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 809,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 182,
+      "title": "d) freshness unknown 不显示绿色最新：中性\"数据截至…最新交易日待确认\"，手动重新读取入口仍可用",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 430,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 199,
+      "title": "e) needsUpdate 时点开始训练弹确认框：仍要开始训练照常创建；先更新数据只触发 refresh 不创建",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 1461,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 243,
+      "title": "f) 无可用来源：中性「连接通达信」入口，点击打开接入向导（不触发更新、不用 alert）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 478,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "data-update.spec.ts",
+      "line": 278,
+      "title": "g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启发误报）：首页绿色、开始训练零打扰",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 840,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "diagnostics-copy.spec.ts",
+      "line": 37,
+      "title": "diagnostics copy stays hidden in the pure browser form (DESKTOP-DIAG-CLIPBOARD fail-closed gating)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 726,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "diagnostics-copy.spec.ts",
+      "line": 47,
+      "title": "diagnostics copy rounds the stubbed bridge: 已复制 feedback fades and the failure path stays retryable (DESKTOP-DIAG-CLIPBOARD)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7532,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "drawing-basis.spec.ts",
+      "line": 4,
+      "title": "跨除权日后价位线跟随同一历史K线，缩放和刷新不漂移",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13918,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "drawing-basis.spec.ts",
+      "line": 56,
+      "title": "空画线跨除权日后新画价位线，普通刷新不会再次复权",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10633,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "exit-flow.spec.ts",
+      "line": 47,
+      "title": "a) 单标签保存并退出：dark主题贯穿确认、排空和已退出页",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 2580,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "exit-flow.spec.ts",
+      "line": 47,
+      "title": "a) 单标签保存并退出：light主题贯穿确认、排空和已退出页",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 2575,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "exit-flow.spec.ts",
+      "line": 98,
+      "title": "b) 多标签：另一页面拒绝后发起方收到\"退出未完成\"，服务未停止",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 1508,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "exit-flow.spec.ts",
+      "line": 118,
+      "title": "c) 其他页面发来退出请求：出现确认横幅，拒绝后横幅消失且不显示已退出页",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 594,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 20,
+      "title": "Act1 创建训练并进入训练视图",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7400,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 40,
+      "title": "Act5 买入推进卖出结算",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7913,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 141,
+      "title": "Act2a 线段绘制编辑删除",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9198,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 163,
+      "title": "Act2d 空白点击解除持久选中（选中状态机）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8345,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 177,
+      "title": "Act2b 射线延伸段可选中",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8412,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 187,
+      "title": "Act2c 直线两端延伸段可选中",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8566,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 198,
+      "title": "Act2e 水平线系三工具（D5~D7）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11635,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 228,
+      "title": "Act3a 轴拖拽进主图缩放持续（不中断）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7691,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 246,
+      "title": "Act3b 手动轴后框选无纵向叠加",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8613,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 267,
+      "title": "Act3c 按线拖拽只动线段不动图",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9163,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 291,
+      "title": "Act3d 中键平移整图且松键不残留",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8335,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 324,
+      "title": "Act4a 多选模式框选批量选中且不缩放",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11600,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 351,
+      "title": "Act4b Ctrl+点选累加与批量删除",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11903,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 370,
+      "title": "Act4c 选项卡式批量编辑",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12461,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 401,
+      "title": "Act4d 副图画线与多选框选（主副图同权）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9645,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 440,
+      "title": "Act6 主题切换持久化",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8240,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 50,
+      "title": "KDJ subchart mounts by default with the VOL/MACD panes intact",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6129,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 66,
+      "title": "toggling KDJ off/on takes effect immediately and persists across reload",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9991,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 87,
+      "title": "KDJ pane participates in box select, dbl-click maximize and drawing like other panes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12511,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "local-origin.spec.ts",
+      "line": 6,
+      "title": "本机页面正常读写，其他站点无法读取历史或修改设置",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3838,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-feedback.spec.ts",
+      "line": 48,
+      "title": "常用工具拖入移出排序刷新恢复，自定义模式隔离绘图交易",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13708,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-feedback.spec.ts",
+      "line": 78,
+      "title": "自动保存待保存进行中失败重试成功不改变工具区或账户区位置",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 14446,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-feedback.spec.ts",
+      "line": 113,
+      "title": "折叠其他工具扩展账户可视区，双主题多尺寸标签无背景填充",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 14452,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-round3.spec.ts",
+      "line": 33,
+      "title": "中括号双向循环周期并隔离输入、自定义和未完成画线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7288,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-round3.spec.ts",
+      "line": 57,
+      "title": "840根真实可视范围、历史供给与纯黑主副图",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7267,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-round3.spec.ts",
+      "line": 83,
+      "title": "诅咒线仅保留第二点起始的50%右向射线，编辑与刷新恢复",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11915,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-round3.spec.ts",
+      "line": 119,
+      "title": "频繁成交聚合标记不覆盖主副图与时间轴，颜色明细正确",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10190,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 135,
+      "title": "M3 D6-D7 水平工具改价保持水平且可撤销保存",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 15168,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 155,
+      "title": "M3 工具清单与默认吸附",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9561,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 167,
+      "title": "M3 D2-D13 线系与通道工具逐项绘制",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 27568,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 209,
+      "title": "M3 D14-D22 折线与自定义图形逐项绘制",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 25125,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 243,
+      "title": "M3 D6-D10 有限线段边界与反向射线命中",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 17005,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 272,
+      "title": "M3 D26-D29 编辑移动撤销重做删除清空保留交易标记",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 16613,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 343,
+      "title": "M3 D14 取消取点与画线模式热键隔离",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 15139,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 366,
+      "title": "M3 D23 文本多行样式编辑取消与输入热键隔离",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 15137,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 437,
+      "title": "M3 D16-D25 形状拖角缩放与悬停指针",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12706,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 464,
+      "title": "M3 D28 混合形状框选批量删除与撤销",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13897,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 487,
+      "title": "M3 D24 三态吸附与强吸附开高低收",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12706,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 508,
+      "title": "M3 D30-D31 主副图保存刷新与按周期隔离显示（切回原周期恢复）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 22693,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 566,
+      "title": "M3 D23 取消新文本不污染保存与撤销历史",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 22498,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 601,
+      "title": "M3 D31 保存失败后立即刷新从本地恢复最新画线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 25133,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 646,
+      "title": "M3 D31 已结算训练继续查看刷新保留画线并返回首页",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 17806,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 669,
+      "title": "M3 D31 快速切换周期时过期周线响应不覆盖月线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12857,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 724,
+      "title": "M3 D28 副图框选不命中主图直线的不可见延伸",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13443,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 748,
+      "title": "M3 D31 日线锚点画线按周期隔离显示，切回日线仍按时间锚定",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11940,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 781,
+      "title": "M3 D32 两种桌面尺寸的布局与圆形比例",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13252,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 801,
+      "title": "M3 D28 文本线段混选编辑文本颜色内容并刷新恢复",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 18197,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-history.spec.ts",
+      "line": 116,
+      "title": "历史页加载三态与错误重试（真实延迟门闩，FM-015/F2）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7205,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-history.spec.ts",
+      "line": 171,
+      "title": "结算→按本局id定位历史行→事实成绩单→返回（深色1440）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11929,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-history.spec.ts",
+      "line": 244,
+      "title": "运行中守卫与放弃不入列表（浅色840）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8737,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-history.spec.ts",
+      "line": 285,
+      "title": "详情A→B迟到响应不覆盖、不留永续loading；列表按settle_date DESC稳定排序",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10384,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-rankings.spec.ts",
+      "line": 84,
+      "title": "结算两局→排行定位本局行→指标呈现→打开事实成绩单（深色1440）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 16261,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "m4-rankings.spec.ts",
+      "line": 150,
+      "title": "运行中守卫（排行关闭、零行）与放弃不入榜（浅色840）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7754,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "ma-settings.spec.ts",
+      "line": 24,
+      "title": "MA drafts validate and cancel; presets, colors and shared preferences apply without changing the viewport or drawings",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 13168,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "ma-settings.spec.ts",
+      "line": 77,
+      "title": "1000-period MA uses extended history; all-zero hides and restoring defaults re-enables it",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9108,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "ma-settings.spec.ts",
+      "line": 135,
+      "title": "MA panel fits both themes and desktop sizes with keyboard focus and no overflow",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7082,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "migration-v127.spec.ts",
+      "line": 216,
+      "title": "v1.2.7 真实包：隔离起服→播种→导出工具→合并包→新版导入回放全链路",
+      "status": "skipped",
+      "results": [
+        {
+          "status": "skipped",
+          "retry": 0,
+          "duration": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "odometer.spec.ts",
+      "line": 98,
+      "title": "rapid five-bar advance rolls the two numbers and settles on exact book values (ODO-RAPID-CATCHUP e2e)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10159,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "odometer.spec.ts",
+      "line": 124,
+      "title": "rolling frames stay integer-only and width-stable across the two layers (ODO-NO-PHANTOM-DECIMALS, ODO-WIDTH-STABLE e2e)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10254,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "odometer.spec.ts",
+      "line": 189,
+      "title": "motion preference off via the settings panel skips the roll entirely and still shows exact final text (ODO-MOTION-PREF off e2e)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9477,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "odometer.spec.ts",
+      "line": 226,
+      "title": "OS prefers-reduced-motion no longer suppresses the roll while the app motion preference is on (ODO-MOTION-PREF e2e)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10644,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "order-panel.spec.ts",
+      "line": 56,
+      "title": "统一下单面板＋多条件单＋悬停信息＋唯一活动价位线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10519,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "title": "candle/VOL separator owns diagonal left/right drags in default mode",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9901,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "title": "VOL/MACD separator owns diagonal left/right drags in default mode",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9988,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "title": "candle/VOL separator owns diagonal left/right drags in multi mode",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10623,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "title": "VOL/MACD separator owns diagonal left/right drags in multi mode",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11172,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 138,
+      "title": "Ctrl separator drag preserves selection through the right axis side",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11202,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 149,
+      "title": "separator drag preserves an active drawing tool and maximized panes remain usable",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8717,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "percent-hover.spec.ts",
+      "line": 135,
+      "title": "hover card appears after a 1s dwell with oracle rows and CN colors, clears on bar change and chart leave, no persistence",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10202,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "percent-hover.spec.ts",
+      "line": 190,
+      "title": "keyboard crosshair shows the card instantly (no dwell) and box select still zooms while it shows",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8179,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "percent-hover.spec.ts",
+      "line": 218,
+      "title": "replay view computes the card from the replayed series, first bar shows the gray placeholder",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10764,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "phase-price-line.spec.ts",
+      "line": 23,
+      "title": "open and close use one matching line and one axis label; gap price remains visible without a future candle",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8160,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "phase-price-line.spec.ts",
+      "line": 79,
+      "title": "missing or invalid stage prices retain the normal CN latest-price marker",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11307,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "phase-price-line.spec.ts",
+      "line": 108,
+      "title": "manual price-axis scaling survives a theme switch",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7456,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "port-fallback.spec.ts",
+      "line": 55,
+      "title": "a) 发生回退：常驻提示实际端口、原因与固定端口方法",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 432,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "port-fallback.spec.ts",
+      "line": 69,
+      "title": "b) 发生回退（被占用原因）：文案区分\"被其他程序占用\"",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 443,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "port-fallback.spec.ts",
+      "line": 79,
+      "title": "c) 未发生回退：不出现端口提示条",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 423,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mask-axis.spec.ts",
+      "line": 105,
+      "title": "mask axis: hidden while running, revealed by eye toggle with constant offset, restorable",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11892,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mask-axis.spec.ts",
+      "line": 170,
+      "title": "settle reveal: panel shows real stock name and code with axis real dates",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8570,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mask-axis.spec.ts",
+      "line": 213,
+      "title": "random stock session: axis dates render normally without masking",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8412,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 83,
+      "title": "home tabs: classic is default, switching to random swaps the panel and back",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4361,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 115,
+      "title": "random panel: dimension-driven control visibility and payload for random_stock",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4080,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 181,
+      "title": "random panel: dimension-driven control visibility and payload for random_time",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3861,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 228,
+      "title": "random panel: dimension-driven control visibility and payload for random_both",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3319,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 257,
+      "title": "random period grid: tier options mirror classic and real creation with 3M succeeds",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7125,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 300,
+      "title": "random stock period grid: tier options mirror classic and real creation with 3M succeeds",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6760,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 347,
+      "title": "masked session: hidden stock shows star-masked title and badge while dates render as served",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6759,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 383,
+      "title": "eye toggle: confirm reveals real stock and dates, cancel keeps mask, re-click restores",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7077,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 426,
+      "title": "random recording: library item and replay carry random tag with real stock info",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7544,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 467,
+      "title": "settle reveal: real stock and real date window surface after settlement",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7461,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 530,
+      "title": "error mapping: 422 RANDOM_WINDOW_NOT_FIT and RANDOM_STOCK_UNIVERSE_EMPTY show friendly hints",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3930,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "line": 558,
+      "title": "classic panel spot check: tier grid and stock picker intact with tabs present",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4903,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-panel-stability.spec.ts",
+      "line": 88,
+      "title": "common controls keep vertical positions across the three random dimensions",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5998,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-panel-stability.spec.ts",
+      "line": 119,
+      "title": "dimension condition slot sits under the dimension group and swaps equal-height content",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5680,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "random-panel-stability.spec.ts",
+      "line": 160,
+      "title": "random initial cash is standalone while classic keeps the inline preset row and picker order",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4417,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "rankings-navigation.spec.ts",
+      "line": 43,
+      "title": "自定义区间是训练周期的子列表，固定周期与区间成绩互不混入",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4384,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "rankings-navigation.spec.ts",
+      "line": 87,
+      "title": "从自定义区间切回固定周期后，迟到的区间响应不覆盖当前列表",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4027,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-bulk.spec.ts",
+      "line": 30,
+      "title": "全部导出为合并包，并在新安装环境批量导入恢复且回放可用",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9000,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-bulk.spec.ts",
+      "line": 89,
+      "title": "多选导入损坏文件不整批失败，同批重复跳过并计数报告",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3916,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-daily.spec.ts",
+      "line": 107,
+      "title": "按交易日回放：键盘步进、观察周期独立、画线终态与只读安全",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5739,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-daily.spec.ts",
+      "line": 231,
+      "title": "旧文件缺当日日线：首日即时回退唯一周期、明示缺日线、次日恢复偏好",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4058,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-library.spec.ts",
+      "line": 22,
+      "title": "第一次使用忽略相同地址下旧的浏览器录像库",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 2286,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-library.spec.ts",
+      "line": 51,
+      "title": "导入来源持久保存，同会话重复导入独立，并隔离两个安装实例",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 18249,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-long.spec.ts",
+      "line": 23,
+      "title": "两年前复权训练含交易画线周期切换，可压缩导出并离线回放",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 70291,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-migration.spec.ts",
+      "line": 17,
+      "title": "旧版IndexedDB录制可迁移查看，原始记录仍保留且损坏导入不改变页面",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7198,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-migration.spec.ts",
+      "line": 67,
+      "title": "复制标签页的续录指针不会产生同会话双写",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11218,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording-orders.spec.ts",
+      "line": 39,
+      "title": "条件单挂单与撤单被录制，结算后回放业务列表可见",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7816,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording.spec.ts",
+      "line": 8,
+      "title": "录制上下文准备期间不会漏掉第一笔交易",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7845,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording.spec.ts",
+      "line": 57,
+      "title": "默认录制交易拒单、周期和画线，暂停恢复后可导出并离线只读回放",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11446,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording.spec.ts",
+      "line": 153,
+      "title": "浏览器存储恢复后可重试录制，错误不伪装成正在记录",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7872,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "recording.spec.ts",
+      "line": 186,
+      "title": "首页关闭仅影响本场，刷新保留暂停且恢复后可导出",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 12092,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "replay-period.spec.ts",
+      "line": 11,
+      "title": "开盘训练回放：开盘段可切周K月K且不再提示缺日线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 14737,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "report-feedback.spec.ts",
+      "line": 5,
+      "title": "report themes, independent overlays and date-aligned hover",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "duration": 10700,
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\report-feedback.spec.ts",
+                "column": 73,
+                "line": 92
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  90 |   await page.setViewportSize({ width: 390, height: 844 })\n  91 |   await page.screenshot({ path: evidencePath('report-feedback-light-mobile.png'), fullPage: true })\n> 92 |   expect(await report.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)\n     |                                                                         ^\n  93 |   await report.getByRole('button', { name: '关闭成绩单' }).click()\n  94 |   await page.getByRole('button', { name: '切换到深色主题' }).click()\n  95 |   await page.locator('.history-row').first().click()\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\report-feedback.spec.ts:92:73"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 58,
+      "title": "DETAILS-single-and-cluster：单笔直显、聚合列笔次选笔、金额费用按笔不合并",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11071,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 118,
+      "title": "REPAIR-F1 同一挂载 B→S→B：标题与事实区方向/序号始终一致",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10970,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 143,
+      "title": "REPAIR-F2 hover 浮层键盘进入后不被鼠标离开关闭，焦点与指针均离开才收起",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11195,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 166,
+      "title": "REPAIR-F3 固定后徽标离屏浮层保留当前成交，回视口恢复锚定",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10871,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 200,
+      "title": "DETAILS-pin-lifecycle：固定后移开/切周期/resize 保持，解固定、Esc、外部按下关闭",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11039,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 250,
+      "title": "DETAILS-replay-hotkeys：浮层内 Space/B/S/Delete/方向不触发交易、推进或画线",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10043,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 269,
+      "title": "DETAILS-replay-no-future：离线回放可查看，退至成交日前立即隐藏且无业务写请求",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8351,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 327,
+      "title": "DETAILS-blind：盲训详情只显示相对日期，真实日期不泄露",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9726,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "line": 345,
+      "title": "DETAILS-visual-regression：深浅主题、840/1440px 面板完整可见且徽标无重叠",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11592,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-defaults.spec.ts",
+      "line": 40,
+      "title": "默认设置→持久→A(80万/raw显式)→改默认(120万/forward)A不变→B新默认→C显式覆盖",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 16002,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-defaults.spec.ts",
+      "line": 110,
+      "title": "设置保存失败反馈/取消不保存/键盘路径；迟到读取不覆盖已编辑字段；1440深/840浅",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 20586,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-defaults.spec.ts",
+      "line": 224,
+      "title": "返修F4 modal迟到GET：保存130万/raw成功后释放旧GET，表单不回退且已保存保持；DB为新值",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4282,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-defaults.spec.ts",
+      "line": 260,
+      "title": "返修F5 设置保存使在途预览失效：加载所有权释放可重新预览；旧响应不覆盖新请求",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6043,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-defaults.spec.ts",
+      "line": 339,
+      "title": "840浅色与1440深色下设置弹层完整可读；录制不卸载",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7150,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 82,
+      "title": "stock dual inputs: fuzzy dropdown, click confirmation fills both, clearing one clears both, unmatched shows hint",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4787,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 114,
+      "title": "tier click regenerates start date back from latest data date",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4265,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 130,
+      "title": "range form: auto validation appears and create carries previewId and conditional-order settings",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5616,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 167,
+      "title": "range form: editing input invalidates the validation which then auto-regenerates; single submit creates",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6863,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 192,
+      "title": "reversed custom dates never call create and show an actionable error",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5874,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 223,
+      "title": "custom end date beyond latest data stays visible and requires correction",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5813,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-range.spec.ts",
+      "line": 245,
+      "title": "409 on create clears the stale validation which auto-regenerates; second submit creates",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5869,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-rules.spec.ts",
+      "line": 36,
+      "title": "设置默认→创建A冻结→运行中改默认A不变→B采用新值（费用手算/T+1）",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 14566,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-rules.spec.ts",
+      "line": 112,
+      "title": "设置弹层：取消不保存、非法载荷失败反馈、打开期间空格不推进",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5434,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-rules.spec.ts",
+      "line": 159,
+      "title": "返修F3 设置弹层键盘隔离：Tab/Shift+Tab不出弹层、Enter/Space不触发背景业务写、关闭还焦点、保存/失败/取消",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8604,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "training-rules.spec.ts",
+      "line": 261,
+      "title": "legacy raw 训练：只读警示、交易入口停用；浅色主题与 840 宽度弹层可见",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6274,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-launcher.spec.ts",
+      "line": 35,
+      "title": "desktop creation separates rules from the training subject and keeps start in the first viewport",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3461,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-launcher.spec.ts",
+      "line": 53,
+      "title": "random dimension changes retain common control positions and the classic cash row",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7769,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-launcher.spec.ts",
+      "line": 76,
+      "title": "reorganized creation preserves selected options in the real create request",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9015,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-launcher.spec.ts",
+      "line": 94,
+      "title": "launcher keeps random fields and the start action usable with 125 percent text in both themes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11105,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 172,
+      "title": "history keeps every fact and action within the desktop viewport at compact and wide sizes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7912,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 200,
+      "title": "history has an explicit keyboard report action and child keys never open a report",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 7067,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 220,
+      "title": "rankings expose keyboard report entries while empty records explain the next action",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9426,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 253,
+      "title": "recording library waits for real namespace readiness before enabling imports",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 8596,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 294,
+      "title": "stock rankings keep the visible period in the accessible report name and open by keyboard",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 10106,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 319,
+      "title": "recording library recovers from environment failure through reconnect before a real import",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 5330,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 358,
+      "title": "compact history exposes first and last row facts and linked actions in both themes at supported content sizes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 9395,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 417,
+      "title": "compact rankings scroll locally to the final column in both themes at supported content sizes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 11113,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-records.spec.ts",
+      "line": 551,
+      "title": "nonempty recording library exports and deletes real imported files at compact content sizes in both themes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 41746,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-settings.spec.ts",
+      "line": 25,
+      "title": "settings keeps the default save action anchored outside scrolling content and feedback",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4326,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-settings.spec.ts",
+      "line": 53,
+      "title": "settings retains focus isolation and immediate preferences with reduced motion",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4048,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-settings.spec.ts",
+      "line": 78,
+      "title": "settings retains reachable actions and local scrolling with 125 percent text in both themes",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 6199,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-settings.spec.ts",
+      "line": 140,
+      "title": "settings preserves both ends of long save errors without moving the save action",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4258,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-shell.spec.ts",
+      "line": 10,
+      "title": "UIUX navigation identifies the current page and settles without moving repeated targets",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4252,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-shell.spec.ts",
+      "line": 34,
+      "title": "UIUX reduced motion preserves navigation and settings keyboard recovery",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 4448,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-shell.spec.ts",
+      "line": 49,
+      "title": "UIUX fixed navigation targets accept reverse actions while entry motion is running",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 3998,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-training.spec.ts",
+      "line": 130,
+      "title": "training keeps trading and drawing available together without shifting chart or advance target",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 45368,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "uiux-training.spec.ts",
+      "line": 173,
+      "title": "training keeps enlarged text and every drawing entry reachable by local wheel at actual minimum content size",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 37665,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "update-settings.spec.ts",
+      "line": 145,
+      "title": "update section shows the real current version and keeps existing sections (UPD-UI-SECTION / UPD-UI-SETTINGS-INTACT)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 867,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "update-settings.spec.ts",
+      "line": 167,
+      "title": "check update renders the three states from a local fixture manifest (UPD-UI-CHECK-STATES)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 984,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "file": "update-settings.spec.ts",
+      "line": 201,
+      "title": "apply guard UPDATE_NOT_PACKAGED shows the human message without polling (UPD-UI-GUARD-MESSAGES)",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "duration": 875,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}
