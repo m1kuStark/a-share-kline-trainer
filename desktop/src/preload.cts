@@ -62,3 +62,13 @@ contextBridge.exposeInMainWorld('desktopMigration', {
     { ok: true; requiresRestart: boolean; trainings: number; skipped: number; importing: number } | { ok: false; error: string }
   >,
 })
+
+// GAP1-DIAG（用户 2026-10-19 拍板 G1）：第四个窄对象 desktopDiagnostics（单一方法
+// copyDiagnostics：主进程组装纯文本诊断——版本/平台/数据目录/更新通道与最近检查结果/
+// 最近错误/日志尾部，绝不包含训练与交易数据——并写入系统剪贴板）。同一纪律：结果
+// 结构化返回（ok:false 带中文原因），绝不向渲染端抛异常。
+contextBridge.exposeInMainWorld('desktopDiagnostics', {
+  copyDiagnostics: () => ipcRenderer.invoke('desktop-diagnostics:invoke', { method: 'copy' }) as Promise<
+    { ok: true } | { ok: false; error: string }
+  >,
+})

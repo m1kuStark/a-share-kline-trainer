@@ -24,11 +24,13 @@ describe('UPD-NET-ROBUST-PROCESS-WIDE: main.ts 主进程异常兜底（源码契
     const uncaught = /process\.on\(\s*['"]uncaughtException['"][\s\S]*?=>\s*\{([\s\S]*?)\r?\n\}/.exec(source)
     expect(uncaught, 'uncaughtException 处理体可定位').not.toBeNull()
     expect(uncaught![1]).not.toMatch(/process\.exit|app\.exit|app\.quit/)
-    expect(uncaught![1]).toMatch(/console\.error/)
+    // GAP1-DIAG（2026-10-19）：日志收口经 mainLog（tee＝console 透传＋<dataDir>/logs/main.log
+    // 落盘；console 透传由 diag-log.test.ts 的 tee 用例独立锁定），不再直呼 console.error。
+    expect(uncaught![1]).toMatch(/mainLog\.error|console\.error/)
     const rejection = /process\.on\(\s*['"]unhandledRejection['"][\s\S]*?=>\s*\{([\s\S]*?)\r?\n\}/.exec(source)
     expect(rejection, 'unhandledRejection 处理体可定位').not.toBeNull()
     expect(rejection![1]).not.toMatch(/process\.exit|app\.exit|app\.quit/)
-    expect(rejection![1]).toMatch(/console\.error/)
+    expect(rejection![1]).toMatch(/mainLog\.error|console\.error/)
   })
 })
 
@@ -71,7 +73,8 @@ describe('UPD-QUIT-TYPEERROR-GUARD: 退出路径 undefined error 形态守卫（
       const body = new RegExp(`process\\.on\\(\\s*['"]${name}['"][\\s\\S]*?=>\\s*\\{([\\s\\S]*?)\\r?\\n\\}`).exec(source)
       expect(body, `${name} 处理体可定位`).not.toBeNull()
       expect(body![1]).toContain(`formatUnknownError(${name === 'uncaughtException' ? 'error' : 'reason'})`)
-      expect(body![1]).toMatch(/console\.error/)
+      // GAP1-DIAG（2026-10-19）：日志收口经 mainLog（tee；console 透传由 diag-log.test.ts 锁定）
+      expect(body![1]).toMatch(/mainLog\.error|console\.error/)
       expect(body![1]).not.toMatch(/process\.exit|app\.exit|app\.quit/)
       expect(body![1]).not.toMatch(/\.(stack|message)\b/)
     }

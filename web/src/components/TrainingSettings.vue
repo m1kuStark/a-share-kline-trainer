@@ -9,6 +9,9 @@ import {
   type DesktopApplyState, type DesktopUpdatesApi, type UpdateFlowState,
 } from '../updateFlow'
 import {
+  DIAG_COPY_DONE_TEXT, DIAG_COPY_FAILED_PREFIX, DIAG_FEEDBACK_MS, detectDesktopDiagnostics,
+} from '../diagnosticsFlow'
+import {
   fetchAppSettings, putAppSettings, fetchTdxPathSettings, validateTdxPath,
   runTdxApplyFlow,
   fetchKeyboardShortcuts, putKeyboardShortcuts, type TdxPathSettingsView, type TdxCandidateCheckInfo,
@@ -434,6 +437,40 @@ const updateSourceMirrorConfigured = ref(false)
 const updateSourceSaving = ref(false)
 const updateSourceSavedMessage = ref('')
 const updateSourceError = ref('')
+
+// ===== GAP1-DIAG 关于与更新分栏：复制诊断信息（2026-10-19 拍板 G1） =====
+// 主进程组装纯文本（版本/平台/数据目录/更新通道与最近检查/最近错误/日志尾部，不含训练
+// 与交易数据）并写系统剪贴板；纯浏览器/e2e 形态无桥→区块不渲染（fail-closed 探测）。
+// 反馈形态为 proposed_default：已复制＝role=status 文本停留 DIAG_FEEDBACK_MS；失败＝
+// 主进程结构化中文原因＋可重试。复用既有 ghost-button/语义 token，零新样式体系。
+const desktopDiagnosticsApi = detectDesktopDiagnostics((window as unknown as { desktopDiagnostics?: unknown }).desktopDiagnostics)
+const diagCopying = ref(false)
+const diagCopyDone = ref(false)
+const diagCopyError = ref('')
+let diagFeedbackTimer: ReturnType<typeof setTimeout> | undefined
+
+async function copyDiagnostics(): Promise<void> {
+  if (diagCopying.value || !desktopDiagnosticsApi) return
+  diagCopying.value = true
+  diagCopyDone.value = false
+  diagCopyError.value = ''
+  try {
+    const result = await desktopDiagnosticsApi.copyDiagnostics()
+    if (result.ok) {
+      diagCopyDone.value = true
+      clearTimeout(diagFeedbackTimer)
+      diagFeedbackTimer = setTimeout(() => { diagCopyDone.value = false }, DIAG_FEEDBACK_MS)
+    } else {
+      diagCopyError.value = `${DIAG_COPY_FAILED_PREFIX}${result.error}`
+    }
+  } catch (error) {
+    // IPC 契约承诺结构化返回；真异常也如实呈现，绝不吞
+    diagCopyError.value = `${DIAG_COPY_FAILED_PREFIX}${error instanceof Error ? error.message : String(error)}`
+  } finally {
+    diagCopying.value = false
+  }
+}
+onUnmounted(() => { clearTimeout(diagFeedbackTimer) })
 
 interface UpdateSourceView {
   source: 'auto' | 'official' | 'custom'
@@ -1089,6 +1126,19 @@ function close(): void {
         </div>
         <p v-if="applyCompletedVersion !== null" class="settings-saved" role="status">已更新到 {{ versionLabel(applyCompletedVersion) }}</p>
         <p v-if="applyFailedReason" class="error-text" role="alert">更新失败：{{ applyFailedReason }}</p>
+
+        <!-- GAP1-DIAG 复制诊断信息：主进程组装（版本/平台/数据目录/更新状态/最近错误/日志尾部，
+             不含训练与交易数据）经 desktopDiagnostics 窄接口写系统剪贴板；无桥形态不渲染 -->
+        <div v-if="desktopDiagnosticsApi" class="diag-copy">
+          <p class="settings-section-note">遇到问题？复制诊断信息（版本、环境、更新状态与最近日志，不含训练数据），粘贴到问题反馈中便于定位。</p>
+          <div class="settings-actions">
+            <button class="ghost-button" :disabled="diagCopying" @click="copyDiagnostics">
+              {{ diagCopying ? '复制中…' : '复制诊断信息' }}
+            </button>
+          </div>
+          <p v-if="diagCopyDone" class="settings-saved diag-copy-result" role="status">{{ DIAG_COPY_DONE_TEXT }}</p>
+          <p v-if="diagCopyError" class="error-text diag-copy-error" role="alert">{{ diagCopyError }}</p>
+        </div>
       </section>
         </div>
       <footer v-if="activeSection === 'defaults'" class="settings-save-footer">
@@ -1181,6 +1231,8 @@ function close(): void {
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
 /* UPD-02 关于与更新分栏 */
 .update-current-version { margin: 0 0 4px; font-size: var(--font-size-md); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* GAP1-DIAG 复制诊断信息（仅区块间距；按钮/反馈全复用既有 ghost-button、settings-saved、error-text） */
+.diag-copy { margin-top: 18px; }
 /* CN-FEED-01 更新源三态设置 */
 .update-source-setting { margin: 8px 0 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; }
 .update-source-label { margin: 0 0 6px; font-size: var(--font-size-md); font-weight: 600; }
