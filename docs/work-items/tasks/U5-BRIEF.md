@@ -17,9 +17,9 @@
   "depends_on": [],
   "docs_impact": {
     "update": [
-      "docs/engineering/portable-updater-review-brief.md"
+      "docs/work-items/tasks/U5-BRIEF.md"
     ],
-    "reason": "自更新链按第三档对待，需独立审查材料。"
+    "reason": "自更新链按第三档对待，需独立审查材料；简报文件由本任务在 worktree 内创建。"
   },
   "verification_refs": [],
   "integration_ref": null,
