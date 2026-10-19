@@ -371,6 +371,16 @@ export async function verifyReleaseAssets({
         if (bytes.length !== asset.size) {
           pushDefect('deep-size', `${reference.name} 实际字节 ${bytes.length} ≠ Release 资产 size ${asset.size}`)
         }
+        // setup exe 额外对表 latest.yml 的 sha512 声明（元数据级只验 base64 形态，此处验内容）
+        if (latestParsed && reference.name === names.setupExe) {
+          const entry = latestParsed.files.find(file => basename(file.url) === names.setupExe)
+          if (entry) {
+            const actualSha512 = createHash('sha512').update(bytes).digest('base64')
+            if (actualSha512 !== entry.sha512) {
+              pushDefect('deep-sha512', `${reference.name} 实际字节 sha512=${actualSha512} ≠ latest.yml files 记录 ${entry.sha512}`)
+            }
+          }
+        }
       } catch (error) {
         pushDefect('deep-fetch', `${reference.name} 下载失败：${messageOf(error)}`)
       }

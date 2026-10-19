@@ -410,4 +410,36 @@ describe('VERIFY-RELEASE-ASSETS: --deep byte-level verification of checksummed a
     expect(sizeLie.ok).toBe(false)
     expect(codesOf(sizeLie)).toContain('deep-size')
   })
+
+  it('deep verifies latest.yml sha512 against the downloaded setup exe bytes (metadata level cannot)', async () => {
+    // latest.yml 的 sha512 撒谎（合法 base64 但内容错）：元数据级只验形态拦不住，--deep 须对实际字节。
+    // fixture 自洽改造：换撒谎版 latest.yml 后同步重建 SHA256SUMS-desktop.txt 与 release 资产表，
+    // 保证唯一缺陷源＝sha512 谎言（排除 deep-sha256/deep-size 误触发）。
+    const scenario = makeScenario()
+    const setupBytes = scenario.bytes.get(SETUP_NAME)!
+    const lyingDigest = sha512B64(deterministicBytes(64, 5150))
+    const lyingYml = buildLatestYml(VERSION, SETUP_NAME, setupBytes).replaceAll(sha512B64(setupBytes), lyingDigest)
+    scenario.bytes.set('latest.yml', enc.encode(lyingYml))
+    scenario.bytes.set('SHA256SUMS-desktop.txt', enc.encode(buildSums([
+      { name: SETUP_NAME, bytes: setupBytes },
+      { name: 'latest.yml', bytes: scenario.bytes.get('latest.yml')! },
+      { name: BLOCKMAP_NAME, bytes: scenario.bytes.get(BLOCKMAP_NAME)! },
+      { name: 'migrate-v127.zip', bytes: scenario.bytes.get('migrate-v127.zip')! },
+    ])))
+    scenario.releaseJson = {
+      ...scenario.releaseJson,
+      assets: [...scenario.bytes.entries()].map(([name, data]) => ({
+        name,
+        size: data.length,
+        browser_download_url: `${DOWNLOAD_HOST}/${REPO}/releases/download/${TAG}/${name}`,
+      })),
+    }
+    scenario.mirrorLatestYml = lyingYml
+    const result = await run(makeNet(scenario), { deep: true })
+    expect(result.ok).toBe(false)
+    const codes = codesOf(result)
+    expect(codes).toContain('deep-sha512')
+    expect(codes).not.toContain('deep-sha256')
+    expect(codes).not.toContain('deep-size')
+  })
 })
