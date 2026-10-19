@@ -5,7 +5,7 @@
   "id": "GAP2-RELCHECK",
   "title": "release 资产 manifest 产出＋上传后核对脚本（防误删类事故）",
   "owner": "integrator",
-  "state": "planned",
+  "state": "review",
   "milestone": "REL",
   "summary": "复盘缺口 G2（用户 2026-10-19 拍板）：release:desktop 产出资产 manifest（文件名/大小/sha256）；新增发布后核对脚本——GitHub release 与镜像 feed 双源核对资产数量、SHA256SUMS 与实际资产一致、latest.yml version/文件名/size/sha512 一致、latest 指针指向预期；发布手册补「发布后核对」一节（含每轮发布后核验 latest 指针与各 release 状态）。零产品码改动（纪律适配预声明：不新增矩阵行为行，替代收据＝单测＋对现有 v1.3.0/v1.3.1 的实测核对输出）。",
   "next_action": "TDD 实现核对逻辑（fixture 单测）；对 GitHub v1.3.0/v1.3.1（公开只读，不带凭证打印）与镜像 feed 实测 7/7；构造缺资产场景验证 fail-closed 报红。",

@@ -25,6 +25,7 @@ import {
   desktopArtifactNames,
   assertChecksumsAssetName,
   renderSha256SumsFile,
+  renderReleaseManifest,
   renderLatestYml,
   verifyLatestYml,
   collectChecksumEntries,
@@ -286,7 +287,17 @@ async function main() {
   entries.push({ name: 'migrate-v127.zip', sha256Hex: createHash('sha256').update(migrateZipBytes).digest('hex'), size: migrateZipBytes.length })
   entries.sort((a, b) => a.name.localeCompare(b.name))
   const sumsPath = join(OUT_DIR, names.checksums)
-  await writeFile(sumsPath, renderSha256SumsFile(entries), 'utf8')
+  const sumsBytes = Buffer.from(renderSha256SumsFile(entries), 'utf8')
+  await writeFile(sumsPath, sumsBytes)
+
+  // ===== GAP2-RELCHECK：release-manifest.json（上传后核对的对表基准） =====
+  // 覆盖全部上传资产（校验和文件本身也是上传资产之一，一并列入；清单自身除外）。
+  const manifestText = renderReleaseManifest({
+    version,
+    entries: [...entries, { name: names.checksums, size: sumsBytes.length, sha256Hex: createHash('sha256').update(sumsBytes).digest('hex') }],
+    generatedAt: new Date().toISOString(),
+  })
+  await writeFile(join(OUT_DIR, 'release-manifest.json'), manifestText, 'utf8')
 
   // ===== 产物目录打印（名称＋体积＋sha256 前缀） =====
   console.log('\n[release-desktop] artifacts:')

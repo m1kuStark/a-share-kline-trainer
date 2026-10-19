@@ -49,10 +49,65 @@
    - `SHA256SUMS-desktop.txt`（desktop 校验和）
    - zip 兜底形态（若同批发布）：`kline-trainer-v<版本>-windows-x64.zip`＋其 `SHA256SUMS`（来自 `npm run release:windows`，**与 desktop 的校验和是两个文件**）
    - **不要**再上传任何 `kline-trainer-desktop-v<版本>-windows-x64.exe`（便携 exe 已随 INSTALL-01 退役；release 脚本对输出目录残留的同名产物 fail-closed 拒跑）
-3. **核对（发布后自查）**：Release 资产页应能数出上列文件；`latest.yml` 资产点开 version 应等于本版本、url 指向本版本 setup exe。
+3. **核对（发布后自查）**：按 §三点五跑 `verify-release-assets.mjs` 机器核对（Release 资产页肉眼数文件已不够——v1.3.1 误删事故教训）；`latest.yml` 资产点开 version 应等于本版本、url 指向本版本 setup exe。
 4. **不要**把 desktop 校验和文件重命名成 `SHA256SUMS`——zip 在线更新器按精确名取 `SHA256SUMS` 资产校验 zip；两个清单并存时异名是双形态共存的前提（有测试锁定该约束）。
 
-## 四、发布形态策略（INSTALL-01 后：NSIS 主形态＋zip 兜底）
+## 三点五、发布后核对（GAP2-RELCHECK，2026-10-19 复盘缺口 G2）
+
+> 依据：v1.3.1 人工上传环节曾**误删资产**、v1.3.0 曾**长期停留在 draft**（2026-10-19 复盘）。
+> 上传是唯一人工环节，也是最高风险环节——本节把 §三第 3 步的人工自查升级为机器核对。
+
+### 命令
+
+```
+node desktop/scripts/verify-release-assets.mjs --tag v<版本> [--expect-latest] [--deep] [--min-assets N]
+```
+
+- `--tag vX.Y.Z`：要核对的 Release（必填）。
+- `--expect-latest`：该版本是正式最新版时加上——额外核对 `/releases/latest` 指针指向它、国内镜像 feed 版本已跟上。
+- `--deep`：字节级核对（下载每个校验和覆盖的资产，对 sha256 与 size；安装器上百 MB，默认只做元数据级）。
+- `--min-assets N`：资产数量下限阈值（缺省＝按 Release 自身内容推导的期望集大小）。
+
+数据源全只读、零凭证：GitHub 匿名 API ＋ 国内镜像 feed（`CN_MIRROR_BASE` 常量）。核对逻辑
+（期望资产集推导＝该 Release 自身 SHA256SUMS-desktop.txt/SHA256SUMS 内容＋latest.yml files 条目＋
+setup exe＋migrate-v127.zip＋元数据资产）有单测锁定（`desktop/test/verify-release-assets.test.ts`，
+含缺资产/指针错/校验和缺三类注入场景）。另外 `release:desktop` 现在会随产物落
+`desktop/release/release-manifest.json`（版本号＋每个资产的文件名/字节数/sha256），供上传对表。
+
+### 判读
+
+全绿样例（v1.3.0 正式版）：
+
+```
+[verify-release-assets] 匿名只读核对（GitHub API × 镜像 feed），不携带任何凭证
+[verify-release-assets] repo=m1kuStark/a-share-kline-trainer tag=v1.3.0（--expect-latest）
+[verify-release-assets] release: draft=false prerelease=false
+[verify-release-assets] SHA256SUMS-desktop.txt: 4 条校验和，逐条对表 Release 资产
+[verify-release-assets] assets: 实际 7 / 期望 7（数量阈值 7）
+[verify-release-assets]   ok      SHA256SUMS-desktop.txt（… B）
+…（逐资产 ok 清单，共 7 行）
+[verify-release-assets] latest 指针: /releases/latest -> v1.3.0（与 --expect-latest 一致）
+[verify-release-assets] 镜像核对: latest.yml=1.3.0 manifest=v1.3.0，与期望 latest 一致
+[verify-release-assets] PASS：核对全绿（资产 7/7，缺陷 0）     ← 退出码 0
+```
+
+任何不符即 `FAIL`＋逐条缺陷（`[asset-missing]`/`[latest-pointer]`/`[checksums-missing]` 等）＋退出码 1
+（fail-closed，不猜不放过）。GitHub API 匿名限流（60 次/时）报 `release-fetch` 时：等限额恢复重跑，
+**不得**为过闸加凭证或改阈值。镜像段显示 `skipped（…不可达…）` 时先确认镜像网络/常量状态，勿无视。
+
+### 每轮发布后的操作纪律（防 v1.3.1 误删与 v1.3.0 长期 draft 复发）
+
+1. **正式版**（上 latest 通道）：`--tag vX.Y.Z --expect-latest` 必须全绿（latest 指针＋镜像同步一并核到）。
+2. **预发布版**（prerelease）：`--tag vX.Y.Z` 全绿即可，输出应如实显示 `prerelease=true` 且不加
+   `--expect-latest`；此时 latest 指针应**不**指向它（指向的仍是上一个正式版）。
+3. **逐个 Release 核状态**：核对输出里的 `draft=` 字段——draft=true 的 Release 对外不可见
+   （electron-updater 取不到），除有意暂存外必须当场发布或删除；`untagged`（有 Release 无 tag /
+   tag 缺失）形态会被 `release-missing` 报红。
+4. **镜像同步别忘**：正式版发布后走 §四点五 sync-feed 并上传镜像，随后重跑核对至镜像段全绿——
+   镜像滞后在 `--expect-latest` 下是 `mirror-version` 缺陷，不会静默放过。
+5. 核对结果（命令与退出码）记入当轮发布记录，作为收尾证据。
+
+
 
 - **主形态＝NSIS 安装器**：承担在线更新（electron-updater 下载 setup exe→排空→静默安装→重启）；向导式安装可自选目录，zh-CN 安装语言。
 - **便携 exe**：已随 INSTALL-01（2026-10-11 用户拍板）退役——v1.3.0 起不再产出；存量便携用户（≤v1.2.7）检查更新将收到「更新源未提供便携版产物」fail-closed 提示，按引导改走安装器。
