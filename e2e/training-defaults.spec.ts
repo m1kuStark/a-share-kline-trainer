@@ -129,8 +129,8 @@ test('设置保存失败反馈/取消不保存/键盘路径；迟到读取不覆
   await expect(dialog).not.toContainText('已保存')
   await page.unroute('**/api/settings/training')
 
-  // 取消：不保存；Esc 关闭还焦点设置入口
-  await dialog.getByRole('button', { name: '取消' }).click()
+  // 取消：不保存；✕ 关闭（E2E-SPEC-SYNC-01 B-7：弹层无「取消」按钮）还焦点设置入口
+  await dialog.getByRole('button', { name: '关闭' }).click()
   await expect(dialog).not.toBeVisible()
   expect(await (await page.request.get('/api/settings/training')).json()).toMatchObject({ initialCash: 1_000_000 })
   const focusOnTrigger = await page.evaluate(() => {
@@ -301,7 +301,12 @@ await page.locator(".suggestions button").first().click()
     await route.continue()
   })
   await page.getByRole('button', { name: '自定义范围' }).click()
-  await page.locator('input[type="date"]').fill('2026-04-15')
+  // E2E-SPEC-SYNC-01 B-8：v1.0.3 起自定义范围＝起始日＋结束日双输入（Launcher.vue），
+  // 按字段标签定位（label 无 for 关联，走结构过滤）；结束日默认今天——超出冻结样本
+  // 覆盖（末根 2026-09-16）会被预览拒绝，须填入覆盖内的起止对
+  const rangeField = (label: string) => page.locator('.form-field').filter({ has: page.locator('label', { hasText: label }) }).locator('input[type="date"]').first()
+  await rangeField('起始日').fill('2026-04-15')
+  await rangeField('结束日').fill('2026-09-15')
   // 首次（旧）预览在途：加载提示由该请求持有
   await expect(page.getByText('范围校验生成中')).toBeVisible()
   // 在途期间：设置保存使默认复权变化 → 在途预览失效并自动重新生成（F5：旧请求

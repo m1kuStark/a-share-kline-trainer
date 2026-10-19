@@ -243,14 +243,14 @@ test('返修F3 设置弹层键盘隔离：Tab/Shift+Tab不出弹层、Enter/Spac
   await expect(dialog).not.toContainText('已保存')
   await page.unroute('**/api/settings/training')
 
-  // 取消路径：Esc 关闭无业务写、无 PUT 副作用；浅色 840 弹层可见
+  // 取消路径（E2E-SPEC-SYNC-01 B-9：✕ 关闭按钮，弹层无「取消」）：关闭无业务写、无 PUT 副作用；浅色 840 弹层可见
   await page.keyboard.press('Escape')
   await expect(dialog).not.toBeVisible()
   await page.setViewportSize({ width: 840, height: 900 })
   await page.getByRole('button', { name: '切换到浅色主题' }).click()
   await page.getByTitle('训练默认设置').click()
   await expect(dialog).toBeVisible()
-  await dialog.getByRole('button', { name: '取消' }).click()
+  await dialog.getByRole('button', { name: '关闭' }).click()
   await expect(dialog).not.toBeVisible()
   expect(businessWrites).toBe(0)
   expect((await (await page.request.get(`/api/trainings/${id}/bars?tf=1D`)).json()).trades.length).toBe(1)

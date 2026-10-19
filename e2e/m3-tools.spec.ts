@@ -417,7 +417,9 @@ test('M3 D23 文本多行样式编辑取消与输入热键隔离', async ({ page
   await page.locator('.ctx-menu').getByRole('button', { name: /编辑/ }).click()
   await input.fill('已复核\n保留观察')
   await panel.getByRole('button', { name: '确定', exact: true }).click()
-  await expect.poll(async () => JSON.stringify((await drawings(page))[0])).toContain('已复核\n保留观察')
+  // E2E-SPEC-SYNC-01 B-4：JSON.stringify 必然把换行转义为 \\n，旧「未转义换行包含」断言
+  // 数学上不可满足；改为对 extendData.text 断言（与本用例首段 :402 同源）
+  await expect.poll(async () => (await drawings(page))[0]?.extendData?.text).toBe('已复核\n保留观察')
   const editedText = (await drawings(page))[0]
   await toolButton(page, '撤销').click()
   await expect.poll(() => drawings(page)).toEqual([text])
@@ -503,7 +505,7 @@ test('M3 D24 三态吸附与强吸附开高低收', async ({ page }) => {
   await expect(select).toHaveValue('weak_magnet')
 })
 
-test('M3 D30-D31 主副图保存刷新与跨周期恢复', async ({ page }) => {
+test('M3 D30-D31 主副图保存刷新与按周期隔离显示（切回原周期恢复）', async ({ page }) => {
   test.setTimeout(90_000)
   await openTraining(page)
   await readyChart(page)
@@ -523,12 +525,18 @@ test('M3 D30-D31 主副图保存刷新与跨周期恢复', async ({ page }) => {
   const restored = await geometry(page, before[1].id)
   const macd = (await panes(page)).find(item => item.name === 'MACD')!
   expect(restored.anchors.every(point => point.y >= macd.top && point.y <= macd.top + macd.height)).toBe(true)
-  for (const label of ['周K', '月K', '日K']) {
+  // E2E-SPEC-SYNC-01 画线隔离口径（用户 2026-10-19 拍板：画线不跨周期可见，维持现状）：
+  // 日K 所画线在 周K/月K 视图不可见（过滤显示而非丢失——服务端保存集不动），切回日K恢复。
+  for (const label of ['周K', '月K']) {
     await page.locator('.timeframe-tabs').getByRole('tab', { name: label, exact: true }).click()
     await expect(page.locator('.timeframe-tabs').getByRole('tab', { name: label, exact: true })).toHaveClass(/selected/)
     await expect(page.locator('.loading-dot')).not.toBeVisible()
-    await expect.poll(() => drawings(page)).toEqual(before)
+    await expect.poll(() => drawings(page)).toEqual([])
+    expect((await (await page.request.get(`/api/trainings/${active.training.id}/drawings`)).json()).drawings).toEqual(before)
   }
+  await page.locator('.timeframe-tabs').getByRole('tab', { name: '日K', exact: true }).click()
+  await expect(page.locator('.loading-dot')).not.toBeVisible()
+  await expect.poll(() => drawings(page)).toEqual(before)
   await screenshot(page, 'D31-main-secondary-restored')
   const beforeRange = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
   const start = await panePoint(page, { x: .7, y: .2 })
@@ -700,8 +708,13 @@ test('M3 D31 快速切换周期时过期周线响应不覆盖月线', async ({ p
     await page.waitForTimeout(150)
     await expect(page.locator('.timeframe-tabs').getByRole('tab', { name: '月K', exact: true })).toHaveClass(/selected/)
     expect(await chartBars()).toEqual(expectedBars)
-    await expect.poll(() => drawings(page)).toEqual([line])
     await screenshot(page, 'D31-timeframe-latest-response')
+    // E2E-SPEC-SYNC-01 隔离口径：日K 画线在月K视图不可见；切回日K后原线恢复——
+    // 快速切换（过期周线响应迟到落地）不丢失画线
+    await expect.poll(() => drawings(page)).toEqual([])
+    await page.locator('.timeframe-tabs').getByRole('tab', { name: '日K', exact: true }).click()
+    await expect(page.locator('.loading-dot')).not.toBeVisible()
+    await expect.poll(() => drawings(page)).toEqual([line])
   } finally {
     releaseWeek()
     await page.unroute(pattern)
@@ -732,7 +745,7 @@ test('M3 D28 副图框选不命中主图直线的不可见延伸', async ({ page
   await screenshot(page, 'D28-pane-selection-isolated')
 })
 
-test('M3 D31 最新日线锚点跨周月映射到当前聚合柱', async ({ page }) => {
+test('M3 D31 日线锚点画线按周期隔离显示，切回日线仍按时间锚定', async ({ page }) => {
   await openTraining(page)
   await readyChart(page)
   for (let step = 0; step < 2; step++) {
@@ -748,15 +761,20 @@ test('M3 D31 最新日线锚点跨周月映射到当前聚合柱', async ({ page
   await expect.poll(async () => (await drawings(page)).length).toBe(1)
   const original = (await drawings(page))[0]
   expect(original.points[0].timestamp).toBe(daily.timestamp)
+  // E2E-SPEC-SYNC-01 隔离口径：日K 画线在 周K/月K 视图不可见（不再断言跨周期聚合柱映射）
   for (const label of ['周K', '月K']) {
     await page.locator('.timeframe-tabs').getByRole('tab', { name: label, exact: true }).click()
     await expect(page.locator('.loading-dot')).not.toBeVisible()
-    const aggregate = await page.evaluate(() => (window as any).__trainerChart.bars().at(-1))
-    const expectedPixel = await page.evaluate(({ timestamp, close }) => (window as any).__trainerChart.pointToPixel(timestamp, close), aggregate)
-    await expect.poll(async () => (await geometry(page, original.id)).anchors[0].x).toBeCloseTo(expectedPixel.x, 5)
-    expect(await drawings(page)).toEqual([original])
-    expect((await drawings(page))[0].points[0].timestamp).toBe(daily.timestamp)
+    await expect.poll(() => drawings(page)).toEqual([])
   }
+  // 切回日K：锚点仍按时间定位到原日线（timestamp 不变、像素重算一致）
+  await page.locator('.timeframe-tabs').getByRole('tab', { name: '日K', exact: true }).click()
+  await expect(page.locator('.loading-dot')).not.toBeVisible()
+  await expect.poll(() => drawings(page)).toEqual([original])
+  expect((await drawings(page))[0].points[0].timestamp).toBe(daily.timestamp)
+  const dailyAgain = await page.evaluate(() => (window as any).__trainerChart.bars().at(-1))
+  const expectedDailyPixel = await page.evaluate(({ timestamp, close }) => (window as any).__trainerChart.pointToPixel(timestamp, close), dailyAgain)
+  await expect.poll(async () => (await geometry(page, original.id)).anchors[0].x).toBeCloseTo(expectedDailyPixel.x, 5)
   await screenshot(page, 'D31-latest-anchor-month')
 })
 

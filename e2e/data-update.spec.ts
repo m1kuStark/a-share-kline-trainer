@@ -240,7 +240,7 @@ await page.locator(".suggestions button").first().click()
   expect(createCalls).toBe(1)
 })
 
-test('f) 无可用来源：中性警示按钮，点击后 409 中文原因行内展示（不用 alert）', async ({ page }) => {
+test('f) 无可用来源：中性「连接通达信」入口，点击打开接入向导（不触发更新、不用 alert）', async ({ page }) => {
   await installBaseMocks(page)
   await page.route('**/api/data/status', route => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -259,12 +259,20 @@ test('f) 无可用来源：中性警示按钮，点击后 409 中文原因行内
   await page.goto('/')
   const unavailable = page.locator('.data-update-btn.unavailable')
   await expect(unavailable).toBeVisible()
-  await expect(unavailable).toHaveText('未检测到通达信数据')
+  // E2E-SPEC-SYNC-01 B-1：v1.0.3 起按钮文案改为行动导向「连接通达信」（App.vue），
+  // 「未检测到通达信数据」语义细节保留在 title；点击后直接打开接入向导（openWizard），
+  // 不再触发数据更新请求。409 中文原因的行内展示由 data-update-feedback.spec.ts
+  // 「训练页将 409 更新失败展示在固定反馈区」独立锁定。
+  await expect(unavailable).toHaveText('连接通达信')
+  await expect(unavailable).toHaveAttribute('title', /未检测到通达信数据/)
+  const alerts: string[] = []
+  page.on('dialog', dialog => { alerts.push(dialog.message()); void dialog.dismiss() })
+  const wizardEntry = page.waitForResponse(response => response.request().method() === 'POST'
+    && new URL(response.url()).pathname === '/api/setup/select-directory', { timeout: 10_000 })
   await unavailable.click()
-  const errorLine = page.locator('.data-refresh-error')
-  await expect(errorLine).toBeVisible()
-  await expect(errorLine).toHaveText('未检测到可用的日线数据来源：请先安装通达信并完成盘后下载')
-  expect(refreshCalls).toBe(1)
+  await wizardEntry
+  expect(refreshCalls).toBe(0)
+  expect(alerts).toEqual([])
 })
 
 test('g) freshness current 而 needsUpdate 兼容位为真（周末/节假日启发误报）：首页绿色、开始训练零打扰', async ({ page }) => {
