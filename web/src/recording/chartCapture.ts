@@ -119,3 +119,14 @@ function assertFiniteTree(value: unknown, label: string): void {
 
 /** 只读图形创建参数：lock 拒绝拖拽，ignoreEvent 拒绝选中/右键（klinecharts 10.0.3 OverlayCreate 公开字段） */
 export const READ_ONLY_OVERLAY_CREATE = { lock: true, ignoreEvent: true } as const
+
+/**
+ * 全周期画线合并（M2-DRAWING-01 缺陷③）：周期隔离是显示层口径（用户 2026-10-19 拍板），
+ * 录像持久面不得被视图周期过滤——当前周期以图上序列化为权威（最新编辑），其他周期从
+ * 持久面全集原样并入（各带自身周期盖印与前复权基准，回放按录像时周期还原显示）；
+ * 持久面缺省（未接线）退化为当前视图集合，绝不虚构他周期数据。
+ */
+export function mergePeriodDrawings(current: ReadonlyArray<Drawing>, persisted: ReadonlyArray<Drawing> | null | undefined, timeframe: Timeframe): Drawing[] {
+  const others = (persisted ?? []).filter(item => (item.timeframe ?? '1D') !== timeframe)
+  return [...current, ...others]
+}

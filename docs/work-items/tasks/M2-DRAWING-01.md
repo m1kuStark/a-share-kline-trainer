@@ -5,7 +5,7 @@
   "id": "M2-DRAWING-01",
   "title": "修复画线三真缺陷：推进清撤销历史、恢复覆盖自定义样式、录像丢画线",
   "owner": "integrator",
-  "state": "planned",
+  "state": "review",
   "milestone": "RF",
   "summary": "用户 2026-10-19 批复 1/2/3（E2E-BASELINE-01 桶A-①②④，全部带 G3 探针实证）：①feedData 每次推进无条件 drawingHistory.reset([]) 违背 drawing-persistence.md「推进不清撤销历史」；②restoreDrawings 用 configuredOverlayStyle 覆盖 item.styles 致自定义样式在编辑/撤销/重做/刷新后丢失；③周期过滤渗入 captureState 致录像回放丢画线（隔离口径=显示层过滤，用户已拍板，持久面不得过滤）。RED 已由 G3 线上失败提供（drawing-basis/m3-round3/m3-tools D26-D29/D28/recording 各用例）。矩阵 drawing-persistence.yaml 三行已 root 预登记（worker 不得编辑矩阵）。",
   "next_action": "bug-loop：先逐缺陷读码确认根因（分类报告证据为假设待核实）→修复→受影响 e2e 转绿；禁止为绿弱化既有断言；画线隔离口径（E2E-SPEC-SYNC-01 刚定案）不得回退。",
