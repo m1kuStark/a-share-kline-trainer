@@ -4,7 +4,7 @@
 //   a. GitHub API（匿名只读，公开仓库；绝不携带 Authorization 头、绝不打印任何 token）；
 //   b. 国内镜像 feed（CN_MIRROR_BASE 同源常量：server/dist 编译产物 import，沿
 //      desktop/src/cn-feed.ts 先例；空串/不可达→镜像段如实降级 skipped＋原因）。
-// 用法：node desktop/scripts/verify-release-assets.mjs --tag v1.3.0 [--expect-latest] [--deep] [--min-assets N]
+// 用法：node desktop/scripts/verify-release-assets.mjs --tag v1.3.0 [--expect-latest] [--deep] [--min-assets N] [--migrate-tags v1.3.0,v1.3.1]
 // 退出码：0＝核对全绿；1＝发现缺陷或无法核实（fail-closed）。
 // 依据：v1.3.1 人工上传误删资产、v1.3.0 曾长期 draft（2026-10-19 复盘）——
 // 上传后的人工自查（手册 §三第 3 步）升级为机器核对。
@@ -59,6 +59,7 @@ async function main() {
   const options = parseVerifyArgs(process.argv.slice(2))
   console.log('[verify-release-assets] 匿名只读核对（GitHub API × 镜像 feed），不携带任何凭证')
   console.log(`[verify-release-assets] mirror base = ${CN_MIRROR_BASE === '' ? '(空串＝镜像未上线，镜像段将 skipped)' : CN_MIRROR_BASE}`)
+  console.log(`[verify-release-assets] migrate 资产期望 tags = ${options.migrateTags.join(',')}（列表外 tag 的 migrate-v127.zip 按「v1.3.0 专属连带资产」已知豁免处理，不判缺陷）`)
   const result = await verifyReleaseAssets({
     ...options,
     repo: VERIFY_REPO,
