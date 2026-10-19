@@ -31,7 +31,8 @@ export async function settleThroughConfirmation(page: Page, after: 'home' | 'cha
   const results = page.getByRole('dialog', { name: '训练结算' })
   await expect(results).toBeVisible()
   await expect(results.getByRole('checkbox', { name: '保留到本机训练历史' })).toBeChecked()
-  await results.getByRole('button', { name: after === 'home' ? '完成，返回首页' : '继续查看图表', exact: true }).click()
+  // E2E-SPEC-SYNC-01 B-3/B-5：结算面板出口按钮自 a71139a（v1.1.1 反馈轮）起为「留在当前界面」
+  await results.getByRole('button', { name: after === 'home' ? '完成，返回首页' : '留在当前界面', exact: true }).click()
   await expect(results).not.toBeVisible()
 }
 

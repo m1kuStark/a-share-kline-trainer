@@ -84,7 +84,8 @@ test('report themes, independent overlays and date-aligned hover', async ({ page
   await page.getByRole('button', { name: '切换到浅色主题' }).click()
   await page.locator('.history-row').first().click()
   await expect(chart).toBeVisible()
-  expect(await report.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)')
+  // E2E-SPEC-SYNC-01 B-6：浅色成绩单底色＝surface token（UIUX B2/B3 收敛，styles.css --surface-background: #f3f6f4）
+  expect(await report.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(243, 246, 244)')
   await page.screenshot({ path: evidencePath('report-feedback-light-desktop.png'), fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.screenshot({ path: evidencePath('report-feedback-light-mobile.png'), fullPage: true })

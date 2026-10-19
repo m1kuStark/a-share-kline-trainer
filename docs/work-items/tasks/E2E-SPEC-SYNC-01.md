@@ -5,7 +5,7 @@
   "id": "E2E-SPEC-SYNC-01",
   "title": "e2e 存量失败规格同步：桶B 九条按建议更新＋画线按周期隔离定为正式口径",
   "owner": "integrator",
-  "state": "planned",
+  "state": "closed",
   "milestone": "M5",
   "summary": "用户 2026-10-19 验收批复 1：桶B（spec 过时）9 条按分类报告建议直接更新断言（不删例）；桶A-③「画线按周期过滤」经用户拍板为正式口径（原话：画线不要跨周期可见，维持现状）——受影响用例断言改为隔离语义，并同步规格文档 docs/specs/chart/interaction.md 与 web/src/components/docs/drawing-persistence.md。完成后定向复跑受影响 spec 应转绿。零产品码改动（若探针发现产品行为与隔离口径不符，停下呈报，不改产品）。",
   "next_action": "按内嵌桶B清单逐条更新；画线三条先探针实证现行为再写断言；journey 定向复跑（TDX_ROOT 必填）。",
@@ -56,3 +56,9 @@
 
 - 九条＋画线三条全部更新且定向 journey 复跑转绿（run 收据）。
 - E2E-BASELINE-01 卡与分类报告回填处置结果；剩余失败应只剩桶A-①②④与待复核 1 项（属 M2 产品修复轮，本任务不碰）。
+
+## 完成记录（2026-10-19）
+
+- 全部完成：12 用例断言更新＋探针实证（隔离=过滤显示非丢失，六项断言 exit 0）＋规格文档两处同步＋回填。执行中两处分类报告假设经复跑证伪并按其备选建议修正：B-1（unavailable 按钮现走接入向导、409 行内展示由 data-update-feedback:96 独立覆盖）、B-8（结束日默认今天超出冻结样本覆盖，起止均填覆盖内日期）。
+- 复跑收据（--retries=0）：data-update/training-rules/training-defaults/report-feedback/m3-feedback/journey exit 0；m3-tools exit 1＝18 过 2 败（桶A-② 存量：D26-D29、D28 混选，非本轮范围）。
+- 详见 [验证报告](../../verification/2026-10/E2E-SPEC-SYNC-01/README.md)。

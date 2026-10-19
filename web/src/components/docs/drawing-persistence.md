@@ -10,7 +10,16 @@
 
 ## 对象与本地历史
 
-[drawingState.ts](../../drawingState.ts) 只序列化已完成的用户图形，排除 `bsMark`、`costLine` 和未完成取点。每个锚点仅保留有限数值的 `timestamp + value`，不能保存 `dataIndex`；动态补历史与周期切换后仍以时间定位。窗格保存 `candle_pane`、`VOL`、`MACD` 语义名，恢复时映射回库当前 pane id。
+[drawingState.ts](../../drawingState.ts) 只序列化已完成的用户图形，排除 `bsMark`、`costLine` 和未完成取点。每个锚点仅保留有限数值的 `timestamp + value`，不能保存 `dataIndex`；动态补历史后仍以时间定位。窗格保存 `candle_pane`、`VOL`、`MACD` 语义名，恢复时映射回库当前 pane id。
+
+## 周期隔离（用户 2026-10-19 拍板口径）
+
+画线不跨周期可见，按周期隔离显示（正式口径，非缺陷）：
+
+- 序列化时每条画线盖印所属周期 `timeframe`（`serializeDrawings`，KlineChart）；存量无盖印的旧画线读取时归一为 `'1D'`。
+- 恢复与周期切换只取当前周期子集：挂载/切换均按 `(item.timeframe ?? '1D') === props.timeframe` 过滤后重建 overlay（KlineChart `restoreDrawings`）；`watch(tf)`（Training.vue）从全量 `allDrawings` 重新过滤回填。切走＝过滤显示，不删除。
+- 保存按周期合并不覆盖他周期：`onDrawingsChange` 先保留 `existing` 中其他周期的画线（`otherPeriods`），再拼接当前周期新集整包写 outbox/PUT——任何周期视图下作画、清空都只影响本周期集合，服务端保存集始终包含全部周期。
+- 切回原周期恢复显示（探针实证：A 周期画线→B 周期不可见且服务端仍在→切回 A 原样恢复，往返稳定；重载后视图回默认日K）。
 
 序列化按 id 排序，避免库 hover 重排被误记为编辑；样式与 extendData 深拷贝。DrawingHistory 记录创建、编辑、拖拽、删除后的快照，最多保留 100 个状态；新编辑截断 redo 分支，相同快照不入历史。恢复期间禁止把自身恢复动作记成新编辑。
 

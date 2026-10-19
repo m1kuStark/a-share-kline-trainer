@@ -395,22 +395,30 @@ test('Act4c 选项卡式批量编辑', async ({ page }) => {
 })
 
 // ---------- Act 4 追加：副图同权 ----------
-// MACD 副图窗格约 y[757,857]（画布栈探针实测）；副图画线取点第一击所在 pane 即落点（库同步 overlay.paneId）
+// E2E-SPEC-SYNC-01 B-2：副图画线取点按窗格动态定位（KDJ 副图默认挂载后布局重排，
+// 固定坐标失效）；断言按画线序列化 paneId——v1.2.1 起 phasePriceLine 等引擎标记
+// 占据 overlay 列表前部，overlayInfo(0) 不再指向用户画线。
 test('Act4d 副图画线与多选框选（主副图同权）', async ({ page }) => {
   await openTraining(page)
   // 在 MACD 副图画一条线段
   await pickTool(page, '线段')
-  await drawTwoPointLine(page, 350, 790, 750, 830)
-  const info = await page.evaluate(() => (window as any).__trainerChart.overlayInfo(0))
-  expect(info.paneId).not.toBe('candle_pane')
-  // 多选模式：框选扫过 MACD 副图区域
+  const host = await page.locator('.chart-host').boundingBox()
+  const macd = await page.evaluate(() => (window as any).__trainerChart.panes().find((pane: { name: string }) => pane.name === 'MACD'))
+  expect(macd, 'MACD 副图窗格').toBeTruthy()
+  await page.mouse.click(host!.x + macd.width * .35, host!.y + macd.top + macd.height * .4)
+  await page.waitForTimeout(650)
+  await page.mouse.click(host!.x + macd.width * .75, host!.y + macd.top + macd.height * .7)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.mode().draw)).toBeNull()
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(1)
+  expect(await page.evaluate(() => (window as any).__trainerChart.drawings()[0].paneId)).toBe('MACD')
+  // 多选模式：框选扫过 MACD 副图区域（同样按 MACD 窗格动态取点）
   await toolButton(page, '多选').click()
   await expect(page.locator('.status-strip')).toContainText('多选模式')
   const barsBefore = await page.locator('.view-count').textContent()
   const rangeBefore = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
-  await moveTo(page, 300, 770)
+  await page.mouse.move(host!.x + macd.width * .2, host!.y + macd.top + macd.height * .1)
   await page.mouse.down()
-  await moveTo(page, 820, 850, { steps: 6 })
+  await page.mouse.move(host!.x + macd.width * .85, host!.y + macd.top + macd.height * .9, { steps: 6 })
   // 中途矩形可见（同 Act4a 的可见性回归）
   await expect(page.locator('.multi-rect')).toBeVisible()
   await page.mouse.up()
