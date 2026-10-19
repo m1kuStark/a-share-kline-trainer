@@ -4,7 +4,9 @@
 // 背景：v1.3.1 人工上传曾误删资产、v1.3.0 曾长期 draft——上传后缺一道机器核对闸。
 // 期望资产集推导（对表基准，全部来自该 Release 自身声明）：SHA256SUMS-desktop.txt 内容
 // ＋SHA256SUMS（zip 链，存在才计）内容＋latest.yml files/path 条目＋setup exe（tag 推导命名
-// 契约）＋migrate-v127.zip＋元数据资产自身；数量阈值 --min-assets 可参数化（缺省＝期望集大小）。
+// 契约）＋migrate-v127.zip（仅 --migrate-tags 列表内 tag，缺省 v1.3.0——REL-MIGRATE-SCOPE-01
+// 用户 2026-10-19 批复 3：v1.3.0 专属连带资产，其他 v1.3.x 不连带）＋元数据资产自身；
+// 数量阈值 --min-assets 可参数化（缺省＝期望集大小）。
 // fail-closed：任一不符即缺陷（exit 1 由 CLI 壳决定）；镜像段例外＝常量空串/网络不可达→
 // 如实降级 skipped＋原因（任务指令），但镜像可达而 feed 坏（404/解析失败）＝缺陷不放过。
 // 注：无 shebang——repo 惯例＝可测代码放无 shebang 的文件（vitest/esbuild 解析约束）。
@@ -12,6 +14,8 @@ import { createHash } from 'node:crypto'
 import { desktopArtifactNames, parseLatestYml } from './release-desktop-lib.mjs'
 
 export const VERIFY_REPO = 'm1kuStark/a-share-kline-trainer'
+export const MIGRATE_ASSET_NAME = 'migrate-v127.zip'
+export const DEFAULT_MIGRATE_TAGS = ['v1.3.0']
 const TAG_PATTERN = /^v\d+\.\d+\.\d+$/
 const SUMS_LINE_PATTERN = /^([0-9a-f]{64})[ \t]+\*?(\S+)$/
 const SHA512_BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/
@@ -29,13 +33,42 @@ function isValidSha512Base64(value) {
   return Buffer.from(value, 'base64').length === 64
 }
 
+/** --migrate-tags 取值解析：逗号分隔 tag 列表（每项须 vX.Y.Z；缺值/空项即 throw，fail-closed 不猜） */
+function parseMigrateTagsList(raw) {
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    throw new Error(`--migrate-tags 需要逗号分隔 tag 列表（如 v1.3.0,v1.3.1），收到：${JSON.stringify(raw)}`)
+  }
+  const tags = raw.split(',').map(item => item.trim())
+  for (const tag of tags) {
+    if (tag === '' || !TAG_PATTERN.test(tag)) {
+      throw new Error(`--migrate-tags 项必须是 vX.Y.Z 形态，收到：${JSON.stringify(tag)}`)
+    }
+  }
+  return [...new Set(tags)]
+}
+
+/** verifyReleaseAssets 侧 migrateTags 规整：非空数组、每项 vX.Y.Z；返回 Set 供成员判定 */
+function normalizeMigrateTags(value) {
+  const list = value === undefined ? DEFAULT_MIGRATE_TAGS : value
+  if (!Array.isArray(list) || list.length === 0) {
+    throw new Error(`migrateTags 必须是非空 tag 数组（如 ['v1.3.0']），收到：${JSON.stringify(list)}`)
+  }
+  for (const tag of list) {
+    if (typeof tag !== 'string' || !TAG_PATTERN.test(tag)) {
+      throw new Error(`migrateTags 项必须是 vX.Y.Z 形态，收到：${JSON.stringify(tag)}`)
+    }
+  }
+  return new Set(list)
+}
+
 /**
  * CLI 参数解析（fail-closed）：--tag vX.Y.Z 必填；--expect-latest / --deep 布尔开关；
- * --min-assets N 可选数量阈值（非负整数；缺省＝期望集大小）。未知参数即 throw 不猜。
+ * --min-assets N 可选数量阈值（非负整数；缺省＝期望集大小）；--migrate-tags 逗号分隔
+ * tag 列表（每项 vX.Y.Z；缺省 ['v1.3.0']）。未知参数即 throw 不猜。
  */
 export function parseVerifyArgs(argv) {
   if (!Array.isArray(argv)) throw new Error('parseVerifyArgs 需要 argv 数组')
-  const parsed = { tag: null, expectLatest: false, deep: false, minAssets: null }
+  const parsed = { tag: null, expectLatest: false, deep: false, minAssets: null, migrateTags: [...DEFAULT_MIGRATE_TAGS] }
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]
     if (arg === '--tag') {
@@ -51,8 +84,10 @@ export function parseVerifyArgs(argv) {
         throw new Error(`--min-assets 需要非负整数，收到：${JSON.stringify(raw)}`)
       }
       parsed.minAssets = value
+    } else if (arg === '--migrate-tags') {
+      parsed.migrateTags = parseMigrateTagsList(argv[++index])
     } else {
-      throw new Error(`未知参数：${arg}（用法：--tag vX.Y.Z [--expect-latest] [--deep] [--min-assets N]）`)
+      throw new Error(`未知参数：${arg}（用法：--tag vX.Y.Z [--expect-latest] [--deep] [--min-assets N] [--migrate-tags v1.3.0,v1.3.1]）`)
     }
   }
   if (typeof parsed.tag !== 'string' || !TAG_PATTERN.test(parsed.tag)) {
@@ -91,6 +126,7 @@ export async function verifyReleaseAssets({
   expectLatest = false,
   deep = false,
   minAssets = null,
+  migrateTags = DEFAULT_MIGRATE_TAGS,
   repo = VERIFY_REPO,
   githubApiBase = 'https://api.github.com',
   mirrorBase = '',
@@ -104,11 +140,12 @@ export async function verifyReleaseAssets({
   if (typeof fetchJson !== 'function') throw new Error('verifyReleaseAssets 需要 fetchJson 注入')
   if (typeof fetchText !== 'function') throw new Error('verifyReleaseAssets 需要 fetchText 注入')
   if (deep && typeof fetchBytes !== 'function') throw new Error('--deep 需要 fetchBytes 注入')
+  const migrateTagSet = normalizeMigrateTags(migrateTags)
 
   const version = tag.slice(1)
   const defects = []
   const lines = []
-  const summary = { assetCount: null, expectedCount: null, prerelease: null, draft: null, mirrorStatus: 'disabled', mirrorReason: null }
+  const summary = { assetCount: null, expectedCount: null, prerelease: null, draft: null, mirrorStatus: 'disabled', mirrorReason: null, exemptedExtras: [] }
   const pushDefect = (code, detail) => defects.push({ code, detail })
   const baseUrl = `${githubApiBase.replace(/\/+$/, '')}/repos/${repo}/releases`
 
@@ -247,11 +284,17 @@ export async function verifyReleaseAssets({
     }
   }
 
-  // ④ 期望资产集（对表基准）＋数量/名称集合核对（多余资产也是缺陷——误传/残留形态）
+  // ④ 期望资产集（对表基准）＋数量/名称集合核对（多余资产也是缺陷——误传/残留形态）。
+  //    migrate-v127.zip 仅对 --migrate-tags 列表内 tag 计入期望集（REL-MIGRATE-SCOPE-01，
+  //    用户 2026-10-19 批复 3：v1.3.0 专属连带资产，其他 v1.3.x 不连带）；列表外 tag 的
+  //    Release 若带该资产＝已知豁免的多余资产（输出注明「v1.3.0 专属连带资产，非缺陷」，
+  //    不按 asset-extra 报红）。校验和文件自身列出该资产时仍按自证计入期望（对表基准
+  //    来自 Release 自身声明的既有原则，不因列表收窄而丢弃自证）。
   const expected = new Set()
   const names = desktopArtifactNames(version)
   expected.add(names.setupExe)
-  expected.add('migrate-v127.zip')
+  const migrateExpected = migrateTagSet.has(tag)
+  if (migrateExpected) expected.add(MIGRATE_ASSET_NAME)
   if (latestParsed) {
     for (const file of latestParsed.files) expected.add(basename(file.url))
     if (latestParsed.path) expected.add(basename(latestParsed.path))
@@ -270,9 +313,12 @@ export async function verifyReleaseAssets({
       }
     }
     for (const name of actualNames) {
-      if (!expected.has(name)) {
-        pushDefect('asset-extra', `${name} 不在期望资产集内（多余资产——疑似误传/残留产物混入）`)
+      if (expected.has(name)) continue
+      if (name === MIGRATE_ASSET_NAME && !migrateExpected) {
+        summary.exemptedExtras.push(name)
+        continue
       }
+      pushDefect('asset-extra', `${name} 不在期望资产集内（多余资产——疑似误传/残留产物混入）`)
     }
     const threshold = minAssets ?? expected.size
     if (actualNames.length < threshold) {
@@ -282,6 +328,9 @@ export async function verifyReleaseAssets({
     for (const name of [...expected].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
       const asset = assetByName.get(name)
       lines.push(`  ${asset ? 'ok     ' : 'MISSING'}  ${name}${asset ? `（${asset.size} B）` : ''}`)
+    }
+    for (const name of summary.exemptedExtras) {
+      lines.push(`  豁免    ${name}（v1.3.0 专属连带资产，非缺陷——不在 --migrate-tags ${[...migrateTagSet].join(',')} 列表内的 tag，多余资产按已知豁免处理）`)
     }
   }
 

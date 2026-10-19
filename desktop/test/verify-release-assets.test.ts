@@ -157,8 +157,8 @@ const findDefect = (result: { defects: { code: string; detail: string }[] }, cod
 // ===== 参数解析 =====
 describe('VERIFY-RELEASE-ASSETS: parseVerifyArgs (fail-closed CLI contract)', () => {
   it('parses --tag with optional --expect-latest / --deep / --min-assets and rejects everything else', () => {
-    expect(parseVerifyArgs(['--tag', 'v1.3.0'])).toEqual({ tag: 'v1.3.0', expectLatest: false, deep: false, minAssets: null })
-    expect(parseVerifyArgs(['--tag', 'v1.3.1', '--expect-latest', '--deep'])).toEqual({ tag: 'v1.3.1', expectLatest: true, deep: true, minAssets: null })
+    expect(parseVerifyArgs(['--tag', 'v1.3.0'])).toEqual({ tag: 'v1.3.0', expectLatest: false, deep: false, minAssets: null, migrateTags: ['v1.3.0'] })
+    expect(parseVerifyArgs(['--tag', 'v1.3.1', '--expect-latest', '--deep'])).toEqual({ tag: 'v1.3.1', expectLatest: true, deep: true, minAssets: null, migrateTags: ['v1.3.0'] })
     expect(parseVerifyArgs(['--tag', 'v1.3.0', '--min-assets', '7']).minAssets).toBe(7)
     expect(() => parseVerifyArgs([])).toThrow(/--tag/)
     expect(() => parseVerifyArgs(['--tag', '1.3.0'])).toThrow(/tag/)
@@ -166,6 +166,17 @@ describe('VERIFY-RELEASE-ASSETS: parseVerifyArgs (fail-closed CLI contract)', ()
     expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--bogus'])).toThrow(/未知|bogus/)
     expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--min-assets', 'x'])).toThrow()
     expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--min-assets', '-1'])).toThrow()
+  })
+
+  // REL-MIGRATE-SCOPE-01：--migrate-tags（缺省 ['v1.3.0']；逗号分隔可扩展；fail-closed 拒非法项）
+  it('parses --migrate-tags with default v1.3.0, accepts comma lists, rejects malformed values', () => {
+    expect(parseVerifyArgs(['--tag', 'v1.3.1']).migrateTags).toEqual(['v1.3.0'])
+    expect(parseVerifyArgs(['--tag', 'v1.3.1', '--migrate-tags', 'v1.3.0,v1.3.1']).migrateTags).toEqual(['v1.3.0', 'v1.3.1'])
+    expect(parseVerifyArgs(['--tag', 'v1.3.1', '--migrate-tags', 'v1.3.1']).migrateTags).toEqual(['v1.3.1'])
+    expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--migrate-tags', ''])).toThrow(/migrate-tags/)
+    expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--migrate-tags', 'v1.3'])).toThrow(/migrate-tags/)
+    expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--migrate-tags', 'v1.3.0,'])).toThrow(/migrate-tags/)
+    expect(() => parseVerifyArgs(['--tag', 'v1.3.0', '--migrate-tags', 'v1.3.0,,v1.3.1'])).toThrow(/migrate-tags/)
   })
 })
 
@@ -341,6 +352,129 @@ describe('VERIFY-RELEASE-ASSETS: fail-closed defect detection', () => {
     const result = await run(makeNet(scenario, { textOverride: url => url.endsWith('/latest.yml') && url.startsWith(DOWNLOAD_HOST) ? badDigest : undefined }))
     expect(result.ok).toBe(false)
     expect(codesOf(result)).toContain('latest-yml-sha512')
+  })
+})
+
+// ===== migrate 期望集收窄（REL-MIGRATE-SCOPE-01，用户 2026-10-19 批复 3）=====
+// 口径：migrate-v127.zip 是 v1.3.0 发布时专属连带的 v1.2.7→v1.3.x 迁移工具，其他 v1.3.x 不连带。
+// v1.3.1 线上形态＝资产在、SHA256SUMS-desktop.txt 无该行（旧口径靠期望集硬含补齐才 7/7）——
+// 新口径下这是合法状态：期望集 6＋该资产按已知豁免多余处理（输出注明，不按 asset-extra 报红）。
+// oracle：v1.3.1 线上形态描述来自任务卡/用户批复原文，非实现回显。
+describe('VERIFY-RELEASE-ASSETS: migrate-v127.zip expected only for --migrate-tags (default v1.3.0)', () => {
+  interface ScopeOpts { migrateAsset: boolean }
+
+  /** v1.3.1 形态 fixture：7 资产含 migrate＋3 条校验和（不含 migrate 行）＝线上实际状态 */
+  function makeScenario131(opts: ScopeOpts) {
+    const version = '1.3.1'
+    const tag = `v${version}`
+    const setupName = `kline-trainer-desktop-setup-v${version}-windows-x64.exe`
+    const blockmapName = `${setupName}.blockmap`
+    const zipName = `kline-trainer-v${version}-windows-x64.zip`
+    const bytes = new Map<string, Uint8Array>([
+      [setupName, deterministicBytes(1000, 71)],
+      [blockmapName, deterministicBytes(300, 72)],
+      [zipName, deterministicBytes(5000, 73)],
+    ])
+    if (opts.migrateAsset) bytes.set('migrate-v127.zip', deterministicBytes(400, 74))
+    const latestYmlText = buildLatestYml(version, setupName, bytes.get(setupName)!)
+    bytes.set('latest.yml', enc.encode(latestYmlText))
+    bytes.set('SHA256SUMS-desktop.txt', enc.encode(buildSums([
+      { name: setupName, bytes: bytes.get(setupName)! },
+      { name: 'latest.yml', bytes: bytes.get('latest.yml')! },
+      { name: blockmapName, bytes: bytes.get(blockmapName)! },
+    ])))
+    bytes.set('SHA256SUMS', enc.encode(buildSums([{ name: zipName, bytes: bytes.get(zipName)! }])))
+    const releaseJson = {
+      tag_name: tag,
+      name: tag,
+      draft: false,
+      prerelease: false,
+      assets: [...bytes.entries()].map(([name, data]) => ({
+        name,
+        size: data.length,
+        browser_download_url: `${DOWNLOAD_HOST}/${REPO}/releases/download/${tag}/${name}`,
+      })),
+    }
+    return { tag, version, bytes, releaseJson, latestJson: { tag_name: tag } }
+  }
+
+  function netFor(scenario: ReturnType<typeof makeScenario131>) {
+    const fetchJson = async (url: string) => {
+      if (url === `${GITHUB_API}/repos/${REPO}/releases/tags/${scenario.tag}`) return { status: 200, json: scenario.releaseJson }
+      if (url === `${GITHUB_API}/repos/${REPO}/releases/latest`) return { status: 200, json: scenario.latestJson }
+      return { status: 404, json: { message: 'Not Found' } }
+    }
+    const fetchText = async (url: string) => {
+      if (url.startsWith(`${DOWNLOAD_HOST}/`)) {
+        const name = url.split('/').pop()!
+        const data = scenario.bytes.get(name)
+        if (!data) return { status: 404, text: 'Not Found' }
+        return { status: 200, text: new TextDecoder().decode(data) }
+      }
+      return { status: 404, text: '' }
+    }
+    const fetchBytes = async () => { throw new Error('migrate-scope 用例不需要字节级下载') }
+    return { fetchJson, fetchText, fetchBytes }
+  }
+
+  const runScope = async (scenario: ReturnType<typeof makeScenario131>, extra: Record<string, unknown> = {}) =>
+    verifyReleaseAssets({
+      tag: scenario.tag,
+      githubApiBase: GITHUB_API,
+      repo: REPO,
+      mirrorBase: '', // 镜像段与本口径无关，禁用降噪
+      ...netFor(scenario),
+      ...extra,
+    })
+
+  it('v1.3.1 online shape (asset present, checksums line absent) is legal: expected 6 + exempted extra with explicit note', async () => {
+    const scenario = makeScenario131({ migrateAsset: true })
+    const result = await runScope(scenario)
+    expect(result.ok).toBe(true)
+    expect(result.defects).toEqual([])
+    expect(result.summary.assetCount).toBe(7)
+    expect(result.summary.expectedCount).toBe(6)
+    expect(result.summary.exemptedExtras).toEqual(['migrate-v127.zip'])
+    expect(codesOf(result)).not.toContain('asset-extra')
+    const note = result.lines.find(line => line.includes('migrate-v127.zip') && line.includes('v1.3.0 专属连带资产'))
+    expect(note).toBeDefined()
+    expect(note).toMatch(/非缺陷/)
+  })
+
+  it('v1.3.1 future shape (no migrate asset, no checksums line) is legal with expected 6 and no exemption note', async () => {
+    const scenario = makeScenario131({ migrateAsset: false })
+    const result = await runScope(scenario)
+    expect(result.ok).toBe(true)
+    expect(result.defects).toEqual([])
+    expect(result.summary.assetCount).toBe(6)
+    expect(result.summary.expectedCount).toBe(6)
+    expect(result.summary.exemptedExtras).toEqual([])
+    expect(result.lines.some(line => line.includes('专属连带资产'))).toBe(false)
+  })
+
+  it('--migrate-tags override: listing the tag makes migrate expected again (v1.3.1 online shape -> 7/7, no exemption)', async () => {
+    const scenario = makeScenario131({ migrateAsset: true })
+    const result = await runScope(scenario, { migrateTags: ['v1.3.1'] })
+    expect(result.ok).toBe(true)
+    expect(result.defects).toEqual([])
+    expect(result.summary.expectedCount).toBe(7)
+    expect(result.summary.exemptedExtras).toEqual([])
+    expect(result.lines.some(line => line.includes('专属连带资产'))).toBe(false)
+  })
+
+  it('--migrate-tags override killer: deleting migrate from a listed tag stays asset-missing (expectation really driven by the list)', async () => {
+    const scenario = makeScenario131({ migrateAsset: false })
+    const result = await runScope(scenario, { migrateTags: ['v1.3.1'] })
+    expect(result.ok).toBe(false)
+    const defect = findDefect(result, 'asset-missing')
+    expect(defect).toBeDefined()
+    expect(defect!.detail).toContain('migrate-v127.zip')
+  })
+
+  it('verifyReleaseAssets validates migrateTags entries (fail-closed, not silently ignored)', async () => {
+    const scenario = makeScenario131({ migrateAsset: true })
+    await expect(runScope(scenario, { migrateTags: ['v1.3'] })).rejects.toThrow(/migrateTags/)
+    await expect(runScope(scenario, { migrateTags: [] })).rejects.toThrow(/migrateTags/)
   })
 })
 

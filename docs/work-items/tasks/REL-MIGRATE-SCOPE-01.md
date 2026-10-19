@@ -5,10 +5,10 @@
   "id": "REL-MIGRATE-SCOPE-01",
   "title": "verify-release-assets 期望集：migrate-v127.zip 仅对 v1.3.0 期望",
   "owner": "integrator",
-  "state": "planned",
+  "state": "review",
   "milestone": "REL",
   "summary": "用户 2026-10-19 批复 3：migrate-v127.zip 是 v1.3.0 发布时专属连带的 v1.2.7→v1.3.x 数据迁移工具，其他 v1.3.x 版本不需要连带。改动：desktop/scripts/verify-release-assets*.mjs 期望集推导——migrate 条目默认仅对 v1.3.0 期望（新增 --migrate-tags 参数，缺省 v1.3.0，逗号分隔可扩展）；单测同步（含「v1.3.1 无 migrate 行＝合法」场景）；发布手册 desktop-release-manual.md 补口径：后续 v1.3.x 发布不连带 migrate 资产、SHA256SUMS-desktop 亦不含该行，v1.2.7 用户从 v1.3.0 release 获取迁移工具。线上 v1.3.1 已存在的 migrate 资产不删（历史 release 不动）。零产品码。",
-  "next_action": "TDD 改期望集推导与单测；对 v1.3.1 线上复跑核对应仍 PASS（新口径）；手册补节。",
+  "next_action": "已交付待验收：TDD 完成（RED 6→GREEN 29/29）＋desktop 全量 331/331＋线上 v1.3.0/v1.3.1 复跑均 PASS（v1.3.1 体现新口径：期望 6＋豁免注记）；手册口径节已补。详见 docs/verification/2026-10/REL-MIGRATE-SCOPE-01/README.md。",
   "allowed_paths": [
     "desktop/scripts/**",
     "desktop/test/**",
@@ -23,7 +23,9 @@
     ],
     "reason": "发布资产口径变更需入手册，v1.3.2 发布轮直接依此执行。"
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-10/REL-MIGRATE-SCOPE-01/README.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": "docs/复盘缺口修补-开发计划.md"
 }

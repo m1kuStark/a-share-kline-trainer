@@ -26,7 +26,7 @@
 | NSIS 安装器 | `kline-trainer-desktop-setup-v<版本>-windows-x64.exe` | 正式发布形态；向导式安装、per-user 免管理员、可自选目录、zh-CN 安装语言 |
 | 更新元数据 | `latest.yml` | electron-updater 的更新源描述（**上传 Release 时必须用这个原文件名**；仅含 setup 条目，不再追加便携条目） |
 | 差分下载表 | `…setup….exe.blockmap` | electron-updater 差分下载用（存在即上传） |
-| 迁移工具包 | `migrate-v127.zip` | v1.2.7 训练数据/录像迁入唯一默认数据目录的工具（PORT-UPD-01 P3 产物） |
+| 迁移工具包 | `migrate-v127.zip` | v1.2.7 训练数据/录像迁入唯一默认数据目录的工具（PORT-UPD-01 P3 产物）。**仅 v1.3.0 发布连带上传**（见 §三点五 migrate 口径）；v1.3.1 起发布不再连带 |
 | 校验和 | `SHA256SUMS-desktop.txt` | 覆盖上述全部 desktop 产物；行格式 `<sha256>  <文件名>` |
 
 脚本内置 fail-closed 核验链（任一失败即非零退出、不产出不完整资产集）：构建输入齐备→包内 `resources/app-update.yml` 存在（electron-updater 硬依赖）→setup exe 按命名契约存在→latest.yml 的 version/sha512/size 与 setup exe 实际字节一致（electron-builder 产出则核验，未产出则按同形状生成）→输出目录无同名陈旧便携产物（INSTALL-01 反向门：便携 exe 已退役，残留即失败）→校验和写入。
@@ -45,7 +45,7 @@
    - `kline-trainer-desktop-setup-v<版本>-windows-x64.exe`（安装器——**桌面版用户的更新目标**）
    - `latest.yml`（**文件名不可改**；electron-updater 按 GitHub provider 约定到 Release 资产里精确找它）
    - `kline-trainer-desktop-setup-v<版本>-windows-x64.exe.blockmap`
-   - `migrate-v127.zip`（v1.2.7 数据迁移工具——老用户沿用历史训练数据的唯一入口）
+   - `migrate-v127.zip`（v1.2.7 数据迁移工具——**仅 v1.3.0 发布连带**；后续 v1.3.x 发布不上传该资产、`SHA256SUMS-desktop.txt` 亦不含该行，老用户从 v1.3.0 release 获取，见 §三点五 migrate 口径）
    - `SHA256SUMS-desktop.txt`（desktop 校验和）
    - zip 兜底形态（若同批发布）：`kline-trainer-v<版本>-windows-x64.zip`＋其 `SHA256SUMS`（来自 `npm run release:windows`，**与 desktop 的校验和是两个文件**）
    - **不要**再上传任何 `kline-trainer-desktop-v<版本>-windows-x64.exe`（便携 exe 已随 INSTALL-01 退役；release 脚本对输出目录残留的同名产物 fail-closed 拒跑）
@@ -60,13 +60,14 @@
 ### 命令
 
 ```
-node desktop/scripts/verify-release-assets.mjs --tag v<版本> [--expect-latest] [--deep] [--min-assets N]
+node desktop/scripts/verify-release-assets.mjs --tag v<版本> [--expect-latest] [--deep] [--min-assets N] [--migrate-tags v1.3.0,...]
 ```
 
 - `--tag vX.Y.Z`：要核对的 Release（必填）。
 - `--expect-latest`：该版本是正式最新版时加上——额外核对 `/releases/latest` 指针指向它、国内镜像 feed 版本已跟上。
 - `--deep`：字节级核对（下载每个校验和覆盖的资产，对 sha256 与 size；安装器上百 MB，默认只做元数据级）。
 - `--min-assets N`：资产数量下限阈值（缺省＝按 Release 自身内容推导的期望集大小）。
+- `--migrate-tags`：`migrate-v127.zip` 计入期望集的 tag 列表（逗号分隔，缺省 `v1.3.0`——见下方 migrate 口径）。
 
 数据源全只读、零凭证：GitHub 匿名 API ＋ 国内镜像 feed（`CN_MIRROR_BASE` 常量）。核对逻辑
 （期望资产集推导＝该 Release 自身 SHA256SUMS-desktop.txt/SHA256SUMS 内容＋latest.yml files 条目＋
@@ -106,6 +107,24 @@ setup exe＋migrate-v127.zip＋元数据资产）有单测锁定（`desktop/test
 4. **镜像同步别忘**：正式版发布后走 §四点五 sync-feed 并上传镜像，随后重跑核对至镜像段全绿——
    镜像滞后在 `--expect-latest` 下是 `mirror-version` 缺陷，不会静默放过。
 5. 核对结果（命令与退出码）记入当轮发布记录，作为收尾证据。
+
+### migrate-v127.zip 期望口径（REL-MIGRATE-SCOPE-01，2026-10-19 用户批复 3）
+
+- **migrate-v127.zip 是 v1.3.0 发布时专属连带**的 v1.2.7→v1.3.x 数据迁移工具；**后续 v1.3.x
+  发布不连带该资产与校验和行**（不上传 `migrate-v127.zip`，`SHA256SUMS-desktop.txt` 不含该行）。
+- **v1.2.7 用户迁移工具从 v1.3.0 release 获取**（该 release 永久保留该资产，历史 release 不动）。
+- 核对脚本口径（`--migrate-tags`，缺省 `v1.3.0`）：
+  - v1.3.0（列表内 tag）：期望集含 migrate，缺失仍是 `asset-missing` 缺陷。
+  - 列表外 tag（如 v1.3.1 及后续）：期望集不含 migrate。线上 v1.3.1 已存在的 migrate 资产
+    **不删**（历史 release 不动），核对输出按「v1.3.0 专属连带资产，非缺陷」的**已知豁免多余
+    资产**注明（不按 `asset-extra` 报红）；后续新发布既无该资产也无该行＝正常形态（期望 6）。
+  - 例外：若某 release 的 `SHA256SUMS-desktop.txt` 自身仍列出 migrate 行，则该资产按校验和
+    自证计入期望（对表基准来自 Release 自身声明的既有原则）；行在而资产缺＝`checksums-ref-missing`。
+- **上传侧操作注意**：`release:desktop` 流水线目前仍会把 `migrate-v127.zip` 写进产物目录并追加
+  进 `SHA256SUMS-desktop.txt`（release-desktop.mjs 既有行为）。后续 v1.3.x 发布上传时，**不要
+  上传该 zip**，且 `SHA256SUMS-desktop.txt` 需为**已移除 migrate 行**的版本（上传前手工删去该行
+  再上传；流水线侧的自动剔除属后续任务，不阻塞发布）。
+
 
 
 
