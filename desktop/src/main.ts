@@ -14,7 +14,7 @@
 // 决策逻辑全部抽在纯函数层（boot-plan/port-conflict/quit-state/window-bounds/external-links/
 // data-home/coexist-guard/desktop-updates，vitest 覆盖）；本文件只做 Electron API 粘合，实机行为由
 // desktop/scripts/smoke-desktop.mjs 验证。
-import { app, BrowserWindow, dialog, ipcMain, screen, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, screen, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
@@ -90,6 +90,16 @@ import {
   runOneClickRecordingImport,
 } from './mig-import.js'
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
+import { createDiagLogger, createNodeDiagLogDeps, createTeeConsole, type DiagLogger } from './diag-log.js'
+import {
+  DIAG_RECENT_ERROR_LIMIT,
+  DIAG_TAIL_MAX_LINES,
+  registerDiagnosticsIpc,
+  summarizeUpdateCheck,
+  tailResultToFactsLogTail,
+  type DiagnosticsFacts,
+  type UpdateCheckSnapshot,
+} from './diagnostics.js'
 
 // ===== P0-4（PORT-UPD-01）＋UPD-QUIT-TYPEERROR-GUARD：主进程异常兜底（最后防线） =====
 // 必须是模块体第一段语句（ESM import 无法前移，此处即注册可达的最早点）：晚于此的任何
@@ -99,7 +109,7 @@ import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortabl
 // occurred in the main process」崩溃窗（用户称启动后经常出现）。主进程网络层已整体
 // 换 Node 原生 http/https（server 侧 safe-http.ts＋desktop 侧 portable-updater.ts），
 // 本兜底确保任何残余异步异常（未知的第三方库内部断言等）只被完整记录、不再崩进程：
-//   - uncaughtException/unhandledRejection → console.error（时间＋堆栈）后不退出；
+//   - uncaughtException/unhandledRejection → mainLog.error（tee：console＋落盘；时间＋堆栈）后不退出；
 //   - 不触碰正常退出管线（不调用 process.exit/app.exit/app.quit、不改 exitCode）；
 //   - 正常路径的错误仍由各调用点自身受控处理，本层不是错误处理的替代。
 // UPD-QUIT-TYPEERROR-GUARD（2026-10-11 用户真机第三形态）加固：
@@ -121,11 +131,61 @@ function formatUnknownError(error: unknown): string {
   }
 }
 
+// ===== GAP1-DIAG（用户 2026-10-19 拍板 G1＋拍板 8）：主进程日志 tee 与诊断接线 =====
+// DESKTOP-DIAG-LOG-PERSIST：main.ts 全部日志经 mainLog（tee）＝console 透传＋
+// <dataDir>/logs/main.log 落盘（diag-log.ts 自实现，零新依赖；按大小滚动保留有限份，
+// 写失败逐次降级 console，绝不阻断启动）。sink 在 dataDir 解析后才 attach——attach 前
+// 的启动早期行（含本块与下方兜底注册之间的异常）仅 console，已知边界（开工简报披露）。
+// DESKTOP-DIAG-IPC：诊断专用通道 desktop-diagnostics:invoke（preload 对应 desktopDiagnostics
+// 窄对象），除此外不新增任何 IPC 面。最近错误＝主进程口径（root 2026-10-19 裁定：renderer
+// 错误不采集，守住 IPC 最小面）。
+let diagLogger: DiagLogger | null = null
+let diagDataDir: string | null = null
+let lastUpdateCheckSnapshot: UpdateCheckSnapshot | null = null
+const recentErrors: string[] = []
+const mainLog = createTeeConsole({
+  getSink: () => diagLogger,
+  onErrorLine: line => {
+    recentErrors.push(line)
+    if (recentErrors.length > DIAG_RECENT_ERROR_LIMIT) recentErrors.shift()
+  },
+})
+
+/** dataDir 就绪后接入落盘 sink（幂等；首行自证 attach 成功） */
+function attachDiagLog(dataDir: string): void {
+  if (diagLogger) return
+  diagDataDir = dataDir
+  diagLogger = createDiagLogger({ dataDir, deps: createNodeDiagLogDeps() })
+  mainLog.log(`[desktop] diag log attached at ${diagLogger.filePath}`)
+}
+
+/** 诊断 facts 组装（DESKTOP-DIAG-CLIPBOARD；版本/平台/数据目录/更新通道与最近检查/最近错误/日志尾部） */
+async function collectDiagnosticsFacts(): Promise<DiagnosticsFacts> {
+  const tail = diagLogger
+    ? await diagLogger.readTail(DIAG_TAIL_MAX_LINES)
+    : { ok: false as const, reason: '日志尚未初始化（dev 窗口或启动早期）' }
+  return {
+    appVersion: app.getVersion(),
+    platform: {
+      os: process.platform,
+      arch: process.arch,
+      electron: process.versions.electron ?? null,
+      chrome: process.versions.chrome ?? null,
+      node: process.versions.node,
+    },
+    dataDir: diagDataDir,
+    updateChannel: updateChannelKind,
+    lastUpdateCheck: lastUpdateCheckSnapshot,
+    recentErrors: [...recentErrors],
+    logTail: tailResultToFactsLogTail(tail),
+  }
+}
+
 process.on('uncaughtException', error => {
-  console.error(`[desktop] uncaught exception at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(error))
+  mainLog.error(`[desktop] uncaught exception at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(error))
 })
 process.on('unhandledRejection', reason => {
-  console.error(`[desktop] unhandled rejection at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(reason))
+  mainLog.error(`[desktop] unhandled rejection at ${new Date().toISOString()} (process kept alive):`, formatUnknownError(reason))
 })
 
 const DEV_WINDOW_URL = process.env.DESKTOP_DEV_URL?.trim() || null
@@ -163,13 +223,13 @@ let portableUpdateDataDir: string | null = null
 function sendUpdateEvent(event: DesktopUpdateEvent): void {
   const win = mainWindow
   if (!win || win.isDestroyed()) {
-    console.warn('[desktop] update event dropped (no live window):', event.type)
+    mainLog.warn('[desktop] update event dropped (no live window):', event.type)
     return
   }
   try {
     win.webContents.send('desktop-update:event', event)
   } catch (error) {
-    console.error('[desktop] update event send failed:', error)
+    mainLog.error('[desktop] update event send failed:', error)
   }
 }
 
@@ -199,9 +259,9 @@ function rememberWindowBounds(): void {
     const temporary = `${statePath}.${randomUUID()}.tmp`
     void writeFile(temporary, JSON.stringify(saved), 'utf8')
       .then(() => rename(temporary, statePath))
-      .catch(error => console.error('[desktop] window state persist failed:', error))
+      .catch(error => mainLog.error('[desktop] window state persist failed:', error))
   } catch (error) {
-    console.error('[desktop] window state persist failed:', error)
+    mainLog.error('[desktop] window state persist failed:', error)
   }
 }
 
@@ -221,7 +281,7 @@ function applyExternalLinkPolicy(win: BrowserWindow, appOrigin: string): void {
   // DESKTOP-EXTERNAL-LINKS：应用内不弹新 Electron 窗口；应用源外 http(s) 交系统默认浏览器
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (classifyUrl(url, appOrigin) === 'external') {
-      void shell.openExternal(url).catch(error => console.error('[desktop] openExternal failed:', error))
+      void shell.openExternal(url).catch(error => mainLog.error('[desktop] openExternal failed:', error))
     }
     return { action: 'deny' }
   })
@@ -229,7 +289,7 @@ function applyExternalLinkPolicy(win: BrowserWindow, appOrigin: string): void {
     const disposition = classifyUrl(url, appOrigin)
     if (disposition === 'external') {
       event.preventDefault()
-      void shell.openExternal(url).catch(error => console.error('[desktop] openExternal failed:', error))
+      void shell.openExternal(url).catch(error => mainLog.error('[desktop] openExternal failed:', error))
     } else if (disposition === 'denied') {
       event.preventDefault()
     }
@@ -373,7 +433,7 @@ async function clearOwnTrainerState(): Promise<void> {
     const raw = await readTrainerStateRaw(identity.dataDir)
     if (stateRecordIsOurs(raw, identity)) await rm(path, { force: true })
   } catch (error) {
-    console.error('[desktop] state record cleanup failed:', error)
+    mainLog.error('[desktop] state record cleanup failed:', error)
   }
 }
 
@@ -396,7 +456,7 @@ function createUnavailablePortableAdapter(reason: string): DesktopUpdaterAdapter
     setFeedURL: () => { /* no-op：通道已禁用 */ },
     checkForUpdates: fail,
     downloadUpdate: fail,
-    quitAndInstall: () => { console.error('[desktop] portable update install skipped: channel unavailable') },
+    quitAndInstall: () => { mainLog.error('[desktop] portable update install skipped: channel unavailable') },
     onDownloadProgress: () => { /* no-op */ },
   }
 }
@@ -430,10 +490,10 @@ async function setupUpdateChannel(): Promise<void> {
         quitApp: () => app.quit(),
         feed,
       })
-      console.log(`[desktop] portable self-update channel active (exe: ${portableTargetExe})`)
+      mainLog.log(`[desktop] portable self-update channel active (exe: ${portableTargetExe})`)
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
-      console.error('[desktop] portable self-update unavailable (cannot resolve target exe):', reason)
+      mainLog.error('[desktop] portable self-update unavailable (cannot resolve target exe):', reason)
       adapter = createUnavailablePortableAdapter(reason)
     }
   } else {
@@ -448,7 +508,7 @@ async function setupUpdateChannel(): Promise<void> {
     const fallback = createFeedFallbackAdapter({
       inner,
       getPlan: async () => resolveDesktopFeedPlan(process.env, await readUpdateSourceSetting(portableUpdateDataDir)),
-      logger: console,
+      logger: mainLog,
     })
     adapter = fallback
     updateFeedAttemptsRef = fallback
@@ -463,7 +523,7 @@ async function setupUpdateChannel(): Promise<void> {
       installPendingUpdate = true
       requestGracefulQuit()
     },
-    logger: console,
+    logger: mainLog,
     // DL-HANG-01：下载停滞看门狗阈值（90s 缺省；env TRAINER_DESKTOP_DL_STALL_MS 可注入覆盖）
     stallTimeoutMs: resolveDownloadStallTimeoutMs(process.env),
   })
@@ -471,7 +531,22 @@ async function setupUpdateChannel(): Promise<void> {
     ipcMain,
     controller,
     channelKind: updateChannelKind,
-    runBootCheck: () => controller.checkForUpdates(),
+    // GAP1-DIAG：boot 检查结果留人话快照，供「复制诊断信息」的最近检查字段（渲染端手动
+    // 检查不在主进程面内——设置页自身即呈现，诊断文本只承诺主进程视角）。
+    runBootCheck: async () => {
+      try {
+        const view = await controller.checkForUpdates()
+        lastUpdateCheckSnapshot = summarizeUpdateCheck(new Date().toISOString(), view)
+        return view
+      } catch (error) {
+        lastUpdateCheckSnapshot = {
+          at: new Date().toISOString(),
+          ok: false,
+          summary: `检查失败：${error instanceof Error ? error.message : String(error)}`,
+        }
+        throw error
+      }
+    },
     bootCheckOutPath: updateChannelKind === 'packaged'
       ? (process.env.TRAINER_DESKTOP_UPDATE_BOOT_CHECK_OUT?.trim() || null)
       : null,
@@ -483,7 +558,7 @@ async function setupUpdateChannel(): Promise<void> {
       bootUpdateNotice = notice
       deliverBootUpdateNotice()
     },
-    logger: console,
+    logger: mainLog,
   })
 }
 
@@ -501,7 +576,7 @@ registerArchiveIpc({
     rename: async (oldPath, newPath) => { await rename(oldPath, newPath) },
     access: async path => { await access(path) },
   },
-  logger: console,
+  logger: mainLog,
 })
 
 // ===== MIG-EXT-01 v1.2.7 训练历史迁移 IPC（独立通道面；不触碰更新/归档绑定段） =====
@@ -531,7 +606,17 @@ registerMigrationIpc({
   ipcMain,
   pickManifestFile: pickMigrationManifestFile,
   databasePath: () => migrationDatabasePath,
-  logger: console,
+  logger: mainLog,
+})
+
+// ===== GAP1-DIAG 诊断 IPC（desktop-diagnostics:invoke 单通道；preload 对应 desktopDiagnostics
+// 窄对象的 copyDiagnostics）。facts 惰性取值：dataDir/日志尾部随启动进度生效，启动早期
+// 调用＝结构化「日志尚未初始化」而非失败（与归档/迁移 IPC 同一惰性模式）。 =====
+registerDiagnosticsIpc({
+  ipcMain,
+  clipboard,
+  collectFacts: collectDiagnosticsFacts,
+  logger: mainLog,
 })
 
 // ===== 启动 =====
@@ -551,7 +636,7 @@ async function bootServerAndOpen(): Promise<void> {
     createNodeDataHomeDeps({}),
   )
   if (dataHome.quit) {
-    console.log(`[desktop] ${dataHome.reason}`)
+    mainLog.log(`[desktop] ${dataHome.reason}`)
     app.quit()
     return
   }
@@ -561,14 +646,14 @@ async function bootServerAndOpen(): Promise<void> {
       await persistDataChoiceRecord(exeDir, resolution.record)
     } catch (error) {
       // 记录失败不阻断启动（下次会重新发现，结果相同）；如实记录
-      console.error('[desktop] data choice persist failed:', error)
+      mainLog.error('[desktop] data choice persist failed:', error)
     }
   }
   if (resolution.notice) {
     // 一次性提示 v1 收敛为 console（呈现类保守默认，收尾报告标注）：原生 dialog 实测两种形态
     // 均有硬伤——无父窗口（引导期）在 Windows 触发原生崩溃 0x80000003；挂主窗口则为模态，
     // 阻塞窗口关闭（冒烟/diag 关不掉需强杀）。窗口内提示（页面 toast 等）留待验收轮拍板。
-    console.log(`[desktop] ${resolution.notice}`)
+    mainLog.log(`[desktop] ${resolution.notice}`)
   }
 
   // ---- PACK-03 步骤 2：saved-tdx-choice 沿用（env > 旧配置 > 采用目录内保存的选择） ----
@@ -593,6 +678,9 @@ async function bootServerAndOpen(): Promise<void> {
     tdxRoot: tdxFromLegacy ?? savedTdxRoot ?? undefined,
     tdxSource: tdxFromEnv ? 'env' : tdxFromLegacy ? 'explicit-config' : savedTdxRoot ? 'saved-choice' : undefined,
   })
+  // GAP1-DIAG：生效数据目录一经解析即接入日志落盘 sink（此后的启动行进 <dataDir>/logs/main.log；
+  // 复用分支同样生效——config 在分支前已解析；dev 窗口形态不解析 dataDir＝仅 console，已知边界）
+  attachDiagLog(config.dataDir)
   windowStatePath = join(config.dataDir, WINDOW_STATE_FILE)
   // DATA-ARCH-01：归档目录跟生效数据目录（复用/reuse 分支同样生效——config 在分支前已解析）
   archiveDataDir = config.dataDir
@@ -608,7 +696,7 @@ async function bootServerAndOpen(): Promise<void> {
     const portableTargetExe = resolvePortableTargetExe(process.env, process.execPath)
     await cleanupPortableUpdateLeftovers({ env: process.env, dataDir: config.dataDir, exePath: portableTargetExe })
   } catch (error) {
-    console.error('[desktop] portable update leftover cleanup skipped:', error)
+    mainLog.error('[desktop] portable update leftover cleanup skipped:', error)
   }
 
   // ---- 端口决策（PORT-01/PORT-02 桌面版）：应答注入优先于 GUI 询问 ----
@@ -623,7 +711,7 @@ async function bootServerAndOpen(): Promise<void> {
 
   if (plan.action === 'reuse') {
     // 复用已有训练器服务：窗口直接加载其 URL，绝不启动第二个服务进程
-    console.log(`[desktop] reusing existing trainer at ${plan.url} (PID ${plan.occupant.pid})`)
+    mainLog.log(`[desktop] reusing existing trainer at ${plan.url} (PID ${plan.occupant.pid})`)
     mainWindow = createWindow(plan.url, await loadWindowBounds())
     return
   }
@@ -647,13 +735,13 @@ async function bootServerAndOpen(): Promise<void> {
     })
     if (guard.action === 'quit') {
       if (guard.fatal) throw new Error(guard.reason)
-      console.log(`[desktop] ${guard.reason}`)
+      mainLog.log(`[desktop] ${guard.reason}`)
       app.quit()
       return
     }
     if (guard.action === 'reuse') {
       // 复用同库的已有训练器服务（zip launcher 等不占本端口的形态）：窗口加载其 URL，不启第二服务
-      console.log(`[desktop] reusing same-data-dir trainer at ${guard.url} (PID ${guard.occupant.pid})`)
+      mainLog.log(`[desktop] reusing same-data-dir trainer at ${guard.url} (PID ${guard.occupant.pid})`)
       mainWindow = createWindow(guard.url, await loadWindowBounds())
       return
     }
@@ -666,21 +754,21 @@ async function bootServerAndOpen(): Promise<void> {
     // 本次启动完成归位。录像半边在窗口加载完成后注入（见下方 did-finish-load 接线）。
     try {
       const consumed = await consumeOneClickHistoryStaging(config.dataDir, config.databasePath)
-      if (consumed.ran && consumed.ok) console.log('[desktop] 一键迁移：v1.2.7 训练历史已暂存，本启动将合并应用（导入前自动备份）')
-      else if (consumed.ran) console.error('[desktop] 一键迁移：训练历史暂存失败（暂存保留，下次启动重试）:', consumed.error)
+      if (consumed.ran && consumed.ok) mainLog.log('[desktop] 一键迁移：v1.2.7 训练历史已暂存，本启动将合并应用（导入前自动备份）')
+      else if (consumed.ran) mainLog.error('[desktop] 一键迁移：训练历史暂存失败（暂存保留，下次启动重试）:', consumed.error)
     } catch (error) {
-      console.error('[desktop] 一键迁移训练历史消费异常（下次启动自动重试）:', error)
+      mainLog.error('[desktop] 一键迁移训练历史消费异常（下次启动自动重试）:', error)
     }
     // MIG-EXT-01 / MIG-MERGE-01：内嵌服务开库前应用上次会话暂存的 v1.2.7 训练历史
     // （统一合并：目标不存在＝pending 就位；存在＝合并导入——备份先行＋单事务＋幂等
     // 跳过＋ns 保留；失败目标零损伤、pending 保留下次自动重试——绝不阻断启动）。
     try {
       const applied = await applyPendingHistoryAtBoot(config.databasePath)
-      if (applied.applied) console.log(`[desktop] v1.2.7 训练历史迁移已在启动时合并应用（导入 ${applied.imported} 条、跳过已存在 ${applied.skipped} 条；原库已备份保留）`)
-      else if (applied.error) console.error(`[desktop] v1.2.7 训练历史迁移暂缓（${applied.reason}）:`, applied.error)
-      else if (applied.reason !== 'none') console.log(`[desktop] v1.2.7 训练历史迁移暂缓：${applied.reason}`)
+      if (applied.applied) mainLog.log(`[desktop] v1.2.7 训练历史迁移已在启动时合并应用（导入 ${applied.imported} 条、跳过已存在 ${applied.skipped} 条；原库已备份保留）`)
+      else if (applied.error) mainLog.error(`[desktop] v1.2.7 训练历史迁移暂缓（${applied.reason}）:`, applied.error)
+      else if (applied.reason !== 'none') mainLog.log(`[desktop] v1.2.7 训练历史迁移暂缓：${applied.reason}`)
     } catch (error) {
-      console.error('[desktop] v1.2.7 训练历史迁移应用异常（下次启动自动重试）:', error)
+      mainLog.error('[desktop] v1.2.7 训练历史迁移应用异常（下次启动自动重试）:', error)
     }
     const runId = `run-${randomUUID()}`
     const effectiveConfig: DesktopRuntimeConfig = { ...config, port: plan.port }
@@ -715,18 +803,18 @@ async function bootServerAndOpen(): Promise<void> {
           .then(outcome => {
             if (!outcome.ran) return
             if (outcome.ok) {
-              console.log(`[desktop] 一键迁移：录像导入完成（成功 ${outcome.summary.imported ?? '?'} / 跳过 ${outcome.summary.skipped ?? '?'} / 失败 ${outcome.summary.failed ?? 0}）`)
+              mainLog.log(`[desktop] 一键迁移：录像导入完成（成功 ${outcome.summary.imported ?? '?'} / 跳过 ${outcome.summary.skipped ?? '?'} / 失败 ${outcome.summary.failed ?? 0}）`)
             } else {
-              console.error('[desktop] 一键迁移：录像导入失败（暂存保留，下次启动重试）:', outcome.error)
+              mainLog.error('[desktop] 一键迁移：录像导入失败（暂存保留，下次启动重试）:', outcome.error)
             }
           })
-          .catch(error => console.error('[desktop] 一键迁移录像注入异常（下次启动重试）:', error))
+          .catch(error => mainLog.error('[desktop] 一键迁移录像注入异常（下次启动重试）:', error))
       })
     }
   } finally {
     if (lockHeld) {
       lockHeld = false
-      await rm(lock.path, { force: true }).catch(error => console.error('[desktop] launch lock release failed:', error))
+      await rm(lock.path, { force: true }).catch(error => mainLog.error('[desktop] launch lock release failed:', error))
     }
   }
 }
@@ -745,7 +833,7 @@ async function bootstrap(): Promise<void> {
     }
     await bootServerAndOpen()
   } catch (error) {
-    console.error('[desktop] startup failed:', error)
+    mainLog.error('[desktop] startup failed:', error)
     dialog.showErrorBox('K线训练器启动失败', `${error instanceof Error ? error.message : String(error)}\n\n详细信息见控制台输出。`)
     app.quit()
   }
@@ -762,7 +850,7 @@ function runShutdownOnce(): Promise<void> {
       // PACK-03：清理自有状态记录（身份复核；绝不删他人记录；失败仅日志不阻断退出）
       await clearOwnTrainerState()
     } catch (error) {
-      console.error('[desktop] server shutdown error:', error)
+      mainLog.error('[desktop] server shutdown error:', error)
       throw error
     }
   })()
@@ -788,20 +876,20 @@ function dispatchQuitEvent(event: Parameters<typeof nextQuitState>[1]): void {
       if (resolveInstallActionOnExit({ installPending: installPendingUpdate, forced: action.forced }) === 'quit-and-install') {
         installPendingUpdate = false
         sendUpdateEvent({ type: 'installing' })
-        console.log('[desktop] drained; installing downloaded update (quitAndInstall)')
+        mainLog.log('[desktop] drained; installing downloaded update (quitAndInstall)')
         // UPD-QUIT-TYPEERROR-GUARD：适配器/底层（electron-updater 等）同步抛错不得逃逸出
         // exit 分支——逃逸＝异步链上的未捕获异常（teardown 窗口内即崩溃弹窗形态）或退出
         // 悬挂。就地记录并回落普通退出（更新留缓存可重试），绝不带病悬挂。
         try {
           updateAdapterRef?.quitAndInstall(true, true)
         } catch (error) {
-          console.error('[desktop] quitAndInstall threw synchronously; falling back to plain quit:', error instanceof Error ? error.message : String(error))
+          mainLog.error('[desktop] quitAndInstall threw synchronously; falling back to plain quit:', error instanceof Error ? error.message : String(error))
           app.quit()
         }
         return
       }
       if (action.forced) {
-        console.error(`[desktop] forced exit: ${action.reason ?? 'unknown'}`)
+        mainLog.error(`[desktop] forced exit: ${action.reason ?? 'unknown'}`)
         app.exit(action.code)
       } else {
         app.quit()
@@ -816,7 +904,7 @@ function requestGracefulQuit(): void {
     try {
       return resolveDrainTimeoutMs(process.env)
     } catch (error) {
-      console.error('[desktop] invalid TRAINER_DESKTOP_DRAIN_TIMEOUT_MS, using default:', error)
+      mainLog.error('[desktop] invalid TRAINER_DESKTOP_DRAIN_TIMEOUT_MS, using default:', error)
       return 15_000
     }
   })()
@@ -828,7 +916,7 @@ app.on('window-all-closed', () => { requestGracefulQuit() })
 app.on('before-quit', () => {
   // OS 级退出（会话结束等）或 gracefulQuit 自身触发的 app.quit()：未走排空路径时兜底关闭服务
   if (quitState.phase === 'idle' && serverHandle) {
-    console.error('[desktop] before-quit reached without graceful drain; closing server as fallback')
+    mainLog.error('[desktop] before-quit reached without graceful drain; closing server as fallback')
     void runShutdownOnce().catch(() => { /* 已在 runShutdownOnce 内记录 */ })
   }
 })

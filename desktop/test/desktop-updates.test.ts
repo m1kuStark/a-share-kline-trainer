@@ -243,11 +243,17 @@ describe('PACK-04 主进程粘合源码契约（main.ts / preload.cts）', () =>
     // desktopMigration（三方法 pick/inspect/importHistory，v1.2.7 训练历史迁移；主进程实现于
     // desktop/src/mig-import.ts）。白名单纪律同前：仅枚举授权对象。
     expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopMigration'/)
+    // GAP1-DIAG（2026-10-19 用户拍板 G1，矩阵行 DESKTOP-DIAG-IPC）：新增第四个窄对象
+    // desktopDiagnostics（单一方法 copyDiagnostics：主进程组装诊断文本并复制系统剪贴板）。
+    // 白名单纪律同前：出现任何白名单外的 exposeInMainWorld 即违约。
+    expect(source).toMatch(/contextBridge\.exposeInMainWorld\(\s*'desktopDiagnostics'/)
     const exposed = [...source.matchAll(/exposeInMainWorld\(\s*'([^']+)'/g)].map(match => match[1])
-    expect(exposed.sort()).toEqual(['desktopMigration', 'desktopRecordings', 'desktopUpdates'])
+    expect(exposed.sort()).toEqual(['desktopDiagnostics', 'desktopMigration', 'desktopRecordings', 'desktopUpdates'])
     // 四成员窄接口
     for (const member of ['channel', 'checkForUpdates', 'downloadAndInstall', 'onUpdateEvent']) {
       expect(source).toContain(member)
     }
+    // desktopDiagnostics 单成员窄接口
+    expect(source).toContain('copyDiagnostics')
   })
 })
