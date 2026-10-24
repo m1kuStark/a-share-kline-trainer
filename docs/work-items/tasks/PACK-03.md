@@ -5,7 +5,7 @@
   "id": "PACK-03",
   "title": "首启历史数据发现与原地采用（adopt-in-place）＋旧配置沿用＋双形态共存防双写＋零丢失不变量",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "PACK",
   "summary": "工程验证完成（2026-10-06 接续轮）：首启发现/原地采用（发现→采用/多候选对话框/无候选新建/二次幂等/旧 config 沿用）＋共存防线（launch.lock＋状态记录三应答＋反向记录＋身份复核清理）＋零丢失不变量（哈希前后对照）全交付；desktop 87/87、全量 1515/1516（1 例既有 flaky 单跑全绿）、build/build:desktop/冒烟 SMOKE_PASS(A-G) 全过；矩阵 desktop-app +7 行 covered（RED=0）；server/src、web、scripts/release、launcher.cjs 零改动。Electron/Windows 平台实测四发现＋隔离事故披露见验证记录 §五。",
   "next_action": "用户验收 proposed_default 8 项（含提示形态收敛 console-only、--adopt-child 宿主规避）后转 done",

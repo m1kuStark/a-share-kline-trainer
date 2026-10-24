@@ -5,7 +5,7 @@
   "id": "INSTALLER-UPGRADE-01",
   "title": "新版本安装包检测本地已装版本与位置，触发升级路径继承数据完成更新",
   "owner": "zcode:installer-upgrade",
-  "state": "planned",
+  "state": "review",
   "milestone": "R5",
   "summary": "用户期望：已装 v1.3.x 的机器直接运行从 GitHub 下载的 v1.3.x+1 安装包时，安装包检测本地已装版本与安装位置，走升级路径（继承本地数据完成版本更新），而非全新安装语义。",
   "next_action": "先侦察 NSIS 默认行为（perMachine/perUser、安装位置记忆、覆盖升级语义、数据目录继承现状）→方案呈报（含 needs_user_decision 项）→再实现。矩阵行 INSTALLER-UPGRADE-DETECT 已预登记 planned。",

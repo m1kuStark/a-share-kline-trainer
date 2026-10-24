@@ -5,7 +5,7 @@
   "id": "REPLAY-VIEWPORT-01",
   "title": "回放推进到特定交易日时主图右侧空白突变致画面大规模平移（齐心集团 2026-9-15→9-16）",
   "owner": "zcode:replay-viewport",
-  "state": "planned",
+  "state": "review",
   "milestone": "R5",
   "summary": "用户验收 v1.3.3 报告：齐心集团训练录像回放中，显示 2026-9-15 按空格推进到 9-16 时主图大规模移动——右侧黑色空白空间突然出现（回退 9-14 空白消失）。疑点区：SessionReplay 按日推进 feed 数据 + KlineChart replayView 按时间戳恢复右侧锚点机制在跨日边界的视口计算。",
   "next_action": "bug-loop 三步：复现（本机用户录像只读/或特征数据构造）→RED 回归→修复；矩阵行 REPLAY-VIEWPORT-STEADY-ADVANCE 已预登记 planned。",

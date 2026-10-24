@@ -5,7 +5,7 @@
   "id": "TDX-RECONNECT-01",
   "title": "统一设置分栏与首配向导的 TDX 路径生效语义（受控重启+自动恢复，消灭唐突的手动重启提示）",
   "owner": "zcode:tdx-reconnect",
-  "state": "planned",
+  "state": "review",
   "milestone": "R5",
   "summary": "用户验收 v1.3.3 报告：首装后经右上角设置选择通达信路径，保存后提示需重启应用才能连接（v1.2.7 顶栏「连接通达信」向导为受控重启+轮询自动恢复，无此断裂）。根因：v1.3.0 M5-01 新增设置页「数据目录（通达信）」分栏走 PUT /api/settings/tdx-path 仅保存（restartRequired:true 提示手动重启），与 SETUP apply 受控重启链（/api/setup/apply + restart-status 轮询）语义割裂。",
   "next_action": "RED→修复：分栏保存后自动走 SETUP apply 受控重启链（或等价机制），体验对齐向导；矩阵行 TDX-SETTINGS-APPLY-RESTART 已预登记 planned。",
