@@ -92,10 +92,30 @@ describe('INSTALLER-UPGRADE-DETECT: installer.nsh 升级检测源形状契约（
     expect(code).toMatch(/升级/)
     expect(code).toMatch(/数据/)
     // 呈现必须以「已装版本非空」为条件——全新安装不弹（检测条件先于呈现）
-    const condIdx = code.search(/\$\{If\}\s+\$\w+\s+!=\s+""/)
+    const condIdx = code.search(/\$\{If\}\s+\$\w+\s+!=\s*""/)
     const msgIdx = code.indexOf('MessageBox')
     expect(condIdx).toBeGreaterThanOrEqual(0)
     expect(msgIdx).toBeGreaterThan(condIdx)
+  })
+
+  it('UPGRADE-SILENT-SAFE：升级检测 MessageBox 带 /SD IDOK 且包在 ${IfNot} ${Silent} 守卫内（静默/自动更新链不得挂死等点击）', async () => {
+    // 2026-10-24 P0（bug-loop RED）：NSIS MessageBox 无 /SD 在 silent 模式阻塞等待输入；
+    // electron-updater 自动更新链正是以 /S 静默运行本安装器——检测到旧版登记即挂死
+    // （3060 HKCU 旧键与本机 HKLM 键双实证；第二轮 3060「下载环节 20 分钟死寂」悬案同源）。
+    const code = stripNsisComments(await readInstallerNsh())
+    const init = macroBody(code, 'customInit')
+    expect(init).not.toBe('')
+    // 每个 MessageBox 语句都必须带 /SD IDOK（makensis 3.0.4 实证：/SD 须后置于文本引号，
+    // 前置形态解析为 label 报错）——计数等式锁「无遗漏」
+    const msgCount = (init.match(/MessageBox/g) ?? []).length
+    const sdCount = (init.match(/\/SD IDOK/g) ?? []).length
+    expect(msgCount).toBeGreaterThan(0)
+    expect(sdCount).toBe(msgCount)
+    // 双保险：守卫在外层包住全部 MessageBox（与 customUnInstall 宏同构造）
+    const guardIdx = init.indexOf('${IfNot} ${Silent}')
+    const firstMsg = init.indexOf('MessageBox')
+    expect(guardIdx).toBeGreaterThanOrEqual(0)
+    expect(guardIdx).toBeLessThan(firstMsg)
   })
 
   it('INSTALL-UPGRADE：钩子写面收敛——升级链由内建承担，唯一受控写＝幽灵自愈的两条登记清除（HKCU）', async () => {

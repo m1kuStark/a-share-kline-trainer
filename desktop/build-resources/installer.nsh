@@ -68,10 +68,17 @@
       ${EndIf}
     ${EndIf}
     ${If} $R8 != ""
-      ${If} $R9 == ""
-        MessageBox MB_OK|MB_ICONINFORMATION "检测到已安装 ${PRODUCT_NAME} v$R8。$\r$\n$\r$\n本次安装将按升级路径执行：原位置升级，用户数据目录完整保留，无需迁移。"
-      ${Else}
-        MessageBox MB_OK|MB_ICONINFORMATION "检测到已安装 ${PRODUCT_NAME} v$R8（安装位置：$R9）。$\r$\n$\r$\n本次安装将按升级路径执行：安装到同一位置，用户数据目录完整保留，无需迁移。"
+      ; UPGRADE-SILENT-SAFE（2026-10-24 P0 修复）：升级检测告知框只服务交互向导——
+      ; NSIS MessageBox 无 /SD 在 silent 模式阻塞等待输入，而 electron-updater 自动更新
+      ; 链正是以 /S 静默运行本安装器（3060 HKCU 旧键＋本机 HKLM 键双实证挂死；第二轮
+      ; 3060「下载环节 20 分钟死寂」悬案同源）。双保险＝外层 ${IfNot} ${Silent} 守卫
+      ; （与 customUnInstall 宏同构造）＋每个 MessageBox 显式 /SD IDOK（静默自动确定）。
+      ${IfNot} ${Silent}
+        ${If} $R9 == ""
+          MessageBox MB_OK|MB_ICONINFORMATION "检测到已安装 ${PRODUCT_NAME} v$R8。$\r$\n$\r$\n本次安装将按升级路径执行：原位置升级，用户数据目录完整保留，无需迁移。" /SD IDOK
+        ${Else}
+          MessageBox MB_OK|MB_ICONINFORMATION "检测到已安装 ${PRODUCT_NAME} v$R8（安装位置：$R9）。$\r$\n$\r$\n本次安装将按升级路径执行：安装到同一位置，用户数据目录完整保留，无需迁移。" /SD IDOK
+        ${EndIf}
       ${EndIf}
     ${EndIf}
   ${EndIf}
