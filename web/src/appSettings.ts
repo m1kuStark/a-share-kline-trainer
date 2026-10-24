@@ -23,6 +23,8 @@ export interface SavedTdxChoiceInfo {
 
 export interface TdxPathSettingsView {
   effectiveRoot: string | null
+  /** 生效根的解析来源（服务端 2026-10-24 起返回；旧服务缺省 undefined＝未知，按未钉死呈现） */
+  effectiveSource?: import('./api').TdxRootSource | null
   savedChoice: SavedTdxChoiceInfo | null
 }
 

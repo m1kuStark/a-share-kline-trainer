@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { fetchTrainingSettings, putTrainingSettings, saveSetupChoice, applySetupChoice, fetchRestartStatus, selectSetupDirectory, type TrainingSettingsView } from '../api'
+import { directoryPickFeedback, tdxSourceLocked } from '../dataSourcePresentation'
 import { notifySettingsSaved } from '../settingsPanel'
 import { checkDataStatus } from '../dataStatus'
 import {
@@ -378,6 +379,8 @@ const tdxCheck = ref<TdxCandidateCheckInfo | null>(null)
 const tdxCheckError = ref('')
 const tdxSaving = ref(false)
 const tdxApplying = ref(false)
+// 目录选择器打开期间（原生框可能被主窗遮挡，必须给可见的等待与反馈，不再静默）
+const tdxPicking = ref(false)
 const tdxError = ref('')
 const tdxSavedMessage = ref('')
 
@@ -844,18 +847,28 @@ async function refreshTdxView(): Promise<void> {
 }
 
 async function chooseTdxDirectory(): Promise<void> {
-  if (tdxChecking.value || tdxSaving.value || tdxApplying.value) return
+  if (tdxChecking.value || tdxSaving.value || tdxApplying.value || tdxPicking.value) return
   tdxCheckError.value = ''
   tdxError.value = ''
   tdxSavedMessage.value = ''
+  tdxPicking.value = true
   try {
     const picked = await selectSetupDirectory()
+    // 2026-10-24 bug-loop：非 selected 的失败态此前静默返回（用户报「点选择没反应」）；
+    // 与首配向导同口径给结构化原因，cancelled 仍不打扰
+    const feedback = directoryPickFeedback(picked)
+    if (feedback !== null) {
+      tdxCheckError.value = feedback
+      return
+    }
     if (picked.status !== 'selected' || !picked.path) return
     tdxPathInput.value = picked.path
     tdxPathTouched.value = true
     await checkTdxPath()
   } catch (error) {
     tdxCheckError.value = error instanceof Error ? error.message : '目录选择失败，可重试'
+  } finally {
+    tdxPicking.value = false
   }
 }
 
@@ -1038,8 +1051,13 @@ function close(): void {
         <p v-if="dataDirSavedMessage" class="settings-saved" role="status">{{ dataDirSavedMessage }}</p>
 
         <h4 class="settings-subsection">数据目录（通达信）</h4>
+        <!-- 2026-10-24 bug-loop：来源为 env/explicit-config（启动方式显式钉死，如验收包冻结样本）时
+             事前明示，而不是等用户保存后才在 reason 里告知「不会覆盖它」 -->
+        <p v-if="tdxView && tdxSourceLocked(tdxView.effectiveSource ?? null)" class="settings-tdx-locked" role="note">
+          当前行情目录由启动方式显式指定（例如验收包随包冻结样本）；在此保存的选择不会覆盖它，应用内的「更新日线」也不会改变该目录的数据。如需使用自身通达信行情，请使用完整安装版训练器。
+        </p>
         <p class="settings-section-note">
-          <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code></span>
+          <span>当前生效：<code>{{ tdxView?.effectiveRoot ?? '未找到（离线导入回放仍可用）' }}</code><template v-if="tdxView?.effectiveSource">（来源：{{ tdxView.effectiveSource === 'env' ? '环境变量/启动方式指定' : tdxView.effectiveSource === 'explicit-config' ? '配置文件显式指定' : tdxView.effectiveSource === 'saved-choice' ? '已保存的选择' : '自动发现' }}）</template></span>
           <span v-if="tdxView?.savedChoice">；已保存：<code>{{ tdxView.savedChoice.root }}</code><template v-if="tdxView.savedChoice.root !== tdxView.effectiveRoot">（与当前不同，下次启动生效）</template></span>
           <span v-else>；尚未保存过选择</span>
         </p>
@@ -1053,10 +1071,11 @@ function close(): void {
           <small>选择包含 vipdoc 与 T0002 的通达信根目录；保存前会重新校验，保存失败不会改动之前的选择。</small>
         </div>
         <div class="settings-actions">
-          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying" @click="chooseTdxDirectory">选择文件夹…</button>
-          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying || tdxPicking" @click="chooseTdxDirectory">{{ tdxPicking ? '已打开选择器…' : '选择文件夹…' }}</button>
+          <button class="ghost-button" :disabled="tdxChecking || tdxSaving || tdxApplying || tdxPicking" @click="checkTdxPath">{{ tdxChecking ? '检查中…' : '检查此路径' }}</button>
           <button class="trade-action buy" :disabled="tdxSaving || tdxChecking || tdxApplying || tdxPathInput.trim() === ''" @click="saveTdxPath">{{ tdxApplying ? '生效中…' : tdxSaving ? '保存中…' : '保存数据目录' }}</button>
         </div>
+        <p v-if="tdxPicking" class="settings-section-note" role="status">已打开 Windows 目录选择器，请在前置窗口中选择通达信根目录（包含 vipdoc 与 T0002）；点击取消可返回。</p>
         <div v-if="tdxCheck" class="settings-tdx-check" role="status">
           <span>
             {{ tdxCheck.recognized && tdxCheck.readable ? '✓ 该目录可用' : '✕ 该目录暂不可用' }}：
@@ -1229,6 +1248,8 @@ function close(): void {
 :global(body.dark .shortcut-binding.recording){ color: #9bdce3; }
 .settings-tdx-check { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: var(--font-size-sm); line-height: 1.6; }
 .settings-tdx-check ul { margin: 6px 0 0; padding-left: 18px; color: var(--text-secondary, #51637a); }
+/* 2026-10-24 显式钉死来源（env/explicit-config）的事前明示框 */
+.settings-tdx-locked { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 6px; font-size: var(--font-size-sm); line-height: 1.6; color: var(--text-secondary, #51637a); }
 /* UPD-02 关于与更新分栏 */
 .update-current-version { margin: 0 0 4px; font-size: var(--font-size-md); font-weight: 600; font-variant-numeric: tabular-nums; }
 /* GAP1-DIAG 复制诊断信息（仅区块间距；按钮/反馈全复用既有 ghost-button、settings-saved、error-text） */

@@ -13,6 +13,7 @@ const readFile = async (path: URL, _encoding: 'utf8') => (await readBytes(path, 
 const storePath = new URL('../../web/src/dataStatus.ts', import.meta.url)
 const apiPath = new URL('../../web/src/api.ts', import.meta.url)
 const appPath = new URL('../../web/src/App.vue', import.meta.url)
+const presentationPath = new URL('../../web/src/dataSourcePresentation.ts', import.meta.url)
 const launcherPath = new URL('../../web/src/views/Launcher.vue', import.meta.url)
 const trainingPath = new URL('../../web/src/views/Training.vue', import.meta.url)
 const stylesPath = new URL('../../web/src/styles.css', import.meta.url)
@@ -111,7 +112,13 @@ describe('日线数据更新前端契约（R1）', () => {
     expect(app).toMatch(/未检测到通达信数据/)
     // stale 指引：先去通达信完成盘后下载，再回来重新读取本地日线（不暗示联网）
     expect(app).toMatch(/:title="attentionTitle"/)
-    expect(app).toMatch(/请先在通达信完成盘后数据下载，再点击重新读取本地日线（不联网）/)
+    // 2026-10-24 bug-loop：提示文案决策迁入 dataSourcePresentation（App.vue 只保留 computed 接线）；
+    // 锚点搬移非放宽——盘后下载指引与钉死形态分支均钉在纯函数文件（语义另由
+    // data-source-presentation.test.ts 逐字锁定），attentionTitle 消费 tdx.source
+    const presentation = await readFile(presentationPath, 'utf8')
+    expect(presentation).toMatch(/请先在通达信完成盘后数据下载，再点击重新读取本地日线（不联网）/)
+    expect(presentation).toMatch(/export function attentionHint\(/)
+    expect(app).toMatch(/attentionHint\(env\.value\?\.tdx\?\.source, dataStatus\.value\?\.freshness\?\.reason\)/)
     // 醒目按钮旁附小字数据截止日
     expect(app).toMatch(/dataWidgetState === 'attention'" class="data-status-note">截止 \{\{ dataCutoffText \}\}/)
   })

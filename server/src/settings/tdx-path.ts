@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { HttpError } from '../train/engine.js'
 import { inspectTdxCandidate, type TdxCandidateCheck } from '../tdx/inspect.js'
-import { readSavedTdxChoice, saveTdxChoice, type SavedTdxChoice } from '../setup/saved-choice.js'
+import { readSavedTdxChoice, saveTdxChoice, type SavedTdxChoice, type TdxRootSource } from '../setup/saved-choice.js'
 import type { AppConfig } from '../config.js'
 
 // M5-01：TDX 路径设置 API：GET/PUT /api/settings/tdx-path、POST /api/settings/tdx-path/validate。
@@ -21,6 +21,8 @@ import type { AppConfig } from '../config.js'
 export interface TdxPathSettingsView {
   /** 本进程启动时解析并生效的根（null＝未找到，离线可用） */
   effectiveRoot: string | null
+  /** 生效根的解析来源（env/explicit-config＝启动方式显式指定；前端据此事前明示「保存的选择不会覆盖它」） */
+  effectiveSource: TdxRootSource | null
   /** 已保存选择（null＝尚未保存过） */
   savedChoice: SavedTdxChoice | null
 }
@@ -64,6 +66,7 @@ export function registerTdxPathSettingsRoutes(
 
   app.get('/api/settings/tdx-path', async (): Promise<TdxPathSettingsView> => ({
     effectiveRoot: config.tdxRoot,
+    effectiveSource: config.tdxSource,
     savedChoice: await readSavedTdxChoice(options.dataDir),
   }))
 
