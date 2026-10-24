@@ -61,7 +61,7 @@ async function installBaseMocks(page: Page): Promise<void> {
     body: JSON.stringify({
       status: 'ok',
       recordingNamespace: 'e2e-data-update',
-      tdx: { connected: true, source: 'explicit-config' },
+      tdx: { connected: true, source: 'saved-choice' },
       launcher: { port: Number(new URL(route.request().url()).port), fallbackFrom: null, fallbackReason: null },
       dataCutoff: '2026-09-15', stockCount: 5321, capabilities: {}, activeTrainingId: null,
     } satisfies EnvView),
@@ -106,6 +106,32 @@ test('a) freshness stale 时顶栏出现摇晃的"更新日线"醒目按钮＋�
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
     expect(overflow, `${width}px 宽出现横向溢出`).toBe(false)
   }
+})
+
+test('a2) 行情目录被启动方式显式指定（env/验收包样本）时，attention 提示说明根因而非盘后指引', async ({ page }) => {
+  // 2026-10-24 bug-loop 入口补锁：提示文案按 tdx.source 分叉（dataSourcePresentation.attentionHint），
+  // 钉死形态不得再引导用户去通达信下载（对该形态无意义）
+  await installBaseMocks(page)
+  await page.route('**/api/env', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'ok',
+      recordingNamespace: 'e2e-data-update',
+      tdx: { connected: true, source: 'env' },
+      launcher: { port: Number(new URL(route.request().url()).port), fallbackFrom: null, fallbackReason: null },
+      dataCutoff: '2026-09-15', stockCount: 5321, capabilities: {}, activeTrainingId: null,
+    } satisfies EnvView),
+  }))
+  await page.route('**/api/data/status', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: statusPayload({ state: 'unchanged', needsUpdate: true, reason: '数据源已有 2026-09-24 的日线', sourceMaxDate: '2026-09-15' }, freshness('stale')),
+  }))
+  await page.goto('/')
+  const button = page.locator('.data-update-btn.attention')
+  await expect(button).toBeVisible()
+  await expect(button).toHaveAttribute('title', /启动方式/)
+  await expect(button).toHaveAttribute('title', /无法/)
+  await expect(button).not.toHaveAttribute('title', /请先在通达信完成盘后数据下载/)
 })
 
 test('b) 点击更新 → POST refresh 被调用 → 更新中禁用态 → updated 后显示"数据已最新"，醒目按钮消失且常驻手动入口仍在', async ({ page }) => {
