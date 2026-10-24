@@ -861,13 +861,19 @@ export interface MigrationIpcDeps {
   /** 生效训练库路径（config.databasePath）；null＝未就绪（dev 窗口/启动早期） */
   databasePath(): string | null
   logger: { warn(...args: unknown[]): void, error(...args: unknown[]): void }
+  /** MIG-INLINE-01 内置向导方法路由（inline-*）；返回 null＝方法不属该域，落回本模块路由 */
+  extraRoutes?: (method: unknown, parsed: { root?: unknown, manifestPath?: unknown } | null) => Promise<unknown | null>
 }
 
 export function registerMigrationIpc(deps: MigrationIpcDeps): void {
   deps.ipcMain.handle(MIGRATION_CHANNEL, async (_event, request) => {
     try {
-      const parsed = (request ?? null) as { method?: unknown, manifestPath?: unknown } | null
+      const parsed = (request ?? null) as { method?: unknown, manifestPath?: unknown, root?: unknown } | null
       const method = parsed?.method
+      if (deps.extraRoutes) {
+        const inline = await deps.extraRoutes(method, parsed)
+        if (inline !== null) return inline
+      }
       if (method === 'pick') {
         const picked = await deps.pickManifestFile()
         if (!picked) return { ok: false, error: '已取消选择迁移清单文件。' }

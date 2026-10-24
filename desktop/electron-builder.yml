@@ -14,6 +14,11 @@ publish:
 extraResources:
   - from: desktop/build-resources/app-update.yml
     to: app-update.yml
+  # MIG-INLINE-01 内置迁移向导资源：旧 origin 导出页＋录像导入器脚本（构建产 desktop/scripts/build-migration-page.mjs）
+  - from: desktop/build-resources/migration-export-inline.html
+    to: migration-export-inline.html
+  - from: desktop/build-resources/migration-import-recordings.js
+    to: migration-import-recordings.js
 # 产物与 zip 命名（kline-trainer-v<版本>-windows-x64.zip）可区分：desktop 前缀
 directories:
   output: desktop/release

@@ -61,6 +61,20 @@ contextBridge.exposeInMainWorld('desktopMigration', {
   importHistory: (manifestPath: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'import', manifestPath }) as Promise<
     { ok: true; requiresRestart: boolean; trainings: number; skipped: number; importing: number } | { ok: false; error: string }
   >,
+  // MIG-INLINE-01 内置向导五方法（同通道扩展；结构化返回不抛异常）
+  inspectLegacy: (root: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-inspect', root }) as Promise<
+    { ok: true; trainings: number; trades: number; originPort: number; recordingNamespace: string | null; dataDirSource: string } | { ok: false; error: string }
+  >,
+  migrateLegacyHistory: (root: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-migrate-history', root }) as Promise<
+    { ok: true; imported: number; skipped: number } | { ok: false; error: string }
+  >,
+  startLegacyExport: (root: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-export-start', root }) as Promise<
+    { ok: true; url: string } | { ok: false; error: string }
+  >,
+  legacyExportStatus: () => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-export-status' }) as Promise<
+    { ok: true; state: { phase: string; itemCount?: number; summary?: { imported?: number; skipped?: number; failed?: number }; error?: string } }
+  >,
+  stopLegacyExport: () => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-export-stop' }) as Promise<{ ok: true }>,
 })
 
 // GAP1-DIAG（用户 2026-10-19 拍板 G1）：第四个窄对象 desktopDiagnostics（单一方法

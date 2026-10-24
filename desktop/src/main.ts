@@ -100,6 +100,7 @@ import {
   registerMigrationIpc,
   runOneClickRecordingImport,
 } from './mig-import.js'
+import { inlineMigrationRoutes } from './mig-inline.js'
 import { cleanupPortableUpdateLeftovers, createPortableUpdaterAdapter, isPortableExecution, resolvePortableTargetExe } from './portable-updater.js'
 import { createDiagLogger, createNodeDiagLogDeps, createTeeConsole, type DiagLogger } from './diag-log.js'
 import {
@@ -629,11 +630,29 @@ async function pickMigrationManifestFile(): Promise<string | null> {
   return result.filePaths[0] ?? null
 }
 
+// MIG-INLINE-01 内置迁移资源路径：打包后随 extraResources 落 resources 根；开发态 build-resources
+function migrationResourcePath(name: string): string {
+  return app.isPackaged ? join(process.resourcesPath, name) : join(__dirname, '..', 'build-resources', name)
+}
+
 registerMigrationIpc({
   ipcMain,
   pickManifestFile: pickMigrationManifestFile,
   databasePath: () => migrationDatabasePath,
   logger: mainLog,
+  // MIG-INLINE-01 内置迁移向导路由（历史体检/迁移＋旧 origin 录像导出回流）
+  extraRoutes: inlineMigrationRoutes({
+    dataDir: () => archiveDataDir,
+    databasePath: () => migrationDatabasePath,
+    readPageHtml: async () => readFile(migrationResourcePath('migration-export-inline.html'), 'utf8'),
+    readImporterText: async () => readFile(migrationResourcePath('migration-import-recordings.js'), 'utf8'),
+    openExternal: async url => { await shell.openExternal(url) },
+    executeJavaScript: code => {
+      if (!mainWindow || mainWindow.isDestroyed()) return Promise.reject(new Error('主窗口不可用'))
+      return mainWindow.webContents.executeJavaScript(code)
+    },
+    logger: mainLog,
+  }),
 })
 
 // ===== GAP1-DIAG 诊断 IPC（desktop-diagnostics:invoke 单通道；preload 对应 desktopDiagnostics

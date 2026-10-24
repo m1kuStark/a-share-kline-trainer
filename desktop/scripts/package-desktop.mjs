@@ -4,7 +4,7 @@
 // 写进脚本而非临时环境，可重复构建）；②打包前 preflight（三产物齐备才进 electron-builder）；
 // ③调用 electron-builder（config＝desktop/electron-builder.yml，win portable 目标，
 // NSIS 安装器留 PACK-05）。
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { access } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -14,6 +14,16 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 process.env.ELECTRON_MIRROR ||= 'https://npmmirror.com/mirrors/electron/'
 process.env.ELECTRON_BUILDER_BINARIES_MIRROR ||= 'https://npmmirror.com/mirrors/electron-builder-binaries/'
+
+// MIG-INLINE-01：先从 tools/migrate-v127 源码重编内置迁移导出页（产物虽提交入库，
+// 仍重编以防"源码改了、页面没重编"的陈旧包；esbuild 在仓库 node_modules）
+const migPage = spawnSync(process.execPath, [join(ROOT, 'desktop', 'scripts', 'build-migration-page.mjs')], {
+  cwd: ROOT, stdio: 'inherit',
+})
+if (migPage.status !== 0) {
+  console.error('[package-desktop] FAIL: build-migration-page.mjs failed')
+  process.exit(1)
+}
 
 async function exists(path) {
   try {
@@ -29,6 +39,9 @@ const REQUIRED = [
   'desktop/dist/preload.cjs',
   'server/dist/index.js',
   'web/dist/index.html',
+  // MIG-INLINE-01：内置迁移导出页＋录像导入器必须入包（electron-builder extraResources 引用）
+  'desktop/build-resources/migration-export-inline.html',
+  'desktop/build-resources/migration-import-recordings.js',
 ]
 const missing = []
 for (const path of REQUIRED) {

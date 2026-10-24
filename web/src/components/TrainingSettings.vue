@@ -37,7 +37,7 @@ import {
 // 数据目录（通达信）（查看/校验/保存；TDX-RECONNECT-01 起保存即走与首配向导相同的
 // 受控重启链立即生效，不再要求手动重启应用；保存失败保留原选择、重启未达 ready 自动回滚并如实呈现）。
 
-const emit = defineEmits<{ close: []; 'tdx-connected': [] }>()
+const emit = defineEmits<{ close: []; 'tdx-connected': []; 'open-migration': [] }>()
 
 // UPD-NOTIFY-01：首页更新提示跳转入口——打开即直入指定分栏，并（desktop 通道）以主进程
 // boot 自动检查的结果为初值呈现；两个 prop 均缺省时行为与既有打开完全一致（默认分栏＋手动检查）。
@@ -383,6 +383,8 @@ const tdxApplying = ref(false)
 const tdxPicking = ref(false)
 const tdxError = ref('')
 const tdxSavedMessage = ref('')
+// MIG-INLINE-01：桌面迁移桥存在时呈现「从 v1.2.7 迁移」常驻入口（纯浏览器形态隐藏）
+const desktopMigrationInlineAvailable = computed(() => Boolean((window as unknown as { desktopMigration?: unknown }).desktopMigration))
 
 // ===== V1.2.6 训练数据目录：查看 / 选择 / 保存（写回启动器配置，重启生效） =====
 const dataDirView = ref<DataDirSettingsView | null>(null)
@@ -1090,6 +1092,11 @@ function close(): void {
         <p v-if="tdxLoadError" class="error-text" role="alert">{{ tdxLoadError }}</p>
         <p v-if="tdxError" class="error-text" role="alert">{{ tdxError }}</p>
         <p v-if="tdxSavedMessage" class="settings-saved" role="status">{{ tdxSavedMessage }}</p>
+
+        <!-- MIG-INLINE-01 常驻入口（用户拍板：首启弹一次可跳过，设置页保留入口） -->
+        <div v-if="desktopMigrationInlineAvailable" class="settings-actions">
+          <button class="ghost-button" @click="emit('open-migration')">从 v1.2.7 迁移老数据…</button>
+        </div>
       </section>
       <section v-if="activeSection === 'about'" class="settings-section" aria-label="关于与更新">
         <h3>关于与更新</h3>

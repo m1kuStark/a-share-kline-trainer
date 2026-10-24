@@ -10,6 +10,12 @@ import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
 import { attentionHint } from './dataSourcePresentation'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
+// MIG-INLINE-01 内置迁移向导开关（首启询问/设置页入口共用）
+const migrationWizardOpen = ref(false)
+function onMigrationCompleted(): void {
+  migrationWizardOpen.value = false
+  void checkDataStatus({ force: true })
+}
 import type { DesktopUpdatesApi } from './updateFlow'
 import { ChartCandlestick, History as HistoryIcon, Moon, Power, Settings, Sun, Trophy, Video } from 'lucide-vue-next'
 import Launcher from './views/Launcher.vue'
@@ -18,6 +24,7 @@ import SessionReplay from './views/SessionReplay.vue'
 import History from './views/History.vue'
 import Rankings from './views/Rankings.vue'
 import TrainingSettings from './components/TrainingSettings.vue'
+import MigrationInlineWizard from './components/MigrationInlineWizard.vue'
 import RecordingLibrary from './components/RecordingLibrary.vue'
 import { configureRecordingNamespace, listRecordingLibrary, importRecording as saveImportedRecording, loadLibraryRecording, removeLibraryRecordings, clearRecordingSource } from './recording/recordingRepository'
 import type { RecordingLibraryItem, RecordingRemovalResult, RecordingSource } from './recording/recordingRepository'
@@ -564,6 +571,17 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', onDataVisibilityChange)
   void checkDataStatus({ force: true })
   startStatusTicker()
+  // MIG-INLINE-01 首启迁移询问（用户拍板：弹一次可跳过；不扫描磁盘）：桌面形态＋本机库无训练
+  // ＋未选过「不再提示」→ 打开内置迁移向导。检测失败静默不打扰（设置页有常驻入口）。
+  if ((window as unknown as { desktopMigration?: unknown }).desktopMigration && !localStorage.getItem('mig-inline-dismissed')) {
+    try {
+      const response = await fetch('/api/trainings')
+      if (response.ok) {
+        const view = await response.json() as { items?: unknown[], total?: number }
+        if ((view.items?.length ?? 0) === 0) migrationWizardOpen.value = true
+      }
+    } catch { /* 检测失败＝不弹，设置页入口仍可用 */ }
+  }
   // UPD-NOTIFY-01：App 级订阅 boot 更新通知（同步建立即可——仍远早于主进程 did-finish-load
   // 补投；放在数据状态检查之后，不挤占 R1「启动即 force 检查」的既有契约位）
   desktopNoticeUnsubscribe = desktopUpdatesHolder.desktopUpdates?.onUpdateEvent(event => {
@@ -732,7 +750,8 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 
     <!-- 训练默认设置（TRAIN-01/返修F3）：弹层挂 app-shell 根（main 之外），打开期间 rail/workspace
          inert 隔离背景焦点与原生激活；Training 保持挂载录制不中断；关闭还焦点设置入口 -->
-    <TrainingSettings v-if="trainingSettingsOpen" :initial-section="requestedSettingsSection" :seeded-update-notice="requestedSettingsSection === 'about' ? updateNotice : null" @tdx-connected="onTdxConnected" @close="onSettingsClose" />
+    <TrainingSettings v-if="trainingSettingsOpen" :initial-section="requestedSettingsSection" :seeded-update-notice="requestedSettingsSection === 'about' ? updateNotice : null" @tdx-connected="onTdxConnected" @open-migration="migrationWizardOpen = true" @close="onSettingsClose" />
+    <MigrationInlineWizard :open="migrationWizardOpen" @close="migrationWizardOpen = false" @completed="onMigrationCompleted" />
 
     <!-- 保存并退出训练器（REL-LAUNCH-UX-01）：保存→协调→排空→端口不可达才算已退出 -->
     <div v-if="exitModalOpen" class="exit-overlay" role="dialog" aria-modal="true" aria-label="退出训练器">
