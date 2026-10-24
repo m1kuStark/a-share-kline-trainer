@@ -1,0 +1,5 @@
+{
+  "time": "2026-10-20T00:57:17.4997497+08:00",
+  "initial": "Wrapper used Start-Process -WindowStyle Hidden; service healthy but EnumWindows found product window visible=false; normal main-window close had no handle",
+  "resolution": "Interactive app launch now uses Normal; no product-source change"
+}

@@ -6,6 +6,9 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [report-narrow](report-narrow.spec.ts) | 真实买入后固定本局报告，390/1024/1440 深浅主题无对话框横向溢出，成交全部列支持键盘与鼠标滚动查看 |
+| [local-origin](local-origin.spec.ts) | 应用同源读写成功；另一站点的真实浏览器读取和写入被拒，偏好保持不变 |
+| [backup-restore](backup-restore.spec.ts) | 独立 SQLite 一致快照恢复训练/成交/画线/报告，空浏览器导入录像并只读回放；不覆盖桌面安装和自动归档 |
 | [ma-settings](ma-settings.spec.ts) | 八条MA参数、草稿/取消/校验、颜色和持久化、周期共用、1000周期预热、视窗画线保留及双主题尺寸 |
 | [acceptance-feedback](acceptance-feedback.spec.ts) | 录像入口、活动训练往返、快捷键与顶部空间 |
 | [drawing-basis](drawing-basis.spec.ts) | 除权推进/轴缩放/撤销刷新时画线锚点对齐 |
@@ -25,7 +28,7 @@
 | [pane-resize](pane-resize.spec.ts) | 原生分隔条所有权、对角拖动、组合模式 |
 | [data-update](data-update.spec.ts) | 更新入口、建议弹窗双路径、失败/409状态 |
 | [replay-period](replay-period.spec.ts) | 开盘段回放可切周K/月K且不再误报缺日线（RF-03） |
-| [random-mode](random-mode.spec.ts) | 经典/随机标签与维度面板、载荷与 422 提示、星号遮蔽＋眼睛确认揭示、剩余根数替代日期、结算揭晓、随机录像库/回放 tag（RF-04/RF-05） |
+| [random-mode](random-mode.spec.ts) | 经典/随机标签与维度面板、载荷与 422 提示、星号遮蔽＋眼睛确认揭示、剩余根数替代日期、结算揭晓、随机录像库/回放 tag；三个月窗口独立逐条对照原始日线，允许停牌缺口（RF-04/RF-05） |
 | [random-mask-axis](random-mask-axis.spec.ts) | 随机时间模式时间轴日期隐藏＋眼睛揭示常量差换算＋悬浮卡联动、结算面板披露训练标的、random_stock 轴正常护栏（RF2-02/03） |
 | [order-panel](order-panel.spec.ts) | 统一下单面板标签页、多条件单挂单/撤单、悬停信息主题一致、开盘阶段唯一价位线 |
 | [phase-price-line](phase-price-line.spec.ts) | 开盘/收盘一致虚线与唯一价格轴标签、实际日线前收配色、跳空价格范围 |

@@ -1,0 +1,46 @@
+{
+  "time": "2026-10-19T16:57:43.581Z",
+  "workspace": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\old-ui-migration-ZHQPYi",
+  "oldRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\builder-accept-old-v127\\kline-trainer-v1.2.7-windows-x64",
+  "packageRoot": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\BUILDER-ACCEPT-01-20261020",
+  "steps": [
+    "Verified v1.2.7 UI created real recording via buy, advance, settle; local library has one",
+    "Real export tool scanned/downloaded recording and packed history",
+    "Delivered one-click staging function populated both payloads",
+    "Packaged boot consumed history and injected recording importer; history and replay visible"
+  ],
+  "errors": [],
+  "recordingSessionId": "abc006fe-b18e-4497-9620-a1efd0a830ce",
+  "historyCounts": {
+    "trainings": 1,
+    "trades": 1,
+    "orders": 0,
+    "equityCurve": 2,
+    "positionEvents": 0,
+    "drawings": 0,
+    "tradeNotes": 0
+  },
+  "stage": {
+    "ok": true,
+    "stagingDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\old-ui-migration-ZHQPYi\\new-data\\migrate-v127-import",
+    "manifest": {
+      "format": "trainer-oneclick-import",
+      "version": 1,
+      "stagedAt": "2026-10-19T16:57:57.496Z",
+      "installDir": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\tools\\migrate-v127\\dist",
+      "history": {
+        "manifest": "history/迁移清单.json"
+      },
+      "recordings": {
+        "file": "recordings.trainer-recordings.json",
+        "importer": "import-recordings.js"
+      }
+    }
+  },
+  "identity": {
+    "packaged": true,
+    "userData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\old-ui-migration-ZHQPYi\\electron-profile",
+    "version": "1.3.0"
+  },
+  "passed": true
+}

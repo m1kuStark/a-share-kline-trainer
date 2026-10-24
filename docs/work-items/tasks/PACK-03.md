@@ -5,7 +5,7 @@
   "id": "PACK-03",
   "title": "首启历史数据发现与原地采用（adopt-in-place）＋旧配置沿用＋双形态共存防双写＋零丢失不变量",
   "owner": "integrator",
-  "state": "review",
+  "state": "active",
   "milestone": "PACK",
   "summary": "工程验证完成（2026-10-06 接续轮）：首启发现/原地采用（发现→采用/多候选对话框/无候选新建/二次幂等/旧 config 沿用）＋共存防线（launch.lock＋状态记录三应答＋反向记录＋身份复核清理）＋零丢失不变量（哈希前后对照）全交付；desktop 87/87、全量 1515/1516（1 例既有 flaky 单跑全绿）、build/build:desktop/冒烟 SMOKE_PASS(A-G) 全过；矩阵 desktop-app +7 行 covered（RED=0）；server/src、web、scripts/release、launcher.cjs 零改动。Electron/Windows 平台实测四发现＋隔离事故披露见验证记录 §五。",
   "next_action": "用户验收 proposed_default 8 项（含提示形态收敛 console-only、--adopt-child 宿主规避）后转 done",
@@ -21,12 +21,20 @@
     "ai-harness-lab/harness-state.jsonl（仅 gate-report）",
     ".zcode/skills/ai-harness/matrix/desktop-app.yaml＋镜像"
   ],
-  "depends_on": ["PACK-01", "PACK-02"],
+  "depends_on": [
+    "PACK-01",
+    "PACK-02"
+  ],
   "docs_impact": {
-    "update": ["docs/work-items/tasks/PACK-03.md", "docs/work-items/milestones/PACK.md"],
+    "update": [
+      "docs/work-items/tasks/PACK-03.md",
+      "docs/work-items/milestones/PACK.md"
+    ],
     "reason": "数据兼容任务；行为矩阵在工作区 harness skill（desktop-app.yaml）＋镜像。"
   },
-  "verification_refs": ["docs/verification/2026-10/PACK-03/README.md"],
+  "verification_refs": [
+    "docs/verification/2026-10/PACK-03/README.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }
@@ -48,3 +56,5 @@
 3. **双形态共存防双写**：zip（launcher）与 exe 可能同时运行。desktop 起服务前查 dataDir 状态记录（trainer-state.json），发现活跃记录先健康探测再决定复用/询问/拒绝，口径与 PORT-02 一致；desktop 自身启动后写入同格式状态记录（launcher decideRecordedServer/probeMatchesState 可识别→反向防双写）。
 4. **零丢失证明**：任何路径都不删除/覆盖既有库文件；唯一允许写的场景是新建空白库于全新目录。测试覆盖：发现→采用、多候选→对话框、无候选→新建、二次启动幂等（不再探测）、旧 config 沿用、共存防线。
 5. 迁移（复制）路径 v1 不做（adopt-in-place 已消除迁移必要；%APPDATA% 方案留作未来拍板）。
+
+2026-10-20：卡片兼容状态对齐统一状态文件；不新增实现或用户验收结论。

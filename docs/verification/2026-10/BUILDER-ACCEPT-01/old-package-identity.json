@@ -1,0 +1,16 @@
+{
+  "url": "https://github.com/m1kuStark/a-share-kline-trainer/releases/download/v1.2.7/kline-trainer-v1.2.7-windows-x64.zip",
+  "zip_sha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5",
+  "package_root": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\builder-accept-old-v127\\kline-trainer-v1.2.7-windows-x64",
+  "release": {
+    "appId": "a-share-kline-trainer",
+    "version": "1.2.7",
+    "gitCommit": "bbd368b09a463183364861678db83a9ae86b1472",
+    "nodeVersion": "24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "publicURL": "https://github.com/m1kuStark/kline-trainer"
+  },
+  "manifest_files_verified": 7181,
+  "mismatches": []
+}

@@ -1,0 +1,178 @@
+{
+  "task_id": "BUILDER-REVIEW-01",
+  "base_commit": "a91bad211a44d2d2602f770a6ec95bfef76a1179",
+  "candidate_branch": "codex/builder-review-followup",
+  "tested_source_fingerprint": "source-fingerprint.json",
+  "status": "review",
+  "execution_note": "Native exits captured at execution before interruption; results and original logs checked again during handoff. Product code unchanged since final unit/build and full Journey, except independently verified Vite development proxy as documented. No tests were rerun solely to refresh timestamps.",
+  "gates": [
+    {
+      "name": "unit",
+      "command": "npm test",
+      "native_exit_code": 0,
+      "result": {
+        "server": 1750,
+        "desktop": 357
+      },
+      "log": "unit-final.log"
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "native_exit_code": 0,
+      "log": "build-final.log"
+    },
+    {
+      "name": "m2",
+      "command": "npx tsx scripts/verify-m2.ts",
+      "native_exit_code": 0,
+      "result": {
+        "passed": 24
+      },
+      "log": "m2.log"
+    },
+    {
+      "name": "new-journeys",
+      "command": "npm run journey -- e2e/local-origin.spec.ts e2e/backup-restore.spec.ts --retries=0",
+      "native_exit_code": 0,
+      "result": {
+        "passed": 2
+      },
+      "run_id": "run-d21a1ec2-b38a-4045-97e7-0ac9fde7b427"
+    },
+    {
+      "name": "journey",
+      "command": "npm run journey -- --retries=0",
+      "native_exit_code": 1,
+      "result": {
+        "startTime": "2026-10-19T15:13:19.695Z",
+        "duration": 1927025.02,
+        "expected": 193,
+        "skipped": 1,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "log": "journey-full-detail.log",
+      "run_id": "run-54e0a9b3-4665-42f9-968a-a4eb5b78f13b"
+    },
+    {
+      "name": "dev-proxy",
+      "command": "npx tsx docs/verification/2026-10/BUILDER-REVIEW-01/verify-dev-proxy.ts",
+      "native_exit_code": 0,
+      "log": "dev-proxy-final.log"
+    },
+    {
+      "name": "release-metadata",
+      "command": "node desktop/scripts/verify-release-assets.mjs --tag v1.3.0 --expect-latest",
+      "native_exit_code": 0,
+      "log": "public-release-check.log",
+      "scope": "metadata and manifests; not binary identity or packaged acceptance"
+    },
+    {
+      "name": "binding-local-http-origin",
+      "command": "node D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/scripts/check-binding.mjs --repo . --matrix D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/local-http-origin.yaml --strict --include-untracked",
+      "native_exit_code": 0,
+      "log": "binding-local-http-origin-delivery.log"
+    },
+    {
+      "name": "binding-drawing-persistence",
+      "command": "node D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/scripts/check-binding.mjs --repo . --matrix D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/drawing-persistence.yaml --strict --include-untracked",
+      "native_exit_code": 0,
+      "log": "binding-drawing-persistence-delivery.log"
+    },
+    {
+      "name": "binding-random-training-mode",
+      "command": "node D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/scripts/check-binding.mjs --repo . --matrix D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/random-training-mode.yaml --strict --include-untracked",
+      "native_exit_code": 0,
+      "log": "binding-random-training-mode-delivery.log"
+    },
+    {
+      "name": "docs-check",
+      "command": "npm run docs:check",
+      "native_exit_code": 1,
+      "log": "docs-check-delivery.log"
+    },
+    {
+      "name": "docs-impact",
+      "command": "npm run docs:impact -- --task BUILDER-REVIEW-01 --base a91bad2",
+      "native_exit_code": 1,
+      "log": "docs-impact-delivery.log"
+    },
+    {
+      "name": "docs-status",
+      "command": "npm run docs:status",
+      "native_exit_code": 1,
+      "log": "docs-status-delivery.log"
+    },
+    {
+      "name": "docs-status-check",
+      "command": "npm run docs:status -- --check",
+      "native_exit_code": 1,
+      "log": "docs-status-check-delivery.log"
+    },
+    {
+      "name": "docs-scoped",
+      "command": "npx tsx docs/verification/2026-10/BUILDER-REVIEW-01/check-scoped-docs.ts",
+      "native_exit_code": 0,
+      "log": "docs-scoped-delivery.log"
+    }
+  ],
+  "original_log_sha256": {
+    "unit-final.log": "5af1e6499caa4d41913fcfacf480c42fe13e5258fca04cb6d75869f8d7a6abfd",
+    "build-final.log": "ffa39c54a11403d7f6f064b331c6bd39f0c3fec8d90e8b920c087564d987cc90",
+    "origin-red.log": "a16b8b7ce3e48b00958065f64ba733211aad82c65ea284490f13b548dbbb08ef",
+    "origin-green.log": "9ff020081567a07ab8dc057bd662ba8259b70772acbd9e1377a3688fa7b96f19",
+    "metadata-red.log": "00d473f0efecd98ceb3b1127ebf020a75526f2f5273657c92ae4d934af70bb48",
+    "metadata-green.log": "c28161dad25994130a837ac63412a3ca937a6faf47cce0fd013ad24b6adefa47",
+    "host-red.log": "1297ada5e1643039c8111eeb793583f6d395404fbc93d48c9a1ea2490ee3772c",
+    "host-green.log": "d3588a76caa4110e68d6cb71d39cee87f1a7548426bf271b66058290f9510676",
+    "proxy-red.log": "8a7faae231338bb9da3862cb6d9602b3dc8837efd803081ef0effb00b50a10d0",
+    "proxy-green.log": "eaceb413bba26e3f583a53005b5d695d9dc18f129ef471677d70454f4962b7de",
+    "targeted.log": "cb3ded3b3b6156f8bc8371c0f1660f8cee4c4b7f60ed13f2b8586ddc56a3f4cc",
+    "targeted-fixed.log": "f0a92620217b06bb00876cfde74391e2eab4fff61cf167dcf5fa0ef185d58e05",
+    "unit-all.log": "5fde220c93bab350b57f5a76902f20f2da9802f3eef74349561d7b9845faf790",
+    "dev-proxy.log": "31f9e6cfef1d72cd92fa416d0f2126832db52dd49cbad12accebd8dca3d0eda9",
+    "dev-proxy-final.log": "efba7c52fc2edb9a385a13fec3f0f4565a93a81a19366bf9af0c19e9a6c3da86",
+    "journey-new.log": "edc6a77235bad05a9f6f23ff618eba653e2cad6f7e9fd77f1b0a2fb8fed8c078",
+    "journey-new-fixed.log": "1ee2b9f8a7c7f021d75fee5559fb74d5fa220f2fab837327ed853296c3c4b276",
+    "journey-targeted-result.log": "b6e720faaa7673d2c5505aeca13db35bbed95fd2bb2867b1284a103d4e9b0596",
+    "journey-full-detail.log": "718b86186226ff1bde1ed9771ad6db727766c25eab7520e2cf10ace79b1f2219",
+    "report-baseline-clean-detail.log": "cf194bf19c4580914d5b167389c1dfdfc1a1bdd4c4a5e5cead8e02d95f56046d",
+    "report-baseline-history-detail.log": "34803fccef916be82a9d62afac590e9ae8d53209a035717953b31cb09290e509",
+    "report-baseline-pair-detail.log": "c1f51bdee6cf74b41cb1e852f4fab52ef455501b7c937a4b234f8091104f2e7f",
+    "m2.log": "5e00789c87775169fe8e72eb5ab328b6ef94d00b6dbabc441e187d00ef2c6b0c",
+    "public-release-check.log": "1fd72479f512081bd6a3845d1c4c23128d78f8f5177a6e6884e5e1754c5ded08",
+    "binding-local-http-origin-delivery.log": "a2bb39729ebf096d17a2a8f1a823cc42ed56aede5ad55459e83ef484ba40eceb",
+    "binding-drawing-persistence-delivery.log": "a2bb39729ebf096d17a2a8f1a823cc42ed56aede5ad55459e83ef484ba40eceb",
+    "binding-random-training-mode-delivery.log": "89614783109f2099614b11d0ca752b4f0cba21e1efd61c59f887bf572c1021e7",
+    "docs-check-delivery.log": "884bf46986454c299cf8a8a3be1cab3ea65cc5a9864f7bbc4f8eb5e7dbb77082",
+    "docs-impact-delivery.log": "a760a9d500c5a0178514b747136ad99658e8077f38bd232096ca68b5ba7edd2d",
+    "docs-status-delivery.log": "50546af9200eb1a6983d22606d73623b32acd1900364844f28f42c7f8ae468a6",
+    "docs-status-check-delivery.log": "f967bf8c4f53a23fcbd0d0713588b3e0963ca7f5fe03927b57074e527555b400",
+    "docs-scoped-delivery.log": "3bc9ab7039a8fde909999aed19f6dda64a56a521147ce459a138946e40a99ea2"
+  },
+  "boundaries": [
+    "Full Journey has one baseline report-layout failure and one conditional old-package skip.",
+    "Global docs gates retain baseline errors.",
+    "No package produced or manually accepted.",
+    "No cloud mutation, push, tag or publication."
+  ],
+  "fresh_handoff_checks": {
+    "source_fingerprint_matches": 16,
+    "source_fingerprint_mismatches": [],
+    "diff_check_native_exit": 0,
+    "workflow_state": "review",
+    "workflow_cli_native_exit": 0,
+    "docs_errors_same_as_baseline": 20,
+    "package_doc_broken_links": 0,
+    "initial_staged_diff_with_raw_logs_native_exit": 2,
+    "initial_staged_diff_note": "Only raw-log trailing whitespace/blank final lines. Logs archived without byte changes; no source or assertion altered.",
+    "final_staged_diff_native_exit": 0
+  },
+  "log_archive": {
+    "file": "evidence-logs.zip",
+    "sha256": "e087ab166bd7eeee3c6ffcf2e7ab82253b4c1727b4c81b5e551df436ce2743b7",
+    "entries": 32,
+    "format": "Raw log bytes preserved; original_log_sha256 keys are archive entry names. Raw files also remain locally ignored."
+  }
+}

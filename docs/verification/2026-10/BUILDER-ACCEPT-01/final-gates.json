@@ -1,0 +1,98 @@
+{
+  "time": "2026-10-19T17:49:17.758360+00:00",
+  "baseCommit": "81558ad3b176c07e1f368ef3ea2fdd2fb5da82ed",
+  "runtimeSourceCommit": "8d08a5a0920abb04964f1e6f68fd20291db55ce7",
+  "gates": [
+    {
+      "command": "npm test",
+      "nativeExit": 0,
+      "serverPassed": 1750,
+      "desktopPassed": 357
+    },
+    {
+      "command": "npm run build",
+      "nativeExit": 0
+    },
+    {
+      "command": "npm run build:desktop:main",
+      "nativeExit": 0
+    },
+    {
+      "command": "npx --no-install tsx scripts/verify-m2.ts",
+      "nativeExit": 0,
+      "checks": 24
+    },
+    {
+      "command": "npm run journey -- --retries=0",
+      "nativeExit": 0,
+      "passed": 196,
+      "skipped": 0,
+      "failed": 0
+    },
+    {
+      "command": "npm run docs:status",
+      "nativeExit": 0
+    },
+    {
+      "command": "npm run docs:check",
+      "nativeExit": 0,
+      "errors": 0,
+      "warnings": 125,
+      "warningScope": "legacy document length guidance"
+    },
+    {
+      "command": "npm run docs:impact -- --base 81558ad3b176c07e1f368ef3ea2fdd2fb5da82ed --task BUILDER-ACCEPT-01",
+      "nativeExit": 0
+    },
+    {
+      "command": "npm run docs:status -- --check",
+      "nativeExit": 0
+    }
+  ],
+  "bindingReceipt": "binding-receipt.json",
+  "deliveryReceipt": "delivery-zip.json",
+  "finalExtractedPackageSmoke": "zip-launcher-smoke.json",
+  "archive": "final-gates.zip",
+  "archiveSha256": "d613bc7921a4e5faead1ce368cb09ee31aef77ea6a7e2f9226d461228515e393",
+  "files": [
+    {
+      "path": "docs-final-status.log",
+      "bytes": 146,
+      "sha256": "bbd9a909ba1ff451d01463ce5d6b332bfdd72116c57ad6f399a1645fba86de49"
+    },
+    {
+      "path": "docs-final-check.log",
+      "bytes": 15761,
+      "sha256": "c470ab4876bc808ef9e2022085dad617101ab4e2fe71bb17310e4bce5d55ccf5"
+    },
+    {
+      "path": "docs-final-impact.log",
+      "bytes": 468,
+      "sha256": "228a73fc480c153b68ffa01fee3e1b29b9aa9197727645679c9d20c303372be6"
+    },
+    {
+      "path": "docs-final-status-check.log",
+      "bytes": 154,
+      "sha256": "44a5d97013e53041244ca1aa9fa3750fb45a8322f1126bad7ed306bba7270028"
+    },
+    {
+      "path": "workflow-review.log",
+      "bytes": 26934,
+      "sha256": "d6a7ba8ede64d9fda2b00314e9f65eeebaf5c81fb8148c1101461a98a84111c7"
+    },
+    {
+      "path": "journey-final.log",
+      "bytes": 445,
+      "sha256": "8e5d35129fef5482e61b2576927bde57af04ab942f615f1daac80d343f1ebf3d"
+    },
+    {
+      "path": "docs-post-report-check.log",
+      "bytes": 15897,
+      "sha256": "ef32c9ac3e31ef163eaff4e440efe7dcb180e22c8b7b2f36dbbc8254acd5adcc"
+    }
+  ],
+  "workflowState": "review",
+  "userAcceptance": null,
+  "published": false,
+  "note": "Intermediate report reached the length advisory (126 warnings); report shortened and final docs check returns 125 pre-existing warnings. No check rules changed."
+}

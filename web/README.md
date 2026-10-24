@@ -2,6 +2,8 @@
 
 Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装在 [src/api.ts](./src/api.ts)，训练交易和防未来口径由 [训练规格](../docs/specs/training/rules.md) 定义。
 
+成绩单的逐笔成交表由 [HistoryReport.vue](src/components/HistoryReport.vue) 展示；窄窗时仅表格区域横向滚动，保留全部列，可聚焦后用方向键查看，不能靠裁掉数值消除页面溢出。
+
 ```json
 {"kind":"module","source_paths":["web/**"],"canonical_docs":["web/README.md","web/src/components/README.md","web/src/views/README.md"]}
 ```
@@ -20,3 +22,5 @@ Vue 3 页面和 klinecharts 图表运行在此目录。API 类型与请求封装
 图表相关纯函数目前仍在 `src/`：几何、overlay 注册、画线快照、工具偏好、周期导航和成交聚合各自独立。`components/` 当前只有图表组件，尚无独立 chart adapter 目录。
 
 仓库根目录执行 `npm run dev` 启动开发服务；`npm run typecheck:web` 检查 Vue 类型，`npm run build:web` 生成生产页面。开发端口为 5173，API 为 8787；Agent使用npm run agent:dev，Journey使用独立动态端口与产物；见[运行协议](../docs/engineering/parallel-development.md)。
+
+[Vite 配置](vite.config.ts) 的 `/api` 代理显式保留原 Host，使浏览器 Origin 与访问地址一致，通过[服务入口守卫](../server/README.md#本机-http-边界)。不要改回字符串代理的默认 `changeOrigin: true`；这会使开发页面写请求被 403 拒绝。setup/control 的独立令牌与来源规则仍生效。

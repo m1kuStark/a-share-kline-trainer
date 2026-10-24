@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { migrateDatabase } from '../src/db.js'
 import { DatabaseSync } from 'node:sqlite'
 import { registerTdxPathSettingsRoutes, parseTdxPathPut } from '../src/settings/tdx-path.js'
-import { readSavedTdxChoice, type SavedTdxChoice } from '../src/setup/saved-choice.js'
+import { readSavedTdxChoice, type SavedTdxChoice, type TdxRootSource } from '../src/setup/saved-choice.js'
 import type { TdxCandidateCheck } from '../src/tdx/inspect.js'
 import type { AppConfig } from '../src/config.js'
 
@@ -44,6 +44,7 @@ function failInspect(problems: string[]): (root: string) => Promise<TdxCandidate
 
 async function createApp(overrides?: {
   effectiveRoot?: string | null
+  tdxSource?: TdxRootSource | null
   inspect?: (root: string) => Promise<TdxCandidateCheck>
 }) {
   const root = await mkdtemp(join(tmpdir(), 'settings-tdx-path-'))
@@ -56,6 +57,7 @@ async function createApp(overrides?: {
     port: 0,
     databasePath,
     tdxRoot: overrides?.effectiveRoot === undefined ? null : overrides.effectiveRoot,
+    tdxSource: overrides?.tdxSource ?? null,
   }
   registerTdxPathSettingsRoutes(app, config, {
     dataDir: root,
@@ -76,7 +78,8 @@ describe('M5-01：TDX 路径设置 GET（设置面板数据目录区）', () => 
     try {
       const response = await context.app.inject({ method: 'GET', url: '/api/settings/tdx-path' })
       expect(response.statusCode).toBe(200)
-      expect(response.json()).toEqual({ effectiveRoot: null, savedChoice: null })
+      // 2026-10-24 起响应含 effectiveSource（来源标签；未解析出目录时为 null）
+      expect(response.json()).toEqual({ effectiveRoot: null, effectiveSource: null, savedChoice: null })
     } finally {
       await closeApp(context)
     }
@@ -94,6 +97,21 @@ describe('M5-01：TDX 路径设置 GET（设置面板数据目录区）', () => 
       const body = view.json()
       expect(body.effectiveRoot).toBe('D:\\tdx_live')
       expect(body.savedChoice).toMatchObject({ version: 1, root: 'D:\\tdx_saved' })
+    } finally {
+      await closeApp(context)
+    }
+  })
+
+  it('GET tdx-path 返回 effectiveSource 反映配置来源（env 形态）——显式钉死明示的数据依据', async () => {
+    // 2026-10-24 bug-loop：验收包以 TDX_ROOT 钉死冻结样本时前端需知来源才能事前明示
+    // 「保存的选择不会覆盖它」；来源字段缺失会让设置页在钉死形态下零标识。
+    const context = await createApp({ effectiveRoot: 'D:\\sample-market', tdxSource: 'env' })
+    try {
+      const view = await context.app.inject({ method: 'GET', url: '/api/settings/tdx-path' })
+      expect(view.statusCode).toBe(200)
+      const body = view.json()
+      expect(body.effectiveSource).toBe('env')
+      expect(body.effectiveRoot).toBe('D:\\sample-market')
     } finally {
       await closeApp(context)
     }

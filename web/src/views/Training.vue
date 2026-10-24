@@ -953,7 +953,7 @@ void load()
           :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
           :draw-tool="drawTool" :multi-select="multiSelectMode"
-          :magnet="magnet" :saved-drawings="initialDrawings" :training-id="training.id"
+          :magnet="magnet" :saved-drawings="initialDrawings" :all-drawings="allDrawings" :training-id="training.id"
           :hide-dates="axisDateHidden" :date-shift-days="axisDateShiftDays"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"

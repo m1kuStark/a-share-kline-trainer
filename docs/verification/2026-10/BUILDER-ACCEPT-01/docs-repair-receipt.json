@@ -1,0 +1,66 @@
+{
+  "state_normalization": [
+    {
+      "task": "INSTALLER-UPGRADE-01",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    },
+    {
+      "task": "MIG-ONECLICK-01",
+      "old_state": "in_progress",
+      "normalized_state": "active"
+    },
+    {
+      "task": "MIG-ONECLICK-02",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    },
+    {
+      "task": "RELEASE-CLEANUP-01",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    },
+    {
+      "task": "REPLAY-INIT-REANCHOR-01",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    },
+    {
+      "task": "REPLAY-VIEWPORT-01",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    },
+    {
+      "task": "TDX-RECONNECT-01",
+      "old_state": "queued",
+      "normalized_state": "planned"
+    }
+  ],
+  "restored_indexes": [
+    "R5",
+    "R6",
+    "MIG-MERGE-01"
+  ],
+  "original_log_source": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\uiux-refine-20261017\\docs\\verification\\2026-10\\UIUX-REFINE-01",
+  "original_log_sha256": {
+    "unit-delivery.log": "3c80d7b79872a16e83fa43dd5d6539c43abc130260b2ccbe79f05f65079b7360",
+    "build-final.log": "b810c53f2da0cfc80f3f23206b9518b55ea109b5d88ce6d8555d603d241f584a",
+    "build-desktop-final.log": "c3cdab465524b71e67e43de1a14c80dbe5b09d116b4ba0e4c90dfbd39d7ded9d",
+    "binding-final.log": "a5790f9f55d802d43475398d6260b2ba90173dae5a36ab066d64dfe835f5faab"
+  },
+  "note": "No checker rules changed, no historical acceptance invented.",
+  "state_drift_reconciliation": [
+    {
+      "id": "MIG-01",
+      "card_before": "closed",
+      "canonical_status": "review",
+      "reason": "existing canonical workflow and task next_action both indicate user review pending"
+    },
+    {
+      "id": "PACK-03",
+      "card_before": "review",
+      "canonical_status": "active",
+      "canonical_updated_at": "2026-10-06T08:57:00.309Z"
+    }
+  ]
+}

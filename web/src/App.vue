@@ -8,6 +8,7 @@ import {
 import type { LifecyclePendingExit, LifecycleSessionView, TrainingSnapshot } from './api'
 import { applyThemeClass, theme, toggleTheme } from './theme'
 import { cancelDataWatchers, checkDataStatus, dataRefreshError, dataStatus, dataUpdating, onDataActive, refreshDataNow, startStatusTicker, stopStatusTicker } from './dataStatus'
+import { attentionHint } from './dataSourcePresentation'
 import { closeTrainingSettings, openTrainingSettings, trainingSettingsOpen } from './settingsPanel'
 import type { DesktopUpdatesApi } from './updateFlow'
 import { ChartCandlestick, History as HistoryIcon, Moon, Power, Settings, Sun, Trophy, Video } from 'lucide-vue-next'
@@ -246,12 +247,10 @@ const dataWidgetState = computed<'legacy' | 'ok' | 'running' | 'failed' | 'atten
   return 'unknown'
 })
 const dataCutoffText = computed(() => dataStatus.value?.sourceMaxDate ?? env.value?.dataCutoff ?? 'N/A')
-// stale 的可行动提示：先去通达信下载盘后日线，再回来重新读取（不暗示联网下载）
-const STALE_HINT = '请先在通达信完成盘后数据下载，再点击重新读取本地日线（不联网）'
-const attentionTitle = computed(() => {
-  const reason = dataStatus.value?.freshness?.reason
-  return reason ? `${reason}${STALE_HINT}` : STALE_HINT
-})
+// stale 的可行动提示（文案决策在 dataSourcePresentation.attentionHint）：普通形态引导先去
+// 通达信下载盘后日线再回来重读；目录被启动方式显式钉死（env/explicit-config，如验收包
+// 冻结样本）时改为说明根因——应用内更新不了也换不了，不再误导用户去下载。
+const attentionTitle = computed(() => attentionHint(env.value?.tdx?.source, dataStatus.value?.freshness?.reason))
 // 常驻手动入口：ok/unknown 状态下始终提供"重新读取本地日线"（attention/failed 已有主按钮）
 const showManualReread = computed(() => dataWidgetState.value === 'ok' || dataWidgetState.value === 'unknown')
 function updateData(): void {

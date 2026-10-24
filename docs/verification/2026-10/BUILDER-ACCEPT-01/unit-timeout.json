@@ -1,0 +1,8 @@
+{
+  "time": "2026-10-20T00:41:53.2248425+08:00",
+  "pid": 43048,
+  "command": "\"node\"   \"D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\node_modules\\.bin\\\\..\\vitest\\vitest.mjs\" run --config server/vitest.config.ts --maxWorkers=1",
+  "started": "2026-10-20T00:35:54.699239+08:00",
+  "reason": "No test results after more than 10 minutes; bounded verification timeout, terminating only the owned vitest process",
+  "previous_native_crash": -1073740791
+}

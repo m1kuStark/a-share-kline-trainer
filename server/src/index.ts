@@ -1,5 +1,4 @@
 import Fastify from 'fastify'
-import cors from '@fastify/cors'
 import staticFiles from '@fastify/static'
 import { registerApi } from './api.js'
 import { registerSetupControlApi } from './setup/control-api.js'
@@ -44,13 +43,24 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   migrateDatabase(database)
 
   const app = Fastify({ logger: true })
+  app.addHook('onRequest', async (request, reply) => {
+    if (!/^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?$/.test(request.headers.host ?? '')) {
+      return reply.code(403).send({ error: '训练器仅接受本机地址访问', code: 'LOCAL_HOST_REQUIRED' })
+    }
+    const site = request.headers['sec-fetch-site']
+    if (site !== undefined && site !== 'same-origin' && site !== 'none') {
+      return reply.code(403).send({ error: '此请求不来自训练器页面', code: 'LOCAL_ORIGIN_REQUIRED' })
+    }
+    if (request.headers.origin !== undefined && request.headers.origin !== `http://${request.headers.host}`) {
+      return reply.code(403).send({ error: '此请求不来自训练器页面', code: 'LOCAL_ORIGIN_REQUIRED' })
+    }
+  })
   const drainController = createDrainController({
     getActiveTraining: () => getActiveTraining(database),
   })
   // UPD-01（UPD-VERSION-EXPOSE）：currentVersion 来自包根 package.json（构建时写入），
   // 不改 status/runId/pid 三身份字段（launcher isTrainerHealth 只认这三者）。
   app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid, currentVersion: serverVersion() }))
-  await app.register(cors, { origin: true })
   await registerApi(app, config, database, {
     drain: drainController.gate,
     // REL-LAUNCH-UX-01：页面"保存并退出"与控制桥共用同一冻结排空实现与真实关闭函数

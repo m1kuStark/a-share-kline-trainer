@@ -9,7 +9,8 @@ import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
-import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
+import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
+import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
 import type { Action, JsonValue } from '../recording/types'
 import { drawingOperationParams, hasUnreportedMove, markDrawingReported, syncReportedDrawings, type ReportedDrawings } from '../recording/drawingOperations'
@@ -49,6 +50,9 @@ const props = withDefaults(defineProps<{
   /** 多选模式：主图空白处框选拖拽变为划线批量选中（不缩放 K 线），平移与键盘缩放不受影响 */
   multiSelect?: boolean
   savedDrawings?: Drawing[] | null
+  /** 全周期画线持久面（周期隔离口径＝显示层过滤，用户 2026-10-19 拍板）：显示与撤销史仍按本周期
+   *  过滤；仅录像 captureState 取他周期子集并入持久面（回放按录像时周期与样式还原显示） */
+  allDrawings?: Drawing[] | null
   magnet?: 'normal' | 'weak_magnet' | 'strong_magnet'
   /** 只读展示（录制回放）：保存画线照常显示，但禁全部编辑写入口、右键菜单与图形拖动；平移/缩放/十字线不受影响 */
   readOnly?: boolean
@@ -120,6 +124,9 @@ const drawingHistory = new DrawingHistory()
 // 喂新K线基准变化时，先按旧基准捕获画线，喂完统一投影到新基准。null＝基准未知（prop 未
 // 接线或只读回放），一切保持旧行为，绝不二次复权。
 let renderedBasis: DrawingPriceBasis | null = null
+// 周期面重建判定（M2-DRAWING-01 缺陷①）：上一喂入周期与当前不同（含挂载首喂 null）
+// 才重建图表面；普通推进（同周期新K线）不清撤销历史（drawing-persistence.md 成文契约）
+let fedTimeframe: Timeframe | null = null
 function currentDrawingPriceBasis(): DrawingPriceBasis | null {
   return props.readOnly || !isDrawingPriceBasis(props.drawingPriceBasis) ? null : { ...props.drawingPriceBasis }
 }
@@ -165,26 +172,25 @@ function cancelHoverTimer(): void {
 // 遮蔽符（与 RF-05 星号遮蔽同语言）；shiftDays≠0：时间戳/日期串按会话常量差换算成真实日期
 // 再呈现（先例＝SessionReplay.realDateOf 的「偏移起始日↔真实起始日」常量差）。经 klinecharts
 // setFormatter 注入（Chart 侧 setFormatter 走 _setOptions 全量 layout，含 X 轴刻度重建）。
-const MS_PER_DAY = 86_400_000
-const MASKED_DATE_TEXT = '******'
+// 纯函数自 ../randomDatePresentation 引入（M2-RANDOM-AXIS-01 抽出以便单元层锁定语义）。
 const datePresentation = { hidden: false, shiftDays: 0 }
-function presentableTimestamp(timestamp: number): number {
-  return datePresentation.shiftDays === 0 ? timestamp : timestamp + datePresentation.shiftDays * MS_PER_DAY
-}
-/** 呈现层日期字符串换算：支持完整日期与月键（周/月观察周期的 bar.date 形态）；未知形态原样 */
-function presentableDateString(date: string): string {
-  if (datePresentation.hidden) return MASKED_DATE_TEXT
-  if (datePresentation.shiftDays === 0) return date
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 10)
-  if (/^\d{4}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}-01T00:00:00Z`) + datePresentation.shiftDays * MS_PER_DAY).toISOString().slice(0, 7)
-  return date
+// M2-RANDOM-AXIS-01 真实数据锚：已加载 K 线（呈现空间）时间戳集合——揭示态轴刻度只有命中
+// 真实 bar 才换算呈现（该 bar 的真实交易日）；klinecharts 对右侧空白越界 dataIndex 的日历日
+// 外推刻度无 bar 可锚，不呈现日期（null → 空文本），杜绝揭示出周末/节假日假日期。
+let barTimestamps: ReadonlySet<number> = new Set()
+function rebuildBarTimestamps(): void {
+  barTimestamps = new Set(loadedData.map(bar => bar.timestamp))
 }
 function applyDateFormatter(): void {
-  // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径
+  // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径。
+  // 揭示态换算入口 revealedTickTimestamp：非 bar 锚刻度返回 null → 空文本（不造日期）；
+  // 遮蔽态（hidden）与经典态（shiftDays=0）行为与本修复前完全一致。
   chart?.setFormatter({
     formatDate: ({ dateTimeFormat, timestamp, template, type }) => {
       if (datePresentation.hidden) return type === 'xAxis' ? '' : MASKED_DATE_TEXT
-      return utils.formatDate(dateTimeFormat, presentableTimestamp(timestamp), template)
+      const revealed = revealedTickTimestamp(timestamp, barTimestamps, datePresentation.shiftDays)
+      if (revealed === null) return ''
+      return utils.formatDate(dateTimeFormat, revealed, template)
     },
   })
 }
@@ -205,7 +211,7 @@ function buildHoverModel(dataIndex: number): HoverCardModel | null {
   const bar = list[dataIndex]
   if (!bar) return null
   return formatHoverCard(
-    { ...bar, date: typeof bar.date === 'string' ? presentableDateString(bar.date) : bar.date },
+    { ...bar, date: typeof bar.date === 'string' ? (datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date, datePresentation.shiftDays)) : bar.date },
     dataIndex > 0 ? list[dataIndex - 1]?.close ?? null : null,
   )
 }
@@ -373,10 +379,12 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   for (const overlay of chart.getOverlays()) if (!engineMarkNames.has(overlay.name)) chart.removeOverlay({ id: overlay.id })
   for (const item of items) {
     // 只读＝纯展示：lock+ignoreEvent 让保存画线只渲染，不进库的选中/拖动/右键交互链
-    const fixedArrowStyle = item.name === 'bullArrow' || item.name === 'bearArrow'
+    // 样式逐条保留保存时值（M2-DRAWING-01 缺陷②）：编辑/撤销重做/刷新回读不得被会话默认
+    // 覆盖；工具偏好与箭头语义色只兜底无样式旧数据，默认样式仅用于新建（watch drawTool）。
+    const fallbackStyle = item.name === 'bullArrow' || item.name === 'bearArrow'
       ? { line: { color: item.name === 'bullArrow' ? '#ef4444' : '#16a34a' } }
       : configuredOverlayStyle(item.name)
-    const id = chart.createOverlay({ ...item, styles: fixedArrowStyle, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
+    const id = chart.createOverlay({ ...item, styles: item.styles ?? fallbackStyle, paneId: actualPaneId(item.paneId), ...drawingEvents(), mode: props.magnet ?? 'weak_magnet', lock: props.readOnly, ignoreEvent: props.readOnly } as OverlayCreate)
     if (item.name === 'polyline' && id) {
       const overlay = chart.getOverlays({ id: id as string })[0] as unknown as { forceComplete: () => void }
       overlay?.forceComplete()
@@ -439,7 +447,7 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
     const result = await props.fetchEarlier(first.date, forMa ? Math.min(1000, maHistoryMissing()) : LOAD_CHUNK_BARS)
     if (disposed || version !== dataVersion) return
     const older = result.bars.map(toK)
-    if (older.length) loadedData = [...older, ...loadedData]
+    if (older.length) { loadedData = [...older, ...loadedData]; rebuildBarTimestamps() }
     result.hasMore = result.hasMore && older.length > 0
     hasMoreForward = result.hasMore
     callback(older, { forward: result.hasMore })
@@ -463,8 +471,14 @@ function feedData(): void {
   hideHoverCard()
   // A timeframe change rebuilds the chart surface. Restore only drawings that
   // belong to the new period; the parent supplies the filtered snapshot.
-  restoredDrawings = false
-  drawingHistory.reset([])
+  // 推进不清撤销历史：overlay 按时间戳锚定，库重载数据不改画线集合；除权推进的旧撤销步
+  // 由 rebasePriceBasis/adoptDrawings 统一再投影（历史快照各带自身基准）。
+  const surfaceRebuild = fedTimeframe !== props.timeframe
+  fedTimeframe = props.timeframe
+  if (surfaceRebuild) {
+    restoredDrawings = false
+    drawingHistory.reset([])
+  }
   clearMultiSelection()
   closePanels()
   maHistoryError.value = ''
@@ -476,6 +490,7 @@ function feedData(): void {
   loadingForward = false
   chart.setPeriod({ type: props.timeframe === '1W' ? 'week' : props.timeframe === '1M' ? 'month' : 'day', span: 1 })
   loadedData = props.bars.map(toK)
+  rebuildBarTimestamps()
   hasMoreForward = props.hasMoreBars
   chart.setDataLoader({
     getBars: ({ type, callback }) => {
@@ -508,12 +523,19 @@ function semanticPaneHeights(): Record<string, number> {
   }
   return heights
 }
+// 录像持久面＝全周期画线（M2-DRAWING-01 缺陷③）：周期隔离是显示层口径（用户 2026-10-19
+// 拍板），captureState 不得继承视图过滤——当前周期以图上序列化为权威（含最新编辑），
+// 他周期从 props.allDrawings 全集原样并入（各带自身周期盖印与前复权基准），
+// 回放按录像时周期与样式还原显示。
+function allPeriodDrawings(): Drawing[] {
+  return mergePeriodDrawings(drawings(), props.allDrawings, props.timeframe)
+}
 function captureState(): ChartCapture {
   if (!chart) throw new Error('K线图未初始化，无法生成图表捕获')
   const data = chart.getDataList() as Array<CaptureSourceBar>
   const range = chart.getVisibleRange()
   const view = captureView({ fromIndex: range.from, toIndex: range.to, data, barSpace: chart.getBarSpace().bar, paneHeights: semanticPaneHeights() })
-  return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(data), drawings: drawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
+  return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(data), drawings: allPeriodDrawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
 }
 /** 重挂前视窗捕获（REPLAY-VIEWPORT-01）：内容锚点与 captureState().view 同构，另带瞬态
  *  右侧空隔（diff≥0 走 getOffsetRightDistance 精确值，历史位回落 realTo 反解）。

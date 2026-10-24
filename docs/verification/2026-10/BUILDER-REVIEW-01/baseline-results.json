@@ -1,0 +1,145 @@
+{
+  "baseline_commit": "a91bad211a44d2d2602f770a6ec95bfef76a1179",
+  "runs": [
+    {
+      "command": "npm run journey -- e2e/report-feedback.spec.ts --retries=0",
+      "native_exit_code": 0,
+      "context": "Unchanged main a91bad2, empty test history.",
+      "run_id": "run-4b87c256-8b29-4809-ab78-f6bb34975599",
+      "source_result_sha256": "6ff2a22adb3e99ca773b8ee21cb4ef2f76e0941e58fdcea4e44c34e0603583f3",
+      "source_result_path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-4b87c256-8b29-4809-ab78-f6bb34975599\\artifacts\\browser-results.json",
+      "stats": {
+        "startTime": "2026-10-19T15:39:51.974Z",
+        "duration": 14177.591999999999,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "tests": [
+        {
+          "file": "report-feedback.spec.ts",
+          "line": 5,
+          "title": "report themes, independent overlays and date-aligned hover",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "retry": 0,
+              "duration": 12987,
+              "errors": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command": "npx tsx docs/verification/2026-10/BUILDER-REVIEW-01/verify-report-baseline.ts",
+      "native_exit_code": 1,
+      "context": "Candidate history snapshot, unchanged main a91bad2 server/web build and report test.",
+      "run_id": "run-e200f8c4-fba2-491d-9b50-8b297926157c",
+      "source_result_sha256": "0353c21f1736bdf59c51ad1de31ea7c1ba143f03f48de134a03766b790ebe83e",
+      "source_result_path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-e200f8c4-fba2-491d-9b50-8b297926157c\\artifacts\\browser-results.json",
+      "stats": {
+        "startTime": "2026-10-19T15:41:10.013Z",
+        "duration": 16048.734000000002,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "tests": [
+        {
+          "file": "report-feedback.spec.ts",
+          "line": 5,
+          "title": "report themes, independent overlays and date-aligned hover",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "retry": 0,
+              "duration": 14823,
+              "errors": [
+                {
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\report-feedback.spec.ts",
+                    "column": 73,
+                    "line": 92
+                  },
+                  "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  90 |   await page.setViewportSize({ width: 390, height: 844 })\n  91 |   await page.screenshot({ path: evidencePath('report-feedback-light-mobile.png'), fullPage: true })\n> 92 |   expect(await report.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)\n     |                                                                         ^\n  93 |   await report.getByRole('button', { name: '关闭成绩单' }).click()\n  94 |   await page.getByRole('button', { name: '切换到深色主题' }).click()\n  95 |   await page.locator('.history-row').first().click()\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\report-feedback.spec.ts:92:73"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command": "npm run journey -- e2e/recording-long.spec.ts e2e/report-feedback.spec.ts --retries=0",
+      "native_exit_code": 1,
+      "context": "Unchanged main a91bad2. Recording button wait timed out; report overflow also reproduced.",
+      "run_id": "run-3e9f546d-4840-4d65-af3e-77c92576beba",
+      "source_result_sha256": "1f2277f854071b77765cbfdfb5c7fbf68ea6e7884a81a0b382291040c32d84da",
+      "source_result_path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-3e9f546d-4840-4d65-af3e-77c92576beba\\artifacts\\browser-results.json",
+      "stats": {
+        "startTime": "2026-10-19T15:41:54.241Z",
+        "duration": 756315.2370000001,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "tests": [
+        {
+          "file": "recording-long.spec.ts",
+          "line": 23,
+          "title": "两年前复权训练含交易画线周期切换，可压缩导出并离线回放",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "timedOut",
+              "retry": 0,
+              "duration": 730704,
+              "errors": [
+                {
+                  "message": "\u001b[31mTest timeout of 720000ms exceeded.\u001b[39m"
+                },
+                {
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\recording-long.spec.ts",
+                    "column": 54,
+                    "line": 115
+                  },
+                  "message": "Error: locator.click: Test timeout of 720000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '跳到最后一天' })\u001b[22m\n\n\n  113 |   await page.getByLabel('导入录制', { exact: true }).setInputFiles(output.path)\n  114 |   // REC-03 按日回放：跳到最后一天后画线仍在，且 b/Delete/鼠标都改不动（只读）\n> 115 |   await page.getByRole('button', { name: '跳到最后一天' }).click()\n      |                                                      ^\n  116 |   await expect(page.locator('.replay-day')).toHaveText(/第 \\d+ \\/ \\d+ 日/)\n  117 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings().length)).toBe(1)\n  118 |   const importMs = Date.now() - importedAt\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\recording-long.spec.ts:115:54"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "report-feedback.spec.ts",
+          "line": 5,
+          "title": "report themes, independent overlays and date-aligned hover",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "retry": 0,
+              "duration": 10559,
+              "errors": [
+                {
+                  "location": {
+                    "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\report-feedback.spec.ts",
+                    "column": 73,
+                    "line": 92
+                  },
+                  "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  90 |   await page.setViewportSize({ width: 390, height: 844 })\n  91 |   await page.screenshot({ path: evidencePath('report-feedback-light-mobile.png'), fullPage: true })\n> 92 |   expect(await report.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)\n     |                                                                         ^\n  93 |   await report.getByRole('button', { name: '关闭成绩单' }).click()\n  94 |   await page.getByRole('button', { name: '切换到深色主题' }).click()\n  95 |   await page.locator('.history-row').first().click()\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\e2e\\report-feedback.spec.ts:92:73"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

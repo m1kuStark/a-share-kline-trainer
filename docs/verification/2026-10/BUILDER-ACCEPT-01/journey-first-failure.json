@@ -1,0 +1,144 @@
+{
+  "runId": "23338005-34cc-44a9-a0a1-0afa574745e0",
+  "stats": {
+    "startTime": "2026-10-19T16:30:41.893Z",
+    "duration": 1950303.24,
+    "expected": 193,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  },
+  "failures": [
+    {
+      "file": "m4-rankings.spec.ts",
+      "title": "运行中守卫（排行关闭、零行）与放弃不入榜（浅色840）",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: '开始训练' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('button', { name: '开始训练' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: '开始训练' })\u001b[22m\n",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: '开始训练' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('button', { name: '开始训练' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: '开始训练' })\u001b[22m\n\n    at resetToLauncher (D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:21:60)\n    at createTrainingFromForm (D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:26:3)\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:154:21",
+            "location": {
+              "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts",
+              "column": 60,
+              "line": 21
+            },
+            "snippet": "  19 |   await page.goto('/')\n  20 |   await page.waitForTimeout(400)\n> 21 |   await expect(page.getByRole('button', { name: '开始训练' })).toBeVisible()\n     |                                                            ^\n  22 | }\n  23 |\n  24 | /** 表单创建 3 个月训练并返回本局 id（排行断言一律按此 id 定位自己的行）。 */"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts",
+                "column": 60,
+                "line": 21
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: '开始训练' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByRole('button', { name: '开始训练' }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: '开始训练' })\u001b[22m\n\n\n  19 |   await page.goto('/')\n  20 |   await page.waitForTimeout(400)\n> 21 |   await expect(page.getByRole('button', { name: '开始训练' })).toBeVisible()\n     |                                                            ^\n  22 | }\n  23 |\n  24 | /** 表单创建 3 个月训练并返回本局 id（排行断言一律按此 id 定位自己的行）。 */\n    at resetToLauncher (D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:21:60)\n    at createTrainingFromForm (D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:26:3)\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\m4-rankings.spec.ts:154:21"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "random-mode.spec.ts",
+      "title": "random period grid: tier options mirror classic and real creation with 3M succeeds",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m40\u001b[39m\nReceived:    \u001b[31m20\u001b[39m",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m40\u001b[39m\nReceived:    \u001b[31m20\u001b[39m\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\random-mode.spec.ts:293:44",
+            "location": {
+              "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\random-mode.spec.ts",
+              "column": 44,
+              "line": 293
+            },
+            "snippet": "  291 |     expect(active.training.range.mode).toBe('random')\n  292 |     // 3 个自然月 ≈ 40–70 个交易日（真实数据容差口径）\n> 293 |     expect(active.training.range.barCount).toBeGreaterThanOrEqual(40)\n      |                                            ^\n  294 |     expect(active.training.range.barCount).toBeLessThanOrEqual(70)\n  295 |   })\n  296 |"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\random-mode.spec.ts",
+                "column": 44,
+                "line": 293
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m40\u001b[39m\nReceived:    \u001b[31m20\u001b[39m\n\n  291 |     expect(active.training.range.mode).toBe('random')\n  292 |     // 3 个自然月 ≈ 40–70 个交易日（真实数据容差口径）\n> 293 |     expect(active.training.range.barCount).toBeGreaterThanOrEqual(40)\n      |                                            ^\n  294 |     expect(active.training.range.barCount).toBeLessThanOrEqual(70)\n  295 |   })\n  296 |\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\random-mode.spec.ts:293:44"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "file": "trade-marker-details.spec.ts",
+      "title": "DETAILS-blind：盲训详情只显示相对日期，真实日期不泄露",
+      "status": "unexpected",
+      "results": [
+        {
+          "status": "failed",
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.trade-marker-badge')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('.trade-marker-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.trade-marker-badge')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.trade-marker-badge')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('.trade-marker-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.trade-marker-badge')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\trade-marker-details.spec.ts:331:53",
+            "location": {
+              "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\trade-marker-details.spec.ts",
+              "column": 53,
+              "line": 331
+            },
+            "snippet": "  329 |   expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', weightPct: 1 } })).ok()).toBe(true)\n  330 |   await page.reload()\n> 331 |   await expect(page.locator('.trade-marker-badge')).toHaveCount(1)\n      |                                                     ^\n  332 |   await page.locator('.trade-marker-badge').click()\n  333 |   await expect(panel(page)).toBeVisible()\n  334 |   await expect(factValue(page, '日期')).toHaveText('今日')"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\trade-marker-details.spec.ts",
+                "column": 53,
+                "line": 331
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('.trade-marker-badge')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('.trade-marker-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.trade-marker-badge')\u001b[22m\n\u001b[2m    14 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  329 |   expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', weightPct: 1 } })).ok()).toBe(true)\n  330 |   await page.reload()\n> 331 |   await expect(page.locator('.trade-marker-badge')).toHaveCount(1)\n      |                                                     ^\n  332 |   await page.locator('.trade-marker-badge').click()\n  333 |   await expect(panel(page)).toBeVisible()\n  334 |   await expect(factValue(page, '日期')).toHaveText('今日')\n    at D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\e2e\\trade-marker-details.spec.ts:331:53"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "independentOracle": {
+    "source": "RF-04/RF3-01 approved natural-calendar-month window; 32-byte raw TDX date records, no production date/window helper",
+    "row": {
+      "id": 95,
+      "code": "600519",
+      "market": "sh",
+      "range_start": "2006-02-06",
+      "range_end": "2006-04-25",
+      "range_bar_count": 20,
+      "random_time_offset_days": 2867
+    },
+    "rawSha256": "751558c9c9e3c7172e13dce7d4eb8feca18bd9bb4a2b6287181436337abcc057",
+    "calendarEnd": "2006-05-06",
+    "expectedDates": [
+      "2006-02-06",
+      "2006-02-07",
+      "2006-02-08",
+      "2006-02-09",
+      "2006-02-10",
+      "2006-02-13",
+      "2006-02-15",
+      "2006-02-16",
+      "2006-02-17",
+      "2006-02-20",
+      "2006-02-21",
+      "2006-02-22",
+      "2006-02-23",
+      "2006-04-17",
+      "2006-04-18",
+      "2006-04-19",
+      "2006-04-20",
+      "2006-04-21",
+      "2006-04-24",
+      "2006-04-25"
+    ],
+    "expectedCount": 20,
+    "actualCount": 20,
+    "matches": true,
+    "oldAssertion": "40 <= barCount <= 70 is invalid for a natural-month window containing gaps",
+    "causeLimit": "Raw input has a date gap; no independent exchange record checked to attribute it to suspension."
+  }
+}

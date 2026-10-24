@@ -45,7 +45,12 @@ test('跨除权日后价位线跟随同一历史K线，缩放和刷新不漂移'
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings()[0]?.points[0].value)).toBeCloseTo(anchorBar.high, 6)
   await page.getByRole('tab', { name: '周K', exact: true }).click()
   await expect(page.locator('.loading-dot')).not.toBeVisible()
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings()[0]?.points[0].value)).toBeCloseTo(anchorBar.high, 6)
+  // 画线按周期隔离（用户 2026-10-19 拍板「画线不要跨周期可见，维持现状」）：周K 视图不显示
+  // 日线价位线（视图集合为空）；切回日K 原样恢复且值仍为除权后重锚价位——持久不丢、显示隔离。
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(0)
+  await page.getByRole('tab', { name: '日K', exact: true }).click()
+  await expect(page.locator('.loading-dot')).not.toBeVisible()
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.drawings()[0]?.points[0].value)).toBeCloseTo(anchorBar.high, 6)
 })
 
 test('空画线跨除权日后新画价位线，普通刷新不会再次复权', async ({ page }) => {

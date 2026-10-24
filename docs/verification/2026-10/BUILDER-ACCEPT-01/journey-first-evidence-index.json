@@ -1,0 +1,72 @@
+{
+  "archive": "journey-first-evidence.zip",
+  "sha256": "136dca39671adec1aad732536c6e3f5c023f3238bf6f70c980b599f5fa653b30",
+  "files": [
+    {
+      "path": "manifest.json",
+      "bytes": 1652,
+      "sha256": "a7aa038e913b95123b38ec8524963950c180894ac680d30c22a5689074b1ed3d"
+    },
+    {
+      "path": "artifacts/browser-results.json",
+      "bytes": 286968,
+      "sha256": "922341632f6b9044894c9e37f86390318f63d2decd143ec4aa720d47b5df4081"
+    },
+    {
+      "path": "artifacts/journey.log",
+      "bytes": 39311,
+      "sha256": "793f7b6dd1ed1abd9d94c9cda46f1168de1d946b35508668aff5adc6e3034d17"
+    },
+    {
+      "path": "artifacts/test-results/.last-run.json",
+      "bytes": 194,
+      "sha256": "4164c053556b13c70b19fc9f16a16d398dbcf38423736b49502590a39bec7e0f"
+    },
+    {
+      "path": "artifacts/test-results/m4-rankings-\u8fd0\u884c\u4e2d\u5b88\u536b\uff08\u6392\u884c\u5173\u95ed\u3001\u96f6\u884c\uff09\u4e0e\u653e\u5f03\u4e0d\u5165\u699c\uff08\u6d45\u8272840\uff09/error-context.md",
+      "bytes": 10954,
+      "sha256": "052866429c16001a4a30cd467bf6ecfb8d8f8e8f1cc49de5033773c86510e881"
+    },
+    {
+      "path": "artifacts/test-results/m4-rankings-\u8fd0\u884c\u4e2d\u5b88\u536b\uff08\u6392\u884c\u5173\u95ed\u3001\u96f6\u884c\uff09\u4e0e\u653e\u5f03\u4e0d\u5165\u699c\uff08\u6d45\u8272840\uff09/test-failed-1.png",
+      "bytes": 67854,
+      "sha256": "30089e7a38b6523f5abc7d4a3fea4d951dcddc08b74648763bfa2f8f55f5c618"
+    },
+    {
+      "path": "artifacts/test-results/m4-rankings-\u8fd0\u884c\u4e2d\u5b88\u536b\uff08\u6392\u884c\u5173\u95ed\u3001\u96f6\u884c\uff09\u4e0e\u653e\u5f03\u4e0d\u5165\u699c\uff08\u6d45\u8272840\uff09/trace.zip",
+      "bytes": 172642,
+      "sha256": "edcf08f42a13c0efe1abf14190e7fa934494af92d99313138001678273abf145"
+    },
+    {
+      "path": "artifacts/test-results/random-mode-random-mode-M7-2a29a-l-creation-with-3M-succeeds/error-context.md",
+      "bytes": 21553,
+      "sha256": "c9b7c328bb484e124f91a34d1581f2d3a60142a526c30ea6ce8c5086e6f84c0a"
+    },
+    {
+      "path": "artifacts/test-results/random-mode-random-mode-M7-2a29a-l-creation-with-3M-succeeds/test-failed-1.png",
+      "bytes": 155399,
+      "sha256": "e13004faf1e329a3c1b8a053cf8519aab18514fe5cca38c4d40eb8d5a2ff0b84"
+    },
+    {
+      "path": "artifacts/test-results/random-mode-random-mode-M7-2a29a-l-creation-with-3M-succeeds/trace.zip",
+      "bytes": 874822,
+      "sha256": "9ada40740f94429b76f583c1717fa75e176ee204b4685883a1128a6f5e7578f2"
+    },
+    {
+      "path": "artifacts/test-results/trade-marker-details-DETAILS-blind\uff1a\u76f2\u8bad\u8be6\u60c5\u53ea\u663e\u793a\u76f8\u5bf9\u65e5\u671f\uff0c\u771f\u5b9e\u65e5\u671f\u4e0d\u6cc4\u9732/error-context.md",
+      "bytes": 12125,
+      "sha256": "5ed0c53716c7898da80300f2c9f59efb000585efd75483eb845c6374b2ded788"
+    },
+    {
+      "path": "artifacts/test-results/trade-marker-details-DETAILS-blind\uff1a\u76f2\u8bad\u8be6\u60c5\u53ea\u663e\u793a\u76f8\u5bf9\u65e5\u671f\uff0c\u771f\u5b9e\u65e5\u671f\u4e0d\u6cc4\u9732/test-failed-1.png",
+      "bytes": 15819,
+      "sha256": "e44fec967a4dbee5a9796e8ff86f30397d07fc364516172630648435222fc749"
+    },
+    {
+      "path": "artifacts/test-results/trade-marker-details-DETAILS-blind\uff1a\u76f2\u8bad\u8be6\u60c5\u53ea\u663e\u793a\u76f8\u5bf9\u65e5\u671f\uff0c\u771f\u5b9e\u65e5\u671f\u4e0d\u6cc4\u9732/trace.zip",
+      "bytes": 200318,
+      "sha256": "7e1d3f356f8cab4822ac06a00aec2c801e7bb36ec1ad3f495e7bca67d3976f3c"
+    }
+  ],
+  "scope": "First failed full Journey: original manifest, complete machine report, log, all failure screenshots/error contexts/traces; bytes preserved."
+}

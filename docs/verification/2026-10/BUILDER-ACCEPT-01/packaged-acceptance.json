@@ -1,0 +1,162 @@
+{
+  "time": "2026-10-19T16:50:50.791Z",
+  "exe": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\BUILDER-ACCEPT-01-20261020\\app\\K线训练器.exe",
+  "workspace": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2",
+  "data": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\data",
+  "profile": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\profile",
+  "port": 11626,
+  "boots": [
+    {
+      "identity": {
+        "packaged": true,
+        "version": "1.3.0",
+        "userData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\profile",
+        "appData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\home\\AppData\\Roaming",
+        "home": "C:\\Users\\Stark_Du666",
+        "exe": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\BUILDER-ACCEPT-01-20261020\\app\\K线训练器.exe"
+      },
+      "health": {
+        "status": "ok",
+        "runId": "run-969634a0-e7b2-4b44-b9ef-5922b302a0ec",
+        "pid": 39400,
+        "currentVersion": "1.3.0"
+      },
+      "url": "http://127.0.0.1:11626/",
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "identity": {
+        "packaged": true,
+        "version": "1.3.0",
+        "userData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\profile",
+        "appData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\home\\AppData\\Roaming",
+        "home": "C:\\Users\\Stark_Du666",
+        "exe": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\BUILDER-ACCEPT-01-20261020\\app\\K线训练器.exe"
+      },
+      "health": {
+        "status": "ok",
+        "runId": "run-2ebd1620-d6d1-4b26-8cca-88d5abb865bd",
+        "pid": 45488,
+        "currentVersion": "1.3.0"
+      },
+      "url": "http://127.0.0.1:11626/",
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "identity": {
+        "packaged": true,
+        "version": "1.3.0",
+        "userData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\profile",
+        "appData": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\packaged-accept-3J8Ht2\\home\\AppData\\Roaming",
+        "home": "C:\\Users\\Stark_Du666",
+        "exe": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\output\\acceptance\\BUILDER-ACCEPT-01-20261020\\app\\K线训练器.exe"
+      },
+      "health": {
+        "status": "ok",
+        "runId": "run-369402fd-6171-49e1-86ad-f30f79113bcf",
+        "pid": 46620,
+        "currentVersion": "1.3.0"
+      },
+      "url": "http://127.0.0.1:11626/",
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    }
+  ],
+  "reports": [
+    {
+      "theme": "dark",
+      "width": 1024,
+      "dimensions": {
+        "client": 943,
+        "scroll": 943,
+        "viewport": {
+          "width": 1008,
+          "height": 861
+        }
+      }
+    },
+    {
+      "theme": "dark",
+      "width": 1440,
+      "dimensions": {
+        "client": 1103,
+        "scroll": 1103,
+        "viewport": {
+          "width": 1424,
+          "height": 861
+        }
+      }
+    },
+    {
+      "theme": "light",
+      "width": 1024,
+      "dimensions": {
+        "client": 943,
+        "scroll": 943,
+        "viewport": {
+          "width": 1008,
+          "height": 861
+        }
+      }
+    },
+    {
+      "theme": "light",
+      "width": 1440,
+      "dimensions": {
+        "client": 1103,
+        "scroll": 1103,
+        "viewport": {
+          "width": 1424,
+          "height": 861
+        }
+      }
+    }
+  ],
+  "sourceManifest": "D:\\Superlinear_Academy\\Stock_WorkSpace\\trainer-worktrees\\builder-review-followup\\.runs\\history-v127-jIiNqW\\训练历史迁移-20261020-003944\\迁移清单.json",
+  "errors": [],
+  "scope": "Unpacked production Electron; no installer/system-upgrade run. History exported from verified real v1.2.7, staged with production importer while closed, then applied by packaged boot.",
+  "existingId": 1,
+  "stage": {
+    "ok": true,
+    "requiresRestart": true,
+    "trainings": 1,
+    "counts": {
+      "trainings": 1,
+      "trades": 2,
+      "orders": 0,
+      "equityCurve": 2,
+      "positionEvents": 0,
+      "drawings": 1,
+      "tradeNotes": 1
+    },
+    "skipped": 0,
+    "importing": 1
+  },
+  "importedId": 2,
+  "repeatStage": {
+    "ok": true,
+    "requiresRestart": true,
+    "trainings": 1,
+    "counts": {
+      "trainings": 1,
+      "trades": 2,
+      "orders": 0,
+      "equityCurve": 2,
+      "positionEvents": 0,
+      "drawings": 1,
+      "tradeNotes": 1
+    },
+    "skipped": 1,
+    "importing": 0
+  },
+  "asarSha256": "731ee72ab6e6da75cbd09b1740a6e706b3a467de4d3860b3f528bdca29a3e336",
+  "passed": true
+}

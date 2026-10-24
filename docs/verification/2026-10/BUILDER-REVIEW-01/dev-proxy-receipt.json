@@ -1,0 +1,10 @@
+{
+  "runId": "run-30baf51a-65ef-4940-9750-a2717ed49dba",
+  "check": "real Vite config + Edge same-origin API proxy",
+  "result": {
+    "writeStatus": 200,
+    "readStatus": 200,
+    "saved": false
+  },
+  "pageErrors": []
+}

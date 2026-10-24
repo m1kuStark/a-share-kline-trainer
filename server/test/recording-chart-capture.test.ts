@@ -20,7 +20,8 @@ describe('REC-CHART-B chart capture contract', () => {
   it('declares the chartCapture emit, captureState expose and optional replayView prop', async () => {
     const source = await readChart()
     expect(source).toMatch(/import type \{ ChartCapture \} from '\.\.\/recording\/types'/)
-    expect(source).toMatch(/import \{ VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, toCaptureBars, type CaptureSourceBar \} from '\.\.\/recording\/chartCapture'/)
+    // M2-DRAWING-01：chartCapture 导入新增 mergePeriodDrawings（captureState 全周期画线合并）
+    expect(source).toMatch(/import \{ VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar \} from '\.\.\/recording\/chartCapture'/)
     // REPLAY-VIEWPORT-01：回放重挂视窗改用 ReplayViewport（extends ChartCaptureView，另带瞬态
     // rightOffsetBars）；恢复算术经纯模块 replayViewport 接线。原 ChartCaptureView 导入随之收窄。
     expect(source).toMatch(/import \{ nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport \} from '\.\.\/recording\/replayViewport'/)

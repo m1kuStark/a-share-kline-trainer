@@ -1,0 +1,11 @@
+{
+  "verifiedAt": "2026-10-19T17:33:13.424987+00:00",
+  "runtimeSourceCommit": "8d08a5a0920abb04964f1e6f68fd20291db55ce7",
+  "productionInputCount": 187,
+  "productionInputSha256": "20c3805ac8be253d346309557bec845a7e13de75678be739d32a6512bc9713b7",
+  "testInputCount": 58,
+  "testInputSha256": "0e126d5d7e7c466e6bb1c68069ac891ff6041dc96ada150eae6d591da595aa4e",
+  "runtimeAndTestDrift": [],
+  "separateMainHead": "a91bad211a44d2d2602f770a6ec95bfef76a1179",
+  "note": "All byte hashes rechecked on current checkout. Git source comparison normalized repository CRLF conversion only. Later changes limited to standalone acceptance smoke scripts, docs and evidence."
+}

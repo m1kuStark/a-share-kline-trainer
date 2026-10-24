@@ -15,4 +15,10 @@ Fastify 提供行情、训练和画线 API，SQLite 保存业务记录及数据�
 
 所有 npm 命令在仓库根执行：开发 `npm run dev:server`，测试 `npm test`，编译 `npm run build:server`。`server/` 没有独立 package.json。
 
+## 本机 HTTP 边界
+
+[index.ts](src/index.ts) 在路由执行前检查 Host、Origin 和 Fetch Metadata：仅接受明确的回环 Host；存在 Origin 时必须与请求地址同源；存在 `Sec-Fetch-Site` 时仅接受 `same-origin` 或 `none`。外站读取、写入和预检返回 403，不授予 CORS 权限。无这些浏览器头的本地脚本仍可调用，setup/control 的令牌检查保留。
+
+Vite 的普通 `/api` 同源代理保留原 Host/Origin，因此可用；受控重启等 setup/control 路径继续遵守其独立守卫，调试时从服务端同源页面操作。此边界不是用户登录，也不授权把服务部署到公网。真实服务回归见 [local-request-guard.test.ts](test/local-request-guard.test.ts)，浏览器证据见 [local-origin.spec.ts](../e2e/local-origin.spec.ts)。
+
 跨模块依赖见 [架构入口](../docs/architecture/README.md)；任务与阶段进度统一查 [状态页](../docs/status.md)。

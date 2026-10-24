@@ -1,0 +1,7 @@
+{
+  "baselineCommit": "a91bad211a44d2d2602f770a6ec95bfef76a1179",
+  "candidateDataRun": "run-54e0a9b3-4665-42f9-968a-a4eb5b78f13b",
+  "baselineRun": "run-e200f8c4-fba2-491d-9b50-8b297926157c",
+  "result": "failed",
+  "artifacts": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer\\.runs\\run-e200f8c4-fba2-491d-9b50-8b297926157c\\artifacts"
+}
