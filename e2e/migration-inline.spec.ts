@@ -36,9 +36,12 @@ async function installStubBridge(page: Page, calls: StubCalls): Promise<void> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/trainings', route => route.fulfill({
+  // 真实路由契约（mock 漂移教训 2026-10-25）：mock 必须镜像真实端点 /api/trainings/history
+  // 与真实形状 HistoryListPayload{total,limit,offset,items}——早前 mock 了不存在的 /api/trainings，
+  // 掩盖了产品 404 缺陷（首启弹窗永不触发），真机自验才暴露。
+  await page.route('**/api/trainings/history*', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify({ items: [], total: 0 }),
+    body: JSON.stringify({ items: [], total: 0, limit: 1, offset: 0 }),
   }))
 })
 

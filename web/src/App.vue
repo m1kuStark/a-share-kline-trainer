@@ -573,12 +573,14 @@ onMounted(async () => {
   startStatusTicker()
   // MIG-INLINE-01 首启迁移询问（用户拍板：弹一次可跳过；不扫描磁盘）：桌面形态＋本机库无训练
   // ＋未选过「不再提示」→ 打开内置迁移向导。检测失败静默不打扰（设置页有常驻入口）。
+  // 真机实测教训（2026-10-25）：必须打真实存在的 /api/trainings/history（HistoryListPayload.total）；
+  // 早前写成不存在的 /api/trainings 被 e2e mock 掩盖（404 静默吞→弹窗永不出现）。
   if ((window as unknown as { desktopMigration?: unknown }).desktopMigration && !localStorage.getItem('mig-inline-dismissed')) {
     try {
-      const response = await fetch('/api/trainings')
+      const response = await fetch('/api/trainings/history?limit=1')
       if (response.ok) {
-        const view = await response.json() as { items?: unknown[], total?: number }
-        if ((view.items?.length ?? 0) === 0) migrationWizardOpen.value = true
+        const view = await response.json() as { total?: number }
+        if ((view.total ?? 0) === 0) migrationWizardOpen.value = true
       }
     } catch { /* 检测失败＝不弹，设置页入口仍可用 */ }
   }
