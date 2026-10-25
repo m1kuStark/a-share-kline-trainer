@@ -647,6 +647,19 @@ registerMigrationIpc({
     readPageHtml: async () => readFile(migrationResourcePath('migration-export-inline.html'), 'utf8'),
     readImporterText: async () => readFile(migrationResourcePath('migration-import-recordings.js'), 'utf8'),
     openExternal: async url => { await shell.openExternal(url) },
+    // 真机缺陷修复（2026-10-25 用户首用即中）：向导「选择文件夹…」必须用 openDirectory
+    // 原生目录选择器——曾误接旧外置工具的迁移清单.json 文件选择器，用户点开必见系统「找不到文件」
+    pickDirectory: async () => {
+      const options = {
+        title: '选择 v1.2.7 安装根目录（包含 Start.cmd 与 data 文件夹的那一层）',
+        properties: ['openDirectory'] as ('openDirectory')[],
+      }
+      const result = mainWindow && !mainWindow.isDestroyed()
+        ? await dialog.showOpenDialog(mainWindow, options)
+        : await dialog.showOpenDialog(options)
+      if (result.canceled || result.filePaths.length === 0) return { ok: false, canceled: true }
+      return { ok: true, root: result.filePaths[0] }
+    },
     executeJavaScript: code => {
       if (!mainWindow || mainWindow.isDestroyed()) return Promise.reject(new Error('主窗口不可用'))
       return mainWindow.webContents.executeJavaScript(code)

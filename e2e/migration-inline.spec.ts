@@ -18,7 +18,7 @@ async function installStubBridge(page: Page, calls: StubCalls): Promise<void> {
       desktopMigration: unknown
     }
     w.desktopMigration = {
-      pick: async () => ({ ok: false, error: 'stub' }),
+      pickLegacyRoot: async () => ({ ok: false, canceled: true }),  // stub 不驱动目录选择（真机已实测 openDirectory 原生选择器）
       inspectLegacy: async (root: string) => {
         await w.__migSpyInspect(root)
         if (!root || !root.includes('v127')) return { ok: false, error: '所选目录里找不到 v1.2.7 的训练数据（期望位置：<目录>\\data\\trainer.sqlite）。' }

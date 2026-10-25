@@ -10,7 +10,7 @@ interface InlineBridge {
   startLegacyExport(root: string): Promise<{ ok: true, url: string } | { ok: false, error: string }>
   legacyExportStatus(): Promise<{ ok: true, state: { phase: string, itemCount?: number, summary?: { imported?: number, skipped?: number, failed?: number }, error?: string } }>
   stopLegacyExport(): Promise<{ ok: true }>
-  pick(): Promise<{ ok: true, manifestPath: string } | { ok: false, error: string }>
+  pickLegacyRoot(): Promise<{ ok: true, root: string } | { ok: false, canceled?: boolean, error?: string }>
 }
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [], completed: [], 'dismiss-forever': [] }>()
@@ -67,13 +67,11 @@ function dismissForever(): void {
 
 async function browse(): Promise<void> {
   if (!bridge) return
-  // 复用迁移桥的原生目录选择（返回的是文件路径——取其目录作为安装根）
-  const picked = await bridge.pick()
-  if (picked.ok && picked.manifestPath) {
-    const parts = picked.manifestPath.replace(/\\/g, '/').split('/')
-    parts.pop()
-    rootInput.value = parts.join('\\')
-  }
+  // 真机缺陷修复（2026-10-25）：原生目录选择器（openDirectory）。早前误接旧外置工具的
+  // pick()＝「迁移清单.json」文件选择器，用户点开必见系统「找不到文件」提示。
+  const picked = await bridge.pickLegacyRoot()
+  if (picked.ok) rootInput.value = picked.root
+  // 取消＝无事发生；error 形态静默（用户仍可手填路径，不打扰）
 }
 
 async function inspect(): Promise<void> {

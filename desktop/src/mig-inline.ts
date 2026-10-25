@@ -353,6 +353,9 @@ export interface InlineMigrationIpcDeps {
   openExternal(url: string): Promise<void>
   /** 对主窗口渲染端执行 JS（录像注入） */
   executeJavaScript(code: string): Promise<unknown>
+  /** 原生目录选择（真机缺陷修复 2026-10-25：向导「选择文件夹…」曾误接旧外置工具的
+   *  迁移清单.json 文件选择器，用户点开即见系统「找不到文件」提示——必须是 openDirectory） */
+  pickDirectory(): Promise<{ ok: true, root: string } | { ok: false, canceled?: boolean, error?: string }>
   logger: { log(...args: unknown[]): void, error(...args: unknown[]): void }
 }
 
@@ -367,9 +370,12 @@ function resetRecordingState(): void {
   injectedThisRound = false
 }
 
-/** 内置向导五方法路由；返回 null＝方法不属本域（落回 mig-import 原路由） */
+/** 内置向导六方法路由；返回 null＝方法不属本域（落回 mig-import 原路由） */
 export function inlineMigrationRoutes(deps: InlineMigrationIpcDeps) {
   return async (method: unknown, parsed: { root?: unknown } | null): Promise<unknown | null> => {
+    if (method === 'inline-pick-root') {
+      return await deps.pickDirectory()
+    }
     if (method === 'inline-inspect') {
       const root = typeof parsed?.root === 'string' ? parsed.root : ''
       if (!root) return { ok: false, error: '缺少 v1.2.7 安装路径。' }

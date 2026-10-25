@@ -61,7 +61,10 @@ contextBridge.exposeInMainWorld('desktopMigration', {
   importHistory: (manifestPath: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'import', manifestPath }) as Promise<
     { ok: true; requiresRestart: boolean; trainings: number; skipped: number; importing: number } | { ok: false; error: string }
   >,
-  // MIG-INLINE-01 内置向导五方法（同通道扩展；结构化返回不抛异常）
+  // MIG-INLINE-01 内置向导六方法（同通道扩展；结构化返回不抛异常）
+  pickLegacyRoot: () => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-pick-root' }) as Promise<
+    { ok: true; root: string } | { ok: false; canceled?: boolean; error?: string }
+  >,
   inspectLegacy: (root: string) => ipcRenderer.invoke('desktop-migration:invoke', { method: 'inline-inspect', root }) as Promise<
     { ok: true; trainings: number; trades: number; originPort: number; recordingNamespace: string | null; dataDirSource: string } | { ok: false; error: string }
   >,
