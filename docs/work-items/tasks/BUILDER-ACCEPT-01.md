@@ -47,7 +47,7 @@
   "verification_refs": [
     "docs/verification/2026-10/BUILDER-ACCEPT-01/README.md"
   ],
-  "integration_ref": "codex/builder-review-followup（隔离候选）",
+  "integration_ref": "codex/builder-review-followup 分支 5da1564 已并入 main（2026-10-25 核实）；该分支与工作树已于同日工程清理中删除，代码事实以 main 为准",
   "acceptance_ref": null
 }
 ```

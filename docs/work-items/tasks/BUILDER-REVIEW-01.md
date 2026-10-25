@@ -46,7 +46,7 @@
     "reason": "本地 HTTP 信任边界改变；桌面与 ZIP 安装、数据位置及完整备份说明对齐实际行为。"
   },
   "verification_refs": ["docs/verification/2026-10/BUILDER-REVIEW-01/README.md"],
-  "integration_ref": "codex/builder-review-followup（隔离候选，未合主仓库）",
+  "integration_ref": "codex/builder-review-followup 分支 5da1564 已并入 main（2026-10-25 以 git merge-base 核实）；该分支与工作树已于同日工程清理中删除，代码事实以 main 为准",
   "acceptance_ref": null
 }
 ```
