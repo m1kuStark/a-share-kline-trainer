@@ -17,7 +17,8 @@
     "bug_reflection": "向导曾裸用 TrainingSettings 的 scoped 类名致平铺无遮罩——已补组件自有样式并转为 e2e 回归断言（getComputedStyle(position)==fixed）",
     "realbox_bug": "真机自验暴露产品缺陷（e24 已修，e084f1e）：首启检测打的是不存在的 GET /api/trainings（404 静默吞→弹窗永不出现）；e2e mock 曾发明该路由掩盖缺陷（mock 漂移）。修复=改打真实 /api/trainings/history 判 total===0；e2e mock 同步镜像真实端点形状",
     "realbox_receipt": "realbox-flows（工作区级，非仓库）install-flow.ps1＋wizard-flow.ps1（UIA 语义定位＋BM_CLICK/WM_SETTEXT，用户拍板固化真机固定流程）：安装向导全页走完 PASS；向导六步 PASS＋node:sqlite 断言 2 局/1 笔成交迁入全新 TRAINER_DATA_DIR；完成页卸载指引逐字可见",
-    "release_receipt": "v1.3.2 同号重发两轮（首轮 0ececa0、修复轮 e084f1e）：GitHub 6 资产逐名置换（id 前置核对）＋CloudBase 镜像 6 件；API 通道字节级核对全绿（sha256/sha512/latest 指针/镜像 feed）；SHA256SUMS-desktop.txt 3 行（migrate 行手工裁剪，脚本口径错配已挂待办）"
+    "release_receipt": "v1.3.2 同号重发两轮（首轮 0ececa0、修复轮 e084f1e）：GitHub 6 资产逐名置换（id 前置核对）＋CloudBase 镜像 6 件；API 通道字节级核对全绿（sha256/sha512/latest 指针/镜像 feed）；SHA256SUMS-desktop.txt 3 行（migrate 行手工裁剪，脚本口径错配已挂待办）",
+    "hotfix_v133": "用户真机首用即中（2026-10-25）：向导「选择文件夹…」误接旧外置工具的迁移清单.json 文件选择器——所有用户必见系统「找不到文件」提示（cda3f3b 修复：inline-pick-root 原生 openDirectory 目录选择器）。因 v1.3.2 已发给用户且 electron-updater 按版本号比较，热补丁升版 v1.3.3 发布（f160750）——已装 v1.3.2 用户首页将收到常规更新提示；用户侧闭环＝首启提示先「不再提示」→ 更新 1.3.3 → 设置→数据目录→「从 v1.2.7 迁移老数据…」"
   },
   "allowed_paths": [
     "desktop/src/mig-inline.ts",
