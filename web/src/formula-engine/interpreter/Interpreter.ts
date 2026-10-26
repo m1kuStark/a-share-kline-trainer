@@ -11,6 +11,7 @@ import {
   Identifier,
   NumberLiteral,
   StringLiteral,
+  PeriodReference,
   BinaryOperator,
   UnaryOperator,
   NodeType,
@@ -26,6 +27,16 @@ import * as patternFunctions from './functions/pattern';
 import * as chipFunctions from './functions/chip';
 import * as technicalFunctions from './functions/technical';
 import * as statisticsFunctions from './functions/statistics';
+import {
+  MarketData,
+} from '../types/MarketData';
+import {
+  BuiltinIndicatorProvider,
+  CrossPeriodResolver,
+  PeriodSuffix,
+  broadcastReferenceLine,
+  createDefaultBuiltinIndicatorProvider,
+} from '../crossPeriod';
 
 type DrawingEventList = DrawingEvent[] & { __formulaDrawingEvents: true };
 type EvaluatedValue = number[] | string | DrawingEventList;
@@ -147,9 +158,62 @@ export class Interpreter {
         return this.visitNumberLiteral(expression as NumberLiteral);
       case NodeType.StringLiteral:
         return this.visitStringLiteral(expression as StringLiteral);
+      case NodeType.PeriodReference:
+        // M9-02 patch: cross-period / cross-formula reference node
+        return this.visitPeriodReference(expression as PeriodReference);
       default:
         throw new Error(`Unknown expression type: ${expression.type}`);
     }
+  }
+
+  /**
+   * M9-02 patch: evaluate a cross-period / cross-formula reference node.
+   * The referenced line is computed on the resampled higher-period series and
+   * broadcast back onto the daily axis (trailing week/month aggregated as-of
+   * each day). Builtin indicators use the TDX convention table; other names go
+   * through the injected auxiliary formula registry.
+   */
+  private visitPeriodReference(node: PeriodReference): number[] {
+    const bars = this.context.getMarketData();
+    const resolver = this.context.getCrossPeriodResolver();
+    const builtins = resolver?.builtinIndicators ?? createDefaultBuiltinIndicatorProvider();
+    const computeLine = (series: MarketData[]): number[] =>
+      this.resolveIndicatorLine(node.indicator, node.line, series, builtins, resolver);
+    return broadcastReferenceLine(bars, node.period as PeriodSuffix, computeLine);
+  }
+
+  /**
+   * M9-02 patch: resolve indicator.LINE on the given bar series — builtin table
+   * first, then the auxiliary formula registry (human-readable errors when the
+   * formula is unregistered or the output line does not exist).
+   */
+  private resolveIndicatorLine(
+    indicator: string,
+    line: string,
+    bars: MarketData[],
+    builtins: BuiltinIndicatorProvider,
+    resolver: CrossPeriodResolver | undefined,
+  ): number[] {
+    const builtinLine = builtins.getLine(indicator, line, bars);
+    if (builtinLine !== undefined) {
+      return builtinLine;
+    }
+    if (resolver?.evaluateAuxiliary) {
+      const outputs = resolver.evaluateAuxiliary(indicator, bars);
+      if (outputs.has(line)) {
+        return outputs.get(line) as number[];
+      }
+      const caseInsensitive = [...outputs.keys()].find((name) => name.toUpperCase() === line.toUpperCase());
+      if (caseInsensitive) {
+        return outputs.get(caseInsensitive) as number[];
+      }
+      throw new Error(
+        `辅助公式 ${indicator} 没有输出线 ${line}（可用输出：${[...outputs.keys()].join('、') || '无'}）`,
+      );
+    }
+    throw new Error(
+      `跨公式引用失败：辅助公式 ${indicator} 未注册（请在 evaluate 的 options.auxiliaryFormulas 中提供其源码）`,
+    );
   }
 
   /**
@@ -1459,6 +1523,27 @@ export class Interpreter {
         throw new Error(`Variable ${name} is undefined`);
       }
       return value;
+    }
+
+    // M9-02 patch: bare builtin indicator identifiers (current period, TDX
+    // convention) — resolved AFTER user variables so a formula-local
+    // `MACD := ...` definition takes precedence (分金定穴 full formula shape).
+    const builtinBareLines: Record<string, [string, string]> = {
+      MACD: ['MACD', 'MACD'],
+      DIF: ['MACD', 'DIF'],
+      DEA: ['MACD', 'DEA'],
+    };
+    if (builtinBareLines[upperName]) {
+      const [indicator, line] = builtinBareLines[upperName];
+      const resolver = this.context.getCrossPeriodResolver();
+      const builtins = resolver?.builtinIndicators ?? createDefaultBuiltinIndicatorProvider();
+      return this.resolveIndicatorLine(
+        indicator,
+        line,
+        this.context.getMarketData(),
+        builtins,
+        resolver,
+      );
     }
 
     throw new Error(`Undefined identifier: ${name}`);

@@ -24,9 +24,27 @@
 
 不在本层（另立卡）：跨周期/跨公式引用 `#WEEK/#MONTH`（M9-02）、板块/市场上下文函数族 FINANCE/HYBLOCK 等（M9-03）、产品 UI（M9-04）。
 
+## 补丁层清单（M9-02：跨周期/跨公式引用，任务卡 M9-02 语义冻结）
+
+新增 `crossPeriod.ts`（纯函数层：重采样/广播/内置指标表/注册表类型，零引擎反向依赖），并最小改动 lexer/parser/Interpreter/FormulaEngine：
+
+| # | 能力 | 语义（冻结） | 改动位置 |
+|---|---|---|---|
+| 7 | 跨周期引用 `"MACD.DEA#WEEK"`（带引号）与 `MACD.DIF#MONTH`（裸写） | 两种形态都解析为 `PeriodReference` 节点并参与数值比较；字符串仅当严格匹配 `名.线#周期` 模式才升级（DRAWTEXT 文本等正当字符串用途零回归）；未知周期后缀（如 `#MIN60`）＝人话 ParserError | `lexer/TokenType.ts`＋`lexer/Lexer.ts`（`.`/`#` 两个 token）＋`parser/ast/nodes.ts`（PeriodReference）＋`parser/Parser.ts` |
+| 8 | 周线/月线重采样与广播 | 自然周（周一始，节假日周＝实际交易日聚合）/自然月；每完整周单值广播到该周全部日 bar；**当周（数据末组）未走完按截至当日的部分周聚合、组内随日线推进**（周内重绘属设计内语义；证据＝骑牛买1 注释「WEEKDAY…确保取的是上周五数据」）；`#DAY` 恒等 | `crossPeriod.ts`（`resampleBars`/`broadcastReferenceLine`/`aggregateBars`）＋`interpreter/Interpreter.ts` |
+| 9 | 内置指标引用＝通达信口径 | `MACD.DIF/DEA/MACD`：DIF=EMA(C,12)−EMA(C,26)、DEA=EMA(DIF,9)、柱=2×(DIF−DEA)（复用 vendored `functions/indicators.ts`，其柱体本就 ×2）；裸 `MACD`/`DIF`/`DEA` 标识符＝当前周期内置线（分金定穴形态），**公式局部 `MACD:=` 定义优先**；可经 `options.builtinIndicators` 注入替换 | `crossPeriod.ts`（默认 provider）＋`interpreter/Interpreter.ts`（visitIdentifier 兜底） |
+| 10 | 跨公式引用 `"W144UP.UP#WEEK"` | 注入式注册表：`evaluate(formula, bars, { auxiliaryFormulas: { 名: 源码 } })`；被引公式先在**重采样后的高周期 bar 序列**上求值、取其输出线再广播；递归依赖共享同一引用栈（环＝人话报错、深度上限 8）；未注册/无输出线＝人话错误；缺省 options 时内置指标仍可用系统定义、辅助公式引用报人话错 | `FormulaEngine.ts`（evaluate 第三可选参数＋引用栈递归）＋`interpreter/Context.ts`（resolver 注入与 `getMarketData()`） |
+
+边界与披露（M9-02 实现口径）：
+- 复权属数据层职责，引擎收到的行情序列原样参与重采样（root 预判定）。
+- 数据末组恒按「当周未走完」处理（即便末日恰为周五——无法从数据本身判定周已走完，as-of 语义）。
+- 跨周期引用在 `evaluateIncremental` 路径未注入注册表：内置指标引用可用，辅助公式引用报人话错误。
+- 带引号字符串若恰为 `A.B#C` 形状（ASCII 标识符）即视为引用（通达信同款语义）；DRAWTEXT 想显示这类文本属病用例，不保证。
+- 引用求值为无前视（no-lookahead）口径：完整周的值只依赖其前序周；这也使 EMA 族指标在历史周上稳定不重绘，重绘只发生在当周。
+
 ## 导出面
 
-沿用上游 `index.ts` 结构（FormulaEngine、错误类、AST、核心组件、内置函数全量导出），另导出补丁层 `scanFutureFunctions` / `FUTURE_FUNCTIONS`。
+沿用上游 `index.ts` 结构（FormulaEngine、错误类、AST、核心组件、内置函数全量导出），另导出补丁层 `scanFutureFunctions` / `FUTURE_FUNCTIONS`（M9-01）与 `crossPeriod.ts` 全部类型与纯函数（`resampleBars`/`broadcastReferenceLine`/`aggregateBars`/`FormulaEvaluationOptions` 等，M9-02）。
 
 ## 测试
 

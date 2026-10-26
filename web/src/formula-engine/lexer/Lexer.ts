@@ -471,6 +471,16 @@ export class Lexer {
         this.advance();
         return new Token(TokenType.EQ, '=', this.line, startColumn);
 
+      // M9-02 patch: '.' and '#' for bare cross-period references (MACD.DIF#MONTH).
+      // A '.' that starts a number is consumed by readNumber before this point.
+      case '.':
+        this.advance();
+        return new Token(TokenType.DOT, '.', this.line, startColumn);
+
+      case '#':
+        this.advance();
+        return new Token(TokenType.HASH, '#', this.line, startColumn);
+
       // M9-01 patch: != inequality operator (same NEQ token as <>).
       // Bare '!' is not advanced so the unexpected-character error still points at it.
       case '!':

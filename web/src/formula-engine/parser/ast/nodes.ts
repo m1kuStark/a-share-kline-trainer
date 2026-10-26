@@ -20,6 +20,9 @@ export enum NodeType {
   FunctionCall = 'FunctionCall',
   ConditionalExpression = 'ConditionalExpression',
 
+  // M9-02 patch: cross-period / cross-formula reference ("MACD.DEA#WEEK", MACD.DIF#MONTH)
+  PeriodReference = 'PeriodReference',
+
   // Literals and Identifiers
   Identifier = 'Identifier',
   NumberLiteral = 'NumberLiteral',
@@ -194,6 +197,21 @@ export interface StringLiteral extends Expression {
 }
 
 /**
+ * M9-02 patch: cross-period / cross-formula reference.
+ * Both quoted ("MACD.DEA#WEEK") and bare (MACD.DIF#MONTH) forms parse into this
+ * node; `period` is validated at parse time to DAY/WEEK/MONTH. `indicator` is a
+ * builtin indicator name (MACD) or a registered auxiliary formula name; `line`
+ * is the referenced output line of that indicator/formula.
+ */
+export interface PeriodReference extends Expression {
+  type: NodeType.PeriodReference;
+  indicator: string;
+  line: string;
+  period: 'DAY' | 'WEEK' | 'MONTH';
+  quoted: boolean;
+}
+
+/**
  * Type guard functions for discriminated unions
  */
 
@@ -241,6 +259,10 @@ export function isStringLiteral(node: ASTNode): node is StringLiteral {
   return node.type === NodeType.StringLiteral;
 }
 
+export function isPeriodReference(node: ASTNode): node is PeriodReference {
+  return node.type === NodeType.PeriodReference;
+}
+
 /**
  * Utility type for all possible AST nodes (discriminated union)
  */
@@ -255,4 +277,5 @@ export type AnyASTNode =
   | ConditionalExpression
   | Identifier
   | NumberLiteral
-  | StringLiteral;
+  | StringLiteral
+  | PeriodReference;

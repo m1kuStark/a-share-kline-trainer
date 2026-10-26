@@ -13,12 +13,17 @@ import {
   Identifier,
   NumberLiteral,
   StringLiteral,
+  PeriodReference,
   ExpressionStatement,
   NodeType,
   BinaryOperator,
   UnaryOperator,
   DrawingStyle,
 } from './ast/nodes';
+import { PERIOD_SUFFIXES, PeriodSuffix } from '../crossPeriod';
+
+/** Quoted reference shape: NAME.LINE#PERIOD with ASCII identifier characters only. */
+const QUOTED_REFERENCE_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)#([A-Za-z0-9_]+)$/;
 
 /**
  * Parser for the formula language
@@ -361,9 +366,15 @@ export class Parser {
       return numLiteral;
     }
 
-    // String literal
+    // String literal — M9-02 patch: quoted cross-period / cross-formula reference
+    // ("MACD.DEA#WEEK", "W144UP.UP#WEEK") upgrades to a PeriodReference node; every
+    // other string keeps its text-literal semantics (DRAWTEXT payloads etc.).
     if (this.check(TokenType.STRING)) {
       const token = this.advance();
+      const quotedReference = this.tryParseQuotedPeriodReference(token.value, token);
+      if (quotedReference) {
+        return quotedReference;
+      }
       const stringLiteral: StringLiteral = {
         type: NodeType.StringLiteral,
         value: token.value,
@@ -379,6 +390,11 @@ export class Parser {
       // Check if this is a function call
       if (this.check(TokenType.LPAREN)) {
         return this.parseFunctionCall(name);
+      }
+
+      // M9-02 patch: bare cross-period reference NAME.LINE#PERIOD (MACD.DIF#MONTH)
+      if (this.check(TokenType.DOT)) {
+        return this.parseBarePeriodReference(nameToken);
       }
 
       // It's an identifier
@@ -398,6 +414,67 @@ export class Parser {
     }
 
     throw this.error('Expected expression');
+  }
+
+  /**
+   * M9-02 patch: try to interpret a string-literal token as a quoted
+   * cross-period / cross-formula reference ("MACD.DEA#WEEK"). Returns null when
+   * the text does not match the reference shape (ordinary string payload).
+   */
+  private tryParseQuotedPeriodReference(value: string, token: Token): PeriodReference | null {
+    const match = QUOTED_REFERENCE_PATTERN.exec(value);
+    if (!match) {
+      return null;
+    }
+    const period = this.requirePeriodSuffix(match[3], token);
+    return {
+      type: NodeType.PeriodReference,
+      indicator: match[1],
+      line: match[2],
+      period,
+      quoted: true,
+    };
+  }
+
+  /**
+   * M9-02 patch: bare cross-period reference NAME.LINE#PERIOD.
+   * Assumes the indicator identifier and the DOT have been recognized.
+   */
+  private parseBarePeriodReference(nameToken: Token): PeriodReference {
+    this.advance(); // consume DOT
+    const lineToken = this.consume(
+      TokenType.IDENTIFIER,
+      `跨周期引用 ${nameToken.value}. 后需给出输出线名（如 ${nameToken.value}.DIF#WEEK）`,
+    );
+    this.consume(
+      TokenType.HASH,
+      `跨周期引用 ${nameToken.value}.${lineToken.value} 缺 #周期后缀（DAY/WEEK/MONTH）`,
+    );
+    const periodToken = this.consume(
+      TokenType.IDENTIFIER,
+      `跨周期引用 ${nameToken.value}.${lineToken.value}# 后需给出周期后缀`,
+    );
+    const period = this.requirePeriodSuffix(periodToken.value, periodToken);
+    return {
+      type: NodeType.PeriodReference,
+      indicator: nameToken.value,
+      line: lineToken.value,
+      period,
+      quoted: false,
+    };
+  }
+
+  /** Validate a #PERIOD suffix; unknown suffixes get a human-readable parse error. */
+  private requirePeriodSuffix(raw: string, token: Token): PeriodSuffix {
+    const upper = raw.toUpperCase();
+    if (!(PERIOD_SUFFIXES as readonly string[]).includes(upper)) {
+      throw new ParserError(
+        `未知周期后缀 #${raw}：跨周期引用仅支持 DAY/WEEK/MONTH`,
+        token.line,
+        token.column,
+      );
+    }
+    return upper as PeriodSuffix;
   }
 
   /**

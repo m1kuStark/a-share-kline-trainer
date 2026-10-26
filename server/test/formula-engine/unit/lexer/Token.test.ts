@@ -124,7 +124,8 @@ describe('Token', () => {
 
     it('should have correct number of token types', () => {
       const tokenTypes = Object.keys(TokenType);
-      expect(tokenTypes.length).toBe(31);
+      // M9-02 patch：上游 31 + DOT/HASH（裸写跨周期引用 MACD.DIF#MONTH 的两个标点 token）= 33
+      expect(tokenTypes.length).toBe(33);
     });
   });
 

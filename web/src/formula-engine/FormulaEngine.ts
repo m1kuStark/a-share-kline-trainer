@@ -7,6 +7,15 @@ import { FunctionRegistry } from './interpreter/FunctionRegistry';
 import { Program, isOutputDeclaration } from './parser/ast/nodes';
 import { MarketData } from './types/MarketData';
 import { FormulaResult, OutputLine, LineStyle } from './types/FormulaResult';
+import {
+  AUXILIARY_REFERENCE_DEPTH_LIMIT,
+  AuxiliaryFormulaRegistry,
+  AuxiliaryReferenceState,
+  CrossPeriodResolver,
+  FormulaEvaluationOptions,
+  createDefaultBuiltinIndicatorProvider,
+  normalizeAuxiliaryFormulas,
+} from './crossPeriod';
 
 /**
  * FormulaEngine - Main entry point for formula compilation and execution
@@ -41,17 +50,40 @@ export class FormulaEngine {
    * Evaluate a formula with market data
    * @param formula Formula source code
    * @param marketData Array of market data records
+   * @param options M9-02: cross-period / cross-formula evaluation options —
+   *   `auxiliaryFormulas` registers sources referenced via "NAME.LINE#PERIOD";
+   *   `builtinIndicators` overrides the default TDX MACD provider. Omitting
+   *   options keeps builtin indicator references working (system definitions);
+   *   auxiliary references then raise a human-readable error.
    * @returns Formula result containing outputs and variables
    * @throws {LexerError} If lexical analysis fails
    * @throws {ParserError} If parsing fails
    * @throws {RuntimeError} If execution fails
    */
-  evaluate(formula: string, marketData: MarketData[]): FormulaResult {
+  evaluate(formula: string, marketData: MarketData[], options?: FormulaEvaluationOptions): FormulaResult {
+    return this.evaluateWithReferenceState(formula, marketData, options, { stack: [] });
+  }
+
+  /**
+   * M9-02 patch: shared evaluate path carrying the auxiliary-reference stack
+   * (cycle detection + depth limit live in one state per top-level call).
+   */
+  private evaluateWithReferenceState(
+    formula: string,
+    marketData: MarketData[],
+    options: FormulaEvaluationOptions | undefined,
+    referenceState: AuxiliaryReferenceState,
+  ): FormulaResult {
     // Parse the formula
     const ast = this.parse(formula);
 
     // Create execution context
     const context = new ExecutionContext(marketData, this.registry);
+
+    // M9-02 patch: wire the cross-period resolver (registry + builtin table)
+    context.setCrossPeriodResolver(
+      this.createCrossPeriodResolver(options, referenceState),
+    );
 
     // Create interpreter and execute
     const interpreter = new Interpreter(context);
@@ -190,5 +222,52 @@ export class FormulaEngine {
    */
   getRegistry(): FunctionRegistry {
     return this.registry;
+  }
+
+  /**
+   * M9-02 patch: build the cross-period resolver for one evaluation.
+   * Auxiliary sub-evaluations recurse through evaluateWithReferenceState with
+   * the SAME reference state, so cycles and depth are caught across levels.
+   * Unregistered names and missing output lines raise human-readable errors.
+   */
+  private createCrossPeriodResolver(
+    options: FormulaEvaluationOptions | undefined,
+    referenceState: AuxiliaryReferenceState,
+  ): CrossPeriodResolver {
+    if (!options) {
+      return {};
+    }
+    const auxiliary: AuxiliaryFormulaRegistry | undefined = normalizeAuxiliaryFormulas(options.auxiliaryFormulas);
+    const resolver: CrossPeriodResolver = {
+      builtinIndicators: options.builtinIndicators ?? createDefaultBuiltinIndicatorProvider(),
+    };
+    if (auxiliary) {
+      resolver.evaluateAuxiliary = (name: string, bars: MarketData[]): Map<string, number[]> => {
+        const source = auxiliary.get(name);
+        if (source === undefined) {
+          throw new Error(
+            `跨公式引用失败：辅助公式 ${name} 未注册（请在 evaluate 的 options.auxiliaryFormulas 中提供其源码）`,
+          );
+        }
+        if (referenceState.stack.includes(name)) {
+          throw new Error(
+            `跨公式引用检测到环：${[...referenceState.stack, name].join(' -> ')}（请检查辅助公式之间的相互引用）`,
+          );
+        }
+        if (referenceState.stack.length >= AUXILIARY_REFERENCE_DEPTH_LIMIT) {
+          throw new Error(
+            `跨公式引用深度超过上限 ${AUXILIARY_REFERENCE_DEPTH_LIMIT} 层：${[...referenceState.stack, name].join(' -> ')}`,
+          );
+        }
+        referenceState.stack.push(name);
+        try {
+          const subResult = this.evaluateWithReferenceState(source, bars, options, referenceState);
+          return new Map(subResult.outputs.map((output) => [output.name, output.data]));
+        } finally {
+          referenceState.stack.pop();
+        }
+      };
+    }
+    return resolver;
   }
 }

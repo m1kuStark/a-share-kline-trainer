@@ -1,6 +1,7 @@
 import { MarketData } from '../types/MarketData';
 import { DrawingEvent } from '../types/FormulaResult';
 import { FunctionRegistry } from './FunctionRegistry';
+import { CrossPeriodResolver } from '../crossPeriod';
 
 /**
  * ExecutionContext manages the state during formula interpretation
@@ -22,6 +23,9 @@ export class ExecutionContext {
   /** Function registry for built-in functions */
   private functionRegistry: FunctionRegistry;
 
+  /** M9-02 patch: injected cross-period reference resolver (optional) */
+  private crossPeriodResolver?: CrossPeriodResolver;
+
   /**
    * Create a new execution context
    * @param marketData - Array of market data records
@@ -33,6 +37,27 @@ export class ExecutionContext {
     this.outputs = new Map();
     this.drawings = [];
     this.functionRegistry = functionRegistry;
+  }
+
+  /**
+   * M9-02 patch: raw market data access for period resampling / reference broadcast
+   */
+  getMarketData(): MarketData[] {
+    return this.marketData;
+  }
+
+  /**
+   * M9-02 patch: set the cross-period reference resolver (engine-injected)
+   */
+  setCrossPeriodResolver(resolver: CrossPeriodResolver): void {
+    this.crossPeriodResolver = resolver;
+  }
+
+  /**
+   * M9-02 patch: get the cross-period reference resolver (undefined when not injected)
+   */
+  getCrossPeriodResolver(): CrossPeriodResolver | undefined {
+    return this.crossPeriodResolver;
   }
 
   /**

@@ -111,4 +111,74 @@ describe('M9-01 corpus smoke replay', () => {
       expect(() => engine.parse(source), `实盘单行版应解析通过：${file}`).not.toThrow()
     }
   })
+
+  // ---------- M9-02（XPER-CORPUS-LIFT）：跨周期支持后的执行提升 ----------
+  // 口径披露：分金定穴-1/2/3 为语料抽取剥离块——除裸 MACD 引用外还依赖 N/M（通达信
+  // 参数区，抽取时被剥）与紧邻块 1 的 RED_MAX_144/GRE_MIN_144。此处按「主体块＋前奏」
+  // 重组重放：参数前奏 N:=144;M:=144;BIG_RATIO:=0.75;MID_RATIO:=0.3（取自分金定穴.md
+  // 第{1}节参数值与 144 周期主题，N/M 为参数区默认的等价值——proposed_default 待拍板）；
+  // 块 2/3 另前置块 1 原文（同公式紧邻块，非跨公式）。裸重放口径（无前奏）＝
+  // 11/23（新增 骑牛买2-1、骑牛买3-5 两块），见 docs/verification/2026-10/M9-02。
+  // 不计入执行提升的块：M9-03 板块函数域＝六龙连山-3/4/7（HYBLOCK/INBLOCK/HY_INDEXC 族）
+  // 与六龙-6（INDEC）；语料伪影＝六龙-5/8、分金定穴-4、骑牛买3-3、万能过左峰-1（parse 编码伪影）。
+
+  const FJD_PARAM_PRELUDE = 'N:=144;M:=144;BIG_RATIO:=0.75;MID_RATIO:=0.3;'
+
+  function composedFenjindingxueSources(): Array<{ label: string; source: string }> {
+    const block1 = readFileSync(join(CORPUS_DIR, 'corpus-分金定穴-1.txt'), 'utf8')
+    const block2 = readFileSync(join(CORPUS_DIR, 'corpus-分金定穴-2.txt'), 'utf8')
+    const block3 = readFileSync(join(CORPUS_DIR, 'corpus-分金定穴-3.txt'), 'utf8')
+    return [
+      { label: 'corpus-分金定穴-1.txt', source: FJD_PARAM_PRELUDE + block1 },
+      { label: 'corpus-分金定穴-2.txt', source: FJD_PARAM_PRELUDE + block1 + block2 },
+      { label: 'corpus-分金定穴-3.txt', source: FJD_PARAM_PRELUDE + block1 + block3 },
+    ]
+  }
+
+  it('lifts corpus exec passing to at least 13 of 23 with cross period support', () => {
+    if (!guardCorpus()) return
+    const engine = new FormulaEngine()
+    const bars = syntheticBars()
+    const files = readdirSync(CORPUS_DIR).filter(f => f.startsWith('corpus-') && f.endsWith('.txt')).sort()
+    expect(files).toHaveLength(23)
+    const composed = new Map(composedFenjindingxueSources().map(x => [x.label, x.source]))
+    const failed: string[] = []
+    let execOk = 0
+    for (const f of files) {
+      const source = composed.get(f) ?? readFileSync(join(CORPUS_DIR, f), 'utf8')
+      try {
+        engine.evaluate(source, bars)
+        execOk++
+      } catch (e) {
+        failed.push(`${f} :: ${String((e as Error).message).slice(0, 70)}`)
+      }
+    }
+    // 矩阵口径 XPER-CORPUS-LIFT：≥13/23（基线 9 零损失＋骑牛买2-1、骑牛买3-5 裸重放新通过＋分金定穴-1/2/3 重组通过）
+    expect(execOk, `执行失败明细：\n${failed.join('\n')}`).toBeGreaterThanOrEqual(13)
+    // 基线零损失：M9-01 断言的 8 块＋M9-01 实际提升的第 9 块（六龙连山-1）
+    for (const f of [...BASELINE_EXEC_OK, 'corpus-六龙连山-1.txt']) {
+      expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, f), 'utf8'), bars), `基线零损失：${f}`).not.toThrow()
+    }
+    // 跨周期新通过块（裸重放，无前奏）
+    expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-骑牛买2_生命线诅咒线选股公式-1.txt'), 'utf8'), bars)).not.toThrow()
+    expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-骑牛买3_过左峰选股公式-5.txt'), 'utf8'), bars)).not.toThrow()
+  })
+
+  it('replays qiniu1 strict and loose full formulas with cross period references', () => {
+    if (!guardCorpus()) return
+    const md = readFileSync(join(TDX_FORMULA_DIR, '骑牛买1公式.md'), 'utf8')
+    const strictStart = md.indexOf('严格版本：')
+    const looseStart = md.indexOf('宽松版本：')
+    expect(strictStart).toBeGreaterThan(-1)
+    expect(looseStart).toBeGreaterThan(strictStart)
+    // 剥节标题行（语料抽取同款：注释由 lexer 自行跳过，CODELIKE 行本就是 // 注释）
+    const stripSectionHeader = (s: string) =>
+      s.split('\n').filter(l => !/^\s*(严格版本|宽松版本)：/.test(l)).join('\n')
+    const strict = stripSectionHeader(md.slice(strictStart, looseStart))
+    const loose = stripSectionHeader(md.slice(looseStart))
+    const engine = new FormulaEngine()
+    const bars = syntheticBars()
+    expect(() => engine.evaluate(strict, bars), '骑牛买1 严格版应执行通过（WEEKDAY/SUMBARS 严格口径）').not.toThrow()
+    expect(() => engine.evaluate(loose, bars), '骑牛买1 宽松版应执行通过（REF 近似口径）').not.toThrow()
+  })
 })

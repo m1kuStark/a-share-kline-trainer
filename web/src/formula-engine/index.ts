@@ -37,6 +37,7 @@ export {
   Identifier,
   NumberLiteral,
   StringLiteral,
+  PeriodReference,
 } from './parser/ast/nodes';
 
 // Export core components (for advanced usage)
@@ -53,3 +54,22 @@ export * from './interpreter/functions';
 
 // M9-01 patch layer: future-function static marking (support + explicit marking, never forbid)
 export { scanFutureFunctions, FUTURE_FUNCTIONS } from './futureFunctions';
+
+// M9-02 patch layer: cross-period / cross-formula references (#WEEK / #MONTH, auxiliary registry)
+export {
+  PeriodSuffix,
+  ResamplePeriod,
+  PERIOD_SUFFIXES,
+  AUXILIARY_REFERENCE_DEPTH_LIMIT,
+  FormulaEvaluationOptions,
+  BuiltinIndicatorProvider,
+  AuxiliaryFormulaRegistry,
+  AuxiliaryReferenceState,
+  CrossPeriodResolver,
+  isKnownPeriodSuffix,
+  normalizeAuxiliaryFormulas,
+  aggregateBars,
+  resampleBars,
+  broadcastReferenceLine,
+  createDefaultBuiltinIndicatorProvider,
+} from './crossPeriod';

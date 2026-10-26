@@ -32,6 +32,10 @@ export enum TokenType {
   SEMICOLON = 'SEMICOLON',
   COLON = 'COLON',
 
+  // M9-02 patch: bare cross-period reference punctuation (NAME.LINE#PERIOD)
+  DOT = 'DOT',
+  HASH = 'HASH',
+
   // Assignment
   ASSIGN = 'ASSIGN',
 
