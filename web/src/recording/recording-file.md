@@ -54,7 +54,8 @@ IndexedDB 增量存储、CompactRecorder/useRecording 接线、页面导入导�
   "format": "trainer-recordings-bundle",
   "version": 1,
   "exportedAt": "2026-10-09T08:00:00.000Z",
-  "items": [ /* CompactRecordingFile, ... */ ]
+  "items": [ /* CompactRecordingFile, ... */ ],
+  "collections": { /* CollectionsManifest，可选（REC-COLLECT-01） */ }
 }
 ```
 
@@ -64,6 +65,7 @@ IndexedDB 增量存储、CompactRecorder/useRecording 接线、页面导入导�
 - `version`：合并包结构版本，当前为 `1`；未来不兼容变更递增，读取端对未知版本显式拒绝。
 - `exportedAt`：导出时刻的 ISO 8601 字符串（`Date.prototype.toISOString`），必须可被 `Date.parse` 解析。
 - `items`：数组；每个元素是**现有单条导出 JSON 的载荷**（v2/v3 紧凑录制文件，即 `writeRecordingFile(compressed=false)` 的 JSON 对象）。导出侧先逐条 `validateCompactRecording`（导出自洽，不产出读不回的包）；旧录像（v1 明文/已迁移 v2）按现有导出路径的规范化形态进入包，不做新转换。
+- `collections`（可选，REC-COLLECT-01 2026-10-26 起）：收藏结构清单 `CollectionsManifest`（`{ type: 'recording-collections-manifest', version: 1, collections: [{name, kind}], members: [{collectionName, recordingKey}] }`，清单以目录名承载结构、不携带机器本地 id）。**版本保持 1**：该字段为可选附加，旧版读取端（v1.3.3）按必需字段解析、忽略未知字段，可继续打开携带本字段的新包；新读取端对旧包（无本字段）照常解析。字段存在即做结构校验，清单损坏整文件计一次失败（与 format/version 同级守卫）。导入侧按目录名合并（重名并集），`recordingKey` 按 `source:sessionId` 与导入项 `originalSessionId` 双通道解析，解析不到的成员跳过并如实计数。
 
 实现：`web/src/recording/bundle.ts`（`buildRecordingBundle` / `parseRecordingBundle` / `exportRecordingBundleFile` / `isRecordingBundleFile` / `bulkImportRecordingFiles`）。
 

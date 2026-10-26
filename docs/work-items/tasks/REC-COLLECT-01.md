@@ -5,11 +5,11 @@
   "id": "REC-COLLECT-01",
   "title": "录像库收藏与自定义目录（收藏索引/星标/导出带结构）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "REC",
   "base_commit": "81cef4b",
   "summary": "四功能拍板第一序（2026-10-26，docs/proposals/后续四功能-方案细化讨论-20261026.md）：录像物理存储保持平铺，收藏走索引（多对多）；内置「收藏」目录（星标标志、不可删除/重命名）＋用户自建目录；录像条目星标按钮快速加入/移出内置收藏（QQ 邮箱式交互）；删除录像级联清理成员关系；导出 REC-BULK 携带收藏结构、导入按目录名合并。实现层调整（已披露）：索引存 IndexedDB（与录像同域、生命周期同进退），不落 SQLite——录像本体在 IndexedDB 且其迁移受物理限制（v1.2.7 实证），SQLite 侧索引会在数据迁移后悬空。",
-  "next_action": "本轮（UI 轮）=RecordingLibrary UI（星标/目录树/归档/导出携带结构）＋recordingRepository 接线（namespace 构造 storage/service；remove/clear 后级联清理）＋bundle.ts 可选 collections 字段（向后兼容 v1 解析器）＋e2e；然后按单功能验收闸门停机提验。root 扩卡记录（2026-10-26）：UI 轮新增 allowed_paths＝web/src/recording/bundle.ts＋server/test/recording-bundle.test.ts——拍板「导出（REC-BULK）统一保留收藏结构」要求合并包携带 manifest，bundle.ts 是合并包结构的唯一属主，核心轮未触碰属合理、UI 轮必须入范围。",
+  "next_action": "两轮工程验证完成（核心层 0e08424＋UI 层 b719b78），矩阵 8/8 covered、root 复核独立复跑全绿（定向 30/30、journey 新 spec exit 0、check-binding --strict exit 0）。停机提验：待用户验收录像库星标/目录/归档/导出导入全链路（proposed_default 清单见验证记录第二轮节）＋拍板目录级导出是否补做＋推送 547b13a/0e08424/b719b78 三个提交。root 扩卡记录（2026-10-26）：UI 轮新增 allowed_paths＝web/src/recording/bundle.ts＋server/test/recording-bundle.test.ts＋web/src/components/docs/recording.md——拍板「导出（REC-BULK）统一保留收藏结构」要求合并包携带 manifest，bundle.ts 是合并包结构的唯一属主；recording.md 系 docs_impact 已声明但首轮漏列。",
   "allowed_paths": [
     "web/src/recording/collectionTypes.ts",
     "web/src/recording/collections.ts",
@@ -71,4 +71,4 @@
 - 测试：collections 3 接线用例＋bundle 5 collections 用例＋e2e/recording-collections.spec.ts 3 用例（星标往返/目录全生命周期＋导出断言/合并包跨命名空间并集＋级联重载持久）；MUTATION-A（级联移除）与 MUTATION-B（清单丢弃）双击杀；typecheck:web exit 0；全量回归：真实回归 frontend-contract 字面量已修复复绿，其余三轮各 1 个互不相同的负载性超时 flake（隔离复验全绿、零导入关系、已登记）；journey：新 spec 3/3＋邻接 bulk 2/2＋library 2/2；check-binding --strict：covered=7/open=1（COLL-UI-LIBRARY-ENTRY 待 root 升 covered，test_ids 提案 4 条见验证记录）/RED=0/exit 3。
 - 文档：web/src/components/docs/recording.md 追加「录像库收藏与自定义目录」用户交互说明。
 - 待用户提验：proposed_default 清单（目录条形态/文案/星标色/目录级导出未做）与读屏器等通道——见验证记录「第二轮」节。
-- 契约文档缺口（root 补记）：web/src/recording/recording-file.md「录像合并包」节需同步 collections 可选字段（不在本卡 allowed_paths）。
+- 契约文档缺口（root 已补，2026-10-26）：web/src/recording/recording-file.md「录像合并包」节已同步 collections 可选字段（含向后兼容与导入合并口径），随 root docs 提交入账。
