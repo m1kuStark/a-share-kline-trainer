@@ -28,3 +28,17 @@
 新增持有一项：`viewportOpTimer`（setTimeout 尾沿），在 `applyReplayView`、`feedData`（数据替换作废挂起上报）与 `onUnmounted` 中经 `cancelViewportOperation()` 成对撤销；window 监听无新增。interaction.md 生命周期表的本项登记由集成人合并（REC-CHART-C 任务范围仅允许写本页）。
 
 回归：`server/test/recording-chart-actions.test.ts`（动作入口、只读与程序 restore 抑制、viewport 入口与抑制、基线表同步接线）与 `server/test/recording-drawing-operations.test.ts`（基线表重播种/清除与 params 有限性兜底的行为回归）。
+
+## 录像库收藏与自定义目录（REC-COLLECT-01，用户交互说明）
+
+[RecordingLibrary.vue](../RecordingLibrary.vue) 在两列清单之上提供「目录」条：内置「收藏」（星形图标恒置顶，**不可删除、不可重命名**）＋用户自建目录＋「新建目录」。收藏索引与录像库同 namespace 存于 IndexedDB 独立库（`<录像库>.collections`），录像本体存储与自动归档命名零改动。
+
+- **星标**：每条录像（本机/导入两列一致）最左侧星形按钮，点击即在「收藏」目录加入/移出（QQ 邮箱式），按钮状态（实心/空心）如实反映当前归属。
+- **归档**：条目「归档到目录」按钮展开目录勾选面板；勾选即加入、取消勾选即移出（幂等），内置「收藏」也在面板内（与星标等价）。同一录像可属多个目录。
+- **目录管理**：用户目录可重命名（重名/空白名拒绝并提示）、可删除（确认后仅清除成员关系，录像本体不动）。新建目录名称去首尾空格，空白与重名（含「收藏」）拒绝。
+- **按目录过滤**：点击目录条即在两列中只显示该目录成员（跨本机/导入），计数实时；「全部」恢复完整清单。
+- **导出携带收藏结构**：「全部导出」的合并包在 items 之外携带可选 `collections` 收藏清单（目录名+成员，含内置收藏）；旧版训练器（v1.3.3 及以前）解析器只认必需字段，可正常导入不带结构损失的录像条目。
+- **导入合并**：合并包携带 `collections` 时，批量导入完成后按**目录名合并**——重名目录成员取并集不丢既有成员，内置收藏映射到本机「收藏」；清单成员经 sessionId 与导入项 originalSessionId 双通道解析，解析不到的跳过并如实计数（「跳过无法解析成员 N 条」）。
+- **级联清理**：删除单条录像或清空某列时，该录像在所有目录的成员关系一并清除（失败不阻塞删除，仅记录诊断日志）。
+
+回归：`server/test/recording-collections.test.ts`（核心语义＋recordingRepository 接线/级联/守卫）＋`server/test/recording-bundle.test.ts`（合并包 collections 字段契约与兼容）＋`e2e/recording-collections.spec.ts`（星标/目录/过滤/导出导入合并/级联，真实浏览器 IndexedDB）。

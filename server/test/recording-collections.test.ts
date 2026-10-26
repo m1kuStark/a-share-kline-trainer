@@ -1,6 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import ts from 'typescript'
+// UI 轮接线层（recordingRepository）直接导入被测真实模块（recording-bundle.test.ts 同模式）；
+// 新增模块级收藏 API 用命名空间导入——RED 期导出尚不存在时仅该用例失败，不拖垮整文件。
+import * as repositoryModule from '../../web/src/recording/recordingRepository'
+import { RecordingLibraryRepository, configureRecordingNamespace } from '../../web/src/recording/recordingRepository'
+import { CollectionCatalogService } from '../../web/src/recording/collectionService'
+import { MemoryCollectionStorage } from '../../web/src/recording/collectionStorage'
+import { MemoryImportedRecordingStorage } from '../../web/src/recording/importedStorage'
+import type { CompactRecordingFile } from '../../web/src/recording/compactTypes'
 
 // REC-COLLECT-01 录像库收藏与自定义目录（2026-10-26 四功能拍板第一序）。
 // 独立 oracle 原则：期望全部为内嵌常量/手造夹具，本文件禁止调用被测实现生成期望。
@@ -247,5 +255,77 @@ describe('REC-COLLECT-01 收藏目录核心语义（提取执行 web/src/recordi
     const merged = list.find(row => row.name === '骑牛1买训练')!
     expect((await service.memberKeys(merged.id)).sort()).toEqual(['imported:xyz-1', 'local:s0'].sort())
     expect(await service.memberKeys(favorites.id)).toEqual([])
+  })
+})
+
+/** 接线层最小录像夹具（与 recording-bundle.test.ts 同形态；空事件合法录制文件） */
+function wiringRecording(sessionId: string): CompactRecordingFile {
+  return {
+    format: 'trainer-session', schemaVersion: 2, sessionId, createdAt: '2026-10-26T00:00:00.000Z',
+    app: { version: 'test', gitCommit: 'test', dirty: false, chartLibrary: 'klinecharts' },
+    environment: { timezone: 'Asia/Shanghai', viewport: { width: 1, height: 1 }, dpr: 1 }, trainingKey: `${sessionId}.key`,
+    events: [], checkpoints: [], resources: { series: [], drawings: [], trainingMeta: [], accounts: [], trades: [], contexts: [] }, gaps: [], complete: true,
+  }
+}
+
+function wiringLocalStorage() {
+  const records = new Map<string, CompactRecordingFile>()
+  return {
+    records,
+    async save(file: CompactRecordingFile) { records.set(file.sessionId, structuredClone(file)) },
+    async load(id: string) { return records.get(id) ?? null },
+    async list() { return [...records.values()].map(file => ({ sessionId: file.sessionId, trainingKey: file.trainingKey, createdAt: file.createdAt, eventCount: file.events.length })) },
+    async remove(id: string) { records.delete(id) },
+  }
+}
+
+describe('REC-COLLECT-01 接线层（recordingRepository 收藏面真实接线）', () => {
+  it('删除录像后成员级联清理被真实调用：repository.remove 经注入的收藏服务清掉对应成员关系', async () => {
+    // 独立 oracle：录像 s1 删除前在收藏与用户目录各有成员关系；删除后两者都必须清空，
+    // 且 s2 的成员关系不受影响（级联只作用于被删条目的 source:sessionId 键）。
+    const localStorage = wiringLocalStorage()
+    await localStorage.save(wiringRecording('s1'))
+    await localStorage.save(wiringRecording('s2'))
+    const collectionStorage = new MemoryCollectionStorage()
+    const service = new CollectionCatalogService(collectionStorage, () => '2026-10-26T00:00:00Z', () => `wire-${Math.random()}`)
+    await service.toggleStar('local:s1')
+    const userDir = await service.create('骑牛1买训练')
+    await service.assign(userDir.id, ['local:s1', 'local:s2'])
+    const repository = new RecordingLibraryRepository(localStorage, new MemoryImportedRecordingStorage(), async () => () => {}, service)
+    const result = await repository.remove([{ sessionId: 's1', source: 'local' }])
+    expect(result.deleted).toHaveLength(1)
+    expect(result.failed).toEqual([])
+    expect(await service.memberKeys('favorites')).toEqual([])
+    expect(await service.memberKeys(userDir.id)).toEqual(['local:s2'])
+  })
+
+  it('级联清理失败不阻塞删除主流程：cleanup 抛错时录像仍删除成功，且清理确曾被调用（如实记录）', async () => {
+    const localStorage = wiringLocalStorage()
+    await localStorage.save(wiringRecording('boom'))
+    let cleanupAttempts = 0
+    const failingCleanup = {
+      cleanupRemovedRecordings: async () => {
+        cleanupAttempts++
+        throw new Error('收藏库暂时不可用')
+      },
+    }
+    const repository = new RecordingLibraryRepository(localStorage, new MemoryImportedRecordingStorage(), async () => () => {}, failingCleanup)
+    const result = await repository.remove([{ sessionId: 'boom', source: 'local' }])
+    expect(result.deleted).toHaveLength(1) // 主流程不被阻塞
+    expect(result.failed).toEqual([])
+    expect(cleanupAttempts).toBe(1) // 清理被真实调用过（失败如实记录于诊断日志）
+    expect(await localStorage.load('boom')).toBeNull()
+  })
+
+  it('模块级收藏面 API 接线：namespace 未初始化走守卫错误；初始化后进入真实收藏存储链路', async () => {
+    // 独立 oracle：守卫文案必须与既有录像库 storage 同一措辞（App 录像库壳层渲染早于安装隔离
+    // 初始化的场景），且与 library() 同为同步抛出（UI withNamespaceRetry 的 try 内调用口径）；
+    // configureRecordingNamespace 后请求进入 IndexedDbCollectionStorage 链路——Node 无 indexedDB，
+    // 真实链路的拒绝消息来自收藏库 open()（仅有那条链路能产出该文案）。
+    const listCollections = (repositoryModule as { listCollections?: () => Promise<unknown> }).listCollections
+    expect(typeof listCollections).toBe('function')
+    expect(() => listCollections!()).toThrow('录像库尚未完成安装隔离初始化')
+    configureRecordingNamespace('rec-collect-wiring')
+    await expect(listCollections!()).rejects.toThrow('收藏目录')
   })
 })

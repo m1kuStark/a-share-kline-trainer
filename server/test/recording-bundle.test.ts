@@ -13,6 +13,7 @@ import {
   exportRecordingBundleFile,
   parseRecordingBundle,
 } from '../../web/src/recording/bundle'
+import type { CollectionsManifest } from '../../web/src/recording/collectionTypes'
 import { RecordingLibraryRepository } from '../../web/src/recording/recordingRepository'
 import { MemoryImportedRecordingStorage } from '../../web/src/recording/importedStorage'
 import type { CompactRecordingFile } from '../../web/src/recording/compactTypes'
@@ -154,6 +155,73 @@ describe('bulkImportRecordingFiles（批量导入编排：多选/单条兼容/�
     const outcome = await bulkImportRecordingFiles([jsonFile(recording('legacy-import'), 'legacy.json')], repository)
     expect(outcome.imported).toHaveLength(1)
     expect(outcome.skipped).toEqual([])
+  })
+
+  it('carries collections manifest in bundle and export blob（导出携带收藏结构）', async () => {
+    // 独立 oracle：手造清单（不调用收藏实现生成期望）；目录名承载结构、成员键 source:sessionId
+    const manifest: CollectionsManifest = {
+      type: 'recording-collections-manifest',
+      version: 1,
+      collections: [
+        { name: '收藏', kind: 'builtin' },
+        { name: '骑牛1买训练', kind: 'user' },
+      ],
+      members: [
+        { collectionName: '收藏', recordingKey: 'local:a' },
+        { collectionName: '骑牛1买训练', recordingKey: 'local:a' },
+      ],
+    }
+    const bundle = buildRecordingBundle([recording('a')], new Date('2026-10-26T08:00:00.000Z'), manifest)
+    expect(bundle.version).toBe(RECORDING_BUNDLE_VERSION) // 版本保持 1：新增可选字段不递增
+    expect(bundle.collections).toEqual(manifest)
+    const blob = await exportRecordingBundleFile([recording('a')], new Date('2026-10-26T08:00:00.000Z'), manifest)
+    const persisted = JSON.parse(await blob.text())
+    expect(persisted.collections).toEqual(manifest)
+    expect(parseRecordingBundle(persisted).map(item => item.sessionId)).toEqual(['a'])
+  })
+
+  it('bundle without manifest keeps the v1 shape（不带清单时 collections 字段缺省）', () => {
+    const bundle = buildRecordingBundle([recording('a')])
+    expect('collections' in bundle).toBe(false)
+    expect(parseRecordingBundle(JSON.parse(JSON.stringify(bundle)))).toHaveLength(1)
+  })
+
+  it('old-parser compatibility: a bundle carrying collections still parses by required fields only（v1.3.3 可继续解析新包）', () => {
+    const manifest: CollectionsManifest = {
+      type: 'recording-collections-manifest', version: 1,
+      collections: [{ name: '收藏', kind: 'builtin' }],
+      members: [{ collectionName: '收藏', recordingKey: 'local:a' }],
+    }
+    const bundle = buildRecordingBundle([recording('a'), recording('b')], new Date('2026-10-26T08:00:00.000Z'), manifest)
+    // 以「只认必需字段」的旧解析行为锁形：未知/新增字段不得导致解析失败或条目丢失
+    const items = parseRecordingBundle(JSON.parse(JSON.stringify(bundle)))
+    expect(items.map(item => item.sessionId)).toEqual(['a', 'b'])
+  })
+
+  it('rejects a bundle whose collections field is present but malformed（清单结构错误整文件失败）', () => {
+    const raw = JSON.parse(JSON.stringify(buildRecordingBundle([recording('a')]))) as Record<string, unknown>
+    raw.collections = { type: 'oops' }
+    expect(() => parseRecordingBundle(raw)).toThrow(/collections/)
+    const rawMembers = JSON.parse(JSON.stringify(buildRecordingBundle([recording('a')]))) as Record<string, unknown>
+    rawMembers.collections = { type: 'recording-collections-manifest', version: 1, collections: [], members: 'nope' }
+    expect(() => parseRecordingBundle(rawMembers)).toThrow(/collections/)
+  })
+
+  it('bulkImportRecordingFiles surfaces bundle collections manifests for the UI merge（导入侧暴露清单）', async () => {
+    const { repository } = await repositoryWith()
+    const manifest: CollectionsManifest = {
+      type: 'recording-collections-manifest', version: 1,
+      collections: [{ name: '收藏', kind: 'builtin' }, { name: '骑牛1买训练', kind: 'user' }],
+      members: [{ collectionName: '骑牛1买训练', recordingKey: 'local:a' }],
+    }
+    const withManifest = buildRecordingBundle([recording('a', 'a.key')], new Date('2026-10-26T08:00:00.000Z'), manifest)
+    const without = buildRecordingBundle([recording('b', 'b.key')])
+    const outcome = await bulkImportRecordingFiles([
+      jsonFile(withManifest, 'with-collections.trainer-recordings.json'),
+      jsonFile(without, 'plain.trainer-recordings.json'),
+    ], repository)
+    expect(outcome.imported).toHaveLength(2)
+    expect(outcome.collections).toEqual([manifest]) // 仅携带清单的包出现且原样透出
   })
 
   it('migrates legacy v1 plaintext recordings through the bulk path（v1 兼容）', async () => {
