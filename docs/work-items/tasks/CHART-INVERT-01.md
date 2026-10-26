@@ -29,8 +29,8 @@
     "update": ["web/src/components/docs/interaction.md", "docs/specs/chart/display.md"],
     "reason": "图表新增多空反转显示模式与开关交互说明"
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/CHART-INVERT-01/README.md"],
+  "integration_ref": "main@1e2dfeb",
   "acceptance_ref": null
 }
 ```
