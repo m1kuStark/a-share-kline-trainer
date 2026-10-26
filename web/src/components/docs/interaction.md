@@ -27,6 +27,12 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 
 历史成交使用服务端 `chartPrice`。B/S 由独立标记条按周期与像素列聚合，不再画在蜡烛或轴上；成本线使用账户同源成本。刷新行情走原训练读取边界，回到最新只调用 `resetView`，不推进日期。
 
+## 多空反转（CHART-INVERT-01，2026-10-26 用户拍板）
+
+- 开关由训练页（周期按钮行近旁）与回放页（周期按钮近旁）传入 `priceMirror` prop；不持久化，每会话从关开始。切换立即重喂全序列（同一 `feedData` 路径，视窗按数据装载语义回到默认），周期面不重建、撤销历史不清；既有画线先按切换前显示域快照回真实价，重喂后按新显示域恢复。
+- 组件内 `loadedData` 是唯一真实序列事实源；镜像只发生在 `chartFeedData()`（feed/前插喂库最后一跳）与 `displayValue()`（B/S 标记/成本线/阶段价线/挂单标记像素锚定）。capture/emit/画线持久面（`drawings()` 反镜像读回、`restoreDrawings` 镜像喂入，对称成对）与订单悬浮文本全部真实价；悬浮信息卡从 `loadedData` 取数（交易决策信息不撒谎）。镜像基准 P₀＝本会话首次启用时已加载序列首根收盘价，解析后冻结至组件卸载（补历史前插不重算）。
+- 水印（「多空反转视角／坐标为镜像值」）是 `chart-wrap` 内 `pointer-events:none` 纯展示层，不参与指针入口与监听表；开关按钮原生 button＋aria-pressed，键盘可达。
+
 ## 监听与卸载
 
 | 持有者 | 注册项 | 释放 |
@@ -40,4 +46,4 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 
 新增监听同步登记本表。App 按训练 id 重建 Training，已结算训练可通过 URL 查询参数重开，返回首页清理参数；组件卸载不能仅移除 DOM 而留下图库实例。
 
-相关回归：[journey](../../../../e2e/journey.spec.ts)、[pane-resize](../../../../e2e/pane-resize.spec.ts)、[m3-round3](../../../../e2e/m3-round3.spec.ts)、[compact-chart](../../../../e2e/compact-chart.spec.ts)。
+相关回归：[journey](../../../../e2e/journey.spec.ts)、[pane-resize](../../../../e2e/pane-resize.spec.ts)、[m3-round3](../../../../e2e/m3-round3.spec.ts)、[compact-chart](../../../../e2e/compact-chart.spec.ts)、[chart-invert](../../../../e2e/chart-invert.spec.ts)。

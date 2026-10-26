@@ -5,17 +5,18 @@
   "id": "CHART-INVERT-01",
   "title": "K 线多空反转：视图层镜像开关（训练/回放、水印防混淆、不影响交易与录像）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "M6",
   "base_commit": "66b719e",
   "summary": "四功能拍板第二序（2026-10-26，docs/proposals/后续四功能-方案细化讨论-20261026.md 第四节＋拍板记录「按本文第四节建议开发」）：视图层镜像开关，K 线数据镜像 p′=2P₀−p（P₀＝首根收盘价，开高低收全镜像、阴阳形状互换），指标按镜像序列重算（MACD 到水下）；防混淆三件套＝显眼水印「多空反转视角」＋开关态高亮＋回放页同步适配；范围＝训练页＋回放页；纯视图——不影响交易与结算、录像与画线持久面零污染（M2-DRAWING-01「显示层变换、持久面不变」同构约束）。M6（图表交互）为此单卡重开。",
-  "next_action": "本轮＝全卡交付：priceMirror 纯函数（RED 先行）→KlineChart 集成（喂入层镜像、capture/画线/标记隔离）→训练页/回放页开关与水印→e2e；矩阵 9 行 root 预登记（worker 不编辑矩阵）；完成后停机提验（用户当前不在家，验收 deferred 与 REC-COLLECT-01 一同排队）。",
+  "next_action": "工程验证完成（开发轮 worker 中断于账户限额，收尾门禁由 root 同纪律续做）：定向 24/24、typecheck 0、journey 新 spec 9/9＋三邻接 8/8、全量 1786/1787（1 flake 隔离复跑绿）、矩阵 9/9 covered＋check-binding --strict exit 0。停机提验 deferred（用户 2026-10-26 不在家，与 REC-COLLECT-01 同列验收队列）：验收训练/回放两页多空反转开关全链路（proposed_default 9 项清单见验证记录）＋卡内手算样例勘误追认。root 扩卡记录（2026-10-26）：新增 allowed_paths＝server/test/recording-chart-capture.test.ts——capture/feed 函数的源码形状契约属主，实现变更必须同步且方向收紧（详见验证记录 root 收尾节）。",
   "allowed_paths": [
     "web/src/priceMirror.ts",
     "web/src/components/KlineChart.vue",
     "web/src/views/Training.vue",
     "web/src/views/SessionReplay.vue",
     "server/test/chart-invert.test.ts",
+    "server/test/recording-chart-capture.test.ts",
     "e2e/chart-invert.spec.ts",
     "web/src/components/docs/interaction.md",
     "docs/specs/chart/display.md",
@@ -69,4 +70,13 @@
 
 ## 本轮交付
 
-（开发轮完成后回填）
+2026-10-26 开发轮（worker 全卡交付，矩阵 9 行 test_ids 回填待 root 复核升 covered）：
+
+- **新增** `web/src/priceMirror.ts`（纯函数层：mirrorBasis/mirrorPrice/unmirrorPrice/mirrorBar/mirrorBars/mirrorDrawing/unmirrorDrawing/mirrorDrawings/unmirrorDrawings；无运行时依赖，server/test transpile 提取单测锁定）。手算 oracle 样例勘误：卡内样例 `{o:9,h:10.5,l:12,c:9.5}` 的 `l:12` 与自身规则「p′=2P₀−p 全镜像」矛盾（20−12=8，且 l>h 为非法 K 线），实现与测试按 `{o:9,h:10.5,l:8,c:9.5}`（阴阳互换不变式自洽）。
+- **KlineChart.vue 集成**：`priceMirror` prop；`loadedData` 真实序列唯一事实源；镜像仅在 `chartFeedData()`（feed/前插喂库最后一跳）与 `displayValue()`（B/S 标记/成本线/阶段价线/挂单像素锚定/纵轴范围并入价）；`captureState` 改读 `loadedData`（**capture 隔离核心修复**，源码契约＋变异锁定）；`drawings()` 反镜像读回与 `restoreDrawings` 镜像喂入对称；`buildHoverModel` 改从 `loadedData` 取数（信息卡真实值）；`configurePhasePriceRange` 并入价经 displayValue；watch(priceMirror) 切换重喂全序列＋画线真实域快照往返；水印 overlay（pointer-events:none）；journey 探针新增 capture/indicatorResult/yAxisTicks/yAxisTicks+yAxisRange。
+- **两页开关**：Training.vue（周期按钮行近旁）＋SessionReplay.vue（周期按钮近旁）各一「多空反转」按钮（aria-pressed、开启橙色高亮、title 防误导文案），默认关、不持久化。
+- **测试**：`server/test/chart-invert.test.ts`（16 用例：纯函数 8＋源码契约 8）＋`e2e/chart-invert.spec.ts`（9 用例，真实 TDX 数据 600519）。变异抽检 2 个（喂入漏镜像／capture 误读镜像序列）均被定向杀手处决（executed，exit 1），还原后全绿。
+- **文档**：web/src/components/docs/interaction.md（多空反转节＋监听表不变说明＋回归清单）、docs/specs/chart/display.md（CHART-INVERT 显示模式节）、docs/specs/chart/interaction.md（镜像态画线存储语义一句）。
+- 验证记录：docs/verification/2026-10/CHART-INVERT-01/README.md（门禁表＋RED 摘要＋变异击杀＋proposed_default 清单）。
+- root 收尾（2026-10-26）：worker 中断于账户 5 小时限额（全量回归/邻接 journey/check-binding/报告/commit 未及执行），root 以同纪律续做并收口 review——定向 24/24、typecheck 0、journey 9/9＋8/8、全量 1786/1787（flake 隔离复跑绿）、矩阵 9 行 covered 回填（18 test_ids 字节级核对）、check-binding --strict --include-untracked exit 0；越界处置（契约测试扩卡）与 root 自呈失误（漏 --include-untracked 假 RED）详见验证记录「root 收尾记录」节。
+- 停机提验（deferred，与 REC-COLLECT-01 同列）。

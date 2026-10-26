@@ -56,6 +56,9 @@ const orderTrigger = ref<number | null>(null)
 const orderReason = ref('')
 const orderError = ref('')
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
+// CHART-INVERT-01 多空反转（视图层镜像）：纯视图开关——不影响交易结算/录像/画线持久面；
+// 不持久化（每会话从关开始，防混淆优先）
+const priceMirror = ref(false)
 const settledView = ref<TrainingSnapshot | null>(null)
 const endAction = ref<'settle' | 'abandon' | null>(null)
 const keepRecording = ref(true)
@@ -901,6 +904,14 @@ void load()
         <div class="indicator-toggles" role="group" aria-label="副图指标开关">
           <button v-for="item in indicatorToggles" :key="item.name" class="indicator-toggle" :class="{ off: !item.enabled.value }" :aria-pressed="item.enabled.value ? 'true' : 'false'" :title="item.enabled.value ? `${item.label}副图：显示中（点击隐藏）` : `${item.label}副图：已隐藏（点击显示）`" @click="item.toggle(!item.enabled.value)">{{ item.name }}</button>
         </div>
+        <!-- CHART-INVERT-01 多空反转（视图层镜像）：开启时开关高亮＋图表水印；纯视图不影响交易/录像/画线存储 -->
+        <button
+          class="price-mirror-toggle"
+          :class="{ on: priceMirror }"
+          :aria-pressed="priceMirror ? 'true' : 'false'"
+          :title="priceMirror ? '多空反转视角：K 线以首根收盘价为轴上下翻转（坐标为镜像值）。多头分析之镜，不是做空信号。点击恢复真实价格' : '多空反转：以首根收盘价为轴镜像翻转全部 K 线（空头视角检验，指标按镜像序列重算）。纯视图，不影响交易与录像'"
+          @click="priceMirror = !priceMirror"
+        >多空反转</button>
         <!-- M6-07：数字滚动动效入口已移入设置面板「动画效果」分栏（顶栏胶囊按钮移除，用户 2026-10-05 拍板） -->
         <details class="training-details" @keydown.esc.prevent.stop="($event.currentTarget as HTMLDetailsElement).open = false">
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>
@@ -955,6 +966,7 @@ void load()
           :draw-tool="drawTool" :multi-select="multiSelectMode"
           :magnet="magnet" :saved-drawings="initialDrawings" :all-drawings="allDrawings" :training-id="training.id"
           :hide-dates="axisDateHidden" :date-shift-days="axisDateShiftDays"
+          :price-mirror="priceMirror"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
@@ -1169,6 +1181,13 @@ void load()
 </template>
 
 <style scoped>
+/* CHART-INVERT-01 多空反转开关：与副图开关同区同尺寸（周期按钮行近旁）；开启＝橙色高亮（区别于
+   副图开关的青色系），aria-pressed 语义供读屏器识别；深色主题随设计令牌回退 */
+.price-mirror-toggle { border: 1px solid var(--surface-border, #cbd5e1); background: transparent; color: var(--text-secondary, #5c7187); font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: .3px; line-height: 1; height: 20px; padding: 0 8px; border-radius: 10px; cursor: pointer; margin-left: 4px; }
+.price-mirror-toggle:hover { filter: brightness(.97); }
+.price-mirror-toggle.on { border: 1px solid #d97706; background: #fdf3e3; color: #b45309; box-shadow: 0 0 0 1px rgba(217, 119, 6, .35); }
+.price-mirror-toggle:focus-visible { outline: 2px solid #54b8cc; }
+body.dark .price-mirror-toggle.on { border-color: #f59e0b; background: #3a2a12; color: #fbbf24; }
 /* Keep the account, trade controls and drawing tools visible together at short desktop heights. */
 .trade-panel { padding: 16px; }
 .equity-block { padding: 16px 0; }

@@ -41,13 +41,17 @@ describe('REC-CHART-B chart capture contract', () => {
     const source = await readChart()
     const capture = blockOf(source, 'function captureState(', 'let captureTimer')
     expect(capture).toMatch(/if \(!chart\) throw/)
-    expect(capture).toMatch(/chart\.getDataList\(\)/)
+    // CHART-INVERT-01（2026-10-26 拍板）起捕获唯一源＝组件内真实序列 loadedData：镜像开启时库内
+    // 喂入的是镜像显示序列，改读库内数据列表会把镜像值渗入录像（M2-DRAWING-01 同构事故）。
+    // 非镜像态 loadedData 与库内数据按索引同构（setDataLoader 全量喂入＋forward 前插同构维护）。
+    expect(capture).not.toMatch(/chart\.getDataList\(\)/)
+    expect(capture).toMatch(/data: loadedData,/)
     expect(capture).toMatch(/chart\.getVisibleRange\(\)/)
     expect(capture).toMatch(/chart\.getBarSpace\(\)\.bar/)
     expect(capture).toMatch(/captureView\(/)
-    expect(capture).toMatch(/toCaptureBars\(data\)/)
+    expect(capture).toMatch(/toCaptureBars\(loadedData\)/)
     expect(capture).toMatch(/props\.chartCostPrice \?\? props\.costPrice/)
-    // bars 绝不来自 props.bars（补载历史只存在于库内 loadedData）
+    // bars 绝不来自 props.bars（补载历史只存在于 loadedData）
     expect(capture).not.toMatch(/props\.bars/)
     // 语义窗格：跳过 x 轴、只收正高度
     const heights = blockOf(source, 'function semanticPaneHeights(', 'function captureState(')
@@ -65,12 +69,13 @@ describe('REC-CHART-B chart capture contract', () => {
     expect(schedule).toMatch(/VIEWPORT_CAPTURE_THROTTLE_MS/)
     expect(schedule).toMatch(/if \(disposed \|\| props\.readOnly \|\| restoringView \|\| !chart\) return/)
     expect(schedule).toMatch(/emit\('chartCapture', captureState\(\)\)/)
-    // feed 完成（库在 loader callback 内同步应用初始数据）后调度；回放恢复排程在前、首次捕获随后
+    // feed 完成（库在 loader callback 内同步应用初始数据）后调度；回放恢复排程在前、首次捕获随后。
+    // CHART-INVERT-01：喂库经 chartFeedData() 最后一跳（镜像开启时为镜像显示序列，loadedData 事实源不变）
     const feed = blockOf(source, 'function feedData(', '// REC-CHART 图表捕获')
-    expect(feed).toMatch(/callback\(loadedData, \{ forward: hasMoreForward, backward: false \}\)\n      scheduleReplayRestore\(\)\n      scheduleChartCapture\(\)/)
-    // 补历史成功后调度
+    expect(feed).toMatch(/callback\(chartFeedData\(\), \{ forward: hasMoreForward, backward: false \}\)\n      scheduleReplayRestore\(\)\n      scheduleChartCapture\(\)/)
+    // 补历史成功后调度（前插喂库同样经镜像最后一跳）
     const earlier = blockOf(source, 'async function loadEarlierBars(', 'function feedData(')
-    expect(earlier).toMatch(/callback\(older, \{ forward: result\.hasMore \}\)\n    scheduleChartCapture\(\)/)
+    expect(earlier).toMatch(/callback\(basis === null \? older : mirrorBars\(older, basis\), \{ forward: result\.hasMore \}\)\n    scheduleChartCapture\(\)/)
     // 视窗变化后调度
     expect(source).toMatch(/subscribeAction\('onVisibleRangeChange', \(\) => \{ emit\('visibleCount', visibleCount\(\)\); updateAnchorDots\(\); scheduleChartCapture\(\) \}\)/)
   })

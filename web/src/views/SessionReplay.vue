@@ -49,6 +49,9 @@ const drawingEpoch = ref(0)
 /** 重挂前视窗（含瞬态右侧空隔，REPLAY-VIEWPORT-01）：重挂后按时间戳＋空隔恢复，空白预留不丢 */
 const replayView = ref<ReplayViewport | null>(null)
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
+/** CHART-INVERT-01 多空反转（视图层镜像）：回放页同款开关（默认关、不持久化）——
+ *  回放按镜像序列重算指标、水印防混淆；纯视图，不改写录像数据 */
+const priceMirror = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
 let replayViewClearFrame: number | null = null
 
@@ -389,6 +392,15 @@ onBeforeUnmount(() => {
               @click="setObservation(timeframe)"
             >{{ PERIOD_NAMES[timeframe] }}</button>
           </div>
+          <!-- CHART-INVERT-01 多空反转：回放页同步适配（默认关，行为与训练页一致） -->
+          <button
+            type="button"
+            class="price-mirror-toggle"
+            :class="{ on: priceMirror }"
+            :aria-pressed="priceMirror ? 'true' : 'false'"
+            :title="priceMirror ? '多空反转视角：K 线以首根收盘价为轴上下翻转（坐标为镜像值）。多头分析之镜，不是做空信号。点击恢复真实价格' : '多空反转：以首根收盘价为轴镜像翻转全部 K 线（空头视角检验，指标按镜像序列重算）。纯视图，不改写录像数据'"
+            @click="priceMirror = !priceMirror"
+          >多空反转</button>
           <span class="replay-event-text" :title="dayText">{{ dayText }}</span>
           <span v-if="dayGap" class="replay-gap" role="alert" :title="describeGap(dayGap)">缺口</span>
           <span v-if="stepGap && stepGap !== dayGap" class="replay-gap" role="alert" :title="describeGap(stepGap)">缺口</span>
@@ -409,6 +421,7 @@ onBeforeUnmount(() => {
             :timeframe="observation.timeframe"
             :saved-drawings="state.drawings"
             :replay-view="replayView ?? undefined"
+            :price-mirror="priceMirror"
           />
           <div v-else class="replay-chart-empty">
             <strong>该日期没有图表快照</strong>
@@ -593,6 +606,12 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 .replay-day { white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* CHART-INVERT-01 多空反转开关（回放页，周期按钮近旁；开启＝橙色高亮，与训练页同款语义） */
+.price-mirror-toggle { flex: 0 0 auto; height: 22px; padding: 0 8px; font-size: var(--font-size-xs); font-weight: 650; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--control-background, #ffffff); color: var(--text-secondary, #38596d); white-space: nowrap; cursor: pointer; }
+.price-mirror-toggle:hover { border-color: #94bec5; color: var(--text-primary, #1c6076); }
+.price-mirror-toggle:focus-visible { outline: 2px solid #54b8cc; }
+.price-mirror-toggle.on { border-color: #d97706; background: #fdf3e3; color: #b45309; box-shadow: 0 0 0 1px rgba(217, 119, 6, .35); }
+body.dark .price-mirror-toggle.on { border-color: #f59e0b; background: #3a2a12; color: #fbbf24; }
 .replay-tabs { display: flex; gap: 2px; flex: 0 0 auto; }
 .replay-tabs button {
   height: 22px;

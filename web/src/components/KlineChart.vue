@@ -9,6 +9,7 @@ import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
+import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings } from '../priceMirror'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
@@ -69,7 +70,11 @@ const props = withDefaults(defineProps<{
   hideDates?: boolean
   /** RF2-02 揭示态常量差换算：真实日期＝呈现时间戳＋N 天（0＝原样呈现；与 SessionReplay 的 realDateOf 同法） */
   dateShiftDays?: number
-}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0 })
+  /** CHART-INVERT-01 多空反转（视图层镜像）：true＝全部 K 线按 p′=2P₀−p 镜像显示（P₀＝本会话
+   *  首次启用时已加载序列首根收盘价，冻结不重算）。纯视图：capture/emit/画线持久面/标记数据
+   *  全部走真实价，镜像只发生在 chart feed 前最后一跳与渲染锚定（displayValue）。 */
+  priceMirror?: boolean
+}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0, priceMirror: false })
 
 const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
 const host = ref<HTMLElement | null>(null)
@@ -119,6 +124,25 @@ let loadedData: KLineData[] = []
 let hasMoreForward = false
 let loadingForward = false
 let dataVersion = 0
+// CHART-INVERT-01 多空反转：真实序列 loadedData 是唯一事实源（capture/emit/画线持久面/标记数据
+// 全走真实价）；镜像基准 P₀ 首次启用时惰性解析，之后冻结至组件卸载（补历史不重算，防整体跳变）。
+let mirrorBasisP0: number | null = null
+/** 镜像态的 P₀；未启用或数据未就绪返回 null（一切保持真实价路径） */
+function activeMirrorBasis(): number | null {
+  if (!props.priceMirror || !loadedData.length) return null
+  if (mirrorBasisP0 === null) mirrorBasisP0 = loadedData[0]!.close
+  return mirrorBasisP0
+}
+/** chart feed 前的最后一跳：镜像态喂显示序列（镜像 K 线），否则喂真实序列本体 */
+function chartFeedData(): KLineData[] {
+  const basis = activeMirrorBasis()
+  return basis === null ? loadedData : mirrorBars(loadedData, basis)
+}
+/** 渲染锚定：真实价 → 镜像显示域（B/S 标记/成本线/阶段价线/挂单标记像素锚定共用） */
+function displayValue(price: number): number {
+  const basis = activeMirrorBasis()
+  return basis === null ? price : mirrorPrice(price, basis)
+}
 const drawingHistory = new DrawingHistory()
 // 画线数值所属的前复权基准（DRAW-02）：恢复时按各画线存储基准投影/采用当前基准；
 // 喂新K线基准变化时，先按旧基准捕获画线，喂完统一投影到新基准。null＝基准未知（prop 未
@@ -202,13 +226,15 @@ watch(() => [props.hideDates, props.dateShiftDays] as const, ([hidden, shiftDays
   applyDateFormatter()
 })
 function hideHoverCard(): void { cancelHoverTimer(); hoverCard.value = null }
-// 卡数据源＝chart.getDataList()（训练与只读回放同一路径：回放按回放数据序列计算），
+// 卡数据源＝组件真实序列 loadedData（训练与只读回放同一路径：回放按回放数据序列计算），
 // 计算不受只读门控（只读回放十字线照常可用，卡与十字线同一可用性）。
+// INVERT-MARKS-REAL-INFO：镜像态库内是镜像显示序列，卡必须从真实序列取数——交易决策信息
+// （开高低收/涨幅）不撒谎；loadedData 与库内 dataList 按索引一一对应（时间戳域镜像不变）。
 // RF2-02：日期行先过呈现层（遮蔽期星号、揭示期常量差换算）再进卡，与轴同口径联动。
 function buildHoverModel(dataIndex: number): HoverCardModel | null {
   if (!chart) return null
-  const list = chart.getDataList() as Array<KLineData & { date?: string }>
-  const bar = list[dataIndex]
+  const list = loadedData as Array<KLineData & { date?: string }>
+  const bar = (loadedData as Array<KLineData & { date?: string }>)[dataIndex]
   if (!bar) return null
   return formatHoverCard(
     { ...bar, date: typeof bar.date === 'string' ? (datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date, datePresentation.shiftDays)) : bar.date },
@@ -332,7 +358,15 @@ function applySubchartPanes(): void {
   }
 }
 function drawings(): Drawing[] {
-  return chart ? serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined, props.timeframe) : []
+  return drawingsAt(activeMirrorBasis())
+}
+/** 按给定显示域序列化读回（真实价）：basis=null＝图上即真实域（镜像关闭态） */
+function drawingsAt(basis: number | null): Drawing[] {
+  if (!chart) return []
+  const serialized = serializeDrawings(chart.getOverlays().filter(overlay => !(textPanel.value?.isNew && textPanel.value.id === overlay.id)), paneName, renderedBasis ?? undefined, props.timeframe)
+  // INVERT-DRAWING-FOLLOW：镜像态图上锚点是镜像显示值，序列化读回（存储/持久面/撤销史/上报）
+  // 一律反镜像回真实价——显示层变换不改写持久面（与 restoreDrawings 的 mirrorDrawings 对称）
+  return basis === null ? serialized : unmirrorDrawings(serialized, basis)
 }
 function notifyHistory(): void { emit('historyChange', { undo: drawingHistory.canUndo, redo: drawingHistory.canRedo }) }
 function recordDrawings(): void {
@@ -373,6 +407,9 @@ function restoreDrawings(items: Drawing[], resetHistory = false): void {
   // 撤销/重做恢复的历史快照各带自身基准，同路径投影回当前基准。
   if (!renderedBasis) renderedBasis = currentDrawingPriceBasis()
   if (renderedBasis) items = adoptDrawings(items, renderedBasis)
+  // INVERT-DRAWING-FOLLOW：入参恒真实价（存储/撤销史/切换快照），镜像态喂库前整体镜像到显示域
+  const mirrorTo = activeMirrorBasis()
+  if (mirrorTo !== null) items = mirrorDrawings(items, mirrorTo)
   deselectLibrarySelected()
   closePanels()
   cancelDrawing()
@@ -450,7 +487,9 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
     if (older.length) { loadedData = [...older, ...loadedData]; rebuildBarTimestamps() }
     result.hasMore = result.hasMore && older.length > 0
     hasMoreForward = result.hasMore
-    callback(older, { forward: result.hasMore })
+    // 前插喂库同样走镜像最后一跳（loadedData 事实源保持真实价）
+    const basis = activeMirrorBasis()
+    callback(basis === null ? older : mirrorBars(older, basis), { forward: result.hasMore })
     scheduleChartCapture()
     succeeded = true
     maHistoryError.value = ''
@@ -498,7 +537,7 @@ function feedData(): void {
       if (type === 'update') return
       // 10.0.3 在 callback 内同步应用初始数据：回放恢复排到一帧之后（等本次 feed 的默认视窗与
       // 布局落定，挂载时不被 resetView 覆盖），恢复完成后再调度首次捕获
-      callback(loadedData, { forward: hasMoreForward, backward: false })
+      callback(chartFeedData(), { forward: hasMoreForward, backward: false })
       scheduleReplayRestore()
       scheduleChartCapture()
       queueMicrotask(ensureMaHistory)
@@ -532,10 +571,12 @@ function allPeriodDrawings(): Drawing[] {
 }
 function captureState(): ChartCapture {
   if (!chart) throw new Error('K线图未初始化，无法生成图表捕获')
-  const data = chart.getDataList() as Array<CaptureSourceBar>
+  // INVERT-CAPTURE-ISOLATION：捕获唯一源＝组件内真实序列 loadedData（含补历史，不限可见窗口）。
+  // 镜像开启时库内喂入的是镜像显示序列，这里绝不能改读库内数据列表（M2-DRAWING-01
+  // 「周期过滤渗入 capture」同构事故：显示层变换不得渗入持久面）。时间戳域镜像不变，视窗锚点等价。
   const range = chart.getVisibleRange()
-  const view = captureView({ fromIndex: range.from, toIndex: range.to, data, barSpace: chart.getBarSpace().bar, paneHeights: semanticPaneHeights() })
-  return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(data), drawings: allPeriodDrawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
+  const view = captureView({ fromIndex: range.from, toIndex: range.to, data: loadedData, barSpace: chart.getBarSpace().bar, paneHeights: semanticPaneHeights() })
+  return buildChartCapture({ timeframe: props.timeframe, bars: toCaptureBars(loadedData), drawings: allPeriodDrawings(), view, costPrice: props.chartCostPrice ?? props.costPrice })
 }
 /** 重挂前视窗捕获（REPLAY-VIEWPORT-01）：内容锚点与 captureState().view 同构，另带瞬态
  *  右侧空隔（diff≥0 走 getOffsetRightDistance 精确值，历史位回落 realTo 反解）。
@@ -591,7 +632,7 @@ function scheduleViewportOperation(): void {
     const barSpace = chart.getBarSpace().bar
     if (!Number.isFinite(barSpace) || barSpace <= 0) return
     const range = chart.getVisibleRange()
-    const view = captureView({ fromIndex: range.from, toIndex: range.to, data: chart.getDataList(), barSpace, paneHeights: semanticPaneHeights() })
+    const view = captureView({ fromIndex: range.from, toIndex: range.to, data: loadedData, barSpace, paneHeights: semanticPaneHeights() })
     emitOperation('chart.viewport', { fromTimestamp: view.fromTimestamp, toTimestamp: view.toTimestamp, barSpace: view.barSpace, paneHeights: view.paneHeights })
   }, VIEWPORT_CAPTURE_THROTTLE_MS)
 }
@@ -665,7 +706,9 @@ function configurePhasePriceRange(): void {
   if (!chart) return
   // 正常纵轴在最新视窗纳入阶段执行价；浏览历史、手动纵轴缩放及副图保持原有范围规则。
   // overrideYAxis 会重设自动范围标志，故只在挂载时注册一次，不随主题/订单刷新调用。
-  chart.overrideYAxis({ paneId: 'candle_pane', createRange: ({ defaultRange, chart: source }) => includePhasePriceRange(defaultRange, source.getVisibleRange().to >= source.getDataList().length ? props.currentPrice : null) })
+  // CHART-INVERT-01：defaultRange 来自镜像显示序列时，纳入范围的价格须同经 displayValue
+  // 变换到显示域，否则真实阶段价会把镜像纵轴拉到完全错位的范围。
+  chart.overrideYAxis({ paneId: 'candle_pane', createRange: ({ defaultRange, chart: source }) => includePhasePriceRange(defaultRange, source.getVisibleRange().to >= source.getDataList().length && hasPhasePrice(props.currentPrice) ? displayValue(props.currentPrice) : null) })
 }
 
 function currentPriceColor(): string {
@@ -682,14 +725,14 @@ function refreshMarks(): void {
   if (!chart) return
   chart.removeOverlay({ name: 'bsMark' }); chart.removeOverlay({ name: 'costLine' }); chart.removeOverlay({ name: 'phasePriceLine' }); chart.removeOverlay({ name: 'orderTriggerMark' })
   orderTooltip.value = null
-  for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', points: [{ timestamp: tradeTimestamp(trade.date), value: trade.chartPrice ?? trade.price }], extendData: { side: trade.side, shares: trade.shares, price: trade.chartPrice ?? trade.price } })
+  for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', points: [{ timestamp: tradeTimestamp(trade.date), value: displayValue(trade.chartPrice ?? trade.price) }], extendData: { side: trade.side, shares: trade.shares, price: trade.chartPrice ?? trade.price } })
   const cost = props.chartCostPrice ?? props.costPrice
-  if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: cost }], extendData: cost })
+  if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: displayValue(cost) }], extendData: cost })
   if (hasPhasePrice(props.currentPrice)) {
-    chart.createOverlay({ name: 'phasePriceLine', points: [{ value: props.currentPrice }], extendData: { price: props.currentPrice, color: currentPriceColor() }, lock: true })
+    chart.createOverlay({ name: 'phasePriceLine', points: [{ value: displayValue(props.currentPrice) }], extendData: { price: props.currentPrice, color: currentPriceColor() }, lock: true })
   }
   for (const order of props.orders.filter(order => order.status === 'pending')) {
-    chart.createOverlay({ name: 'orderTriggerMark', points: [{ value: order.triggerPrice }], extendData: { side: order.side, orderType: order.orderType, triggerPrice: order.triggerPrice, shares: order.shares, status: order.status } })
+    chart.createOverlay({ name: 'orderTriggerMark', points: [{ value: displayValue(order.triggerPrice) }], extendData: { side: order.side, orderType: order.orderType, triggerPrice: order.triggerPrice, shares: order.shares, status: order.status } })
   }
   applyLastPriceStyle()
   updateMarkerRail()
@@ -707,7 +750,7 @@ function hitPendingOrders(clientX: number, clientY: number): OrderView[] {
   if (clientX < markerX - 86 || clientX > markerX + 12) return []
   const hits: Array<{ order: OrderView; distance: number }> = []
   for (const order of pending) {
-    const point = chart.convertToPixel({ value: order.triggerPrice }, { paneId: 'candle_pane', absolute: true })
+    const point = chart.convertToPixel({ value: displayValue(order.triggerPrice) }, { paneId: 'candle_pane', absolute: true })
     const y = rect.top + (point.y ?? Number.NaN)
     if (!Number.isFinite(y)) continue
     const distance = Math.abs(clientY - y)
@@ -722,7 +765,7 @@ function showOrderTooltip(orders: OrderView[]): void {
   if (!chart || !host.value || !orders.length) return
   const rect = host.value.getBoundingClientRect()
   const axis = chart.getSize('candle_pane', 'yAxis')
-  const anchor = chart.convertToPixel({ value: orders[0].triggerPrice }, { paneId: 'candle_pane', absolute: true })
+  const anchor = chart.convertToPixel({ value: displayValue(orders[0].triggerPrice) }, { paneId: 'candle_pane', absolute: true })
   const x = clampToHost((axis?.left ?? 0) - 190, 234, rect.width)
   const y = clampToHost((anchor.y ?? 0) - 28, 120, rect.height)
   const text = orders.map(orderTooltipText).join('\n')
@@ -1481,7 +1524,7 @@ function isNearPendingOrder(clientX: number, clientY: number): boolean {
   const rect = host.value?.getBoundingClientRect()
   if (!rect) return false
   const order = props.orders.find(item => item.status === 'pending')!
-  const point = chart.convertToPixel({ value: order.triggerPrice }, { paneId: 'candle_pane', absolute: true })
+  const point = chart.convertToPixel({ value: displayValue(order.triggerPrice) }, { paneId: 'candle_pane', absolute: true })
   const axis = chart.getSize('candle_pane', 'yAxis')
   const x = rect.left + (axis?.left ?? 0) - 7
   const y = rect.top + (point.y ?? Number.NaN)
@@ -1593,7 +1636,14 @@ onMounted(() => {
         }),
       }
     },
-    orderMarkerPoints: () => props.orders.filter(order => order.status === 'pending').map(order => ({ id: order.id, side: order.side, trigger: order.triggerPrice, x: chart?.getSize('candle_pane', 'yAxis')?.left ?? 0, y: chart?.convertToPixel({ value: order.triggerPrice }, { paneId: 'candle_pane', absolute: true }).y ?? null })),
+    orderMarkerPoints: () => props.orders.filter(order => order.status === 'pending').map(order => ({ id: order.id, side: order.side, trigger: order.triggerPrice, x: chart?.getSize('candle_pane', 'yAxis')?.left ?? 0, y: chart?.convertToPixel({ value: displayValue(order.triggerPrice) }, { paneId: 'candle_pane', absolute: true }).y ?? null })),
+    // CHART-INVERT-01 e2e 只读探针（测试专用，不影响生产行为）：
+    // capture＝当前图表捕获（真实价持久面断言）；indicatorResult＝库内指标计算结果（镜像重算断言）；
+    // yAxisTicks＝主图价格轴刻度文本（klinecharts 轴为 canvas，DOM 断言不可用）
+    capture: () => captureState(),
+    indicatorResult: (name: string) => chart?.getIndicators({ name })[0]?.result ?? null,
+    yAxisTicks: () => (chart?.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getTicks?: () => Array<{ text: string }> } | undefined)?.getTicks?.().map(tick => tick.text) ?? null,
+    yAxisRange: () => (chart?.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange?: () => { from: number; to: number } } | undefined)?.getRange?.() ?? null,
   })
 })
 onUnmounted(() => { disposed = true; markerResizeObserver?.disconnect(); window.removeEventListener('pointerup', completePointerAction); window.removeEventListener('pointercancel', onPaneResizeCancel) })
@@ -1619,6 +1669,21 @@ watch(() => props.bars, () => {
   }
 })
 watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.previousClose, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+// CHART-INVERT-01 多空反转开关切换：立即重喂全序列（真实 ⇄ 镜像显示域），既有画线先按
+// **切换前**显示域快照（drawingsAt(wasBasis) 反解到真实价）捕获，重喂后原样恢复
+// （restoreDrawings 按新显示域镜像喂入）。快照为空（无画线）时无需恢复；周期面不重建
+// （fedTimeframe 未变），撤销历史不清；恢复后补一次捕获（数据版本已变）。
+watch(() => props.priceMirror, (_on, wasOn) => {
+  if (!chart || disposed) return
+  const wasBasis = wasOn ? mirrorBasisP0 : null
+  const snapshot = restoredDrawings ? drawingsAt(wasBasis) : null
+  feedData()
+  if (snapshot?.length) {
+    restoreDrawings(snapshot)
+    emit('drawingsChange', drawings())
+  }
+  scheduleChartCapture()
+})
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
 watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
@@ -1642,6 +1707,11 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
       <div class="hover-card-row"><span class="hover-card-label">涨幅</span><span class="hover-card-value" :class="hoverCard.model.pct.cls">{{ hoverCard.model.pct.text }}</span></div>
     </div>
     <div class="select-rect"></div>
+    <!-- CHART-INVERT-01 多空反转水印（防混淆三件套）：纯展示层，不拦截任何指针交互 -->
+    <div v-if="props.priceMirror" class="price-mirror-watermark" aria-hidden="true">
+      <span class="pmw-main">多空反转视角</span>
+      <span class="pmw-note">坐标为镜像值 · 多头分析之镜，非做空信号</span>
+    </div>
     <!-- 多选模式橡皮筋矩形：框选划线批量选中（不缩放 K 线） -->
     <div v-if="multiRect" class="multi-rect" :style="{ left: `${multiRect.left}px`, top: `${multiRect.top}px`, width: `${multiRect.width}px`, height: `${multiRect.height}px` }"></div>
     <!-- 右键菜单/编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七） -->
@@ -1707,6 +1777,10 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 .hover-card-value.pct-down { color: #16a34a; font-weight: 600; }
 .hover-card-value.pct-flat { color: #94a3b8; font-weight: 600; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
+/* CHART-INVERT-01 多空反转水印：图表中部显眼位置，半透明不遮 K 线细节；pointer-events:none 纯展示 */
+.price-mirror-watermark { position: absolute; left: 50%; top: 22%; transform: translate(-50%, -50%) rotate(-12deg); z-index: 4; display: grid; gap: 3px; text-align: center; pointer-events: none; user-select: none; }
+.pmw-main { font-size: 26px; font-weight: 700; letter-spacing: 8px; color: rgba(245, 195, 67, .5); text-shadow: 0 0 10px rgba(0, 0, 0, .4); white-space: nowrap; }
+.pmw-note { font-size: var(--font-size-xs); color: var(--text-secondary); opacity: .8; letter-spacing: 1px; white-space: nowrap; }
 .ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }
 .ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: var(--font-size-sm); color: #334155; border-radius: 4px; }
 .ctx-menu button:hover { background: #eef2f7; }
