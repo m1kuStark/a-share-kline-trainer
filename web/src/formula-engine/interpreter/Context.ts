@@ -2,6 +2,7 @@ import { MarketData } from '../types/MarketData';
 import { DrawingEvent } from '../types/FormulaResult';
 import { FunctionRegistry } from './FunctionRegistry';
 import { CrossPeriodResolver } from '../crossPeriod';
+import { StockContext } from '../marketContext';
 
 /**
  * ExecutionContext manages the state during formula interpretation
@@ -11,8 +12,8 @@ export class ExecutionContext {
   /** Market data arrays for OHLCV */
   private marketData: MarketData[];
 
-  /** User-defined variables */
-  private variables: Map<string, number[]>;
+  /** User-defined variables (M9-03 patch: string values allowed — string-typed context intermediates, e.g. STRCAT chains) */
+  private variables: Map<string, number[] | string>;
 
   /** Output declarations */
   private outputs: Map<string, number[]>;
@@ -25,6 +26,9 @@ export class ExecutionContext {
 
   /** M9-02 patch: injected cross-period reference resolver (optional) */
   private crossPeriodResolver?: CrossPeriodResolver;
+
+  /** M9-03 patch: injected market context of the evaluated stock (optional) */
+  private stockContext?: StockContext;
 
   /**
    * Create a new execution context
@@ -58,6 +62,21 @@ export class ExecutionContext {
    */
   getCrossPeriodResolver(): CrossPeriodResolver | undefined {
     return this.crossPeriodResolver;
+  }
+
+  /**
+   * M9-03 patch: set the market context of the evaluated stock (engine-injected)
+   */
+  setStockContext(context: StockContext | undefined): void {
+    this.stockContext = context;
+  }
+
+  /**
+   * M9-03 patch: get the injected market context (undefined when not injected —
+   * market-context functions then raise human-readable errors)
+   */
+  getStockContext(): StockContext | undefined {
+    return this.stockContext;
   }
 
   /**
@@ -112,18 +131,18 @@ export class ExecutionContext {
   /**
    * Set a variable value
    * @param name - Variable name
-   * @param value - Variable value (array)
+   * @param value - Variable value (array; M9-03 patch: string allowed for text intermediates)
    */
-  setVariable(name: string, value: number[]): void {
+  setVariable(name: string, value: number[] | string): void {
     this.variables.set(name, value);
   }
 
   /**
    * Get a variable value
    * @param name - Variable name
-   * @returns Variable value (array) or undefined if not found
+   * @returns Variable value (array or string) or undefined if not found
    */
-  getVariable(name: string): number[] | undefined {
+  getVariable(name: string): number[] | string | undefined {
     return this.variables.get(name);
   }
 
@@ -180,9 +199,9 @@ export class ExecutionContext {
 
   /**
    * Get all variables
-   * @returns Map of variable names to values
+   * @returns Map of variable names to values (M9-03 patch: string values possible)
    */
-  getVariables(): Map<string, number[]> {
+  getVariables(): Map<string, number[] | string> {
     return this.variables;
   }
 

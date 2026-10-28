@@ -42,9 +42,29 @@
 - 带引号字符串若恰为 `A.B#C` 形状（ASCII 标识符）即视为引用（通达信同款语义）；DRAWTEXT 想显示这类文本属病用例，不保证。
 - 引用求值为无前视（no-lookahead）口径：完整周的值只依赖其前序周；这也使 EMA 族指标在历史周上稳定不重绘，重绘只发生在当周。
 
+## 补丁层清单（M9-03：市场上下文函数族，任务卡 M9-03 语义冻结）
+
+新增 `marketContext.ts`（纯函数层：StockContext 类型＋前缀/品种/日期对齐纯函数，零引擎反向依赖），并最小改动 Interpreter/Context/FormulaEngine/crossPeriod：
+
+| # | 能力 | 语义（冻结） | 改动位置 |
+|---|---|---|---|
+| 11 | StockContext 注入 | `evaluate(formula, bars, { stockContext })` 注入被评估证券上下文（code/name/industry/industryIndexBars/regionName/conceptName/styleName）；未注入而调上下文函数＝人话运行时错误（引擎独立使用可测） | `crossPeriod.ts`（options 增字段）＋`FormulaEngine.ts`（接线）＋`interpreter/Context.ts`（注入） |
+| 12 | `FINANCE(3)` 品种类型 | 按代码前缀派生常数序列：60/00→1 沪深主板（工作区既有口径）；688/689→3 科创板、300/301→2 创业板、4/8/92 前缀→4 北交所（非主板值＝proposed_default，速查表无记载，可经 `<>1` 剔除）；**其余 FINANCE 编号＝显式未实现人话错误，不返回假值**；无法识别前缀同样报错 | `marketContext.ts`（`boardTypeOfCode`）＋`interpreter/Interpreter.ts` |
+| 13 | `NAMELIKE(s)`/`CODELIKE(s)` | 名称/代码**前缀**匹配布尔常数序列（通达信口径）；参数须字符串字面量；`NOT(NAMELIKE('ST'))` 组合可用（放量解放公式口径） | `marketContext.ts`（`prefixMatchSeries`）＋`interpreter/Interpreter.ts` |
+| 14 | `HYBLOCK` 行业名 | 返回所属行业名字符串常数（`industry.name`）；无行业数据＝人话错误。同族 `DYBLOCK`/`GNBLOCK`/`FGBLOCK`（地域/概念/风格，取上下文可选字段，缺失＝人话错误）——六龙连山-3 语料依赖 | `marketContext.ts`（`marketBlockName`）＋`interpreter/Interpreter.ts` |
+| 15 | `HY_INDEXC/O/H/L/V/A` | 行业指数收/开/高/低/量/额序列，**按股票日线日历日对齐**（本地日历日键，与跨周期周/月分组同约定）：指数缺该日→NaN（比较为假不崩溃，与 warmup NaN 同语义）；股票轴外的指数日被忽略；**对齐错位＝缺陷**（变异必杀）；未注入 industryIndexBars＝人话错误 | `marketContext.ts`（`alignIndexField`/`localDateKey`）＋`interpreter/Interpreter.ts` |
+| 16 | 裸标识符形态 | `CCC:=HY_INDEXC;`、`STRCAT('行业',HYBLOCK)` 等无括号用法＝Identifier 兜底解析（用户变量优先，规则同 M9-02 裸 MACD 线） | `interpreter/Interpreter.ts`（visitIdentifier） |
+| 17 | 字符串变量中间态 | `Z10:=STRCAT(' 行业： ',HYBLOCK);` 允许字符串存入变量并在后续 STRCAT/DRAWTEXT 消费（六龙连山-3 形态）；`FormulaResult.variables` 保持纯数值形状（字符串中间态不出现在结果里） | `interpreter/Context.ts`（变量类型放宽）＋`FormulaEngine.ts`（结果收集过滤） |
+
+边界与披露（M9-03 实现口径）：
+- 上下文函数在 `evaluateIncremental` 路径未注入 StockContext：调用＝人话错误（与 M9-02 注册表同边界）。
+- `HY_INDEX` 对齐约定：bars 时间戳的**本地日历日**须等于交易日（服务端 `/api/formulas/context` 产出本地午夜毫秒时间戳，与此约定配套）。
+- `HYBLOCK` 返回字符串（非数值序列）：输出行 `X:HYBLOCK;`（数值输出位）会报 must be numeric——字符串仅作为 STRCAT/DRAWTEXT 文本路径的中间态，通达信同款用法。
+- 上下文函数未注册进 FunctionRegistry（其 execute 签名无法承载字符串/上下文），分发在 Interpreter switch＋Identifier 兜底，与 marketData 函数族（OPEN/CLOSE…）同模式。
+
 ## 导出面
 
-沿用上游 `index.ts` 结构（FormulaEngine、错误类、AST、核心组件、内置函数全量导出），另导出补丁层 `scanFutureFunctions` / `FUTURE_FUNCTIONS`（M9-01）与 `crossPeriod.ts` 全部类型与纯函数（`resampleBars`/`broadcastReferenceLine`/`aggregateBars`/`FormulaEvaluationOptions` 等，M9-02）。
+沿用上游 `index.ts` 结构（FormulaEngine、错误类、AST、核心组件、内置函数全量导出），另导出补丁层 `scanFutureFunctions` / `FUTURE_FUNCTIONS`（M9-01）、`crossPeriod.ts` 全部类型与纯函数（`resampleBars`/`broadcastReferenceLine`/`aggregateBars`/`FormulaEvaluationOptions` 等，M9-02）与 `marketContext.ts` 全部类型与纯函数（`StockContext`/`boardTypeOfCode`/`alignIndexField`/`prefixMatchSeries` 等，M9-03）。
 
 ## 测试
 

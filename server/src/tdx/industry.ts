@@ -7,6 +7,12 @@ export interface IndustryEntry {
   id: string
   name: string
   codes: string[]
+  /**
+   * 通达信行业根 blockCode（如 T0305）。M9-03 透传字段：tdxzs3.cfg type=2 行的第 6 列，
+   * TDX 本地目录路径下恒有值；显式行业映射文件（industryMapPath）路径下缺省——
+   * 该路径的 id 也不保证是 880 指数代码，公式上下文接口按可核验性降级。
+   */
+  blockCode?: string
 }
 
 export interface IndustryCatalog {
@@ -93,7 +99,8 @@ async function loadTdxIndustryCatalog(tdxRoot: string): Promise<IndustryCatalogR
         ? blockCode.startsWith(entry.blockCode)
         : blockCode === entry.blockCode)) codes.push(code)
     }
-    return { id: entry.id, name: entry.name, codes: codes.sort() }
+    // M9-03: blockCode 透传（TDX 本地目录两路径都有；供公式上下文接口映射行业指数）
+    return { id: entry.id, name: entry.name, codes: codes.sort(), blockCode: entry.blockCode }
   })
   const sha256 = createHash('sha256').update(directoryBytes).update(Buffer.from([0])).update(membershipBytes).digest('hex')
   return {

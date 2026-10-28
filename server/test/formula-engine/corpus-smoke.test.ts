@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { FormulaEngine, type MarketData } from '../../../web/src/formula-engine/index'
+import { FormulaEngine, type MarketData, type StockContext } from '../../../web/src/formula-engine/index'
 
 // M9-01 语料回放冒烟（FE-CORPUS-SMOKE）。
 // 语料＝侦察冻结快照 ai-harness-lab/formula-recon/corpus-*.txt（23 块）＋两个实盘单行版（只读引用）。
@@ -162,6 +162,95 @@ describe('M9-01 corpus smoke replay', () => {
     // 跨周期新通过块（裸重放，无前奏）
     expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-骑牛买2_生命线诅咒线选股公式-1.txt'), 'utf8'), bars)).not.toThrow()
     expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-骑牛买3_过左峰选股公式-5.txt'), 'utf8'), bars)).not.toThrow()
+  })
+
+  // ---------- M9-03（MC-CORPUS-LIFT）：市场上下文函数后的执行提升 ----------
+  // 口径披露：合成 StockContext 注入（600519/贵州茅台/酿酒行业＋按同款生成器另造的
+  // 行业指数日线），六龙连山-3（HYBLOCK/DYBLOCK/GNBLOCK/FGBLOCK＋字符串链）与
+  // 六龙连山-7（HY_INDEXC/O/L/H）两块由缺功能失败转为通过 → 执行 14→16/23。
+  // INDEC（六龙连山-6）重分类（M9-03 核实）：INDEC/板块 系六龙连山-5 定义的跨块
+  // 用户变量（INDEC:=IF(中小企业=1,"399005$C",…)），非函数——语料抽取伪影，豁免，
+  // 不计入 M9-03 失败；其定义块（-5 的 "399005$O" 直接指数引用形态）不在 M9-03 范围。
+  // 六龙连山-4（INBLOCK＋"399005$H"）不在 M9-03 冻结函数清单，维持失败。
+  // 额外实盘重放（不计入 /23 分母）：my_xg 放量解放单行版（FINANCE(3)＋NOT NAMELIKE）。
+
+  function syntheticIndexBars(n = 400): MarketData[] {
+    const bars: MarketData[] = []
+    let price = 3000
+    let seed = 20261027
+    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648 }
+    let day = new Date('2025-01-06').getTime()
+    for (let i = 0; i < n; i++) {
+      const drift = (rnd() - 0.5) * 20
+      const open = price
+      const close = Math.max(1000, open + drift)
+      const high = Math.max(open, close) + rnd() * 10
+      const low = Math.min(open, close) - rnd() * 10
+      day += 86400000
+      const dow = new Date(day).getDay()
+      if (dow === 0) day += 86400000
+      if (dow === 6) day += 2 * 86400000
+      bars.push({ open, close, high, low, volume: 1e8 + rnd() * 5e8, amount: 1e10, timestamp: day })
+      price = close
+    }
+    return bars
+  }
+
+  function syntheticStockContext(): StockContext {
+    return {
+      code: '600519',
+      name: '贵州茅台',
+      industry: { name: '酿酒', blockCode: 'T0305', indexCode: 'sh880380' },
+      industryIndexBars: syntheticIndexBars(),
+      regionName: '浙江',
+      conceptName: '白酒',
+      styleName: '百元股',
+    }
+  }
+
+  it('lifts corpus exec passing to at least 16 of 23 with market context injected', () => {
+    if (!guardCorpus()) return
+    const engine = new FormulaEngine()
+    const bars = syntheticBars()
+    const stockContext = syntheticStockContext()
+    const files = readdirSync(CORPUS_DIR).filter(f => f.startsWith('corpus-') && f.endsWith('.txt')).sort()
+    expect(files).toHaveLength(23)
+    const composed = new Map(composedFenjindingxueSources().map(x => [x.label, x.source]))
+    const failed: string[] = []
+    let execOk = 0
+    for (const f of files) {
+      const source = composed.get(f) ?? readFileSync(join(CORPUS_DIR, f), 'utf8')
+      try {
+        engine.evaluate(source, bars, { stockContext })
+        execOk++
+      } catch (e) {
+        failed.push(`${f} :: ${String((e as Error).message).slice(0, 70)}`)
+      }
+    }
+    // 矩阵口径 MC-CORPUS-LIFT：≥16/23（M9-02 组装 14 零损失＋六龙连山-3/-7 上下文函数新通过）
+    expect(execOk, `执行失败明细：\n${failed.join('\n')}`).toBeGreaterThanOrEqual(16)
+    // 基线零损失：M9-02 组装口径的 14 块（9 基线＋骑牛买2-1/骑牛买3-5＋分金定穴-1/2/3 重组）
+    for (const f of [...BASELINE_EXEC_OK, 'corpus-六龙连山-1.txt', 'corpus-骑牛买2_生命线诅咒线选股公式-1.txt', 'corpus-骑牛买3_过左峰选股公式-5.txt']) {
+      expect(() => engine.evaluate(composed.get(f) ?? readFileSync(join(CORPUS_DIR, f), 'utf8'), bars, { stockContext }), `基线零损失：${f}`).not.toThrow()
+    }
+    // M9-03 新通过块：六龙连山-3（板块名字符串族）与 -7（行业指数序列族）
+    expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-六龙连山-3.txt'), 'utf8'), bars, { stockContext }), '六龙连山-3 应通过（HYBLOCK/DYBLOCK/GNBLOCK/FGBLOCK）').not.toThrow()
+    expect(() => engine.evaluate(readFileSync(join(CORPUS_DIR, 'corpus-六龙连山-7.txt'), 'utf8'), bars, { stockContext }), '六龙连山-7 应通过（HY_INDEXC/O/L/H）').not.toThrow()
+  })
+
+  it('replays fangliang single line formula with market context passing board gate', () => {
+    if (!guardCorpus()) return
+    const file = join(TDX_FORMULA_DIR, 'my_xg', '放量解放选股_单行粘贴版.txt')
+    if (!existsSync(file)) {
+      console.warn(`[corpus-smoke] 放量解放单行版缺失，跳过该文件：${file}`)
+      return
+    }
+    const engine = new FormulaEngine()
+    const bars = syntheticBars()
+    const source = readFileSync(file, 'utf8')
+    const result = engine.evaluate(source, bars, { stockContext: syntheticStockContext() })
+    // 600519 主板非 ST：板块闸门 BD 恒 1（FINANCE(3)=1 AND NOT NAMELIKE ST AND NOT NAMELIKE *ST）
+    expect(result.variables['BD']).toEqual(Array(bars.length).fill(1))
   })
 
   it('replays qiniu1 strict and loose full formulas with cross period references', () => {

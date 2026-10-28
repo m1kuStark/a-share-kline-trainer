@@ -73,3 +73,19 @@ export {
   broadcastReferenceLine,
   createDefaultBuiltinIndicatorProvider,
 } from './crossPeriod';
+
+// M9-03 patch layer: market-context functions (FINANCE(3)/NAMELIKE/CODELIKE/HYBLOCK/HY_INDEX family)
+export {
+  StockContext,
+  StockIndustryContext,
+  BOARD_TYPE,
+  MARKET_CONTEXT_BARE_FUNCTIONS,
+  boardTypeOfCode,
+  prefixMatchSeries,
+  constantSeries,
+  localDateKey,
+  alignIndexField,
+  marketBlockName,
+  requireIndexBars,
+  evaluateBareMarketContext,
+} from './marketContext';

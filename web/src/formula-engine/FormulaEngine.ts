@@ -85,6 +85,9 @@ export class FormulaEngine {
       this.createCrossPeriodResolver(options, referenceState),
     );
 
+    // M9-03 patch: wire the market context of the evaluated stock (provider-style injection)
+    context.setStockContext(options?.stockContext);
+
     // Create interpreter and execute
     const interpreter = new Interpreter(context);
     interpreter.visitProgram(ast);
@@ -105,10 +108,14 @@ export class FormulaEngine {
     }
 
     // Convert variables Map to Record
+    // M9-03 patch: string-valued intermediates (STRCAT chains over HYBLOCK etc.)
+    // stay context-internal; FormulaResult.variables keeps its numeric shape.
     const variables: Record<string, number[]> = {};
     const variablesMap = context.getVariables();
     for (const [name, value] of variablesMap) {
-      variables[name] = value;
+      if (typeof value !== 'string') {
+        variables[name] = value;
+      }
     }
 
     return {
@@ -203,10 +210,13 @@ export class FormulaEngine {
     }
 
     // Convert variables Map to Record
+    // M9-03 patch: string-valued intermediates stay context-internal (numeric shape preserved)
     const variables: Record<string, number[]> = {};
     const variablesMap = context.getVariables();
     for (const [name, value] of variablesMap) {
-      variables[name] = value;
+      if (typeof value !== 'string') {
+        variables[name] = value;
+      }
     }
 
     return {

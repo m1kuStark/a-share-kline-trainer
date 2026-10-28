@@ -37,6 +37,17 @@ import {
   broadcastReferenceLine,
   createDefaultBuiltinIndicatorProvider,
 } from '../crossPeriod';
+import {
+  MARKET_CONTEXT_BARE_FUNCTIONS,
+  StockContext,
+  alignIndexField,
+  boardTypeOfCode,
+  constantSeries,
+  evaluateBareMarketContext,
+  marketBlockName,
+  prefixMatchSeries,
+  requireIndexBars,
+} from '../marketContext';
 
 type DrawingEventList = DrawingEvent[] & { __formulaDrawingEvents: true };
 type EvaluatedValue = number[] | string | DrawingEventList;
@@ -119,6 +130,11 @@ export class Interpreter {
         this.applyStatementStyle(value, node.style);
       }
       this.context.addDrawings(value);
+      return;
+    }
+    // M9-03 patch: string intermediates (STRCAT chains over HYBLOCK etc.) storable in variables
+    if (typeof value === 'string') {
+      this.context.setVariable(node.name, value);
       return;
     }
     this.context.setVariable(node.name, this.expectNumberArray(value, node.name));
@@ -1186,9 +1202,85 @@ export class Interpreter {
         }
         return this.buildFullRangeDrawings(functionName, args, ['high', 'open', 'low', 'close']);
 
+      // ---------- M9-03 patch: market-context function family ----------
+      case 'FINANCE':
+        {
+        const values = numericArgs();
+        if (args.length !== 1) {
+          throw new Error(`FINANCE expects 1 argument, got ${args.length}`);
+        }
+        const financeArg = this.getConstantValue(values[0]);
+        if (financeArg !== 3) {
+          throw new Error(
+            `FINANCE(N) 仅实现 N=3（品种类型，按证券代码前缀派生），收到 N=${financeArg}——其余编号显式未实现，不返回假值`,
+          );
+        }
+        return constantSeries(this.context.getDataLength(), boardTypeOfCode(this.requireStockContext().code));
+        }
+
+      case 'NAMELIKE':
+      case 'CODELIKE':
+        {
+        if (args.length !== 1) {
+          throw new Error(`${functionName} expects 1 argument, got ${args.length}`);
+        }
+        if (typeof args[0] !== 'string') {
+          throw new Error(`${functionName} 参数须为字符串字面量（前缀），如 ${functionName}('ST')`);
+        }
+        const likeCtx = this.requireStockContext();
+        const likeSubject = functionName === 'NAMELIKE' ? likeCtx.name : likeCtx.code;
+        return prefixMatchSeries(this.context.getDataLength(), likeSubject, args[0]);
+        }
+
+      case 'HYBLOCK':
+      case 'DYBLOCK':
+      case 'GNBLOCK':
+      case 'FGBLOCK':
+        {
+        if (args.length !== 0) {
+          throw new Error(`${functionName} expects 0 arguments, got ${args.length}`);
+        }
+        return marketBlockName(functionName, this.requireStockContext());
+        }
+
+      case 'HY_INDEXC':
+      case 'HY_INDEXO':
+      case 'HY_INDEXH':
+      case 'HY_INDEXL':
+      case 'HY_INDEXV':
+      case 'HY_INDEXA':
+        {
+        if (args.length !== 0) {
+          throw new Error(`${functionName} expects 0 arguments, got ${args.length}`);
+        }
+        const indexCtx = this.requireStockContext();
+        const indexBars = requireIndexBars(functionName, indexCtx);
+        const indexField =
+          functionName === 'HY_INDEXC' ? 'close'
+          : functionName === 'HY_INDEXO' ? 'open'
+          : functionName === 'HY_INDEXH' ? 'high'
+          : functionName === 'HY_INDEXL' ? 'low'
+          : functionName === 'HY_INDEXV' ? 'volume'
+          : 'amount';
+        return alignIndexField(this.context.getMarketData(), indexBars, indexField);
+        }
+
       default:
         throw new Error(`Unknown function: ${node.name}`);
     }
+  }
+
+  /**
+   * M9-03 patch: the injected market context, or a human-readable error when absent.
+   */
+  private requireStockContext(): StockContext {
+    const stockContext = this.context.getStockContext();
+    if (!stockContext) {
+      throw new Error(
+        `市场上下文函数需要 StockContext：请在 evaluate 的 options.stockContext 注入被评估证券的上下文（code/name/industry/industryIndexBars）`,
+      );
+    }
+    return stockContext;
   }
 
   /**
@@ -1446,7 +1538,7 @@ export class Interpreter {
    * @param node - Identifier node
    * @returns Evaluated value as number array
    */
-  visitIdentifier(node: Identifier): number[] {
+  visitIdentifier(node: Identifier): EvaluatedValue {
     const name = node.name;
     const upperName = name.toUpperCase();
 
@@ -1523,6 +1615,17 @@ export class Interpreter {
         throw new Error(`Variable ${name} is undefined`);
       }
       return value;
+    }
+
+    // M9-03 patch: market-context block/index functions used without parentheses
+    // (e.g. `CCC:=HY_INDEXC;`), resolved AFTER user variables — a formula-local
+    // definition takes precedence, same rule as the M9-02 bare builtin lines.
+    if ((MARKET_CONTEXT_BARE_FUNCTIONS as readonly string[]).includes(upperName)) {
+      const stockContext = this.requireStockContext();
+      const bareValue = evaluateBareMarketContext(upperName, stockContext, this.context.getMarketData());
+      if (bareValue !== undefined) {
+        return bareValue;
+      }
     }
 
     // M9-02 patch: bare builtin indicator identifiers (current period, TDX

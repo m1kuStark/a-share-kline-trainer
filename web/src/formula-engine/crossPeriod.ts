@@ -19,6 +19,7 @@
  */
 import { MarketData } from './types/MarketData';
 import { MACD_DIF, MACD_DEA, MACD_MACD } from './interpreter/functions/indicators';
+import type { StockContext } from './marketContext';
 
 /** Supported period suffixes of `#PERIOD` references. */
 export type PeriodSuffix = 'DAY' | 'WEEK' | 'MONTH';
@@ -57,6 +58,8 @@ export interface FormulaEvaluationOptions {
   auxiliaryFormulas?: AuxiliaryFormulaRegistry | Record<string, string>;
   /** Builtin indicator provider; defaults to the system TDX-convention table (MACD family). */
   builtinIndicators?: BuiltinIndicatorProvider;
+  /** M9-03 patch: market context of the evaluated stock (FINANCE/NAMELIKE/CODELIKE/HYBLOCK/HY_INDEX family). */
+  stockContext?: StockContext;
 }
 
 /** Resolver injected by FormulaEngine for cross-period / cross-formula references (M9-02). */

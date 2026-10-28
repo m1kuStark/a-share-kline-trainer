@@ -3,7 +3,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { randomUUID } from 'node:crypto'
 import { access, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { readDayFileRange, readLastDayDate, isDayDate } from './tdx/dayfile.js'
+import { readDayFileRange, readLastDayDate, isDayDate, type DayBar } from './tdx/dayfile.js'
 import { aggregateBars, type Timeframe } from './tdx/kline.js'
 import type { AppConfig } from './config.js'
 import { refreshStockCatalog } from './tdx/catalog.js'
@@ -34,6 +34,8 @@ import { drawingPriceBasis } from './train/drawing-price-basis.js'
 import { assertNoActiveTraining, historyList, historyReport, parseHistoryListQuery } from './train/history-report.js'
 import { deleteSettledTrainings, parseHistoryDeleteIds } from './train/history-delete.js'
 import { industryRankingsPayload, parseRankingsQuery, rangeRankingsPayload, rankingsPayload, stockRankingsPayload } from './train/rankings.js'
+// M9-03 公式市场上下文：行业目录解析（industry.ts 既有）＋880 板块指数日线
+import { industryByCode, loadIndustryCatalog } from './tdx/industry.js'
 import { equityComparison } from './train/equity-comparison.js'
 import { readTradeNote, writeTradeNote } from './train/trade-notes.js'
 import { validateSetupRequest } from './setup/control-guard.js'
@@ -975,6 +977,84 @@ export async function registerApi(
     const query = request.query as { market?: string; q?: string }
     const items = searchStockIndex(searchIndexFor(stocks), query.q ?? '', query.market)
     return { items: items.slice(0, 100), total: items.length }
+  })
+
+  // M9-03 公式市场上下文：GET /api/formulas/context?code=600519
+  // 返回被评估证券的 StockContext 载荷（名称/行业归属/行业指数日线 bars）。
+  // 降级契约（root 预判定）：行业文件缺失→industry/bars null＋人话 reason，不 500；
+  // blockCode→880 映射规则＝industry.ts TDX 目录路径下 IndustryEntry.id 即 880xxx
+  // 指数代码（实测 tdxzs3.cfg type=2 行 parts[1]），匹配 ^880\d{3}$ → 'sh'+id。
+  // 指数日线时间戳＝本地午夜毫秒（引擎按本地日历日对齐，与跨周期分组同约定）。
+  app.get('/api/formulas/context', async (request, reply) => {
+    if (!config.tdxRoot) return reply.code(503).send({ error: 'TDX directory not found' })
+    const query = request.query as { code?: string }
+    if (!query.code) {
+      return reply.code(400).send({ error: 'code 参数必填（6 位代码或带 sh/sz/bj 前缀）' })
+    }
+    let parsed
+    try {
+      parsed = parseTdxSymbol(query.code)
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : 'Invalid symbol' })
+    }
+    // 名称取目录扫描（无名称文件时回退为代码本身——披露口径，不静默伪造名称）
+    const stocks = await getStocks()
+    const stock = stocks.find(item => item.code === parsed.code)
+    const name = stock?.name ?? parsed.code
+    const catalog = await loadIndustryCatalog(config)
+    if (!catalog.ok) {
+      return { code: parsed.code, name, industry: null, industryIndexBars: null, reason: catalog.reason }
+    }
+    const entry = industryByCode(catalog.catalog).get(parsed.code)
+    if (!entry) {
+      return {
+        code: parsed.code,
+        name,
+        industry: null,
+        industryIndexBars: null,
+        reason: `行业目录中未找到 ${parsed.code} 的行业归属（tdxhy.cfg 无该代码的成员行）`,
+      }
+    }
+    const indexCode = /^880\d{3}$/.test(entry.id) ? `sh${entry.id}` : null
+    if (!indexCode) {
+      return {
+        code: parsed.code,
+        name,
+        industry: { name: entry.name, blockCode: entry.blockCode ?? null, indexCode: null },
+        industryIndexBars: null,
+        reason: `行业 ${entry.name} 的目录 id（${entry.id}）不是 880 指数代码，无法定位行业指数日线`,
+      }
+    }
+    const dayPath = join(config.tdxRoot, 'vipdoc', 'sh', 'lday', `${indexCode}.day`)
+    let daily: DayBar[]
+    try {
+      daily = await readDayFileRange(dayPath)
+    } catch {
+      return {
+        code: parsed.code,
+        name,
+        industry: { name: entry.name, blockCode: entry.blockCode ?? null, indexCode },
+        industryIndexBars: null,
+        reason: `行业指数日线缺失或不可读：vipdoc/sh/lday/${indexCode}.day`,
+      }
+    }
+    return {
+      code: parsed.code,
+      name,
+      industry: { name: entry.name, blockCode: entry.blockCode ?? null, indexCode },
+      industryIndexBars: daily.map(bar => {
+        const [year, month, day] = bar.date.split('-').map(Number)
+        return {
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          volume: bar.volume,
+          amount: bar.amount,
+          timestamp: new Date(year, month - 1, day).getTime(),
+        }
+      }),
+    }
   })
 
   // 原始行情接口：训练进行中关闭，保证前端拿不到任何训练日之后的 K 线（防未来的根）
