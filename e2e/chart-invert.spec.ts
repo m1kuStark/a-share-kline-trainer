@@ -104,21 +104,32 @@ test('toggle mirrors all bars around frozen first close with shape swap and rest
   for (let i = 0; i < real.length; i++) expect(restored[i]!.close).toBeCloseTo(real[i]!.close, 6)
 })
 
-test('watermark and toggle highlight follow the mirror state', async ({ page }) => {
+test('no chart watermark while mirrored and toggle styling matches subchart toggle family', async ({ page }) => {
+  // 用户 2026-10-28 验收整改：主图零水印（图面与正常模式一致）；开关复用副图开关
+  // indicator-toggle 样式（与 KDJ 同色同尺寸，off 态虚线灰），弃用独立橙色高亮
   await openChart(page)
-  const watermark = page.locator('.price-mirror-watermark')
-  await expect(watermark).toHaveCount(0)
-  await expect(toggle(page)).toHaveAttribute('aria-pressed', 'false')
+  const invert = toggle(page)
+  await expect(invert).toHaveAttribute('aria-pressed', 'false')
+  await expect(invert).toHaveClass(/indicator-toggle/)
+  await expect(invert).toHaveClass(/off/)
 
   await enableMirror(page)
-  await expect(watermark).toBeVisible()
-  await expect(watermark).toContainText('多空反转视角')
-  await expect(watermark).toContainText('镜像值')
-  // 水印不拦截指针（纯展示层）
-  expect(await watermark.evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none')
+  // 图面零水印：镜像态下不存在水印元素
+  await expect(page.locator('.price-mirror-watermark')).toHaveCount(0)
+  await expect(invert).not.toHaveClass(/off/)
+  // 颜色与 KDJ 按钮一致：同族 indicator-toggle，激活态计算样式逐项相等
+  const kdj = page.getByRole('button', { name: 'KDJ', exact: true })
+  await expect(kdj).toHaveClass(/indicator-toggle/)
+  if (await kdj.evaluate(el => el.classList.contains('off'))) await kdj.click()
+  await expect(kdj).not.toHaveClass(/off/)
+  const pickStyle = (el: HTMLElement) => ({ border: getComputedStyle(el).borderColor, bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color })
+  expect(await invert.evaluate(pickStyle)).toEqual(await kdj.evaluate(pickStyle))
+  // 训练页开关位于副图开关组内（间距由组内 gap 统一）
+  await expect(page.locator('.indicator-toggles button', { hasText: '多空反转' })).toBeVisible()
 
-  await toggle(page).click()
-  await expect(watermark).toHaveCount(0)
+  await invert.click()
+  await expect(invert).toHaveClass(/off/)
+  await expect(page.locator('.price-mirror-watermark')).toHaveCount(0)
 })
 
 test('indicators recompute on mirrored series with MACD sign flipped and VOL unchanged', async ({ page }) => {
@@ -340,7 +351,8 @@ test('replay page mirrors the recorded series with the same toggle semantics', a
     expect(replayMirrored[i]!.close).toBeCloseTo(mirror(replayReal[i]!.close, basis), 6)
     expect(replayMirrored[i]!.high).toBeCloseTo(mirror(replayReal[i]!.low, basis), 6)
   }
-  await expect(page.locator('.price-mirror-watermark')).toBeVisible()
+  // 2026-10-28 验收整改：主图零水印（图面与正常模式一致），镜像态截图留证
+  await expect(page.locator('.price-mirror-watermark')).toHaveCount(0)
   await page.screenshot({ path: evidencePath('chart-invert-replay-mirrored.png') })
   await toggle(page).click()
   await expect(page.locator('.price-mirror-watermark')).toHaveCount(0)

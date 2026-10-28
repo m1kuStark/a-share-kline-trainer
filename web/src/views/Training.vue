@@ -903,15 +903,16 @@ void load()
         <!-- M6-04 副图指标开关：与周期按钮同区（股票信息行），aria-pressed 语义保留；off＝虚线灰 -->
         <div class="indicator-toggles" role="group" aria-label="副图指标开关">
           <button v-for="item in indicatorToggles" :key="item.name" class="indicator-toggle" :class="{ off: !item.enabled.value }" :aria-pressed="item.enabled.value ? 'true' : 'false'" :title="item.enabled.value ? `${item.label}副图：显示中（点击隐藏）` : `${item.label}副图：已隐藏（点击显示）`" @click="item.toggle(!item.enabled.value)">{{ item.name }}</button>
+          <!-- CHART-INVERT-01 多空反转：并入副图开关组（用户 2026-10-28 验收整改——样式与间距对齐 KDJ、
+               主图零水印）；纯视图开关，默认关不持久化 -->
+          <button
+            class="indicator-toggle"
+            :class="{ off: !priceMirror }"
+            :aria-pressed="priceMirror ? 'true' : 'false'"
+            :title="priceMirror ? '多空反转视角：K 线以首根收盘价为轴上下翻转（坐标为镜像值）。多头分析之镜，不是做空信号。点击恢复真实价格' : '多空反转：以首根收盘价为轴镜像翻转全部 K 线（空头视角检验，指标按镜像序列重算）。纯视图，不影响交易与录像'"
+            @click="priceMirror = !priceMirror"
+          >多空反转</button>
         </div>
-        <!-- CHART-INVERT-01 多空反转（视图层镜像）：开启时开关高亮＋图表水印；纯视图不影响交易/录像/画线存储 -->
-        <button
-          class="price-mirror-toggle"
-          :class="{ on: priceMirror }"
-          :aria-pressed="priceMirror ? 'true' : 'false'"
-          :title="priceMirror ? '多空反转视角：K 线以首根收盘价为轴上下翻转（坐标为镜像值）。多头分析之镜，不是做空信号。点击恢复真实价格' : '多空反转：以首根收盘价为轴镜像翻转全部 K 线（空头视角检验，指标按镜像序列重算）。纯视图，不影响交易与录像'"
-          @click="priceMirror = !priceMirror"
-        >多空反转</button>
         <!-- M6-07：数字滚动动效入口已移入设置面板「动画效果」分栏（顶栏胶囊按钮移除，用户 2026-10-05 拍板） -->
         <details class="training-details" @keydown.esc.prevent.stop="($event.currentTarget as HTMLDetailsElement).open = false">
           <summary title="训练详情" aria-label="训练详情"><Info :size="15" /></summary>
@@ -1181,13 +1182,8 @@ void load()
 </template>
 
 <style scoped>
-/* CHART-INVERT-01 多空反转开关：与副图开关同区同尺寸（周期按钮行近旁）；开启＝橙色高亮（区别于
-   副图开关的青色系），aria-pressed 语义供读屏器识别；深色主题随设计令牌回退 */
-.price-mirror-toggle { border: 1px solid var(--surface-border, #cbd5e1); background: transparent; color: var(--text-secondary, #5c7187); font-size: var(--font-size-2xs); font-weight: 700; letter-spacing: .3px; line-height: 1; height: 20px; padding: 0 8px; border-radius: 10px; cursor: pointer; margin-left: 4px; }
-.price-mirror-toggle:hover { filter: brightness(.97); }
-.price-mirror-toggle.on { border: 1px solid #d97706; background: #fdf3e3; color: #b45309; box-shadow: 0 0 0 1px rgba(217, 119, 6, .35); }
-.price-mirror-toggle:focus-visible { outline: 2px solid #54b8cc; }
-body.dark .price-mirror-toggle.on { border-color: #f59e0b; background: #3a2a12; color: #fbbf24; }
+/* CHART-INVERT-01 多空反转开关已并入副图开关组复用全局 .indicator-toggle（用户 2026-10-28
+   验收整改：与 KDJ 同色同间距）；本页不再持有独立开关样式 */
 /* Keep the account, trade controls and drawing tools visible together at short desktop heights. */
 .trade-panel { padding: 16px; }
 .equity-block { padding: 16px 0; }

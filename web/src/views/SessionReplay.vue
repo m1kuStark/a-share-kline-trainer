@@ -392,11 +392,12 @@ onBeforeUnmount(() => {
               @click="setObservation(timeframe)"
             >{{ PERIOD_NAMES[timeframe] }}</button>
           </div>
-          <!-- CHART-INVERT-01 多空反转：回放页同步适配（默认关，行为与训练页一致） -->
+          <!-- CHART-INVERT-01 多空反转：回放页同步适配（默认关，行为与训练页一致）；
+               2026-10-28 验收整改——复用全局 .indicator-toggle 样式（与训练页副图开关同族），主图零水印 -->
           <button
             type="button"
-            class="price-mirror-toggle"
-            :class="{ on: priceMirror }"
+            class="indicator-toggle"
+            :class="{ off: !priceMirror }"
             :aria-pressed="priceMirror ? 'true' : 'false'"
             :title="priceMirror ? '多空反转视角：K 线以首根收盘价为轴上下翻转（坐标为镜像值）。多头分析之镜，不是做空信号。点击恢复真实价格' : '多空反转：以首根收盘价为轴镜像翻转全部 K 线（空头视角检验，指标按镜像序列重算）。纯视图，不改写录像数据'"
             @click="priceMirror = !priceMirror"
@@ -606,12 +607,8 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 .replay-day { white-space: nowrap; font-variant-numeric: tabular-nums; }
-/* CHART-INVERT-01 多空反转开关（回放页，周期按钮近旁；开启＝橙色高亮，与训练页同款语义） */
-.price-mirror-toggle { flex: 0 0 auto; height: 22px; padding: 0 8px; font-size: var(--font-size-xs); font-weight: 650; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: var(--control-background, #ffffff); color: var(--text-secondary, #38596d); white-space: nowrap; cursor: pointer; }
-.price-mirror-toggle:hover { border-color: #94bec5; color: var(--text-primary, #1c6076); }
-.price-mirror-toggle:focus-visible { outline: 2px solid #54b8cc; }
-.price-mirror-toggle.on { border-color: #d97706; background: #fdf3e3; color: #b45309; box-shadow: 0 0 0 1px rgba(217, 119, 6, .35); }
-body.dark .price-mirror-toggle.on { border-color: #f59e0b; background: #3a2a12; color: #fbbf24; }
+/* CHART-INVERT-01 多空反转开关已改用全局 .indicator-toggle（2026-10-28 验收整改：与训练页
+   副图开关同族样式；行内 flex/gap 由 .replay-status 的 gap 承担） */
 .replay-tabs { display: flex; gap: 2px; flex: 0 0 auto; }
 .replay-tabs button {
   height: 22px;

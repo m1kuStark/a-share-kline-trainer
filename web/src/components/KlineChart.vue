@@ -1707,11 +1707,6 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
       <div class="hover-card-row"><span class="hover-card-label">涨幅</span><span class="hover-card-value" :class="hoverCard.model.pct.cls">{{ hoverCard.model.pct.text }}</span></div>
     </div>
     <div class="select-rect"></div>
-    <!-- CHART-INVERT-01 多空反转水印（防混淆三件套）：纯展示层，不拦截任何指针交互 -->
-    <div v-if="props.priceMirror" class="price-mirror-watermark" aria-hidden="true">
-      <span class="pmw-main">多空反转视角</span>
-      <span class="pmw-note">坐标为镜像值 · 多头分析之镜，非做空信号</span>
-    </div>
     <!-- 多选模式橡皮筋矩形：框选划线批量选中（不缩放 K 线） -->
     <div v-if="multiRect" class="multi-rect" :style="{ left: `${multiRect.left}px`, top: `${multiRect.top}px`, width: `${multiRect.width}px`, height: `${multiRect.height}px` }"></div>
     <!-- 右键菜单/编辑划线面板：锚定图表宿主层内并钳制边界（口径修订七） -->
@@ -1777,10 +1772,7 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 .hover-card-value.pct-down { color: #16a34a; font-weight: 600; }
 .hover-card-value.pct-flat { color: #94a3b8; font-weight: 600; }
 .select-rect { display: none; position: absolute; top: 0; height: 100%; border: 1px solid #2563eb; background: rgba(37,99,235,.08); pointer-events: none; z-index: 5; }
-/* CHART-INVERT-01 多空反转水印：图表中部显眼位置，半透明不遮 K 线细节；pointer-events:none 纯展示 */
-.price-mirror-watermark { position: absolute; left: 50%; top: 22%; transform: translate(-50%, -50%) rotate(-12deg); z-index: 4; display: grid; gap: 3px; text-align: center; pointer-events: none; user-select: none; }
-.pmw-main { font-size: 26px; font-weight: 700; letter-spacing: 8px; color: rgba(245, 195, 67, .5); text-shadow: 0 0 10px rgba(0, 0, 0, .4); white-space: nowrap; }
-.pmw-note { font-size: var(--font-size-xs); color: var(--text-secondary); opacity: .8; letter-spacing: 1px; white-space: nowrap; }
+/* CHART-INVERT-01 水印已按用户 2026-10-28 验收整改移除：镜像态图面与正常模式完全一致 */
 .ctx-menu { position: absolute; z-index: 8; display: grid; min-width: 128px; padding: 4px; background: #fff; border: 1px solid #dfe5eb; border-radius: 6px; box-shadow: 0 4px 16px rgba(15,23,42,.14); }
 .ctx-menu button { border: 0; background: transparent; text-align: left; padding: 7px 10px; font-size: var(--font-size-sm); color: #334155; border-radius: 4px; }
 .ctx-menu button:hover { background: #eef2f7; }

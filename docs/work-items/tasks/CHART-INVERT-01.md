@@ -68,6 +68,10 @@
 - 补历史路径：fetchEarlier（KlineChart.vue:449 附近）前置 older bars——P₀ 冻结语义在此验证。
 - 涨幅百分比悬浮卡（candle-percent-hover 模块）与 hover 卡数据源保持真实值。
 
+## 验收与整改记录
+
+- 2026-10-28 用户验收：**基本通过**＋三项整改（去水印/按钮样式对齐 KDJ/间距规范）——整改已完成（bug-loop RED→GREEN，收据见验证记录「验收反馈整改」节），矩阵行 SUPERSEDED，待用户复验后 closed。
+
 ## 本轮交付
 
 2026-10-26 开发轮（worker 全卡交付，矩阵 9 行 test_ids 回填待 root 复核升 covered）：

@@ -238,9 +238,10 @@ describe('CHART-INVERT-01 KlineChart 集成源码契约（capture 隔离与镜�
     const replay = await readFile(replayPath, 'utf8')
     expect(training).toMatch(/:price-mirror="priceMirror"/)
     expect(replay).toMatch(/:price-mirror="priceMirror"/)
-    // 两页各有带 aria-pressed 的「多空反转」开关按钮（同一按钮内：class→aria-pressed→按钮文本）
+    // 两页各有带 aria-pressed 的「多空反转」开关按钮（同一按钮内：class→aria-pressed→按钮文本；
+    // 2026-10-28 验收整改：复用副图开关 indicator-toggle 类，off 态随镜像状态切换）
     for (const [label, source] of [['Training', training], ['SessionReplay', replay]] as const) {
-      expect(source, `${label} 多空反转开关按钮`).toMatch(/class="price-mirror-toggle"[\s\S]{0,600}aria-pressed[\s\S]{0,600}多空反转<\/button>/)
+      expect(source, `${label} 多空反转开关按钮`).toMatch(/class="indicator-toggle"[\s\S]{0,600}:class="\{ off: !priceMirror \}"[\s\S]{0,600}aria-pressed[\s\S]{0,600}多空反转<\/button>/)
       expect(source).toMatch(/const priceMirror = ref\(false\)/)
     }
     // 不持久化（防混淆优先）：无镜像开关专用 localStorage 键
@@ -248,11 +249,22 @@ describe('CHART-INVERT-01 KlineChart 集成源码契约（capture 隔离与镜�
     expect(replay).not.toMatch(/trainer_price_mirror/)
   })
 
-  it('防混淆水印，开启时显示多空反转视角水印且注明坐标为镜像值', async () => {
+  it('防混淆整改，主图零水印且开关复用副图开关样式与间距', async () => {
+    // 用户 2026-10-28 验收整改（SUPERSEDED 原水印拍板）：「水印太多余，保持和正常模式一样的主图背景；
+    // 按钮颜色应和已有 KDJ 按钮一样，间距排列规范整齐」——主图不渲染任何水印元素，
+    // 开关并入副图开关组复用 indicator-toggle（同色/同尺寸/同 off 态），弃用独立橙色样式。
     const source = await readChart()
-    expect(source).toMatch(/多空反转视角/)
-    expect(source).toMatch(/坐标为镜像值/)
-    // 水印为纯展示层：不拦截指针事件
-    expect(source).toMatch(/price-mirror-watermark[\s\S]{0,400}pointer-events: none/)
+    expect(source).not.toMatch(/price-mirror-watermark/)
+    expect(source).not.toMatch(/多空反转视角/)
+    const training = await readFile(trainingPath, 'utf8')
+    const replay = await readFile(replayPath, 'utf8')
+    for (const view of [training, replay]) {
+      expect(view).toMatch(/indicator-toggle/)
+      expect(view).toMatch(/off: !priceMirror/)
+      expect(view).not.toMatch(/price-mirror-toggle/)
+    }
+    // 训练页开关位于副图开关组内（组内 gap 即间距规范；不另设独立间距样式）
+    const trainingToggles = functionBody(training, 'class="indicator-toggles"', '</div>')
+    expect(trainingToggles).toMatch(/多空反转/)
   })
 })

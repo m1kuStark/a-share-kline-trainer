@@ -64,3 +64,20 @@
 - **越界处置（root 扩卡）**：`server/test/recording-chart-capture.test.ts` 不在原 allowed_paths——它是 capture/feed 函数的源码形状契约（正则锁实现形态），实现变更必须同步契约且方向为收紧（新增 `not.toMatch(/chart\.getDataList\(\)/)` 禁止 capture 读库内数据列表）。root 判定合法并扩卡入册（依据＝该文件是 INVERT-CAPTURE-ISOLATION 行为的契约属主）。
 - **root 自呈失误**：终验首轮漏带 `--include-untracked` 致 18 条 ref 全悬空（假 RED），且 tail -3 截断问题清单险些误判为 3 条转录失真；字节级复核后带旗标重跑 exit 0。「新测试文件必须带旗标」为既有条款，属执行违反非条款缺失。
 - **UI/UX 自审缺口**：worker 未及产出 UI/UX 自审映射表；root 以代码级核对补位——开关 aria-pressed/键盘可达、水印 pointer-events:none＋aria-hidden、复用既有 token 与副图开关同族样式已核实，读屏器/暗色观感列入留用户验收项。
+
+## 验收反馈整改（2026-10-28，用户验收后 root 直修）
+
+用户验收结论：**基本通过**＋三项整改（原话要点）：①水印多余——「保持和非多空反转的正常模式下一样的主图背景」②按钮激活色应与 KDJ 按钮一致③按钮间距排列规范整齐。
+
+处置（bug-loop：先 RED 后修）：
+
+| 步骤 | 收据 |
+|---|---|
+| 矩阵 SUPERSEDED | INVERT-WATERMARK-HIGHLIGHT 行 EARS 重写（零水印＋indicator-toggle 同族高亮）；INVERT-AXIS-MIRROR-VALUE 行说明载体改 title |
+| RED | 新 oracle 契约用例对旧码 exit 1（水印仍在＝正确原因）；连带同步两处旧断言（两页接线类名断言、回放用例水印可见断言） |
+| GREEN | 定向 24/24 exit 0（chart-invert＋recording-chart-capture）；typecheck:web exit 0 |
+| journey | e2e/chart-invert.spec.ts 9/9 exit 0（含新用例 no chart watermark…styles matches subchart toggle family：镜像态零水印＋与 KDJ 激活态计算样式逐项相等＋位于 indicator-toggles 组内） |
+| check-binding | --strict exit 0（SUPERSEDED 后 9 行全解析） |
+| 击杀证明 | RED 轮即击杀收据（旧码含水印时新用例死）；恢复水印＝复现 RED |
+
+改动面：KlineChart.vue（删水印模板＋CSS）、Training.vue（按钮并入副图开关组，复用 indicator-toggle/off 语义，删独立橙色样式）、SessionReplay.vue（同款类复用，删独立样式）、display.md/interaction.md（防混淆口径更新）、两测试文件（oracle 同步）。旧行为（橙色高亮/水印/独立间距）全部移除，无残留样式。
