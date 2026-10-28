@@ -182,3 +182,17 @@
 - RecordingLibrary 星标按钮/目录树/归档/导出入口（COLL-UI-LIBRARY-ENTRY planned 行）＋ recordingRepository 接线（configureRecordingNamespace 构造 storage/service；remove/clear 后调 cleanupRemovedRecordings）
 - e2e recording-collections.spec.ts（含 IndexedDB 封装类首次真浏览器执行）
 - 用户验收
+
+## 复验收敛（2026-10-29，用户三项反馈 root 直修）
+
+用户复验反馈：①⋯ 管理按钮与目录 chip 重叠妨碍点击②胶囊文字太小，按全局排版优化③目录多时不得横向滚动隐藏，一眼看到全部。
+
+| 步骤 | 收据 |
+|---|---|
+| 矩阵 SUPERSEDED | COLL-UI-LIBRARY-ENTRY 行 EARS 更新（多行换行全可见＋⋯ 独立槽位不重叠＋字号＝控件基准 sm） |
+| RED | 新 oracle e2e 对 v2 码 exit 1（.recording-collections-wrap 不存在＝正确原因） |
+| 修复 | ⋯ 改文档流内独立槽位（删 absolute 覆盖；常驻 24px 槽、hover/聚焦显形，chip 宽度布局恒定）；chip/标题/图标 2xs→sm（10→12px，tokens.css 控件基准档），弹层与菜单同步对齐（清单/标题→sm，辅助/输入→xs）；目录条 overflow-x:auto→flex-wrap:wrap（gap 兼行列间距，全部可见） |
+| GREEN | 定向 68/68 exit 0；typecheck exit 0；journey 新 spec 10/10 exit 0（几何断言：⋯.x ≥ chip 右缘，不重叠） |
+| check-binding | --strict exit 0 |
+
+过程中一处测试自纠：隐藏态 boundingBox 量取改为 hover 显形后量（槽位常驻几何不变，重叠检查等价且更贴近真实操作）。

@@ -293,7 +293,7 @@ test('弹层操作失败就地报错且弹层保持可用（目录被外部移�
   await expect(collectionChip(page, '健在目录')).toContainText('(1)')
 })
 
-test('目录条单行横向滚动，chip 溢出菜单承载重命名与删除且内置 chip 无菜单', async ({ page }) => {
+test('目录条多行换行全可见，管理按钮独立槽位不重叠且字号对齐控件基准', async ({ page }) => {
   await cleanActive(page)
   await page.route('**/api/env', async route => {
     const response = await route.fetch()
@@ -305,21 +305,32 @@ test('目录条单行横向滚动，chip 溢出菜单承载重命名与删除且
   await createCollectionAtBar(page, '目录甲')
   await createCollectionAtBar(page, '目录乙')
   await createCollectionAtBar(page, '目录丙')
-  // 单行横向滚动：滚动容器 overflow-x auto，全部 chip 同一水平线（数量增长只产生横向滚动）
-  const scroll = page.locator('.recording-collections-scroll')
-  await expect(scroll).toBeVisible()
-  expect(await scroll.evaluate(el => getComputedStyle(el).overflowX)).toBe('auto')
-  const chipTops = await page.locator('nav[aria-label="收藏目录"] .collection-chip').evaluateAll(
-    els => [...new Set(els.map(el => Math.round(el.getBoundingClientRect().top)))],
-  )
-  expect(chipTops).toHaveLength(1)
-  // 溢出菜单仅用户目录有：全部/★收藏 chip 无 ⋯，浏览态零常驻管理按钮（hover 才浮现）
+  // 换行全可见（用户 2026-10-29 复验拍板：目录多也不许横向滚动隐藏）：
+  // 容器 flex-wrap wrap 且无横向滚动；全部 chip 都在可滚区域外可见
+  const chipsArea = page.locator('.recording-collections-wrap')
+  await expect(chipsArea).toBeVisible()
+  expect(await chipsArea.evaluate(el => getComputedStyle(el).flexWrap)).toBe('wrap')
+  expect(await chipsArea.evaluate(el => getComputedStyle(el).overflowX)).not.toBe('scroll')
+  expect(await chipsArea.evaluate(el => getComputedStyle(el).overflowX)).not.toBe('auto')
+  for (const name of ['全部', '收藏', '目录甲', '目录乙', '目录丙']) {
+    await expect(collectionChip(page, name)).toBeVisible()
+  }
+  // 字号对齐全局控件基准：chip 文字＝--font-size-sm（12px，tokens.css 控件基准档）
+  expect(await collectionChip(page, '目录甲').evaluate(el => getComputedStyle(el).fontSize)).toBe('12px')
+  // ⋯ 管理按钮独立槽位：与 chip 几何不重叠（右边界不越界），仅用户目录有
   await expect(page.locator('nav[aria-label="收藏目录"] .collection-overflow')).toHaveCount(3)
   const wrap = page.locator('.collection-chip-wrap').filter({ hasText: '目录甲' })
   const overflow = wrap.getByRole('button', { name: '管理目录：目录甲' })
+  // 浏览态零常驻观感：hover 才显形（visibility 切换，槽位常驻＝布局恒定）；
+  // 几何在 hover 显形后量取（槽位在文档流内常驻，显隐不改变几何——重叠检查对 hover 前后同样成立）
   await expect(overflow).toBeHidden()
   await wrap.hover()
   await expect(overflow).toBeVisible()
+  const chipBox = await collectionChip(page, '目录甲').boundingBox()
+  const overflowBox = await overflow.boundingBox()
+  expect(chipBox, 'chip 应有几何').not.toBeNull()
+  expect(overflowBox, '⋯ 显形后应有几何').not.toBeNull()
+  expect(overflowBox!.x >= chipBox!.x + chipBox!.width - 0.5, '⋯ 按钮不得与 chip 重叠').toBe(true)
   // 菜单两项：重命名走既有内联表单（预填现名），删除走既有确认对话框（文案不变）
   // （菜单项 role=menuitem——显式角色覆盖隐式 button，按 menuitem 检索）
   await overflow.click()

@@ -415,7 +415,7 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
     <nav class="recording-collections-bar" aria-label="收藏目录">
       <div class="recording-collections-row">
         <span class="recording-collections-title">目录</span>
-        <div class="recording-collections-scroll">
+        <div class="recording-collections-wrap">
           <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === null }" :aria-pressed="selectedCollectionId === null" @click="selectedCollectionId = null">全部 ({{ displayItems.length }})</button>
           <button v-if="favoritesCollection" type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === favoritesCollection.id }" :aria-pressed="selectedCollectionId === favoritesCollection.id" :data-collection-id="favoritesCollection.id" @click="selectedCollectionId = selectedCollectionId === favoritesCollection.id ? null : favoritesCollection.id">
             <Star :size="12" aria-hidden="true" /> {{ favoritesCollection.name }} ({{ memberCount(favoritesCollection.id) }})
@@ -424,9 +424,9 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
             <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === collection.id }" :aria-pressed="selectedCollectionId === collection.id" :data-collection-id="collection.id" @click="selectedCollectionId = selectedCollectionId === collection.id ? null : collection.id">
               {{ collection.name }} ({{ memberCount(collection.id) }})
             </button>
-            <button type="button" class="icon-button collection-overflow" :class="{ 'collection-overflow-open': chipMenu?.collection.id === collection.id }" :aria-label="`管理目录：${collection.name}`" :title="`管理目录：${collection.name}`" :aria-expanded="chipMenu?.collection.id === collection.id" @click="openChipMenu(collection, $event)"><EllipsisVertical :size="13" aria-hidden="true" /></button>
+            <button type="button" class="icon-button collection-overflow" :class="{ 'collection-overflow-open': chipMenu?.collection.id === collection.id }" :aria-label="`管理目录：${collection.name}`" :title="`管理目录：${collection.name}`" :aria-expanded="chipMenu?.collection.id === collection.id" @click="openChipMenu(collection, $event)"><EllipsisVertical :size="14" aria-hidden="true" /></button>
           </span>
-          <button type="button" class="ghost-button collection-create" @click="openCreateForm"><Plus :size="13" aria-hidden="true" />新建目录</button>
+          <button type="button" class="ghost-button collection-create" @click="openCreateForm"><Plus :size="14" aria-hidden="true" />新建目录</button>
         </div>
       </div>
       <form v-if="collectionForm" class="collection-form" @submit.prevent="submitCollectionForm">
@@ -582,15 +582,18 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 /* REC-COLLECT-01 UI v2 目录条：单行横向滚动（目录增长只产生横向滚动，不换行不挤压两列）；
    管理动作收进 chip ⋯ 溢出菜单（opacity/visibility 切换不占布局宽度，hover/键盘聚焦才浮现） */
 .recording-collections-bar { display: grid; gap: 8px; margin: 0 0 18px; }
-.recording-collections-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.recording-collections-title { color: var(--text-secondary, #64748b); font-size: var(--font-size-2xs); flex-shrink: 0; }
-.recording-collections-scroll { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow-x: auto; }
-.recording-collections-scroll > * { flex-shrink: 0; }
-.collection-chip-wrap { position: relative; display: inline-flex; align-items: center; }
-.collection-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; font-size: var(--font-size-2xs); }
+.recording-collections-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+/* 2026-10-29 复验收敛：字号对齐全局控件基准 sm（此前误用角标档 2xs） */
+.recording-collections-title { color: var(--text-secondary, #64748b); font-size: var(--font-size-sm); flex-shrink: 0; line-height: 28px; }
+/* 目录条多行换行全可见（用户复验拍板：目录多也不许横向滚动隐藏；gap 同时承担行列间距） */
+.recording-collections-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.recording-collections-wrap > * { flex-shrink: 0; }
+/* ⋯ 管理按钮独立槽位（复验收敛：此前 absolute 覆盖 chip 右缘妨碍点击）——常驻占位、hover/聚焦显形，chip 宽度与布局恒定 */
+.collection-chip-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.collection-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; font-size: var(--font-size-sm); }
 .collection-chip:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 .collection-chip-active { border-color: var(--focus-ring-color); font-weight: 600; }
-.collection-overflow { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 22px; min-height: 22px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); background: var(--surface-background, #fff); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s ease; z-index: 2; }
+.collection-overflow { min-width: 24px; min-height: 24px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); background: var(--surface-background, #fff); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s ease; }
 .collection-chip-wrap:hover .collection-overflow, .collection-chip-wrap:focus-within .collection-overflow, .collection-overflow-open { opacity: 1; visibility: visible; pointer-events: auto; }
 .collection-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .collection-form input { padding: 5px 8px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: transparent; color: inherit; }

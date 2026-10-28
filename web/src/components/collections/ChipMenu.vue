@@ -21,7 +21,7 @@ const emit = defineEmits<{ close: []; rename: []; remove: [] }>()
 
 <style scoped>
 .chip-menu { display: grid; min-width: 148px; padding: 4px; }
-.chip-menu button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; text-align: left; font-size: var(--font-size-xs, 13px); }
+.chip-menu button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; text-align: left; font-size: var(--font-size-sm, 12px); }
 .chip-menu button:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 .chip-menu-danger { color: #e47777; }
 </style>
