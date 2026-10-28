@@ -73,3 +73,12 @@
 - 文档：web/src/components/docs/recording.md 追加「录像库收藏与自定义目录」用户交互说明。
 - 待用户提验：proposed_default 清单（目录条形态/文案/星标色/目录级导出未做）与读屏器等通道——见验证记录「第二轮」节。
 - 契约文档缺口（root 已补，2026-10-26）：web/src/recording/recording-file.md「录像合并包」节已同步 collections 可选字段（含向后兼容与导入合并口径），随 root docs 提交入账。
+
+第三轮（UI v2 重做·方案 A，2026-10-29）：
+
+- 拍板：用户否决 v1（三条冗余理由：归类清单含收藏＝双写入口；行内展开推挤布局；chip 常驻管理按钮冗余），调研报告（ai-harness-lab/ui-research/collection-ui-redesign-20261028.md）呈报后拍板方案 A＋批量选择模式＋建议默认全采纳（横向滚动/≥8 过滤框/「加入目录」文案/拖拽不做/目录级导出不立项）。
+- 交付：`web/src/components/collections/` 三组件（AnchoredPopover 锚定浮层壳＝Teleport portal＋触发器矩形锚定＋上下翻转＋滚动缩放重定位＋Esc/点外关闭；ArchivePopover「加入目录」弹层＝仅用户目录清单/勾选即生效乐观更新失败回正＋role=alert/≥8 过滤框/空态引导首焦点/新建目录并加入就地报错；ChipMenu 目录 ⋯ 溢出菜单＝重命名/删除）＋RecordingLibrary.vue v2（行内固定四控件行高恒定、目录条单行横向滚动＋chip ⋯ hover/聚焦浮现管理菜单＋条尾＋新建、批量选择模式＝checkbox 常驻槽位 visibility 切换零位移＋列头等高批量栏＋两列独立、frontend-contract 两步 computeds 字面量零破坏）。
+- 语义零回归：星标/按目录过滤/导出含结构/导入合并/删除级联/重命名校验全部保持 v1 行为（e2e 对应场景全绿）。
+- 测试：e2e/recording-collections.spec.ts 重写为 v2 oracle（10 用例：星标往返/固定四控件行高恒定/弹层清单不含收藏＋单浮层/关闭语义焦点返回/弹层内新建并加入/操作失败就地报错（IndexedDB 直删目录记录的自然失败注入）/目录条滚动＋⋯菜单/≥8 过滤框/批量模式全键生效零位移/导出导入合并级联持久）；server/test/recording-collections.test.ts 追加 UI v2 源码契约 3 例（清单不含收藏/批量全键/失败回正）。变异双击杀（弹层误含收藏、批量只 assign 首键，契约＋e2e 双杀手）。
+- 验证记录：docs/verification/2026-10/REC-COLLECT-01/README.md「UI v2」节。
+- 待用户提验：呈现细节 proposed_default（⋯按钮覆盖 chip 右缘形态/弹层宽度/图标/批量栏文案）＋读屏器通道——见验证记录。

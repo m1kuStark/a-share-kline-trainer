@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, Download, FolderPlus, Pencil, Star, Trash2, Upload } from 'lucide-vue-next'
+import { ArrowLeft, ChevronDown, Download, EllipsisVertical, FolderPlus, Plus, Star, Trash2, Upload } from 'lucide-vue-next'
 import { fetchTrainingSnapshot } from '../api'
 import { bulkImportRecordingFiles, exportRecordingBundleFile, isRecordingBundleFile } from '../recording/bundle'
 import {
@@ -22,6 +22,8 @@ import { FAVORITES_COLLECTION_ID } from '../recording/collectionTypes'
 import type { CollectionsManifest, RecordingCollection } from '../recording/collectionTypes'
 import type { CompactRecordingFile } from '../recording/compactTypes'
 import type { RecordingLibraryItem, RecordingSource } from '../recording/recordingRepository'
+import ArchivePopover from './collections/ArchivePopover.vue'
+import ChipMenu from './collections/ChipMenu.vue'
 
 const props = withDefaults(defineProps<{
   items: RecordingLibraryItem[]
@@ -72,6 +74,15 @@ const displayItems = computed(() => {
 onMounted(() => { void loadBriefs(displayItems.value); void refreshCollections() })
 watch(displayItems, items => { void loadBriefs(items); void refreshCollections() })
 watch(() => props.items, () => { void pruneExtras() })
+// 批量选择模式：条目增删后选中集合仅保留仍存在的键（防止对已删录像批量归档）
+watch(displayItems, items => {
+  const alive = new Set(items.map(rowKey))
+  for (const state of Object.values(batchColumns.value)) {
+    if (!state.on) continue
+    const kept = new Set([...state.keys].filter(key => alive.has(key)))
+    if (kept.size !== state.keys.size) state.keys = kept
+  }
+})
 async function pruneExtras(): Promise<void> {
   if (!extraItems.value.length) return
   try {
@@ -93,8 +104,9 @@ async function withNamespaceRetry<T>(action: () => Promise<T>): Promise<T> {
     }
   }
 }
-// REC-COLLECT-01：收藏目录与星标。目录索引存 IndexedDB（与录像库同 namespace），
-// 呈现＝目录条（内置收藏星标置顶＋用户目录＋新建）＋条目星标/归档操作＋按目录过滤。
+// REC-COLLECT-01 UI v2（方案 A）：收藏目录与星标。目录索引存 IndexedDB（与录像库同 namespace）。
+// 呈现＝目录条（全部/★收藏/用户 chips＋条尾＋新建，单行横向滚动，管理动作收进 chip ⋯ 溢出菜单）
+// ＋条目固定四控件（星标/主信息/加入目录/删除，行高恒定）＋「加入目录」锚定弹层＋按目录过滤＋批量选择模式。
 const collections = ref<RecordingCollection[]>([])
 const membershipsBy = ref<Record<string, string[]>>({})
 const selectedCollectionId = ref<string | null>(null)
@@ -102,7 +114,6 @@ const collectionsError = ref('')
 const collectionBusy = ref(false)
 let collectionsRefreshQueued = false
 const collectionForm = ref<{ mode: 'create' | 'rename'; id?: string; name: string; error: string } | null>(null)
-const archivingKey = ref('')
 
 const isMember = (collectionId: string, key: string) => (membershipsBy.value[key] ?? []).includes(collectionId)
 const isStarred = (item: RecordingLibraryItem) => isMember(FAVORITES_COLLECTION_ID, rowKey(item))
@@ -140,16 +151,101 @@ async function runCollectionAction(action: () => Promise<unknown>): Promise<bool
 async function toggleStar(item: RecordingLibraryItem): Promise<void> {
   await runCollectionAction(() => toggleCollectionStar(rowKey(item)))
 }
-function toggleArchivePanel(item: RecordingLibraryItem): void {
-  archivingKey.value = archivingKey.value === rowKey(item) ? '' : rowKey(item)
+
+// 目录条 v2：内置收藏恒置顶只读过滤视图；用户目录 chip 的管理动作（重命名/删除）收进
+// hover/键盘聚焦浮现的 ⋯ 溢出菜单，浏览态零常驻管理按钮（否决理由三的解法）。
+const userCollections = computed(() => collections.value.filter(collection => collection.kind === 'user'))
+const favoritesCollection = computed(() => collections.value.find(collection => collection.kind === 'builtin') ?? null)
+const chipMenu = ref<{ anchor: HTMLElement; collection: RecordingCollection } | null>(null)
+function openChipMenu(collection: RecordingCollection, event: MouseEvent): void {
+  const anchor = event.currentTarget as HTMLElement
+  if (chipMenu.value?.anchor === anchor) { closeChipMenu(); return }
+  archivePopover.value = null // 同一时刻仅一个浮层：开新关旧（不夺焦点）
+  chipMenu.value = { anchor, collection }
 }
-async function onArchiveChange(collection: RecordingCollection, item: RecordingLibraryItem, event: Event): Promise<void> {
+function closeChipMenu(): void {
+  const trigger = chipMenu.value?.anchor
+  chipMenu.value = null
+  // 焦点返回触发按钮（skill 浮层规则）；延后一拍避开点击默认聚焦（pointerdown 关闭时浏览器随后会把焦点拨到点击目标）
+  if (trigger) setTimeout(() => trigger.focus(), 0)
+}
+function onChipMenuRename(): void {
+  const target = chipMenu.value?.collection
+  closeChipMenu()
+  if (target) openRenameForm(target)
+}
+function onChipMenuRemove(): void {
+  const target = chipMenu.value?.collection
+  closeChipMenu()
+  if (target) pendingCollectionRemoval.value = target
+}
+
+// 「加入目录」锚定弹层（否决理由二的解法：portal 浮层不占文档流，列表行高恒定）。
+// 行级单键与批量多键共用一个弹层实例；清单只含用户目录（userCollections），内置收藏绝不在其中。
+const archivePopover = ref<{ anchor: HTMLElement; key: string; keys: string[]; batch: boolean; source: RecordingSource | null } | null>(null)
+function openRowArchive(item: RecordingLibraryItem, event: MouseEvent): void {
+  const anchor = event.currentTarget as HTMLElement
+  chipMenu.value = null
+  if (archivePopover.value?.anchor === anchor) { closeArchivePopover(); return }
+  archivePopover.value = { anchor, key: rowKey(item), keys: [rowKey(item)], batch: false, source: null }
+}
+function closeArchivePopover(): void {
+  const trigger = archivePopover.value?.anchor
+  archivePopover.value = null
+  // 焦点返回触发按钮（skill 浮层规则）；延后一拍避开点击默认聚焦（点外部关闭时浏览器随后会把焦点拨到点击目标）
+  if (trigger) setTimeout(() => trigger.focus(), 0)
+}
+async function applyArchiveToggle(collectionId: string, recordingKeys: string[], assign: boolean): Promise<{ ok: boolean; message?: string }> {
+  try {
+    await withNamespaceRetry(() => assign
+      ? assignToCollection(collectionId, recordingKeys)
+      : unassignFromCollection(collectionId, recordingKeys))
+    await refreshCollections()
+    return { ok: true }
+  } catch (error) {
+    await refreshCollections() // 失败以存储真实态回正（弹层本地勾选态另做显式回退）
+    return { ok: false, message: error instanceof Error ? error.message : '收藏目录操作失败' }
+  }
+}
+async function applyCreateAndAssign(name: string, recordingKeys: string[]): Promise<{ ok: boolean; message?: string; collectionId?: string }> {
+  try {
+    const created = await withNamespaceRetry(() => createCollection(name))
+    await withNamespaceRetry(() => assignToCollection(created.id, recordingKeys))
+    await refreshCollections()
+    return { ok: true, collectionId: created.id }
+  } catch (error) {
+    await refreshCollections() // 新建成功但加入失败时目录条也要如实呈现已建目录
+    return { ok: false, message: error instanceof Error ? error.message : '新建目录失败' }
+  }
+}
+
+// 批量选择模式（方案 A 拍板含批量；两列各自独立进出——F01 自洽取舍，收尾报告披露）：
+// checkbox 常驻槽位＋visibility 切换（浮现不推挤、退出零位移）；列头等高替换为批量栏。
+interface BatchColumnState { on: boolean; keys: Set<string> }
+const batchColumns = ref<Record<RecordingSource, BatchColumnState>>({
+  local: { on: false, keys: new Set() },
+  imported: { on: false, keys: new Set() },
+})
+function enterBatch(source: RecordingSource): void {
+  batchColumns.value[source] = { on: true, keys: new Set() }
+}
+function exitBatch(source: RecordingSource): void {
+  if (archivePopover.value?.source === source) archivePopover.value = null
+  batchColumns.value[source] = { on: false, keys: new Set() }
+}
+function toggleSelect(source: RecordingSource, item: RecordingLibraryItem, event: Event): void {
   const checked = (event.target as HTMLInputElement).checked
-  const ok = await runCollectionAction(() => checked
-    ? assignToCollection(collection.id, [rowKey(item)])
-    : unassignFromCollection(collection.id, [rowKey(item)]))
-  if (!ok) await refreshCollections() // 失败时以存储真实态回正勾选框
+  const keys = batchColumns.value[source].keys
+  if (checked) keys.add(rowKey(item))
+  else keys.delete(rowKey(item))
 }
+function openBatchArchive(source: RecordingSource, event: MouseEvent): void {
+  const selected = [...batchColumns.value[source].keys]
+  if (!selected.length) return
+  chipMenu.value = null
+  archivePopover.value = { anchor: event.currentTarget as HTMLElement, key: `batch:${source}`, keys: selected, batch: true, source }
+}
+
 function openCreateForm(): void {
   collectionForm.value = { mode: 'create', name: '', error: '' }
 }
@@ -317,16 +413,22 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
     </div>
 
     <nav class="recording-collections-bar" aria-label="收藏目录">
-      <span class="recording-collections-title">目录</span>
-      <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === null }" :aria-pressed="selectedCollectionId === null" @click="selectedCollectionId = null">全部 ({{ displayItems.length }})</button>
-      <span v-for="collection in collections" :key="collection.id" class="collection-chip-wrap">
-        <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === collection.id }" :aria-pressed="selectedCollectionId === collection.id" :data-collection-id="collection.id" @click="selectedCollectionId = selectedCollectionId === collection.id ? null : collection.id">
-          <Star v-if="collection.kind === 'builtin'" :size="12" aria-hidden="true" /> {{ collection.name }} ({{ memberCount(collection.id) }})
-        </button>
-        <button v-if="collection.kind === 'user'" type="button" class="icon-button collection-manage" :aria-label="`重命名目录：${collection.name}`" :title="`重命名目录：${collection.name}`" @click="openRenameForm(collection)"><Pencil :size="12" aria-hidden="true" /></button>
-        <button v-if="collection.kind === 'user'" type="button" class="icon-button collection-manage" :aria-label="`删除目录：${collection.name}`" :title="`删除目录：${collection.name}`" @click="pendingCollectionRemoval = collection"><Trash2 :size="12" aria-hidden="true" /></button>
-      </span>
-      <button type="button" class="ghost-button" @click="openCreateForm">新建目录</button>
+      <div class="recording-collections-row">
+        <span class="recording-collections-title">目录</span>
+        <div class="recording-collections-scroll">
+          <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === null }" :aria-pressed="selectedCollectionId === null" @click="selectedCollectionId = null">全部 ({{ displayItems.length }})</button>
+          <button v-if="favoritesCollection" type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === favoritesCollection.id }" :aria-pressed="selectedCollectionId === favoritesCollection.id" :data-collection-id="favoritesCollection.id" @click="selectedCollectionId = selectedCollectionId === favoritesCollection.id ? null : favoritesCollection.id">
+            <Star :size="12" aria-hidden="true" /> {{ favoritesCollection.name }} ({{ memberCount(favoritesCollection.id) }})
+          </button>
+          <span v-for="collection in userCollections" :key="collection.id" class="collection-chip-wrap">
+            <button type="button" class="collection-chip" :class="{ 'collection-chip-active': selectedCollectionId === collection.id }" :aria-pressed="selectedCollectionId === collection.id" :data-collection-id="collection.id" @click="selectedCollectionId = selectedCollectionId === collection.id ? null : collection.id">
+              {{ collection.name }} ({{ memberCount(collection.id) }})
+            </button>
+            <button type="button" class="icon-button collection-overflow" :class="{ 'collection-overflow-open': chipMenu?.collection.id === collection.id }" :aria-label="`管理目录：${collection.name}`" :title="`管理目录：${collection.name}`" :aria-expanded="chipMenu?.collection.id === collection.id" @click="openChipMenu(collection, $event)"><EllipsisVertical :size="13" aria-hidden="true" /></button>
+          </span>
+          <button type="button" class="ghost-button collection-create" @click="openCreateForm"><Plus :size="13" aria-hidden="true" />新建目录</button>
+        </div>
+      </div>
       <form v-if="collectionForm" class="collection-form" @submit.prevent="submitCollectionForm">
         <input v-model="collectionForm.name" type="text" aria-label="目录名称" :placeholder="collectionForm.mode === 'create' ? '输入新目录名称' : '输入新的目录名称'" />
         <button type="submit" class="ghost-button">保存</button>
@@ -340,11 +442,20 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
       <section class="recording-library-column" data-recording-source="local" aria-labelledby="local-recordings-heading">
         <div class="recording-library-column-header">
           <h2 id="local-recordings-heading">本机训练录像 <span>({{ localItems.length }})</span></h2>
-          <button type="button" class="ghost-button danger-button" :disabled="!localItems.length || busy" @click="askClear('local', localItems.length)">清空本机录像</button>
+          <div v-if="!batchColumns.local.on" class="recording-column-actions">
+            <button type="button" class="ghost-button" :disabled="!localItems.length" @click="enterBatch('local')">批量选择</button>
+            <button type="button" class="ghost-button danger-button" :disabled="!localItems.length || busy" @click="askClear('local', localItems.length)">清空本机录像</button>
+          </div>
+          <div v-else class="recording-column-actions">
+            <span class="recording-batch-count">已选 {{ batchColumns.local.keys.size }} 项</span>
+            <button type="button" class="ghost-button" :disabled="!batchColumns.local.keys.size" :aria-expanded="archivePopover?.key === 'batch:local'" @click="openBatchArchive('local', $event)">加入目录 <ChevronDown :size="13" aria-hidden="true" /></button>
+            <button type="button" class="ghost-button" @click="exitBatch('local')">退出选择</button>
+          </div>
         </div>
         <p v-if="!localItems.length" class="recording-library-empty" role="status"><strong>还没有保存的本机训练录像</strong><span>训练时开启「记录操作」，结束后选择保留，即可在这里回放。</span></p>
         <ul v-else class="recording-history-list">
           <li v-for="item in localItems" :key="item.sessionId" class="recording-history-item">
+            <input type="checkbox" class="recording-select-checkbox" :class="{ 'recording-select-on': batchColumns.local.on }" :aria-label="`选择录像 ${formatDate(item.createdAt)}`" :checked="batchColumns.local.keys.has(rowKey(item))" @change="toggleSelect('local', item, $event)" />
             <button type="button" class="recording-star icon-button" :disabled="busy" :aria-pressed="isStarred(item)" :aria-label="isStarred(item) ? '移出收藏' : '加入收藏'" :title="isStarred(item) ? '移出收藏' : '加入收藏'" @click="toggleStar(item)"><Star :size="15" aria-hidden="true" :fill="isStarred(item) ? 'currentColor' : 'none'" /></button>
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
               <strong>{{ formatDate(item.createdAt) }}</strong>
@@ -354,15 +465,8 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
                 {{ item.eventCount }} 个事件 · 查看回放 →
               </span>
             </button>
-            <button type="button" class="icon-button" :disabled="busy" :aria-expanded="archivingKey === rowKey(item)" aria-label="归档到目录" title="归档到目录" @click="toggleArchivePanel(item)"><FolderPlus :size="15" aria-hidden="true" /></button>
+            <button type="button" class="icon-button" :disabled="busy" :aria-expanded="archivePopover?.key === rowKey(item)" aria-haspopup="dialog" aria-label="加入目录" title="加入目录" @click="openRowArchive(item, $event)"><FolderPlus :size="15" aria-hidden="true" /></button>
             <button type="button" class="recording-delete icon-button" :disabled="busy || isActive(item.sessionId)" :title="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" :aria-label="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" @click="askRemove(item)"><Trash2 :size="15" /></button>
-            <div v-if="archivingKey === rowKey(item)" class="recording-archive-panel" role="group" aria-label="归档到目录">
-              <label v-for="collection in collections" :key="collection.id" class="recording-archive-option">
-                <input type="checkbox" :aria-label="collection.name" :checked="isMember(collection.id, rowKey(item))" :disabled="collectionBusy" @change="onArchiveChange(collection, item, $event)" />
-                {{ collection.name }}
-              </label>
-              <button type="button" class="ghost-button" @click="archivingKey = ''">收起归档</button>
-            </div>
           </li>
         </ul>
       </section>
@@ -370,11 +474,20 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
       <section class="recording-library-column" data-recording-source="imported" aria-labelledby="imported-recordings-heading">
         <div class="recording-library-column-header">
           <h2 id="imported-recordings-heading">导入的分享录像 <span>({{ importedItems.length }})</span></h2>
-          <button type="button" class="ghost-button danger-button" :disabled="!importedItems.length || busy" @click="askClear('imported', importedItems.length)">清空导入录像</button>
+          <div v-if="!batchColumns.imported.on" class="recording-column-actions">
+            <button type="button" class="ghost-button" :disabled="!importedItems.length" @click="enterBatch('imported')">批量选择</button>
+            <button type="button" class="ghost-button danger-button" :disabled="!importedItems.length || busy" @click="askClear('imported', importedItems.length)">清空导入录像</button>
+          </div>
+          <div v-else class="recording-column-actions">
+            <span class="recording-batch-count">已选 {{ batchColumns.imported.keys.size }} 项</span>
+            <button type="button" class="ghost-button" :disabled="!batchColumns.imported.keys.size" :aria-expanded="archivePopover?.key === 'batch:imported'" @click="openBatchArchive('imported', $event)">加入目录 <ChevronDown :size="13" aria-hidden="true" /></button>
+            <button type="button" class="ghost-button" @click="exitBatch('imported')">退出选择</button>
+          </div>
         </div>
         <p v-if="!importedItems.length" class="recording-library-empty" role="status"><strong>还没有导入分享录像</strong><span>使用上方「导入分享的录像」，打开收到的录像文件。</span></p>
         <ul v-else class="recording-history-list">
           <li v-for="item in importedItems" :key="item.sessionId" class="recording-history-item">
+            <input type="checkbox" class="recording-select-checkbox" :class="{ 'recording-select-on': batchColumns.imported.on }" :aria-label="`选择录像 ${item.fileName || formatDate(item.createdAt)}`" :checked="batchColumns.imported.keys.has(rowKey(item))" @change="toggleSelect('imported', item, $event)" />
             <button type="button" class="recording-star icon-button" :disabled="busy" :aria-pressed="isStarred(item)" :aria-label="isStarred(item) ? '移出收藏' : '加入收藏'" :title="isStarred(item) ? '移出收藏' : '加入收藏'" @click="toggleStar(item)"><Star :size="15" aria-hidden="true" :fill="isStarred(item) ? 'currentColor' : 'none'" /></button>
             <button type="button" class="recording-history-open" @click="emit('replay', item.sessionId)">
               <strong>{{ item.fileName || formatDate(item.createdAt) }}</strong>
@@ -384,19 +497,25 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
                 {{ item.eventCount }} 个事件 · {{ formatDate(item.createdAt) }} · 查看回放 →
               </span>
             </button>
-            <button type="button" class="icon-button" :disabled="busy" :aria-expanded="archivingKey === rowKey(item)" aria-label="归档到目录" title="归档到目录" @click="toggleArchivePanel(item)"><FolderPlus :size="15" aria-hidden="true" /></button>
+            <button type="button" class="icon-button" :disabled="busy" :aria-expanded="archivePopover?.key === rowKey(item)" aria-haspopup="dialog" aria-label="加入目录" title="加入目录" @click="openRowArchive(item, $event)"><FolderPlus :size="15" aria-hidden="true" /></button>
             <button type="button" class="recording-delete icon-button" :disabled="busy || isActive(item.sessionId)" :title="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" :aria-label="isActive(item.sessionId) ? '活动录像不能删除' : '删除录像'" @click="askRemove(item)"><Trash2 :size="15" /></button>
-            <div v-if="archivingKey === rowKey(item)" class="recording-archive-panel" role="group" aria-label="归档到目录">
-              <label v-for="collection in collections" :key="collection.id" class="recording-archive-option">
-                <input type="checkbox" :aria-label="collection.name" :checked="isMember(collection.id, rowKey(item))" :disabled="collectionBusy" @change="onArchiveChange(collection, item, $event)" />
-                {{ collection.name }}
-              </label>
-              <button type="button" class="ghost-button" @click="archivingKey = ''">收起归档</button>
-            </div>
           </li>
         </ul>
       </section>
     </div>
+
+    <ArchivePopover
+      v-if="archivePopover"
+      :anchor="archivePopover.anchor"
+      :collections="userCollections"
+      :memberships-by="membershipsBy"
+      :recording-keys="archivePopover.keys"
+      :batch="archivePopover.batch"
+      :apply-toggle="applyArchiveToggle"
+      :apply-create="applyCreateAndAssign"
+      @close="closeArchivePopover"
+    />
+    <ChipMenu v-if="chipMenu" :anchor="chipMenu.anchor" :collection="chipMenu.collection" @close="closeChipMenu" @rename="onChipMenuRename" @remove="onChipMenuRemove" />
 
     <div v-if="confirming" class="recording-confirm-overlay" role="alertdialog" aria-modal="true" aria-label="确认删除录像">
       <div class="recording-confirm-panel">
@@ -434,17 +553,22 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 .recording-import { position: relative; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; padding: 8px 12px; color: inherit; cursor: pointer; }
 .recording-import input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .recording-import:focus-within { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 3px; }
-.icon-button { display: inline-grid; place-items: center; min-width: 30px; min-height: 30px; border: 0; border-radius: 5px; background: transparent; color: inherit; cursor: pointer; }
+.icon-button { display: inline-grid; place-items: center; min-width: 30px; min-height: 30px; border: 0; border-radius:  5px; background: transparent; color: inherit; cursor: pointer; }
 .icon-button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 12%, transparent); }
 .icon-button:disabled { opacity: .45; cursor: not-allowed; }
 .recording-library-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .recording-library-column { min-width: 0; padding: 16px; }
 .recording-library-column h2 { margin: 0; font-size: 1rem; }
 .recording-library-column h2 span { color: var(--text-secondary, #64748b); font-weight: 400; }
+.recording-column-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.recording-batch-count { color: var(--text-secondary, #64748b); font-size: var(--font-size-2xs, 12px); }
 .recording-library-empty { display: grid; gap: 8px; padding: 28px 0; color: var(--text-secondary, #64748b); line-height: 1.7; }
 .recording-library-empty strong { color: var(--text-primary); font-weight: 500; }
 .recording-history-list { display: grid; gap: 8px; list-style: none; padding: 0; margin: 14px 0 0; }
 .recording-history-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; padding: 8px 10px; }
+/* 批量选择：checkbox 常驻槽位＋visibility 切换（浮现不推挤星标、退出零位移；隐藏态不可聚焦） */
+.recording-select-checkbox { visibility: hidden; width: 16px; height: 16px; margin: 0; flex-shrink: 0; cursor: pointer; }
+.recording-select-checkbox.recording-select-on { visibility: visible; }
 .recording-history-open { flex: 1; min-width: 0; display: grid; gap: 6px; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; overflow-wrap: anywhere; line-height: 1.6; }
 .recording-history-open span { color: var(--text-secondary, #64748b); }
 /* RF-05 录像库标注：真实标的（斜体弱化）＋「随机模式」tag 胶囊 */
@@ -455,19 +579,22 @@ const formatDate = (value: string) => new Date(value).toLocaleString()
 .recording-confirm-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / .55); z-index: 20; }
 .recording-confirm-panel { width: min(420px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--surface-border, #444); border-radius: 8px; background: var(--surface-background, #181818); color: var(--text-primary, #eee); }
 .recording-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-/* REC-COLLECT-01 收藏目录条与条目操作（复用既有表面边框/次级文本 token） */
-.recording-collections-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 18px; }
-.recording-collections-title { color: var(--text-secondary, #64748b); font-size: var(--font-size-2xs); }
-.collection-chip-wrap { display: inline-flex; align-items: center; gap: 2px; }
+/* REC-COLLECT-01 UI v2 目录条：单行横向滚动（目录增长只产生横向滚动，不换行不挤压两列）；
+   管理动作收进 chip ⋯ 溢出菜单（opacity/visibility 切换不占布局宽度，hover/键盘聚焦才浮现） */
+.recording-collections-bar { display: grid; gap: 8px; margin: 0 0 18px; }
+.recording-collections-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.recording-collections-title { color: var(--text-secondary, #64748b); font-size: var(--font-size-2xs); flex-shrink: 0; }
+.recording-collections-scroll { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow-x: auto; }
+.recording-collections-scroll > * { flex-shrink: 0; }
+.collection-chip-wrap { position: relative; display: inline-flex; align-items: center; }
 .collection-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; font-size: var(--font-size-2xs); }
 .collection-chip:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 .collection-chip-active { border-color: var(--focus-ring-color); font-weight: 600; }
-.collection-manage { min-width: 24px; min-height: 24px; }
+.collection-overflow { position: absolute; right: 0; top: 50%; transform: translateY(-50%); min-width: 22px; min-height: 22px; border-radius: 999px; border: 1px solid var(--surface-border, #dfe5eb); background: var(--surface-background, #fff); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .12s ease; z-index: 2; }
+.collection-chip-wrap:hover .collection-overflow, .collection-chip-wrap:focus-within .collection-overflow, .collection-overflow-open { opacity: 1; visibility: visible; pointer-events: auto; }
 .collection-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .collection-form input { padding: 5px 8px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: transparent; color: inherit; }
 .recording-star[aria-pressed="true"] { color: #b8860b; }
 :global(body.dark .recording-star[aria-pressed="true"]) { color: #f5c518; }
-.recording-archive-panel { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding-top: 8px; border-top: 1px dashed var(--surface-border, #dfe5eb); }
-.recording-archive-option { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-size-2xs); color: var(--text-secondary, #64748b); cursor: pointer; }
 @media (max-width: 900px) { .recording-library-columns { grid-template-columns: 1fr; } }
 </style>

@@ -4,6 +4,79 @@
 - 规格：docs/proposals/后续四功能-方案细化讨论-20261026.md 拍板记录节（用户 2026-10-26）
 - 矩阵：recording-collections.yaml（8 行：7 covered＋1 planned UI 占位）
 
+## 第三轮（UI v2 重做·方案 A，2026-10-29）
+
+- 范围：RecordingLibrary UI v2 全重做（用户否决 v1 后按 2026-10-29 拍板的方案 A：行内固定四控件＋锚定「加入目录」弹层＋目录条 chip ⋯ 溢出菜单＋批量选择模式），新增 `web/src/components/collections/`（AnchoredPopover/ArchivePopover/ChipMenu 三组件）；服务层/存储层/接线层零改动（API 已够用，方案 A 零新增后端能力）。
+- 工作树基线：9b69b07（UI v2 立卡提交）之上。
+- 语义零回归承诺的验证：星标往返/按目录过滤（两步 computeds 字面量契约保住 frontend-contract 不改）/导出含结构/导入并集/删除级联重载持久——v1 语义场景全部保留在新 e2e 中并全绿。
+
+### 门禁收据（命令字面退出码）
+
+| 项 | 命令 | 退出码 | 结果 |
+|---|---|---|---|
+| RED-contract | npx vitest run --config server/vitest.config.ts server/test/recording-collections.test.ts（实现前） | 1 | 3 failed（UI v2 契约 3 例 ENOENT——ArchivePopover.vue 不存在，以正确原因失败）｜12 存量 passed |
+| RED-e2e | TDX_ROOT=… npm run journey -- e2e/recording-collections.spec.ts --retries=0（对 v1 码） | 1 | 9 failed（加入目录按钮/.archive-popover/.recording-collections-scroll/批量选择 全部不存在——v1 缺 popover/固定行控件/批量栏为正确原因）＋1 passed（星标场景，v1 语义本就该绿） |
+| GREEN-定向 | npx vitest run --config server/vitest.config.ts server/test/recording-collections.test.ts server/test/recording-bundle.test.ts server/test/frontend-contract.test.ts | 0 | 68/68（collections 15＋bundle 18＋frontend-contract 35，契约测试断言零改动） |
+| GREEN-typecheck | npm run typecheck:web | 0 | — |
+| GREEN-e2e | TDX_ROOT=… npm run journey -- e2e/recording-collections.spec.ts --retries=0 | 0 | 10 passed（59.4s；两轮中间修复后终态：a. 关闭弹层的焦点返回延后一拍避开点击默认聚焦；b. 测试侧修正 Playwright filter has 相对路径语义/menuitem 显式角色检索/补第二条种子录像） |
+| MUTATION-1 | RecordingLibrary 弹层 collections prop 由 userCollections 改为 collections（清单混入收藏） | 1 | 杀手×2 死亡：契约「UI v2 契约 归档弹层清单只含用户目录且无收藏第二写入口」（`:collections="userCollections"` 字面量失配）＋e2e「弹层清单只含用户目录，勾选即生效且同一时刻仅一个弹层」（checkbox 3≠2） |
+| MUTATION-2 | 批量弹层 keys 由 selected 改为 [selected[0]!]（只 assign 首键） | 1 | 杀手×2 死亡：契约「UI v2 契约 批量归档对全部选中键一次 assign」（`keys: selected, batch: true` 字面量失配）＋e2e「批量选择模式勾选两条一次加入目录全部生效，退出选择零位移恢复」（弹层副标题「已选 2 项录像」变 1 项即失败） |
+| 变异还原复绿 | 同 GREEN-定向命令 | 0 | 68/68 |
+| build:server | npm run build:server | 0 | 全量回归前置 |
+| 全量回归 | npx vitest run --config server/vitest.config.ts | 1 | 2556/2558：2 failed＝data-refresh（torn .day 用例 5s 超时）＋updater-verify（UPD-RUNTIME-COMPAT 5s 超时）——两文件零 recording 导入（grep 核实） |
+| flake 隔离复验 | npx vitest run … server/test/data-refresh.test.ts server/test/updater-verify.test.ts | 0 | 29/29；与本卡 diff 零导入关系，归因本机负载时序超时（先例＝第二轮四个互不相同的负载 flake） |
+| JOURNEY-collections＋邻接 | TDX_ROOT=… npm run journey -- e2e/recording-collections.spec.ts e2e/recording-bulk.spec.ts e2e/recording-library.spec.ts --retries=0 | 0 | 14 passed（新 spec 10＋bulk 2＋library 2，1.5m） |
+| check-binding | check-binding.mjs --repo … --matrix recording-collections.yaml --strict --include-untracked | 3 | covered=7 / open=3（COLL-UI-LIBRARY-ENTRY/COLL-UI-ARCHIVE-POPOVER/COLL-UI-BATCH-MODE 均 planned，升 covered 由 root 凭下述 test_ids 提案做）/ RED=0（设计内） |
+| 变异还原方式 | Edit 工具逐处还原（禁 git checkout -- 整文件），还原后 diff 核对＋复跑 | — | 已遵守 |
+
+### e2e 新增覆盖（v2 oracle，10 用例）
+
+固定四控件与行高恒定（弹层开/关/勾选后行几何逐像素不变、v1 归档面板不复存在）；弹层清单绝不含收藏（checkbox 计数＋无「收藏」勾选框双断言）；勾选即生效/取消即移出；同一时刻仅一个浮层（行级弹层↔chip 管理菜单互斥）；Esc/点外部/✕/再点触发按钮四路关闭＋焦点返回触发按钮（aria-expanded 同步）；弹层内新建目录并加入（空白拒/重名拒就地报错、成功即勾选、空目录态引导＋首焦点）；操作失败就地报错（page.evaluate 直删 IndexedDB 目录记录制造 assign 自然失败「目录不存在」——role=alert 就地显示、弹层保持可用）；目录条单行横向滚动（overflowX=auto＋chips 同水平线）＋⋯ 菜单 hover 浮现/重命名预填/删除确认、内置与全部 chip 无 ⋯；≥8 目录过滤框（7 个不出/8 个出/无命中「无匹配目录」/过滤后勾选生效）；批量模式（列头等高替换、checkbox 浮现不推挤、勾选两条一次 assign 全部生效、退出零位移——三态行几何全等）；v1 语义保留场景（星标往返、导出 collections 结构断言、跨命名空间导入并集、级联删除重载持久）。
+
+### 实现层调整与覆盖降级披露
+
+1. **弹层勾选失败回正的微观断言降级**：assign 失败的「checkbox 显式回正」无法在不污染产品码的前提下从 Playwright 注入（repository 层非 HTTP，page.route 不可达）；已用**自然失败注入**（直删 IndexedDB 目录记录→requireCollection 抛「目录不存在」）覆盖「失败就地报错＋弹层保持可用」行为，回正分支另由源码契约第三例锁定（`toggleError.value = result.message` 只存在于失败回正分支）。行级 UI 级「勾选框视觉回正」未做纯断言——失败后清单会随存储真实态刷新（被删目录的行消失，这是正确行为），回正与行消失互斥不可同帧断言。
+2. **同一时刻仅一个弹层的验证口径**：两个行级弹层在物理上互相遮挡（弹层锚定触发器下方，天然盖住下一行触发按钮），「开新关旧」以行级弹层↔chip 管理菜单互斥＋`.anchored-popover` 全场计数=1 验证；两行级弹层的直接互开因遮挡不可测（用户须先 Esc，这正是真实交互形态）。
+3. **批量模式两列独立**（F01 自洽取舍，见下 proposed_default）：规格书允许「两列各自独立或统一」；取独立——批量栏与列头一一对应、退出零位移断言更局部、跨列混合归档无真实用例。
+4. **批量弹层的取消勾选语义**：规格书只写「一次 assign」；实现取对称语义（勾选=assign 全部选中键，取消勾选=unassign 全部选中键，初始勾选=全部选中键均已是成员）——与行级弹层同构，自洽且 API 零新增。
+5. **弹层关闭的焦点返回延后一拍**（setTimeout 0）：点外部关闭时浏览器点击默认聚焦会覆盖同步 focus()，延后避开；Esc/✕/再点触发按钮路径行为不变（e2e 四路全部断言）。
+6. **chip ⋯ 按钮覆盖 chip 右缘**（opacity/visibility 切换不占宽度）：目录条为单行横向滚动区，⋯ 若不覆盖 chip 则会被 overflow 容器裁剪；仅 hover/键盘聚焦该 chip 时浮现，离开即隐。
+
+### proposed_default（呈现细节，待用户提验）
+
+- ⋯ 按钮＝EllipsisVertical 图标 22px，绝对定位于 chip 右缘内（半覆盖计数文字），带边框圆角与表面底色；hover/focus-within 显现（0.12s opacity 过渡）。
+- 弹层：min-width 220px / max-width min(380px, 视口-16px)；列表区 max-height 264px 内滚动；标题「加入目录」＋右上 ✕；批量态副标题「已选 N 项录像」。
+- 过滤框：type=search、placeholder「过滤目录…」、出现阈值≥8 用户目录、存在时首焦点。
+- 弹层内新建：折叠态「＋ 新建目录并加入」、展开态输入框（placeholder「输入新目录名称」）＋「加入」提交按钮；Enter 提交。
+- 批量栏：左「已选 N 项」计数＋「加入目录 ⌄」（ChevronDown 图标）＋「退出选择」；「批量选择」按钮位于列头「清空本机/导入录像」左侧（危险按钮保持最右恒定位置）。
+- 行级「加入目录」触发器：FolderPlus 图标＋aria-haspopup="dialog"/aria-expanded；chip 管理菜单 role=menu/menuitem。
+- checkbox 常驻 16px 槽位（隐藏态 visibility:hidden 不可聚焦不可点）；星标/删除按钮与文案维持 v1。
+- 目录条：「目录」标签＋单行滚动区（全部/★收藏/用户 chips/＋新建目录）；条形由 v1 的换行 flex 改为 grid 两行结构（滚动行＋表单/错误行）。
+
+### 留用户验收项（不进 e2e 的通道）
+
+- 读屏器（NVDA/旁白）对弹层 dialog 语义、menuitem 菜单、批量 checkbox 的实际播报与 Tab 顺序体感（结构上均为原生 button/checkbox/input＋ARIA 角色，理论可达）。
+- 暗色主题下弹层/菜单表面与边框观感；⋯ 按钮覆盖 chip 计数的视觉接受度（proposed_default 第 6 条）。
+- 滚动重定位的实机手感（e2e 已锁「滚动/缩放时重定位」的实现存在性与 Esc/点外关闭，未做逐帧跟随断言）。
+- 真机（安装版 Electron）首用批量归档。
+
+### test_ids 提案（三行 planned 升 covered 候选）
+
+- COLL-UI-LIBRARY-ENTRY：
+  - `e2e/recording-collections.spec.ts::每行固定四控件无展开块，弹层打开前后列表行位置不变`
+  - `e2e/recording-collections.spec.ts::目录条单行横向滚动，chip 溢出菜单承载重命名与删除且内置 chip 无菜单`
+  - `server/test/recording-collections.test.ts::UI v2 契约 归档弹层清单只含用户目录且无收藏第二写入口`
+- COLL-UI-ARCHIVE-POPOVER：
+  - `e2e/recording-collections.spec.ts::弹层清单只含用户目录，勾选即生效且同一时刻仅一个弹层`
+  - `e2e/recording-collections.spec.ts::弹层关闭语义与焦点返回，Esc 点外部与再点触发按钮均可关闭`
+  - `e2e/recording-collections.spec.ts::弹层内新建目录并加入，空白与重名就地报错且成功即勾选新目录`
+  - `e2e/recording-collections.spec.ts::弹层操作失败就地报错且弹层保持可用（目录被外部移除）`
+  - `e2e/recording-collections.spec.ts::弹层过滤框在用户目录达到八个时出现，无命中显示无匹配目录`
+  - `server/test/recording-collections.test.ts::UI v2 契约 弹层勾选失败显式回正并就地报错`
+- COLL-UI-BATCH-MODE：
+  - `e2e/recording-collections.spec.ts::批量选择模式勾选两条一次加入目录全部生效，退出选择零位移恢复`
+  - `server/test/recording-collections.test.ts::UI v2 契约 批量归档对全部选中键一次 assign`
+
 ## 第二轮（UI 层＋接线，2026-10-26）
 
 - 范围：RecordingLibrary UI（星标/目录条/归档/过滤/导出携带结构/导入合并）＋recordingRepository 接线（namespace 构造 CollectionService；remove/clear 后级联清理，失败不阻塞）＋bundle.ts 可选 `collections` 字段（版本保持 1，向后兼容 v1 解析器）＋e2e。

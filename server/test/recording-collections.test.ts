@@ -329,3 +329,40 @@ describe('REC-COLLECT-01 接线层（recordingRepository 收藏面真实接线�
     await expect(listCollections!()).rejects.toThrow('收藏目录')
   })
 })
+
+// REC-COLLECT-01 UI v2（方案 A，2026-10-29 拍板）源码契约：
+// e2e 锁行为全链路；此处锁「归类清单绝不含收藏」「批量 assign 全键」两条最高返工项语义的源码形态，
+// 防止后续重构悄悄把内置收藏带回归类清单或把批量键退化为首键（正则按单行匹配，规避 CRLF 差异）。
+describe('REC-COLLECT-01 UI v2 契约（RecordingLibrary 与归档弹层源码锁定）', () => {
+  it('UI v2 契约 归档弹层清单只含用户目录且无收藏第二写入口', async () => {
+    const library = await readFile(new URL('../../web/src/components/RecordingLibrary.vue', import.meta.url), 'utf8')
+    const popover = await readFile(new URL('../../web/src/components/collections/ArchivePopover.vue', import.meta.url), 'utf8')
+    // 目录条与弹层共用同一「仅用户目录」集合（用户否决理由一：星标是收藏唯一写入口）
+    expect(library).toMatch(/const userCollections = computed\(\(\) => collections\.value\.filter\(collection => collection\.kind === 'user'\)\)/)
+    expect(library).toMatch(/:collections="userCollections"/)
+    // 弹层组件零收藏常量引用（不 import FAVORITES，也就不存在渲染收藏项的路径）
+    expect(popover).not.toMatch(/FAVORITES_COLLECTION_ID|FAVORITES_COLLECTION_NAME/)
+    // 弹层语义形态：dialog 标题＝加入目录（文案拍板），底部「新建目录并加入」入口
+    expect(popover).toMatch(/role="dialog" aria-label="加入目录"/)
+    expect(popover).toMatch(/新建目录并加入/)
+  })
+
+  it('UI v2 契约 批量归档对全部选中键一次 assign', async () => {
+    const library = await readFile(new URL('../../web/src/components/RecordingLibrary.vue', import.meta.url), 'utf8')
+    const popover = await readFile(new URL('../../web/src/components/collections/ArchivePopover.vue', import.meta.url), 'utf8')
+    // 批量弹层键＝选中集合整体展开（仅取首键的退化实现打红此字面量；行为层由 e2e 批量用例锁死）
+    expect(library).toMatch(/const selected = \[\.\.\.batchColumns\.value\[source\]\.keys\]/)
+    expect(library).toMatch(/keys: selected, batch: true/)
+    // 弹层把 props.recordingKeys 整体交给 applyToggle（一次调用覆盖全部键）
+    expect(popover).toMatch(/props\.applyToggle\(collection\.id, props\.recordingKeys, checked\)/)
+    expect(library).toMatch(/:apply-toggle="applyArchiveToggle"/)
+  })
+
+  it('UI v2 契约 弹层勾选失败显式回正并就地报错', async () => {
+    const popover = await readFile(new URL('../../web/src/components/collections/ArchivePopover.vue', import.meta.url), 'utf8')
+    // 失败分支：toggleError 就地承接服务层错误消息（该赋值只存在于失败回正分支）
+    expect(popover).toMatch(/toggleError\.value = result\.message/)
+    // 错误行 role=alert 存在于弹层模板（就近反馈，不打断）
+    expect(popover).toMatch(/role="alert"/)
+  })
+})
