@@ -5,7 +5,7 @@
   "id": "REC-COLLECT-01",
   "title": "录像库收藏与自定义目录（收藏索引/星标/导出带结构）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "REC",
   "base_commit": "81cef4b",
   "summary": "四功能拍板第一序（2026-10-26，docs/proposals/后续四功能-方案细化讨论-20261026.md）：录像物理存储保持平铺，收藏走索引（多对多）；内置「收藏」目录（星标标志、不可删除/重命名）＋用户自建目录；录像条目星标按钮快速加入/移出内置收藏（QQ 邮箱式交互）；删除录像级联清理成员关系；导出 REC-BULK 携带收藏结构、导入按目录名合并。实现层调整（已披露）：索引存 IndexedDB（与录像同域、生命周期同进退），不落 SQLite——录像本体在 IndexedDB 且其迁移受物理限制（v1.2.7 实证），SQLite 侧索引会在数据迁移后悬空。",
