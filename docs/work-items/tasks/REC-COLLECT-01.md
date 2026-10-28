@@ -33,7 +33,7 @@
     "reason": "录像库新增收藏目录与星标交互说明"
   },
   "verification_refs": ["docs/verification/2026-10/REC-COLLECT-01/README.md"],
-  "integration_ref": null,
+  "integration_ref": "UI v2 feat main@8f6afa3（核心层 0e08424＋UI v1 b719b78 已被 v2 取代呈现层）",
   "acceptance_ref": null
 }
 ```
