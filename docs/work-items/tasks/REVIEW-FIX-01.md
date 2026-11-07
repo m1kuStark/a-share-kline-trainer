@@ -20,6 +20,7 @@
     "web/src/styles.css",
     "e2e/data-update.spec.ts",
     "e2e/m3-feedback.spec.ts",
+    "e2e/uiux-training.spec.ts",
     "docs/verification/2026-11/TRAIN-FEE-01/README.md",
     "docs/verification/2026-11/CHART-WEEKDAY-01/README.md",
     "docs/verification/2026-11/CHART-ZOOM-01/README.md",
