@@ -7,8 +7,8 @@
     "owner":  "integrator",
     "state":  "review",
     "milestone":  "M3",
-    "summary":  "Shift两点测量五字段已实现，功能界面、录制契约、构建、桌面与M2通过，主代理检查双主题；用户已授权amend并更新PR #7，完整门禁仍未全绿，用户验收未记录。",
-    "next_action":  "按用户授权将两点测量并入上一提交并更新同一PR #7，交上游评审和用户体验；保留失败记录，不扩展修复其他模块。",
+    "summary":  "Shift两点测量五字段已实现并经 PR #7 评审；2026-11-07 维护者合入时补镜像态真实价口径（像素价位反镜像回真实域）与镜像 e2e，用户验收未记录。",
+    "next_action":  "本批整批验收通过后随 CHART-ANALYSIS-01 一并合入 main；不扩展修复其他模块。",
     "base_commit":  "0ab10657c8e2e49fa6a5fd55a831f49a8f8d2cd9",
     "allowed_paths":  [
                           "web/src/chartStatistics.ts",
@@ -61,3 +61,9 @@
 拖动实时显示，松开保留，Esc/再次点击/失焦/视窗布局或数据变化清除。Ctrl/Alt/Meta组合、绘图取点、多选、分隔及轴区不启动测量；只读回放可测量，不入画线、录像、撤销史或持久层。
 
 2026-11-01：用户明确要求commit --amend到上一提交，并通过同一个PR #7提交。base_commit保留开发及验证起点0ab1065；合并候选的父提交仍为81cef4b，历史验证不改写为合并或用户验收。
+
+## 维护者合入与适配（2026-11-07）
+
+- 随 PR #7 一并本地 `--no-ff` 合入；测量五项字段与既有手势仲裁未改语义。
+- 新增真实价口径：镜像态下像素→价位是显示域（镜像值），测量前按活动 P₀ 用 `unmirrorPrice` 反镜像回真实域，五项字段按真实价计算；图上直观价位可能不同，已在规格明确（决策信息不撒谎）。
+- 新增镜像 e2e 用例（与区间统计同一测试）；矩阵 `chart-measurement.yaml` 4 行 covered、binding RED=0；证据见 `docs/verification/2026-11/CHART-PR7-MERGE/README.md`。若整批验收通过，用户验收记录随批次登记。
