@@ -14,6 +14,8 @@
 
 - [UI-TOOLBAR-01 悬浮划线工具栏](tasks/UI-TOOLBAR-01.md)：顶栏「划线」开关＋可拖拽图形化浮层，hover 显示名称/描述。
 
+- [F7-DEPS-01 依赖安全升级](tasks/F7-DEPS-01.md)：vite 7.3.7、fast-uri 3.1.9/4.2.3、undici 6.29.1/7.30.1 本地等价 chore。
+
 - [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
 
 - [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。
