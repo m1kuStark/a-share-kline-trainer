@@ -1,0 +1,165 @@
+{
+    "task":  "CHART-ANALYSIS-01",
+    "base_commit":  "81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58",
+    "branch":  "feat/chart-analysis",
+    "scope":  "uncommitted working tree; no package release or user acceptance",
+    "fingerprints":  "source-fingerprints.json",
+    "environment":  {
+                        "os":  "Windows",
+                        "node":  "24.21.0",
+                        "npm":  "11.19.0",
+                        "browser":  "system Edge",
+                        "temp":  "D:/Ktrain-build-cache/temp",
+                        "npm_cache":  "D:/Ktrain-build-cache/npm",
+                        "database":  "isolated per run; M2 in-memory",
+                        "tdx":  "read-only frozen three-symbol sample, cutoff 2026-09-16"
+                    },
+    "checks":  [
+                   {
+                       "command":  "npm run build",
+                       "exit_code":  0,
+                       "report":  ".runs/chart-analysis-build-final.log"
+                   },
+                   {
+                       "command":  "focused vitest calculation/frontend/readonly contracts",
+                       "exit_code":  0,
+                       "passed":  43,
+                       "report":  ".runs/chart-analysis-unit-focused.json"
+                   },
+                   {
+                       "command":  "desktop vitest complete suite",
+                       "exit_code":  0,
+                       "passed":  367,
+                       "report":  ".runs/chart-analysis-desktop-final.json"
+                   },
+                   {
+                       "command":  "npx --no-install tsx scripts/verify-m2.ts",
+                       "exit_code":  0,
+                       "passed":  24,
+                       "report":  ".runs/chart-analysis-m2/M2-e2e-report.md"
+                   },
+                   {
+                       "command":  "npm run journey -- e2e/chart-analysis.spec.ts --retries=0 --max-failures=1",
+                       "exit_code":  0,
+                       "passed":  5,
+                       "failed":  0,
+                       "page_errors":  0,
+                       "run":  "run-b7718f22-24a8-4819-b32a-0e8a3b4eaf6b",
+                       "test_fingerprint":  ".runs/chart-analysis-fingerprint-ui5.json",
+                       "note":  "same final production code; test 2 subsequently strengthened"
+                   },
+                   {
+                       "command":  "npm run journey -- e2e/chart-analysis.spec.ts --grep \u0027right drag\u0027 --retries=0 --max-failures=1",
+                       "exit_code":  0,
+                       "passed":  1,
+                       "failed":  0,
+                       "run":  "run-8b4a8cb6-4c24-4812-903f-c028cb074741",
+                       "note":  "final test fingerprint; completed segment crosses selection endpoint; drawing and viewport preserved"
+                   },
+                   {
+                       "command":  "npm run journey -- --retries=0 --max-failures=3",
+                       "exit_code":  1,
+                       "failed":  3,
+                       "not_run":  202,
+                       "total":  205,
+                       "run":  "run-674c4739-1ebc-4cda-a790-27f06ef84759",
+                       "failure_area":  "first three acceptance-feedback recording tests; import disabled and timeouts",
+                       "baseline_comparison":  "not performed; causality not established"
+                   },
+                   {
+                       "command":  "npx --no-install vitest run --config server/vitest.config.ts --maxWorkers=1 --reporter=json --outputFile=.runs/chart-analysis-full-unit-final.json",
+                       "exit_code":  1,
+                       "passed":  1755,
+                       "failed":  2,
+                       "report":  ".runs/chart-analysis-full-unit-final.json",
+                       "failures":  [
+                                        {
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-stale-busy.test.ts",
+                                            "name":  "POST /api/update/apply 陈旧 busy 自愈（UPD-STALE-BUSY-SELFHEAL） apply heals a stale applying status to failed with a human reason logged and retries through in the same request",
+                                            "duration_ms":  5031.523700000005,
+                                            "reported_error":  "STACK_TRACE_ERROR (JSON reporter); no baseline comparison"
+                                        },
+                                        {
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-verify.test.ts",
+                                            "name":  "verifyZipArtifact (UPD-DOWNLOAD-VERIFY) UPD-RUNTIME-COMPAT: refuses online swap and names the full-package reinstall path when nodeVersion differs",
+                                            "duration_ms":  5090.19749999998,
+                                            "reported_error":  "STACK_TRACE_ERROR (JSON reporter); no baseline comparison"
+                                        }
+                                    ]
+                   },
+                   {
+                       "command":  "npm run docs:impact -- --base 81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58 --task CHART-ANALYSIS-01",
+                       "exit_code":  0,
+                       "errors":  0,
+                       "warnings":  0,
+                       "report":  ".runs/chart-analysis-docs-impact-final.log"
+                   },
+                   {
+                       "command":  "npm run docs:status",
+                       "exit_code":  0,
+                       "note":  "Kept only new task row; restored unrelated existing task rows to HEAD to preserve scope."
+                   },
+                   {
+                       "command":  "npm run docs:check",
+                       "exit_code":  1,
+                       "errors":  1,
+                       "warnings":  127,
+                       "report":  ".runs/chart-analysis-docs-check-final.log",
+                       "reason":  "docs/status.md generated region differs after restoring unrelated task summaries"
+                   },
+                   {
+                       "command":  "npm run docs:status -- --check",
+                       "exit_code":  1,
+                       "errors":  1,
+                       "report":  ".runs/chart-analysis-docs-status-check-final.log",
+                       "reason":  "same unrelated generated summary drift; not silently expanded scope"
+                   },
+                   {
+                       "command":  "git diff --check",
+                       "exit_code":  0,
+                       "note":  "only Git CRLF normalization warnings"
+                   }
+               ],
+    "earlier_attempts":  [
+                             {
+                                 "report":  ".runs/chart-analysis-full-unit.json",
+                                 "exit_code":  1,
+                                 "passed":  1742,
+                                 "failed":  15
+                             },
+                             {
+                                 "report":  ".runs/chart-analysis-unit-rerun.json",
+                                 "exit_code":  1,
+                                 "passed":  48,
+                                 "failed":  15,
+                                 "note":  "old in-repository TEMP"
+                             },
+                             {
+                                 "run":  "run-f6c3f1ea-651b-4847-8af9-45a6be18e619",
+                                 "status":  "interrupted",
+                                 "note":  "full Journey using old in-repository TEMP; rerun with external TEMP"
+                             }
+                         ],
+    "visual_review":  {
+                          "reviewer":  "primary agent",
+                          "themes":  [
+                                         "dark",
+                                         "light"
+                                     ],
+                          "viewports":  [
+                                            "1440x900",
+                                            "1280x720"
+                                        ],
+                          "result":  "new quote row and statistics fit; no error overlay; rounded zero change neutral",
+                          "screenshots":  [
+                                              "quote-dark.png",
+                                              "statistics-dark.png",
+                                              "statistics-light.png"
+                                          ]
+                      },
+    "full_gate_passed":  false,
+    "committed":  false,
+    "pushed":  false,
+    "user_acceptance":  "not recorded",
+    "followup_baseline_comparison":  "baseline-comparison.json"
+}

@@ -77,7 +77,11 @@ describe('REC-CHART-B chart capture contract', () => {
     const earlier = blockOf(source, 'async function loadEarlierBars(', 'function feedData(')
     expect(earlier).toMatch(/callback\(basis === null \? older : mirrorBars\(older, basis\), \{ forward: result\.hasMore \}\)\n    scheduleChartCapture\(\)/)
     // 视窗变化后调度
-    expect(source).toMatch(/subscribeAction\('onVisibleRangeChange', \(\) => \{ emit\('visibleCount', visibleCount\(\)\); updateAnchorDots\(\); scheduleChartCapture\(\) \}\)/)
+    const visibleRange = source.match(/subscribeAction\('onVisibleRangeChange', \(\) => \{([^}]+)\}\)/)?.[1]
+    expect(visibleRange).toBeDefined()
+    expect(visibleRange).toMatch(/emit\('visibleCount', visibleCount\(\)\); updateAnchorDots\(\); scheduleChartCapture\(\)/)
+    // Closing a transient measurement is display cleanup, not a recorded user action.
+    expect(visibleRange).not.toMatch(/scheduleViewportOperation|emitOperation/)
   })
 
   it('cancels the pending capture timer on unmount', async () => {

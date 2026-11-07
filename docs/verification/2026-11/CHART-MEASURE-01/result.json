@@ -1,0 +1,243 @@
+{
+    "task":  "CHART-MEASURE-01",
+    "base_commit":  "0ab10657c8e2e49fa6a5fd55a831f49a8f8d2cd9",
+    "branch":  "feat/chart-analysis",
+    "scope":  "uncommitted follow-up; no push or PR update",
+    "fingerprints":  "source-fingerprints.json",
+    "environment":  {
+                        "temp":  "D:/Ktrain-build-cache/temp",
+                        "data":  "same frozen six-file TDX sample, three symbols, cutoff 2026-09-16",
+                        "klinecharts":  "10.0.3",
+                        "node":  "24.21.0",
+                        "tdx_read_only":  true,
+                        "os":  "Windows",
+                        "browser":  "system Edge",
+                        "npm_cache":  "D:/Ktrain-build-cache/npm",
+                        "npm":  "11.19.0",
+                        "database":  "isolated run database; M2 in-memory"
+                    },
+    "checks":  [
+                   {
+                       "passed":  41,
+                       "exit_code":  0,
+                       "command":  "npx --no-install vitest run --config server/vitest.config.ts server/test/chart-statistics.test.ts server/test/frontend-contract.test.ts server/test/recording-readonly.test.ts --maxWorkers=2 --reporter=json --outputFile=.runs/chart-measure-focused-unit.json",
+                       "note":  "Third filter matched no file; only the two named files ran.",
+                       "matched_files":  [
+                                             "server/test/chart-statistics.test.ts",
+                                             "server/test/frontend-contract.test.ts"
+                                         ],
+                       "report":  ".runs/chart-measure-focused-unit.json"
+                   },
+                   {
+                       "command":  "npm run build",
+                       "report":  ".runs/chart-measure-build.log",
+                       "exit_code":  0
+                   },
+                   {
+                       "run":  "run-fab8a96e-8b56-4ef6-88f5-cf8b39a82870",
+                       "command":  "npm run journey -- e2e/chart-analysis.spec.ts --retries=0 --max-failures=1",
+                       "exit_code":  0,
+                       "passed":  7,
+                       "failed":  0,
+                       "page_errors":  0
+                   },
+                   {
+                       "command":  "npx --no-install vitest run --config server/vitest.config.ts --maxWorkers=2 --reporter=json --outputFile=.runs/chart-measure-full-unit.json",
+                       "exit_code":  1,
+                       "passed":  1753,
+                       "failed":  7,
+                       "failures":  [
+                                        {
+                                            "name":  "REC-CHART-C pointerup fallback and viewport operations never counts mount initialization, feed, history backfill, layout resize or replay restore as user navigation",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/recording-chart-actions.test.ts",
+                                            "duration_ms":  31.64060000004247,
+                                            "error":  "AssertionError: expected \u0027\u003cscript setup lang=\"ts\"\u003e\\nimport { co…\u0027 to match /markerResizeObserver = new ResizeObse…/\n    at D:/Ktrain/a-share-kline-trainer/server/test/recording-chart-actions.test.ts:184:20\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+                                        },
+                                        {
+                                            "name":  "REC-CHART-B chart capture contract schedules a 150ms trailing-edge capture after feed completion, history load and viewport changes",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/recording-chart-capture.test.ts",
+                                            "duration_ms":  34.10289999993984,
+                                            "error":  "AssertionError: expected \u0027\u003cscript setup lang=\"ts\"\u003e\\nimport { co…\u0027 to match /subscribeAction\\(\u0027onVisibleRangeChang…/\n    at D:/Ktrain/a-share-kline-trainer/server/test/recording-chart-capture.test.ts:75:20\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+                                        },
+                                        {
+                                            "name":  "POST /api/update/apply guards rejects when no newer release is available or the manifest fails",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-apply.test.ts",
+                                            "duration_ms":  5026.608500000031,
+                                            "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-apply.test.ts:141:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                        },
+                                        {
+                                            "name":  "POST /api/update/apply 陈旧 busy 自愈（UPD-STALE-BUSY-SELFHEAL） apply heals a stale applying status to failed with a human reason logged and retries through in the same request",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-stale-busy.test.ts",
+                                            "duration_ms":  5378.989299999957,
+                                            "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-stale-busy.test.ts:155:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                        },
+                                        {
+                                            "name":  "UPD-APPLY-SWAP / UPD-PRESERVE-DATA performSwap moves old-only files away, places new files, and leaves runtime + preserve untouched",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-swap.test.ts",
+                                            "duration_ms":  5035.683700000052,
+                                            "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-swap.test.ts:104:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                        },
+                                        {
+                                            "name":  "UPD-APPLY-SWAP / UPD-PRESERVE-DATA performSwap UPD-APPLY-ROLLBACK (move failure): restores every moved file and places nothing new",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-swap.test.ts",
+                                            "duration_ms":  5004.285899999959,
+                                            "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-swap.test.ts:139:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                        },
+                                        {
+                                            "name":  "verifyZipArtifact (UPD-DOWNLOAD-VERIFY) UPD-RUNTIME-COMPAT: refuses online swap and names the full-package reinstall path when nodeVersion differs",
+                                            "file":  "D:/Ktrain/a-share-kline-trainer/server/test/updater-verify.test.ts",
+                                            "duration_ms":  5032.324700000001,
+                                            "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-verify.test.ts:59:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                        }
+                                    ],
+                       "note":  "Two chart source-shape contracts were corrected afterward; current related contracts pass. Remaining updater failures retained; no full-suite green claim."
+                   },
+                   {
+                       "run":  "run-60852c46-0adc-42af-b5eb-d979448b034b",
+                       "command":  "npm run journey -- --retries=0 --max-failures=3",
+                       "exit_code":  1,
+                       "failed":  3,
+                       "not_run":  204,
+                       "total":  207,
+                       "note":  "Same three acceptance-feedback recording failures previously reproduced on unmodified 81cef4b. Final focus-fixture-only edit occurred after this run collected tests; production unchanged."
+                   },
+                   {
+                       "command":  "npx --no-install vitest run --config server/vitest.config.ts server/test/chart-statistics.test.ts server/test/frontend-contract.test.ts server/test/recording-chart-readonly.test.ts --maxWorkers=2 --reporter=json --outputFile=.runs/chart-measure-focused-unit-final.json",
+                       "exit_code":  0,
+                       "passed":  46,
+                       "report":  ".runs/chart-measure-focused-unit-final.json"
+                   },
+                   {
+                       "command":  "npx --no-install vitest run --config server/vitest.config.ts server/test/chart-statistics.test.ts server/test/frontend-contract.test.ts server/test/recording-chart-readonly.test.ts server/test/recording-chart-actions.test.ts server/test/recording-chart-capture.test.ts --maxWorkers=2 --reporter=json --outputFile=.runs/chart-measure-contracts-final.json",
+                       "exit_code":  0,
+                       "passed":  69,
+                       "report":  ".runs/chart-measure-contracts-final.json",
+                       "note":  "Preserves required resize/capture calls and rejects user-navigation recording from display cleanup; only tests changed after full unit run."
+                   },
+                   {
+                       "command":  "npx --no-install vitest run --config desktop/vitest.config.ts --maxWorkers=2 --reporter=json --outputFile=.runs/chart-measure-desktop.json",
+                       "exit_code":  0,
+                       "passed":  367,
+                       "report":  ".runs/chart-measure-desktop.json"
+                   },
+                   {
+                       "command":  "npx --no-install tsx scripts/verify-m2.ts",
+                       "exit_code":  0,
+                       "passed":  24,
+                       "report":  ".runs/chart-measure-m2/M2-e2e-report.md",
+                       "database":  ":memory:"
+                   },
+                   {
+                       "command":  "npm run docs:status",
+                       "exit_code":  0,
+                       "note":  "Retained only the new task row; unrelated existing task summaries restored to HEAD."
+                   },
+                   {
+                       "command":  "npm run docs:impact -- --base 0ab10657c8e2e49fa6a5fd55a831f49a8f8d2cd9 --task CHART-MEASURE-01",
+                       "exit_code":  0,
+                       "errors":  0,
+                       "warnings":  0,
+                       "report":  ".runs/chart-measure-docs-impact-final.log"
+                   },
+                   {
+                       "command":  "npm run docs:check",
+                       "exit_code":  1,
+                       "errors":  1,
+                       "warnings":  128,
+                       "reason":  "Same baseline generated-status drift; new task row only retained",
+                       "report":  ".runs/chart-measure-docs-check-final.log"
+                   },
+                   {
+                       "command":  "npm run docs:status -- --check",
+                       "exit_code":  1,
+                       "errors":  1,
+                       "report":  ".runs/chart-measure-docs-status-check-final.log"
+                   },
+                   {
+                       "command":  "git diff --check",
+                       "exit_code":  0,
+                       "note":  "Only Git CRLF normalization warnings; nine final fingerprints verified; backend source unchanged relative to 81cef4b."
+                   }
+               ],
+    "earlier_attempts":  [
+                             {
+                                 "run":  "run-c7151e15-e0d8-4e2e-a642-08c3c4d55bbb",
+                                 "kind":  "RED on unchanged production code",
+                                 "reason":  "two-point measurement group not found",
+                                 "exit_code":  1
+                             },
+                             {
+                                 "run":  "run-1fff3d67-feae-43dd-9a32-1d77c637bf83",
+                                 "reason":  "Test expected pre-projection candle high/low. Library price-to-pixel rounds to integer pixels, so the picked price differs. Oracle corrected using axis range and actual pixel; production unchanged.",
+                                 "exit_code":  1
+                             },
+                             {
+                                 "run":  "run-690fc69b-1409-4dbf-825b-0812e8647d85",
+                                 "exit_code":  1,
+                                 "passed":  1,
+                                 "failed":  1,
+                                 "not_run":  5,
+                                 "reason":  "Tab switching test did not disable Playwright focus emulation; both pages remained focused. Browser focus fixture corrected and native hasFocus transitions asserted; production unchanged."
+                             }
+                         ],
+    "visual_review":  {
+                          "reviewer":  "primary agent",
+                          "status":  "reviewed final screenshots",
+                          "themes":  [
+                                         "dark",
+                                         "light"
+                                     ],
+                          "viewports":  [
+                                            "1440x900",
+                                            "1280x720"
+                                        ],
+                          "result":  "All four combinations inspected; five fields readable, no overflow/error overlay; initial positive measurement also inspected. Existing unrelated light-theme indicator text contrast unchanged.",
+                          "screenshots":  [
+                                              "measurement-dark.png",
+                                              "measurement-light.png"
+                                          ]
+                      },
+    "full_gate_passed":  false,
+    "committed":  false,
+    "pushed":  false,
+    "user_acceptance":  "not recorded",
+    "baseline_failure_reference":  "../../2026-10/CHART-ANALYSIS-01/baseline-comparison.json",
+    "updater_followup":  {
+                             "command":  "npx --no-install vitest run --config server/vitest.config.ts server/test/updater-apply.test.ts server/test/updater-swap.test.ts --maxWorkers=2 --reporter=json --outputFile=\u003creport\u003e",
+                             "baseline_commit":  "81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58",
+                             "baseline":  {
+                                              "passed":  16,
+                                              "report":  "D:/Ktrain-baselines/chart-analysis-81cef4b/.runs/chart-measure-baseline-updater.json",
+                                              "failed":  0,
+                                              "exit_code":  0
+                                          },
+                             "candidate":  {
+                                               "passed":  16,
+                                               "report":  ".runs/chart-measure-updater-rerun.json",
+                                               "failed":  0,
+                                               "exit_code":  0
+                                           },
+                             "backend_source_unchanged":  true,
+                             "conclusion":  "Three extra full-run updater apply/swap failures did not reproduce in isolated reruns on either baseline or candidate. Timing/runner variability observed, precise cause unconfirmed; no updater code or timeout changed."
+                         },
+    "delivery_authorization":  {
+                                   "request":  "Amend two-point measurement into previous feature commit and update existing PR #7",
+                                   "previous_commit":  "0ab10657c8e2e49fa6a5fd55a831f49a8f8d2cd9",
+                                   "combined_parent":  "81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58",
+                                   "target_pr":  "https://github.com/m1kuStark/a-share-kline-trainer/pull/7",
+                                   "note":  "Earlier committed/pushed flags describe validation-time state; final delivery head is independently verified on PR.",
+                                   "pre_amend_checks":  {
+                                                            "parent_impact_exit":  0,
+                                                            "measure_impact_exit":  0,
+                                                            "docs_check_exit":  1,
+                                                            "status_check_exit":  1,
+                                                            "reason":  "same baseline generated-status drift; both feature task rows refreshed, unrelated task rows preserved",
+                                                            "reports":  [
+                                                                            ".runs/chart-analysis-amend-parent-impact.log",
+                                                                            ".runs/chart-analysis-amend-measure-impact.log",
+                                                                            ".runs/chart-analysis-amend-docs-check.log",
+                                                                            ".runs/chart-analysis-amend-status-check.log"
+                                                                        ]
+                                                        }
+                               }
+}

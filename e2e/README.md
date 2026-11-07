@@ -6,6 +6,7 @@
 
 | 套件 | 覆盖 |
 |---|---|
+| [chart-analysis](chart-analysis.spec.ts) | 常驻行情、右键区间统计；Shift两点测量五字段、双向/同根价格与数量、取消/边界/绘图多选优先、无写请求和视窗画线保持；只读回放、随机日期遮蔽及双主题桌面截图 |
 | [report-narrow](report-narrow.spec.ts) | 真实买入后固定本局报告，390/1024/1440 深浅主题无对话框横向溢出，成交全部列支持键盘与鼠标滚动查看 |
 | [local-origin](local-origin.spec.ts) | 应用同源读写成功；另一站点的真实浏览器读取和写入被拒，偏好保持不变 |
 | [backup-restore](backup-restore.spec.ts) | 独立 SQLite 一致快照恢复训练/成交/画线/报告，空浏览器导入录像并只读回放；不覆盖桌面安装和自动归档 |

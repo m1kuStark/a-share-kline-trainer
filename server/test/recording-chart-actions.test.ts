@@ -181,7 +181,11 @@ describe('REC-CHART-C pointerup fallback and viewport operations', () => {
     expect(blockOf(source, 'function feedData(', '// REC-CHART 图表捕获')).not.toMatch(/scheduleViewportOperation/)
     expect(blockOf(source, 'async function loadEarlierBars(', 'function feedData(')).not.toMatch(/scheduleViewportOperation/)
     expect(blockOf(source, 'function updateMarkerRail(', 'function projectTradeTime(')).not.toMatch(/scheduleViewportOperation/)
-    expect(source).toMatch(/markerResizeObserver = new ResizeObserver\(\(\) => \{ enforceVisibleLimit\(\); updateMarkerRail\(\) \}\)/)
+    const resize = source.match(/markerResizeObserver = new ResizeObserver\(\(\) => \{([^}]+)\}\)/)?.[1]
+    expect(resize).toBeDefined()
+    expect(resize).toMatch(/enforceVisibleLimit\(\); updateMarkerRail\(\)/)
+    // Other display-only cleanup may share this callback; it must never count navigation.
+    expect(resize).not.toMatch(/scheduleViewportOperation|emitOperation/)
     // replayView 恢复与卸载撤销挂起的上报
     expect(blockOf(source, 'function applyReplayView(', 'watch(() => props.replayView')).toMatch(/cancelViewportOperation\(\)/)
     expect(blockOf(source, 'onUnmounted(() => {', 'dispose(host.value)')).toMatch(/cancelChartCapture\(\); cancelReplayRestore\(\); cancelViewportOperation\(\)/)

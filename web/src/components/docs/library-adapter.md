@@ -8,6 +8,7 @@
 
 | 依赖 | 当前用途与复核点 |
 |---|---|
+| `getDataList` / `convertFromPixel` / `convertToPixel` / `getSize('candle_pane','main')` | CHART-ANALYSIS-01用公开API将拖选端点吸附/钳制到已加载K线，主图bounding限定选区；只读统计含原始date/amount附加字段。10.0.3右键图形事件在mousedown分发，故统计手势必须在host mousedown capture阻止；普通绘图右键继续放行，contextmenu仅处理自有菜单。升级须回归主图/副图边界、图形菜单、单根/反向区间、只读回放及日期遮蔽。 |
 | `getChartStore()._processDataLoad('forward')` | MA-01仅在长周期缺少预热历史时主动触发既有loader。10.0.3以_loading防并发，经callback调用_addData的forward分支，前插不改右侧偏移，指标自动重算；不执行init或滚动补偿。复核主动补载、失败重试、切周期作废旧响应及同名日期/画线保留。 |
 | `overrideIndicator({name,paneId,calcParams,styles,visible})` | MA-01通过公开API更新MA参数、颜色和可见性；10.0.3模板regenerateFigures按参数生成图例，calc在完整窗口后输出收盘价等权均值。变更参数触发重算；不重建图表或替换行情。 |
 | `_chartStore.getLayoutOptions().barSpaceLimit.min/max` | onMounted 改为 0.1/300；允许窄屏多根和少根放大。实际 840 限制另由 `clampBarSpace` / `enforceVisibleLimit` 执行，范围变化后微任务再校正。 |
@@ -35,6 +36,8 @@
 生命周期与释放登记见 [事件仲裁](./interaction.md)。样式语义、透明测量标签、成交标记和国内配色由 [显示规格](../../../../docs/specs/chart/display.md) 定义，默认虚线参数必须在主题和编辑应用间同源。
 
 ## 只读测试接口
+
+CHART-MEASURE-01复用公开`convertFromPixel([{y}], {paneId:'candle_pane', absolute:true})`取测量价，`convertToPixel({dataIndex})`取加载K线中心；不自行线性插值或改轴显示单位。复核10.0.3 `ChartImp.convertFromPixel`会在absolute模式减pane.top并调用该pane的yAxis.convertFromPixel。端点钳制主图和已载数据索引，再按当前两位价格精度量化；真实事件回归使用公开投影往返核验价格和方向，无新增内部结构依赖。
 
 `window.__trainerChart` 仅在 `import.meta.env.MODE === 'journey'` 时注入；`DEV` 不能代替这个条件，因为 build 时恒为 false。生产构建必须无钩子。
 

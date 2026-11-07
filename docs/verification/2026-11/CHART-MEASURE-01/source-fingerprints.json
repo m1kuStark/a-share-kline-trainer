@@ -1,0 +1,42 @@
+{
+    "base_commit":  "0ab10657c8e2e49fa6a5fd55a831f49a8f8d2cd9",
+    "branch":  "feat/chart-analysis",
+    "files":  [
+                  {
+                      "path":  "web/src/chartStatistics.ts",
+                      "sha256":  "8131b6556bcfd97d3a167720fa47147c5090e0d6bb61d9485ac476a2c7c735af"
+                  },
+                  {
+                      "path":  "web/src/components/KlineChart.vue",
+                      "sha256":  "52eb169c12b5208b73316e8ae3de96735525c1c4da026a3e267b34ec2d2ae478"
+                  },
+                  {
+                      "path":  "web/src/components/PointMeasurement.vue",
+                      "sha256":  "57c889d6774eda6b81d99db7c213e9c3024b91a2044cac2540df1a22a1ec14f0"
+                  },
+                  {
+                      "path":  "server/test/chart-statistics.test.ts",
+                      "sha256":  "1f1d18dff4110134942308d48ed397d005bb9bcca4e436a6eef731edbf5bac92"
+                  },
+                  {
+                      "path":  "e2e/chart-analysis.spec.ts",
+                      "sha256":  "940c48d63de8376f22802b1c3a5e1af6d913502df87117ac5cd8acd4bdb57bf2"
+                  },
+                  {
+                      "path":  "package.json",
+                      "sha256":  "0eb5585d3a0518473eb601737424f301ead542f1fb776441671e5b863d577bd5"
+                  },
+                  {
+                      "path":  "package-lock.json",
+                      "sha256":  "355a19333877dd4b5d8d2dfefcc8df280c5d6d8ed807a1dab0d01d626ab85f42"
+                  },
+                  {
+                      "path":  "server/test/recording-chart-actions.test.ts",
+                      "sha256":  "26d568b909036d1d0ff26a8ad548a32a1973551016616ffda14729a2d87c7d3c"
+                  },
+                  {
+                      "path":  "server/test/recording-chart-capture.test.ts",
+                      "sha256":  "b825635258672db46aa163b3b716b6b12eebb854cc7c97aef355c76da7272a1c"
+                  }
+              ]
+}

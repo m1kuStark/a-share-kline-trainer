@@ -1,0 +1,34 @@
+{
+    "base_commit":  "81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58",
+    "branch":  "feat/chart-analysis",
+    "files":  [
+                  {
+                      "sha256":  "a44261db9147dda7eb859ab045bd8a0796db32bfc49af03bae0dc4d64ad4a3bb",
+                      "path":  "web/src/chartStatistics.ts"
+                  },
+                  {
+                      "sha256":  "29ecbd127befb28d179081928c2e36b6a32d8a418729c70e2d1a696dd1baa4c8",
+                      "path":  "web/src/components/KlineChart.vue"
+                  },
+                  {
+                      "sha256":  "f85b41643fc2ac0bce8703b726b47121b33daeba9385419cc824e360fa72c554",
+                      "path":  "web/src/components/RangeStatisticsDialog.vue"
+                  },
+                  {
+                      "sha256":  "dd1543f0848bae32f2548abb67aa7f8cf2b635951bd8c7202cb9c7b53c738d31",
+                      "path":  "server/test/chart-statistics.test.ts"
+                  },
+                  {
+                      "sha256":  "63ef1e8cd337cc8bd8e8bac57f4f780fa71b47f9c3346b126b1a5a3d666e890e",
+                      "path":  "e2e/chart-analysis.spec.ts"
+                  },
+                  {
+                      "sha256":  "0eb5585d3a0518473eb601737424f301ead542f1fb776441671e5b863d577bd5",
+                      "path":  "package.json"
+                  },
+                  {
+                      "sha256":  "355a19333877dd4b5d8d2dfefcc8df280c5d6d8ed807a1dab0d01d626ab85f42",
+                      "path":  "package-lock.json"
+                  }
+              ]
+}

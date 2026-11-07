@@ -1,0 +1,204 @@
+{
+    "task":  "CHART-ANALYSIS-01",
+    "checked_at":  "2026-11-01T11:02:53.0351477+08:00",
+    "baseline_commit":  "81cef4b8a674c21b9d7d12f3fb7cd58fb125dd58",
+    "baseline_worktree":  "D:\\Ktrain-baselines\\chart-analysis-81cef4b",
+    "baseline_tracked_tree_clean":  true,
+    "environment":  {
+                        "database":  "isolated per run; no personal training database",
+                        "npm":  "11.19.0",
+                        "dependencies":  "same installed dependencies via node_modules junction; identical lockfile",
+                        "browser":  "system Edge",
+                        "node":  "24.21.0",
+                        "npm_cache":  "D:/Ktrain-build-cache/npm",
+                        "data":  "identical six-file frozen snapshot, cutoff 2026-09-16",
+                        "temp":  "D:/Ktrain-build-cache/temp"
+                    },
+    "unchanged_files":  [
+                            {
+                                "path":  "server/test/updater-stale-busy.test.ts",
+                                "baseline_sha256":  "cfb1a6ffa30d66a34820947ba5d0ae5c1c78c5fbadc7b6e35ab3c07028cfaf2a",
+                                "candidate_sha256":  "cfb1a6ffa30d66a34820947ba5d0ae5c1c78c5fbadc7b6e35ab3c07028cfaf2a",
+                                "identical":  true
+                            },
+                            {
+                                "path":  "server/test/updater-verify.test.ts",
+                                "baseline_sha256":  "fe5f323953a59f1df6470ad2f3ba4c14b39edf8624d77c069aa2a3a03bf07dbb",
+                                "candidate_sha256":  "fe5f323953a59f1df6470ad2f3ba4c14b39edf8624d77c069aa2a3a03bf07dbb",
+                                "identical":  true
+                            },
+                            {
+                                "path":  "server/test/helpers/updater-fixtures.ts",
+                                "baseline_sha256":  "86e21474136bcf9be31fba9eb1d2fe908a5e6e3be7b51b45e5bbf6f7da2bd1e1",
+                                "candidate_sha256":  "86e21474136bcf9be31fba9eb1d2fe908a5e6e3be7b51b45e5bbf6f7da2bd1e1",
+                                "identical":  true
+                            },
+                            {
+                                "path":  "server/vitest.config.ts",
+                                "baseline_sha256":  "bccefb7c984fde399623e16e81be2ea1082ca7167fa02b501ba1f9490c421840",
+                                "candidate_sha256":  "bccefb7c984fde399623e16e81be2ea1082ca7167fa02b501ba1f9490c421840",
+                                "identical":  true
+                            },
+                            {
+                                "path":  "e2e/acceptance-feedback.spec.ts",
+                                "baseline_sha256":  "836a613e9eed16c816b556d23ffec9e2600dbdd317d838aaf76c369ea62722bb",
+                                "candidate_sha256":  "836a613e9eed16c816b556d23ffec9e2600dbdd317d838aaf76c369ea62722bb",
+                                "identical":  true
+                            },
+                            {
+                                "path":  "package-lock.json",
+                                "baseline_sha256":  "355a19333877dd4b5d8d2dfefcc8df280c5d6d8ed807a1dab0d01d626ab85f42",
+                                "candidate_sha256":  "355a19333877dd4b5d8d2dfefcc8df280c5d6d8ed807a1dab0d01d626ab85f42",
+                                "identical":  true
+                            }
+                        ],
+    "unit":  {
+                 "conclusion":  "Both failures observed in original complete candidate unit run also reproduced on unmodified baseline. Failure counts vary between runs; exact timing/environment root cause not established.",
+                 "command":  "npx --no-install vitest run --config server/vitest.config.ts server/test/updater-stale-busy.test.ts server/test/updater-verify.test.ts --maxWorkers=1 --reporter=json --outputFile=\u003creport\u003e",
+                 "candidate":  {
+                                   "passed":  16,
+                                   "report":  ".runs/chart-analysis-candidate-unit-comparison.json",
+                                   "failures":  [
+                                                    {
+                                                        "name":  "verifyZipArtifact (UPD-DOWNLOAD-VERIFY) UPD-RUNTIME-COMPAT: refuses online swap and names the full-package reinstall path when nodeVersion differs",
+                                                        "duration_ms":  5016.8089,
+                                                        "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain/a-share-kline-trainer/server/test/updater-verify.test.ts:59:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                                    }
+                                                ],
+                                   "failed":  1,
+                                   "exit_code":  1
+                               },
+                 "baseline":  {
+                                  "passed":  13,
+                                  "report":  "D:\\Ktrain-baselines\\chart-analysis-81cef4b\\.runs\\chart-analysis-baseline-unit.json",
+                                  "failures":  [
+                                                   {
+                                                       "name":  "POST /api/update/apply 陈旧 busy 自愈（UPD-STALE-BUSY-SELFHEAL） apply heals a stale applying status to failed with a human reason logged and retries through in the same request",
+                                                       "duration_ms":  11241.165099999998,
+                                                       "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain-baselines/chart-analysis-81cef4b/server/test/updater-stale-busy.test.ts:155:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                                   },
+                                                   {
+                                                       "name":  "服务启动期 reconcile（startTrainerServer 接线） boot resets a stale busy status file to failed and keeps restarting to completed when the version matches",
+                                                       "duration_ms":  13767.427999999993,
+                                                       "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain-baselines/chart-analysis-81cef4b/server/test/updater-stale-busy.test.ts:272:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                                   },
+                                                   {
+                                                       "name":  "verifyZipArtifact (UPD-DOWNLOAD-VERIFY) accepts an intact release zip when the SHA256 matches and versions line up",
+                                                       "duration_ms":  5022.179,
+                                                       "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain-baselines/chart-analysis-81cef4b/server/test/updater-verify.test.ts:26:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                                   },
+                                                   {
+                                                       "name":  "verifyZipArtifact (UPD-DOWNLOAD-VERIFY) UPD-RUNTIME-COMPAT: refuses online swap and names the full-package reinstall path when nodeVersion differs",
+                                                       "duration_ms":  5014.742200000001,
+                                                       "error":  "Error: STACK_TRACE_ERROR\n    at task (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1784:27)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1817:16)\n    at Object.\u003canonymous\u003e (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1563:28)\n    at chain (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:599:14)\n    at D:/Ktrain-baselines/chart-analysis-81cef4b/server/test/updater-verify.test.ts:59:3\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:40\n    at runWithSuite (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2258:8)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1889:10)\n    at Object.collect (file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:1893:54)\n    at file:///D:/Ktrain/a-share-kline-trainer/node_modules/@vitest/runner/dist/chunk-artifact.js:2462:26"
+                                                   }
+                                               ],
+                                  "failed":  4,
+                                  "exit_code":  1
+                              }
+             },
+    "journey":  {
+                    "conclusion":  "Same three named tests fail at the same source locations: disabled import at line 9, training POST timeout at line 62, missing training input at line 99. Baseline and candidate use identical frozen data.",
+                    "command":  "npm run journey -- e2e/acceptance-feedback.spec.ts --retries=0 --max-failures=3",
+                    "baseline":  {
+                                     "run":  "run-f6c0d9de-42b9-4520-a30b-06f8dac7ea49",
+                                     "not_run":  1,
+                                     "failures":  [
+                                                      {
+                                                          "name":  "用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户",
+                                                          "status":  "failed",
+                                                          "errors":  [
+                                                                         "Error: expect(locator).toBeEnabled() failed\n\nLocator:  getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true })\nExpected: enabled\nReceived: disabled\nTimeout:  15000ms\n\nCall log:\n  - Expect \"toBeEnabled\" getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true }) with timeout 15000ms\n  - waiting for getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true })\n    33 × locator resolved to \u003cinput multiple disabled type=\"file\" aria-label=\"导入录制\" data-v-53753844=\"\" accept=\".json,.gz,.trainer-session\"/\u003e\n       - unexpected value \"disabled\"\n\n\n   7 | async function expectEmptyLocalRecordings(page: Page): Promise\u003cvoid\u003e {\n   8 |   const library = page.getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true })\n\u003e  9 |   await expect(library.getByLabel(\u0027导入录制\u0027, { exact: true })).toBeEnabled({ timeout: 15_000 })\n     |                                                             ^\n  10 |   const local = library.locator(\u0027[data-recording-source=\"local\"]\u0027)\n  11 |   await expect(local).toBeVisible()\n  12 |   await expect(local.locator(\u0027.recording-history-item\u0027)).toHaveCount(0)\n    at expectEmptyLocalRecordings (D:\\Ktrain-baselines\\chart-analysis-81cef4b\\e2e\\acceptance-feedback.spec.ts:9:61)\n    at D:\\Ktrain-baselines\\chart-analysis-81cef4b\\e2e\\acceptance-feedback.spec.ts:26:9"
+                                                                     ]
+                                                      },
+                                                      {
+                                                          "name":  "周月观察时仍记录同期日线，界面和开关操作不增加业务计数",
+                                                          "status":  "timedOut",
+                                                          "errors":  [
+                                                                         "Test timeout of 30000ms exceeded.",
+                                                                         "Error: apiRequestContext.post: Test timeout of 30000ms exceeded.\nCall log:\n  - → POST http://127.0.0.1:54377/api/trainings\n    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0\n    - accept: */*\n    - accept-encoding: gzip,deflate,br\n    - content-type: application/json\n    - content-length: 55\n\n\n  60 |   const active = (await (await page.request.get(\u0027/api/trainings/active\u0027)).json()).training\n  61 |   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)\n\u003e 62 |   const created = await page.request.post(\u0027/api/trainings\u0027, { data: { code: \u0027600519\u0027, tier: \u00271M\u0027, start_date: \u00272026-09-01\u0027 } })\n     |                                      ^\n  63 |   expect(created.status()).toBe(201)\n  64 |   await page.goto(\u0027/\u0027)\n  65 |   await expect(page.getByRole(\u0027status\u0027).filter({ hasText: \u0027正在记录\u0027 })).toBeVisible()\n    at D:\\Ktrain-baselines\\chart-analysis-81cef4b\\e2e\\acceptance-feedback.spec.ts:62:38"
+                                                                     ]
+                                                      },
+                                                      {
+                                                          "name":  "放弃可丢弃录像但保留训练与画线，结算默认保存且可从历史回放",
+                                                          "status":  "timedOut",
+                                                          "errors":  [
+                                                                         "Test timeout of 90000ms exceeded.",
+                                                                         "Error: locator.fill: Test timeout of 90000ms exceeded.\nCall log:\n  - waiting for getByPlaceholder(\u0027股票代码，如 600519\u0027)\n\n\n   97 |   await page.goto(\u0027/\u0027)\n   98 |   async function start() {\n\u003e  99 |     await page.getByPlaceholder(\u0027股票代码，如 600519\u0027).fill(\u0027600519\u0027)\n      |                                                  ^\n  100 | await expect(page.locator(\".suggestions button\").first()).toBeVisible()\n  101 | await page.locator(\".suggestions button\").first().click()\n  102 |     await expect(page.getByText(/已选：/)).toBeVisible()\n    at start (D:\\Ktrain-baselines\\chart-analysis-81cef4b\\e2e\\acceptance-feedback.spec.ts:99:50)\n    at D:\\Ktrain-baselines\\chart-analysis-81cef4b\\e2e\\acceptance-feedback.spec.ts:107:9"
+                                                                     ]
+                                                      }
+                                                  ],
+                                     "failed":  3,
+                                     "exit_code":  1
+                                 },
+                    "candidate_previous_full_run":  {
+                                                        "run":  "run-674c4739-1ebc-4cda-a790-27f06ef84759",
+                                                        "not_run":  202,
+                                                        "failures":  [
+                                                                         {
+                                                                             "name":  "用户能找到录像入口，往返录像库保持训练，顶部显示快捷键且不挤账户",
+                                                                             "status":  "failed",
+                                                                             "errors":  [
+                                                                                            "Error: expect(locator).toBeEnabled() failed\n\nLocator:  getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true })\nExpected: enabled\nReceived: disabled\nTimeout:  15000ms\n\nCall log:\n  - Expect \"toBeEnabled\" getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true }) with timeout 15000ms\n  - waiting for getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true }).getByLabel(\u0027导入录制\u0027, { exact: true })\n    33 × locator resolved to \u003cinput multiple disabled type=\"file\" aria-label=\"导入录制\" data-v-53753844=\"\" accept=\".json,.gz,.trainer-session\"/\u003e\n       - unexpected value \"disabled\"\n\n\n   7 | async function expectEmptyLocalRecordings(page: Page): Promise\u003cvoid\u003e {\n   8 |   const library = page.getByRole(\u0027region\u0027, { name: \u0027训练录像库\u0027, exact: true })\n\u003e  9 |   await expect(library.getByLabel(\u0027导入录制\u0027, { exact: true })).toBeEnabled({ timeout: 15_000 })\n     |                                                             ^\n  10 |   const local = library.locator(\u0027[data-recording-source=\"local\"]\u0027)\n  11 |   await expect(local).toBeVisible()\n  12 |   await expect(local.locator(\u0027.recording-history-item\u0027)).toHaveCount(0)\n    at expectEmptyLocalRecordings (D:\\Ktrain\\a-share-kline-trainer\\e2e\\acceptance-feedback.spec.ts:9:61)\n    at D:\\Ktrain\\a-share-kline-trainer\\e2e\\acceptance-feedback.spec.ts:26:9"
+                                                                                        ]
+                                                                         },
+                                                                         {
+                                                                             "name":  "周月观察时仍记录同期日线，界面和开关操作不增加业务计数",
+                                                                             "status":  "timedOut",
+                                                                             "errors":  [
+                                                                                            "Test timeout of 30000ms exceeded.",
+                                                                                            "Error: apiRequestContext.post: Test timeout of 30000ms exceeded.\nCall log:\n  - → POST http://127.0.0.1:49746/api/trainings\n    - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0\n    - accept: */*\n    - accept-encoding: gzip,deflate,br\n    - content-type: application/json\n    - content-length: 55\n\n\n  60 |   const active = (await (await page.request.get(\u0027/api/trainings/active\u0027)).json()).training\n  61 |   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)\n\u003e 62 |   const created = await page.request.post(\u0027/api/trainings\u0027, { data: { code: \u0027600519\u0027, tier: \u00271M\u0027, start_date: \u00272026-09-01\u0027 } })\n     |                                      ^\n  63 |   expect(created.status()).toBe(201)\n  64 |   await page.goto(\u0027/\u0027)\n  65 |   await expect(page.getByRole(\u0027status\u0027).filter({ hasText: \u0027正在记录\u0027 })).toBeVisible()\n    at D:\\Ktrain\\a-share-kline-trainer\\e2e\\acceptance-feedback.spec.ts:62:38"
+                                                                                        ]
+                                                                         },
+                                                                         {
+                                                                             "name":  "放弃可丢弃录像但保留训练与画线，结算默认保存且可从历史回放",
+                                                                             "status":  "timedOut",
+                                                                             "errors":  [
+                                                                                            "Test timeout of 90000ms exceeded.",
+                                                                                            "Error: locator.fill: Test timeout of 90000ms exceeded.\nCall log:\n  - waiting for getByPlaceholder(\u0027股票代码，如 600519\u0027)\n\n\n   97 |   await page.goto(\u0027/\u0027)\n   98 |   async function start() {\n\u003e  99 |     await page.getByPlaceholder(\u0027股票代码，如 600519\u0027).fill(\u0027600519\u0027)\n      |                                                  ^\n  100 | await expect(page.locator(\".suggestions button\").first()).toBeVisible()\n  101 | await page.locator(\".suggestions button\").first().click()\n  102 |     await expect(page.getByText(/已选：/)).toBeVisible()\n    at start (D:\\Ktrain\\a-share-kline-trainer\\e2e\\acceptance-feedback.spec.ts:99:50)\n    at D:\\Ktrain\\a-share-kline-trainer\\e2e\\acceptance-feedback.spec.ts:107:9"
+                                                                                        ]
+                                                                         }
+                                                                     ],
+                                                        "failed":  3,
+                                                        "exit_code":  1
+                                                    }
+                },
+    "docs":  {
+                 "candidate_check":  {
+                                         "errors":  1,
+                                         "warnings":  127,
+                                         "exit_code":  1
+                                     },
+                 "conclusion":  "Same fatal generated-status error exists before feature changes.",
+                 "same_error":  "docs/status.md generated region out of date",
+                 "baseline_status":  {
+                                         "command":  "npm run docs:status -- --check",
+                                         "errors":  1,
+                                         "exit_code":  1
+                                     },
+                 "baseline_check":  {
+                                        "command":  "npm run docs:check",
+                                        "errors":  1,
+                                        "warnings":  126,
+                                        "exit_code":  1
+                                    }
+             },
+    "disposition":  "Observed failures are reproducible without this feature; leave other modules unchanged as requested and disclose baseline failures in MR.",
+    "limitations":  [
+                        "Targeted baseline comparison, not complete baseline test suite.",
+                        "No claim that the 202 unexecuted candidate Journey tests passed.",
+                        "No root-cause fix or complete-green gate proof."
+                    ],
+    "full_gate_passed":  false,
+    "followup_document_checks":  {
+                                     "impact_exit":  0,
+                                     "status_generate_exit":  0,
+                                     "docs_check_exit":  1,
+                                     "docs_check_errors":  1,
+                                     "docs_check_warnings":  127,
+                                     "status_check_exit":  1,
+                                     "diff_check_exit":  0,
+                                     "feature_fingerprints_unchanged":  true,
+                                     "note":  "Only task row retained in generated status; original unrelated task summaries preserved."
+                                 }
+}

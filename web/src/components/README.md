@@ -8,6 +8,8 @@
 
 | 任务 | 正文与实现 |
 |---|---|
+| Shift两点测量 | KlineChart沿既有指针入口取主图两点实际价位；[PointMeasurement.vue](PointMeasurement.vue)展示五项精简结果及临时引导线，计算仍在[chartStatistics.ts](../chartStatistics.ts)，不接画线持久层。 |
+| 常驻行情、区间统计 | KlineChart复用buildHoverModel展示常驻行情，沿既有指针入口接右键选区；[chartStatistics.ts](../chartStatistics.ts)仅对传入的已见数据计算，[统计窗口](RangeStatisticsDialog.vue)负责只读展示与模态焦点。 |
 | 主图均线参数 | [MaSettingsDialog.vue](./MaSettingsDialog.vue) 编辑八行草稿，[maSettings.ts](../maSettings.ts) 校验及浏览器持久化；KlineChart用公开overrideIndicator原位更新MA。日周月共用，默认25/60/144，0关闭。 |
 | 改指针、快捷键、窗格或视窗 | [事件仲裁与生命周期](./docs/interaction.md)；[chartNavigation.ts](../chartNavigation.ts) |
 | 升级图库、覆盖默认绘制 | [库适配登记](./docs/library-adapter.md)；[theme.ts](../theme.ts)、[indicators.ts](../indicators.ts)、[overlays.ts](../overlays.ts) |

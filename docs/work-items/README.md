@@ -1,5 +1,9 @@
 # 任务与阶段
 
+- [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
+
+- [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。
+
 - [MA-01 自定义主图均线](tasks/MA-01.md)：设计与实现固定八条 MA 参数面板，日周月共用配置。
 
 协作工具入口：[ORCH阶段](milestones/ORCH.md) → [影子路由](tasks/ORCH-01.md)、[独立验证](tasks/ORCH-02.md)、[动态派发](tasks/ORCH-03.md)、[分类审查](tasks/ORCH-04.md)。

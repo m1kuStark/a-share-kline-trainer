@@ -4,6 +4,10 @@
 
 ## 指针入口
 
+CHART-MEASURE-01：Shift+左键主图拖动在现有pointerdown capture优先于普通选中/框选处理，保留绘图取点、多选、Ctrl/Alt/Meta、轴和原生分隔优先权。已完成图形可作为测量起点但不接库拖动。mousedown capture吞掉本次库取点/平移链；window原有pointermove/up/cancel更新与释放，Shift提前松开仍由测量持有手势。active期间panelChange及keydown capture隔离交易热键，完成后仅保留展示。closePanels、全局下一次pointerdown、blur、visible-range订阅、wheel和ResizeObserver清理结果；配置watch清理工具/多选切换。未新增全局监听器；五项浮层和SVG仅DOM展示，鼠标事件穿透，悬浮信息卡暂时避让。
+
+CHART-ANALYSIS-01：常驻行情条位于chart-wrap上方独立网格行，保持host坐标系与MA图例。quoteIndex即时跟随crosshair/键盘，离开清空，日期走buildHoverModel；markerRevision使加载/前插/推进后的默认行情重算。右键主图空白或显式左键统计选择在现有pointerdown capture先仲裁；对应mousedown capture拦库右键事件，避免终点图形收到默认删除。绘图取点在pointerdown记录右键归属，取消后contextmenu不得误打开统计。窗口pointermove/up/cancel沿现有入口，未新增另一套手势监听；数据替换closePanels清统计状态，配置watch随Vue释放。临时矩形/menu不入drawings；native dialog负责模态焦点，panelChange与现有keydown capture隔离快捷键。
+
 MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点期间禁用。面板只编辑草稿，应用原位更新指标；panelChange隔离训练快捷键，dialog接管焦点、Esc和输入，modal阻止画布手势。取消及关闭回到入口，不改变画线/视窗。组件新增配置watch由Vue卸载，不新增全局监听器。
 
 `pointerdown` 与 `mousedown` 均在 host capture 处理，后者另有 bubble 修补。不能把它们理解成互不相关的操作；一次原生手势会依次经过两条链。
@@ -39,6 +43,7 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 |---|---|---|
 | 图表 host | wheel（非 passive）；pointerdown capture；mousedown capture/bubble；dblclick；contextmenu | `onUnmounted` 对应移除 |
 | 图表 window | pointermove；pointerup 手势处理；pointerup 历史记录；pointercancel 分隔取消；keydown capture；pointerdown capture 全局关闭 | 两处 `onUnmounted` 成对移除 |
+| 图表区间统计 | window blur取消未完成统计选择/菜单；pointercancel沿已有入口取消 | 对应onUnmounted移除blur；无额外持久化或计时器 |
 | 图表实例与尺寸 | visible-range 订阅；ResizeObserver；待执行微任务 | 库公开 `dispose(host)`；observer disconnect；微任务检查 `disposed` |
 | 图表录制与回放 | 150ms尾沿捕获/用户视窗操作计时器；回放恢复requestAnimationFrame | `cancelChartCapture()`、`cancelViewportOperation()`、`cancelReplayRestore()`；只读/卸载/程序恢复时不发捕获反馈 |
 | Training | keydown；pagehide；document visibilitychange；保存/短提示计时器 | 卸载移除、清计时器并尝试 flush |
