@@ -487,6 +487,18 @@ body.dark .random-mode-badge { border-color: #2b5c49; background: #14271f; color
   .report-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
 }
 
+/* 常驻行情条（PR #7）：训练页经 Teleport 并入 .status-strip（单行、不额外占主图高度），
+   回放页无槽位时内联在图表顶部。纯展示层。 */
+.status-quote-slot { display: contents; }
+.chart-quote { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 5px 10px; font-size: 12px; line-height: 18px; color: var(--text-secondary, #64748b); background: var(--surface-background, #fff); border-bottom: 1px solid var(--surface-border, #dfe5eb); font-variant-numeric: tabular-nums; min-width: 0; }
+.chart-quote-field, .chart-quote-date { white-space: nowrap; }
+.chart-quote b { font-weight: 500; }
+.chart-quote .pct-up { color: #ef4444; } .chart-quote .pct-down { color: #16a34a; } .chart-quote .pct-flat { color: var(--text-secondary, #64748b); }
+.chart-quote-source { font-size: 10px; opacity: .8; }
+.status-strip .chart-quote { display: flex; flex-wrap: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: transparent; gap: 8px; font-size: var(--font-size-xs); line-height: 18px; color: inherit; }
+.status-strip .chart-quote b { font-weight: 600; }
+.status-strip .chart-quote-source { font-size: 10px; }
+
 /* ===== M6-05 账户权益/收益率 Odometer 数字滚动（仅这两个数字；可用资金等其余数字不接） ===== */
 /* 架构：.odo-text 恒为账面终值（任何时刻读取＝精确值）；.odo-roll 是 aria-hidden 视觉层，
    每位数字＝0-9 竖排条带 translateY（帧间 80ms 线性过渡＝竖直滚动观感）。

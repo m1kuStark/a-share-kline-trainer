@@ -21,6 +21,7 @@ import { MAX_VISIBLE_BARS, CHART_RIGHT_MARGIN_PX } from '../chartNavigation'
 import { nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport } from '../recording/replayViewport'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
 import MaSettingsDialog from './MaSettingsDialog.vue'
+import ChartQuote from './ChartQuote.vue'
 import RangeStatisticsDialog from './RangeStatisticsDialog.vue'
 import PointMeasurement from './PointMeasurement.vue'
 import { calculatePointMeasurement, calculateRangeStatistics, type RangeStatistics } from '../chartStatistics'
@@ -189,6 +190,10 @@ const quote = computed(() => {
   return buildHoverModel(quoteIndex.value ?? last)
 })
 const periodLabel = computed(() => props.timeframe === '1W' ? '周K' : props.timeframe === '1M' ? '月K' : '日K')
+// 训练页状态行提供 #chart-quote-slot：行情条 teleport 进去，避免额外占一行压缩主图高度
+// （compact-chart 既有验收口径：主图起始 y 不因新功能变高）。回放页无槽位时内联渲染。
+const quoteSlot = ref(false)
+onMounted(() => { quoteSlot.value = typeof document !== 'undefined' && document.getElementById('chart-quote-slot') !== null })
 type MeasurementPoint = { x: number; y: number; index: number; value: number }
 const measurement = ref<{ start: MeasurementPoint; end: MeasurementPoint; pointerId: number; active: boolean } | null>(null)
 const measurementModel = computed(() => {
@@ -1893,12 +1898,10 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 
 <template>
   <div class="chart-frame">
-  <div class="chart-quote" role="group" aria-label="K线行情">
-    <span class="chart-quote-date">{{ periodLabel }} {{ quote?.date ?? '--' }}</span>
-    <span v-for="row in (quote?.rows ?? [{ label: '开', value: '--' }, { label: '高', value: '--' }, { label: '低', value: '--' }, { label: '收', value: '--' }])" :key="row.label" class="chart-quote-field" :data-field="row.label">{{ row.label }} <b>{{ row.value }}</b></span>
-    <span class="chart-quote-field" data-field="涨幅">{{ props.timeframe === '1W' ? '周涨幅' : props.timeframe === '1M' ? '月涨幅' : '日涨幅' }} <b :class="quote?.pct.cls">{{ quote?.pct.text ?? '--' }}</b></span>
-    <span class="chart-quote-source">{{ quoteIndex === null ? '最近已知K线' : '光标K线' }}</span>
-  </div>
+  <Teleport v-if="quoteSlot" to="#chart-quote-slot">
+    <ChartQuote :period-label="periodLabel" :quote="quote" :source="quoteIndex === null ? '最近已知K线' : '光标K线'" />
+  </Teleport>
+  <ChartQuote v-else :period-label="periodLabel" :quote="quote" :source="quoteIndex === null ? '最近已知K线' : '光标K线'" />
   <div class="chart-wrap">
     <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
     <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
@@ -1968,11 +1971,6 @@ defineExpose({ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelec
 .ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
 .ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: var(--font-size-sm); }
 .chart-frame { display: grid; grid-template-rows: auto minmax(0, 1fr) 40px; height: 100%; min-height: 0; }
-.chart-quote { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 5px 10px; font-size: 12px; line-height: 18px; color: var(--text-secondary, #64748b); background: var(--surface-background, #fff); border-bottom: 1px solid var(--surface-border, #dfe5eb); font-variant-numeric: tabular-nums; min-width: 0; }
-.chart-quote-field, .chart-quote-date { white-space: nowrap; }
-.chart-quote b { font-weight: 500; }
-.chart-quote .pct-up { color: #ef4444; } .chart-quote .pct-down { color: #16a34a; } .chart-quote .pct-flat { color: var(--text-secondary, #64748b); }
-.chart-quote-source { font-size: 10px; opacity: .8; }
 .statistics-selection { position: absolute; pointer-events: none; z-index: 5; border: 1px solid #54b8cc; background: #54b8cc25; box-sizing: border-box; }
 .statistics-hint { position: absolute; z-index: 6; top: 35px; left: 8px; padding: 5px 8px; font-size: 12px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); border: 1px solid #54b8cc; pointer-events: none; }
 .statistics-selecting { cursor: crosshair; }

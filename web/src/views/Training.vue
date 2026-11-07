@@ -946,6 +946,7 @@ void load()
     <section class="status-strip" aria-live="polite">
       <span v-if="miniFeedback && !errorMessage" class="status-message mini-update-feedback" :class="{ 'error-text': !!dataRefreshError }" :title="miniFeedback" :role="dataRefreshError ? 'alert' : 'status'">{{ miniFeedback }}</span>
       <span v-else class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
+      <span id="chart-quote-slot" class="status-quote-slot"></span>
       <span v-if="!miniFeedback" class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
       <span v-if="loading" class="loading-dot">处理中</span>
       <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ viewportDateText(chartViewport.visibleDate) }}</span>

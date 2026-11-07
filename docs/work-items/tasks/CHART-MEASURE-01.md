@@ -29,7 +29,10 @@
                           "docs/work-items/README.md",
                           "docs/status.md",
                           "docs/verification/2026-11/CHART-MEASURE-01/**",
-                          "docs/work-items/tasks/CHART-ANALYSIS-01.md"
+                          "docs/work-items/tasks/CHART-ANALYSIS-01.md",
+                          "docs/user/README.md",
+                          "web/src/components/RangeStatisticsDialog.vue",
+                          "docs/verification/2026-10/CHART-ANALYSIS-01/**"
                       ],
     "depends_on":  [
                        "CHART-ANALYSIS-01"

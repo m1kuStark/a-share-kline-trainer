@@ -312,7 +312,7 @@ test('range statistics and point measurement stay on real prices while the price
   const toggle = page.getByRole('button', { name: '多空反转', exact: true })
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.bars()[0].close)).not.toBeCloseTo(real[0]!.close, 2)
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.bars()[5].close)).not.toBeCloseTo(real[5]!.close, 2)
   await drag(page, from, to, 'right')
   const mirrored = await readStats()
   expect(mirrored.pct).toBeCloseTo(expected.pct, 1)
