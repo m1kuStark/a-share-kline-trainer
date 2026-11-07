@@ -17,6 +17,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
+  // 全量 journey 在 Windows/Node24 上约 40 分钟，机器满载时页面启动/保存状态偶发超过默认 5s；
+  // 统一等待预算提到 15s（显式更短/更长的用例自带 timeout 不受影响），断言不变。
+  expect: { timeout: 15_000 },
   workers: 1,
   retries: 1,
   reporter: [['list'], ['json', { outputFile: join(artifacts, 'browser-results.json') }], ['html', { open: 'never', outputFolder: join(artifacts, 'html') }]],
