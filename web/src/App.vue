@@ -300,12 +300,56 @@ async function reloadEnv(): Promise<void> {
     envError.value = ''
   } catch (error) { envError.value = error instanceof Error ? error.message : '无法连接本地服务' }
 }
+// SETUP-PASTE-01（Issue #8-B，用户 2026-11-07 拍板）：连接通达信弹层同时提供「手动输入/粘贴路径」
+// 与原生浏览两条入口；仍遵守 SETUP-01 边界（只校验用户确认的单个目录、不自动发现、保存前必须通过检查）。
+const connectDialogOpen = ref(false)
+const connectPathInput = ref('')
+const connectPathChecking = ref(false)
+const connectPathError = ref('')
+const connectPathNote = ref('')
 function openWizard(): void {
   wizardError.value = ''
   wizardNote.value = ''
-  void chooseWizardFolder()
+  connectPathError.value = ''
+  connectPathNote.value = ''
+  connectDialogOpen.value = true
 }
-async function chooseWizardFolder(): Promise<void> {
+function closeConnectDialog(): void {
+  if (wizardBusy.value || connectPathChecking.value) return
+  connectDialogOpen.value = false
+  connectPathInput.value = ''
+  connectPathError.value = ''
+  connectPathNote.value = ''
+}
+async function checkConnectPath(): Promise<void> {
+  const root = connectPathInput.value.trim()
+  if (!root) { connectPathError.value = '请输入通达信安装根目录（包含 vipdoc 与 T0002）'; return }
+  if (connectPathChecking.value || wizardBusy.value) return
+  connectPathChecking.value = true
+  connectPathError.value = ''
+  connectPathNote.value = ''
+  try {
+    const result = await inspectSetupRoot(root)
+    if (!(result.check.recognized && result.check.readable)) {
+      connectPathError.value = result.check.problems.join('；') || '该目录不符合通达信数据目录要求，请核对路径'
+      return
+    }
+    wizardChosenRoot.value = result.check.root
+    connectPathNote.value = `路径可用：${result.check.root}（点击「保存并连接」应用）`
+  } catch (error) {
+    connectPathError.value = error instanceof Error ? error.message : '检查路径失败'
+  } finally {
+    connectPathChecking.value = false
+  }
+}
+async function saveConnectPath(): Promise<void> {
+  if (wizardBusy.value) return
+  if (!wizardChosenRoot.value) { connectPathError.value = '请先检查路径并通过校验，再保存并连接'; return }
+  connectDialogOpen.value = false
+  await saveAndApplyWizard()
+}
+async function browseWizardFolder(): Promise<void> {
+  connectDialogOpen.value = false
   if (wizardBusy.value) return
   wizardBusy.value = true
   wizardError.value = ''
@@ -737,6 +781,28 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
         </div>
       </div>
 
+      <!-- SETUP-PASTE-01：连接通达信弹层（手动粘贴路径 / 原生浏览 两条入口） -->
+      <div v-if="connectDialogOpen" class="connect-dialog" role="dialog" aria-modal="true" aria-label="连接通达信" @click.self="closeConnectDialog">
+        <div class="connect-dialog-panel">
+          <header class="connect-dialog-head">
+            <h2>连接通达信</h2>
+            <button type="button" class="ghost-button" aria-label="关闭连接通达信弹层" title="关闭" :disabled="wizardBusy || connectPathChecking" @click="closeConnectDialog">✕</button>
+          </header>
+          <p class="connect-dialog-note">训练器不会自动发现或扫描安装目录。请手动输入/粘贴，或用 Windows 目录选择器浏览；目录须包含 vipdoc 与 T0002。</p>
+          <label class="connect-dialog-label" for="connect-path-input">通达信安装根目录</label>
+          <input id="connect-path-input" v-model="connectPathInput" type="text" spellcheck="false" placeholder="可直接粘贴路径，例如 D:\new_tdx" aria-label="通达信安装根目录" :disabled="wizardBusy || connectPathChecking" @input="connectPathError = ''; connectPathNote = ''" @keydown.enter.prevent="checkConnectPath" />
+          <p v-if="connectPathError" class="connect-dialog-error" role="alert">{{ connectPathError }}</p>
+          <p v-else-if="connectPathNote" class="connect-dialog-ok" role="status">{{ connectPathNote }}</p>
+          <div class="connect-dialog-actions">
+            <button type="button" class="ghost-button" :disabled="wizardBusy || connectPathChecking" @click="checkConnectPath">{{ connectPathChecking ? '检查中…' : '检查路径' }}</button>
+            <button type="button" class="advance-button" :disabled="wizardBusy || connectPathChecking || !wizardChosenRoot" @click="saveConnectPath">保存并连接</button>
+          </div>
+          <div class="connect-dialog-divider"><span>或</span></div>
+          <button type="button" class="ghost-button connect-dialog-browse" :disabled="wizardBusy || connectPathChecking" @click="browseWizardFolder">浏览文件夹…（Windows 目录选择器）</button>
+          <p class="connect-dialog-hint">取消不会改动当前连接；保存后训练器会受控重启以应用新目录。</p>
+        </div>
+      </div>
+
       <template v-if="view === 'launcher'">
         <p v-if="wizardError" class="setup-connection-error" role="alert">{{ wizardError }} <button class="data-reread-btn" @click="openWizard">重新选择目录</button></p>
         <p v-if="wizardNote" class="setup-connection-note" role="status">{{ wizardNote }}</p>
@@ -841,6 +907,24 @@ function onTrainingRetrained(next: TrainingSnapshot): void {
 .picker-blocker-panel h2 { margin: 0 0 10px; font-size: 17px; }
 .picker-blocker-panel p { margin: 6px 0; line-height: 1.6; color: var(--text-secondary, #51637a); }
 .picker-blocker-hint { display: block; margin-top: 12px; color: var(--text-muted, #7b8794); font-size: var(--font-size-sm); }
+/* SETUP-PASTE-01：连接通达信弹层（手动粘贴路径 / 目录选择器） */
+.connect-dialog { position: fixed; inset: 0; z-index: 121; display: grid; place-items: center; background: rgba(15, 23, 42, .48); }
+.connect-dialog-panel { width: min(520px, calc(100vw - 40px)); max-height: calc(100vh - 40px); overflow: auto; padding: 20px 22px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 10px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 18px 48px #0006; }
+.connect-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.connect-dialog-head h2 { margin: 0; font-size: 17px; }
+.connect-dialog-note { margin: 8px 0 14px; font-size: var(--font-size-sm); line-height: 1.6; color: var(--text-secondary, #51637a); }
+.connect-dialog-label { display: block; margin-bottom: 6px; font-size: var(--font-size-md); font-weight: 600; }
+.connect-dialog input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 5px; background: transparent; color: inherit; font-family: inherit; }
+.connect-dialog-error { margin: 8px 0 0; font-size: var(--font-size-sm); color: #d24b4b; line-height: 1.5; overflow-wrap: anywhere; }
+.connect-dialog-ok { margin: 8px 0 0; font-size: var(--font-size-sm); color: #2e7c8c; line-height: 1.5; overflow-wrap: anywhere; }
+.connect-dialog-actions { display: flex; gap: 10px; margin-top: 12px; }
+.connect-dialog-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: var(--text-muted, #7b8794); font-size: var(--font-size-sm); }
+.connect-dialog-divider::before, .connect-dialog-divider::after { content: ""; flex: 1; border-top: 1px solid var(--surface-border, #dfe5eb); }
+.connect-dialog-browse { width: 100%; }
+.connect-dialog-hint { margin: 12px 0 0; font-size: var(--font-size-xs); color: var(--text-muted, #7b8794); line-height: 1.6; }
+:global(body.dark .connect-dialog) { background: rgba(0, 0, 0, .68); }
+:global(body.dark .connect-dialog-panel) { background: #1b1b1b; border-color: #383838; color: #e5e7eb; }
+:global(body.dark .connect-dialog input[type="text"]) { border-color: #383838; }
 :global(body.dark .picker-blocker){ background: rgba(0, 0, 0, .68); }
 
 /* SETUP-01 首次接入向导：跟随训练器面板风格（双主题，不引外部样式） */

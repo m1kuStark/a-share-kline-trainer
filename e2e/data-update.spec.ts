@@ -292,10 +292,13 @@ test('f) 无可用来源：中性「连接通达信」入口，点击打开接�
   await expect(unavailable).toHaveText('连接通达信')
   await expect(unavailable).toHaveAttribute('title', /未检测到通达信数据/)
   const alerts: string[] = []
-  page.on('dialog', dialog => { alerts.push(dialog.message()); void dialog.dismiss() })
+  await unavailable.click()
+  // SETUP-PASTE-01：点击先打开连接弹层（手动粘贴路径 / 原生浏览），浏览按钮仍走原生命令桥
+  const dialog = page.getByRole('dialog', { name: '连接通达信', exact: true })
+  await expect(dialog).toBeVisible()
   const wizardEntry = page.waitForResponse(response => response.request().method() === 'POST'
     && new URL(response.url()).pathname === '/api/setup/select-directory', { timeout: 10_000 })
-  await unavailable.click()
+  await dialog.getByRole('button', { name: '浏览文件夹…（Windows 目录选择器）' }).click()
   await wizardEntry
   expect(refreshCalls).toBe(0)
   expect(alerts).toEqual([])
