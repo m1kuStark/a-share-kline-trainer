@@ -178,6 +178,8 @@ test('shift-left ownership, cancellation and boundaries preserve drawings and ex
   await expect(measurementCard(page)).not.toBeVisible()
   await quickMeasure(page, await visibleStart(page), (await visibleStart(page)) + 5)
   await page.setViewportSize({ width: 1280, height: 720 })
+  // 视口尺寸变化后等待图表 resize 落定（并行满载下下一笔取点曾用舊布局坐标导致测量卡不出现）
+  await page.waitForTimeout(500)
   await expect(measurementCard(page)).not.toBeVisible()
   await quickMeasure(page, await visibleStart(page), (await visibleStart(page)) + 5)
   await page.getByRole('tab', { name: '周K', exact: true }).click()

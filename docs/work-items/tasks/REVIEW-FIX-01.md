@@ -21,6 +21,8 @@
     "e2e/data-update.spec.ts",
     "e2e/m3-feedback.spec.ts",
     "e2e/uiux-training.spec.ts",
+    "e2e/chart-analysis.spec.ts",
+    "e2e/m3-round3.spec.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",
     "docs/verification/2026-11/TEST-BUDGET-01/README.md",
     "server/test/runtime-cancel.test.ts",
