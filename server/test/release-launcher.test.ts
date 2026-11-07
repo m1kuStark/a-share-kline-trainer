@@ -176,7 +176,7 @@ if (mode === 'hang') {
 const FIXTURE_DIR_NAME = 'rel launch 容器 pkg'
 const NODE_BINARY = process.platform === 'win32' ? 'node.exe' : 'node'
 
-interface OwnedServer { pid: number, port: number, runId: string, healthDelayMs: number }
+interface OwnedServer { pid: number, port: number, runId: string, healthDelayMs: number, dataDir: string }
 const activeServers: OwnedServer[] = []
 const activeChildren: ChildProcess[] = []
 const pendingLaunches = new Set<Promise<LaunchResult>>()
@@ -204,7 +204,16 @@ async function cleanupFixtures() {
     // 慢健康夹具的身份确认必须等待它的固定响应延迟，否则探针超时会被误判
     // 为“身份不符”而跳过结束，留下占用夹具目录的孤儿进程。
     const probe = await launcher.probeHealth(server.port, { timeoutMs: 400 + server.healthDelayMs })
-    if (!launcher.probeMatchesState(probe, { runId: server.runId, pid: server.pid })) continue
+    let owned = launcher.probeMatchesState(probe, { runId: server.runId, pid: server.pid })
+    if (!owned) {
+      // 健康探针在满载/慢夹具下可能超时；状态文件同样能证明进程身份（appId+runId+pid），
+      // 避免把本测试启动的服务误判为无关进程而泄漏成孤儿（2026-11-07 实证 4 个残留）。
+      try {
+        const state = JSON.parse(await readFile(join(server.dataDir, 'trainer-state.json'), 'utf8')) as { appId?: unknown, runId?: unknown, pid?: unknown }
+        owned = state.appId === 'a-share-kline-trainer' && state.runId === server.runId && state.pid === server.pid
+      } catch { /* 状态文件缺失/损坏时保持未证明 */ }
+    }
+    if (!owned) continue
     try { process.kill(server.pid, 'SIGKILL') } catch { /* already gone */ }
   }
   for (const server of servers) {
@@ -301,6 +310,7 @@ async function launchFixture(root: string, overrides: Record<string, string | un
       port: result.port,
       runId: result.runId,
       healthDelayMs: Number(overrides.FIXTURE_HEALTH_DELAY_MS ?? 0) || 0,
+      dataDir: result.dataDir,
     })
     return result
   })

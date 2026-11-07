@@ -14,6 +14,7 @@
     "server/test/review-profile.test.ts",
     "scripts/runtime/run.ts",
     "server/test/runtime-cancel.test.ts",
+    "server/test/release-launcher.test.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/work-items/README.md",
