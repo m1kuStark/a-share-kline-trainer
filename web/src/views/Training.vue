@@ -28,6 +28,7 @@ import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff } from 'lucide-vue-next'
+import { withWeekday } from '../dateLabels'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
 const emit = defineEmits<{ ended: []; 'open-history': []; retrained: [TrainingSnapshot] }>()
@@ -434,10 +435,13 @@ function viewportDateText(date: string | null): string | null {
   if (date === null) return null
   if (axisDateHidden.value) return MASKED_DATE_TEXT
   const shift = axisDateShiftDays.value
-  if (shift === 0) return date
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 10)
-  if (/^\d{4}-\d{2}$/.test(date)) return new Date(Date.parse(`${date}-01T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 7)
-  return date
+  let presented = date
+  if (shift !== 0) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) presented = new Date(Date.parse(`${date}T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 10)
+    else if (/^\d{4}-\d{2}$/.test(date)) presented = new Date(Date.parse(`${date}-01T00:00:00Z`) + shift * 86_400_000).toISOString().slice(0, 7)
+  }
+  // CHART-WEEKDAY-01：状态条「可见至/末根」日K日期追加星期（周/月键不加；遮蔽态只呈现星号）
+  return tf.value === '1D' ? withWeekday(presented) : presented
 }
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'

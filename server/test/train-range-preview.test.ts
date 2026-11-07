@@ -9,6 +9,11 @@ import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 import { createTraining, previewTrainingRange, RANGE_PREVIEW_TTL_MS } from '../src/train/engine.js'
 
+// 并发创建用例在真实临时 SQLite 上做双请求事务竞争；并行 worker 满载时实测 > 5s
+// （与 settings-training / review-profile / worktree-tools 同一先例：真实 I/O 预算放宽到 20s，
+// 断言与产品语义不变）。
+vi.setConfig({ testTimeout: 20_000 })
+
 // TRAIN-02 第一片：服务端训练范围预览/创建复核。合成夹具，不通达信目录、不写个人库。
 // 日历：2026-07-01(三)…07-31(五) 共23根 + 08-03…08-14(五) 共10根 = 33 根。
 

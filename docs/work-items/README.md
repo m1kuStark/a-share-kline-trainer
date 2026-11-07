@@ -6,6 +6,8 @@
 
 - [SETUP-PASTE-01 目录粘贴](tasks/SETUP-PASTE-01.md)：连接通达信弹层支持手动输入/粘贴路径，保留原生选择器。
 
+- [CHART-WEEKDAY-01 星期显示](tasks/CHART-WEEKDAY-01.md)：日K 悬浮卡/时间轴/状态条显示中文星期，周月K不加。
+
 - [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
 
 - [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。

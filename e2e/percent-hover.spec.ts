@@ -124,7 +124,9 @@ async function leaveChart(page: Page, host: { x: number; y: number }): Promise<v
 
 /** 断言卡内容与独立期望一致（日期行＋开/高/低/收/涨幅五行＋涨幅配色档与计算色） */
 async function expectCardContents(page: Page, expected: CardOracle): Promise<void> {
-  await expect(page.locator('.hover-card-date')).toHaveText(expected.date)
+  // CHART-WEEKDAY-01：日K悬浮卡日期追加星期（'YYYY-MM-DD 周X'）；转义正则元字符后匹配
+  const escapedDate = expected.date.replace(/[.*+?^${}()|[\]\\]/g, match => `\\${match}`)
+  await expect(page.locator('.hover-card-date')).toHaveText(new RegExp(`^${escapedDate} 周[一二三四五六日]$`))
   await expect(page.locator('[data-testid="hover-card"] .hover-card-row')).toHaveText([...expected.rows, `涨幅${expected.pct.text}`])
   const pctValue = page.locator('[data-testid="hover-card"] .hover-card-row').last().locator('.hover-card-value')
   await expect(pctValue).toHaveClass(new RegExp(expected.pct.cls))

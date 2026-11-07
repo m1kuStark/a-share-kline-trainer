@@ -29,6 +29,7 @@ import { appMaSettings, maWarmup } from '../maSettings'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
 import { builtInGeometry, pointInPolygon, segmentInRect } from '../builtInGeometry'
+import { decorateAxisLabel, withWeekday } from '../dateLabels'
 import { formatHoverCard, hasPhasePrice, includePhasePriceRange, phasePriceColor, HOVER_CARD_DWELL_MS, type HoverCardModel } from '../phasePrice'
 
 registerDrawingOverlays()
@@ -320,8 +321,11 @@ const datePresentation = { hidden: false, shiftDays: 0 }
 // 真实 bar 才换算呈现（该 bar 的真实交易日）；klinecharts 对右侧空白越界 dataIndex 的日历日
 // 外推刻度无 bar 可锚，不呈现日期（null → 空文本），杜绝揭示出周末/节假日假日期。
 let barTimestamps: ReadonlySet<number> = new Set()
+// CHART-WEEKDAY-01：轴刻度追加星期需要「时间戳→该位置真实 bar 日期」；只对命中真实 bar 的刻度装饰。
+let barDateByTimestamp: ReadonlyMap<number, string> = new Map()
 function rebuildBarTimestamps(): void {
   barTimestamps = new Set(loadedData.map(bar => bar.timestamp))
+  barDateByTimestamp = new Map(loadedData.filter(bar => typeof (bar as { date?: string }).date === 'string').map(bar => [bar.timestamp, (bar as { date?: string }).date as string]))
 }
 function applyDateFormatter(): void {
   // 遮蔽只作用于轴/十字线/悬浮的日期文本；其余格式化（价格/量额）不经此路径。
@@ -332,7 +336,11 @@ function applyDateFormatter(): void {
       if (datePresentation.hidden) return type === 'xAxis' ? '' : MASKED_DATE_TEXT
       const revealed = revealedTickTimestamp(timestamp, barTimestamps, datePresentation.shiftDays)
       if (revealed === null) return ''
-      return utils.formatDate(dateTimeFormat, revealed, template)
+      const text = utils.formatDate(dateTimeFormat, revealed, template)
+      if (type !== 'xAxis') return text
+      const barDate = barDateByTimestamp.get(timestamp)
+      const presentedDate = barDate === undefined ? null : datePresentation.shiftDays === 0 ? barDate : presentableDateString(barDate, datePresentation.shiftDays)
+      return decorateAxisLabel(text, presentedDate, props.timeframe)
     },
   })
 }
@@ -354,8 +362,11 @@ function buildHoverModel(dataIndex: number): HoverCardModel | null {
   const list = loadedData as Array<KLineData & { date?: string }>
   const bar = (loadedData as Array<KLineData & { date?: string }>)[dataIndex]
   if (!bar) return null
+  const presentedDate = typeof bar.date === 'string' ? (datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date, datePresentation.shiftDays)) : bar.date
+  // CHART-WEEKDAY-01：日K悬浮卡日期追加星期（遮蔽态只呈现星号；周/月K不加）
+  const dateText = !datePresentation.hidden && props.timeframe === '1D' && typeof presentedDate === 'string' ? withWeekday(presentedDate) : presentedDate
   return formatHoverCard(
-    { ...bar, date: typeof bar.date === 'string' ? (datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date, datePresentation.shiftDays)) : bar.date },
+    { ...bar, date: dateText },
     dataIndex > 0 ? list[dataIndex - 1]?.close ?? null : null,
   )
 }

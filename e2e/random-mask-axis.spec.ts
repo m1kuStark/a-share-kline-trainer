@@ -90,6 +90,9 @@ function chartBarDates(page: Page): Promise<string[]> {
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+// CHART-WEEKDAY-01：日K轴标签/悬浮卡日期追加中文星期（'YYYY-MM-DD 周X'）
+const ISO_DATE_WITH_WEEKDAY = /^\d{4}-\d{2}-\d{2} 周[一二三四五六日]$/
+const isoDayOf = (label: string): string => label.slice(0, 10)
 
 /** 悬浮信息卡日期：指针停驻主图中心 ≥1s 触发（与用户真实悬停同路径），返回卡内日期文本 */
 async function hoverCardDateAt(page: Page, clientX: number, clientY: number): Promise<string> {
@@ -140,13 +143,13 @@ test.describe('random mask axis and settle stock (RF2-02/03)', () => {
     await dialog.getByRole('button', { name: '确认显示', exact: true }).click()
     await expect(page.locator('.workspace-title')).toHaveText(`${revealed.training.name} · ${revealed.training.code}`)
 
-    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE.test(text)).length).toBeGreaterThan(0)
+    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE_WITH_WEEKDAY.test(text)).length).toBeGreaterThan(0)
     labels = await axisLabels(page)
-    const dateLabels = labels.filter(text => ISO_DATE.test(text))
+    const dateLabels = labels.filter(text => ISO_DATE_WITH_WEEKDAY.test(text))
     expect(dateLabels.length).toBeGreaterThan(0)
     const barDates = await chartBarDates(page) // 运行中为偏移空间；真实日期＝偏移日期＋offsetDays
     for (const label of dateLabels) {
-      expect(barDates, `揭示态轴标签 ${label} 反推偏移空间后应命中图内 K 线日期`).toContain(shiftIsoDay(label, -offsetDays))
+      expect(barDates, `揭示态轴标签 ${label} 反推偏移空间后应命中图内 K 线日期`).toContain(shiftIsoDay(isoDayOf(label), -offsetDays))
     }
     // 状态条「可见至」视窗日期同步换算（命中真实空间任一 K 线日）
     const stripDate = ((await page.locator('.viewport-date').first().textContent()) ?? '').match(/\d{4}-\d{2}-\d{2}/)?.[0]
@@ -154,8 +157,8 @@ test.describe('random mask axis and settle stock (RF2-02/03)', () => {
     expect(barDates).toContain(shiftIsoDay(stripDate!, -offsetDays))
     // 悬浮卡日期同步换算为真实日期（命中真实空间任一 K 线日）
     const revealedCardDate = await hoverCardDateAt(page, chart!.x + chart!.width * 0.5, chart!.y + chart!.height * 0.35)
-    expect(ISO_DATE.test(revealedCardDate), `揭示态悬浮卡应为真实日期，实际=${revealedCardDate}`).toBe(true)
-    expect(barDates).toContain(shiftIsoDay(revealedCardDate, -offsetDays))
+    expect(ISO_DATE_WITH_WEEKDAY.test(revealedCardDate), `揭示态悬浮卡应为真实日期＋星期，实际=${revealedCardDate}`).toBe(true)
+    expect(barDates).toContain(shiftIsoDay(isoDayOf(revealedCardDate), -offsetDays))
 
     // ③ 再点眼睛恢复遮蔽（无需确认）：日期维度回遮蔽（random_time 股票本就真实，标题不变）
     await page.getByRole('button', { name: '恢复星号遮蔽' }).click()
@@ -200,11 +203,11 @@ test.describe('random mask axis and settle stock (RF2-02/03)', () => {
     // 留在当前界面：结束＝全面揭晓，轴显示真实日期（bars 已换真实空间，标签直接命中 K 线日期）
     await results.getByRole('button', { name: '留在当前界面', exact: true }).click()
     await expect(results).not.toBeVisible()
-    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE.test(text)).length).toBeGreaterThan(0)
-    const dateLabels = (await axisLabels(page)).filter(text => ISO_DATE.test(text))
+    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE_WITH_WEEKDAY.test(text)).length).toBeGreaterThan(0)
+    const dateLabels = (await axisLabels(page)).filter(text => ISO_DATE_WITH_WEEKDAY.test(text))
     const barDates = await chartBarDates(page)
     for (const label of dateLabels) {
-      expect(barDates, `结束态轴标签 ${label} 应直接命中真实 K 线日期`).toContain(label)
+      expect(barDates, `结束态轴标签 ${label} 应直接命中真实 K 线日期`).toContain(isoDayOf(label))
     }
     expect(pageErrors).toEqual([])
   })
@@ -230,11 +233,11 @@ test.describe('random mask axis and settle stock (RF2-02/03)', () => {
     await waitTrainingInteractive(page)
 
     const active = await (await page.request.get('/api/trainings/active')).json() as { training: { id: number } }
-    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE.test(text)).length).toBeGreaterThan(0)
-    const dateLabels = (await axisLabels(page)).filter(text => ISO_DATE.test(text))
+    await expect.poll(async () => (await axisLabels(page)).filter(text => ISO_DATE_WITH_WEEKDAY.test(text)).length).toBeGreaterThan(0)
+    const dateLabels = (await axisLabels(page)).filter(text => ISO_DATE_WITH_WEEKDAY.test(text))
     const barDates = await chartBarDates(page)
     for (const label of dateLabels) {
-      expect(barDates, `random_stock 轴标签 ${label} 应直接命中 K 线日期`).toContain(label)
+      expect(barDates, `random_stock 轴标签 ${label} 应直接命中 K 线日期`).toContain(isoDayOf(label))
     }
     await page.request.post(`/api/trainings/${active.training.id}/abandon`)
   })
