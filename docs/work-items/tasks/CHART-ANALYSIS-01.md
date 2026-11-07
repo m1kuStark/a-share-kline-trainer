@@ -32,7 +32,11 @@
                           "server/test/recording-chart-actions.test.ts",
                           "server/test/recording-chart-capture.test.ts",
                           "docs/work-items/tasks/CHART-MEASURE-01.md",
-                          "docs/verification/2026-11/CHART-MEASURE-01/**"
+                          "docs/verification/2026-11/CHART-MEASURE-01/**",
+                          "docs/verification/2026-11/CHART-PR7-MERGE/**",
+                          "web/src/components/ChartQuote.vue",
+                          "web/src/styles.css",
+                          "web/src/views/Training.vue"
                       ],
     "depends_on":  [
 

@@ -32,7 +32,11 @@
                           "docs/work-items/tasks/CHART-ANALYSIS-01.md",
                           "docs/user/README.md",
                           "web/src/components/RangeStatisticsDialog.vue",
-                          "docs/verification/2026-10/CHART-ANALYSIS-01/**"
+                          "docs/verification/2026-10/CHART-ANALYSIS-01/**",
+                          "docs/verification/2026-11/CHART-PR7-MERGE/**",
+                          "web/src/components/ChartQuote.vue",
+                          "web/src/styles.css",
+                          "web/src/views/Training.vue"
                       ],
     "depends_on":  [
                        "CHART-ANALYSIS-01"
