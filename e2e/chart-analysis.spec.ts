@@ -276,6 +276,81 @@ test('right drag and menu selection calculate inclusive ranges without requests 
   expect(requests).toEqual([])
 })
 
+test('range statistics and point measurement stay on real prices while the price mirror is on', async ({ page }) => {
+  await openChart(page)
+  const from = await visibleStart(page), to = from + 17
+  const real = await bars(page), selected = real.slice(from, to + 1)
+  const base = real[from - 1]?.close ?? selected[0]!.open
+  const expected = {
+    pct: (selected[selected.length - 1]!.close / base - 1) * 100,
+    change: selected[selected.length - 1]!.close - base,
+    high: Math.max(...selected.map(bar => bar.high)),
+    low: Math.min(...selected.map(bar => bar.low)),
+  }
+  const readStats = async () => {
+    const dialog = page.getByRole('dialog', { name: /区间统计/ })
+    await expect(dialog).toBeVisible()
+    const snapshot = {
+      pct: parseFloat(await field(page, '区间涨跌幅').innerText()),
+      change: parseFloat(await field(page, '区间涨跌额').innerText()),
+      high: parseFloat(await field(page, '区间最高价').innerText()),
+      low: parseFloat(await field(page, '区间最低价').innerText()),
+    }
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toBeVisible()
+    return snapshot
+  }
+  // 关闭镜像：统计＝真实序列手算值（既有基线）
+  await drag(page, from, to, 'right')
+  const plain = await readStats()
+  expect(plain.pct).toBeCloseTo(expected.pct, 1)
+  expect(plain.change).toBeCloseTo(expected.change, 1)
+  expect(plain.high).toBeCloseTo(expected.high, 1)
+  expect(plain.low).toBeCloseTo(expected.low, 1)
+
+  // 开启多空反转：库内喂入镜像序列，统计仍必须以 loadedData 真实序列计算
+  const toggle = page.getByRole('button', { name: '多空反转', exact: true })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.bars()[0].close)).not.toBeCloseTo(real[0]!.close, 2)
+  await drag(page, from, to, 'right')
+  const mirrored = await readStats()
+  expect(mirrored.pct).toBeCloseTo(expected.pct, 1)
+  expect(mirrored.change).toBeCloseTo(expected.change, 1)
+  expect(mirrored.high).toBeCloseTo(expected.high, 1)
+  expect(mirrored.low).toBeCloseTo(expected.low, 1)
+
+  // 两点测量：像素→价位是镜像显示域，五项字段必须反镜像回真实价（p′=2P₀−p）
+  const basis = real[0]!.close
+  const host = (await page.locator('.chart-host').boundingBox())!
+  const axis = await page.evaluate(() => {
+    const hook = (window as any).__trainerChart
+    return { range: hook.yRange(), pane: hook.panes().find((pane: any) => pane.id === 'candle_pane') }
+  })
+  const priceAt = (y: number) => Number((axis.range.realFrom + (1 - (y - host.y - axis.pane.top) / axis.pane.height) * axis.range.realRange).toFixed(2))
+  const startX = (await position(page, from)).x, endX = (await position(page, to)).x
+  const startY = host.y + 130, endY = host.y + 230
+  const startReal = Number((2 * basis - priceAt(startY)).toFixed(2))
+  const endReal = Number((2 * basis - priceAt(endY)).toFixed(2))
+  await page.keyboard.down('Shift')
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(endX, endY, { steps: 10 })
+  await expect(measurementCard(page)).toBeVisible()
+  await page.mouse.up()
+  await page.keyboard.up('Shift')
+  const metric = (label: string) => measurementCard(page).locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${label}$`) }) }).locator('dd')
+  const readNumber = async (label: string) => parseFloat(await metric(label).innerText())
+  expect(await readNumber('起点价')).toBeCloseTo(startReal, 1)
+  expect(await readNumber('终点价')).toBeCloseTo(endReal, 1)
+  expect(await readNumber('价差')).toBeCloseTo(endReal - startReal, 1)
+  expect(await readNumber('涨跌幅')).toBeCloseTo((endReal / startReal - 1) * 100, 1)
+  await page.keyboard.press('Escape')
+  await expect(measurementCard(page)).not.toBeVisible()
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+})
+
 test('statistics and persistent quote fit both themes and desktop sizes; drawing right-click retains priority', async ({ page }) => {
   await openChart(page)
   for (const size of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }]) {

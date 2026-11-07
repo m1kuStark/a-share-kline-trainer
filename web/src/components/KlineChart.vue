@@ -9,7 +9,7 @@ import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
-import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings } from '../priceMirror'
+import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings, unmirrorPrice } from '../priceMirror'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
@@ -185,7 +185,7 @@ const quoteIndex = ref<number | null>(null)
 const quote = computed(() => {
   markerRevision.value
   props.hideDates; props.dateShiftDays
-  const last = (chart?.getDataList().length ?? 0) - 1
+  const last = loadedData.length - 1
   return buildHoverModel(quoteIndex.value ?? last)
 })
 const periodLabel = computed(() => props.timeframe === '1W' ? '周K' : props.timeframe === '1M' ? '月K' : '日K')
@@ -212,7 +212,13 @@ function measurementPoint(event: PointerEvent): MeasurementPoint | null {
   const index = statisticsIndex(event.clientX)
   if (!plot || index === null) return null
   const y = Math.max(plot.top, Math.min(event.clientY - bounds.top, plot.top + plot.height))
-  const value = chart.convertFromPixel([{ y }], { paneId: 'candle_pane', absolute: true })[0]?.value
+  const displayValue = chart.convertFromPixel([{ y }], { paneId: 'candle_pane', absolute: true })[0]?.value
+  // CHART-INVERT-01：像素→价位是显示域（镜像态为镜像价）；测量口径＝真实价（决策信息不撒谎），
+  // 用活动 P₀ 反镜像回真实域后再进入五项字段。
+  const basis = activeMirrorBasis()
+  const value = displayValue === undefined || !Number.isFinite(displayValue)
+    ? undefined
+    : basis === null ? displayValue : unmirrorPrice(displayValue, basis)
   const x = chart.convertToPixel({ dataIndex: index }, { paneId: 'candle_pane', absolute: true }).x
   return value === undefined || !Number.isFinite(value) || x === undefined || !Number.isFinite(x) ? null
     : { x: Math.max(plot.left, Math.min(x, plot.left + plot.width)), y, index, value: Number(value.toFixed(2)) }
@@ -244,7 +250,7 @@ function statisticsIndex(clientX: number): number | null {
   if (!plot) return null
   const x = Math.max(plot.left, Math.min(clientX - host.value.getBoundingClientRect().left, plot.left + plot.width))
   const index = chart.convertFromPixel([{ x }], { paneId: 'candle_pane' })[0]?.dataIndex
-  return index === undefined || !Number.isFinite(index) || !chart.getDataList().length ? null : Math.max(0, Math.min(Math.round(index), chart.getDataList().length - 1))
+  return index === undefined || !Number.isFinite(index) || !loadedData.length ? null : Math.max(0, Math.min(Math.round(index), loadedData.length - 1))
 }
 function statisticsHit(event: MouseEvent | PointerEvent): boolean {
   if (!chart || !host.value || isOverPaneSeparator(event) || isOverPriceAxis(event.clientX, event.clientY)) return false
@@ -270,8 +276,10 @@ function openStatisticsMenu(event: MouseEvent | PointerEvent, from: number | nul
   void nextTick(() => host.value?.parentElement?.querySelector<HTMLButtonElement>('.statistics-menu button')?.focus())
 }
 function showStatistics(from: number, to: number): void {
-  const list = chart?.getDataList() as Array<KLineData & { date?: string }> | undefined
-  const result = calculateRangeStatistics((list ?? []).map(bar => ({ ...bar, date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date ?? '', datePresentation.shiftDays) })), from, to)
+  // CHART-INVERT-01：统计必须以组件真实序列 loadedData 为唯一源（镜像态库内是显示序列，
+  // 涨跌方向会反）；日期仍走同一呈现层（遮蔽/常量差）。
+  const list = loadedData as Array<KLineData & { date?: string }>
+  const result = calculateRangeStatistics(list.map(bar => ({ ...bar, date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date ?? '', datePresentation.shiftDays) })), from, to)
   statisticsMenu.value = null; statisticsArmed.value = false
   statisticsResult.value = result
   if (!result) { closeStatistics(); emit('panelChange', false); return }
