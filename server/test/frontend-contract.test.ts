@@ -243,6 +243,13 @@ describe('M2 chart interaction contract', () => {
     expect(chartSource).toMatch(/if \(event\.ctrlKey\) \{[\s\S]{0,160}?zoomBy\(event\.deltaY > 0 \? 1\.3 : 1 \/ 1\.3\)/)
   })
 
+  it('CHART-PAN-01：时间轴普通左键拖动独占手势并按像素平移，不进入框选/测量', async () => {
+    const source = await readFile(chartPath, 'utf8')
+    expect(source).toMatch(/paneIdAt\(event\.clientY\) === 'x_axis_pane'\) \{[\s\S]{0,160}?timeAxisPan = \{ pointerId: event\.pointerId, lastX: event\.clientX \}/)
+    expect(source).toMatch(/if \(timeAxisPan\) \{[\s\S]{0,220}?chart\.scrollByDistance\(dx, 0\)/)
+    expect(source).toMatch(/timeAxisPan && event\.pointerId === timeAxisPan\.pointerId[\)\s\S]{0,80}?timeAxisPan = null/)
+  })
+
   it('slims MACD histogram bars to 2/5 of the default width', async () => {
     const source = await readFile(new URL('../../web/src/indicators.ts', import.meta.url), 'utf8')
     expect(source).toMatch(/barSpace\.halfGapBar \* 2 \* 0\.4/)

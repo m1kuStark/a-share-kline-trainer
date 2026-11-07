@@ -154,9 +154,10 @@ describe('REC-CHART-C pointerup fallback and viewport operations', () => {
   it('wires every user gesture end to the viewport report exactly once per path', async () => {
     const source = await readChart()
     expect(blockOf(source, 'function onWheel(', 'onMounted(() => {')).toMatch(/chart\?\.scrollByDistance\([^\n]+\)\n  scheduleViewportOperation\(\)/)
-    // 框选右滑/左滑、轴缩放松手、窗格分隔松手、中键平移松手共 5 处
+    // 框选右滑/左滑、轴缩放松手、窗格分隔松手、中键平移松手、时间轴拖动平移松手共 6 处
     const up = blockOf(source, 'function onPointerUp(', 'function onPaneDblClick(')
-    expect((up.match(/scheduleViewportOperation\(\)/g) ?? []).length).toBe(5)
+    expect((up.match(/scheduleViewportOperation\(\)/g) ?? []).length).toBe(6)
+    expect(up).toMatch(/timeAxisPan && event\.pointerId === timeAxisPan\.pointerId[\s\S]{0,200}scheduleViewportOperation\(\)[\s\S]{0,20}return/)
     expect(up).toMatch(/if \(event\.pointerId === paneResizePointerId\) \{ paneResizePointerId = null; scheduleViewportOperation\(\); return \}/)
     expect(up).toMatch(/if \(axisScaleDrag\) \{ axisScaleDrag = false; scheduleViewportOperation\(\); return \}/)
     for (const count of [1, 150]) {

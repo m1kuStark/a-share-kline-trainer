@@ -10,6 +10,8 @@
 
 - [CHART-ZOOM-01 缩放与平移](tasks/CHART-ZOOM-01.md)：Ctrl+滚轮缩放、Shift+←/→ 平移快捷键，设置可改键。
 
+- [CHART-PAN-01 时间轴拖动平移](tasks/CHART-PAN-01.md)：底部时间轴左键拖动平移，独占时间轴手势，回放可用。
+
 - [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
 
 - [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。

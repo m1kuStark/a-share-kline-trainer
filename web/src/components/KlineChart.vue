@@ -1046,6 +1046,17 @@ function onPaneResizeCancel(event: PointerEvent): void {
   if (event.pointerId === paneResizePointerId) paneResizePointerId = null
 }
 function onPointerDown(event: PointerEvent): void {
+  // CHART-PAN-01：时间轴拖动平移。必须最先裁决：x_axis_pane 不属于绘图 pane，
+  // 此分支让时间轴独占本次手势（框选/测量/多选/分隔条都不会在时间轴启动）。
+  if (event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey
+    && !props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag
+    && paneIdAt(event.clientY) === 'x_axis_pane') {
+    timeAxisPan = { pointerId: event.pointerId, lastX: event.clientX }
+    hideHoverCard()
+    if (host.value) host.value.style.cursor = 'grabbing'
+    event.preventDefault(); event.stopPropagation()
+    return
+  }
   if (event.button === 0 && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey
     && !props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag && statisticsHit(event)) {
     const point = measurementPoint(event)
@@ -1122,6 +1133,16 @@ function onPointerMove(event: PointerEvent): void {
     }
     return
   }
+  if (timeAxisPan) {
+    if (event.pointerId !== timeAxisPan.pointerId) return
+    const dx = event.clientX - timeAxisPan.lastX
+    if (dx !== 0 && chart) {
+      timeAxisPan.lastX = event.clientX
+      chart.scrollByDistance(dx, 0)
+      scheduleViewportOperation()
+    }
+    return
+  }
   if (paneResizePointerId !== null) return
   // M6-03 信息卡可见性跟随十字线：库在指针移到价格轴/时间轴/分隔条时不派发 onCrosshairChange
   // 但已清除十字线，这里兜底隐藏（指针在图表外或轴区都不该有卡；挂起中的停留计时一并取消）
@@ -1138,7 +1159,8 @@ function onPointerMove(event: PointerEvent): void {
   }
   if (host.value && !props.drawTool && event.buttons === 0) {
     hostRect = host.value.getBoundingClientRect()
-    host.value.style.cursor = hitTestUserOverlay(event.clientX, event.clientY) ? 'pointer' : ''
+    // CHART-PAN-01：悬停时间轴显示抓手，提示可拖动平移；其余保持既有指针语义
+    host.value.style.cursor = paneIdAt(event.clientY) === 'x_axis_pane' ? 'grab' : hitTestUserOverlay(event.clientX, event.clientY) ? 'pointer' : ''
   }
   // 纵轴缩放拖拽中：把指针位置重路由回轴区域，库原生缩放持续生效（与框选互斥）
   if (axisScaleDrag) { dispatchSyntheticAxisMove(event); return }
@@ -1175,6 +1197,12 @@ function onPointerUp(event: PointerEvent): void {
     statisticsGesture = null
     if (gesture.button === 2) openStatisticsMenu(event, gesture.moved ? gesture.index : null, gesture.moved ? gesture.end : null)
     else showStatistics(gesture.index, gesture.end)
+    return
+  }
+  if (timeAxisPan && event.pointerId === timeAxisPan.pointerId) {
+    timeAxisPan = null
+    if (host.value) host.value.style.cursor = ''
+    scheduleViewportOperation()
     return
   }
   if (event.pointerId === paneResizePointerId) { paneResizePointerId = null; scheduleViewportOperation(); return }
@@ -1684,6 +1712,10 @@ function suppressNativeContextMenu(event: MouseEvent): void {
 // 让库的原生缩放管线（_processYAxisScalingEvent，含其自身重绘）持续工作，直到松手。
 let axisScaleDrag = false
 let axisScaleDragX = 0
+// CHART-PAN-01：时间轴（底部 x_axis_pane）左右拖动平移——普通左键在时间轴上按下即进入；
+// 拖右看更早、拖左看更新（库 scrollByDistance 正距离＝视窗左移/看更早）。与图表区框选、
+// Shift 测量、Ctrl/Alt/Meta 组合、分隔条/轴缩放互斥：只在 x_axis_pane 且无修饰键时启动。
+let timeAxisPan: { pointerId: number; lastX: number } | null = null
 // host 捕获阶段拦截 mousedown：主图空白的按下＝框选接管，拦截库的 mousedown——
 // 否则库会在拖拽中对手动模式纵轴叠加纵向平移（框选时所有画线整体上下移动的根因）；
 // 轴上按下与画线命中照常放行给库（轴缩放起点/画线选中拖拽不受影响）
@@ -1854,6 +1886,8 @@ onMounted(() => {
       return value === undefined ? null : { value, y: chart?.convertToPixel({ value }, { paneId: 'candle_pane', absolute: true }).y }
     },
     viewportMetrics: () => ({ width: chart?.getSize('candle_pane', 'main')?.width, bar: chart?.getBarSpace().bar, range: chart?.getVisibleRange(), scrollEnabled: chart?.isScrollEnabled() }),
+    // CHART-PAN-01 时间轴拖动 e2e 只读探针：主图与时间轴 pane 在 host 内的矩形（尺寸/坐标）
+    paneRects: () => ({ candle: chart?.getSize('candle_pane'), xAxis: chart?.getSize('x_axis_pane') }),
     bars: () => chart?.getDataList(),
     pointToPixel: (timestamp: number, value: number, pane = 'candle_pane') => chart?.convertToPixel({ timestamp, value }, { paneId: actualPaneId(pane), absolute: true }),
     lastPriceMarkShow: () => chart?.getStyles().candle.priceMark.last.show ?? null,

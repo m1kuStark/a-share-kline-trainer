@@ -9,7 +9,9 @@ import { classifyReview, REVIEW_POLICY_VERSION } from '../../scripts/worktree/re
 import { planVerification } from '../../scripts/verify-candidate.js'
 import { runTask } from '../../scripts/worktree.js'
 
-vi.setConfig({ testTimeout: 90_000, hookTimeout: 30_000 })
+// 并行满载时 beforeEach 的真实临时 git 仓/符号链接初始化实测超过 30s；按既有先例放宽 hook
+// 预算（断言与产品语义不变）。
+vi.setConfig({ testTimeout: 90_000, hookTimeout: 90_000 })
 
 let sandbox: string
 let root: string

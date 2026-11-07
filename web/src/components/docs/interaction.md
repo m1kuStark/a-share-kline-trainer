@@ -18,6 +18,7 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 4. 中键先把主图轴置手动模式，临时锁住用户图形，合成左键 `mousedown` 交给库滚动。松中键须补左键 `mouseup`，否则库的 `_startScrollCoordinate` 会残留，松手后仍跟随鼠标平移。
 5. 绘图模式左键先重置库双击计时，再放行 overlay 取点；已绘图形的命中交给库选择与拖动。自定义命中线体 7px、锚点 8px，比库宽，因此 bubble 阶段补齐 pressed/click 状态。
 6. 普通模式的价格轴左键设 `axisScaleDrag`，持续移动被重路由成轴内合成 `mousemove`，直到释放。绘图区空白先主动解除库持久选中：多选模式启动矩形选图，普通模式启动时间范围缩放，并拦截库原生平移，避免手动轴叠加纵向移动。
+7. CHART-PAN-01：`x_axis_pane` 上的普通左键在 pointerdown capture 最先裁决并独占本次手势（`timeAxisPan`），进入后拦截库 mousedown/框选/测量/多选；window 既有 pointermove/up 链负责按像素 `scrollByDistance` 平移与释放，不新增监听器；`readOnly` 回放不限制该平移。
 
 主图、VOL、MACD 的绘图区同权，时间轴排除。多选框选不缩放；关闭多选会清空集合和自绘锚点。选中层为 18px 黄芯白圈，随选中、可见范围和拖动重算，线体保留原色。hover 只改变指针。
 
