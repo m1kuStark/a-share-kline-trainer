@@ -21,7 +21,7 @@
 | `npx vitest run server/test/runtime-isolation.test.ts` | 15/15 通过（隔离，硬化后多次） |
 | `npx vitest run server/test/runtime-cancel.test.ts` | 1/1 通过（有界清理错误窗口 18s→26s 对齐新 20s 死线，断言不变） |
 | `npx vitest run server/test/release-launcher.test.ts` | **52/52** 通过（泄漏修复后隔离） |
-| `npm run verify:baseline` | 待填（整批最终门禁） |
+| `npm run verify:baseline` | **0**（run-601825e0；journey 235 passed / 1 skipped / 0 failed，45.4m；总 53.3min；cleanBefore/After=true） |
 
 ## 边界
 

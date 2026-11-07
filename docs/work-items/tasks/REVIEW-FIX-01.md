@@ -37,6 +37,7 @@
     "docs/verification/2026-11/UI-TOOLBAR-01/README.md",
     "docs/verification/2026-11/F7-DEPS-01/README.md",
     "docs/verification/2026-11/REVIEW-FIX-01/**",
+    "docs/verification/2026-11/BATCH-GH-202611/**",
     "docs/work-items/tasks/REVIEW-FIX-01.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/work-items/README.md",

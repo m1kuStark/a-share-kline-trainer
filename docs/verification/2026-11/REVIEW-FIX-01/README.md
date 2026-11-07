@@ -32,7 +32,7 @@
 
 ## 最终门禁（verify:baseline）
 
-待填。
+**通过（2026-11-08）**：`npm run verify:baseline` 全绿，验证运行 `run-601825e0-6248-4ea4-9f32-9b11ed53a44f`，被测提交 `0453f5b`，`verification.json: passed=true`、`cleanBefore/cleanAfter=true`，总耗时 **53.3min**（journey 45.4m：235 passed / 1 skipped / 0 failed；docs/unit/types/build/snapshot/m2 全 0）。
 
 ## 备注
 
