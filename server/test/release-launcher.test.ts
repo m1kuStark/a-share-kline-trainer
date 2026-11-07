@@ -107,6 +107,9 @@ interface LauncherModule {
 
 const launcher = launcherModule as unknown as LauncherModule
 
+// 满载/慢机时真实启动器健康探测可超过默认预算；只放宽预算与就绪窗口，断言不变。
+vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
+
 // 固定包结构的最小替身：真实 Node 进程、动态端口，ready 文件与 /api/health
 // 身份语义与 server/dist/index.js 对齐。响应体是启动时预计算的静态字符串，
 // 不在请求处理器里拼接任何请求输入。
@@ -114,9 +117,6 @@ const FIXTURE_SERVER = `
 import { appendFile, rename, writeFile } from 'node:fs/promises'
 import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
-
-// 满载/慢机时真实启动器健康探测可超过默认预算；只放宽预算与就绪窗口，断言不变。
-vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
 
 const counterFile = process.env.FIXTURE_SPAWN_COUNTER
 if (counterFile) await appendFile(counterFile, process.pid + '\\n')
