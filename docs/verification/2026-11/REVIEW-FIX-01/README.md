@@ -19,6 +19,7 @@
 | 10 | minor：TRAIN-FEE 证据自查数字 | 更正为实测值 |
 | 11 | 整批 verify:baseline 首跑发现：UIUX-TOOLBAR 新悬浮面板使 uiux-training 两例旧布局断言失败（祖先 overflow 裁切假设/账户区必须溢出） | 更新 uiux-training e2e：固定浮层子树以「视口内＋中心命中」为可达口径，账户区/工具列表允许内容自然适配（`allowFits`）；图表/交易/推进/全部工具可点等原断言保留 |
 | 12 | 长时全量 journey 环境 flaky：chart-analysis resize 后立即取点偶发测量卡不出现；m3-round3 载入画线 5s 超时 | 两处测试预算/等待加固：resize 后等待 500ms 布局落定；保存状态等待 15s；断言与产品语义不变 |
+| 13 | 全量 journey 后段偶发页面仍停在「正在连接本地服务…」/工具保存状态 >5s（机器满载） | Playwright 全局 expect timeout 5s→15s（显式短超时用例不受影响），断言不变 |
 
 ## 定向检查（整改后）
 
