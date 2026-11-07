@@ -92,7 +92,7 @@ describe('M2 chart interaction contract', () => {
     const trainingSource = await readFile(trainingPath, 'utf8')
     // 工具条停靠训练控制台底部（用户 D1 验收反馈改定：不遮挡图表），内容区滚动观察
     expect(trainingSource).toMatch(/class="console-scroll"/)
-    expect(trainingSource).toMatch(/class="draw-toolbar"/)
+    expect(trainingSource).toMatch(/class="draw-toolbar/)
     expect(trainingSource).toMatch(/DRAW_TOOLS/)
     expect(trainingSource).toMatch(/drawTool = drawTool === tool\.name \? null : tool\.name/)
     // 画线模式下 Space/B/S 禁用（防误推进/误交易）、Esc 退出、状态条提示
@@ -170,11 +170,11 @@ describe('M2 chart interaction contract', () => {
   it('registers the ray tool in the drawing registry (D3)', async () => {
     // D3/D4/D5~D7：射线/直线/水平线系入注册表（库内置；命中几何延伸见 overlayHitGeometry）
     const drawToolsSource = await readFile(new URL('../../web/src/drawTools.ts', import.meta.url), 'utf8')
-    expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线' \}/)
-    expect(drawToolsSource).toMatch(/\{ name: 'straightLine', label: '直线' \}/)
-    expect(drawToolsSource).toMatch(/\{ name: 'horizontalStraightLine', label: '水平直线' \}/)
-    expect(drawToolsSource).toMatch(/\{ name: 'horizontalSegment', label: '水平线段' \}/)
-    expect(drawToolsSource).toMatch(/\{ name: 'horizontalRayLine', label: '水平射线' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'rayLine', label: '射线', description: [^}]+glyph: 'ray' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'straightLine', label: '直线', description: [^}]+glyph: 'line' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalStraightLine', label: '水平直线', description: [^}]+glyph: 'hline' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalSegment', label: '水平线段', description: [^}]+glyph: 'hseg' \}/)
+    expect(drawToolsSource).toMatch(/\{ name: 'horizontalRayLine', label: '水平射线', description: [^}]+glyph: 'hray' \}/)
     const chartSource = await readFile(chartPath, 'utf8')
     // 水平系命中几何与库渲染范围一致：水平直线单点全宽、水平射线沿点2方向延伸到边
     expect(chartSource).toMatch(/builtInGeometry\(overlay.name, pts, bounds\)/)

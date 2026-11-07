@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
 import { theme } from '../theme'
 import { useRecording } from '../recording/useRecording'
 import type { ChartCapture } from '../recording/types'
@@ -7,6 +7,7 @@ import { writeRecordingFile } from '../recording/recordingFile'
 import { archiveRecordingFile } from '../recording/archive'
 import { buildArchiveFileName, describeRecordingForArchive } from '../recording/archiveNaming'
 import KlineChart from '../components/KlineChart.vue'
+import ToolGlyph from '../components/ToolGlyph.vue'
 import {
   abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, revealRandomTraining, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
   type Bar, type OrderView, type RandomRevealTraining, type Tier, type Timeframe, type TrainingSnapshot,
@@ -27,7 +28,7 @@ import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
-import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff } from 'lucide-vue-next'
+import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil } from 'lucide-vue-next'
 import { withWeekday } from '../dateLabels'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
@@ -70,6 +71,77 @@ const drawTool = ref<string | null>(null)
 const toolbarCollapsed = ref(false)
 const customizingTools = ref(false)
 const otherToolsExpanded = ref(false)
+// UI-TOOLBAR-01（Issue #8 工具栏布局，用户 2026-11-07 拍板）：顶栏「划线」开关控制可拖拽悬浮工具面板；
+// 面板位置持久化到 localStorage，拖动钳制在视口内；图形化图标 + hover 中文名称/描述。
+const TOOLBAR_POSITION_KEY = 'trainer.drawToolbar.position.v1'
+const toolbarVisible = ref(true)
+const toolHover = ref<{ label: string; description: string; x: number; y: number } | null>(null)
+const toolbarPosition = ref<{ x: number; y: number } | null>(loadToolbarPosition())
+function loadToolbarPosition(): { x: number; y: number } | null {
+  try {
+    const raw = localStorage.getItem(TOOLBAR_POSITION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object') return null
+    const { x, y } = parsed as { x?: unknown; y?: unknown }
+    return typeof x === 'number' && typeof y === 'number' && Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null
+  } catch { return null }
+}
+function saveToolbarPosition(): void {
+  if (!toolbarPosition.value) return
+  try { localStorage.setItem(TOOLBAR_POSITION_KEY, JSON.stringify(toolbarPosition.value)) } catch { /* 存储不可用时仅本会话生效 */ }
+}
+function toolbarElement(): HTMLElement | null { return document.querySelector('.draw-toolbar') }
+function clampToolbarPoint(x: number, y: number): { x: number; y: number } {
+  const element = toolbarElement()
+  const width = element?.offsetWidth ?? 320, height = element?.offsetHeight ?? 460
+  const maxX = Math.max(8, window.innerWidth - width - 8), maxY = Math.max(8, window.innerHeight - height - 8)
+  return { x: Math.min(Math.max(8, x), maxX), y: Math.min(Math.max(8, y), maxY) }
+}
+function toggleToolbar(): void {
+  toolbarVisible.value = !toolbarVisible.value
+  toolHover.value = null
+  if (!toolbarVisible.value) { drawTool.value = null; customizingTools.value = false }
+}
+let toolbarDrag: { pointerId: number; startX: number; startY: number; originX: number; originY: number } | null = null
+function onToolbarDragStart(event: PointerEvent): void {
+  if (event.button !== 0) return
+  if ((event.target as HTMLElement | null)?.closest('button, select, input')) return
+  const element = toolbarElement()
+  if (!element) return
+  const rect = element.getBoundingClientRect()
+  toolbarDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: rect.left, originY: rect.top }
+  toolHover.value = null
+  ;(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
+  event.preventDefault()
+}
+function onToolbarDragMove(event: PointerEvent): void {
+  if (!toolbarDrag || event.pointerId !== toolbarDrag.pointerId) return
+  toolbarPosition.value = clampToolbarPoint(toolbarDrag.originX + event.clientX - toolbarDrag.startX, toolbarDrag.originY + event.clientY - toolbarDrag.startY)
+}
+function onToolbarDragEnd(event: PointerEvent): void {
+  if (!toolbarDrag || event.pointerId !== toolbarDrag.pointerId) return
+  ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
+  toolbarDrag = null
+  saveToolbarPosition()
+}
+function showToolHover(tool: { label: string; description: string }, event: MouseEvent | FocusEvent): void {
+  const target = event.currentTarget as HTMLElement | null
+  if (!target) return
+  const rect = target.getBoundingClientRect()
+  const width = 236
+  const x = Math.min(Math.max(8, rect.left + rect.width / 2 - width / 2), Math.max(8, window.innerWidth - width - 8))
+  const y = rect.bottom + 10 + 74 > window.innerHeight ? Math.max(8, rect.top - 84) : rect.bottom + 10
+  toolHover.value = { label: tool.label, description: tool.description, x, y }
+}
+function hideToolHover(): void { toolHover.value = null }
+function ensureToolbarPosition(): void {
+  if (!toolbarVisible.value) return
+  // 默认停靠在主图右侧（账户区）上方且不压价格轴——用户可拖动到任意位置；小屏由 clamp 收进视口
+  const chartPanel = document.querySelector('.chart-panel')?.getBoundingClientRect()
+  toolbarPosition.value = toolbarPosition.value ? clampToolbarPoint(toolbarPosition.value.x, toolbarPosition.value.y) : clampToolbarPoint((chartPanel?.right ?? window.innerWidth - 308) + 8, 72)
+}
+onMounted(() => { nextTick(() => ensureToolbarPosition()) })
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const favoriteTools = computed(() => favoriteToolNames.value.flatMap(name => DRAW_TOOLS.find(tool => tool.name === name) ?? []))
 const otherTools = computed(() => DRAW_TOOLS.filter(tool => !favoriteToolNames.value.includes(tool.name)))
@@ -939,6 +1011,7 @@ void load()
         </details>
       </div>
       <div class="training-actions">
+        <button class="ghost-button draw-toolbar-toggle" :class="{ active: toolbarVisible }" :aria-pressed="toolbarVisible" title="显示/隐藏划线工具（可拖拽悬浮面板）" @click="toggleToolbar"><Pencil :size="14" />划线</button>
         <button class="ghost-button data-refresh-btn" :class="{ 'is-updating': dataUpdating, attention: dataStatus?.freshness?.state === 'stale' && !dataUpdating, 'flash-ok': miniFlash === 'ok', 'flash-fail': miniFlash === 'fail' || !!dataRefreshError }" :disabled="dataUpdating" :title="miniTitle" :aria-label="`日线数据更新：${miniTitle}`" @click="onMiniRefresh">{{ miniLabel }}</button>
         <button class="ghost-button compact-icon-button" title="刷新图表" aria-label="刷新图表" :disabled="loading" @click="load"><RefreshCw :size="14" /></button>
         <button class="ghost-button compact-icon-button" title="回到最新K线" aria-label="回到最新K线" :disabled="loading" @click="chartRef?.resetView()"><SkipForward :size="14" /></button>
@@ -1068,8 +1141,9 @@ void load()
         <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
 
         </div>
-        <div class="draw-toolbar" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools }" @keydown="onToolbarKeydown">
-          <div class="drawing-toolbar-heading">
+        <div v-show="toolbarVisible" class="draw-toolbar is-floating" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools }" :style="toolbarPosition ? { left: `${toolbarPosition.x}px`, top: `${toolbarPosition.y}px`, right: 'auto' } : undefined" @keydown="onToolbarKeydown">
+          <div class="drawing-toolbar-heading" @pointerdown="onToolbarDragStart" @pointermove="onToolbarDragMove" @pointerup="onToolbarDragEnd" @pointercancel="onToolbarDragEnd">
+            <span class="toolbar-drag-handle" title="拖动移动工具面板" aria-hidden="true"><GripVertical :size="13" /></span>
             <button class="tool-collapse" :disabled="customizingTools" :title="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-label="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-expanded="!toolbarCollapsed" @click="toolbarCollapsed = !toolbarCollapsed"><ChevronDown v-if="toolbarCollapsed" :size="14"/><ChevronUp v-else :size="14"/></button>
             <span>常用工具</span>
             <button v-if="customizingTools" class="tool-reset" title="恢复默认常用工具" aria-label="恢复默认常用工具" @click="updateFavoriteTools([...DEFAULT_FAVORITE_TOOLS])"><RotateCcw :size="13"/></button>
@@ -1079,7 +1153,7 @@ void load()
             <div class="toolbar-tool-lists">
               <div class="favorite-tools tool-list" :class="{ 'accepting-drop': customizingTools && draggedTool }" @dragover="dragOverTools($event, 'favorites')" @drop.stop="dropTool">
                 <template v-for="(tool, index) in favoriteTools" :key="tool.name">
-                  <div class="tool-item" :class="{ 'is-dragged': draggedTool === tool.name }" @dragover.stop="dragOverTools($event, 'favorites', index)">
+                  <div class="tool-item" @mouseenter="showToolHover(tool, $event)" @mouseleave="hideToolHover" @focusin="showToolHover(tool, $event)" @focusout="hideToolHover" :class="{ 'is-dragged': draggedTool === tool.name }" @dragover.stop="dragOverTools($event, 'favorites', index)">
                     <span v-if="toolDropTarget?.list === 'favorites' && toolDropTarget.index === index" class="toolbar-drop-indicator" aria-hidden="true"></span>
                     <span v-if="toolDropTarget?.list === 'favorites' && toolDropTarget.index === favoriteTools.length && index === favoriteTools.length - 1" class="toolbar-drop-indicator at-end" aria-hidden="true"></span>
                     <button
@@ -1089,7 +1163,7 @@ void load()
                       @dragstart="startToolDrag($event, tool.name)" @dragend="endToolDrag"
                       @mousedown="!customizingTools && $event.preventDefault()"
                       @click="!customizingTools && (drawTool = drawTool === tool.name ? null : tool.name)"
-                    ><GripVertical v-if="customizingTools" :size="12"/>{{ tool.label }}</button>
+                    ><GripVertical v-if="customizingTools" :size="12"/><ToolGlyph :tool="tool" /><span class="tool-label">{{ tool.label }}</span></button>
                     <div v-if="customizingTools" class="tool-item-actions">
                       <button :disabled="index === 0" :title="`${tool.label}前移`" :aria-label="`${tool.label}前移`" @click="shiftFavoriteTool(tool.name, -1)"><ArrowLeft :size="12"/></button>
                       <button :disabled="index === favoriteTools.length - 1" :title="`${tool.label}后移`" :aria-label="`${tool.label}后移`" @click="shiftFavoriteTool(tool.name, 1)"><ArrowRight :size="12"/></button>
@@ -1103,7 +1177,7 @@ void load()
               <button class="other-tools-toggle" :aria-expanded="otherToolsExpanded || customizingTools" :disabled="customizingTools" @click="otherToolsExpanded = !otherToolsExpanded"><ChevronUp v-if="otherToolsExpanded || customizingTools" :size="13"/><ChevronDown v-else :size="13"/>其他工具 <span>{{ otherTools.length }}</span></button>
               <div v-if="otherToolsExpanded || customizingTools" class="other-tools tool-list" :class="{ 'accepting-drop': customizingTools && draggedTool }" @dragover="dragOverTools($event, 'other')" @drop.stop="dropTool">
                 <span v-if="toolDropTarget?.list === 'other'" class="toolbar-drop-indicator" aria-hidden="true"></span>
-                <div v-for="tool in otherTools" :key="tool.name" class="tool-item" :class="{ 'is-dragged': draggedTool === tool.name }">
+                <div v-for="tool in otherTools" @mouseenter="showToolHover(tool, $event)" @mouseleave="hideToolHover" @focusin="showToolHover(tool, $event)" @focusout="hideToolHover" :key="tool.name" class="tool-item" :class="{ 'is-dragged': draggedTool === tool.name }">
                   <button
                     :data-tool-name="tool.name" :draggable="customizingTools"
                     :disabled="!customizingTools && (initialDrawings === null || textPanelOpen)"
@@ -1111,7 +1185,7 @@ void load()
                     @dragstart="startToolDrag($event, tool.name)" @dragend="endToolDrag"
                     @mousedown="!customizingTools && $event.preventDefault()"
                     @click="!customizingTools && (drawTool = drawTool === tool.name ? null : tool.name)"
-                  ><GripVertical v-if="customizingTools" :size="12"/>{{ tool.label }}</button>
+                    ><GripVertical v-if="customizingTools" :size="12"/><ToolGlyph :tool="tool" /><span class="tool-label">{{ tool.label }}</span></button>
                   <div v-if="customizingTools" class="tool-item-actions"><button :title="`加入常用：${tool.label}`" :aria-label="`加入常用：${tool.label}`" @click="updateFavoriteTools(moveFavoriteTool(favoriteToolNames, tool.name, favoriteToolNames.length))"><Plus :size="12"/></button></div>
                 </div>
                 <span v-if="!otherTools.length" class="tool-list-empty">全部工具已加入常用</span>
@@ -1131,6 +1205,10 @@ void load()
             <button v-if="drawingSaveStatus === '保存失败'" @click="flushDrawings">重试保存</button>
             <span v-if="favoriteStorageError" class="favorite-storage-error" title="常用工具未能写入浏览器存储，刷新后会恢复之前的设置">常用未保存</span>
           </div>
+        </div>
+        <div v-if="toolHover" class="draw-tool-hover" role="tooltip" :style="{ left: `${toolHover.x}px`, top: `${toolHover.y}px` }">
+          <strong>{{ toolHover.label }}</strong>
+          <span>{{ toolHover.description }}</span>
         </div>
       </aside>
     </section>

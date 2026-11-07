@@ -110,14 +110,14 @@ test('自动保存待保存进行中失败重试成功不改变工具区或账�
   expect((await (await page.request.get(`/api/trainings/${active.training.id}/drawings`)).json()).drawings).toHaveLength(2)
 })
 
-test('折叠其他工具扩展账户可视区，双主题多尺寸标签无背景填充', async ({ page }) => {
+test('折叠其他工具压缩悬浮工具面板高度，双主题多尺寸标签无背景填充', async ({ page }) => {
   test.setTimeout(60_000)
   await open(page)
-  const folded = await page.locator('.console-scroll').boundingBox()
+  // UI-TOOLBAR-01：工具面板改为悬浮层，折叠「其他工具」压缩面板自身高度（不再改变账户区滚动高度）
+  const folded = await page.locator('.draw-toolbar').boundingBox()
   await page.locator('.other-tools-toggle').click()
-  const expanded = await page.locator('.console-scroll').boundingBox()
-  expect(folded!.height).toBeGreaterThan(expanded!.height)
-  await draw(page, 'fibonacciLine', .4)
+  const expanded = await page.locator('.draw-toolbar').boundingBox()
+  expect(expanded!.height).toBeGreaterThan(folded!.height)
   await draw(page, 'percentageLine', .8)
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   for (const viewport of [{ width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
