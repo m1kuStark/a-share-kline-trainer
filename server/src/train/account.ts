@@ -64,7 +64,7 @@ export function buyCommission(amount: number, fees: FeeConfig): number {
 
 export function sellFee(amount: number, fees: FeeConfig): number {
   if (!fees.enabled) return 0
-  return roundMoney(Math.max(fees.minimumCommission, amount * fees.commissionRate)) + roundMoney(amount * fees.stampDutyRate)
+  return roundMoney(roundMoney(Math.max(fees.minimumCommission, amount * fees.commissionRate)) + roundMoney(amount * fees.stampDutyRate))
 }
 
 // RF-01：A 股口径——送转/配股到账股数取整，零股舍去（现实市场从不入账非整数股）。

@@ -118,6 +118,7 @@ test('折叠其他工具压缩悬浮工具面板高度，双主题多尺寸标�
   await page.locator('.other-tools-toggle').click()
   const expanded = await page.locator('.draw-toolbar').boundingBox()
   expect(expanded!.height).toBeGreaterThan(folded!.height)
+  await draw(page, 'fibonacciLine', .4)
   await draw(page, 'percentageLine', .8)
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   for (const viewport of [{ width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {

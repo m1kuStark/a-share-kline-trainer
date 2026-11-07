@@ -292,6 +292,7 @@ test('f) 无可用来源：中性「连接通达信」入口，点击打开接�
   await expect(unavailable).toHaveText('连接通达信')
   await expect(unavailable).toHaveAttribute('title', /未检测到通达信数据/)
   const alerts: string[] = []
+  page.on('dialog', dialog => { alerts.push(dialog.message()); void dialog.dismiss() })
   await unavailable.click()
   // SETUP-PASTE-01：点击先打开连接弹层（手动粘贴路径 / 原生浏览），浏览按钮仍走原生命令桥
   const dialog = page.getByRole('dialog', { name: '连接通达信', exact: true })

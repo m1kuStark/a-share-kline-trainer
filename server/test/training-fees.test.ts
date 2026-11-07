@@ -8,6 +8,7 @@ import { registerApi } from '../src/api.js'
 import { migrateDatabase } from '../src/db.js'
 import type { AppConfig } from '../src/config.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules } from '../src/train/rules.js'
+import { commitTrainingCreation } from '../src/train/engine.js'
 import { buyCommission, planBuyShares, planSell, sellFee, initialAccountState, type FeeConfig } from '../src/train/account.js'
 import { DEFAULT_FEE_DEFAULTS, FEE_SETTING_KEYS, readFeeDefaults } from '../src/settings/fee-defaults.js'
 
@@ -189,5 +190,32 @@ describe('TRAIN-FEE-01 费用取整与免 5（独立手算 oracle）', () => {
     expect(buyCommission(123456, off)).toBe(0)
     expect(sellFee(123456, off)).toBe(0)
     expect(sellFee(10_000, { ...custom, stampDutyRate: 0 })).toBe(1)
+  })
+})
+
+describe('TRAIN-FEE-01 创建态损坏费率阻断', () => {
+
+  it('创建入口对损坏费率键 409 零写（与资金/复权同口径）', async () => {
+    const context = await createApp()
+    try {
+      context.database.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run(FEE_SETTING_KEYS.commission, 'abc')
+      const before = (context.database.prepare('SELECT COUNT(*) AS n FROM trainings').get() as { n: number }).n
+      let error: unknown = null
+      try {
+        commitTrainingCreation(context.database, {
+          tier: '1M', code: '600519', name: '贵州茅台', market: 'sh',
+          startDate: '2026-04-15', plannedEnd: '2026-05-15', blind: 0,
+          adjustMode: 'forward', initialCash: 1_000_000,
+          createdAt: '2026-04-15T00:00:00.000Z', currentDate: '2026-04-15', currentClose: null,
+          range: null, industry: null, currentOpen: null, currentPhase: 'close',
+          clockMode: 'close_only', ordersEnabled: false,
+        })
+      } catch (caught) { error = caught }
+      expect((error as { code?: string } | null)?.code).toBe('TRAINING_DEFAULTS_UNREADABLE')
+      expect(String((error as { message?: string } | null)?.message)).toContain(FEE_SETTING_KEYS.commission)
+      expect((context.database.prepare('SELECT COUNT(*) AS n FROM trainings').get() as { n: number }).n).toBe(before)
+    } finally {
+      await closeApp(context)
+    }
   })
 })

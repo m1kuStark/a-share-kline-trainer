@@ -20,7 +20,7 @@
 | 命令 | 退出码 / 结果 |
 |---|---|
 | `npm run build`（vue-tsc + server tsc + vite） | **0** |
-| `npm test` | **0**：server 173 文件 / 2596 用例；desktop 34 文件 / 367 用例（2954+367? 合计 2963）全部通过 |
+| `npm test` | **0**：server 173 文件 / 2596 用例；desktop 34 文件 / 367 用例全部通过 |
 | `npm run docs:check` | **0 errors** / 143 warnings |
 | `npm run docs:status -- --check` | **0 errors** |
 | `npm run docs:impact -- --base 79b0f8a --task TRAIN-FEE-01` | **0 errors** |

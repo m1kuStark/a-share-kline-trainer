@@ -16,8 +16,8 @@
 
 | 命令 | 退出码 / 结果 |
 |---|---|
-| `npm run build` | 待填 |
-| `npm test` | 待填 |
+| `npm run build` | **0** |
+| `npm test` | **0**：server 174 文件 / 2599 用例；desktop 34 文件 / 367 用例全部通过 |
 | `npm run docs:check` | **0 errors** / 145 warnings |
 | `npm run docs:status -- --check` | **0 errors** |
 | `npm run docs:impact -- --base dac4c95 --task CHART-WEEKDAY-01` | **0 errors** |

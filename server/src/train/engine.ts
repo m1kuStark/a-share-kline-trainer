@@ -422,6 +422,15 @@ export function commitTrainingCreation(database: DatabaseSync, row: TrainingCrea
   try {
     const active = database.prepare("SELECT id FROM trainings WHERE status = 'running'").get()
     if (active) throw new HttpError(409, '已有进行中的训练，请先结算或放弃')
+    // TRAIN-FEE-01：费率默认与资金/复权同口径——三键任一损坏即 409 零写，禁止静默回退内建常量。
+    const feeFields = readFeeDefaultsFields(database)
+    const feeCorruptKeys: string[] = []
+    if (feeFields.commission.state === 'corrupt') feeCorruptKeys.push(FEE_SETTING_KEYS.commission)
+    if (feeFields.minimum.state === 'corrupt') feeCorruptKeys.push(FEE_SETTING_KEYS.minimum)
+    if (feeFields.stamp.state === 'corrupt') feeCorruptKeys.push(FEE_SETTING_KEYS.stamp)
+    if (feeCorruptKeys.length > 0) {
+      throw new HttpError(409, `训练默认设置损坏（${feeCorruptKeys.join('、')} 无法读取）：请在设置中核对表单并重新保存即可修复`, 'TRAINING_DEFAULTS_UNREADABLE')
+    }
     // M5-DEFAULTS＋返修 F1：省略的资金/复权在 BEGIN IMMEDIATE 提交事务边界按实际依赖字段
     // 解析持久默认（只实际依赖的损坏字段才 409 TRAINING_DEFAULTS_UNREADABLE 零写，无关字段
     // 的损坏不扩散）；显式值不依赖任何默认。

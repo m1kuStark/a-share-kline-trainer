@@ -92,7 +92,7 @@ describe('M2 chart interaction contract', () => {
     const trainingSource = await readFile(trainingPath, 'utf8')
     // 工具条停靠训练控制台底部（用户 D1 验收反馈改定：不遮挡图表），内容区滚动观察
     expect(trainingSource).toMatch(/class="console-scroll"/)
-    expect(trainingSource).toMatch(/class="draw-toolbar/)
+    expect(trainingSource).toMatch(/class="draw-toolbar is-floating"/)
     expect(trainingSource).toMatch(/DRAW_TOOLS/)
     expect(trainingSource).toMatch(/drawTool = drawTool === tool\.name \? null : tool\.name/)
     // 画线模式下 Space/B/S 禁用（防误推进/误交易）、Esc 退出、状态条提示

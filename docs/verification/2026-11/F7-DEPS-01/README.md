@@ -31,7 +31,7 @@
 | `npm test` | **0**：server 175 文件 / 2604 用例；desktop 34 文件 / 367 用例全部通过 |
 | `npm run docs:check` / `docs:status -- --check` | **0 errors** |
 | `npm run docs:impact -- --base ae9f6b8 --task F7-DEPS-01` | **0 errors** |
-| `npm run journey -- e2e/toolbar-floating.spec.ts --retries=0` | 待填 |
+| `npm run journey -- e2e/toolbar-floating.spec.ts --retries=0` | **0**：2/2 通过（18.2s，升级后 vite 7.3.7 构建产物） |
 
 ## 发布边界
 

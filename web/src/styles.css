@@ -508,7 +508,7 @@ body.dark .random-mode-badge { border-color: #2b5c49; background: #14271f; color
 .draw-toolbar.is-floating .toolbar-tool-lists { overflow-y: auto; overflow-x: hidden; max-height: min(52vh, 430px); padding: 2px; }
 .draw-toolbar.is-floating .tool-list { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .draw-toolbar.is-floating .tool-item > button { flex-direction: column; gap: 2px; height: 44px; padding: 3px 2px; white-space: normal; }
-.draw-toolbar.is-floating .draw-toolbar.is-floating .tool-glyph { display: block; width: 20px; height: 20px; }
+.draw-toolbar.is-floating .tool-glyph { display: block; width: 20px; height: 20px; }
 .tool-label { font-size: var(--font-size-2xs, 10px); line-height: 1; font-weight: 500; }
 .draw-toolbar.is-floating .other-tools-toggle { margin: 4px 0; }
 .draw-toolbar.is-floating .drawing-toolbar-actions { flex-wrap: wrap; gap: 4px; }

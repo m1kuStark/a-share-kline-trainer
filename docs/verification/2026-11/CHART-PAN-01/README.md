@@ -16,7 +16,7 @@
 | 命令 | 退出码 / 结果 |
 |---|---|
 | `npm run build` | **0** |
-| `npm test` | 待填 |
+| `npm test` | **0**：server 174 文件 / 2602 用例；desktop 34 文件 / 367 用例全部通过 |
 | `npm run docs:check` / `docs:status -- --check` | **0 errors** |
 | `npm run docs:impact -- --base 4a8f44e --task CHART-PAN-01` | **0 errors** |
 | `check-binding --matrix chart-gestures.yaml --strict --include-untracked` | **8/8 covered，RED=0，open=0** |

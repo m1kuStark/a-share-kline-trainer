@@ -18,6 +18,8 @@
 
 - [TEST-BUDGET-01 测试预算收敛](tasks/TEST-BUDGET-01.md)：review-profile 真实 git I/O 用例 30s→90s（断言不变）。
 
+- [REVIEW-FIX-01 整批审查整改](tasks/REVIEW-FIX-01.md)：创建态费率损坏阻断＋证据收据补实＋并发配置真改＋回归细节。
+
 - [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
 
 - [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。

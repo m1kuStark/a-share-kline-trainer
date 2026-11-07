@@ -17,8 +17,8 @@
 
 | 命令 | 退出码 / 结果 |
 |---|---|
-| `npm run build` | 待填 |
-| `npm test` | 待填 |
+| `npm run build` | **0** |
+| `npm test` | **0**：server 175 文件 / 2604 用例；desktop 34 文件 / 367 用例全部通过 |
 | `npm run docs:check` / `docs:status -- --check` | **0 errors** |
 | `npm run docs:impact -- --base 529105a --task UI-TOOLBAR-01` | **0 errors** |
 | `check-binding --matrix uiux-workbench.yaml --strict --include-untracked` | **11/11 covered，RED=0，open=0** |
