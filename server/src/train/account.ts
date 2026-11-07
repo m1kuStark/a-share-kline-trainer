@@ -52,13 +52,19 @@ export function dilutedCostPrice(state: AccountState): number | null {
   return state.shares > 0 ? state.costTotal / state.shares : null
 }
 
+/** 费用取整到分（TRAIN-FEE-01 用户 2026-11-07 拍板）：佣金与印花税各自四舍五入到 0.01 元，
+ * 再相加；+1e-9 只用于吸收二进制浮点表示噪声（如 71.954999999…），不改变四舍五入口径。 */
+export function roundMoney(value: number): number {
+  return Math.round(value * 100 + 1e-9) / 100
+}
+
 export function buyCommission(amount: number, fees: FeeConfig): number {
-  return fees.enabled ? Math.max(fees.minimumCommission, amount * fees.commissionRate) : 0
+  return fees.enabled ? roundMoney(Math.max(fees.minimumCommission, amount * fees.commissionRate)) : 0
 }
 
 export function sellFee(amount: number, fees: FeeConfig): number {
   if (!fees.enabled) return 0
-  return Math.max(fees.minimumCommission, amount * fees.commissionRate) + amount * fees.stampDutyRate
+  return roundMoney(Math.max(fees.minimumCommission, amount * fees.commissionRate)) + roundMoney(amount * fees.stampDutyRate)
 }
 
 // RF-01：A 股口径——送转/配股到账股数取整，零股舍去（现实市场从不入账非整数股）。

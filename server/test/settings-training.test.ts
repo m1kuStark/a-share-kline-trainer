@@ -391,7 +391,7 @@ describe('TRAINING-RULES：设置默认值 API', () => {
     { name: '缺 feesEnabled', body: { tPlusOne: true }, badField: 'feesEnabled' },
     { name: '缺 tPlusOne', body: { feesEnabled: true }, badField: 'tPlusOne' },
     { name: '类型错误', body: { feesEnabled: 'true', tPlusOne: true }, badField: '布尔' },
-    { name: '未知字段', body: { feesEnabled: true, tPlusOne: true, commissionRate: 0.001 }, badField: '未知字段' },
+    { name: '未知字段', body: { feesEnabled: true, tPlusOne: true, feeRate: 0.001 }, badField: '未知字段' },
     { name: '非对象', body: [true, true], badField: '对象' },
   ]
 

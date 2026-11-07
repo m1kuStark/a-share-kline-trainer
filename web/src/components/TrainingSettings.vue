@@ -55,6 +55,30 @@ const saving = ref(false)
 const feesEnabled = ref(false)
 const tPlusOne = ref(true)
 const initialCashText = ref<string | number>('1000000')
+// TRAIN-FEE-01：费率三项按「万分之」编辑，保存时换算为比率；最低佣金 0＝免 5。
+const commissionWanText = ref<string | number>('2.5')
+const minimumCommissionText = ref<string | number>('5')
+const stampWanText = ref<string | number>('5')
+function formatWanRate(rate: number): string { return String(Number((rate * 10000).toFixed(4))) }
+function parseWanRate(text: string | number): number | null {
+  const value = Number(text)
+  if (!Number.isFinite(value) || value < 0 || value > 100) return null
+  return Number((value / 10000).toFixed(8))
+}
+function parseMinimumCommission(text: string | number): number | null {
+  const value = Number(text)
+  if (!Number.isFinite(value) || value < 0 || value > 1_000_000) return null
+  const raw = String(text).trim()
+  const dot = raw.indexOf('.')
+  if (dot >= 0 && raw.length - dot - 1 > 2) return null
+  return value
+}
+function applyFeePreset(wan: number, minimum: number): void {
+  commissionWanText.value = String(wan)
+  minimumCommissionText.value = String(minimum)
+  markFormDirty()
+  saveSuccess.value = ''
+}
 const adjustMode = ref<'forward' | 'raw'>('forward')
 const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>(props.initialSection ?? 'defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
@@ -258,6 +282,9 @@ function applyView(view: TrainingSettingsView): void {
   tPlusOne.value = view.tPlusOne
   initialCashText.value = String(view.initialCash)
   adjustMode.value = view.adjustMode
+  commissionWanText.value = formatWanRate(view.commissionRate)
+  minimumCommissionText.value = String(view.minimumCommission)
+  stampWanText.value = formatWanRate(view.stampDutyRate)
 }
 
 async function save(): Promise<void> {
@@ -265,6 +292,21 @@ async function save(): Promise<void> {
   const initialCash = parseInitialCash(initialCashText.value)
   if (initialCash === null) {
     saveError.value = '初始资金需在 0.01 至 1,000,000,000 元之间，且至多两位小数'
+    return
+  }
+  const commissionRate = parseWanRate(commissionWanText.value)
+  if (commissionRate === null) {
+    saveError.value = '佣金率需在万分之 0 至 100 之间'
+    return
+  }
+  const minimumCommission = parseMinimumCommission(minimumCommissionText.value)
+  if (minimumCommission === null) {
+    saveError.value = '最低佣金需在 0 至 1,000,000 元之间，且至多两位小数（0＝免 5）'
+    return
+  }
+  const stampDutyRate = parseWanRate(stampWanText.value)
+  if (stampDutyRate === null) {
+    saveError.value = '卖出印花税率需在万分之 0 至 100 之间'
     return
   }
   saving.value = true
@@ -276,6 +318,9 @@ async function save(): Promise<void> {
       tPlusOne: tPlusOne.value,
       initialCash,
       adjustMode: adjustMode.value,
+      commissionRate,
+      minimumCommission,
+      stampDutyRate,
     })
     // 返修 F4：成功保存递增 readVersion——挂起中的旧 GET 迟到到达后不得回退已保存的新默认
     // 或复写“已保存”状态
@@ -925,9 +970,31 @@ function close(): void {
         <input v-model="feesEnabled" type="checkbox" aria-label="新训练收取手续费（佣金/印花税）" @change="markFormDirty()" />
         <span class="settings-row-text">
           <strong>收取手续费</strong>
-          <small>佣金万分之 2.5（最低 5 元），卖出另收万分之 5 印花税。默认关闭。</small>
+          <small>佣金率、最低佣金、卖出印花税率可配置；费用四舍五入到分。默认关闭，开启后按本栏费率扣费。</small>
         </span>
       </label>
+      <div class="settings-fee-box" role="group" aria-label="费率设置">
+        <div class="settings-row settings-column">
+          <label class="settings-field-label" for="training-default-commission">佣金率（万分之，仅影响新训练）</label>
+          <input id="training-default-commission" v-model="commissionWanText" type="number" step="0.1" min="0" max="100" aria-label="佣金率（万分之）" @input="markFormDirty(); saveSuccess = ''" />
+        </div>
+        <div class="settings-row settings-column">
+          <label class="settings-field-label" for="training-default-minimum-commission">最低佣金（元；0＝免 5）</label>
+          <input id="training-default-minimum-commission" v-model="minimumCommissionText" type="number" step="0.01" min="0" max="1000000" aria-label="最低佣金（元）" @input="markFormDirty(); saveSuccess = ''" />
+        </div>
+        <div class="settings-row settings-column">
+          <label class="settings-field-label" for="training-default-stamp">卖出印花税率（万分之）</label>
+          <input id="training-default-stamp" v-model="stampWanText" type="number" step="0.1" min="0" max="100" aria-label="卖出印花税率（万分之）" @input="markFormDirty(); saveSuccess = ''" />
+        </div>
+        <div class="settings-fee-presets" role="group" aria-label="费率预设">
+          <button type="button" class="ghost-button" @click="applyFeePreset(2.5, 5)">万 2.5 · 最低 5</button>
+          <button type="button" class="ghost-button" @click="applyFeePreset(3, 5)">万 3 · 最低 5</button>
+          <button type="button" class="ghost-button" @click="applyFeePreset(1, 0)">万 1 免 5</button>
+          <button type="button" class="ghost-button" @click="applyFeePreset(0.8, 0)">万 0.8 免 5</button>
+          <button type="button" class="ghost-button" @click="applyFeePreset(0.6, 0)">万 0.6 免 5</button>
+        </div>
+        <small>费率随新训练冻结进本局规则快照；已结算训练与录像回放不受影响。</small>
+      </div>
       <label class="settings-row">
         <input v-model="tPlusOne" type="checkbox" aria-label="新训练启用 T+1（当日买入次日可卖）" @change="markFormDirty()" />
         <span class="settings-row-text">
@@ -1215,6 +1282,8 @@ function close(): void {
 .settings-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-top: 1px solid var(--surface-border, #eef2f6); cursor: pointer; }
 .settings-row.settings-column { flex-direction: column; gap: 4px; cursor: default; }
 .settings-field-label { font-size: var(--font-size-md); font-weight: 600; }
+.settings-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settings-row-text small { display: block; font-size: var(--font-size-xs); color: var(--text-secondary, #51637a); line-height: 1.5; }
 .settings-column small { font-size: var(--font-size-xs); color: var(--text-secondary, #51637a); }
 .settings-column input[type="number"] { width: 100%; padding: 6px 8px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 4px; background: transparent; color: inherit; font-variant-numeric: tabular-nums; }
 .settings-adjust-grid { display: flex; gap: 8px; }

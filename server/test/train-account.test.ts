@@ -55,14 +55,14 @@ describe('training account', () => {
 
   it('computes commission and stamp tax exactly when fees are enabled', () => {
     const state = initialAccountState(1_000_000)
-    // 手算：10,000 股 × 9.95 = 99,500；佣金 max(5, 99500×0.00025)=24.875
+    // 手算：10,000 股 × 9.95 = 99,500；佣金 max(5, 99500×0.00025)=24.88
     const buy = planBuy(state, 9.95, 10, FEES_ON)
     if (!buy.ok) throw new Error('unreachable')
     expect(buy.plan.amount).toBe(99_500)
-    expect(buy.plan.fee).toBeCloseTo(24.875, 10)
+    expect(buy.plan.fee).toBeCloseTo(24.88, 10) // TRAIN-FEE-01：费用四舍五入到分（99500×0.00025=24.88→24.88）
     const afterBuy = applyTrade(state, buy.plan)
-    expect(afterBuy.cash).toBeCloseTo(1_000_000 - 99_500 - 24.875, 10)
-    expect(afterBuy.costTotal).toBeCloseTo(99_500 + 24.875, 10)
+    expect(afterBuy.cash).toBeCloseTo(1_000_000 - 99_500 - 24.88, 10)
+    expect(afterBuy.costTotal).toBeCloseTo(99_500 + 24.88, 10)
 
     // 手算：卖出 5,000 股 × 10.00 = 50,000；佣金 12.5 ＋ 印花税 25 = 37.5
     const sell = planSell(afterBuy, 10, { shares: 5_000 }, 10_000, FEES_ON)

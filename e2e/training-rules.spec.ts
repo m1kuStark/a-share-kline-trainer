@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test'
 const SAMPLE = { code: '300857', startDate: '2026-04-15' }
 
 async function resetDefaults(page: Page): Promise<void> {
-  const response = await page.request.put('/api/settings/training', { data: { feesEnabled: false, tPlusOne: true } })
+  const response = await page.request.put('/api/settings/training', { data: { feesEnabled: false, tPlusOne: true, initialCash: 1_000_000, adjustMode: 'forward', commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005 } })
   expect(response.status()).toBe(200)
 }
 
@@ -71,7 +71,8 @@ test('设置默认→创建A冻结→运行中改默认A不变→B采用新值�
   await dialog.getByRole('button', { name: '保存设置' }).click()
   await expect(dialog).toContainText('已保存')
   // M5-DEFAULTS：设置面板四字段一起保存（资金/复权为此刻未编辑的默认值）
-  expect(putBody).toEqual({ feesEnabled: true, tPlusOne: false, initialCash: 1000000, adjustMode: 'forward' })
+  // TRAIN-FEE-01：保存对象扩展为 7 字段（费率三项取自当前默认值）
+  expect(putBody).toMatchObject({ feesEnabled: true, tPlusOne: false, initialCash: 1000000, adjustMode: 'forward', commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005 })
   await dialog.getByRole('button', { name: '关闭' }).click()
   await expect(dialog).not.toBeVisible()
   expect((await (await page.request.get('/api/settings/training')).json())).toMatchObject({ feesEnabled: true, tPlusOne: false })
@@ -101,7 +102,8 @@ test('设置默认→创建A冻结→运行中改默认A不变→B采用新值�
   // 费用手算核对：fee = amount × 0.00025（买入佣金，amount ≥ 20000 时高于最低 5 元）
   const trade = snapshotB.trades.at(-1)
   expect(trade.fee).toBeGreaterThan(5)
-  expect(trade.fee).toBeCloseTo(trade.amount * 0.00025, 6)
+  // TRAIN-FEE-01：佣金四舍五入到分（245.60375 → 245.60）
+  expect(trade.fee).toBeCloseTo(Math.round(trade.amount * 0.00025 * 100 + 1e-9) / 100, 6)
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-strip')).toContainText('卖出成交')
   // e2e 约定：套件收尾不残留活动训练（后续套件与重试不再依赖隐式状态）

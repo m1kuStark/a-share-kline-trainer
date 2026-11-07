@@ -545,3 +545,8 @@ body.dark .equity-block span.odo-strip { color: inherit; }
   .settings-mask > .settings-panel, .exit-overlay > .exit-panel { animation: none; }
   .rail-item, .tier-grid button, .mode-tabs button, .ghost-button, .theme-toggle { transition: none; }
 }
+
+/* TRAIN-FEE-01：训练默认设置-费率可配置（Issue #8-A） */
+.settings-fee-box { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; padding: 10px 12px; border: 1px dashed var(--surface-border, #dfe5eb); border-radius: 8px; }
+.settings-fee-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-fee-presets .ghost-button { font-size: var(--font-size-xs); padding: 2px 8px; }

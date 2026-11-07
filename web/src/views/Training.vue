@@ -352,7 +352,11 @@ const legacyRawLocked = computed(() =>
 const rulesSummary = computed(() => {
   const rules = training.value.rules
   if (!rules) return ''
-  return `费用 ${rules.feesEnabled ? '开' : '关'} · T+1 ${rules.tPlusOne ? '开' : '关'}（本局冻结）`
+  const wan = (rate: number) => String(Number((rate * 10000).toFixed(4)))
+  const feeText = rules.feesEnabled
+    ? `费用 开（佣金万 ${wan(rules.commissionRate)}，最低 ${rules.minimumCommission === 0 ? '免 5' : `${rules.minimumCommission} 元`}，卖出印花万 ${wan(rules.stampDutyRate)}）`
+    : '费用 关'
+  return `${feeText} · T+1 ${rules.tPlusOne ? '开' : '关'}（本局冻结）`
 })
 const isTyping = (event: KeyboardEvent) => event.isComposing || !!(event.target as HTMLElement)?.closest?.('input, textarea, select, [contenteditable="true"]')
 const tierLabel = computed(() => {

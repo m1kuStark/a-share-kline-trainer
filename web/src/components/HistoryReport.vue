@@ -197,6 +197,7 @@ function sideText(side: 'buy' | 'sell'): string {
       <div class="report-rule-tags" aria-label="本局规则">
         <span class="report-rule-tag">{{ report.rules.tPlusOne ? 'T+1' : 'T+0' }}</span>
         <span class="report-rule-tag">{{ report.rules.feesEnabled ? '费用开' : '费用关' }}</span>
+        <span v-if="report.rules.feesEnabled" class="report-rule-tag">佣金万 {{ String(Number((report.rules.commissionRate * 10000).toFixed(4))) }} · 最低 {{ report.rules.minimumCommission === 0 ? '免 5' : report.rules.minimumCommission + ' 元' }} · 印花万 {{ String(Number((report.rules.stampDutyRate * 10000).toFixed(4))) }}</span>
         <span class="report-rule-tag">收盘成交</span>
         <span class="report-rule-tag">{{ info?.adjustText }}</span>
         <span class="report-rule-tag">{{ info?.rulesOriginText }}</span>

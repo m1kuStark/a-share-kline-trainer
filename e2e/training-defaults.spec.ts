@@ -8,7 +8,7 @@ const SAMPLE = { code: '300857', startDate: '2026-04-15' }
 
 async function resetFullDefaults(page: Page): Promise<void> {
   const response = await page.request.put('/api/settings/training', {
-    data: { feesEnabled: false, tPlusOne: true, initialCash: 1_000_000, adjustMode: 'forward' },
+    data: { feesEnabled: false, tPlusOne: true, initialCash: 1_000_000, adjustMode: 'forward', commissionRate: 0.00025, minimumCommission: 5, stampDutyRate: 0.0005 },
   })
   expect(response.status()).toBe(200)
 }

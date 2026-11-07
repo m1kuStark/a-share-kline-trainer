@@ -1,5 +1,9 @@
 # 任务与阶段
 
+- [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
+
+- [TRAIN-FEE-01 个性化佣金费率](tasks/TRAIN-FEE-01.md)：训练默认设置可配佣金率/最低佣金（0＝免 5）/卖出印花税率，新训练冻结快照。
+
 - [CHART-MEASURE-01 Shift两点测量](tasks/CHART-MEASURE-01.md)：主图Shift左键拖动，精简显示涨跌幅、起终点价格、价差和K线数量。
 
 - [CHART-ANALYSIS-01 行情条与区间统计](tasks/CHART-ANALYSIS-01.md)：常驻OHLC、周期涨幅和主图右键拖选统计。

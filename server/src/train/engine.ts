@@ -17,6 +17,7 @@ import {
 } from './account.js'
 import { observedDefaultRules, parseTrainingRules, serializeTrainingRules, type TrainingRulesV1 } from './rules.js'
 import { readCreationDefaultsFields, type CreationDefaults } from '../settings/creation-defaults.js'
+import { FEE_SETTING_KEYS, readFeeDefaultsFields } from '../settings/fee-defaults.js'
 import { industryByCode, loadIndustryCatalog } from '../tdx/industry.js'
 
 export type Tier = '1M' | '3M' | '6M' | '1Y' | '2Y'

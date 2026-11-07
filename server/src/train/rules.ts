@@ -1,12 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { COMMISSION_MIN, COMMISSION_RATE, LOT_SIZE, STAMP_TAX_RATE } from './account.js'
+import { readFeeDefaultsLenient } from '../settings/fee-defaults.js'
 
 // TRAIN-01 训练规则快照：创建训练时冻结完整交易规则，旧训练在迁移时一次性冻结升级时点
 // 观察值。规则是不可变记录（trainings.rules_json），交易/可卖数量/录像上下文一律读本局
 // 快照，不再逐笔读全局 settings；快照缺失/损坏/版本不支持由调用方显式报错，绝不静默
 // 回退当前设置继续交易。
 
-/** 固定执行口径与费用数值沿既有 account.ts 常量，本片不开放费率编辑。 */
+/** 固定执行/权息口径不变；费用数值自 TRAIN-FEE-01 起读全局默认设置（缺键回退 account.ts 常量，
+ * 损坏键由创建入口按 TRAINING_DEFAULTS_UNREADABLE 阻断），创建时数值冻结进本局快照。 */
 export type TrainingExecutionPolicy = 'same-day-raw-close'
 export type TrainingWeightBasis = 'total-equity'
 /** cash-shares-v1＝完整现金/送转/配股权息入账；legacy-raw-unverified＝旧不复权训练历史权息缺失，只读保护。 */
@@ -37,13 +39,14 @@ function settingsFlag(database: DatabaseSync, key: string, fallback: '0' | '1'):
 /** 观察当前全局默认并构造新训练规则（origin=created）。必须在提交事务边界内调用，
  * 才能保证"创建读取的是真正提交时的默认"，不使用 await 前缓存的旧值。 */
 export function observedDefaultRules(database: DatabaseSync, capturedAt: string): TrainingRulesV1 {
+  const feeDefaults = readFeeDefaultsLenient(database)
   return {
     version: 1,
     feesEnabled: settingsFlag(database, 'fees_enabled', '0'),
     tPlusOne: settingsFlag(database, 't1_enabled', '1'),
-    commissionRate: COMMISSION_RATE,
-    minimumCommission: COMMISSION_MIN,
-    stampDutyRate: STAMP_TAX_RATE,
+    commissionRate: feeDefaults.commissionRate ?? COMMISSION_RATE,
+    minimumCommission: feeDefaults.minimumCommission ?? COMMISSION_MIN,
+    stampDutyRate: feeDefaults.stampDutyRate ?? STAMP_TAX_RATE,
     lotSize: LOT_SIZE,
     execution: 'same-day-raw-close',
     weightBasis: 'total-equity',

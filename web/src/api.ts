@@ -417,7 +417,7 @@ export function fetchTrainingSettings(): Promise<TrainingSettingsView> {
   return request('/api/settings/training')
 }
 
-export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean; initialCash: number; adjustMode: 'forward' | 'raw' }): Promise<TrainingSettingsView> {
+export function putTrainingSettings(input: { feesEnabled: boolean; tPlusOne: boolean; initialCash: number; adjustMode: 'forward' | 'raw'; commissionRate?: number; minimumCommission?: number; stampDutyRate?: number }): Promise<TrainingSettingsView> {
   return request('/api/settings/training', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
