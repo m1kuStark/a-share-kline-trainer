@@ -10,6 +10,7 @@ import {
   type DesktopApplyState, type DesktopUpdatesApi, type UpdateFlowState,
 } from '../updateFlow'
 import {
+  supportsOpenLogDir,
   DIAG_COPY_DONE_TEXT, DIAG_COPY_FAILED_PREFIX, DIAG_FEEDBACK_MS, detectDesktopDiagnostics,
 } from '../diagnosticsFlow'
 import {
@@ -494,9 +495,13 @@ const updateSourceError = ref('')
 // 反馈形态为 proposed_default：已复制＝role=status 文本停留 DIAG_FEEDBACK_MS；失败＝
 // 主进程结构化中文原因＋可重试。复用既有 ghost-button/语义 token，零新样式体系。
 const desktopDiagnosticsApi = detectDesktopDiagnostics((window as unknown as { desktopDiagnostics?: unknown }).desktopDiagnostics)
+const desktopDiagnosticsCanOpenLogs = supportsOpenLogDir(desktopDiagnosticsApi)
 const diagCopying = ref(false)
 const diagCopyDone = ref(false)
 const diagCopyError = ref('')
+const diagOpeningLogs = ref(false)
+const diagOpenLogsError = ref('')
+const diagOpenLogsDone = ref(false)
 let diagFeedbackTimer: ReturnType<typeof setTimeout> | undefined
 
 async function copyDiagnostics(): Promise<void> {
@@ -520,6 +525,27 @@ async function copyDiagnostics(): Promise<void> {
     diagCopying.value = false
   }
 }
+async function openOperationLogs(): Promise<void> {
+  if (diagOpeningLogs.value || !desktopDiagnosticsApi?.openLogDir) return
+  diagOpeningLogs.value = true
+  diagOpenLogsDone.value = false
+  diagOpenLogsError.value = ''
+  try {
+    const result = await desktopDiagnosticsApi.openLogDir()
+    if (result.ok) {
+      diagOpenLogsDone.value = true
+      clearTimeout(diagFeedbackTimer)
+      diagFeedbackTimer = setTimeout(() => { diagOpenLogsDone.value = false }, DIAG_FEEDBACK_MS)
+    } else {
+      diagOpenLogsError.value = '打开日志目录失败：' + result.error
+    }
+  } catch (error) {
+    diagOpenLogsError.value = '打开日志目录失败：' + (error instanceof Error ? error.message : String(error))
+  } finally {
+    diagOpeningLogs.value = false
+  }
+}
+
 onUnmounted(() => { clearTimeout(diagFeedbackTimer) })
 
 interface UpdateSourceView {
@@ -1228,9 +1254,15 @@ function close(): void {
             <button class="ghost-button" :disabled="diagCopying" @click="copyDiagnostics">
               {{ diagCopying ? '复制中…' : '复制诊断信息' }}
             </button>
+            <button v-if="desktopDiagnosticsCanOpenLogs" class="ghost-button" :disabled="diagOpeningLogs" @click="openOperationLogs">
+              {{ diagOpeningLogs ? '打开中…' : '打开操作日志目录' }}
+            </button>
           </div>
           <p v-if="diagCopyDone" class="settings-saved diag-copy-result" role="status">{{ DIAG_COPY_DONE_TEXT }}</p>
           <p v-if="diagCopyError" class="error-text diag-copy-error" role="alert">{{ diagCopyError }}</p>
+          <p class="settings-section-note">操作日志（本机，仅用于问题定位，不联网）：记录页面操作与最近错误；验收或反馈问题时可直接提供该目录内的文件。</p>
+          <p v-if="diagOpenLogsDone" class="settings-saved diag-copy-result" role="status">已打开操作日志目录</p>
+          <p v-if="diagOpenLogsError" class="error-text diag-copy-error" role="alert">{{ diagOpenLogsError }}</p>
         </div>
       </section>
         </div>

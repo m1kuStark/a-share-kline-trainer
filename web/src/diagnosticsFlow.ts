@@ -5,6 +5,8 @@
 /** preload 暴露的 window.desktopDiagnostics 窄接口形状（主进程实现于 desktop/src/diagnostics.ts） */
 export interface DesktopDiagnosticsBridge {
   copyDiagnostics(): Promise<{ ok: true } | { ok: false, error: string }>
+  /** GAP1-DIAG 扩展：打开 <dataDir>/logs（旧桥无此方法＝按钮不渲染） */
+  openLogDir?(): Promise<{ ok: true } | { ok: false, error: string }>
 }
 
 /** 桥面形状探测：仅 copyDiagnostics 为函数才可用（缺桥/坏形状一律 null，按钮不渲染） */
@@ -22,3 +24,9 @@ export const DIAG_COPY_DONE_TEXT = '已复制，可粘贴到问题反馈'
 export const DIAG_FEEDBACK_MS = 3000
 /** 复制失败文案前缀（人话原因由主进程结构化返回） */
 export const DIAG_COPY_FAILED_PREFIX = '复制失败：'
+
+
+/** 桥是否支持「打开操作日志目录」（旧 preload 无该方法时 fail-closed 隐藏按钮）。 */
+export function supportsOpenLogDir(bridge: DesktopDiagnosticsBridge | null): boolean {
+  return typeof bridge?.openLogDir === 'function'
+}

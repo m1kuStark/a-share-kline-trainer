@@ -88,4 +88,7 @@ contextBridge.exposeInMainWorld('desktopDiagnostics', {
   copyDiagnostics: () => ipcRenderer.invoke('desktop-diagnostics:invoke', { method: 'copy' }) as Promise<
     { ok: true } | { ok: false; error: string }
   >,
+  openLogDir: () => ipcRenderer.invoke('desktop-diagnostics:invoke', { method: 'openLogDir' }) as Promise<
+    { ok: true } | { ok: false; error: string }
+  >,
 })

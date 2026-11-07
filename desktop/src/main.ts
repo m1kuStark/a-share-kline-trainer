@@ -186,6 +186,7 @@ async function collectDiagnosticsFacts(): Promise<DiagnosticsFacts> {
       node: process.versions.node,
     },
     dataDir: diagDataDir,
+    operationLogPath: diagDataDir ? join(diagDataDir, 'logs', 'operations.log') : null,
     updateChannel: updateChannelKind,
     lastUpdateCheck: lastUpdateCheckSnapshot,
     recentErrors: [...recentErrors],
@@ -675,6 +676,11 @@ registerDiagnosticsIpc({
   ipcMain,
   clipboard,
   collectFacts: collectDiagnosticsFacts,
+  openLogDir: async () => {
+    if (!diagDataDir) return { ok: false as const, error: '日志目录尚未初始化（启动早期）' }
+    const failure = await shell.openPath(join(diagDataDir, 'logs'))
+    return failure ? { ok: false as const, error: '打开日志目录失败：' + failure } : { ok: true as const }
+  },
   logger: mainLog,
 })
 

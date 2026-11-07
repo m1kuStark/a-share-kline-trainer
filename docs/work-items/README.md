@@ -16,6 +16,8 @@
 
 - [F7-DEPS-01 依赖安全升级](tasks/F7-DEPS-01.md)：vite 7.3.7、fast-uri 3.1.9/4.2.3、undici 6.29.1/7.30.1 本地等价 chore。
 
+- [DIAG-OPLOG-01 本地操作日志](tasks/DIAG-OPLOG-01.md)：v1.3.4 验收埋点（点击/错误/API→本机 JSONL，诊断页可打开目录；不联网）。
+
 - [TEST-BUDGET-01 测试预算收敛](tasks/TEST-BUDGET-01.md)：review-profile 真实 git I/O 用例 30s→90s（断言不变）。
 
 - [REVIEW-FIX-01 整批审查整改](tasks/REVIEW-FIX-01.md)：创建态费率损坏阻断＋证据收据补实＋并发配置真改＋回归细节。

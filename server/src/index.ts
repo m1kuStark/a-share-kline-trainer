@@ -7,6 +7,7 @@ import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
 import { registerUpdateApi } from './update/api.js'
+import { registerDiagnosticsApi } from './diagnostics/api.js'
 import { reconcileUpdateStatus, resolveStaleBusyMs } from './update/status.js'
 import { serverVersion } from './update/version.js'
 import { dirname, join, resolve } from 'node:path'
@@ -61,6 +62,8 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   // UPD-01（UPD-VERSION-EXPOSE）：currentVersion 来自包根 package.json（构建时写入），
   // 不改 status/runId/pid 三身份字段（launcher isTrainerHealth 只认这三者）。
   app.get('/api/health', async () => ({ status: 'ok', runId: config.runId ?? null, pid: process.pid, currentVersion: serverVersion() }))
+  // DIAG-OPLOG-01：本地操作日志（事件面/读取面 + /api/** onResponse 自动记录），只落本机。
+  const diagnostics = registerDiagnosticsApi(app, config)
   await registerApi(app, config, database, {
     drain: drainController.gate,
     // REL-LAUNCH-UX-01：页面"保存并退出"与控制桥共用同一冻结排空实现与真实关闭函数
@@ -99,6 +102,10 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   const url = await app.listen({ port: config.port, host: config.host })
   const address = app.server.address()
   if (!address || typeof address === 'string') throw new Error('Server did not bind a TCP port')
+  void diagnostics.log.append({
+    type: 'lifecycle', action: 'server.started', source: 'server',
+    data: { version: serverVersion(), port: address.port },
+  })
   return { app, config, url, port: address.port, shutdown, drain: drainController }
 }
 

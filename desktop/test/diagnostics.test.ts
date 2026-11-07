@@ -177,3 +177,38 @@ describe('GAP1-DIAG 主进程接线源码契约（main.ts / diagnostics.ts 无�
     expect(source).not.toMatch(/node:fs/)
   })
 })
+
+
+// DIAG-OPLOG-01：诊断文本包含本地操作日志路径；IPC 支持打开日志目录。
+describe('DIAG-OPLOG-01 操作日志诊断', () => {
+  it('buildDiagnosticsText includes the local operation log path between dataDir and update channel', () => {
+    const text = buildDiagnosticsText(fixtureFacts({ operationLogPath: 'D:\\data\\trainer\\logs\\operations.log' }))
+    const dataDirAt = text.indexOf('数据目录：D:\\data\\trainer')
+    const oplogAt = text.indexOf('操作日志：D:\\data\\trainer\\logs\\operations.log')
+    const channelAt = text.indexOf('更新通道：packaged')
+    expect(dataDirAt).toBeGreaterThanOrEqual(0)
+    expect(oplogAt).toBeGreaterThan(dataDirAt)
+    expect(channelAt).toBeGreaterThan(oplogAt)
+  })
+
+  it('openLogDir IPC returns structured success/failure and missing support', async () => {
+    const register = (openLogDir?: () => Promise<{ ok: true } | { ok: false, error: string }>) => {
+      const registrations: Array<{ channel: string, listener: (event: unknown, request: unknown) => unknown }> = []
+      registerDiagnosticsIpc({
+        ipcMain: { handle: (channel, listener) => { registrations.push({ channel, listener }) } },
+        clipboard: { writeText: () => undefined },
+        collectFacts: async () => fixtureFacts(),
+        openLogDir,
+      })
+      return registrations[0].listener
+    }
+    const ok = register(async () => ({ ok: true as const }))
+    await expect(ok(undefined, { method: 'openLogDir' })).resolves.toEqual({ ok: true })
+    const failed = register(async () => ({ ok: false as const, error: 'no shell' }))
+    await expect(failed(undefined, { method: 'openLogDir' })).resolves.toEqual({ ok: false, error: 'no shell' })
+    const missing = register(undefined)
+    const result = await missing(undefined, { method: 'openLogDir' }) as { ok: boolean, error: string }
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('不支持')
+  })
+})

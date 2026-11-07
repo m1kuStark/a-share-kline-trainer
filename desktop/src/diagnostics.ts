@@ -25,6 +25,8 @@ export interface DiagnosticsFacts {
   appVersion: string | null
   platform: { os: string, arch: string, electron: string | null, chrome: string | null, node: string }
   dataDir: string | null
+  /** 服务端本地操作日志文件（<dataDir>/logs/operations.log）；null＝未知/dev */
+  operationLogPath?: string | null
   updateChannel: string
   lastUpdateCheck: UpdateCheckSnapshot | null
   recentErrors: string[]
@@ -56,6 +58,7 @@ export function buildDiagnosticsText(facts: DiagnosticsFacts): string {
   parts.push(`平台：${facts.platform.os} / ${facts.platform.arch}${engineParts.length > 0 ? `（${engineParts.join('、')}）` : ''}`)
 
   parts.push(`数据目录：${facts.dataDir ?? '未知'}`)
+  parts.push(`操作日志：${facts.operationLogPath ?? '未记录（启动早期或浏览器形态）'}`)
   parts.push(`更新通道：${facts.updateChannel}`)
   parts.push(facts.lastUpdateCheck
     ? `最近更新检查：${facts.lastUpdateCheck.at}（${facts.lastUpdateCheck.summary}）`
@@ -88,6 +91,8 @@ export interface DiagnosticsIpcDeps {
   }
   clipboard: { writeText(text: string): void }
   collectFacts: () => Promise<DiagnosticsFacts>
+  /** 打开 <dataDir>/logs（主进程 shell.openPath）；缺省时该 IPC 方法返回结构化不可用 */
+  openLogDir?: () => Promise<{ ok: true } | { ok: false, error: string }>
   logger?: { error(...args: unknown[]): void }
 }
 
@@ -98,6 +103,16 @@ export interface DiagnosticsIpcDeps {
 export function registerDiagnosticsIpc(deps: DiagnosticsIpcDeps): void {
   deps.ipcMain.handle('desktop-diagnostics:invoke', async (_event, request) => {
     const method = (request as { method?: unknown } | null)?.method
+    if (method === 'openLogDir') {
+      if (!deps.openLogDir) return { ok: false, error: '当前形态不支持打开日志目录' }
+      try {
+        return await deps.openLogDir()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        deps.logger?.error('[desktop] 打开日志目录失败:', message)
+        return { ok: false, error: `打开日志目录失败：${message}` }
+      }
+    }
     if (method !== 'copy') {
       return { ok: false, error: `未知的诊断 IPC 方法：${String(method)}` }
     }

@@ -37,6 +37,8 @@ M1保存导出是历史快照，源文件增长或复权基准改变可能不匹
 
 Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。使用冻结的真实三股票/指数样本，指纹可查；不能把样本回归说成全市场实源核验。主代理统一组织候选验证，两个工作副本的独立旅程可以并行。
 
+本地诊断（DIAG-OPLOG）另跑 `npx vitest run server/test/diagnostics-operation-log.test.ts server/test/diagnostics-operation-trace.test.ts desktop/test/diagnostics.test.ts` 与 `npm run journey -- e2e/operation-trace.spec.ts`；全量门禁仍以 `verify:baseline` 为准。
+
 `npm run verify:baseline`执行文档、单测、类型、独立生产构建、样本M2和全量Journey，不修改个人库、原dist或历史报告。`npm run verify:candidate -- --base SHA --task ID`额外运行impact；所有检查通过且提交/工作树不变才产生候选proof。M1在改解析/复权时额外执行，旧导出差异不能当作通过。主代理视觉记录是promote前的独立条件，不等于用户验收。
 
 新增bug先有失败回归再改生产逻辑；低影响文档编辑不写镜像测试。源码形状断言逐步迁移到行为测试时，先补等价保护再移除旧断言。测试数仅在[证据记录](../verification/README.md)维护。
