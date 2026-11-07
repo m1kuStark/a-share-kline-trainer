@@ -93,6 +93,7 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   async function shutdown() {
     return closing ??= (async () => {
       await app.close()
+      await diagnostics.log.flush()
       database.close()
       if (config.readyFile) await rm(config.readyFile, { force: true })
       if (process.connected) process.disconnect()

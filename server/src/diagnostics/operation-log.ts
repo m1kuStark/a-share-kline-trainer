@@ -47,6 +47,8 @@ export interface OperationLog {
   readonly maxBytes: number
   readonly keepFiles: number
   append(record: OperationRecord): Promise<void>
+  /** 等待排队中的写入落盘（关停前调用，避免测试/退出时目录被异步重建） */
+  flush(): Promise<void>
   readTail(maxLines: number): Promise<OperationLogTail>
 }
 
@@ -183,5 +185,5 @@ export function createOperationLog(options: {
     }
   }
 
-  return { dirPath, filePath, maxBytes, keepFiles, append, readTail }
+  return { dirPath, filePath, maxBytes, keepFiles, append, readTail, flush: () => queue }
 }
