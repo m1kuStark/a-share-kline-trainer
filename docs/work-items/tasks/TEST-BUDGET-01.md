@@ -12,6 +12,7 @@
   "next_action": "随整批验收与 push。",
   "allowed_paths": [
     "server/test/review-profile.test.ts",
+    "scripts/runtime/run.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/work-items/README.md",

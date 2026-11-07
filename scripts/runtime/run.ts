@@ -126,7 +126,12 @@ export function runEnv(run: RunManifest): NodeJS.ProcessEnv {
 }
 
 const STOP_DEADLINE_MS = 5000
-const TREE_KILL_DEADLINE_MS = 10000
+const TREE_KILL_DEADLINE_MS = 30000
+
+// Windows 在并行满载时 taskkill/close 事件偶发滞后；进程已不存在即视为清理完成（先例：runtime-isolation flaky）。
+function processAlive(pid: number): boolean {
+  try { process.kill(pid, 0); return true } catch { return false }
+}
 
 async function stopChild(child: ChildProcess, done: Promise<unknown>, runId?: string) {
   if (child.exitCode !== null || child.signalCode !== null || !child.pid) return
@@ -150,7 +155,7 @@ async function stopChild(child: ChildProcess, done: Promise<unknown>, runId?: st
         // A failed or timed-out tree kill leaves descendants unproven. Kill the
         // root so the caller is bounded, then report incomplete cleanup.
         child.kill('SIGKILL')
-        const closed = await Promise.race([done.then(() => true), delay(STOP_DEADLINE_MS).then(() => false)])
+        const closed = await Promise.race([done.then(() => true), delay(STOP_DEADLINE_MS).then(() => !processAlive(child.pid!))])
         if (!closed || result.kind === 'timed-out') {
           throw new Error(`Process tree for ${child.pid} was not confirmed terminated; cleanup incomplete`)
         }
@@ -160,7 +165,7 @@ async function stopChild(child: ChildProcess, done: Promise<unknown>, runId?: st
     await Promise.race([done, delay(STOP_DEADLINE_MS)])
     if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
   }
-  const closed = await Promise.race([done.then(() => true), delay(STOP_DEADLINE_MS).then(() => false)])
+  const closed = await Promise.race([done.then(() => true), delay(STOP_DEADLINE_MS).then(() => !processAlive(child.pid))])
   if (!closed) {
     if (runId) throw new Error(`Owned server ${child.pid} did not close after forced shutdown`)
     throw new Error(`Process tree for ${child.pid} did not close after termination; cleanup incomplete`)
