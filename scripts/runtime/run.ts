@@ -126,7 +126,7 @@ export function runEnv(run: RunManifest): NodeJS.ProcessEnv {
 }
 
 const STOP_DEADLINE_MS = 5000
-const TREE_KILL_DEADLINE_MS = 30000
+const TREE_KILL_DEADLINE_MS = 20000
 
 // Windows 在并行满载时 taskkill/close 事件偶发滞后；进程已不存在即视为清理完成（先例：runtime-isolation flaky）。
 function processAlive(pid: number): boolean {

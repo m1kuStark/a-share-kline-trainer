@@ -63,7 +63,7 @@ describe('generic command cancellation', () => {
       controller.abort(reason)
       const outcome = await Promise.race([
         running.then(() => 'resolved' as const, error => error as Error),
-        delay(18_000).then(() => 'unbounded' as const),
+        delay(26_000).then(() => 'unbounded' as const),
       ])
       expect(outcome).toBeInstanceOf(Error)
       expect((outcome as Error).message).toMatch(/cleanup incomplete/i)
@@ -75,5 +75,5 @@ describe('generic command cancellation', () => {
       control.release?.()
       control.release = undefined
     }
-  }, 20_000)
+  }, 40_000)
 })

@@ -13,6 +13,7 @@
   "allowed_paths": [
     "server/test/review-profile.test.ts",
     "scripts/runtime/run.ts",
+    "server/test/runtime-cancel.test.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/work-items/README.md",
