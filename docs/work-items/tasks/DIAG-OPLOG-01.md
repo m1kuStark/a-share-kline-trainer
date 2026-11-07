@@ -5,7 +5,7 @@
   "id": "DIAG-OPLOG-01",
   "title": "本地操作日志：Web 埋点/业务 API 自动记录/脱敏滚动/诊断页打开与复制",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "V134",
   "base_commit": "1a9fcb5",
   "summary": "用户 2026-11-08 要求 v1.3.4 验收前增加埋点，获取验收操作行为以确认/定位 bug，未来用户也可用。实现本地 JSONL 操作日志（<dataDir>/logs/operations.log，滚动 4×2MiB）：Web 点击/错误/生命周期、业务 API 调用（状态/耗时/脱敏数据）、服务端启动事件；设置页诊断区显示本机不联网说明、复制诊断、打开日志目录；桌面诊断文本加入日志路径。不做联网上报。",
