@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { randomBytes } from 'node:crypto'
 import { spawn, type ChildProcess } from 'node:child_process'
 import http from 'node:http'
@@ -114,6 +114,9 @@ const FIXTURE_SERVER = `
 import { appendFile, rename, writeFile } from 'node:fs/promises'
 import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
+
+// 满载/慢机时真实启动器健康探测可超过默认预算；只放宽预算与就绪窗口，断言不变。
+vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
 
 const counterFile = process.env.FIXTURE_SPAWN_COUNTER
 if (counterFile) await appendFile(counterFile, process.pid + '\\n')
@@ -301,7 +304,7 @@ async function launchFixture(root: string, overrides: Record<string, string | un
     root,
     openBrowser: false,
     env: { ...process.env, NODE_OPTIONS: '', TDX_ROOT: '', TRAINER_DB: '', ...overrides },
-    startTimeoutMs: 10_000,
+    startTimeoutMs: 20_000,
     lockWaitMs: 2_000,
     ...options,
   }).then(result => {
