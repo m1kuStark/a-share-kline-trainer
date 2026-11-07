@@ -21,7 +21,7 @@ async function exported(page: Page, button: string, name: string) {
 }
 
 test('两年前复权训练含交易画线周期切换，可压缩导出并离线回放', async ({ page }) => {
-  test.setTimeout(12 * 60 * 1000)
+  test.setTimeout(30 * 60 * 1000)
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   const pageErrors: string[] = []

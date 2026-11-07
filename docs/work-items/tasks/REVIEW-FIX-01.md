@@ -22,6 +22,8 @@
     "e2e/m3-feedback.spec.ts",
     "e2e/uiux-training.spec.ts",
     "e2e/chart-analysis.spec.ts",
+    "e2e/weekday-display.spec.ts",
+    "e2e/recording-long.spec.ts",
     "e2e/m3-round3.spec.ts",
     "playwright.config.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",

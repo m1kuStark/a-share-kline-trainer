@@ -73,6 +73,8 @@ test('日K 状态条/行情条/X 轴/悬浮卡显示星期；周K 不加；1440/
   await expect.poll(async () => (await page.locator('.chart-date-status').innerText()).includes('周K')).toBe(true)
   expect(await page.locator('.chart-date-status').innerText()).not.toMatch(/周[一二三四五六日]/)
   await expect.poll(async () => (await axisLabels(page)).filter(Boolean).length).toBeGreaterThan(0)
+  // 周期切换后 canvas 刻度重绘晚于状态条；等待周K刻度落定再断言（避免读到上一周期缓存）
+  await expect.poll(async () => (await axisLabels(page)).filter(Boolean).every(label => !/周[一二三四五六日]/.test(label)), { timeout: 15_000 }).toBe(true)
   for (const label of (await axisLabels(page)).filter(Boolean)) expect(label, `周K轴刻度不应加星期：${label}`).not.toMatch(/周[一二三四五六日]/)
   await page.getByRole('tab', { name: '日K', exact: true }).click()
   await expect(page.locator('.chart-date-status')).toContainText('可见至')
