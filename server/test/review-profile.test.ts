@@ -9,7 +9,9 @@ import { classifyReview, isDocsCandidatePath, REVIEW_POLICY_VERSION } from '../.
 import { planVerification } from '../../scripts/verify-candidate.js'
 import { runDocs } from '../../scripts/docs.js'
 
-vi.setConfig({ testTimeout: 30_000, hookTimeout: 15_000 })
+// 并行 worker 满载时 beforeEach 的临时 git 仓初始化（真实磁盘 I/O）实测超过 15s；按既有先例
+// 放宽 hook 预算（断言与产品语义不变，testTimeout 保持 30s）。
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 45_000 })
 const runCli = promisify(execFile)
 
 let sandbox: string

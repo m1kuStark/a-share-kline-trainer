@@ -45,7 +45,7 @@ describe('keyboard shortcut settings', () => {
       expect(JSON.stringify(readShortcutSettings(context.database).ok && readShortcutSettings(context.database).shortcuts)).toBe(before)
       const invalid = { ...defaults.shortcuts, buy: [['Control', 'Shift', 'KeyB']] }
       expect(parseShortcutPreferences(invalid)).toBeNull()
-      expect(SHORTCUT_ACTIONS).toHaveLength(13)
+      expect(SHORTCUT_ACTIONS).toHaveLength(15)
     } finally {
       await context.app.close(); context.database.close(); await rm(context.root, { recursive: true, force: true })
     }

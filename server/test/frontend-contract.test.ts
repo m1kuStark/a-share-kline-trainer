@@ -234,6 +234,15 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/isShortcut\('zoomOut', event\)[\s\S]{0,120}?zoomBy\(1\.3\)/)
   })
 
+  it('CHART-ZOOM-01：Ctrl+滚轮缩放复用 zoomBy，Shift+←/→ 映射 panBy', async () => {
+    const source = await readFile(trainingPath, 'utf8')
+    expect(source).toMatch(/isShortcut\('panLeft', event\)[\s\S]{0,80}?panBy\(-1\)/)
+    expect(source).toMatch(/isShortcut\('panRight', event\)[\s\S]{0,80}?panBy\(1\)/)
+    expect(source).toMatch(/Shift\+← \/ →：平移视图/)
+    const chartSource = await readFile(chartPath, 'utf8')
+    expect(chartSource).toMatch(/if \(event\.ctrlKey\) \{[\s\S]{0,160}?zoomBy\(event\.deltaY > 0 \? 1\.3 : 1 \/ 1\.3\)/)
+  })
+
   it('slims MACD histogram bars to 2/5 of the default width', async () => {
     const source = await readFile(new URL('../../web/src/indicators.ts', import.meta.url), 'utf8')
     expect(source).toMatch(/barSpace\.halfGapBar \* 2 \* 0\.4/)
@@ -516,7 +525,7 @@ describe('M2 chart interaction contract', () => {
     expect(source).toMatch(/const zone = chart\.getSize\(pane\.id, 'yAxis'\)/)
     expect(source).toMatch(/x >= zone\.left && x <= zone\.left \+ zone\.width && y >= zone\.top && y <= zone\.top \+ zone\.height/)
     // 滚轮：轴上直接返回（交给库原生纵轴缩放），不平移
-    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,160}scrollByDistance/s)
+    expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,420}scrollByDistance/s)
     // 按下：轴上不进入框选；空白按下先解除持久选中，多选模式分支在框选启动之前（框选缩放被多选模式接管）
     expect(source).toMatch(/if \(isOverPriceAxis\(event\.clientX, event\.clientY\)\) return[\s\S]{0,240}if \(props\.multiSelect\) \{[\s\S]{0,460}selecting = true/s)
   })

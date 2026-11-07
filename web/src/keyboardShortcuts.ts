@@ -3,7 +3,7 @@ export const KEYBOARD_SHORTCUTS_CHANGED_EVENT = 'trainer:keyboard-shortcuts-chan
 
 export const SHORTCUT_ACTIONS = [
   'advance', 'timeframePrev', 'timeframeNext', 'undo', 'redo', 'deleteDrawing',
-  'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'resetView',
+  'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'panLeft', 'panRight', 'resetView',
 ] as const
 export type ShortcutAction = typeof SHORTCUT_ACTIONS[number]
 
@@ -20,6 +20,8 @@ export const SHORTCUT_ACTION_LABELS: Record<ShortcutAction, string> = {
   zoomOut: '缩小 K 线',
   crosshairLeft: '十字光标向左',
   crosshairRight: '十字光标向右',
+  panLeft: '向左平移（查看更早 K 线）',
+  panRight: '向右平移（查看更新 K 线）',
   resetView: '回到最新位置',
 }
 
@@ -41,6 +43,8 @@ const DEFAULTS: KeyboardShortcutPreferences = {
   zoomOut: [['ArrowDown']],
   crosshairLeft: [['ArrowLeft']],
   crosshairRight: [['ArrowRight']],
+  panLeft: [['Shift', 'ArrowLeft']],
+  panRight: [['Shift', 'ArrowRight']],
   resetView: [['Home']],
 }
 

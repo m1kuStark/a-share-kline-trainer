@@ -42,3 +42,8 @@ CHART-MEASURE-01复用公开`convertFromPixel([{y}], {paneId:'candle_pane', abso
 `window.__trainerChart` 仅在 `import.meta.env.MODE === 'journey'` 时注入；`DEV` 不能代替这个条件，因为 build 时恒为 false。生产构建必须无钩子。
 
 接口包括数量/模式/轴范围、hitTest/overlayInfo、单选与多选、drawings/geometry/panes、visibleRange/viewportMetrics/bars、costLine 和 pointToPixel。phasePriceMark 只读返回阶段线数量、价格、前收和公开回调生成的线体/轴标签图元，用于检查唯一标记与价位坐标；图元不能代替主代理的实际 Canvas 视觉核查。测试先用真实鼠标/键盘操作，再读结果或投影下一步坐标；禁止借 hook 创建、移动、删除图形。临时矩形、菜单和面板仍须检查 DOM 可见性，状态值不能证明已渲染。运行与产物恢复见 [E2E](../../../../e2e/README.md)。
+
+### klinecharts 内置键盘热键（CHART-ZOOM-01）
+
+- 钉定 klinecharts 10.0.3 内置 `scrollLeft/scrollRight` 等全局 hotkey（document keydown），与本应用快捷键系统（Shift+←/→ 平移）重复执行，导致每按一次实际移动两步且方向叠加。
+- 处理：`init(..., { hotkey: { enabled: false } })` 关闭库内置热键，键盘导航完全由应用 `keyboardShortcuts.ts` + Training/KlineChart 显式动作负责；升级库版本时须复核该选项与 hotkey 默认值。

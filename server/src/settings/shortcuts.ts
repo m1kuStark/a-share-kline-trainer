@@ -5,7 +5,7 @@ import { HttpError } from '../train/engine.js'
 export const SHORTCUT_SETTINGS_VERSION = 1
 export const SHORTCUT_ACTIONS = [
   'advance', 'timeframePrev', 'timeframeNext', 'undo', 'redo', 'deleteDrawing',
-  'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'resetView',
+  'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'panLeft', 'panRight', 'resetView',
 ] as const
 export type ShortcutAction = typeof SHORTCUT_ACTIONS[number]
 export type Shortcut = string[]
@@ -15,7 +15,8 @@ const DEFAULT_SHORTCUTS: ShortcutPreferences = {
   advance: [['Space']], timeframePrev: [['BracketLeft']], timeframeNext: [['BracketRight']],
   undo: [['Control', 'KeyZ']], redo: [['Control', 'KeyY']], deleteDrawing: [['Delete']],
   buy: [['KeyB']], sell: [['KeyS']], zoomIn: [['ArrowUp']], zoomOut: [['ArrowDown']],
-  crosshairLeft: [['ArrowLeft']], crosshairRight: [['ArrowRight']], resetView: [['Home']],
+  crosshairLeft: [['ArrowLeft']], crosshairRight: [['ArrowRight']],
+  panLeft: [['Shift', 'ArrowLeft']], panRight: [['Shift', 'ArrowRight']], resetView: [['Home']],
 }
 const SETTING_KEY = 'keyboard_shortcuts_v1'
 

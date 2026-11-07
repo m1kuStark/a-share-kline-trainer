@@ -752,7 +752,7 @@ function setTrainingUrl(): void {
 }
 
 function isShortcut(action: ShortcutAction, event: KeyboardEvent, allowRepeat = false): boolean {
-  const repeatable = allowRepeat || action === 'advance' || action === 'zoomIn' || action === 'zoomOut' || action === 'crosshairLeft' || action === 'crosshairRight'
+  const repeatable = allowRepeat || action === 'advance' || action === 'zoomIn' || action === 'zoomOut' || action === 'crosshairLeft' || action === 'crosshairRight' || action === 'panLeft' || action === 'panRight'
   if (matchesActionShortcut(action, event, keyboardShortcuts.value, pressedShortcutKeys, repeatable)) return true
   // 保留旧版本的 Ctrl+Shift+Z 重做入口；用户替换默认 Ctrl+Y 后即由自定义映射完全接管。
   return action === 'redo' && keyboardShortcuts.value.redo.some(binding => shortcutId(binding) === 'Control+KeyY') &&
@@ -766,7 +766,7 @@ function onKeydown(event: KeyboardEvent): void {
   if (preparingRecording.value || endAction.value || settledView.value || finishingSession.value || revealDialogOpen.value) return
   if (customizingTools.value) {
     if (event.key === 'Escape') { event.preventDefault(); toggleToolCustomization() }
-    if (['advance', 'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'deleteDrawing', 'resetView'].some(action => isShortcut(action as ShortcutAction, event))) event.preventDefault()
+    if (['advance', 'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight', 'panLeft', 'panRight', 'deleteDrawing', 'resetView'].some(action => isShortcut(action as ShortcutAction, event))) event.preventDefault()
     return
   }
   if (isTyping(event) || textPanelOpen.value) return
@@ -787,6 +787,8 @@ function onKeydown(event: KeyboardEvent): void {
   if (isShortcut('sell', event)) { event.preventDefault(); void trade('sell'); return }
   if (isShortcut('zoomIn', event)) { event.preventDefault(); chartRef.value?.zoomBy(1 / 1.3); return }
   if (isShortcut('zoomOut', event)) { event.preventDefault(); chartRef.value?.zoomBy(1.3); return }
+  if (isShortcut('panLeft', event)) { event.preventDefault(); chartRef.value?.panBy(-1); return }
+  if (isShortcut('panRight', event)) { event.preventDefault(); chartRef.value?.panBy(1); return }
   if (isShortcut('crosshairLeft', event)) { event.preventDefault(); chartRef.value?.moveCrosshair(-1); return }
   if (isShortcut('crosshairRight', event)) { event.preventDefault(); chartRef.value?.moveCrosshair(1); return }
   if (isShortcut('resetView', event)) { event.preventDefault(); chartRef.value?.resetView() }
@@ -955,7 +957,7 @@ void load()
       <span v-if="miniFeedback && !errorMessage" class="status-message mini-update-feedback" :class="{ 'error-text': !!dataRefreshError }" :title="miniFeedback" :role="dataRefreshError ? 'alert' : 'status'">{{ miniFeedback }}</span>
       <span v-else class="status-message" :title="errorMessage || statusText" :class="{ 'error-text': errorMessage }">{{ errorMessage || statusText }}</span>
       <span id="chart-quote-slot" class="status-quote-slot"></span>
-      <span v-if="!miniFeedback" class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Del 删线</span>
+      <span v-if="!miniFeedback" class="shortcut-hint" title="空格：推进下一日；[ / ]：日周月周期；Home：回到最新；↑ / ↓：缩放；Shift+← / →：平移视图；Del：删除选中画线；B / S：买入卖出；Ctrl+Z / Ctrl+Y：撤销重做。输入、弹窗和画线取点期间部分快捷键暂停。">空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Shift←→ 平移 · Del 删线</span>
       <span v-if="loading" class="loading-dot">处理中</span>
       <span v-if="chartViewport.visibleDate" class="viewport-date chart-date-status">{{ tf === '1D' ? '可见至' : tf === '1W' ? '右端周K' : '右端月K' }} {{ viewportDateText(chartViewport.visibleDate) }}</span>
       <span v-if="chartViewport.latestDate && chartViewport.latestDate !== chartViewport.visibleDate" class="viewport-date latest-date">{{ tf === '1D' ? '末根' : tf === '1W' ? '最新周K' : '最新月K' }} {{ viewportDateText(chartViewport.latestDate) }}</span>

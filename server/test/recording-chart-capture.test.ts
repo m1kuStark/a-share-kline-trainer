@@ -27,7 +27,8 @@ describe('REC-CHART-B chart capture contract', () => {
     expect(source).toMatch(/import \{ nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport \} from '\.\.\/recording\/replayViewport'/)
     expect(source).toMatch(/chartCapture: \[ChartCapture\]/)
     expect(source).toMatch(/replayView\?: ReplayViewport/)
-    expect(source).toMatch(/defineExpose\(\{ zoomBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView \}\)/)
+    // CHART-ZOOM-01：expose 增补 panBy（键盘平移），其余既有动作顺序/集合不变
+expect(source).toMatch(/defineExpose\(\{ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView \}\)/)
   })
 
   it('feeds bars with original date and amount so captures restore them verbatim', async () => {

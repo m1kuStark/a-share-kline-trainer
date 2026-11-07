@@ -41,4 +41,21 @@ describe('keyboard shortcut preferences', () => {
     expect(SHORTCUT_ACTIONS).toContain('buy')
     expect(formatShortcut(['Control', 'KeyZ'])).toBe('Ctrl + Z')
   })
+
+  it('CHART-ZOOM-01：默认 Shift+←/→ 平移且不与既有动作冲突', () => {
+    expect(DEFAULT_KEYBOARD_SHORTCUTS.panLeft).toEqual([['Shift', 'ArrowLeft']])
+    expect(DEFAULT_KEYBOARD_SHORTCUTS.panRight).toEqual([['Shift', 'ArrowRight']])
+    expect(formatShortcut(['Shift', 'ArrowLeft'])).toBe('Shift + ←')
+    expect(SHORTCUT_ACTIONS).toContain('panLeft')
+    expect(SHORTCUT_ACTIONS).toContain('panRight')
+    const event = { code: 'ArrowLeft', key: 'ArrowLeft', ctrlKey: false, shiftKey: true, altKey: false, metaKey: false, repeat: false, isComposing: false }
+    expect(matchesActionShortcut('panLeft', event, DEFAULT_KEYBOARD_SHORTCUTS, new Set(['ShiftLeft']))).toBe(true)
+    expect(matchesActionShortcut('crosshairLeft', event, DEFAULT_KEYBOARD_SHORTCUTS, new Set(['ShiftLeft']))).toBe(false)
+    // 与交易/推进/缩放热键不冲突（重复默认组合只在自身出现）
+    expect(shortcutConflict(DEFAULT_KEYBOARD_SHORTCUTS, 'panLeft', ['Shift', 'ArrowLeft'])).toBe('panLeft')
+    for (const action of ['advance', 'buy', 'sell', 'zoomIn', 'zoomOut', 'crosshairLeft', 'crosshairRight'] as const) {
+      const first = DEFAULT_KEYBOARD_SHORTCUTS[action][0]!
+      expect(shortcutConflict(DEFAULT_KEYBOARD_SHORTCUTS, 'panLeft', first)).not.toBe('panLeft')
+    }
+  })
 })
