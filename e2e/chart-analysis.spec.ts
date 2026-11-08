@@ -53,158 +53,102 @@ async function drag(page: Page, from: number, to: number, button: 'right' | 'lef
 }
 const field = (page: Page, name: string) => page.getByRole('dialog', { name: /区间统计/ }).locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${name}$`) }) }).locator('dd')
 const measurementCard = (page: Page) => page.getByRole('group', { name: '两点测量', exact: true })
-async function quickMeasure(page: Page, from: number, to: number): Promise<void> {
+async function twoPoint(page: Page, from: number, to: number): Promise<void> {
   const a = await position(page, from), b = await position(page, to)
   await page.keyboard.down('Shift')
-  await page.mouse.move(a.x, a.y)
-  await page.mouse.down()
-  await page.mouse.move(b.x, b.y + 30, { steps: 8 })
-  await expect(measurementCard(page)).toBeVisible()
-  await page.mouse.up()
+  await page.mouse.click(a.x, a.y)
+  await page.mouse.click(b.x, b.y)
   await page.keyboard.up('Shift')
   await expect(measurementCard(page)).toBeVisible()
 }
 
-test('shift-left measures the actual two prices live, preserves direction and keeps a compact result', async ({ page }) => {
+test('Shift 两次点击 K 线形成区间测量：起止收盘/K线数/区间高低，拖动边界实时更新', async ({ page }) => {
   await openChart(page)
   const from = await visibleStart(page), to = from + 18, list = await bars(page)
-  const coordinates = async (index: number, value: number) => {
-    const point = await page.evaluate(({ index, value }) => {
-      const hook = (window as any).__trainerChart
-      return hook.pointToPixel(hook.bars()[index].timestamp, value)
-    }, { index, value })
-    const host = (await page.locator('.chart-host').boundingBox())!
-    return { x: host.x + point.x, y: host.y + point.y }
-  }
-  const low = list[from]!.low, high = list[to]!.high
-  const a = await coordinates(from, low), b = await coordinates(to, high)
-  // The pinned chart rounds price->pixel to integer pixels. Measure the actual
-  // picked pixel's price, independently from the axis range and pane height;
-  // a projected candle high/low is not an exact inverse at arbitrary zoom.
-  const axis = await page.evaluate(() => {
-    const hook = (window as any).__trainerChart
-    return { range: hook.yRange(), pane: hook.panes().find((pane: any) => pane.id === 'candle_pane') }
-  })
-  const host = (await page.locator('.chart-host').boundingBox())!
-  const priceAt = (point: { y: number }) => Number((axis.range.realFrom + (1 - (point.y - host.y - axis.pane.top) / axis.pane.height) * axis.range.realRange).toFixed(2))
-  const pickedLow = priceAt(a), pickedHigh = priceAt(b)
-  const card = page.getByRole('group', { name: '两点测量', exact: true })
-  const metric = (label: string) => card.locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${label}$`) }) }).locator('dd')
   const before = await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))
   const requests: string[] = []
-  page.on('request', request => { if (request.url().includes('/bars?') || request.method() !== 'GET') requests.push(request.url()) })
-  for (const [start, end, startPrice, endPrice] of [[a, b, pickedLow, pickedHigh], [b, a, pickedHigh, pickedLow], [a, { ...a, y: b.y }, pickedLow, pickedHigh]] as const) {
-    await page.keyboard.down('Shift')
-    await page.mouse.move(start.x, start.y)
-    await page.mouse.down()
-    await page.mouse.move(end.x, end.y, { steps: 10 })
-    await expect(card).toBeVisible()
-    await expect(card.locator('dl > div')).toHaveCount(5)
-    await expect(page.locator('.point-measure-guide')).toBeVisible()
-    await expect(metric('K线数量')).toHaveText(`${start.x === end.x ? 1 : 19} 根`)
-    expect(parseFloat(await metric('涨跌幅').innerText())).toBeCloseTo((endPrice / startPrice - 1) * 100, 1)
-    expect(parseFloat(await metric('价差').innerText())).toBeCloseTo(endPrice - startPrice, 1)
-    expect(parseFloat(await metric('起点价').innerText())).toBeCloseTo(startPrice, 1)
-    expect(parseFloat(await metric('终点价').innerText())).toBeCloseTo(endPrice, 1)
-    await page.keyboard.press('Space'); await page.keyboard.press('b'); await page.keyboard.press('Delete')
-    await page.keyboard.up('Shift') // Releasing Shift must not hand an active drag back to zoom/drawing.
-    await page.mouse.up()
-    await expect(card).toBeVisible()
-    const result = await card.innerText()
-    await page.mouse.move(20, 20)
-    expect(await card.innerText()).toBe(result)
-    await expect(page.getByRole('dialog')).not.toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(card).not.toBeVisible()
-  }
+  page.on('request', request => {
+    const url = request.url()
+    if ((url.includes('/bars?') || request.method() !== 'GET') && !/\/api\/diagnostics\/events$/.test(url)) requests.push(url)
+  })
+  await twoPoint(page, from, to)
+  const card = measurementCard(page)
+  const metric = (label: string) => card.locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${label}$`) }) }).locator('dd')
+  const startClose = list[from]!.close, endClose = list[to]!.close
+  const highest = Math.max(...list.slice(from, to + 1).map(bar => bar.high)), lowest = Math.min(...list.slice(from, to + 1).map(bar => bar.low))
+  expect(await metric('K线数量')).toHaveText('19 根')
+  expect(parseFloat(await metric('起点收盘价').innerText())).toBeCloseTo(startClose, 1)
+  expect(parseFloat(await metric('终点收盘价').innerText())).toBeCloseTo(endClose, 1)
+  expect(parseFloat(await metric('价差').innerText())).toBeCloseTo(endClose - startClose, 1)
+  expect(parseFloat(await metric('涨跌幅').innerText())).toBeCloseTo((endClose / startClose - 1) * 100, 1)
+  expect(parseFloat(await metric('区间最高价').innerText())).toBeCloseTo(highest, 1)
+  expect(parseFloat(await metric('区间最低价').innerText())).toBeCloseTo(lowest, 1)
+  expect(await page.evaluate(() => (window as any).__trainerChart.measurement())).toMatchObject({ from, to, count: 19 })
+  await expect(page.locator('.range-measure-handle[data-edge="start"]')).toBeVisible()
+  await expect(page.locator('.range-measure-handle[data-edge="end"]')).toBeVisible()
+  // 拖动右边界 +5 根：数据窗口实时更新（含新的起止收盘与 K 线数）
+  const handle = await page.locator('.range-measure-handle[data-edge="end"]').boundingBox()
+  const target = await position(page, to + 5)
+  await page.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(target.x, handle!.y + handle!.height / 2, { steps: 8 })
+  await page.mouse.up()
+  await expect(metric('K线数量')).toHaveText('24 根')
+  expect(await page.evaluate(() => (window as any).__trainerChart.measurement())).toMatchObject({ from, to: to + 5, count: 24 })
+  expect(parseFloat(await metric('终点收盘价').innerText())).toBeCloseTo(list[to + 5]!.close, 1)
+  // 测量激活期间训练热键被吞掉，不会误推进/误交易/误删画线
+  await page.keyboard.press('Space'); await page.keyboard.press('b'); await page.keyboard.press('Delete')
+  await expect(card).toBeVisible()
   expect(await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))).toEqual(before)
   expect(requests).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(card).not.toBeVisible()
 })
-
-test('shift-left ownership, cancellation and boundaries preserve drawings and existing modes', async ({ page }) => {
+test('两点测量的所有权与取消：画线/多选/价格轴/滚轮/周期切换/失焦均按既有仲裁', async ({ page }) => {
   await openChart(page)
   const from = await visibleStart(page), a = await position(page, from), b = await position(page, from + 8)
-  const tool = page.locator('[data-tool-name="segment"]')
-  if (!await tool.isVisible()) await page.locator('.other-tools-toggle').click()
-  await tool.click()
-  await page.keyboard.down('Shift')
-  await page.mouse.click(a.x, a.y)
-  await page.waitForTimeout(560)
-  await page.mouse.click(b.x, b.y)
-  await page.keyboard.up('Shift')
+  // 画线模式激活时 Shift 点击属于取点链路，不启动测量
+  const segment = page.locator('[data-tool-name="segment"]')
+  if (!await segment.isVisible()) await page.locator('.other-tools-toggle').click()
+  await segment.click()
+  await page.keyboard.down('Shift'); await page.mouse.click(a.x, a.y); await page.mouse.click(b.x, b.y); await page.keyboard.up('Shift')
   await expect(measurementCard(page)).not.toBeVisible()
-  await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
-  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(1)
+  await page.keyboard.press('Escape')
+  await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.mode().draw)).toBe(null)
   const before = await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))
-  await quickMeasure(page, from, from + 8) // Explicit Shift also measures over an existing line, without grabbing it.
-  await page.keyboard.press('Escape')
-  await page.keyboard.down('Shift')
-  await page.mouse.move(a.x, a.y)
-  await page.mouse.down()
-  await page.mouse.move(b.x, b.y + 30, { steps: 5 })
-  await expect(measurementCard(page)).toBeVisible()
-  await page.keyboard.press('Escape')
-  await page.mouse.move(b.x + 30, b.y + 60)
-  await page.mouse.up()
-  await page.keyboard.up('Shift')
-  await expect(measurementCard(page)).not.toBeVisible()
-  expect(await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))).toEqual(before)
-  await page.keyboard.down('Control'); await page.keyboard.down('Shift')
-  await page.mouse.click(a.x, a.y)
-  await page.keyboard.up('Shift'); await page.keyboard.up('Control')
+  // 多选模式：Shift 点击属于多选，不启动测量
+  await page.locator('.draw-toolbar').getByRole('button', { name: '多选', exact: true }).click()
+  await page.keyboard.down('Shift'); await page.mouse.click(a.x, a.y); await page.keyboard.up('Shift')
   await expect(measurementCard(page)).not.toBeVisible()
   await page.locator('.draw-toolbar').getByRole('button', { name: '多选', exact: true }).click()
-  await page.keyboard.down('Shift'); await page.mouse.click(b.x, b.y); await page.keyboard.up('Shift')
+  // 价格轴仍归自身手势，不启动测量
+  const host = (await page.locator('.chart-host').boundingBox())!, width = await page.evaluate(() => (window as any).__trainerChart.viewportMetrics().width)
+  await page.keyboard.down('Shift'); await page.mouse.click(host.x + width + 12, a.y); await page.keyboard.up('Shift')
   await expect(measurementCard(page)).not.toBeVisible()
-  await page.locator('.draw-toolbar').getByRole('button', { name: '多选', exact: true }).click()
-  const host = (await page.locator('.chart-host').boundingBox())!
-  const width = await page.evaluate(() => (window as any).__trainerChart.viewportMetrics().width)
-  await page.keyboard.down('Shift')
-  await page.mouse.click(host.x + width + 12, a.y) // Price axis owns its own gestures.
-  await page.keyboard.up('Shift')
-  await expect(measurementCard(page)).not.toBeVisible()
-  await page.keyboard.down('Shift'); await page.mouse.move(a.x, a.y); await page.mouse.down()
-  await page.mouse.move(host.x + host.width + 100, host.y - 50, { steps: 8 })
-  await page.mouse.up(); await page.keyboard.up('Shift')
-  await expect(measurementCard(page)).toBeVisible()
-  expect(Number(await page.locator('.point-measure-guide circle').last().getAttribute('cx'))).toBeLessThanOrEqual(width)
-  expect(Number(await page.locator('.point-measure-guide circle').last().getAttribute('cy'))).toBe(0)
-  const count = Number.parseInt(await measurementCard(page).locator('dd').last().innerText())
-  expect(count).toBeLessThanOrEqual((await bars(page)).length)
-  await page.mouse.click(20, 20)
-  await expect(measurementCard(page)).not.toBeVisible()
-  await quickMeasure(page, from, from + 8)
+  // 正常两次点击建立区间；滚轮平移会取消测量
+  await twoPoint(page, from, from + 8)
   await page.mouse.move(a.x, a.y); await page.mouse.wheel(0, -50)
   await expect(measurementCard(page)).not.toBeVisible()
-  await quickMeasure(page, await visibleStart(page), (await visibleStart(page)) + 5)
-  await page.setViewportSize({ width: 1280, height: 720 })
-  // 视口尺寸变化后等待图表 resize 落定（并行满载下下一笔取点曾用舊布局坐标导致测量卡不出现）
-  await page.waitForTimeout(500)
-  await expect(measurementCard(page)).not.toBeVisible()
-  await quickMeasure(page, await visibleStart(page), (await visibleStart(page)) + 5)
+  // 再次测量后切换周期取消
+  await twoPoint(page, await visibleStart(page), (await visibleStart(page)) + 5)
   await page.getByRole('tab', { name: '周K', exact: true }).click()
   await expect(measurementCard(page)).not.toBeVisible()
+  await page.getByRole('tab', { name: '日K', exact: true }).click()
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+  // 窗口失焦取消
   const other = await page.context().newPage()
-  // Playwright emulates focus for every tab. Disable that browser emulation,
-  // then switch real tabs so the application receives a genuine window blur.
-  for (const tab of [page, other]) {
-    const session = await page.context().newCDPSession(tab)
-    await session.send('Emulation.setFocusEmulationEnabled', { enabled: false })
-  }
+  for (const tab of [page, other]) { const session = await page.context().newCDPSession(tab); await session.send('Emulation.setFocusEmulationEnabled', { enabled: false }) }
   await page.bringToFront()
-  expect(await page.evaluate(() => document.hasFocus())).toBe(true)
-  const point = await position(page, await visibleStart(page))
-  await page.keyboard.down('Shift'); await page.mouse.move(point.x, point.y); await page.mouse.down()
-  await page.mouse.move(point.x + 30, point.y + 20)
-  await expect(measurementCard(page)).toBeVisible()
+  await twoPoint(page, await visibleStart(page), (await visibleStart(page)) + 4)
   await other.bringToFront()
-  expect(await page.evaluate(() => document.hasFocus())).toBe(false)
   await expect(measurementCard(page)).not.toBeVisible()
   await other.close(); await page.bringToFront()
-  await page.mouse.up(); await page.keyboard.up('Shift')
+  // 测量不改视窗/画线；普通左键点击图表外区域同样取消
+  await twoPoint(page, from, from + 8)
+  await page.mouse.click(20, 20)
+  await expect(measurementCard(page)).not.toBeVisible()
+  expect(await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))).toEqual(before)
 })
-
 test('quote is visible without dwell, tracks mouse/keyboard and never exposes unknown open-phase OHLC', async ({ page }) => {
   await openChart(page, true)
   const list = await bars(page), latest = list.at(-1)!
@@ -251,7 +195,7 @@ test('right drag and menu selection calculate inclusive ranges without requests 
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(1)
   const before = await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))
   const requests: string[] = []
-  page.on('request', request => { if (request.url().includes('/bars?') || request.method() !== 'GET') requests.push(request.url()) })
+  page.on('request', request => { const url = request.url(); if ((url.includes('/bars?') || request.method() !== 'GET') && !/\/api\/diagnostics\/events$/.test(url)) requests.push(url) })
   for (const [a, b] of [[from, to], [to, from]]) {
     await drag(page, a!, b!)
     await expect(page.getByRole('dialog')).toContainText('26 根 K 线')
@@ -322,33 +266,17 @@ test('range statistics and point measurement stay on real prices while the price
   expect(mirrored.high).toBeCloseTo(expected.high, 1)
   expect(mirrored.low).toBeCloseTo(expected.low, 1)
 
-  // 两点测量：像素→价位是镜像显示域，五项字段必须反镜像回真实价（p′=2P₀−p）
-  const basis = real[0]!.close
-  const host = (await page.locator('.chart-host').boundingBox())!
-  const axis = await page.evaluate(() => {
-    const hook = (window as any).__trainerChart
-    return { range: hook.yRange(), pane: hook.panes().find((pane: any) => pane.id === 'candle_pane') }
-  })
-  const priceAt = (y: number) => Number((axis.range.realFrom + (1 - (y - host.y - axis.pane.top) / axis.pane.height) * axis.range.realRange).toFixed(2))
-  const startX = (await position(page, from)).x, endX = (await position(page, to)).x
-  const startY = host.y + 130, endY = host.y + 230
-  const startReal = Number((2 * basis - priceAt(startY)).toFixed(2))
-  const endReal = Number((2 * basis - priceAt(endY)).toFixed(2))
-  await page.keyboard.down('Shift')
-  await page.mouse.move(startX, startY)
-  await page.mouse.down()
-  await page.mouse.move(endX, endY, { steps: 10 })
-  await expect(measurementCard(page)).toBeVisible()
-  await page.mouse.up()
-  await page.keyboard.up('Shift')
+  // 两点测量：区间口径以真实 loadedData 收盘价计算（镜像态显示真实价，不撒谎）
+  await twoPoint(page, from, to)
   const metric = (label: string) => measurementCard(page).locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${label}$`) }) }).locator('dd')
   const readNumber = async (label: string) => parseFloat(await metric(label).innerText())
-  expect(await readNumber('起点价')).toBeCloseTo(startReal, 1)
-  expect(await readNumber('终点价')).toBeCloseTo(endReal, 1)
-  expect(await readNumber('价差')).toBeCloseTo(endReal - startReal, 1)
-  expect(await readNumber('涨跌幅')).toBeCloseTo((endReal / startReal - 1) * 100, 1)
+  expect(await readNumber('起点收盘价')).toBeCloseTo(real[from]!.close, 1)
+  expect(await readNumber('终点收盘价')).toBeCloseTo(real[to]!.close, 1)
+  expect(await readNumber('价差')).toBeCloseTo(real[to]!.close - real[from]!.close, 1)
+  expect(await readNumber('涨跌幅')).toBeCloseTo((real[to]!.close / real[from]!.close - 1) * 100, 1)
   await page.keyboard.press('Escape')
   await expect(measurementCard(page)).not.toBeVisible()
+
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 })
@@ -371,13 +299,13 @@ test('statistics and persistent quote fit both themes and desktop sizes; drawing
       await page.keyboard.press('Escape')
       await page.mouse.move(20, 20)
       await page.screenshot({ path: evidencePath(`chart-quote-${mode}-${size.width}.png`) })
-      await quickMeasure(page, from, from + 20)
+      await twoPoint(page, from, from + 20)
       const card = measurementCard(page), bounds = (await card.boundingBox())!
       expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.y).toBeGreaterThanOrEqual(0)
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(size.width)
       expect(bounds.y + bounds.height).toBeLessThanOrEqual(size.height)
       expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
-      await expect(card.locator('dl > div')).toHaveCount(5)
+      await expect(card.locator('dl > div')).toHaveCount(12)
       await page.screenshot({ path: evidencePath(`point-measure-${mode}-${size.width}.png`) })
       await page.keyboard.press('Escape')
     }
@@ -406,15 +334,15 @@ test('recording replay supports statistics with no training writes', async ({ pa
   await page.locator('[data-recording-source="local"] .recording-history-open').first().click()
   await expect(page.getByRole('button', { name: '关闭回放' })).toBeVisible()
   const requests: string[] = []
-  page.on('request', request => { if (request.method() !== 'GET' || request.url().includes('/bars?')) requests.push(request.url()) })
+  page.on('request', request => { const url = request.url(); if ((request.method() !== 'GET' || url.includes('/bars?')) && !/\/api\/diagnostics\/events$/.test(url)) requests.push(url) })
   const range = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
   const from = await visibleStart(page)
   await drag(page, from, from + 10)
   await expect(quote(page)).toBeVisible()
   await expect(page.getByRole('dialog')).toContainText('11 根 K 线')
   await page.keyboard.press('Escape')
-  await quickMeasure(page, from, from + 10)
-  await expect(measurementCard(page).locator('dd').last()).toHaveText('11 根')
+  await twoPoint(page, from, from + 10)
+  await expect(measurementCard(page).locator('dl > div').filter({ has: page.locator('dt', { hasText: /^K线数量$/ }) }).locator('dd')).toHaveText('11 根')
   await page.keyboard.press('Escape')
   expect(requests).toEqual([])
 })
@@ -433,7 +361,7 @@ test('random-time quote and range statistics keep dates concealed', async ({ pag
   await expect(page.getByRole('dialog').locator('.range-stat-dates')).toContainText('*')
   expect(await page.getByRole('dialog').innerText()).not.toMatch(/\d{4}-\d{2}-\d{2}/)
   await page.keyboard.press('Escape')
-  await quickMeasure(page, from, from + 12)
+  await twoPoint(page, from, from + 12)
   expect(await measurementCard(page).innerText()).not.toMatch(/\d{4}-\d{2}-\d{2}/)
   await page.keyboard.press('Escape')
 })

@@ -18,6 +18,8 @@
 
 - [DIAG-OPLOG-01 本地操作日志](tasks/DIAG-OPLOG-01.md)：v1.3.4 验收埋点（点击/错误/API→本机 JSONL，诊断页可打开目录；不联网）。
 
+- [CHART-MEASURE-02 两点区间测量](tasks/CHART-MEASURE-02.md)：Shift 两次点击 K 线＋Select Box 可拖边界＋区间统计窗口（v1.3.5）。
+
 - [TEST-BUDGET-01 测试预算收敛](tasks/TEST-BUDGET-01.md)：review-profile 真实 git I/O 用例 30s→90s（断言不变）。
 
 - [REVIEW-FIX-01 整批审查整改](tasks/REVIEW-FIX-01.md)：创建态费率损坏阻断＋证据收据补实＋并发配置真改＋回归细节。

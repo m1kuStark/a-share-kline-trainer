@@ -108,7 +108,7 @@ await page.locator(".suggestions button").first().click()
   await expect(page.getByRole('heading', { name: '训练录像', exact: true })).toBeVisible()
   await page.route('**/api/**', route => route.abort())
   const writes: string[] = []
-  page.on('request', request => { if (/\/api\//.test(request.url()) && ['POST','PUT','DELETE'].includes(request.method())) writes.push(request.url()) })
+  page.on('request', request => { const url = request.url(); if (/\/api\//.test(url) && ['POST','PUT','DELETE'].includes(request.method()) && !/\/api\/diagnostics\/events$/.test(url)) writes.push(url) })
   const importedAt = Date.now()
   await page.getByLabel('导入录制', { exact: true }).setInputFiles(output.path)
   // REC-03 按日回放：跳到最后一天后画线仍在，且 b/Delete/鼠标都改不动（只读）

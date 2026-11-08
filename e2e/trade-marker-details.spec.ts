@@ -296,7 +296,7 @@ await page.locator(".suggestions button").first().click()
   await page.getByLabel('导入录制', { exact: true }).setInputFiles(output)
   await expect(page.getByRole('button', { name: '关闭回放', exact: true })).toBeVisible()
   const writes: string[] = []
-  page.on('request', request => { if (/\/api\//.test(request.url()) && ['POST', 'PUT', 'DELETE'].includes(request.method())) writes.push(request.url()) })
+  page.on('request', request => { const url = request.url(); if (/\/api\//.test(url) && ['POST', 'PUT', 'DELETE'].includes(request.method()) && !/\/api\/diagnostics\/events$/.test(url)) writes.push(url) })
 
   await page.getByRole('button', { name: '跳到最后一天' }).click()
   await expect(page.locator('.replay-day')).toHaveText(/第 \d+ \/ \d+ 日/)

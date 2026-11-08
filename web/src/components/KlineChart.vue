@@ -9,7 +9,7 @@ import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
-import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings, unmirrorPrice } from '../priceMirror'
+import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings } from '../priceMirror'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
@@ -23,8 +23,8 @@ import TradeMarkerRail from '../TradeMarkerRail.vue'
 import MaSettingsDialog from './MaSettingsDialog.vue'
 import ChartQuote from './ChartQuote.vue'
 import RangeStatisticsDialog from './RangeStatisticsDialog.vue'
-import PointMeasurement from './PointMeasurement.vue'
-import { calculatePointMeasurement, calculateRangeStatistics, type RangeStatistics } from '../chartStatistics'
+import RangeMeasurement from './RangeMeasurement.vue'
+import { calculateTwoPointMeasurement, calculateRangeStatistics, type RangeStatistics, type TwoPointMeasurement } from '../chartStatistics'
 import { appMaSettings, maWarmup } from '../maSettings'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
@@ -195,40 +195,55 @@ const periodLabel = computed(() => props.timeframe === '1W' ? '周K' : props.tim
 // （compact-chart 既有验收口径：主图起始 y 不因新功能变高）。回放页无槽位时内联渲染。
 const quoteSlot = ref(false)
 onMounted(() => { quoteSlot.value = typeof document !== 'undefined' && document.getElementById('chart-quote-slot') !== null })
-type MeasurementPoint = { x: number; y: number; index: number; value: number }
-const measurement = ref<{ start: MeasurementPoint; end: MeasurementPoint; pointerId: number; active: boolean } | null>(null)
-const measurementModel = computed(() => {
-  const state = measurement.value
-  return state ? calculatePointMeasurement(state.start.value, state.end.value, state.start.index, state.end.index) : null
+type MeasurementRange = { from: number; to: number }
+const measurementRange = ref<MeasurementRange | null>(null)
+const measurementAnchor = ref<{ index: number } | null>(null)
+const measurementTick = ref(0)
+const measurementBars = computed(() => (loadedData as Array<Record<string, unknown>>).map(bar => ({
+  ...bar,
+  date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(String(bar.date ?? ''), datePresentation.shiftDays),
+})))
+const measurementModel = computed(() => measurementRange.value
+  ? calculateTwoPointMeasurement(measurementBars.value as unknown as Parameters<typeof calculateTwoPointMeasurement>[0], measurementRange.value.from, measurementRange.value.to)
+  : null)
+const measurementBox = computed(() => {
+  measurementTick.value
+  const range = measurementRange.value, plot = chart?.getSize('candle_pane', 'main')
+  if (!range || !plot || !chart) return null
+  const a = chart.convertToPixel({ dataIndex: range.from }, { paneId: 'candle_pane' }).x ?? 0
+  const b = chart.convertToPixel({ dataIndex: range.to }, { paneId: 'candle_pane' }).x ?? 0
+  const half = chart.getBarSpace().bar / 2
+  const left = Math.max(plot.left, Math.min(a, b) - half), right = Math.min(plot.left + plot.width, Math.max(a, b) + half)
+  const width = Math.max(1, right - left)
+  const preferRight = left + width + 12 + 300 <= plot.left + plot.width
+  return {
+    box: { left, top: plot.top, width, height: plot.height },
+    panel: {
+      x: preferRight ? Math.max(plot.left, left + width + 12) : Math.max(plot.left, left - 312),
+      y: Math.max(plot.top, Math.min(plot.top + 8, plot.top + plot.height - 340)),
+    },
+  }
 })
-const measurementPosition = computed(() => {
-  const end = measurement.value?.end, plot = chart?.getSize('candle_pane', 'main')
-  if (!end || !plot) return { x: 4, y: 4 }
-  const x = end.x + 192 < plot.left + plot.width ? end.x + 12 : end.x - 192
-  return { x: clampToHost(x, 180, plot.left + plot.width), y: clampToHost(end.y + 12, 154, plot.top + plot.height) }
+const measurementAnchorLine = computed(() => {
+  measurementTick.value
+  const anchor = measurementAnchor.value, plot = chart?.getSize('candle_pane', 'main')
+  if (!anchor || !plot || !chart) return null
+  const x = chart.convertToPixel({ dataIndex: anchor.index }, { paneId: 'candle_pane' }).x
+  return x === undefined || !Number.isFinite(x) ? null : { left: Math.max(plot.left, Math.min(x, plot.left + plot.width)), top: plot.top, height: plot.height }
 })
 function closeMeasurement(): void {
-  const active = measurement.value?.active
-  measurement.value = null
+  const active = measurementRange.value !== null || measurementAnchor.value !== null
+  measurementRange.value = null; measurementAnchor.value = null
   if (active) emit('panelChange', false)
 }
-function measurementPoint(event: PointerEvent): MeasurementPoint | null {
-  if (!chart || !host.value) return null
-  const plot = chart.getSize('candle_pane', 'main'), bounds = host.value.getBoundingClientRect()
-  const index = statisticsIndex(event.clientX)
-  if (!plot || index === null) return null
-  const y = Math.max(plot.top, Math.min(event.clientY - bounds.top, plot.top + plot.height))
-  const displayValue = chart.convertFromPixel([{ y }], { paneId: 'candle_pane', absolute: true })[0]?.value
-  // CHART-INVERT-01：像素→价位是显示域（镜像态为镜像价）；测量口径＝真实价（决策信息不撒谎），
-  // 用活动 P₀ 反镜像回真实域后再进入五项字段。
-  const basis = activeMirrorBasis()
-  const value = displayValue === undefined || !Number.isFinite(displayValue)
-    ? undefined
-    : basis === null ? displayValue : unmirrorPrice(displayValue, basis)
-  const x = chart.convertToPixel({ dataIndex: index }, { paneId: 'candle_pane', absolute: true }).x
-  return value === undefined || !Number.isFinite(value) || x === undefined || !Number.isFinite(x) ? null
-    : { x: Math.max(plot.left, Math.min(x, plot.left + plot.width)), y, index, value: Number(value.toFixed(2)) }
+function moveMeasurementEdge(payload: { edge: 'start' | 'end'; clientX: number }): void {
+  const range = measurementRange.value, index = statisticsIndex(payload.clientX)
+  if (!range || index === null) return
+  if (payload.edge === 'start') range.from = Math.max(0, Math.min(index, range.to))
+  else range.to = Math.max(range.from, Math.min(index, loadedData.length - 1))
+  measurementTick.value += 1
 }
+
 
 type StatisticsGesture = { pointerId: number; button: number; startX: number; index: number; end: number; moved: boolean }
 const statisticsArmed = ref(false)
@@ -391,7 +406,7 @@ function placeHoverCard(anchorX: number, anchorY: number, model: HoverCardModel)
 // 停留计时以 dataIndex 为键：同一根 K 线内的指针微动只更新锚点（不重置计时），
 // 已可见时随十字线实时重摆；移到另一根＝取消计时＋隐藏＋重新计时。
 function scheduleHoverCard(dataIndex: number, anchorX: number, anchorY: number): void {
-  if (measurement.value) return
+  if (measurementRange.value || measurementAnchor.value) return
   if (hoverPendingIndex === dataIndex) {
     hoverPendingAnchor = { x: anchorX, y: anchorY }
     if (hoverCard.value) hoverCard.value = placeHoverCard(anchorX, anchorY, hoverCard.value.model)
@@ -1041,11 +1056,13 @@ function beginPaneResize(event: PointerEvent): void {
   const rect = selectionRect(); if (rect) rect.style.display = 'none'
 }
 function onPaneResizeCancel(event: PointerEvent): void {
-  if (measurement.value?.pointerId === event.pointerId) closeMeasurement()
   if (statisticsGesture?.pointerId === event.pointerId) closeStatistics()
   if (event.pointerId === paneResizePointerId) paneResizePointerId = null
 }
 function onPointerDown(event: PointerEvent): void {
+  const eventTarget = event.target as Element | null
+  // 两点测量面板/边界拖动拥有自己的指针手势（在组件内处理），宿主捕获阶段直接放行
+  if (eventTarget?.closest?.('.range-measure-panel, .range-measure-handle')) return
   // CHART-PAN-01：时间轴拖动平移。必须最先裁决：x_axis_pane 不属于绘图 pane，
   // 此分支让时间轴独占本次手势（框选/测量/多选/分隔条都不会在时间轴启动）。
   if (event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey
@@ -1059,15 +1076,21 @@ function onPointerDown(event: PointerEvent): void {
   }
   if (event.button === 0 && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey
     && !props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag && statisticsHit(event)) {
-    const point = measurementPoint(event)
-    if (point) {
-      closePanels(); hideHoverCard()
-      measurement.value = { start: point, end: point, pointerId: event.pointerId, active: true }
+    const index = statisticsIndex(event.clientX)
+    if (index !== null) {
+      hideHoverCard()
+      if (statisticsGesture || statisticsArmed.value || statisticsMenu.value || statisticsResult.value) closeStatistics()
+      const anchor = measurementAnchor.value
+      measurementAnchor.value = null; measurementRange.value = null
+      if (anchor) measurementRange.value = { from: Math.min(anchor.index, index), to: Math.max(anchor.index, index) }
+      else measurementAnchor.value = { index }
+      measurementTick.value += 1
       emit('panelChange', true)
       event.preventDefault(); event.stopPropagation()
       return
     }
   }
+
   if (event.button === 2) suppressStatisticsContext = !!props.drawTool
   if (!props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag && statisticsHit(event)
     && (event.button === 2 || (event.button === 0 && statisticsArmed.value))) {
@@ -1116,13 +1139,6 @@ function onPointerDown(event: PointerEvent): void {
   const rect = selectionRect(); if (rect) { rect.style.left = `${selectStartX}px`; rect.style.width = '0px'; rect.style.display = 'block'; if (plotBounds) { rect.style.top = `${plotBounds.top}px`; rect.style.height = `${Math.max(0, plotBounds.bottom - plotBounds.top)}px` } }
 }
 function onPointerMove(event: PointerEvent): void {
-  if (measurement.value?.active) {
-    if (event.pointerId === measurement.value.pointerId) {
-      const point = measurementPoint(event)
-      if (point) measurement.value.end = point
-    }
-    return
-  }
   if (statisticsGesture) {
     if (event.pointerId !== statisticsGesture.pointerId) return
     const end = statisticsIndex(event.clientX)
@@ -1195,13 +1211,6 @@ function onTimeAxisPanCancel(event: PointerEvent): void {
 }
 
 function onPointerUp(event: PointerEvent): void {
-  if (measurement.value?.active && event.pointerId === measurement.value.pointerId && event.button === 0) {
-    const point = measurementPoint(event)
-    if (point) measurement.value.end = point
-    measurement.value.active = false
-    emit('panelChange', false)
-    return
-  }
   if (statisticsGesture && event.pointerId === statisticsGesture.pointerId && event.button === statisticsGesture.button) {
     const gesture = statisticsGesture
     statisticsGesture = null
@@ -1310,6 +1319,13 @@ function distanceToSegment(px: number, py: number, a: { x: number; y: number }, 
   const t = Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / lengthSq))
   return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy))
 }
+function onGlobalWheelCancel(event: WheelEvent): void {
+  if (!measurementRange.value && !measurementAnchor.value) return
+  // 面板内滚动查看统计不禁用测量；图表/边界上的滚轮等同平移手势，取消测量
+  if ((event.target as Element | null)?.closest?.('.range-measure-panel')) return
+  closeMeasurement()
+}
+
 function onWheel(event: WheelEvent): void {  event.preventDefault()
   closeMeasurement()
   // 价格轴上滚轮＝klinecharts 原生纵轴比例缩放（不平移）；其余区域滚轮＝K 线平移
@@ -1326,8 +1342,8 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
 
 // CHART-ZOOM-01：关闭 klinecharts 内置键盘热键（其 Shift+←/→ 会与应用平移快捷键重复执行）——应用快捷键系统唯一权威
 onMounted(() => { if (!host.value) return;
-  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
-onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); cancelHoverTimer(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('mouseleave', hideHoverCard); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('pointercancel', onTimeAxisPanCancel); window.removeEventListener('blur', cancelTimeAxisPan); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
+  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('wheel', onGlobalWheelCancel, true); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { measurement: () => measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null, overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); cancelHoverTimer(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('mouseleave', hideHoverCard); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('wheel', onGlobalWheelCancel, true); window.removeEventListener('pointercancel', onTimeAxisPanCancel); window.removeEventListener('blur', cancelTimeAxisPan); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
 // 一次性语义：取点完成（onDrawEnd）即自动退回默认模式。库不处理 Esc，取消由 cancelDrawing 完成。
@@ -1552,9 +1568,9 @@ function confirmTextPanel(): void {
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
-  if (measurement.value) {
+  if (measurementRange.value || measurementAnchor.value) {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeMeasurement(); return }
-    if (measurement.value.active) { event.preventDefault(); event.stopPropagation(); return }
+    event.preventDefault(); event.stopPropagation(); return
   }
   if (statisticsArmed.value || statisticsGesture || statisticsMenu.value || statisticsResult.value) {
     event.stopPropagation()
@@ -1593,7 +1609,9 @@ function onPanelTitlePointerMove(event: PointerEvent): void {
 function onPanelTitlePointerUp(): void { panelDragging.value = false }
 // 点击菜单/面板以外区域时关闭（capture 阶段，先于其他处理）
 function onGlobalPointerDown(event: PointerEvent): void {
-  closeMeasurement()
+  const overlayTarget = event.target as HTMLElement | null
+  if (overlayTarget?.closest('.range-measure-panel, .range-measure-handle')) return
+  if (!(event.button === 0 && event.shiftKey && statisticsHit(event))) closeMeasurement()
   if (statisticsMenu.value && !(event.target as HTMLElement | null)?.closest('.statistics-menu')) closeStatistics()
   if (statisticsArmed.value && !statisticsHit(event)) closeStatistics()
   if (!ctxMenu.value && !editPanel.value && !textPanel.value) return
@@ -1737,7 +1755,7 @@ let timeAxisPan: { pointerId: number; lastX: number } | null = null
 //    （框选时所有画线整体上下移动的根因）；
 // ③ 轴上按下与画线命中照常放行给库（轴缩放起点/画线选中拖拽不受影响），画线模式的取点交互也不受影响
 function onHostMouseDown(event: MouseEvent): void {
-  if (measurement.value?.active) { event.preventDefault(); event.stopPropagation(); return }
+  if (measurementRange.value || measurementAnchor.value) { event.preventDefault(); event.stopPropagation(); return }
   if (statisticsGesture || statisticsArmed.value) { event.preventDefault(); event.stopPropagation(); return }
   // 中键合成的左键 mousedown：直接放行给库（跳过本拦截器与冒泡修补，避免自我拦截）
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
@@ -1982,7 +2000,7 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
     <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
     <button v-if="maHistoryError" class="ma-history-error" role="alert" @click="ensureMaHistory">{{ maHistoryError }}，点击重试</button>
     <div ref="host" class="chart-host" tabindex="-1" :class="{ 'statistics-selecting': statisticsArmed || statisticsGesture }"></div>
-    <PointMeasurement v-if="measurement && measurementModel" :start="measurement.start" :end="measurement.end" :position="measurementPosition" :model="measurementModel" :active="measurement.active" />
+    <RangeMeasurement v-if="measurementRange && measurementModel && measurementBox" :box="measurementBox.box" :panel="measurementBox.panel" :model="measurementModel" :period="periodLabel" @close="closeMeasurement" @edge-move="moveMeasurementEdge" />
     <div v-if="statisticsArmed" class="statistics-hint" role="status">拖选要统计的 K 线区间，Esc 取消</div>
     <div v-if="statisticsRect" class="statistics-selection" :style="{ left: `${statisticsRect.left}px`, top: `${statisticsRect.top}px`, width: `${statisticsRect.width}px`, height: `${statisticsRect.height}px` }"></div>
     <div v-if="statisticsMenu" class="ctx-menu statistics-menu" role="menu" aria-label="图表区间菜单" :style="{ left: `${statisticsMenu.x}px`, top: `${statisticsMenu.y}px` }" @pointerdown.stop @mousedown.stop @contextmenu.prevent>

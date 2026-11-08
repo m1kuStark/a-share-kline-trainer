@@ -76,14 +76,36 @@ export function statisticsNumber(value: number | null, suffix = '', signed = fal
   return `${signed && rounded > 0 ? '+' : ''}${rounded.toFixed(2)}${suffix}`
 }
 
-/** Pick order is significant: a backward drag still uses its first price as base. */
-export function calculatePointMeasurement(startPrice: number, endPrice: number, startIndex: number, endIndex: number): {
-  startPrice: number; endPrice: number; change: number; changePct: number | null; count: number
-} | null {
-  if (![startPrice, endPrice, startIndex, endIndex].every(Number.isFinite)
-    || !Number.isInteger(startIndex) || !Number.isInteger(endIndex) || startIndex < 0 || endIndex < 0) return null
-  const change = endPrice - startPrice
-  if (!Number.isFinite(change)) return null
-  const pct = startPrice > 0 ? change / startPrice * 100 : null
-  return { startPrice, endPrice, change, changePct: pct !== null && Number.isFinite(pct) ? pct : null, count: Math.abs(endIndex - startIndex) + 1 }
+export interface TwoPointMeasurement {
+  from: number
+  to: number
+  count: number
+  startDate: string
+  endDate: string
+  startClose: number
+  endClose: number
+  change: number
+  changePct: number | null
+  range: RangeStatistics
+}
+
+/**
+ * CHART-MEASURE-02：两点测量改为「K 线区间」口径——两次 Shift 点击确定起止 K 线，
+ * 涨跌幅/价差按起止两根的收盘价计算，K 线数量含首尾；区间高/低/振幅/量额沿用区间统计。
+ */
+export function calculateTwoPointMeasurement(bars: readonly StatisticsBar[], a: number, b: number): TwoPointMeasurement | null {
+  const range = calculateRangeStatistics(bars, a, b)
+  if (!range || !bars.length) return null
+  const from = Math.max(0, Math.min(bars.length - 1, Math.floor(Math.min(a, b))))
+  const to = Math.max(0, Math.min(bars.length - 1, Math.floor(Math.max(a, b))))
+  const startClose = bars[from]!.close
+  const endClose = bars[to]!.close
+  if (!Number.isFinite(startClose) || !Number.isFinite(endClose)) return null
+  const change = endClose - startClose
+  const changePct = startClose > 0 ? change / startClose * 100 : null
+  return {
+    from, to, count: range.count, startDate: range.start, endDate: range.end,
+    startClose, endClose, change, changePct: changePct !== null && Number.isFinite(changePct) ? changePct : null,
+    range,
+  }
 }

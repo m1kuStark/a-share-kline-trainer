@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculatePointMeasurement, calculateRangeStatistics, statisticsNumber } from '../../web/src/chartStatistics'
+import { calculateRangeStatistics, calculateTwoPointMeasurement, statisticsNumber } from '../../web/src/chartStatistics'
 
 const bars = [
   { date: '2026-01-01', open: 98, high: 102, low: 97, close: 100, volume: 1000, amount: 100000 },
@@ -8,23 +8,25 @@ const bars = [
   { date: '2026-01-06', open: 100, high: 103, low: 96, close: 100, volume: 4000, amount: 400000 },
 ]
 
-describe('two-point price measurement', () => {
-  it('uses the actual first picked price and preserves reverse direction instead of date sorting', () => {
-    expect(calculatePointMeasurement(80, 100, 10, 30)).toEqual({ startPrice: 80, endPrice: 100, change: 20, changePct: 25, count: 21 })
-    expect(calculatePointMeasurement(100, 80, 30, 10)).toEqual({ startPrice: 100, endPrice: 80, change: -20, changePct: -20, count: 21 })
+describe('two-point bar-range measurement (CHART-MEASURE-02)', () => {
+  it('anchors both points to K-line closes and includes both endpoints', () => {
+    const result = calculateTwoPointMeasurement(bars, 1, 3)!
+    // bars[1].close=105, bars[3].close=100; 3 bars inclusive
+    expect(result).toMatchObject({ from: 1, to: 3, count: 3, startDate: '2026-01-02', endDate: '2026-01-06',
+      startClose: 105, endClose: 100, change: -5 })
+    expect(result.changePct).toBeCloseTo((100 / 105 - 1) * 100)
+    expect(result.range).toMatchObject({ high: 110, low: 95, volume: 9000, amount: 900000 })
   })
-  it('includes both endpoints and permits vertical measurement within one candle', () => {
-    expect(calculatePointMeasurement(100, 103, 4, 4)).toMatchObject({ count: 1, change: 3, changePct: 3 })
-    expect(calculatePointMeasurement(100, 100, 4, 5)).toMatchObject({ count: 2, change: 0, changePct: 0 })
-    expect(calculatePointMeasurement(0, 5, 0, 1)).toMatchObject({ change: 5, changePct: null })
-    expect(calculatePointMeasurement(-2, 5, 0, 1)?.changePct).toBeNull()
+  it('normalizes reverse clicks to chronological range while keeping the same counts', () => {
+    const forward = calculateTwoPointMeasurement(bars, 1, 3)
+    expect(calculateTwoPointMeasurement(bars, 3, 1)).toEqual(forward)
   })
-  it('rejects invalid geometry and never returns an infinite percentage', () => {
-    expect(calculatePointMeasurement(NaN, 1, 0, 1)).toBeNull()
-    expect(calculatePointMeasurement(1, Infinity, 0, 1)).toBeNull()
-    expect(calculatePointMeasurement(1, 2, -1, 1)).toBeNull()
-    expect(calculatePointMeasurement(1, 2, 0, 1.5)).toBeNull()
-    expect(calculatePointMeasurement(Number.MIN_VALUE, 1, 0, 1)?.changePct).toBeNull()
+  it('supports one bar, clamped endpoints and rejects empty/invalid data', () => {
+    expect(calculateTwoPointMeasurement(bars, 2, 2)).toMatchObject({ count: 1, startClose: 100, endClose: 100, change: 0, changePct: 0 })
+    expect(calculateTwoPointMeasurement(bars, -99, 99)).toMatchObject({ from: 0, to: 3, count: 4, startClose: 100, endClose: 100 })
+    expect(calculateTwoPointMeasurement([], 0, 1)).toBeNull()
+    expect(calculateTwoPointMeasurement(bars, NaN, 1)).toBeNull()
+    expect(calculateTwoPointMeasurement([{ ...bars[0]!, close: NaN }], 0, 0)).toBeNull()
   })
 })
 describe('selected chart range statistics', () => {
