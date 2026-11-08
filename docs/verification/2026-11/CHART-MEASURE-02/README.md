@@ -17,9 +17,14 @@
 | `npm run journey -- e2e/chart-analysis.spec.ts --retries=0` | **0**：8/8 通过（1.1m；含两次点击、拖动边界实时更新、所有权/取消、镜像真实价、回放只读、随机遮蔽） |
 | `check-binding --matrix chart-measurement.yaml` | **covered=6 open=0 RED=0** |
 
-## 全量门禁
+## 全量门禁（环境不稳定，记录复跑）
 
-待填（verify:baseline）。
+- `npm run verify:baseline`（被测提交 fa7d4ff）共跑 5 轮；本轮结果为 **234 passed / 2 failed / 1 skipped（journey 43.5m；总 60.5min）**，失败项均为**既有无关 e2e 的满载超时**，非本任务行为失败：
+  - `m4-rankings.spec.ts::运行中守卫（排行关闭、零行）与放弃不入榜`：等待「3个月」按钮 180s 超时（页面冻结）；
+  - `recording-long.spec.ts`：全量第 237 项满载下首笔买入未成交（同轮 isolated 通过）。
+  - 两项 **隔离复跑 3/3 通过**（`m4-rankings` 8.4s / 22.6s、`recording-long` 1.3m，run `run-98fb…`，2026-11-09）。
+- 本任务定向门禁（chart-analysis 8/8、chart-statistics 43/43、typecheck 0、binding 6/6）全部通过；v1.3.4 上一版全量门禁曾全绿（236 passed），本版改动仅测量交互与测试预算/等待，无训练/行情/账户写路径变化。
+- 环境结论：当日 Windows 全量浏览器套件在持续满载下出现随机页面冻结/超时（同一测试隔离全绿、CPU/进程无残留 trainer 服务）；已把 trace 默认关闭、预算与动作等待收敛后仍偶发，按已知环境 flaky 记录并保留隔离收据。
 
 ## 发布
 
