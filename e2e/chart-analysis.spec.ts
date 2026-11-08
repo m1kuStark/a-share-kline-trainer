@@ -149,6 +149,48 @@ test('两点测量的所有权与取消：画线/多选/价格轴/滚轮/周期�
   await expect(measurementCard(page)).not.toBeVisible()
   expect(await page.evaluate(() => ({ range: (window as any).__trainerChart.visibleRange(), drawings: (window as any).__trainerChart.drawings() }))).toEqual(before)
 })
+test('周K/月K 两点区间统计跟随当前周期 K 线，Select Box 边界落在 K 线中心', async ({ page }) => {
+  await openChart(page)
+  for (const label of ['周K', '月K'] as const) {
+    await page.getByRole('tab', { name: label, exact: true }).click()
+    await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+    await page.waitForTimeout(800)
+    // 取可见窗口靠右（近期）的 K 线：早年前复权价可能为负，涨跌幅按设计显示 --，不适合做区间 oracle
+    const range = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
+    const from = Math.max(1, Math.floor(range.to) - 10), to = from + 5
+    const chartBars = await page.evaluate(() => (window as any).__trainerChart.bars() as Array<{ timestamp: number; date: string; open: number; high: number; low: number; close: number }>)
+    expect(chartBars[from]!.close).toBeGreaterThan(0)
+    // 当前周期的 K 线数量必须与选中根数一致（此前后端已按 tf 聚合，库内 dataList 为唯一显示事实）
+    expect(to).toBeLessThan(chartBars.length)
+    await twoPoint(page, from, to)
+    const card = measurementCard(page)
+    const metric = (name: string) => card.locator('dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${name}$`) }) }).locator('dd')
+    expect(await metric('K线数量')).toHaveText('6 根')
+    expect(parseFloat(await metric('起点收盘价').innerText())).toBeCloseTo(chartBars[from]!.close, 1)
+    expect(parseFloat(await metric('终点收盘价').innerText())).toBeCloseTo(chartBars[to]!.close, 1)
+    const selected = chartBars.slice(from, to + 1)
+    expect(parseFloat(await metric('区间最高价').innerText())).toBeCloseTo(Math.max(...selected.map(bar => bar.high)), 1)
+    expect(parseFloat(await metric('区间最低价').innerText())).toBeCloseTo(Math.min(...selected.map(bar => bar.low)), 1)
+    const expectedChangePct = (chartBars[to]!.close / chartBars[from]!.close - 1) * 100
+    expect(parseFloat(await metric('涨跌幅').innerText())).toBeCloseTo(expectedChangePct, 1)
+    // Select Box 左右边界＝起止 K 线中心（与十字线竖线同一位置），不是相邻 K 线间隙
+    const centers = await page.evaluate(({ from, to }) => {
+      const hook = (window as any).__trainerChart, list = hook.bars()
+      return { from: hook.pointToPixel(list[from].timestamp, list[from].close).x, to: hook.pointToPixel(list[to].timestamp, list[to].close).x }
+    }, { from, to })
+    const host = (await page.locator('.chart-host').boundingBox())!
+    const box = (await page.locator('.range-measure-box').boundingBox())!
+    expect(Math.abs(box.x - (host.x + centers.from))).toBeLessThanOrEqual(2)
+    expect(Math.abs(box.x + box.width - (host.x + centers.to))).toBeLessThanOrEqual(2)
+    const handleStart = (await page.locator('.range-measure-handle[data-edge="start"]').boundingBox())!
+    const handleEnd = (await page.locator('.range-measure-handle[data-edge="end"]').boundingBox())!
+    expect(Math.abs(handleStart.x + handleStart.width / 2 - (host.x + centers.from))).toBeLessThanOrEqual(2)
+    expect(Math.abs(handleEnd.x + handleEnd.width / 2 - (host.x + centers.to))).toBeLessThanOrEqual(2)
+    await page.keyboard.press('Escape')
+    await expect(card).not.toBeVisible()
+  }
+})
+
 test('quote is visible without dwell, tracks mouse/keyboard and never exposes unknown open-phase OHLC', async ({ page }) => {
   await openChart(page, true)
   const list = await bars(page), latest = list.at(-1)!

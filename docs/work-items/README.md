@@ -20,6 +20,10 @@
 
 - [CHART-MEASURE-02 两点区间测量](tasks/CHART-MEASURE-02.md)：Shift 两次点击 K 线＋Select Box 可拖边界＋区间统计窗口（v1.3.5）。
 
+- [CHART-MEASURE-03 周/月K 区间修正](tasks/CHART-MEASURE-03.md)：统计源改当前周期＋边界对齐 K 线中心（v1.3.6）。
+
+- [TEST-SPEED-01 测试提速](tasks/TEST-SPEED-01.md)：verify:fast／并行 journey／失败项复跑纪律。
+
 - [TEST-BUDGET-01 测试预算收敛](tasks/TEST-BUDGET-01.md)：review-profile 真实 git I/O 用例 30s→90s（断言不变）。
 
 - [REVIEW-FIX-01 整批审查整改](tasks/REVIEW-FIX-01.md)：创建态费率损坏阻断＋证据收据补实＋并发配置真改＋回归细节。

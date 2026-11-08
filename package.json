@@ -1,7 +1,7 @@
 {
   "name": "a-share-kline-trainer",
   "private": true,
-  "version": "1.3.5",
+  "version": "1.3.6",
   "type": "module",
   "main": "desktop/dist/main.js",
   "engines": {
@@ -37,7 +37,9 @@
     "verify:candidate": "tsx scripts/verify-candidate.ts",
     "release:windows": "tsx scripts/release/build.mjs",
     "release:desktop": "node desktop/scripts/release-desktop.mjs",
-    "release:source": "node scripts/release/export-source.mjs"
+    "release:source": "node scripts/release/export-source.mjs",
+    "verify:fast": "node scripts/verify-fast.mjs",
+    "journey:parallel": "node scripts/journey-parallel.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

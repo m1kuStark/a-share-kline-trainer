@@ -48,3 +48,11 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 The docs-tooling test file uses a20second per-test integration budget: it starts real Git processes and commits temporary repositories. All assertions remain; this is not a product latency SLO. Other unit defaults and full candidate checks are unchanged.
 
 Owned runtime readiness retries transient loopback connection errors only within the original deadline, after child identity checks. Persistent errors report the last cause; wrong PID/runId/health and malformed responses remain failures.
+
+## 分层门禁与耗时（TEST-SPEED-01，2026-11-09 用户要求）
+
+- **迭代循环**：`npm run verify:fast -- --unit <受影响单测文件> --journey <受影响 e2e spec>`（无参数时仅 docs:check＋build），分钟级；用于 RED/GREEN 与功能自验。
+- **发布/整批验收**：全量单测＋全量 journey 一次；全量 journey 可用 `npm run journey:parallel -- --shards 2` 拆成 2~4 个独立 run 并行（各自 manifest/端口/数据库/构建/报告，单 run 仍 workers:1）。
+- **失败处理**：全量中若只有既有环境 flaky 失败，只复跑失败 spec（`npm run journey -- <failed specs> --retries=0`）并保存隔离收据，不重复整轮全量；新失败仍按 RED→GREEN 修复。
+- **trace**：默认关闭逐动作 trace（失败仍有截图），定向排查设 `TRAINER_TRACE=on`。
+- 正式候选证明仍以 `verify:baseline` 为准；并行全量用于整批验收提速，必须保留每个 shard 的 journey.log/退出码。

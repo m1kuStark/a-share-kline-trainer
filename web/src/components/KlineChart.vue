@@ -9,7 +9,7 @@ import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
 import { adoptDrawings, advanceRenderedBasis, isDrawingPriceBasis, projectDrawings, sameDrawingPriceBasis, type DrawingPriceBasis } from '../drawingPriceBasis'
-import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings } from '../priceMirror'
+import { mirrorBars, mirrorDrawings, mirrorPrice, unmirrorDrawings, unmirrorPrice } from '../priceMirror'
 import { VIEWPORT_CAPTURE_THROTTLE_MS, buildChartCapture, captureView, mergePeriodDrawings, toCaptureBars, type CaptureSourceBar } from '../recording/chartCapture'
 import { MASKED_DATE_TEXT, presentableDateString, revealedTickTimestamp } from '../randomDatePresentation'
 import type { ChartCapture } from '../recording/types'
@@ -24,7 +24,7 @@ import MaSettingsDialog from './MaSettingsDialog.vue'
 import ChartQuote from './ChartQuote.vue'
 import RangeStatisticsDialog from './RangeStatisticsDialog.vue'
 import RangeMeasurement from './RangeMeasurement.vue'
-import { calculateTwoPointMeasurement, calculateRangeStatistics, type RangeStatistics, type TwoPointMeasurement } from '../chartStatistics'
+import { calculateTwoPointMeasurement, calculateRangeStatistics, type RangeStatistics, type StatisticsBar, type TwoPointMeasurement } from '../chartStatistics'
 import { appMaSettings, maWarmup } from '../maSettings'
 import { registerDrawingOverlays } from '../drawingOverlays'
 import { drawingFigureGeometry } from '../drawingGeometry'
@@ -199,21 +199,42 @@ type MeasurementRange = { from: number; to: number }
 const measurementRange = ref<MeasurementRange | null>(null)
 const measurementAnchor = ref<{ index: number } | null>(null)
 const measurementTick = ref(0)
-const measurementBars = computed(() => (loadedData as Array<Record<string, unknown>>).map(bar => ({
-  ...bar,
-  date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(String(bar.date ?? ''), datePresentation.shiftDays),
-})))
+function dateFromTimestamp(timestamp: number): string {
+  const date = new Date(timestamp)
+  const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+// CHART-MEASURE-03：统计必须跟随**当前周期**的库内数据（周/月K 已由服务端聚合，库 setPeriod 可能再分组），
+// 不能用日线 loadedData 的索引去套周/月K；多空反转时逐项反镜像回真实价。
+function statisticsBarsSource(): Array<StatisticsBar> {
+  if (!chart) return []
+  const basis = activeMirrorBasis()
+  const list = chart.getDataList() as Array<{ timestamp?: number; open: number; high: number; low: number; close: number; volume?: number; amount?: number }>
+  return list.map(bar => {
+    const date = typeof bar.timestamp === 'number' ? (barDateByTimestamp.get(bar.timestamp) ?? dateFromTimestamp(bar.timestamp)) : ''
+    const real = (value: number) => basis === null ? value : unmirrorPrice(value, basis)
+    return {
+      date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(date, datePresentation.shiftDays),
+      open: real(bar.open), close: real(bar.close),
+      // mirrorBar 高低语义对调：镜像域 high′=2P₀−low、low′=2P₀−high，反镜像时需还原换位
+      high: basis === null ? bar.high : unmirrorPrice(bar.low, basis),
+      low: basis === null ? bar.low : unmirrorPrice(bar.high, basis),
+      volume: bar.volume, amount: bar.amount,
+    }
+  })
+}
+const measurementSource = computed(() => { measurementTick.value; return statisticsBarsSource() })
 const measurementModel = computed(() => measurementRange.value
-  ? calculateTwoPointMeasurement(measurementBars.value as unknown as Parameters<typeof calculateTwoPointMeasurement>[0], measurementRange.value.from, measurementRange.value.to)
+  ? calculateTwoPointMeasurement(measurementSource.value, measurementRange.value.from, measurementRange.value.to)
   : null)
 const measurementBox = computed(() => {
   measurementTick.value
   const range = measurementRange.value, plot = chart?.getSize('candle_pane', 'main')
   if (!range || !plot || !chart) return null
+  // CHART-MEASURE-03：边界对齐到 K 线中心（与十字线竖线同一设计），而不是相邻 K 线的间隙
   const a = chart.convertToPixel({ dataIndex: range.from }, { paneId: 'candle_pane' }).x ?? 0
   const b = chart.convertToPixel({ dataIndex: range.to }, { paneId: 'candle_pane' }).x ?? 0
-  const half = chart.getBarSpace().bar / 2
-  const left = Math.max(plot.left, Math.min(a, b) - half), right = Math.min(plot.left + plot.width, Math.max(a, b) + half)
+  const left = Math.max(plot.left, Math.min(a, b)), right = Math.min(plot.left + plot.width, Math.max(a, b))
   const width = Math.max(1, right - left)
   const preferRight = left + width + 12 + 300 <= plot.left + plot.width
   return {
@@ -240,7 +261,7 @@ function moveMeasurementEdge(payload: { edge: 'start' | 'end'; clientX: number }
   const range = measurementRange.value, index = statisticsIndex(payload.clientX)
   if (!range || index === null) return
   if (payload.edge === 'start') range.from = Math.max(0, Math.min(index, range.to))
-  else range.to = Math.max(range.from, Math.min(index, loadedData.length - 1))
+  else range.to = Math.max(range.from, Math.min(index, chart?.getDataList().length ? chart.getDataList().length - 1 : index))
   measurementTick.value += 1
 }
 
@@ -271,8 +292,10 @@ function statisticsIndex(clientX: number): number | null {
   if (!plot) return null
   const x = Math.max(plot.left, Math.min(clientX - host.value.getBoundingClientRect().left, plot.left + plot.width))
   const index = chart.convertFromPixel([{ x }], { paneId: 'candle_pane' })[0]?.dataIndex
-  return index === undefined || !Number.isFinite(index) || !loadedData.length ? null : Math.max(0, Math.min(Math.round(index), loadedData.length - 1))
+  const count = chart.getDataList().length
+  return index === undefined || !Number.isFinite(index) || !count ? null : Math.max(0, Math.min(Math.round(index), count - 1))
 }
+
 function statisticsHit(event: MouseEvent | PointerEvent): boolean {
   if (!chart || !host.value || isOverPaneSeparator(event) || isOverPriceAxis(event.clientX, event.clientY)) return false
   const bounds = host.value.getBoundingClientRect(), plot = chart.getSize('candle_pane', 'main')
@@ -297,10 +320,8 @@ function openStatisticsMenu(event: MouseEvent | PointerEvent, from: number | nul
   void nextTick(() => host.value?.parentElement?.querySelector<HTMLButtonElement>('.statistics-menu button')?.focus())
 }
 function showStatistics(from: number, to: number): void {
-  // CHART-INVERT-01：统计必须以组件真实序列 loadedData 为唯一源（镜像态库内是显示序列，
-  // 涨跌方向会反）；日期仍走同一呈现层（遮蔽/常量差）。
-  const list = loadedData as Array<KLineData & { date?: string }>
-  const result = calculateRangeStatistics(list.map(bar => ({ ...bar, date: datePresentation.hidden ? MASKED_DATE_TEXT : presentableDateString(bar.date ?? '', datePresentation.shiftDays) })), from, to)
+  // CHART-MEASURE-03：区间统计同样跟随当前周期的库内数据；镜像态逐项反镜像回真实价。
+  const result = calculateRangeStatistics(statisticsBarsSource(), from, to)
   statisticsMenu.value = null; statisticsArmed.value = false
   statisticsResult.value = result
   if (!result) { closeStatistics(); emit('panelChange', false); return }
