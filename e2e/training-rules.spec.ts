@@ -104,6 +104,9 @@ test('设置默认→创建A冻结→运行中改默认A不变→B采用新值�
   expect(trade.fee).toBeGreaterThan(5)
   // TRAIN-FEE-01：佣金四舍五入到分（245.60375 → 245.60）
   expect(trade.fee).toBeCloseTo(Math.round(trade.amount * 0.00025 * 100 + 1e-9) / 100, 6)
+  await expect(page.locator('.status-strip')).toContainText('买入成交')
+  await expect(page.locator('.status-strip')).not.toContainText('处理中')
+  await expect(page.getByRole('button', { name: '卖出', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-strip')).toContainText('卖出成交')
   // e2e 约定：套件收尾不残留活动训练（后续套件与重试不再依赖隐式状态）

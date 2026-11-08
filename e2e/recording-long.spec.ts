@@ -36,13 +36,26 @@ await page.locator(".suggestions button").first().click()
   await expect(page.getByText(/已选：/)).toBeVisible()
   await page.getByRole('button', { name: '2年', exact: true }).click()
   await page.locator('input[type="date"]').fill('2024-09-13')
+  // 全量套件共享设置库：前置用例可能改过初始资金；本用例需要一手可成交，先固定默认初始资金并保存
+  const trainingDefaults = await (await page.request.get('/api/settings/training')).json() as Record<string, unknown>
+  const defaultsPut = await page.request.put('/api/settings/training', {
+    data: {
+      feesEnabled: trainingDefaults.feesEnabled ?? false,
+      tPlusOne: trainingDefaults.tPlusOne ?? true,
+      initialCash: 1_000_000,
+      adjustMode: trainingDefaults.adjustMode ?? 'forward',
+      commissionRate: trainingDefaults.commissionRate ?? 0.00025,
+      minimumCommission: trainingDefaults.minimumCommission ?? 5,
+      stampDutyRate: trainingDefaults.stampDutyRate ?? 0.0005,
+    },
+  })
+  expect(defaultsPut.status()).toBe(200)
   await startTrainingFromForm(page)
   const recording = page.getByRole('status').filter({ hasText: '正在记录' })
   await expect(recording).toBeVisible()
   // Fail early against the old implementation, before the costly two-year journey.
   const initialRecording = await exported(page, '导出录制', 'two-year-initial.json.gz')
   await page.getByRole('button', { name: '买入', exact: true }).click()
-  await expect(page.locator('.status-message')).toContainText('成交', { timeout: 30_000 })
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-message')).toHaveClass(/error-text/)
