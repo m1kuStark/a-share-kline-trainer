@@ -14,8 +14,9 @@ export default defineConfig({
     baseURL: run?.baseURL,
     channel: 'msedge',
     viewport: { width: 1440, height: 900 },
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    // 全量 journey 在 Windows 上逐动作 DOM trace 会滚成数百 MB 并反过来拖慢/卡住长测；
+    // 默认关闭 trace（失败仍有 only-on-failure 截图；单测/定向调试可设 TRAINER_TRACE=on）。
+    trace: process.env.TRAINER_TRACE === 'on' ? 'retain-on-failure' : 'off',
   },
   // 全量 journey 在 Windows/Node24 上约 40 分钟，机器满载时页面启动/保存状态偶发超过默认 5s；
   // 统一等待预算提到 15s（显式更短/更长的用例自带 timeout 不受影响），断言不变。
