@@ -5,7 +5,7 @@
   "id": "CHART-MEASURE-02",
   "title": "两点测量重构：Shift 两次单击 K 线 + Select Box 可拖边界 + 区间统计窗口",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "V135",
   "base_commit": "c76cc0d",
   "summary": "用户 2026-11-08 验收反馈：旧两点测量只按鼠标自由两点计算，与 K 线无关。改为参考 Select Box：Shift 单击起止 K 线形成区间并弹出数据窗口（起止收盘/涨跌幅/价差/K线数/区间高低/振幅/量额/涨跌根数），拖动 Select Box 左右边调整起止 K 线并实时更新；测量不写训练/画线/录像，回放可用，镜像按真实价。",
