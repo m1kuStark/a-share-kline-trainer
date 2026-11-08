@@ -5,6 +5,9 @@ import { startTrainingFromForm, expectSettledResultsDialog } from './training-fl
 import { evidencePath } from './runtime'
 import { readRecordingArtifact } from './recording-file'
 
+// 30min 超长真实回放测试：关闭 trace 录制，避免逐动作 trace 增长反过来拖慢测试（断言不变）
+test.use({ trace: 'off' })
+
 async function exported(page: Page, button: string, name: string) {
   const started = Date.now()
   const pending = page.waitForEvent('download')

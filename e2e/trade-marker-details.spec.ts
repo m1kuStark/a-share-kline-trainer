@@ -281,6 +281,7 @@ await page.locator(".suggestions button").first().click()
   await page.getByRole('button', { name: '买入', exact: true }).click()
   await expect(page.locator('.status-message')).toContainText(/成交|买入/)
   await page.getByRole('button', { name: '推进下一日', exact: true }).click()
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled({ timeout: 30_000 })
   await page.getByRole('button', { name: '买入', exact: true }).click()
   await expect(page.locator('.status-message')).toContainText(/成交|买入/)
 
