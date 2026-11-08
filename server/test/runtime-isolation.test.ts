@@ -7,6 +7,9 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
+// 满载时真实子进程/清理可能超过默认 15s；只放宽预算，断言不变。
+vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
+
 const roots: string[] = []
 const activeServers: { stop(): Promise<void> }[] = []
 async function temporaryRoot() {

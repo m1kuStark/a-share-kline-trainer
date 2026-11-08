@@ -15,6 +15,8 @@
     "scripts/runtime/run.ts",
     "server/test/runtime-cancel.test.ts",
     "server/test/release-launcher.test.ts",
+    "server/test/updater-verify.test.ts",
+    "server/test/runtime-isolation.test.ts",
     "docs/work-items/tasks/TEST-BUDGET-01.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/work-items/README.md",

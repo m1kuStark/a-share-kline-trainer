@@ -2,9 +2,12 @@
 // oracle 独立性：完好 zip 由 PowerShell Compress-Archive 构造（与发布产物同源），
 // 损坏＝字节截断、校验和不符＝篡改期望值、版本不符＝错配 expectedVersion，全部独立构造。
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { readReleaseInfoFromZip, verifyZipArtifact, extractZip, listZipEntries } from '../src/update/zip.js'
 import { buildReleaseZip, buildStoredZip, makeTmpDir, sha256Bytes } from './helpers/updater-fixtures.js'
+
+// 真实 zip 构建（PowerShell Compress-Archive）在满载时可能超过默认 5s；只放宽预算。
+vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
 
 const CURRENT_NODE = '24.1.1'
 

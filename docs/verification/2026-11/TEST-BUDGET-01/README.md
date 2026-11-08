@@ -13,6 +13,8 @@
 4. release-launcher 真实启动就绪偶发 >10s（满载）：启动夹具默认就绪窗口 10s→20s，文件级 testTimeout 90s / hookTimeout 60s；断言与失败条件不变（显式短超时用例仍用其自带值）。
 3. release-launcher 夹具泄漏（2026-11-07 实测 4 个残留 `rel launch 容器 pkg` 服务进程）：满载/慢健康夹具下 HTTP 健康探针超时会被判「身份不符」而跳过结束。清理逻辑增加**状态文件身份兜底**（`trainer-state.json` 的 appId+runId+pid 三匹配同样证明所有权），并在清理当前 4 个残留后隔离复跑：**52/52 通过、0 残留**。
 
+5. v1.3.5 全量门禁复现两条**既有重型**单测满载超时：`runtime-isolation`（真实子进程取消 15s）与 `updater-verify`（真实 zip 构建默认 5s）——两文件加 `vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })`，断言与用例集合不变。
+
 ## 复跑
 
 | 命令 | 结果 |
