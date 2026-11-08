@@ -56,6 +56,14 @@ await page.locator(".suggestions button").first().click()
   // Fail early against the old implementation, before the costly two-year journey.
   const initialRecording = await exported(page, '导出录制', 'two-year-initial.json.gz')
   await page.getByRole('button', { name: '买入', exact: true }).click()
+  // 满载启动窗口内首次点击可能落在按钮可用前；重试一次并必须确认成交，后续卖出断言才有持仓可卖
+  let initialBuyFilled = false
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0) await page.getByRole('button', { name: '买入', exact: true }).click()
+    const filled = await expect(page.locator('.status-message')).toContainText('成交', { timeout: 10_000 }).then(() => true, () => false)
+    if (filled) { initialBuyFilled = true; break }
+  }
+  expect(initialBuyFilled).toBe(true)
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-message')).toHaveClass(/error-text/)
