@@ -42,6 +42,7 @@ await page.locator(".suggestions button").first().click()
   // Fail early against the old implementation, before the costly two-year journey.
   const initialRecording = await exported(page, '导出录制', 'two-year-initial.json.gz')
   await page.getByRole('button', { name: '买入', exact: true }).click()
+  await expect(page.locator('.status-message')).toContainText('成交', { timeout: 30_000 })
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   await page.getByRole('button', { name: '卖出', exact: true }).click()
   await expect(page.locator('.status-message')).toHaveClass(/error-text/)

@@ -67,7 +67,8 @@ async function installOdometerProbe(page: Page): Promise<void> {
 }
 
 async function buyHalfPosition(page: Page): Promise<void> {
-  await page.keyboard.press('b')
+  // 本用例验证动画作用域，不复测热键；用真实按钮点击避免键盘事件在满载启动窗口中丢失
+  await page.getByRole('button', { name: '买入', exact: true }).click()
   await expect(page.locator('.status-message')).toContainText('买入成交', { timeout: 30_000 })
   await expect(page.locator('.loading-dot')).not.toBeVisible()
 }
