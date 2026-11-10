@@ -7,7 +7,7 @@ defineProps<{ tool: DrawTool }>()
 </script>
 
 <template>
-  <svg class="tool-glyph" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <svg class="tool-glyph" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
     <template v-if="tool.glyph === 'segment'"><line x1="4" y1="18" x2="20" y2="6" /><circle cx="4" cy="18" r="1.4" fill="currentColor" /><circle cx="20" cy="6" r="1.4" fill="currentColor" /></template>
     <template v-else-if="tool.glyph === 'ray'"><line x1="4" y1="18" x2="20" y2="6" /><circle cx="4" cy="18" r="1.4" fill="currentColor" /><path d="M20 6l-3 1.4M20 6l-1.4 3" /></template>
     <template v-else-if="tool.glyph === 'line'"><line x1="2" y1="19" x2="22" y2="5" /></template>

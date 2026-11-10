@@ -48,7 +48,7 @@ async function dims(page: Page) {
 test('常用工具拖入移出排序刷新恢复，自定义模式隔离绘图交易', async ({ page }) => {
   test.setTimeout(90_000)
   await open(page)
-  await expect(page.locator('.other-tools')).not.toBeVisible()
+  await expect(page.locator('.other-tools')).toBeVisible()
   await expect(page.locator('[data-tool-name="segment"]')).toHaveAttribute('draggable', 'false')
   const before = await favorites(page)
   await page.locator('.tool-customize-toggle').click()
@@ -71,7 +71,7 @@ test('常用工具拖入移出排序刷新恢复，自定义模式隔离绘图�
   await page.reload()
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
   expect(await favorites(page)).toEqual(saved)
-  await expect(page.locator('.other-tools')).not.toBeVisible()
+  await expect(page.locator('.other-tools')).toBeVisible()
   await screenshot(page, 'favorites-restored')
 })
 
@@ -113,11 +113,13 @@ test('自动保存待保存进行中失败重试成功不改变工具区或账�
 test('折叠其他工具压缩悬浮工具面板高度，双主题多尺寸标签无背景填充', async ({ page }) => {
   test.setTimeout(60_000)
   await open(page)
-  // UI-TOOLBAR-01：工具面板改为悬浮层，折叠「其他工具」压缩面板自身高度（不再改变账户区滚动高度）
-  const folded = await page.locator('.draw-toolbar').boundingBox()
-  await page.locator('.other-tools-toggle').click()
+  // UI-TOOLBAR-02：默认展开「其他工具」（全部工具一眼可见），点击折叠后压缩面板自身高度（不再改变账户区滚动高度）
+  await expect(page.locator('.other-tools')).toBeVisible()
   const expanded = await page.locator('.draw-toolbar').boundingBox()
-  expect(expanded!.height).toBeGreaterThan(folded!.height)
+  await page.locator('.other-tools-toggle').click()
+  await expect(page.locator('.other-tools')).toHaveCount(0)
+  const folded = await page.locator('.draw-toolbar').boundingBox()
+  expect(folded!.height).toBeLessThan(expanded!.height)
   await draw(page, 'fibonacciLine', .4)
   await draw(page, 'percentageLine', .8)
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
@@ -131,8 +133,12 @@ test('折叠其他工具压缩悬浮工具面板高度，双主题多尺寸标�
     await screenshot(page, `expanded-${viewport.width}`)
   }
   await page.locator('.other-tools-toggle').click()
+  await expect(page.locator('.other-tools')).toHaveCount(0)
   await screenshot(page, 'folded-dark')
+  await page.locator('.other-tools-toggle').click()
+  await expect(page.locator('.other-tools')).toBeVisible()
+  await screenshot(page, 'expanded-dark')
   await page.locator('.theme-toggle').click()
-  await screenshot(page, 'folded-light')
+  await screenshot(page, 'expanded-light')
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)
 })

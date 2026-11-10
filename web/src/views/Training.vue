@@ -70,7 +70,7 @@ const endError = ref('')
 const drawTool = ref<string | null>(null)
 const toolbarCollapsed = ref(false)
 const customizingTools = ref(false)
-const otherToolsExpanded = ref(false)
+const otherToolsExpanded = ref(true)
 // UI-TOOLBAR-01（Issue #8 工具栏布局，用户 2026-11-07 拍板）：顶栏「划线」开关控制可拖拽悬浮工具面板；
 // 面板位置持久化到 localStorage，拖动钳制在视口内；图形化图标 + hover 中文名称/描述。
 const TOOLBAR_POSITION_KEY = 'trainer.drawToolbar.position.v1'
@@ -137,11 +137,19 @@ function showToolHover(tool: { label: string; description: string }, event: Mous
 function hideToolHover(): void { toolHover.value = null }
 function ensureToolbarPosition(): void {
   if (!toolbarVisible.value) return
-  // 默认停靠在主图右侧（账户区）上方且不压价格轴——用户可拖动到任意位置；小屏由 clamp 收进视口
+  // UI-TOOLBAR-02：默认停靠主图左下（用户 2026-11-10 反馈笔记本常放左下、不遮挡交易区）——可拖动到任意位置；小屏由 clamp 收进视口
   const chartPanel = document.querySelector('.chart-panel')?.getBoundingClientRect()
-  toolbarPosition.value = toolbarPosition.value ? clampToolbarPoint(toolbarPosition.value.x, toolbarPosition.value.y) : clampToolbarPoint((chartPanel?.right ?? window.innerWidth - 308) + 8, 72)
+  const element = toolbarElement()
+  const panelHeight = element?.offsetHeight ?? 420
+  const defaultX = Math.max(8, (chartPanel?.left ?? 8) + 12)
+  const defaultY = window.innerHeight - panelHeight - 12
+  toolbarPosition.value = toolbarPosition.value ? clampToolbarPoint(toolbarPosition.value.x, toolbarPosition.value.y) : clampToolbarPoint(defaultX, defaultY)
 }
-onMounted(() => { nextTick(() => ensureToolbarPosition()) })
+function onViewportResize(): void { ensureToolbarPosition() }
+// UI-TOOLBAR-02：面板高度随折叠/展开/自定义内容变化时重新钳制，避免左下停靠在高内容下越出视口
+watch([toolbarVisible, toolbarCollapsed, otherToolsExpanded, customizingTools], () => { nextTick(() => ensureToolbarPosition()) })
+onMounted(() => { nextTick(() => ensureToolbarPosition()); window.addEventListener('resize', onViewportResize) })
+onUnmounted(() => { window.removeEventListener('resize', onViewportResize) })
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const favoriteTools = computed(() => favoriteToolNames.value.flatMap(name => DRAW_TOOLS.find(tool => tool.name === name) ?? []))
 const otherTools = computed(() => DRAW_TOOLS.filter(tool => !favoriteToolNames.value.includes(tool.name)))

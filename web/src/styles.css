@@ -500,19 +500,19 @@ body.dark .random-mode-badge { border-color: #2b5c49; background: #14271f; color
 .status-strip .chart-quote-source { font-size: 10px; }
 
 /* ===== UI-TOOLBAR-01：顶栏「划线」开关＋可拖拽图形化悬浮工具面板（Issue #8） ===== */
-.draw-toolbar.is-floating { position: fixed; z-index: 60; width: 300px; height: auto; max-height: min(78vh, 620px); min-height: 0; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 8px 10px 10px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 10px; background: var(--surface-background, #fff); box-shadow: 0 18px 44px rgba(15, 23, 42, .28); overflow: hidden; }
+.draw-toolbar.is-floating { position: fixed; z-index: 60; width: 284px; height: auto; max-height: min(84vh, 600px); min-height: 0; display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 7px 8px 8px; border: 1px solid var(--surface-border, #d8e0e8); border-radius: 10px; background: var(--surface-background, #fff); box-shadow: 0 18px 44px rgba(15, 23, 42, .28); overflow: hidden; }
 .draw-toolbar.is-floating.is-collapsed { height: auto; min-height: 0; }
 .draw-toolbar.is-floating .drawing-toolbar-heading { cursor: grab; user-select: none; }
 .draw-toolbar.is-floating .drawing-toolbar-heading:active { cursor: grabbing; }
 .toolbar-drag-handle { display: inline-flex; align-items: center; color: var(--text-muted, #7b8794); cursor: grab; }
-.draw-toolbar.is-floating .toolbar-tool-lists { overflow-y: auto; overflow-x: hidden; max-height: min(52vh, 430px); padding: 2px; }
-.draw-toolbar.is-floating .tool-list { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-.draw-toolbar.is-floating .tool-item > button { flex-direction: column; gap: 2px; height: 44px; padding: 3px 2px; white-space: normal; }
-.draw-toolbar.is-floating .tool-glyph { display: block; width: 20px; height: 20px; }
-.tool-label { font-size: var(--font-size-2xs, 10px); line-height: 1; font-weight: 500; }
-.draw-toolbar.is-floating .other-tools-toggle { margin: 4px 0; }
-.draw-toolbar.is-floating .drawing-toolbar-actions { flex-wrap: wrap; gap: 4px; }
-.draw-toolbar.is-floating .drawing-save-footer { height: 24px; flex: 0 0 auto; }
+.draw-toolbar.is-floating .toolbar-tool-lists { overflow-y: auto; overflow-x: hidden; max-height: min(58vh, 470px); padding: 1px; }
+.draw-toolbar.is-floating .tool-list { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+.draw-toolbar.is-floating .tool-item > button { flex-direction: column; gap: 1px; height: 36px; padding: 2px 1px; white-space: normal; }
+.draw-toolbar.is-floating .tool-glyph { display: block; width: 16px; height: 16px; }
+.tool-label { font-size: 9px; line-height: 1.05; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.draw-toolbar.is-floating .other-tools-toggle { margin: 2px 0; }
+.draw-toolbar.is-floating .drawing-toolbar-actions { flex-wrap: wrap; gap: 3px; }
+.draw-toolbar.is-floating .drawing-save-footer { height: 22px; flex: 0 0 auto; }
 .draw-toolbar.is-floating.is-customizing .toolbar-tool-lists { display: grid; grid-template-rows: minmax(0, 1fr) 26px minmax(0, 1fr); gap: 4px; overflow: hidden; max-height: min(52vh, 430px); }
 .draw-toolbar.is-floating.is-customizing .tool-list { grid-template-columns: repeat(2, minmax(0, 1fr)); overflow-y: auto; }
 .draw-toolbar-toggle.active { border-color: #2b8b99; color: #1c6076; background: rgba(43, 139, 153, .08); }

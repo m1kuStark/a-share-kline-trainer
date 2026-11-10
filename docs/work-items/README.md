@@ -14,6 +14,8 @@
 
 - [UI-TOOLBAR-01 悬浮划线工具栏](tasks/UI-TOOLBAR-01.md)：顶栏「划线」开关＋可拖拽图形化浮层，hover 显示名称/描述。
 
+- [UI-TOOLBAR-02 紧凑工具面板](tasks/UI-TOOLBAR-02.md)：紧凑图标优先、默认展开全部工具、常用数量任意时无纵向滚动（用户 2026-11-11 反馈）。
+
 - [F7-DEPS-01 依赖安全升级](tasks/F7-DEPS-01.md)：vite 7.3.7、fast-uri 3.1.9/4.2.3、undici 6.29.1/7.30.1 本地等价 chore。
 
 - [DIAG-OPLOG-01 本地操作日志](tasks/DIAG-OPLOG-01.md)：v1.3.4 验收埋点（点击/错误/API→本机 JSONL，诊断页可打开目录；不联网）。
