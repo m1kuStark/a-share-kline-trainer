@@ -53,5 +53,4 @@ npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux
 
 ## 提交
 
-- 功能与测试提交：待回填（见 `git log --grep UI-TOOLBAR-02`）。
-- 收据/文档提交：随后。
+- 功能与测试提交：`0b369a7`（本记录随同提交入库；提交哈希在记录写入后由提交本身产生，故回填于此）。
