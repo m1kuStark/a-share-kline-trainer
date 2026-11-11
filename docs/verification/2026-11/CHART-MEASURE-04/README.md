@@ -32,7 +32,8 @@
 |---|---|---|
 | `npm run journey -- e2e/measure-tool.spec.ts --retries=0` | 0 | `run-4a06f420-f7d3-4e2f-8115-eb258bb46c38`，**6 passed (48.5s)** |
 | `npm run journey -- e2e/chart-analysis.spec.ts --retries=0` | 0 | `run-df776de4-b023-4bcd-92fc-8816d8a2c8c1`，**9 passed**（既有用例零回归） |
-| 最终 `npm run verify:fast -- --unit server/test/chart-statistics.test.ts --journey e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts` | 0 | journey run `run-977cb2f1-170d-4a80-9923-c6321779e2c1`：**15 passed (2.1m)**（chart-analysis 9/9 ＋ measure-tool 6/6）；docs:check/build/unit/journey 全 PASS，总 159s。前一次同命令 run `run-4183bacc-49bb-4cf2-83d0-6e67da705bc2`（15 passed）为 panelChange 平衡小修前的通过记录 |
+| 合并 origin/main（8eec4cf，CHART-LAYOUT-01）后复跑同一条 `verify:fast` | 0 | journey run `run-d6484028-c5db-4295-81ba-6706277f9785`：**15 passed (1.9m)**；docs:check/build/unit/journey 全 PASS，总 150s |
+| 合并前同命令 `verify:fast`（特性提交树） | 0 | journey run `run-977cb2f1-170d-4a80-9923-c6321779e2c1`：**15 passed (2.1m)**（chart-analysis 9/9 ＋ measure-tool 6/6），总 159s。更早同命令 run `run-4183bacc-49bb-4cf2-83d0-6e67da705bc2`（15 passed）为 panelChange 平衡小修前的通过记录 |
 
 ## 字段 oracle（独立，不反推实现）
 
@@ -51,6 +52,7 @@
 | `npm run docs:status`（生成区新增 CHART-MEASURE-04 行） | 0 |
 | `npm run docs:status -- --check` | 0 |
 | `npm run docs:impact -- --base 7895a22 --task CHART-MEASURE-04` | 0（11 路径，4 运行代码路径，0 errors/0 warnings） |
+| `npm run docs:impact -- --base 8eec4cf --task CHART-MEASURE-04`（合并 main 后，相对新主线只算本任务差异） | 0（15 路径，4 运行代码路径，0 errors/0 warnings） |
 | `check-binding --strict --include-untracked --matrix chart-measurement.yaml` | **3（预期）**：covered=6、open(未闭合)=3、RED=0；未闭合 3 行＝Lead 预登记的 MEASURE-TOOL-ENTRY / MEASURE-TOOL-DRAG-CREATE / MEASURE-TOOL-PRECEDENCE（planned），按纪律由 Lead 用下方 test_ids 升 covered，worker 不改 matrix |
 | `npm run build`（含 vue-tsc 类型检查） | 0（verify:fast 内） |
 | `npm run verify:fast -- --unit server/test/chart-statistics.test.ts --journey e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts` | 0（155s；docs:check/build/unit/journey 全 PASS） |
@@ -83,4 +85,6 @@
 
 ## 提交
 
-证据随 `feat(chart): CHART-MEASURE-04 新增顶栏测量工具入口与拖动/两次点击建立` 提交（分支 `task/CHART-MEASURE-04`，基于 main@7895a22）。本记录为工程自验，不代表用户验收；视觉检查仍由主代理按 UI-VISUAL-ACCEPTANCE 复核。
+- 特性提交：`5e987c9` `feat(chart): CHART-MEASURE-04 新增顶栏测量工具入口与拖动/两次点击建立`（分支 `task/CHART-MEASURE-04`，基于 main@7895a22）。
+- 合并提交：`1dadcc9` 合并 origin/main `8eec4cf`（CHART-LAYOUT-01）；`docs/status.md`/`e2e/README.md`/`KlineChart.vue` 均自动合并，合并后 `docs:status` 重生成零差异、双向条目保留。
+- 本记录为工程自验，不代表用户验收；视觉检查仍由主代理按 UI-VISUAL-ACCEPTANCE 复核。
