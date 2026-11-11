@@ -53,13 +53,13 @@ git -C $repo push origin main
 
 - 标题：`<type>(<scope>): <TASK-ID> 中文摘要`；正文含 `Task: <TASK-ID>` 与门禁结果。
 - 一个 PR 只做一件事；draft 早开；不把多个任务捆绑进一个 PR。
-- 合并策略：**自己的任务 squash**；**外部贡献 merge commit**，保留作者提交与归属；不启用 required linear history。
+- 合并策略：**自己的任务 squash**；**外部贡献默认 squash**（GitHub 生成签名提交，满足 required signatures）；确需保留作者提交时用 merge commit，但其提交必须已签名，否则会被拒绝。不启用 required linear history。
 - 合并后删除头分支；main 拉取后再开始下一个任务。
 
 ## 保护与审计
 
 - main Ruleset：Require a pull request、required checks `docs` / `verify` / `pr-policy`、block force pushes、restrict deletions；签名要求（required signatures）在 SSH 签名公钥注册并验证后再启用。
-- Secret scanning + push protection；自动删除头分支。
+- Secret scanning + push protection；自动删除头分支；**required signatures 已启用**（2026-11-11，SSH 签名，未签名提交不能合入）。
 - 每个 commit 可追溯：`Task` trailer → PR → 合并提交 → 任务卡 `integration_ref` → 签名 tag/Release → 验证记录。
 - 每周体检：`git fetch -p`、`git branch -vv`、`git worktree list`、`gh pr list`、`gh release list`、main CI 状态、Dependabot/Scorecard。
 
