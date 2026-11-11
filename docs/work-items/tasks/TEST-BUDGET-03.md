@@ -5,11 +5,11 @@
   "id": "TEST-BUDGET-03",
   "title": "CI desktop 测试预算 30s（消除 5s 超时误拦）",
   "owner": "integrator",
-  "state": "active",
+  "state": "closed",
   "milestone": "ENG",
   "base_commit": "8362fd9",
   "summary": "PR #26 verify 又因 mig-import.test.ts 的另一个真实 fs+SQLite 用例 5s 默认超时失败一次（rerun 通过），同类预算问题已出现三次；逐用例放宽不可持续。仅对 CI verify 的 desktop 测试命令显式加 --testTimeout=30000（npm test 的参数只追加到 desktop 命令），本地/全局 testTimeout 契约不变；断言、用例集合、数据范围不变。",
-  "next_action": "改 run-tests-with-retry 默认命令并加 --print-command 自检；PR 门禁后合并，观察 main CI。",
+  "next_action": "工程验证完成（PR #27 → main 649caf6；PR run 43057334647 三 job success；后续 main CI 43058321672 绿）。用户验收未记录，治理收尾后转产品开发。",
   "allowed_paths": [
     "scripts/ci/run-tests-with-retry.mjs",
     "docs/engineering/testing.md",
@@ -32,7 +32,7 @@
     "reason": "CI 测试预算属于门禁纪律；只影响 CI 的 desktop 命令，需在测试协议与 CI 文档记录，并说明本地契约不变。"
   },
   "verification_refs": ["docs/verification/2026-11/TEST-BUDGET-03/README.md"],
-  "integration_ref": null,
+  "integration_ref": "649caf63d0317b80ba72a806ac9d14315cd63dee",
   "acceptance_ref": null
 }
 ```

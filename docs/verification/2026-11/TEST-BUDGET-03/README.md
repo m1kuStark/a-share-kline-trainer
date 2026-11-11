@@ -22,7 +22,13 @@
 | 文档结构/任务卡 | npm run docs:check | 执行中 |
 | 状态生成区 | npm run docs:status -- --check | 执行中 |
 | 范围/文档影响 | npm run docs:impact -- --base 8362fd9 --task TEST-BUDGET-03 | 执行中 |
-| PR 门禁 | docs / verify / pr-policy | 执行中 |
+| PR 门禁 | docs / verify / pr-policy | PR #27 run 43057334647：**三 job 全部 success** |
+
+## PR / 合并收据
+
+- PR #27：fix(ci): TEST-BUDGET-03 desktop 测试预算 30s；CI run 43057334647 三 job success。
+- squash 合入 main：649caf63d0317b80ba72a806ac9d14315cd63dee（2026-11-12 00:25）。
+- 后续 main CI run 43058321672（含依赖升级合并）docs/verify 绿。
 
 ## 边界
 
