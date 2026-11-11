@@ -56,3 +56,8 @@
 - PR #7 已被 GitHub 自动标记 **merged**（mergeCommit `7e36136`）；Dependabot 旧 PR #4/#5/#6 已由本地升级与新版分组覆盖关闭；新分组/大版本 PR #10～#15 按正常门禁单独处理。
 - ENG-GOV-03（发布 tag/追溯）、ENG-GOV-04（CodeQL/Scorecard/dependency-review）、Issue #8 回执与 v1.3.4～v1.3.6 tag 决策在后续任务推进。
 - 用户验收：本任务工程验证完成，用户验收未记录。
+
+## 七、签名验证
+
+- GitHub SSH signing key 已注册（key id `1322370`，2026-11-11 17:53：`a-share-kline-trainer signing 2026-11-11`，指纹 `SHA256:hrJ1UqZdl3TB0gvY8QR1+qJm6vI4WKaqNtPXXXyhdM8`）。
+- 本提交用于验证 GitHub Verified；验证结果与 required signatures 启用记录在收口提交中回填。
