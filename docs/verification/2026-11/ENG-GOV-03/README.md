@@ -42,7 +42,14 @@
 | 文档结构/任务卡 | npm run docs:check | 执行中 |
 | 状态生成区 | npm run docs:status -- --check | 执行中 |
 | 范围/文档影响 | npm run docs:impact -- --base da87d14 --task ENG-GOV-03 | 执行中 |
-| PR 门禁 | docs / verify / pr-policy | 执行中 |
+| PR 门禁 | docs / verify / pr-policy | PR #25 run 43045642860：**三 job 全部 success** |
+
+## 五、PR / 合并收据
+
+- PR [#25](https://github.com/m1kuStark/a-share-kline-trainer/pull/25)：feat(release): ENG-GOV-03 tag-release 守卫与发布追溯。
+- CI run 43045642860：docs / verify / pr-policy 全部 success。
+- squash 合入 main：`6ba431b15d7412a9c85d57457f52f32da3c4f1dc`（2026-11-11 23:14）。
+- 合并后 main CI run 43046410355：docs / verify success（pr-policy 非 PR 事件按设计 skipped）。
 
 ## 边界
 
