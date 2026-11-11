@@ -5,11 +5,11 @@
   "id": "CI-STABILITY-01",
   "title": "verify 基础设施崩溃重试（不重试真实断言失败）",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "ENG",
   "base_commit": "4b7156e",
   "summary": "verify job 在 GitHub 上偶尔以非 0 退出但没有任何 Vitest 失败摘要（worker/进程级基础设施崩溃，run 43012581422 实证；rerun 即绿）；该 flake 会误拦任意 PR。新增 scripts/ci/run-tests-with-retry.mjs：真实失败摘要（Failed Tests/FAIL）直接失败不重试；仅在“非 0 且无失败摘要”时重试一次并打 warning。断言、用例集合、测试命令与产物不变。",
-  "next_action": "工程验证完成（PR #23 → main 5dcb88b，首轮 verify 通过；main CI 绿）。用户验收未记录；观察后续 PR 是否再出现无摘要崩溃。",
+  "next_action": "治理收尾（GOV-CLOSE-01）；用户 2026-11-12 指示收尾并转产品开发；分项用户验收未单独记录。",
   "allowed_paths": [
     ".github/workflows/check.yml",
     "scripts/ci/run-tests-with-retry.mjs",

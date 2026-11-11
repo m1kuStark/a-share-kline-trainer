@@ -46,6 +46,13 @@ scripts/ci/run-tests-with-retry.mjs 是 verify job 的测试执行器：
 - 默认测试命令对 desktop 追加 --testTimeout=30000（TEST-BUDGET-03）：desktop 的 mig-inline/mig-import 等真实 fs+SQLite 用例在 CI 满载时 5s 默认预算不足，已三次误拦；该参数只影响 CI 的 desktop 命令，server 与本地默认契约不变。
 - 失败诊断仍看原始输出；重试只用于消除“无失败摘要”的进程级 flake，不能拿来掩盖断言失败。
 
+## 依赖更新策略
+
+- minor / patch 由 Dependabot 分组；PR 通过 docs/verify/pr-policy 后可合入。
+- **klinecharts 钉定 10.0.3**（图表适配层要求）：Dependabot 忽略全部更新；升级须专项任务 + 图表/视觉回归。
+- **typescript / vitest / @vitest/mocker / lucide-vue-next 的 major** 被 Dependabot 忽略；大版本必须单独任务评估，不能混入日常依赖分组。
+- 不把 major 升级与安全补丁夹在同一组 PR；关闭/暂缓的 PR 在汇报中记录理由。
+
 ## 失败处理
 
 - 新失败 → 修；不能删断言、加 skip、放宽验收来自证通过。
