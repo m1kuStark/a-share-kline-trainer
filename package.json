@@ -56,17 +56,17 @@
     "vue": "^3.5.42"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^24.3.0",
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.10",
     "concurrently": "^9.2.1",
-    "electron": "^44.5.1",
-    "electron-builder": "^26.15.3",
-    "tsx": "^4.20.5",
+    "electron": "^44.10.2",
+    "electron-builder": "^26.18.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "vite": "^7.3.7",
     "vitest": "^4.1.11",
-    "vue-tsc": "^3.3.11"
+    "vue-tsc": "^3.3.14"
   },
   "overrides": {
     "shell-quote": "1.12.0"
