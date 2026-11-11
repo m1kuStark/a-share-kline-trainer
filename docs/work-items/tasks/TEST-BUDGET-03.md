@@ -9,7 +9,7 @@
   "milestone": "ENG",
   "base_commit": "8362fd9",
   "summary": "PR #26 verify 又因 mig-import.test.ts 的另一个真实 fs+SQLite 用例 5s 默认超时失败一次（rerun 通过），同类预算问题已出现三次；逐用例放宽不可持续。仅对 CI verify 的 desktop 测试命令显式加 --testTimeout=30000（npm test 的参数只追加到 desktop 命令），本地/全局 testTimeout 契约不变；断言、用例集合、数据范围不变。",
-  "next_action": "工程验证完成（PR #27 → main 649caf6；PR run 43057334647 三 job success；后续 main CI 43058321672 绿）。用户验收未记录，治理收尾后转产品开发。",
+  "next_action": "工程验证完成（PR #27 → main 649caf6；PR run 43057334647 三 job success）。**更正（TEST-BUDGET-04）**：--testTimeout CLI 未传给 vitest，已由 desktop config 30s 替代；用户验收未记录。",
   "allowed_paths": [
     "scripts/ci/run-tests-with-retry.mjs",
     "docs/engineering/testing.md",

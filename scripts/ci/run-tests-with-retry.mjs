@@ -4,7 +4,7 @@
 // 该 flake 会误拦任意 PR。重试不改变测试命令、断言、用例集合或数据范围。
 import { spawn } from 'node:child_process'
 
-const DEFAULT_COMMAND = 'npm test -- --reporter=default --reporter=json --outputFile=test-results.json --testTimeout=30000'
+const DEFAULT_COMMAND = 'npm test -- --reporter=default --reporter=json --outputFile=test-results.json'
 const command = process.env.TRAINER_CI_TEST_COMMAND || DEFAULT_COMMAND
 const root = process.cwd()
 

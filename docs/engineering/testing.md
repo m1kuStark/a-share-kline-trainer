@@ -45,7 +45,7 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 
 隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。
 
-verify job 的测试命令经 scripts/ci/run-tests-with-retry.mjs：仅在“非 0 退出且无 Vitest 失败摘要”时重试一次（基础设施崩溃），真实断言失败不重试；重试记录打 GitHub warning，断言/用例集合/数据范围不变。CI 的 desktop 命令显式 --testTimeout=30000（TEST-BUDGET-03），本地/全局默认仍为 5s。详见 [CI 门禁](ci.md)。
+verify job 的测试命令经 scripts/ci/run-tests-with-retry.mjs：仅在“非 0 退出且无 Vitest 失败摘要”时重试一次（基础设施崩溃），真实断言失败不重试；重试记录打 GitHub warning，断言/用例集合/数据范围不变。desktop 套件在 desktop/vitest.config.ts 设 testTimeout 30s（TEST-BUDGET-04）；server 与本地纯逻辑用例默认仍为 5s。详见 [CI 门禁](ci.md)。
 
 迁移真实文件 I/O 用例（`desktop/test/mig-inline.test.ts`、`desktop/test/mig-import.test.ts` 的整库合并/幂等用例）使用真实临时目录、`server/dist/db.js` 与 SQLite，单测预算放宽到 30s（TEST-BUDGET-02，2026-11-11）；断言与用例集合不变。全局默认 5s 仍适用于纯内存/纯逻辑用例，不得整体放宽 desktop `testTimeout`。该调整用于消除 CI verify 满载时的 5s 误拦 flake。
 
