@@ -49,6 +49,7 @@
 | `npm run journey -- e2e/measure-tool.spec.ts --retries=0`（整改前，仅 measure-tool 6 例） | 0 | `run-4a06f420-f7d3-4e2f-8115-eb258bb46c38`：**6 passed (48.5s)**；manifest.commit=7895a22，未提交工作树 |
 | 整改前合跑 `npm run journey -- e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts --retries=0` | 0 | `run-4183bacc`（panelChange 小修前）/ `run-977cb2f1`：各 **15 passed**，manifest.commit=7895a22，未提交工作树；`run-d6484028`（合并 origin/main 后）：**15 passed (1.9m)**，manifest.commit=1dadcc9（合并提交，工作树干净） |
 | 整改后合跑同命令（measure-tool 8 例＋chart-analysis 9 例） | 0 | `run-19cdac39-b4dc-4c08-ad34-beec943fa742`：**17 passed (2.1m)**；manifest.commit=a87d296，整改工作树未提交；本文件截图取自该 run |
+| 整改提交后最终 `npm run verify:fast -- --unit server/test/chart-statistics.test.ts --journey e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts` | 0 | journey run `run-ac98ee77-4657-4a4f-8553-d9550aff2c15`：**17 passed (2.2m)**；docs:check/build/unit/journey 全 PASS，总 164s；manifest.commit=`f2b7f1a`（整改提交，**工作树干净**） |
 | 反向记录（不作为通过证据） | 1 | `run-df776de4` 整轮 13 passed/2 failed；`run-1481e5a2` 整轮 16 passed/1 failed（均为测试自身问题，已修，见迭代记录） |
 
 ## 字段 oracle（独立，不反推实现）
@@ -70,9 +71,13 @@
 | `npm run docs:impact -- --base 7895a22 --task CHART-MEASURE-04` | 0（11 路径，4 运行代码路径，0 errors/0 warnings；整改前） |
 | `npm run docs:impact -- --base 8eec4cf --task CHART-MEASURE-04`（合并 main 后，相对新主线只算本任务差异） | 0（15 路径，4 运行代码路径，0 errors/0 warnings；整改前） |
 
-| `check-binding --strict --include-untracked --matrix chart-measurement.yaml` | **3（预期）**：covered=6、open(未闭合)=3、RED=0；未闭合 3 行＝Lead 预登记的 MEASURE-TOOL-ENTRY / MEASURE-TOOL-DRAG-CREATE / MEASURE-TOOL-PRECEDENCE（planned），按纪律由 Lead 用下方 test_ids 升 covered，worker 不改 matrix |
+| `npm run docs:impact -- --base 8eec4cf --task CHART-MEASURE-04`（整改后） | 0（16 路径，5 运行代码路径，0 errors/0 warnings） |
+| `check-binding --strict --include-untracked --matrix chart-measurement.yaml`（整改后） | **0**：covered=9、open(未闭合)=0、RED=0（Lead 已按本任务 test_ids 将 MEASURE-TOOL-ENTRY / DRAG-CREATE / PRECEDENCE 升 covered；整改新增用例名已含在下方列表，未改 matrix） |
+| 整改前同上 | 3（预期）：covered=6、open=3、RED=0，3 行＝Lead 预登记的 planned 行 |
 | `npm run build`（含 vue-tsc 类型检查） | 0（verify:fast 内） |
-| `npm run verify:fast -- --unit server/test/chart-statistics.test.ts --journey e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts` | 0（155s；docs:check/build/unit/journey 全 PASS） |
+| `npm run build`（含 vue-tsc；整改提交树） | 0（verify:fast 内 13s PASS） |
+| `npm run verify:fast …`（整改前，run-d6484028） | 0（150s；docs:check/build/unit/journey 全 PASS） |
+| `npm run verify:fast …`（整改提交树，run-ac98ee77） | 0（164s；docs:check/build/unit/journey 全 PASS） |
 
 ## 矩阵行 test_ids（供 Lead 升 covered）
 
@@ -106,5 +111,6 @@
 
 - 特性提交：`5e987c9` `feat(chart): CHART-MEASURE-04 新增顶栏测量工具入口与拖动/两次点击建立`（分支 `task/CHART-MEASURE-04`，基于 main@7895a22）。
 - 合并提交：`1dadcc9` 合并 origin/main `8eec4cf`（CHART-LAYOUT-01）；`docs/status.md`/`e2e/README.md`/`KlineChart.vue` 均自动合并，合并后 `docs:status` 重生成零差异、双向条目保留。
-- 评审整改提交：PR #38 的追加修复提交，SHA 与提交树门禁收据见文末「整改后最终门禁」追加记录（本文件随该提交一起进入历史，随后补充）。
+- 评审整改提交：`f2b7f1a` `fix(chart): CHART-MEASURE-04 按 PR #38 只读评审修订热键/失焦/文案与证据`（I-1/I-2/M-1/M-5/M-7 代码与测试，I-3/M-4 证据修正）。
+- 整改后最终门禁：`run-ac98ee77-4657-4a4f-8553-d9550aff2c15`（17 passed，manifest.commit=`f2b7f1a`，干净工作树），收据见 GREEN 表末行与轻量门禁表。
 - 本记录为工程自验，不代表用户验收；视觉检查仍由主代理按 UI-VISUAL-ACCEPTANCE 复核。
