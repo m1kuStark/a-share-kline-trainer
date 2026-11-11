@@ -7,6 +7,7 @@
 | 套件 | 覆盖 |
 |---|---|
 | [chart-analysis](chart-analysis.spec.ts) | 常驻行情、右键区间统计；Shift两点测量五字段、双向/同根价格与数量、取消/边界/绘图多选优先、无写请求和视窗画线保持；只读回放、随机日期遮蔽及双主题桌面截图 |
+| [measure-tool](measure-tool.spec.ts) | 顶栏「测量」入口（1024×680 双主题不溢出、键盘切换）；拖动建立实时预览＋反向归一＋边界拖动；两次点击锚点提示与替换；与 Shift 字段完全一致；画线/多选互斥、热键吞、滚轮/价格轴/时间轴/切周期仲裁；镜像真实价与只读回放零写请求（CHART-MEASURE-04） |
 | [report-narrow](report-narrow.spec.ts) | 真实买入后固定本局报告，390/1024/1440 深浅主题无对话框横向溢出，成交全部列支持键盘与鼠标滚动查看 |
 | [local-origin](local-origin.spec.ts) | 应用同源读写成功；另一站点的真实浏览器读取和写入被拒，偏好保持不变 |
 | [backup-restore](backup-restore.spec.ts) | 独立 SQLite 一致快照恢复训练/成交/画线/报告，空浏览器导入录像并只读回放；不覆盖桌面安装和自动归档 |
