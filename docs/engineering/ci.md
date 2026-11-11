@@ -36,6 +36,15 @@ hooks 是本地提示与快速拦截，**不是唯一防线**；main Ruleset 与
 
 main Ruleset 的 required checks 使用这三个 job 名（`docs`、`verify`、`pr-policy`）。修改 job 名时必须同步更新 Ruleset，否则 PR 会永远等待旧检查。
 
+## 基础设施失败重试（verify 专用）
+
+scripts/ci/run-tests-with-retry.mjs 是 verify job 的测试执行器：
+
+- 真实断言失败：输出含 Failed Tests / FAIL 摘要 → **直接失败，不重试**。
+- 基础设施崩溃：测试进程非 0 退出但没有任何失败摘要（worker 退出、加载期崩溃、进程被杀）→ 输出 GitHub warning，**重试一次**；第二次仍失败则红灯。
+- 不改变测试命令、断言、用例集合、数据范围；不重试 npm ci / build / docs。
+- 失败诊断仍看原始输出；重试只用于消除“无失败摘要”的进程级 flake，不能拿来掩盖断言失败。
+
 ## 失败处理
 
 - 新失败 → 修；不能删断言、加 skip、放宽验收来自证通过。
