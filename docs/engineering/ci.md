@@ -50,7 +50,7 @@ scripts/ci/run-tests-with-retry.mjs 是 verify job 的测试执行器：
 
 - minor / patch 由 Dependabot 分组；PR 通过 docs/verify/pr-policy 后可合入。
 - **klinecharts 钉定 10.0.3**（图表适配层要求）：Dependabot 忽略全部更新；升级须专项任务 + 图表/视觉回归。
-- **typescript / vitest / @vitest/mocker / lucide-vue-next 的 major** 被 Dependabot 忽略；大版本必须单独任务评估，不能混入日常依赖分组。
+- **所有 major 升级（npm 与 GitHub Actions）由 Dependabot 全局忽略**；需要升级时立专项任务、临时移除对应忽略并评估兼容性，不能混入日常依赖分组。
 - 不把 major 升级与安全补丁夹在同一组 PR；关闭/暂缓的 PR 在汇报中记录理由。
 
 ## 失败处理

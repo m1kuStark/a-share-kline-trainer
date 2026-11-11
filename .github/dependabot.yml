@@ -21,18 +21,8 @@ updates:
     ignore:
       # 钉定依赖：图表适配层要求 klinecharts 10.0.3，升级必须单独评审 + 图表/视觉回归。
       - dependency-name: klinecharts
-      - dependency-name: electron
-        update-types: ["version-update:semver-major"]
-      - dependency-name: electron-builder
-        update-types: ["version-update:semver-major"]
-      # 大版本升级必须专项任务，避免日常分组 PR 噪声。
-      - dependency-name: typescript
-        update-types: ["version-update:semver-major"]
-      - dependency-name: vitest
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@vitest/mocker"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: lucide-vue-next
+      # 所有 major 升级必须专项任务；日常只自动分组 minor/patch（DEP-POLICY-01）。
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
@@ -43,6 +33,10 @@ updates:
       time: "04:00"
       timezone: Asia/Shanghai
     open-pull-requests-limit: 5
+    ignore:
+      # GitHub Actions 大版本同样走专项任务。
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       github-actions:
         patterns: ["*"]
