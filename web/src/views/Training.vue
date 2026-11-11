@@ -28,7 +28,7 @@ import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
-import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil } from 'lucide-vue-next'
+import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil, Pin, PinOff, MoveDiagonal2 } from 'lucide-vue-next'
 import { withWeekday } from '../dateLabels'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
@@ -74,9 +74,30 @@ const otherToolsExpanded = ref(true)
 // UI-TOOLBAR-01（Issue #8 工具栏布局，用户 2026-11-07 拍板）：顶栏「划线」开关控制可拖拽悬浮工具面板；
 // 面板位置持久化到 localStorage，拖动钳制在视口内；图形化图标 + hover 中文名称/描述。
 const TOOLBAR_POSITION_KEY = 'trainer.drawToolbar.position.v1'
+// UI-TOOLBAR-03（用户 2026-11-10 Issue #8）：固定态/尺寸各存独立 localStorage 键；位置沿用既有键。
+const TOOLBAR_PINNED_KEY = 'trainer.drawToolbar.pinned.v1'
+const TOOLBAR_SIZE_KEY = 'trainer.drawToolbar.size.v1'
+const TOOLBAR_MIN_WIDTH = 240
+const TOOLBAR_MAX_WIDTH = 560
+const TOOLBAR_MIN_HEIGHT = 200
 const toolbarVisible = ref(true)
 const toolHover = ref<{ label: string; description: string; x: number; y: number } | null>(null)
 const toolbarPosition = ref<{ x: number; y: number } | null>(loadToolbarPosition())
+const toolbarPinned = ref(loadToolbarPinned())
+const toolbarSize = ref<{ width: number; height: number } | null>(loadToolbarSize())
+// UI-TOOLBAR-03：列数随面板宽度自适应——默认宽 284px 仍为 UI-TOOLBAR-02 冻结的 6 列，
+// 收窄到 240px 为 5 列、拉宽到 560px 为 12 列；每列宽约 40px+，保证按钮命中区仍 ≥32×32。
+const toolbarToolColumns = computed(() => Math.max(5, Math.min(12, Math.floor(((toolbarSize.value?.width ?? 284) - 18) / 44))))
+const toolbarStyle = computed(() => {
+  const style: Record<string, string> = { '--toolbar-tool-columns': String(toolbarToolColumns.value) }
+  if (toolbarPosition.value) { style.left = `${toolbarPosition.value.x}px`; style.top = `${toolbarPosition.value.y}px`; style.right = 'auto' }
+  if (toolbarSize.value) {
+    style.width = `${toolbarSize.value.width}px`
+    // 折叠态高度仍由内容决定（只保留宽度），展开时应用用户尺寸
+    if (!toolbarCollapsed.value) style.height = `${toolbarSize.value.height}px`
+  }
+  return style
+})
 function loadToolbarPosition(): { x: number; y: number } | null {
   try {
     const raw = localStorage.getItem(TOOLBAR_POSITION_KEY)
@@ -92,11 +113,49 @@ function saveToolbarPosition(): void {
   try { localStorage.setItem(TOOLBAR_POSITION_KEY, JSON.stringify(toolbarPosition.value)) } catch { /* 存储不可用时仅本会话生效 */ }
 }
 function toolbarElement(): HTMLElement | null { return document.querySelector('.draw-toolbar') }
-function clampToolbarPoint(x: number, y: number): { x: number; y: number } {
+function clampToolbarPoint(x: number, y: number, size?: { width: number; height: number }): { x: number; y: number } {
   const element = toolbarElement()
-  const width = element?.offsetWidth ?? 320, height = element?.offsetHeight ?? 460
+  const width = size?.width ?? element?.offsetWidth ?? 320, height = size?.height ?? element?.offsetHeight ?? 460
   const maxX = Math.max(8, window.innerWidth - width - 8), maxY = Math.max(8, window.innerHeight - height - 8)
   return { x: Math.min(Math.max(8, x), maxX), y: Math.min(Math.max(8, y), maxY) }
+}
+// UI-TOOLBAR-03：尺寸口径——宽 240–560px，高 200px–min(85vh, innerHeight−24px)；超界一律回钳到视口内。
+function toolbarMaxWidth(): number { return Math.max(TOOLBAR_MIN_WIDTH, Math.min(TOOLBAR_MAX_WIDTH, window.innerWidth - 16)) }
+function toolbarMaxHeight(): number { return Math.max(TOOLBAR_MIN_HEIGHT, Math.min(window.innerHeight * 0.85, window.innerHeight - 24)) }
+function clampToolbarSize(size: { width: number; height: number }): { width: number; height: number } {
+  return {
+    width: Math.round(Math.min(Math.max(TOOLBAR_MIN_WIDTH, size.width), toolbarMaxWidth())),
+    height: Math.round(Math.min(Math.max(TOOLBAR_MIN_HEIGHT, size.height), toolbarMaxHeight())),
+  }
+}
+function loadToolbarPinned(): boolean {
+  try { return localStorage.getItem(TOOLBAR_PINNED_KEY) === 'true' } catch { return false }
+}
+function loadToolbarSize(): { width: number; height: number } | null {
+  try {
+    const raw = localStorage.getItem(TOOLBAR_SIZE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object') return null
+    const { width, height } = parsed as { width?: unknown; height?: unknown }
+    if (typeof width !== 'number' || typeof height !== 'number' || !Number.isFinite(width) || !Number.isFinite(height)) return null
+    return clampToolbarSize({ width, height })
+  } catch { return null }
+}
+function saveToolbarPinned(): void {
+  try { localStorage.setItem(TOOLBAR_PINNED_KEY, toolbarPinned.value ? 'true' : 'false') } catch { /* 存储不可用时仅本会话生效 */ }
+}
+function saveToolbarSize(): void {
+  try {
+    if (toolbarSize.value) localStorage.setItem(TOOLBAR_SIZE_KEY, JSON.stringify(toolbarSize.value))
+    else localStorage.removeItem(TOOLBAR_SIZE_KEY)
+  } catch { /* 存储不可用时仅本会话生效 */ }
+}
+function toggleToolbarPin(): void {
+  toolbarPinned.value = !toolbarPinned.value
+  toolbarDrag = null
+  toolHover.value = null
+  saveToolbarPinned()
 }
 function toggleToolbar(): void {
   toolbarVisible.value = !toolbarVisible.value
@@ -106,6 +165,8 @@ function toggleToolbar(): void {
 let toolbarDrag: { pointerId: number; startX: number; startY: number; originX: number; originY: number } | null = null
 function onToolbarDragStart(event: PointerEvent): void {
   if (event.button !== 0) return
+  // UI-TOOLBAR-03：固定态锁定位移——标题栏拖动完全无效（内存与持久化位置都不变）
+  if (toolbarPinned.value) return
   if ((event.target as HTMLElement | null)?.closest('button, select, input')) return
   const element = toolbarElement()
   if (!element) return
@@ -124,6 +185,49 @@ function onToolbarDragEnd(event: PointerEvent): void {
   ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
   toolbarDrag = null
   saveToolbarPosition()
+}
+// UI-TOOLBAR-03：右下角尺寸手柄——pointer capture 独占该次手势，拖动改宽高；双击恢复默认尺寸。
+let toolbarResize: { pointerId: number; startX: number; startY: number; originWidth: number; originHeight: number } | null = null
+let lastResizeTap = 0
+function onToolbarResizeStart(event: PointerEvent): void {
+  if (event.button !== 0) return
+  const now = Date.now()
+  if (now - lastResizeTap < 350) { // 双击（两次 pointerdown 间隔很短）→ 恢复默认尺寸
+    lastResizeTap = 0
+    resetToolbarSize()
+    event.preventDefault()
+    return
+  }
+  lastResizeTap = now
+  const element = toolbarElement()
+  if (!element) return
+  const rect = element.getBoundingClientRect()
+  toolbarResize = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originWidth: rect.width, originHeight: rect.height }
+  toolHover.value = null
+  ;(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
+  event.preventDefault()
+  event.stopPropagation()
+}
+function onToolbarResizeMove(event: PointerEvent): void {
+  if (!toolbarResize || event.pointerId !== toolbarResize.pointerId) return
+  const size = clampToolbarSize({ width: toolbarResize.originWidth + event.clientX - toolbarResize.startX, height: toolbarResize.originHeight + event.clientY - toolbarResize.startY })
+  toolbarSize.value = size
+  const rect = toolbarElement()?.getBoundingClientRect()
+  const current = toolbarPosition.value ?? (rect ? { x: rect.left, y: rect.top } : null)
+  if (current) toolbarPosition.value = clampToolbarPoint(current.x, current.y, size)
+}
+function onToolbarResizeEnd(event: PointerEvent): void {
+  if (!toolbarResize || event.pointerId !== toolbarResize.pointerId) return
+  ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
+  toolbarResize = null
+  saveToolbarSize()
+  toolHover.value = null
+}
+function resetToolbarSize(): void {
+  toolbarResize = null
+  toolbarSize.value = null
+  saveToolbarSize()
+  nextTick(() => ensureToolbarPosition())
 }
 function showToolHover(tool: { label: string; description: string }, event: MouseEvent | FocusEvent): void {
   const target = event.currentTarget as HTMLElement | null
@@ -145,12 +249,25 @@ function ensureToolbarPosition(): void {
   const defaultY = window.innerHeight - panelHeight - 12
   toolbarPosition.value = toolbarPosition.value ? clampToolbarPoint(toolbarPosition.value.x, toolbarPosition.value.y) : clampToolbarPoint(defaultX, defaultY)
 }
-function onViewportResize(): void { ensureToolbarPosition() }
+function onViewportResize(): void {
+  // UI-TOOLBAR-03：窗口缩小时尺寸先回钳到新视口上限，再按新尺寸重新钳制位置
+  if (toolbarSize.value) {
+    const clamped = clampToolbarSize(toolbarSize.value)
+    if (clamped.width !== toolbarSize.value.width || clamped.height !== toolbarSize.value.height) {
+      toolbarSize.value = clamped
+      nextTick(() => ensureToolbarPosition())
+      return
+    }
+  }
+  ensureToolbarPosition()
+}
 // UI-TOOLBAR-02：面板高度随折叠/展开/自定义内容变化时重新钳制，避免左下停靠在高内容下越出视口
 watch([toolbarVisible, toolbarCollapsed, otherToolsExpanded, customizingTools], () => { nextTick(() => ensureToolbarPosition()) })
 onMounted(() => { nextTick(() => ensureToolbarPosition()); window.addEventListener('resize', onViewportResize) })
 onUnmounted(() => { window.removeEventListener('resize', onViewportResize) })
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
+// UI-TOOLBAR-03：常用工具数量变化会改变面板内容高度（自动高度时），仍需重新钳制在视口内
+watch(favoriteToolNames, () => { nextTick(() => ensureToolbarPosition()) })
 const favoriteTools = computed(() => favoriteToolNames.value.flatMap(name => DRAW_TOOLS.find(tool => tool.name === name) ?? []))
 const otherTools = computed(() => DRAW_TOOLS.filter(tool => !favoriteToolNames.value.includes(tool.name)))
 const favoriteStorageError = ref(false)
@@ -1149,13 +1266,14 @@ void load()
         <p v-if="orderError" class="error-text" role="alert">{{ orderError }}</p>
 
         </div>
-        <div v-show="toolbarVisible" class="draw-toolbar is-floating" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools }" :style="toolbarPosition ? { left: `${toolbarPosition.x}px`, top: `${toolbarPosition.y}px`, right: 'auto' } : undefined" @keydown="onToolbarKeydown">
+        <div v-show="toolbarVisible" class="draw-toolbar is-floating" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools, 'is-pinned': toolbarPinned, 'has-custom-size': !!toolbarSize && !toolbarCollapsed }" :style="toolbarStyle" @keydown="onToolbarKeydown">
           <div class="drawing-toolbar-heading" @pointerdown="onToolbarDragStart" @pointermove="onToolbarDragMove" @pointerup="onToolbarDragEnd" @pointercancel="onToolbarDragEnd">
             <span class="toolbar-drag-handle" title="拖动移动工具面板" aria-hidden="true"><GripVertical :size="13" /></span>
             <button class="tool-collapse" :disabled="customizingTools" :title="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-label="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-expanded="!toolbarCollapsed" @click="toolbarCollapsed = !toolbarCollapsed"><ChevronDown v-if="toolbarCollapsed" :size="14"/><ChevronUp v-else :size="14"/></button>
             <span>常用工具</span>
             <button v-if="customizingTools" class="tool-reset" title="恢复默认常用工具" aria-label="恢复默认常用工具" @click="updateFavoriteTools([...DEFAULT_FAVORITE_TOOLS])"><RotateCcw :size="13"/></button>
             <button class="tool-customize-toggle" :class="{ active: customizingTools }" :aria-pressed="customizingTools" :disabled="textPanelOpen" @click="toggleToolCustomization"><Check v-if="customizingTools" :size="13"/><Settings2 v-else :size="13"/>{{ customizingTools ? '完成自定义' : '自定义常用' }}</button>
+            <button class="tool-pin" :class="{ active: toolbarPinned }" :aria-pressed="toolbarPinned" :title="toolbarPinned ? '取消固定工具面板（恢复拖动）' : '固定工具面板（锁定位置，禁止拖动）'" :aria-label="toolbarPinned ? '取消固定工具面板' : '固定工具面板'" @click="toggleToolbarPin"><PinOff v-if="toolbarPinned" :size="13"/><Pin v-else :size="13"/></button>
           </div>
           <template v-if="!toolbarCollapsed">
             <div class="toolbar-tool-lists">
@@ -1213,6 +1331,7 @@ void load()
             <button v-if="drawingSaveStatus === '保存失败'" @click="flushDrawings">重试保存</button>
             <span v-if="favoriteStorageError" class="favorite-storage-error" title="常用工具未能写入浏览器存储，刷新后会恢复之前的设置">常用未保存</span>
           </div>
+          <div class="toolbar-resize-handle" role="separator" aria-label="调整工具面板尺寸（拖动调整宽高，双击恢复默认）" title="拖动调整面板大小，双击恢复默认尺寸" @pointerdown="onToolbarResizeStart" @pointermove="onToolbarResizeMove" @pointerup="onToolbarResizeEnd" @pointercancel="onToolbarResizeEnd" @dblclick="resetToolbarSize"><MoveDiagonal2 :size="12" /></div>
         </div>
         <div v-if="toolHover" class="draw-tool-hover" role="tooltip" :style="{ left: `${toolHover.x}px`, top: `${toolHover.y}px` }">
           <strong>{{ toolHover.label }}</strong>
