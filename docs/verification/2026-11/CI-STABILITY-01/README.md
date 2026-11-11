@@ -26,7 +26,20 @@
 | 文档结构/任务卡 | npm run docs:check | 执行中 |
 | 状态生成区 | npm run docs:status -- --check | 执行中 |
 | 范围/文档影响 | npm run docs:impact -- --base 4b7156e --task CI-STABILITY-01 | 执行中 |
-| PR 门禁 | docs / verify / pr-policy | 执行中 |
+| PR 门禁 | docs / verify / pr-policy | PR #23 run 43013872411：**三 job 全部 success**；verify 首轮即通过（未触发基础设施重试） |
+
+## PR / 合并收据
+
+- PR [#23](https://github.com/m1kuStark/a-share-kline-trainer/pull/23)：fix(ci): CI-STABILITY-01 verify 基础设施崩溃重试。
+- CI run 43013872411：docs / verify / pr-policy 全部 success；verify 首轮通过，未出现 infra retry warning。
+- squash 合入 main：5dcb88b18b036a49206459e9fa925595645a9a43（2026-11-11 19:45）。
+- 合并后 main CI run 43014631742：verify / docs success（pr-policy 非 PR 事件按设计 skipped）。
+
+## 结论
+
+- verify 现在使用 run-tests-with-retry.mjs；真实断言失败不重试，仅无失败摘要的进程级崩溃重试一次并 warning。
+- 自测三场景通过；PR 与 main CI 均绿。
+- 用户验收未记录。
 
 ## 边界
 
