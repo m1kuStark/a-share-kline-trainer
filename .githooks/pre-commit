@@ -1,0 +1,5 @@
+#!/bin/sh
+# 快速本地拦截：空白错误 + 高置信密钥。main 保护由 GitHub Ruleset 与 CI 强制。
+set -e
+git diff --cached --check
+node scripts/git/check-staged-secrets.mjs

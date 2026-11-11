@@ -39,7 +39,9 @@
     "release:desktop": "node desktop/scripts/release-desktop.mjs",
     "release:source": "node scripts/release/export-source.mjs",
     "verify:fast": "node scripts/verify-fast.mjs",
-    "journey:parallel": "node scripts/journey-parallel.mjs"
+    "journey:parallel": "node scripts/journey-parallel.mjs",
+    "hooks:install": "node scripts/git/install-hooks.mjs",
+    "prepare": "node scripts/git/install-hooks.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

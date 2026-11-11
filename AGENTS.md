@@ -22,6 +22,7 @@ Vue3＋Fastify＋Node24/SQLite独立工程。先确定任务，再沿模块逐�
 | 文档 | [docs规则](docs/AGENTS.md) → [索引](docs/README.md) |
 | 跨模块设计 | [架构](docs/architecture/README.md)；未实现设计在[提案](docs/proposals/README.md) |
 | 模型委派 | [按判断需求选路](docs/engineering/model-delegation.md)：四路策略、证据交接；保留1M配置目标和最高支持思考档 |
+| Git / PR / 发布规范 | [Git 工作流](docs/engineering/git-workflow.md) → [提交规范](docs/engineering/commit-convention.md) → [CI 门禁](docs/engineering/ci.md) → [发布](docs/engineering/release.md) |
 
 改文件前读取其路径适用的局部AGENTS，不依赖客户端自动加载。局部规则不得放松父级硬边界。
 

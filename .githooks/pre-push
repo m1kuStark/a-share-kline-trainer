@@ -1,0 +1,3 @@
+#!/bin/sh
+# 禁止直推 main；并给出分支命名提示。真正的强制边界是 main Ruleset。
+node scripts/git/check-push.mjs
