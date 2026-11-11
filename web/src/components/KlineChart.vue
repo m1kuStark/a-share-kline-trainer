@@ -2203,7 +2203,13 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
 .ma-settings-trigger:disabled { opacity: .5; cursor: default; }
 .ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
 .ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: var(--font-size-sm); }
-.chart-frame { display: grid; grid-template-rows: auto minmax(0, 1fr) 40px; height: 100%; min-height: 0; }
+/* CHART-LAYOUT-01（用户 2026-11-10 Issue #8 反馈）：图表宿主铺满面板可用高度。
+   原先 3 行 grid（auto/minmax(0,1fr)/40px）假定行情条总在 frame 流内；训练页 ChartQuote 被
+   Teleport 到状态条后，grid 首行 auto 被图表内容高度撑住（实测 536px），成交标记带落入中间
+   1fr 行并溢出到第 3 行，frame 底部残留空白（实测 1024×680 剩 4px、1366×705 剩 29px、
+   1440×900 剩 224px）。改为 flex 纵向列：frame 高度 = 行情条（内联形态，回放页）＋图表宿主
+   （占满剩余）＋成交标记带 40px；Teleport 与内联两种形态共用同一份样式，不再有空网格行。 */
+.chart-frame { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .statistics-selection { position: absolute; pointer-events: none; z-index: 5; border: 1px solid #54b8cc; background: #54b8cc25; box-sizing: border-box; }
 .statistics-hint { position: absolute; z-index: 6; top: 35px; left: 8px; padding: 5px 8px; font-size: 12px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); border: 1px solid #54b8cc; pointer-events: none; }
 .statistics-selecting, .measure-selecting { cursor: crosshair; }
@@ -2213,7 +2219,7 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
 .measure-hint { position: absolute; z-index: 6; top: 35px; left: 8px; max-width: calc(100% - 16px); padding: 5px 8px; font-size: 12px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); border: 1px solid #54b8cc; border-radius: 4px; pointer-events: none; }
 .statistics-menu { max-width: calc(100% - 8px); }
 .statistics-menu button:focus-visible { outline: 2px solid #54b8cc; }
-.chart-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; }
+.chart-wrap { position: relative; flex: 1 1 0; width: 100%; min-width: 0; min-height: 0; overflow: hidden; user-select: none; }
 /* 挂单悬浮信息层：只引用全局已定义的设计令牌（--surface-*、--text-*），深浅主题随令牌自动切换。
    此前引用未定义的 --surface-raised 导致深色主题下回落到浅色（用户 1.2.3 反馈）；纯信息层不拦截指针。 */
 .order-tooltip { position: absolute; z-index: 20; max-width: 230px; white-space: pre-line; padding: 8px 10px; border: 1px solid var(--surface-border, #dfe5eb); border-radius: 5px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); box-shadow: 0 5px 18px rgba(0,0,0,.18); font-size: var(--font-size-xs); line-height: 1.5; pointer-events: none; }
