@@ -42,7 +42,8 @@ scripts/ci/run-tests-with-retry.mjs 是 verify job 的测试执行器：
 
 - 真实断言失败：输出含 Failed Tests / FAIL 摘要 → **直接失败，不重试**。
 - 基础设施崩溃：测试进程非 0 退出但没有任何失败摘要（worker 退出、加载期崩溃、进程被杀）→ 输出 GitHub warning，**重试一次**；第二次仍失败则红灯。
-- 不改变测试命令、断言、用例集合、数据范围；不重试 npm ci / build / docs。
+- 不改变断言、用例集合、数据范围；不重试 npm ci / build / docs。
+- 默认测试命令对 desktop 追加 --testTimeout=30000（TEST-BUDGET-03）：desktop 的 mig-inline/mig-import 等真实 fs+SQLite 用例在 CI 满载时 5s 默认预算不足，已三次误拦；该参数只影响 CI 的 desktop 命令，server 与本地默认契约不变。
 - 失败诊断仍看原始输出；重试只用于消除“无失败摘要”的进程级 flake，不能拿来掩盖断言失败。
 
 ## 失败处理
