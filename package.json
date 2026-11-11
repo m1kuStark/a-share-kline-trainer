@@ -62,7 +62,7 @@
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.2",
+    "typescript": "^7.0.2",
     "vite": "^7.3.7",
     "vitest": "^4.1.11",
     "vue-tsc": "^3.3.11"
