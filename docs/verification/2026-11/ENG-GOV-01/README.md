@@ -56,3 +56,11 @@
 - PR #7 已被 GitHub 自动标记 **merged**（mergeCommit `7e36136`）；Dependabot 旧 PR #4/#5/#6 已由本地升级与新版分组覆盖关闭；新分组/大版本 PR #10～#15 按正常门禁单独处理。
 - ENG-GOV-03（发布 tag/追溯）、ENG-GOV-04（CodeQL/Scorecard/dependency-review）、Issue #8 回执与 v1.3.4～v1.3.6 tag 决策在后续任务推进。
 - 用户验收：本任务工程验证完成，用户验收未记录。
+
+## 七、签名验证
+
+- GitHub SSH signing key 已注册（key id `1322370`，2026-11-11 17:53：`a-share-kline-trainer signing 2026-11-11`，指纹 `SHA256:hrJ1UqZdl3TB0gvY8QR1+qJm6vI4WKaqNtPXXXyhdM8`）。
+- **GitHub Verified 实证**：commit `bef47e5` 由 GitHub API 返回 `verification.verified=true`、`reason=valid`、`verified_at=2026-11-11T09:56:50Z`（北京时间 17:56:50）。
+- **required signatures 已启用**：Ruleset `main-protection` id `27018412` 于 2026-11-11 17:57 更新，规则列表为 `pull_request / required_status_checks / non_fast_forward / deletion / required_signatures`，bypass 为空。
+- 本地已配置 SSH 签名与 `gpg.ssh.allowedSignersFile`，`git log --show-signature` 为 Good signature；此后合入 main 的提交必须签名。
+- 外部贡献在 required signatures 下默认 **squash 合并**（GitHub 生成签名提交）；确需保留作者提交的 merge commit 必须确认其提交已签名，否则会被拒绝。
