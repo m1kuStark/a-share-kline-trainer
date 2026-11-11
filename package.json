@@ -44,15 +44,15 @@
     "prepare": "node scripts/git/install-hooks.mjs"
   },
   "dependencies": {
-    "@fastify/cors": "^11.1.0",
-    "@fastify/static": "^10.1.3",
-    "electron-updater": "^6.8.10",
-    "fastify": "^5.12.5",
-    "klinecharts": "10.0.3",
+    "@fastify/cors": "^11.4.1",
+    "@fastify/static": "^10.1.10",
+    "electron-updater": "^6.8.11",
+    "fastify": "^5.12.8",
+    "klinecharts": "10.1.0",
     "lucide-vue-next": "^0.577.0",
     "pinia": "^3.0.3",
-    "pinyin-pro": "3.29.4",
-    "vue": "^3.5.42"
+    "pinyin-pro": "3.29.5",
+    "vue": "^3.5.45"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
