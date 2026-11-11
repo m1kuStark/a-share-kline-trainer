@@ -5,11 +5,11 @@
   "id": "ENG-GOV-01",
   "title": "工程规范与操作门禁基线（Git/GitHub 执行层）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "ENG",
   "base_commit": "3fa9a76",
   "summary": "在现有 ai-harness、任务卡与 verify 门禁之上补齐 Git/GitHub 强制执行层：Conventional Commits 与 Task trailer 校验、本地 pre-commit/commit-msg/pre-push hooks、PR 模板、Dependabot 分组、CI docs/verify/pr-policy 三个必需检查，以及合并后的 main Ruleset、SSH 签名、secret scanning 与自动删分支。不移动现有 docs 目录，不引入第二套流程；并修复首次 push 后 CI 暴露的公式语料绝对路径依赖（无语料时醒目跳过，不掩盖断言）。",
-  "next_action": "实现并自验 docs:check / docs:status --check / build / hooks 冒烟；发 PR；合并后配置 GitHub 保护与签名，回填验证记录并收口。",
+  "next_action": "工程验证完成（PR #9 → main 302a902，Ruleset 27018412 生效，验证记录已补）。用户验收未记录；待用户注册 SSH 签名公钥后验证 Verified 并启用 required signatures，再做一次受保护 PR 验证后关闭。",
   "allowed_paths": [
     ".github/workflows/check.yml",
     ".github/dependabot.yml",
@@ -60,7 +60,7 @@
     "reason": "新增 Git/PR/发布规范与门禁文档、任务卡和阶段卡；CI/hooks/模板属于工程流程变化，需同步索引与状态页；测试语料改为环境变量可覆盖，CI 无语料时醒目跳过。"
   },
   "verification_refs": ["docs/verification/2026-11/ENG-GOV-01/README.md"],
-  "integration_ref": null,
+  "integration_ref": "302a9029be5a4ab87e34f4a7f960ce645e3f8713",
   "acceptance_ref": null
 }
 ```
