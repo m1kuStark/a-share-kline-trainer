@@ -5,11 +5,11 @@
   "id": "TEST-BUDGET-02",
   "title": "迁移真实文件 I/O 测试预算（desktop mig-*）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "ENG",
   "base_commit": "7cee87e",
   "summary": "CI verify 在 PR #19/#20 两次因 desktop mig-inline/mig-import 的真实 fs+SQLite 迁移用例 5s 默认超时失败（rerun 均通过）。按 TEST-BUDGET-01 既有口径只放宽这两个用例的 timeout 到 30s，断言/用例集合/产品代码不变；并记录该 flake 作为 required check 的不稳定源。",
-  "next_action": "落盘两个 timeout、定向 desktop 套件与 PR 门禁验证；合并后观察 main CI 是否不再被该用例误拦。",
+  "next_action": "工程验证完成（PR #21 → main e9eab78，verify 一次通过）。用户验收未记录；观察 main CI 后关闭。",
   "allowed_paths": [
     "desktop/test/mig-inline.test.ts",
     "desktop/test/mig-import.test.ts",
@@ -31,7 +31,7 @@
     "reason": "测试预算调整属于门禁纪律变化，需在测试协议与本阶段/任务索引记录；产品代码零改动。"
   },
   "verification_refs": ["docs/verification/2026-11/TEST-BUDGET-02/README.md"],
-  "integration_ref": null,
+  "integration_ref": "e9eab78a65bc05ca362e9249fb833974595c0c61",
   "acceptance_ref": null
 }
 ```
