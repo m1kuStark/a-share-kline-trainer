@@ -24,6 +24,15 @@
 - GitHub Release 说明写用户可见行为变化；预览版标 pre-release，不写"latest 稳定"。
 - 追溯：任务卡 `integration_ref` → 版本提交 → tag → Release → 验证记录。
 
+## tag-release 脚本（2026-11-11 起）
+
+`npm run release:tag -- --version X.Y.Z` 默认 **dry-run**，只打印计划；加 `--execute` 才创建签名 annotated tag。校验项：
+
+- 当前分支必须是 `main`，工作树干净；`--version` 与 `package.json` 一致。
+- `CHANGELOG.md` 必须有对应版本小节。
+- 本地/远端 tag 不存在；最新 main CI run 必须 success 且覆盖当前 HEAD（可用 `--skip-ci-check` 仅用于离线演练）。
+- `--push` 推送 tag；`--release --notes <文件> [--asset <文件>...] [--prerelease]` 创建 GitHub Release。实际发布仍须按下面检查清单人工核对资产与通道。
+
 ## 发布前检查清单
 
 1. `git status` 干净；main 与 origin/main 一致或已推送。
@@ -31,10 +40,10 @@
 3. 主代理真实 UI/视觉检查通过（产品行为改动时）。
 4. 用户验收记录已写（发布物验收，不是源码 push）。
 5. 版本号/CHANGELOG/README 口径一致；`docs:check`、`docs:status -- --check` 0 error。
-6. 打签名 tag → 推送 tag → `gh release create` 上传资产 → 核对 SHA256SUMS。
+6. `npm run release:tag -- --version X.Y.Z` dry-run 通过 → `--execute --push`；Release 资产按需用 `gh release create` 上传 → 核对 SHA256SUMS。
 7. 只移动对应通道的指针；稳定 feed 不指向预览。
 
-> 当前（2026-11-11）v1.3.4～v1.3.6 是 CloudBase 预览，GitHub latest 仍是 v1.3.3；补 tag / pre-release 的口径在 ENG-GOV-03 拍板后执行，不在本任务里自动发布。
+> 当前（2026-11-11）v1.3.4 / v1.3.5 / v1.3.6 已补**签名 annotated tag**（分别指向 100f5c8 / 3ef59fe / 527ab29）；GitHub 仅 **v1.3.6 为 pre-release**（setup / blockmap / ZIP / SHA256SUMS），latest 稳定版仍为 **v1.3.3**。v1.3.4/v1.3.5 无 GitHub Release；正式稳定版等 v1.4.0。
 
 ## 回滚
 
