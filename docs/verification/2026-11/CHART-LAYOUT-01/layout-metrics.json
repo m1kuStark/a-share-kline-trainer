@@ -1,0 +1,716 @@
+{
+  "layout-1024x680-dark": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 644,
+      "height": 580,
+      "bottom": 673,
+      "right": 733
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 644,
+      "height": 540,
+      "bottom": 633,
+      "right": 733
+    },
+    "rail": {
+      "x": 89,
+      "y": 633,
+      "width": 644,
+      "height": 40,
+      "bottom": 673,
+      "right": 733
+    },
+    "quote": {
+      "x": 98,
+      "y": 21.5,
+      "width": 410,
+      "height": 108,
+      "bottom": 129.5,
+      "right": 508
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 673,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 540,
+        "bottom": 633
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 633,
+        "height": 40,
+        "bottom": 673
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 644,
+        "height": 211,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 212,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 313,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 414,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 644,
+        "height": 211,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 644,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 514,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1024,
+      "height": 680,
+      "innerWidth": 1024,
+      "innerHeight": 680
+    }
+  },
+  "layout-1024x680-light": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 644,
+      "height": 580,
+      "bottom": 673,
+      "right": 733
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 644,
+      "height": 540,
+      "bottom": 633,
+      "right": 733
+    },
+    "rail": {
+      "x": 89,
+      "y": 633,
+      "width": 644,
+      "height": 40,
+      "bottom": 673,
+      "right": 733
+    },
+    "quote": {
+      "x": 98,
+      "y": 21.5,
+      "width": 410,
+      "height": 108,
+      "bottom": 129.5,
+      "right": 508
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 673,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 540,
+        "bottom": 633
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 633,
+        "height": 40,
+        "bottom": 673
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 644,
+        "height": 211,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 212,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 313,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 644,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 414,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 644,
+        "height": 211,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 644,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 514,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1024,
+      "height": 680,
+      "innerWidth": 1024,
+      "innerHeight": 680
+    }
+  },
+  "layout-1366x705-dark": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 956,
+      "height": 605,
+      "bottom": 698,
+      "right": 1045
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 956,
+      "height": 565,
+      "bottom": 658,
+      "right": 1045
+    },
+    "rail": {
+      "x": 89,
+      "y": 658,
+      "width": 956,
+      "height": 40,
+      "bottom": 698,
+      "right": 1045
+    },
+    "quote": {
+      "x": 312.03125,
+      "y": 66.5,
+      "width": 489.171875,
+      "height": 18,
+      "bottom": 84.5,
+      "right": 801.203125
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 698,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 565,
+        "bottom": 658
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 658,
+        "height": 40,
+        "bottom": 698
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 956,
+        "height": 236,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 237,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 338,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 439,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 956,
+        "height": 236,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 956,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 539,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1366,
+      "height": 705,
+      "innerWidth": 1366,
+      "innerHeight": 705
+    }
+  },
+  "layout-1366x705-light": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 956,
+      "height": 605,
+      "bottom": 698,
+      "right": 1045
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 956,
+      "height": 565,
+      "bottom": 658,
+      "right": 1045
+    },
+    "rail": {
+      "x": 89,
+      "y": 658,
+      "width": 956,
+      "height": 40,
+      "bottom": 698,
+      "right": 1045
+    },
+    "quote": {
+      "x": 312.03125,
+      "y": 66.5,
+      "width": 489.171875,
+      "height": 18,
+      "bottom": 84.5,
+      "right": 801.203125
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 698,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 565,
+        "bottom": 658
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 658,
+        "height": 40,
+        "bottom": 698
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 956,
+        "height": 236,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 237,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 338,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 956,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 439,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 956,
+        "height": 236,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 956,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 539,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1366,
+      "height": 705,
+      "innerWidth": 1366,
+      "innerHeight": 705
+    }
+  },
+  "layout-1440x900-dark": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 1030,
+      "height": 800,
+      "bottom": 893,
+      "right": 1119
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 1030,
+      "height": 760,
+      "bottom": 853,
+      "right": 1119
+    },
+    "rail": {
+      "x": 89,
+      "y": 853,
+      "width": 1030,
+      "height": 40,
+      "bottom": 893,
+      "right": 1119
+    },
+    "quote": {
+      "x": 386.03125,
+      "y": 66.5,
+      "width": 489.171875,
+      "height": 18,
+      "bottom": 84.5,
+      "right": 875.203125
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 893,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 760,
+        "bottom": 853
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 853,
+        "height": 40,
+        "bottom": 893
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 1030,
+        "height": 431,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 432,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 533,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 634,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 1030,
+        "height": 431,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 1030,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 734,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1440,
+      "height": 900,
+      "innerWidth": 1440,
+      "innerHeight": 900
+    }
+  },
+  "layout-1440x900-light": {
+    "frame": {
+      "x": 89,
+      "y": 93,
+      "width": 1030,
+      "height": 800,
+      "bottom": 893,
+      "right": 1119
+    },
+    "host": {
+      "x": 89,
+      "y": 93,
+      "width": 1030,
+      "height": 760,
+      "bottom": 853,
+      "right": 1119
+    },
+    "rail": {
+      "x": 89,
+      "y": 853,
+      "width": 1030,
+      "height": 40,
+      "bottom": 893,
+      "right": 1119
+    },
+    "quote": {
+      "x": 386.03125,
+      "y": 66.5,
+      "width": 489.171875,
+      "height": 18,
+      "bottom": 84.5,
+      "right": 875.203125
+    },
+    "quoteInFrame": false,
+    "containerContentTop": 93,
+    "containerContentBottom": 893,
+    "frameDisplay": "flex",
+    "gridRows": null,
+    "children": [
+      {
+        "className": "chart-wrap",
+        "top": 93,
+        "height": 760,
+        "bottom": 853
+      },
+      {
+        "className": "trade-marker-rail",
+        "top": 853,
+        "height": 40,
+        "bottom": 893
+      }
+    ],
+    "panes": [
+      {
+        "id": "candle_pane",
+        "name": "candle_pane",
+        "width": 1030,
+        "height": 431,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_2",
+        "name": "VOL",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 432,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_5",
+        "name": "MACD",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 533,
+        "bottom": 0
+      },
+      {
+        "id": "indicator_pane_1794422785727_8",
+        "name": "KDJ",
+        "width": 1030,
+        "height": 100,
+        "left": 0,
+        "right": 0,
+        "top": 634,
+        "bottom": 0
+      }
+    ],
+    "paneRects": {
+      "candle": {
+        "width": 1030,
+        "height": 431,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "xAxis": {
+        "width": 1030,
+        "height": 26,
+        "left": 0,
+        "right": 0,
+        "top": 734,
+        "bottom": 0
+      }
+    },
+    "scroll": {
+      "width": 1440,
+      "height": 900,
+      "innerWidth": 1440,
+      "innerHeight": 900
+    }
+  }
+}
