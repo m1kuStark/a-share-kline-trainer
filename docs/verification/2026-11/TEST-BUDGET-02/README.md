@@ -17,7 +17,20 @@
 | 文档结构/任务卡 | `npm run docs:check` | **0 errors**（158 条既有长度 WARN） |
 | 状态生成区 | `npm run docs:status -- --check` | **0 errors** |
 | 范围/文档影响 | `npm run docs:impact -- --base 7cee87e --task TEST-BUDGET-02` | **0 errors** |
-| PR 门禁 | `docs` / `verify` / `pr-policy` | 本 PR 验证；收据回填到验证记录 |
+| PR 门禁 | `docs` / `verify` / `pr-policy` | PR #21 run `43011676106`：**三 job 全部 success**（verify 一次通过，未 rerun） |
+
+## PR / 合并收据
+
+- PR [#21](https://github.com/m1kuStark/a-share-kline-trainer/pull/21)：`fix(test): TEST-BUDGET-02 迁移用例 5s 预算放宽到 30s`。
+- CI run `43011676106`：`docs` / `verify` / `pr-policy` 全部 success；verify 未再因 5s 超时 rerun。
+- squash 合入 main：`e9eab78a65bc05ca362e9249fb833974595c0c61`（2026-11-11 19:29）。
+- 合并后 main CI run `43012413374`：以 GitHub 页面结果为准（本记录提交时仍在运行，收口后核对）。
+
+## 结论
+
+- 只调整两个真实文件 I/O 用例预算，断言/用例集合/产品代码不变。
+- CI verify 的 5s 误拦 flake 在本次 PR 上未复现；保留 30s 预算作为满载保护。
+- 用户验收未记录。
 
 ## 边界
 
