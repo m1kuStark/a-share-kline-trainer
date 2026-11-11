@@ -79,7 +79,9 @@ describe('inspectLegacyRoot（MIGI-INSPECT-LEGACY-ROOT）', () => {
 })
 
 describe('migrateHistoryInline（MIGI-HISTORY-MERGE-IDEMPOTENT / MIGI-RERUN-SKIP-EXISTING）', () => {
-  it('空目标库：老库 2 局全部导入；重跑同一路径全部 skipped；ns 与既有库不受影响', async () => {
+  // 真实 fs + SQLite 迁移链路；CI 满载时 5s 默认预算不足（PR #19/#20 verify 各 flake 一次，rerun 通过）。
+  // TEST-BUDGET-02：只放宽本用例预算，断言/用例集合不变。
+  it('空目标库：老库 2 局全部导入；重跑同一路径全部 skipped；ns 与既有库不受影响', { timeout: 30_000 }, async () => {
     const legacyRoot = await makeDir('legacy')
     await buildLegacyPackage(legacyRoot, 2)
     const dataDir = await makeDir('data')

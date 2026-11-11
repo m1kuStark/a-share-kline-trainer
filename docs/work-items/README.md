@@ -1,6 +1,8 @@
 # 任务与阶段
 
-- [ENG 工程基础设施](milestones/ENG.md)：Git/PR/发布规范与操作门禁基线（ENG-GOV-01）。
+- [ENG 工程基础设施](milestones/ENG.md)：Git/PR/发布规范与操作门禁基线（ENG-GOV-01）＋迁移用例测试预算（TEST-BUDGET-02）。
+
+- [TEST-BUDGET-02 迁移测试预算](tasks/TEST-BUDGET-02.md)：desktop mig-inline/mig-import 真实文件 I/O 用例 5s→30s（断言不变，修 CI flake）。
 
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 

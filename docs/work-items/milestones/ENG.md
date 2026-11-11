@@ -6,10 +6,10 @@
   "title": "工程基础设施",
   "state": "active",
   "summary": "工程规范与操作门禁：Git 分支/提交/PR/发布规范、本地 hooks、CI required checks、main Ruleset、签名与追溯链。目标不是增加流程，而是让既有 task/verify 体系在 GitHub 上被强制并留下可审计记录。",
-  "task_ids": ["ENG-GOV-01"],
+  "task_ids": ["ENG-GOV-01", "TEST-BUDGET-02"],
   "verification_refs": [],
   "acceptance_ref": null,
-  "next_action": "完成 ENG-GOV-01 基线并合并；随后按 ENG-GOV-03/04 推进发布追溯与安全审计。"
+  "next_action": "ENG-GOV-01 基线已合入并启用 main 保护/签名；TEST-BUDGET-02 收敛迁移用例 flake；随后按 ENG-GOV-03/04 推进发布追溯与安全审计。"
 }
 ```
 
