@@ -20,7 +20,7 @@ import {
 //     →NaN（比较为假不崩溃，与跨周期 warmup NaN 同语义）。
 //   · 未注入 StockContext 而调用上下文函数＝人话运行时错误。
 
-const TDX_FORMULA_DIR = 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
+const TDX_FORMULA_DIR = process.env.TRAINER_TDX_FORMULA_DIR ?? 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
 
 /** 手造日线：本地午夜时间戳（与 crossPeriod.test.ts 同约定——对齐按本地日历日） */
 function bar(y: number, m: number, d: number, o: number, h: number, l: number, c: number, v: number, a = 0): MarketData {
