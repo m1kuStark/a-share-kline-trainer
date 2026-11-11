@@ -7,6 +7,8 @@ const props = defineProps<{
   panel: { x: number; y: number }
   model: TwoPointMeasurement
   period: string
+  /** CHART-MEASURE-04：true＝测量工具模式（Esc 语义为退出测量模式；Shift 两点测量仍为关闭窗口） */
+  measureMode?: boolean
 }>()
 const emit = defineEmits<{
   close: []
@@ -65,7 +67,9 @@ function end(event: PointerEvent): void {
         <div><dt>总成交额（万元）</dt><dd>{{ number(model.range.amount === null ? null : model.range.amount / 10000) }}</dd></div>
         <div><dt>上涨 / 下跌 / 平盘</dt><dd><span class="up">{{ model.range.up }}</span> / <span class="down">{{ model.range.down }}</span> / {{ model.range.flat }} 根</dd></div>
       </dl>
-      <p class="range-measure-note">涨跌幅/价差按起止两根收盘价；区间统计含首尾。拖动左右边可调整范围并实时更新，Esc 关闭。</p>
+      <p class="range-measure-note">{{ props.measureMode
+        ? '涨跌幅/价差按起止两根收盘价；区间统计含首尾。拖动左右边可调整范围并实时更新；Esc 退出测量模式，再次拖动/点击可建立新测量。'
+        : '涨跌幅/价差按起止两根收盘价；区间统计含首尾。拖动左右边可调整范围并实时更新，Esc 关闭。' }}</p>
     </div>
   </div>
 </template>

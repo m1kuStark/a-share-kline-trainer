@@ -19,6 +19,17 @@ async function openChart(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
 }
+// 条件单标签页只在 orders_enabled=true 的训练里出现（I-1 输入框用例需要真实可输入的挂单理由框）
+async function openChartWithConditionalOrders(page: Page): Promise<void> {
+  const active = (await (await page.request.get('/api/trainings/active')).json()).training
+  if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
+  const response = await page.request.post('/api/trainings', { data: { code: '600519', tier: '1Y', start_date: '2025-01-02', initial_cash: 1_000_000, orders_enabled: true } })
+  expect(response.status()).toBe(201)
+  await page.goto('/')
+  await expect(page.locator('.training-current-date')).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+  await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
+}
 const bars = (page: Page) => page.evaluate(() => (window as any).__trainerChart.bars() as Array<{ timestamp: number; date: string; open: number; high: number; low: number; close: number; volume: number; amount: number }>)
 async function visibleStart(page: Page): Promise<number> {
   return page.evaluate(() => {
@@ -266,6 +277,14 @@ test('测量模式的互斥与仲裁：画线/多选互斥、热键被吞、滚�
   await expect(measurementCard(page)).not.toBeVisible()
   expect((await mode(page)).measure).toBe(true)
   await expect(page.locator('.range-measure-preview')).toHaveCount(0)
+  // 副图指标开关切换：清除当前测量、保留模式、不留错位 Select Box（review M-1）
+  const m1from = await visibleStart(page), m1to = m1from + 8
+  await dragCreate(page, m1from, m1to)
+  const kdjButton = page.getByRole('button', { name: 'KDJ', exact: true })
+  await kdjButton.click()
+  await expect(measurementCard(page)).not.toBeVisible()
+  expect(await measurementTool(page)).toMatchObject({ mode: true, range: null, anchor: null })
+  await kdjButton.click()
   // 价格轴：轴手势优先，不建立测量（模式保留）
   const width = await page.evaluate(() => (window as any).__trainerChart.viewportMetrics().width)
   const hostBox = (await page.locator('.chart-host').boundingBox())!
@@ -293,6 +312,78 @@ test('测量模式的互斥与仲裁：画线/多选互斥、热键被吞、滚�
   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
   expect(await page.evaluate(() => (window as any).__trainerChart.drawings())).toEqual(before.drawings)
   expect(writes).toEqual([])
+})
+
+test('测量模式内训练热键按应用可配置键位判定：改绑买卖键不成交、输入框可正常输入', async ({ page }) => {
+  await openChartWithConditionalOrders(page)
+  const original = (await (await page.request.get('/api/settings/shortcuts')).json()).shortcuts
+  try {
+    const custom = JSON.parse(JSON.stringify(original)) as Record<string, string[][]>
+    custom.buy = [['KeyQ']]
+    const saved = await page.request.put('/api/settings/shortcuts', { data: { shortcuts: custom }, timeout: 20_000 })
+    expect(saved.ok()).toBe(true)
+    await page.reload()
+    await expect(page.locator('.training-current-date')).toBeVisible({ timeout: 120_000 })
+    await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()
+    await expect(page.locator('.drawing-save-status')).toHaveText('已保存')
+    const writes = watchWrites(page)
+    const snapshot = async () => (await (await page.request.get('/api/trainings/active')).json())
+    const before = await snapshot()
+    await enterMeasure(page)
+    // 改绑后的买键（Q）与默认买键（B）在测量模式内都不成交；推进/删除同样被吞
+    await page.keyboard.press('q'); await page.keyboard.press('b'); await page.keyboard.press('Space'); await page.keyboard.press('Delete')
+    await page.waitForTimeout(400)
+    const afterKeys = await snapshot()
+    expect(afterKeys.trades.length).toBe(before.trades.length)
+    expect(afterKeys.training.currentDate).toBe(before.training.currentDate)
+    expect(writes).toEqual([])
+    // 输入框聚焦时训练热键不被吞（isTyping/isComposing 保护）：条件单理由可正常输入空格与字母
+    await page.getByRole('tab', { name: '条件单', exact: true }).click({ timeout: 20_000 })
+    const reason = page.getByLabel('挂单理由')
+    await reason.click({ timeout: 20_000 })
+    await reason.pressSequentially('q b s ', { delay: 20 })
+    expect(await reason.inputValue()).toBe('q b s ')
+    expect((await snapshot()).training.currentDate).toBe(before.training.currentDate)
+    await page.getByRole('tab', { name: '普通下单', exact: true }).click({ timeout: 20_000 })
+    // 退出测量模式后改绑键生效：Q 买入成交，证明上面的「不成交」来自模式内按键被吞而非改绑失效
+    await page.keyboard.press('Escape')
+    await expect(measureButton(page)).toHaveAttribute('aria-pressed', 'false')
+    await page.keyboard.press('q')
+    await expect.poll(async () => (await snapshot()).trades.length, { timeout: 15_000 }).toBe(before.trades.length + 1)
+  } finally {
+    // 恢复默认/原键位，避免污染同 run 后续用例
+    const restored = await page.request.put('/api/settings/shortcuts', { data: { shortcuts: original }, timeout: 20_000 })
+    expect(restored.ok()).toBe(true)
+  }
+})
+
+test('测量拖动中窗口失焦取消预览，不留幽灵 Select Box', async ({ page }) => {
+  await openChart(page)
+  await enterMeasure(page)
+  const from = await visibleStart(page), to = from + 12
+  const a = await position(page, from), b = await position(page, to)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down()
+  await page.mouse.move(b.x, b.y, { steps: 6 })
+  await expect(page.locator('.range-measure-preview')).toBeVisible()
+  // 真实失焦（复用 chart-analysis 的双页 + 关闭焦点模拟手法）：拖动中切到另一页
+  const other = await page.context().newPage()
+  for (const tab of [page, other]) { const session = await page.context().newCDPSession(tab); await session.send('Emulation.setFocusEmulationEnabled', { enabled: false }) }
+  await page.bringToFront()
+  await other.bringToFront()
+  await expect(page.locator('.range-measure-preview')).toHaveCount(0)
+  await expect(measurementCard(page)).not.toBeVisible()
+  await other.close()
+  await page.bringToFront()
+  await page.mouse.up()
+  // 窗外松键后回到页面：仍无幽灵预览/半成品测量，模式保持
+  await expect(page.locator('.range-measure-preview')).toHaveCount(0)
+  await expect(measurementCard(page)).not.toBeVisible()
+  expect((await mode(page)).measure).toBe(true)
+  // 失焦取消后仍可正常拖动建立
+  await dragCreate(page, from, to)
+  await expect(measurementCard(page)).toBeVisible()
+  expect(await measurementTool(page)).toMatchObject({ mode: true, range: { from, to, count: 13 } })
 })
 
 test('多空反转开启时测量模式仍按真实价计算与显示', async ({ page }) => {

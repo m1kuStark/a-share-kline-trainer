@@ -278,9 +278,16 @@ function closeMeasurement(): void {
   if (active) emit('panelChange', false)
 }
 function measurementActive(): boolean { return measurementRange.value !== null || measurementAnchor.value !== null }
+/** 取消进行中的拖动建立（window blur / 窗外松键 / pointercancel / 配置清理共用）：不建立半成品测量、不留幽灵预览 */
+function cancelMeasureGesture(): void {
+  if (!measureGesture && !measurePreview.value) return
+  measureGesture = null
+  measurePreview.value = null
+  measurementTick.value += 1
+}
 /** Esc/开关退出：清除当前测量并通知训练页收起测量模式（幂等） */
 function exitMeasureMode(): void {
-  measureGesture = null; measurePreview.value = null
+  cancelMeasureGesture()
   closeMeasurement()
   if (props.measureMode) emit('measureChange', false)
 }
@@ -353,6 +360,8 @@ function closeStatistics(restoreFocus = false): void {
   if (restoreFocus) void nextTick(() => host.value?.focus({ preventScroll: true }))
 }
 function cancelStatisticsGesture(): void {
+  // CHART-MEASURE-04：窗口失焦同样取消进行中的测量拖动（Alt+Tab/窗外松键后不留幽灵 Select Box）
+  cancelMeasureGesture()
   closeMeasurement()
   if (statisticsGesture || statisticsArmed.value || statisticsMenu.value) closeStatistics()
 }
@@ -1241,6 +1250,8 @@ function onPointerDown(event: PointerEvent): void {
 function onPointerMove(event: PointerEvent): void {
   if (measureGesture) {
     if (event.pointerId !== measureGesture.pointerId) return
+    // 窗口外松键时没有 pointerup：按钮已全部抬起即取消预览，避免回到页面后无按键仍跟手
+    if (event.buttons === 0) { cancelMeasureGesture(); return }
     updateMeasureGesture(event.clientX)
     return
   }
@@ -1316,7 +1327,7 @@ function cancelTimeAxisPan(): void {
 function onTimeAxisPanCancel(event: PointerEvent): void {
   if (timeAxisPan && event.pointerId === timeAxisPan.pointerId) cancelTimeAxisPan()
   // CHART-MEASURE-04：拖动建立中途 pointercancel 时丢弃预览与手势（不建立半成品测量）
-  if (measureGesture && event.pointerId === measureGesture.pointerId) { measureGesture = null; measurePreview.value = null; measurementTick.value += 1 }
+  if (measureGesture && event.pointerId === measureGesture.pointerId) cancelMeasureGesture()
 }
 
 function onPointerUp(event: PointerEvent): void {
@@ -1681,12 +1692,14 @@ function confirmTextPanel(): void {
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
-  // CHART-MEASURE-04：测量模式内 Esc 一步退出模式并清除；交易/推进/删除热键被吞（沿用测量激活保护）。
-  // 仅有模式、未建立测量时其余导航/缩放快捷键保持可用；建立测量后沿用既有「激活期间全吞」。
+  // MA-01：原生模态 dialog 打开时由它接管焦点、Esc 与可编辑数字输入；必须先于测量模式的 Esc 判定
+  // （否则 MA 设置面板打开时 Esc 会先退出测量模式，CHART-MEASURE-04 review M-7）。
+  if (maSettingsOpen.value) return
+  // CHART-MEASURE-04：测量模式内 Esc 一步退出模式并清除；训练热键（推进/买卖/删除）由 Training 键盘入口
+  // 按应用可配置键位（keyboardShortcuts）判定并吞掉（I-1），此处只保留「已建立测量时激活期间全吞」的既有保护。
   if (props.measureMode) {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); exitMeasureMode(); return }
-    const trainingHotkey = event.code === 'Space' || ['b', 'B', 's', 'S'].includes(event.key) || event.key === 'Delete'
-    if (trainingHotkey || measurementActive()) { event.preventDefault(); event.stopPropagation(); return }
+    if (measurementActive()) { event.preventDefault(); event.stopPropagation(); return }
   }
   if (measurementRange.value || measurementAnchor.value) {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeMeasurement(); return }
@@ -1698,7 +1711,6 @@ function onPanelKeydown(event: KeyboardEvent): void {
     else if (!statisticsResult.value && !['Enter', ' ', 'Tab'].includes(event.key)) event.preventDefault()
     return
   }
-  if (maSettingsOpen.value) return // Native modal owns focus, Esc and editable number inputs.
   if (!ctxMenu.value && !editPanel.value && !textPanel.value) return
   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closePanels(); return }
   event.stopPropagation()
@@ -2111,14 +2123,15 @@ watch(() => props.priceMirror, (_on, wasOn) => {
 })
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
-watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
+// CHART-MEASURE-04（review M-1）：副图指标开关改变窗格布局，按规格清除当前测量（模式保留），不留错位 Select Box
+watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { cancelMeasureGesture(); closeMeasurement(); applySubchartPanes(); scheduleChartCapture() })
 onMounted(applyMaSettings)
 watch(appMaSettings, applyMaSettings)
 watch(() => [props.drawTool, props.multiSelect], () => { closeMeasurement(); closeStatistics() })
 // CHART-MEASURE-04：模式关闭（Esc/按钮/切周期/工具互斥）一律清干净手势与预览，避免陈旧 Select Box/窗口
 watch(() => props.measureMode, on => {
   if (on) { closeStatistics(); hideHoverCard(); return }
-  measureGesture = null; measurePreview.value = null
+  cancelMeasureGesture()
   closeMeasurement()
 })
 defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView })
@@ -2140,7 +2153,7 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
     <div v-if="measurementAnchorLine" class="range-measure-anchor" :style="{ left: `${measurementAnchorLine.left}px`, top: `${measurementAnchorLine.top}px`, height: `${measurementAnchorLine.height}px` }"></div>
     <!-- 模式提示只在尚未建立/无当前测量时显示：数据窗口出现后由状态条「测量模式」继续承载模式可见性，避免窗口遮挡提示 -->
     <div v-if="props.measureMode && !measurementActive()" class="measure-hint" role="status">测量模式：拖动或两次点击选择起止K线，Esc 退出</div>
-    <RangeMeasurement v-if="measurementRange && measurementModel && measurementBox" :box="measurementBox.box" :panel="measurementBox.panel" :model="measurementModel" :period="periodLabel" @close="closeMeasurement" @edge-move="moveMeasurementEdge" />
+    <RangeMeasurement v-if="measurementRange && measurementModel && measurementBox" :box="measurementBox.box" :panel="measurementBox.panel" :model="measurementModel" :period="periodLabel" :measure-mode="props.measureMode" @close="closeMeasurement" @edge-move="moveMeasurementEdge" />
     <div v-if="statisticsArmed" class="statistics-hint" role="status">拖选要统计的 K 线区间，Esc 取消</div>
     <div v-if="statisticsRect" class="statistics-selection" :style="{ left: `${statisticsRect.left}px`, top: `${statisticsRect.top}px`, width: `${statisticsRect.width}px`, height: `${statisticsRect.height}px` }"></div>
     <div v-if="statisticsMenu" class="ctx-menu statistics-menu" role="menu" aria-label="图表区间菜单" :style="{ left: `${statisticsMenu.x}px`, top: `${statisticsMenu.y}px` }" @pointerdown.stop @mousedown.stop @contextmenu.prevent>

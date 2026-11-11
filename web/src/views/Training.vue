@@ -865,6 +865,13 @@ function onKeydown(event: KeyboardEvent): void {
   if (isTyping(event) || textPanelOpen.value) return
   const direction = isShortcut('timeframeNext', event) ? 1 : isShortcut('timeframePrev', event) ? -1 : 0
   if (direction && !drawTool.value) { event.preventDefault(); tf.value = nextTimeframe(tf.value, direction); return }
+  // CHART-MEASURE-04（review I-1）：测量模式内交易/推进/删除热键按应用可配置键位判定并吞掉——与画线模式
+  // 同一键盘入口，避免硬编码 event.code/key 漏吞改绑后的键；输入框/中文输入法组合已由上方 isTyping 返回，
+  // matchesActionShortcut 内部再按 isComposing/isRepeat 守卫。
+  if (measureMode.value && (isShortcut('advance', event) || isShortcut('buy', event) || isShortcut('sell', event) || isShortcut('deleteDrawing', event))) {
+    event.preventDefault()
+    return
+  }
   if (isShortcut('undo', event) || isShortcut('redo', event)) {
     if (drawTool.value) { event.preventDefault(); return }
     event.preventDefault(); if (isShortcut('redo', event)) chartRef.value?.redoDrawing(); else chartRef.value?.undoDrawing(); return

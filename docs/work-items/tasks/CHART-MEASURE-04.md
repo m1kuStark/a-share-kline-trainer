@@ -56,6 +56,7 @@
 ## 本轮交付
 
 - 交互：Training.vue 顶栏「测量」toggle（Ruler 图标＋aria-pressed；≤1180px 压缩为图标入口、aria-label/title 保留中文可访问名称），进入后十字光标、图上提示「测量模式：拖动或两次点击选择起止K线，Esc 退出」、按钮高亮；KlineChart.vue 沿既有指针入口新增 measureMode 手势——拖动建立（拖动期只预览 Select Box，松手出窗口）、两次点击建立（既有 measurementAnchor 虚线锚点，本任务补其渲染）、正反向归一、建立后替换旧值且模式保持；复用 RangeMeasurement 数据窗口/可拖边界与 chartStatistics 计算（算法零改动）；Esc/再点/切周期/结束训练/画线/多选退出并清除，滚轮/缩放/失焦只清测量；分隔条/价格轴/时间轴/绘图取点/多选/修饰键优先，交易/推进/删除热键被吞。
-- 测试：新增 e2e/measure-tool.spec.ts 6 例（入口 1024×680 双主题/键盘、拖动建立＋反向＋边界、两次点击锚点＋替换、互斥与仲裁、镜像真实价、只读回放）；e2e/chart-analysis.spec.ts 9 例零回归。RED `run-0aa7c954-0d59-404e-b238-f77cf918a2ff`（6 failed，入口/探针缺失）；GREEN `run-4a06f420-f7d3-4e2f-8115-eb258bb46c38`（measure-tool 6/6）＋ chart-analysis run `run-df776de4-b023-4bcd-92fc-8816d8a2c8c1`（9/9）。
-- 证据与截图：docs/verification/2026-11/CHART-MEASURE-04/README.md（入口双主题 1024、窗口 1440、镜像 1440）。
+- 测试：新增 e2e/measure-tool.spec.ts（整改后 8 例：入口 1024×680 双主题/键盘、拖动建立＋反向＋边界、两次点击锚点＋替换、互斥与仲裁、可配置热键与输入框、失焦取消预览、镜像真实价、只读回放）；e2e/chart-analysis.spec.ts 9 例零回归。RED `run-0aa7c954-0d59-404e-b238-f77cf918a2ff`（6 failed，入口/探针缺失，manifest.commit=7895a22 未提交工作树）；GREEN：整改前 `run-4a06f420`（measure-tool 6/6）＋ `run-4183bacc`/`run-977cb2f1`/`run-d6484028`（合跑各 15 passed，manifest.commit 依次 7895a22 未提交/7895a22 未提交/1dadcc9 干净）；整改后 `run-19cdac39`（合跑 17 passed，manifest.commit=a87d296 未提交）。`run-df776de4` 为整改前**整轮 15 例 13 passed/2 failed**（chart-analysis 子集 9/9），不是独立通过 run。
+- 证据与截图：docs/verification/2026-11/CHART-MEASURE-04/README.md（入口双主题 1024、窗口 1440、镜像 1440；截图来源＝整改后 run-19cdac39）。
+- 评审整改（PR #38 只读评审）：I-1 训练热键吞改到 Training 键盘入口按 keyboardShortcuts 可配置键位（含 isTyping/isComposing 保护）；I-2 blur/窗外松键统一取消拖动预览；I-3 本卡与证据表格按 run 实际构成如实修正；M-1 副图指标开关显式清测量（e2e 断言）；M-4 run manifest.commit 与截图来源标注；M-5 用户指南补「空白处起手建立新测量」与面板 Esc 模式语义；M-7 MA 原生模态 Esc 判定前置。
 - 未决/边界：回放页本轮不加顶栏入口（SessionReplay.vue 不在 allowed_paths，Lead 口径：回放仍用 Shift 测量且新模式零报错零写；一键入口如需另立卡）；按钮文案/位置/提示措辞属 proposed_default，随用户验收确认。
