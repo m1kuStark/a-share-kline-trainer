@@ -30,7 +30,7 @@ hooks 是本地提示与快速拦截，**不是唯一防线**；main Ruleset 与
 
 `.github/workflows/check.yml` 在 Windows 上运行：
 
-- `docs`：`npm ci` → `docs:check` → `docs:status -- --check`。统一状态在仓库外（`.control/trainer-state.json`），CI/独立仓库没有该文件时状态生成区新鲜度只能告警；在带状态的工作区（本地/verify:baseline）仍按 ERROR 强制，交付前必须跑。
+- `docs`：`npm ci` → `docs:check` → `docs:status -- --check`。统一状态在仓库外（`.control/trainer-state.json`），CI/独立仓库没有该文件时状态生成区新鲜度只能告警（docs job 显式设置 `TRAINER_DOCS_ALLOW_MISSING_STATE=1`）；在带状态的工作区（本地/verify:baseline）仍按 ERROR 强制，交付前必须跑。
 - `verify`：`npm ci` → `npm run build` → `npm test`，保留 test-results.json artifact。
 - `pr-policy`：仅 PR；校验标题 conventional、同仓 `task/<ID>` 分支的 `Task: <ID>` 与任务卡存在；fork PR 只要求标题规范。
 

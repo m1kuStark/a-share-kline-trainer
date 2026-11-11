@@ -37,7 +37,7 @@ describe('canonical docs projection', () => {
     roots.push(root)
     await mkdir(join(root, 'docs'))
     await writeFile(join(root, 'docs/status.md'), '# status\n<!-- generated:status:start -->\nold\n<!-- generated:status:end -->\n')
-    const issues = await updateStatus(root, cards, true)
+    const issues = await updateStatus(root, cards, true, { allowMissingState: true })
     expect(issues).toEqual([expect.objectContaining({ level: 'WARN', message: expect.stringContaining('缺少统一状态') })])
   })
   it('reports state-drift and preserves the status page when the legacy task state disagrees', async () => {

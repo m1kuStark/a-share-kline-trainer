@@ -20,6 +20,9 @@ jobs:
   docs:
     runs-on: windows-latest
     timeout-minutes: 10
+    # 统一状态在仓库外；CI 无 .control 时无法校验生成区新鲜度，显式降级为 WARN。
+    env:
+      TRAINER_DOCS_ALLOW_MISSING_STATE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
