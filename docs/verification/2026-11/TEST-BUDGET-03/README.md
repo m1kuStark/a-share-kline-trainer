@@ -29,6 +29,7 @@
 - PR #27：fix(ci): TEST-BUDGET-03 desktop 测试预算 30s；CI run 43057334647 三 job success。
 - squash 合入 main：649caf63d0317b80ba72a806ac9d14315cd63dee（2026-11-12 00:25）。
 - 后续 main CI run 43058321672（含依赖升级合并）docs/verify 绿。
+- **更正（TEST-BUDGET-04，2026-11-12）**：main CI run 43063764248 仍报 desktop 5000ms 超时，实证 --testTimeout CLI 未传到 vitest（嵌套 npm run）；已撤销该 flag，改由 desktop/vitest.config.ts testTimeout: 30_000 承担。
 
 ## 边界
 
