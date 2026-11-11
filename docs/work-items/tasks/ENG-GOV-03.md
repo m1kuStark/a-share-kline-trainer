@@ -5,11 +5,11 @@
   "id": "ENG-GOV-03",
   "title": "发布 tag 与追溯基线（v1.3.4–v1.3.6 回填 + v1.3.6 pre-release）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "ENG",
   "base_commit": "da87d14",
   "summary": "补齐发布追溯：新增 scripts/release/tag-release.mjs（校验 main/干净树/版本/CHANGELOG/CI/tag 冲突，签名 annotated tag，可选 push/release）与纯函数测试；为 v1.3.4/v1.3.5/v1.3.6 在版本提交处补签名 tag；GitHub 只把 v1.3.6 发成 pre-release（setup/zip/SHA256SUMS），latest 稳定版仍是 v1.3.3；更新发布文档与验证记录。",
-  "next_action": "落盘脚本/测试/文档；创建并推送三个签名 tag；创建 v1.3.6 pre-release 并核对资产与 latest 指针；PR 合并后回填 integration_ref。",
+  "next_action": "工程验证完成（PR #25 → main 6ba431b；tag/release 证据在验证记录）。用户验收未记录；后续稳定版发布按 release.md 与 tag-release 脚本执行。",
   "allowed_paths": [
     "package.json",
     "scripts/release/tag-release.mjs",
@@ -32,7 +32,7 @@
     "reason": "新增 tag/release 自动校验脚本与发布操作规范；v1.3.4–1.3.6 的 tag/pre-release 状态属于发布口径变化，需同步发布文档、任务/阶段索引与状态页。"
   },
   "verification_refs": ["docs/verification/2026-11/ENG-GOV-03/README.md"],
-  "integration_ref": null,
+  "integration_ref": "6ba431b15d7412a9c85d57457f52f32da3c4f1dc",
   "acceptance_ref": null
 }
 ```
