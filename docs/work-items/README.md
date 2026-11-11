@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [ENG 工程基础设施](milestones/ENG.md)：Git/PR/发布规范与操作门禁基线（ENG-GOV-01）。
+
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 
 - [TRAIN-FEE-01 个性化佣金费率](tasks/TRAIN-FEE-01.md)：训练默认设置可配佣金率/最低佣金（0＝免 5）/卖出印花税率，新训练冻结快照。

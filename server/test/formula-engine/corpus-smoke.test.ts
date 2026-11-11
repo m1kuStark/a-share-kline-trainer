@@ -9,8 +9,8 @@ import { FormulaEngine, type MarketData, type StockContext } from '../../../web/
 //   解析通过 18/23、执行通过 8/23；补丁后解析应 ≥22/23（唯一豁免＝万能过左峰编码伪影块，
 //   其源文件存在 GBK 乱码段 X_1:=???，属语料文件损坏而非引擎缺陷）；8 个基线执行通过块零损失。
 
-const CORPUS_DIR = 'D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon'
-const TDX_FORMULA_DIR = 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
+const CORPUS_DIR = process.env.TRAINER_FORMULA_CORPUS_DIR ?? 'D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon'
+const TDX_FORMULA_DIR = process.env.TRAINER_TDX_FORMULA_DIR ?? 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
 
 const SINGLE_LINE_FILES = [
   join(TDX_FORMULA_DIR, '左峰诅咒线主图公式_单行粘贴版.txt'),

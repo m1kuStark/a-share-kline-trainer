@@ -1,5 +1,9 @@
 # 开发协议
 
+- [Git 工作流](git-workflow.md)：main 不变量、分支/worktree、PR、合并与每周体检。
+- [提交规范](commit-convention.md)：Conventional Commits、Task trailer、示例与豁免。
+- [CI 门禁](ci.md)：本地 hooks、PR 必需检查、发布门禁与失败处理。
+- [发布与版本](release.md)：稳定/预览通道、签名 tag、发布检查清单与回滚。
 - [渐进读取](reading.md)：规则继承、模块索引、上下文预算。
 - [文档更新](documentation.md)：任务、证据与状态的责任和命令。
 - [测试门禁](testing.md)：什么检查证明什么，何时必须浏览器和视觉验收。

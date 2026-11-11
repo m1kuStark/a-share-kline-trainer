@@ -22,7 +22,7 @@ export async function runDocs(root: string, args: string[]): Promise<DocsResult>
       const result = checkImpact(root, cards, args[args.indexOf('--base') + 1] ?? '', args[args.indexOf('--task') + 1] ?? '')
       issues.push(...result.issues)
       if (result.summary) messages.push(result.summary)
-    } else issues.push(...await updateStatus(root, cards, args[0] === 'check' || args.includes('--check')))
+    } else issues.push(...await updateStatus(root, cards, args[0] === 'check' || args.includes('--check'), { allowMissingState: process.env.TRAINER_DOCS_ALLOW_MISSING_STATE === '1' }))
   }
   return { exitCode: issues.some(issue => issue.level === 'ERROR') ? 1 : 0,
     messages: [...issues.map(issue => `${issue.level} ${issue.path}: ${issue.message}`), ...messages,

@@ -45,6 +45,8 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 
 隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。
 
+公式引擎的实盘语料回放（`server/test/formula-engine/crossPeriod.test.ts`、`corpus-smoke.test.ts`、`marketContext.test.ts`）依赖工作区 `tdx/选股公式` 与 `ai-harness-lab/formula-recon`，不随仓库分发；路径可用 `TRAINER_TDX_FORMULA_DIR` / `TRAINER_FORMULA_CORPUS_DIR` 覆盖。CI/无语料机器会醒目跳过这些用例（其余合成夹具仍覆盖跨周期、市场上下文语义）；公式引擎交付必须在有语料的机器跑全量并保留收据，不能用 CI skip 冒充语料通过。
+
 The docs-tooling test file uses a20second per-test integration budget: it starts real Git processes and commits temporary repositories. All assertions remain; this is not a product latency SLO. Other unit defaults and full candidate checks are unchanged.
 
 Owned runtime readiness retries transient loopback connection errors only within the original deadline, after child identity checks. Persistent errors report the last cause; wrong PID/runId/health and malformed responses remain failures.

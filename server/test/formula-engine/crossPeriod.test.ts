@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
@@ -18,7 +18,7 @@ import {
 //   · 通达信 MACD：DIF=EMA(C,12)−EMA(C,26)、DEA=EMA(DIF,9)、柱=2×(DIF−DEA)。
 //   · 跨公式引用＝注入式注册表（递归、环检测、深度上限 8、人话错误）。
 
-const TDX_FORMULA_DIR = 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
+const TDX_FORMULA_DIR = process.env.TRAINER_TDX_FORMULA_DIR ?? 'D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式'
 
 /** 手造日线：三元组显式给出，oracle 全部手算 */
 function bar(y: number, m: number, d: number, o: number, h: number, l: number, c: number, v: number): MarketData {
@@ -330,6 +330,12 @@ describe('M9-02 cross period references', () => {
     // 实盘公式（工作区惯例：纯英文辅助公式名 W144UP）
     const helperPath = join(TDX_FORMULA_DIR, '周线144MA上翘辅助公式.txt')
     const pickerPath = join(TDX_FORMULA_DIR, '周线144MA上翘日线25MA之上选股公式.txt')
+    // 实盘公式语料在工作区（不随仓库分发）；CI 无该目录时醒目跳过。
+    // 跨周期/跨公式语义仍由本文件其余合成夹具覆盖，公式引擎交付需在有语料的机器跑全量。
+    if (!existsSync(helperPath) || !existsSync(pickerPath)) {
+      console.warn(`[crossPeriod] 实盘公式语料缺失，跳过该用例：${TDX_FORMULA_DIR}`)
+      return
+    }
     const helper = readFileSync(helperPath, 'utf8')
     const picker = readFileSync(pickerPath, 'utf8')
 

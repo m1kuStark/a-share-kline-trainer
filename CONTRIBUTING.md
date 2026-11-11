@@ -42,14 +42,16 @@ npm run dev
 
 - `npm test`：产品测试（Vitest），行为改动须附带有效回归。提交前至少运行 `npm test` 和 `npm run build`。
 - 浏览器（Playwright）测试依赖本地合法获得的通达信数据夹具和 Microsoft Edge，不能假设在任意机器或CI环境都能直接运行；提交说明里请写明你实际运行了哪些检查。
+- **本地 hooks**：`npm ci` 后 `prepare` 会执行 `npm run hooks:install`（设置 `core.hooksPath=.githooks`）；hooks 只做快速拦截，main 保护由 GitHub Ruleset 与 CI required checks 强制。
 - **严禁提交**：真实行情数据、个人训练数据库、会话录像、凭据、含个人信息的截图或私有路径。
 
 ## 提交流程
 
 1. 先开 Issue 描述问题或提议，确认方向后再动手。
-2. 从 `main` 拉出分支，小步提交；提交信息使用常规前缀（`feat:`、`fix:`、`docs:`、`chore:`、`test:` 等），可用中文描述。
-3. Pull Request 中说明：改动内容、影响面、运行的检查及结果。行为改动需在同一 PR 中同步更新受影响的文档（面向使用者的改动更新 `docs/user/`，代码内部约定写在代码附近的模块文档），避免文档与实现脱节。
-4. 等待维护者评审合并。
+2. 从 `main` 拉出分支：维护者用 `task/<任务ID>`（先立任务卡）；外部贡献用 `feat/<slug>` 或 `fix/<slug>`。小步提交，提交信息使用 Conventional Commits（`feat(scope): 摘要`、`fix(scope): 摘要`、`docs:`、`test:`、`chore:` 等），可用中文描述。维护者在任务分支提交时需带 `Task: <任务ID>` trailer，详见 [提交规范](docs/engineering/commit-convention.md)。
+3. 推送分支并开 PR；PR 标题同样使用 Conventional Commits，正文按模板填写改动、影响面、门禁命令与结果。main 禁止直接 push，必须经 PR。
+4. PR 需通过 `docs`、`verify`、`pr-policy` 三个必需检查；行为改动需在同一 PR 中同步更新受影响的文档（面向使用者的改动更新 `docs/user/`，代码内部约定写在代码附近的模块文档），避免文档与实现脱节。
+5. 等待维护者评审合并；合并后由维护者回填任务卡与验证记录。
 
 ## 文档约定
 
