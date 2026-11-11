@@ -12,6 +12,8 @@
 
 - [GOV-CLOSE-01 治理收尾](tasks/GOV-CLOSE-01.md)：关闭五张治理任务、记录 Dependabot 处置并固化忽略规则；产品开发交接。
 
+- [DEP-POLICY-01 Dependabot 大版本策略](tasks/DEP-POLICY-01.md)：全局忽略 major、klinecharts 钉定忽略；major 需专项任务。
+
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 
 - [TRAIN-FEE-01 个性化佣金费率](tasks/TRAIN-FEE-01.md)：训练默认设置可配佣金率/最低佣金（0＝免 5）/卖出印花税率，新训练冻结快照。
