@@ -48,7 +48,12 @@ export async function updateStatus(root: string, cards: Card[], check: boolean):
   const generated = newline + render(cards, state).replace(/\n/g, newline) + newline
   const begin = source.indexOf(START) + START.length, end = source.indexOf(END)
   if (source.slice(begin, end) === generated) return []
-  if (check) return [{ level: 'ERROR', path, message: '生成区已过期；运行 npm run docs:status 后审查差异。' }]
+  if (check) {
+    // 统一状态在仓库外（.control/trainer-state.json）：CI/独立仓库没有该文件时无法判断生成区是否过期。
+    // 此时只告警不失败；带状态的工作区（本地/verify:baseline）仍按 ERROR 强制。
+    if (!state) return [{ level: 'WARN', path, message: '生成区与卡片派生视图不一致，但当前环境缺少统一状态（.control/trainer-state.json），无法判断是否过期；请在带状态的工作区运行 docs:status --check。' }]
+    return [{ level: 'ERROR', path, message: '生成区已过期；运行 npm run docs:status 后审查差异。' }]
+  }
   await writeFile(join(root, path), source.slice(0, begin) + generated + source.slice(end), 'utf8')
   return []
 }

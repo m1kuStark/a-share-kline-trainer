@@ -18,6 +18,8 @@
     ".githooks/**",
     "scripts/git/**",
     "scripts/ci/**",
+    "scripts/docs/status.ts",
+    "server/test/workflow-docs.test.ts",
     "docs/engineering/git-workflow.md",
     "docs/engineering/commit-convention.md",
     "docs/engineering/ci.md",
