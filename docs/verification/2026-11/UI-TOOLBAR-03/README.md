@@ -52,14 +52,24 @@ npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux
 
 ## 轻量门禁
 
-- `npm run verify:fast -- --journey e2e/toolbar-floating.spec.ts`：**见下方复跑记录**（首次运行 exit 1，仅 docs:check 因新任务卡未生成 status 生成区而失败——docs:status 后复跑；同次 build PASS 15s、journey PASS 164s run `run-bc4293a4-0063-4034-9b00-b53f78d2c280`）。
+- `npm run verify:fast -- --journey e2e/toolbar-floating.spec.ts`：首次运行 **exit 1**，仅 docs:check 失败（新任务卡未生成 status 生成区；build PASS 15s、journey PASS 164s run `run-bc4293a4-0063-4034-9b00-b53f78d2c280`）；`npm run docs:status` 生成区更新后，合并 origin/main 的最终复跑见下（**exit 0**）。
 - `npm test`（unit）：首次 exit 1 为**环境事故**（共享主检出 node_modules 缺 `@babel/parser`，Lead 已定位为删工作树穿过 junction 所致并在主检出修复）；修复后复跑 **exit 0**（server 178 files / 2619 tests + desktop 34 files / 369 tests，日志 `.runs/unit-test.log`）。
 - `npm run docs:check`：exit 0（0 errors，160 warnings）。
 - `npm run docs:status`：exit 0（生成区新增 UI-TOOLBAR-03 一行，diff 仅该行）；`npm run docs:status -- --check`：exit 0。
 - `npm run docs:impact -- --base 7895a22 --task UI-TOOLBAR-03`：exit 0（26 个变更路径，其中 3 个运行代码/配置/测试路径；工作树预检，不代表集成或验收）。
 - `check-binding --strict --include-untracked --matrix uiux-workbench.yaml`：**exit 1，矩阵 16 行 covered=14 open=2 RED=3**。
   - open=2 即本任务 Lead 预登记的 planned 行 `UIUX-TOOLBAR-PIN` / `UIUX-TOOLBAR-RESIZE`（test_ids 待 Lead 升 covered 时填入，见最终报告）；
-  - RED=3 为 `UIUX-TRAINING-FILL-HEIGHT` 引用的 `e2e/layout-fill.spec.ts` 三个用例在 base `7895a22` 不存在（属 CHART-LAYOUT-01，main 已前进合并；合并 origin/main 后复跑见下）。
+  - base `7895a22` 上 RED=3 为 `UIUX-TRAINING-FILL-HEIGHT` 引用的 `e2e/layout-fill.spec.ts` 三个用例尚不存在（属 CHART-LAYOUT-01）；合并 origin/main（8eec4cf）后复跑 RED=0，见下方复跑记录。
+
+## 复跑记录（合并 origin/main 8eec4cf 后）
+
+- 合并提交：`8e490d2`（`Merge remote-tracking branch 'origin/main' into task/UI-TOOLBAR-03'`）。`docs/specs/chart/display.md` 与 `docs/status.md` 由 git ort 自动合并、无冲突（双方条目均保留），随后 `npm run docs:status` 重新生成生成区、`--check` 通过。
+- `npm run verify:fast -- --journey e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux-training.spec.ts`：**exit 0**（docs:check PASS 2s、build PASS 13s、journey PASS 245s；journey run `run-a95374d4-d320-4d61-8f8a-eb3670a97094`：**10 passed / 0 failed**，3.8m）。本目录 18 张截图已用该 post-merge run 重新归档。
+- `npm test`（合并后复跑）：**exit 0**（server 178 files / 2619 tests + desktop 34 files / 369 tests；日志 `.runs/unit-test-merged.log`）。
+- `npm run docs:check`：exit 0（0 errors，162 warnings）。
+- `npm run docs:status` / `npm run docs:status -- --check`：exit 0 / exit 0。
+- `npm run docs:impact`：合并前 `--base 7895a22` exit 0（26 路径）；合并后以 merge base 计 `--base 8eec4cf` **exit 0**（26 路径，其中 3 个运行代码/配置/测试路径）。注：合并后若仍用 `--base 7895a22` 会把 main 上 CHART-LAYOUT-01 的路径计为「超出 allowed_paths」（19 errors，非本任务改动），故 post-merge 收据以 8eec4cf 为基。
+- `check-binding --strict --include-untracked --matrix uiux-workbench.yaml`（合并后）：**exit 1，矩阵 16 行 covered=14 open=2 RED=0**（严格模式因 2 个 planned 行判定失败；RED 已随 origin/main 的 `e2e/layout-fill.spec.ts` 合并清零；open 两行是本任务待 Lead 升 covered 的 `UIUX-TOOLBAR-PIN`/`UIUX-TOOLBAR-RESIZE`）。
 
 ## 视觉检查（主代理）
 
