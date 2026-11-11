@@ -8,6 +8,8 @@
 
 - [ENG-GOV-03 发布 tag 与追溯](tasks/ENG-GOV-03.md)：v1.3.4–v1.3.6 补签名 tag；v1.3.6 GitHub pre-release（latest 稳定仍 v1.3.3）。
 
+- [TEST-BUDGET-03 CI desktop 预算](tasks/TEST-BUDGET-03.md)：CI verify 的 desktop 命令显式 30s testTimeout，消除 5s 超时误拦。
+
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 
 - [TRAIN-FEE-01 个性化佣金费率](tasks/TRAIN-FEE-01.md)：训练默认设置可配佣金率/最低佣金（0＝免 5）/卖出印花税率，新训练冻结快照。
