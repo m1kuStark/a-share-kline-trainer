@@ -538,7 +538,9 @@ describe('启动合并应用（applyPendingHistoryAtBoot，MIG-MERGE-01）', () 
     await rm(dataDir, { recursive: true, force: true })
   })
 
-  it('MIG-MERGE-NS-PRESERVE: 空/非空目标合并后 recording_namespace 均不变，cache_meta 其他键仅缺失时带入', async () => {
+  // 真实 fs + SQLite 迁移链路；CI 满载时 5s 默认预算不足（PR #19/#20 verify 各 flake 一次，rerun 通过）。
+  // TEST-BUDGET-02：只放宽本用例预算，断言/用例集合不变。
+  it('MIG-MERGE-NS-PRESERVE: 空/非空目标合并后 recording_namespace 均不变，cache_meta 其他键仅缺失时带入', { timeout: 30_000 }, async () => {
     const newNamespace = 'aaaaaaaa-aaaa-4aaa-8aaa-dddddddddddd'
     // 场景一（wave-c 复现）：目标库空 trainings 但已有 ns（用户先导入了录像）
     const fixture = await buildPackageFixtureRich(2)
