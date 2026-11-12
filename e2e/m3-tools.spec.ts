@@ -154,7 +154,8 @@ test('M3 D6-D7 水平工具改价保持水平且可撤销保存', async ({ page 
 
 test('M3 工具清单与默认吸附', async ({ page }) => {
   await openTraining(page)
-  await page.locator('.other-tools-toggle').click()
+  // UI-TOOLBAR-02 起「其他工具」默认展开；仅在收起时才点开关（无条件 click 会把它收起导致工具不可见）
+  if (!await page.locator('.other-tools').isVisible()) await page.locator('.other-tools-toggle').click()
   const labels = ['线段', '射线', '直线', '水平直线', '水平线段', '水平射线',
     '垂直直线', '垂直线段', '垂直射线', '平行直线', '价格通道线', '斐波那契线',
     '画笔', '价位线', '矩形', '圆圈', '圆弧', '箭头线', '看涨箭头', '看跌箭头',

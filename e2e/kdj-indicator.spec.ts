@@ -35,6 +35,12 @@ async function openChart(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)
 }
 
+// UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；
+// 涉及图表取点/双击窗格的几何用例先隐藏浮层，取工具时再显示（真实用户也可随时隐藏/拖动）。
+async function setToolbarVisible(page: Page, visible: boolean): Promise<void> {
+  const shown = await page.locator('.draw-toolbar').isVisible()
+  if (shown !== visible) await page.locator('.draw-toolbar-toggle').click()
+}
 function kdjButton(page: Page) { return page.getByRole('button', { name: 'KDJ', exact: true }) }
 
 async function panes(page: Page): Promise<Pane[]> {
@@ -86,6 +92,7 @@ test('toggling KDJ off/on takes effect immediately and persists across reload', 
 
 test('KDJ pane participates in box select, dbl-click maximize and drawing like other panes', async ({ page }) => {
   await openChart(page)
+  await setToolbarVisible(page, false)
   const host = await page.locator('.chart-host').boundingBox()
   expect(host).not.toBeNull()
 
@@ -93,9 +100,9 @@ test('KDJ pane participates in box select, dbl-click maximize and drawing like o
   const before = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
   const kdj = await kdjPane(page)
   const y = host!.y + kdj.top + kdj.height / 2
-  await page.mouse.move(host!.x + kdj.width * .45, y)
+  await page.mouse.move(host!.x + kdj.width * .62, y)
   await page.mouse.down()
-  await page.mouse.move(host!.x + kdj.width * .8, y, { steps: 12 })
+  await page.mouse.move(host!.x + kdj.width * .92, y, { steps: 12 })
   await expect(page.locator('.select-rect')).toBeVisible()
   await page.mouse.up()
   await expect(page.locator('.select-rect')).not.toBeVisible()
@@ -107,19 +114,21 @@ test('KDJ pane participates in box select, dbl-click maximize and drawing like o
   expect(after.to - after.from).toBeLessThan(before.to - before.from)
 
   // ② 双击 KDJ 窗格：最大化（其余窗格高度归零），再双击还原
-  await page.mouse.dblclick(host!.x + kdj.width * .45, host!.y + kdj.top + kdj.height * .5)
+  await page.mouse.dblclick(host!.x + kdj.width * .72, host!.y + kdj.top + kdj.height * .5)
   await expect.poll(async () => (await panes(page))[0].height).toBe(0)
-  await page.mouse.dblclick(host!.x + kdj.width * .45, host!.y + 100)
+  await page.mouse.dblclick(host!.x + kdj.width * .72, host!.y + 100)
   await expect.poll(async () => (await panes(page))[0].height).toBeGreaterThan(0)
 
   // ③ 画线落在 KDJ 窗格：语义 paneId='KDJ'，保存刷新后按语义名恢复回 KDJ 窗格
+  await setToolbarVisible(page, true)
   const button = page.locator('[data-tool-name="segment"]')
   if (!await button.isVisible()) await page.locator('.other-tools-toggle').click()
   await button.click()
   const pane = await kdjPane(page)
-  await page.mouse.click(host!.x + pane.width * .25, host!.y + pane.top + pane.height * .3)
+  // 取点留在右侧，避开左下悬浮工具面板（隐藏面板会取消画线工具，故不隐藏）
+  await page.mouse.click(host!.x + pane.width * .62, host!.y + pane.top + pane.height * .3)
   await page.waitForTimeout(560)
-  await page.mouse.click(host!.x + pane.width * .65, host!.y + pane.top + pane.height * .7)
+  await page.mouse.click(host!.x + pane.width * .85, host!.y + pane.top + pane.height * .7)
   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart.drawings().length)).toBe(1)
   const saved = await page.evaluate(() => (window as any).__trainerChart.drawings())
   expect(saved[0].paneId).toBe('KDJ')
