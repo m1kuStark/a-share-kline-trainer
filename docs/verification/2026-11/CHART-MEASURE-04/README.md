@@ -19,7 +19,7 @@
 - **I-1（训练热键吞按可配置键位）**：删除 KlineChart 内硬编码 `event.code==='Space'` / `b/B/s/S` / `Delete` 判定，改为 Training.vue 键盘入口用既有 `isShortcut('advance'|'buy'|'sell'|'deleteDrawing')`（keyboardShortcuts，按 event.code＋按下的修饰键集合）吞键；`isTyping`（含 isComposing、input/textarea/select/contenteditable）已在入口提前返回，`matchesActionShortcut` 内部再守 isComposing/isRepeat。KlineChart 只保留 Esc 与「已建立测量时激活期间全吞」既有分支。新增 e2e：真实 PUT /api/settings/shortcuts 把 buy 改绑 KeyQ → 测量模式内 Q/B/Space/Delete 均不成交；条件单理由输入框聚焦可正常输入 `q b s `；退出模式后按 Q 买入成交（证明改绑生效、上面的不成交来自模式内吞键）。
 - **I-2（失焦/窗外松键幽灵预览）**：新增 `cancelMeasureGesture()`，window blur、pointermove 检测 `event.buttons===0`、pointercancel、模式关闭与指标开关统一走它；blur 同时 closeMeasurement。新增 e2e：拖动中切到另一页（双页真实失焦）→ `.range-measure-preview` 消失且无半成品测量，回到页面松键后仍无幽灵预览、模式保持、可正常再建立。
 - **I-3（证据表格如实）**：修正下文本文件 GREEN 表：删除不存在的「chart-analysis-only 通过 run」行；`run-df776de4` 明确记为整轮 15 例 13 passed/2 failed（chart-analysis 子集 9/9，非独立命令）；整体绿色改用 `run-4183bacc`/`run-977cb2f1`/`run-d6484028` 与整改后 `run-19cdac39`。任务卡「本轮交付」同步修正。
-- **M-1（指标开关清测量）**：KlineChart 副图指标 watch 显式 `cancelMeasureGesture()+closeMeasurement()`；precedence 用例补断言：建立测量→点 KDJ 开关→窗口消失、模式保留、无陈旧 Select Box→再点恢复。
+- **M-1（指标开关清测量）**：KlineChart 新增独立副图指标 watch 做 `cancelMeasureGesture()+closeMeasurement()`（既有「即时生效且不发 chart.viewport」的源码契约行保持原样，见迭代记录的 CI 首轮失败修正）；precedence 用例补断言：建立测量→点 KDJ 开关→窗口消失、模式保留、无陈旧 Select Box→再点恢复。
 - **M-4（run 清单诚实标注）**：GREEN/迭代表为每个 run 标注 manifest.commit 与是否未提交工作树；截图改为从**整改后** run `run-19cdac39` 归档（此前归档来自 run-d6484028/run-977 的说明见「视觉检查」）。
 - **M-5（文案）**：用户指南补「从没有数据窗口/边界手柄的空白 K 线处起手建立新测量」与「数据窗口内 Esc＝退出测量模式」；`RangeMeasurement.vue` 增加 `measureMode` prop，面板脚注在模式内改为「Esc 退出测量模式，再次拖动/点击可建立新测量」（Shift 两点测量仍为「Esc 关闭」）。
 - **M-7（MA 模态优先）**：`onPanelKeydown` 开头先判 `maSettingsOpen`（原生模态接管 Esc/输入），再判测量模式 Esc，避免 MA 设置弹层打开时 Esc 先退出测量模式。
@@ -39,6 +39,8 @@
 `run-1481e5a2-89c8-4ca0-aa77-8fbb35ff8609`（manifest.commit=a87d296，整改工作树未提交）：**整轮 17 例 16 passed / 1 failed**。失败为**测试自身**前置条件缺失：I-1 新用例用普通训练创建（`orders_enabled` 默认关）导致「条件单」标签页不存在，无默认动作超时的 `click` 挂起到 240s 测试上限；失败保留。修法：该用例改用 `orders_enabled: true` 创建训练并给交互显式 20s 超时；修复后 `run-19cdac39` 17 passed。
 
 `run-19cdac39-b4dc-4c08-ad34-beec943fa742`（manifest.commit=a87d296，整改工作树未提交）：**整轮 17 例 passed (2.1m)**（measure-tool 8 例＋chart-analysis 9 例）；本文件归档截图取自该 run。
+
+GitHub CI 复跑（commit `f2b7f1a`）：`docs`/`pr-policy` 通过，`verify` **失败** 1 例——`server/test/frontend-contract.test.ts:276` 对副图指标 watch 有**源码契约断言**（要求原行 `watch([appKdjSubchart, …], () => { applySubchartPanes(); scheduleChartCapture() })` 原样存在），整改 M-1 曾直接改该行。因该测试文件不在本任务 allowed_paths，修复改为**保留原契约行不动、新增独立 watch** 做 `cancelMeasureGesture()+closeMeasurement()`（行为叠加）；本地 `npm exec -- vitest run server/test/frontend-contract.test.ts server/test/chart-statistics.test.ts` 43 passed 后重新跑门禁。该失败按真实失败记录，未豁免/未改契约断言。
 
 ## GREEN（定向）
 
@@ -114,3 +116,7 @@
 - 评审整改提交：`f2b7f1a` `fix(chart): CHART-MEASURE-04 按 PR #38 只读评审修订热键/失焦/文案与证据`（I-1/I-2/M-1/M-5/M-7 代码与测试，I-3/M-4 证据修正）。
 - 整改后最终门禁：`run-ac98ee77-4657-4a4f-8553-d9550aff2c15`（17 passed，manifest.commit=`f2b7f1a`，干净工作树），收据见 GREEN 表末行与轻量门禁表。
 - 本记录为工程自验，不代表用户验收；视觉检查仍由主代理按 UI-VISUAL-ACCEPTANCE 复核。
+## 集成前最终复跑（2026-11-12 12:35，Lead 确认）
+
+- 最终代码 = `f2b7f1a` + 本轮「保留原契约行、新增独立 watch」修复（工作树未提交）：`npm test` 全量 **exit 0**（server 178 files / 2619 tests + desktop 34 files / 369 tests）；`npm run journey -- e2e/measure-tool.spec.ts e2e/chart-analysis.spec.ts --retries=0` **exit 0**，run `run-5496b6a9-2428-48fa-a6c2-e08011e0445e`（17 passed；manifest.commit=2f07332，未提交工作树）。
+- CI 首轮 verify 失败（run 43094100947，frontend-contract 源码契约）按真实失败保留；最终修法未改契约断言。整改提交推送后以 CI 复跑结果为准。

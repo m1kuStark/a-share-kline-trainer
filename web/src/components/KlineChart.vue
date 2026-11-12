@@ -2123,8 +2123,10 @@ watch(() => props.priceMirror, (_on, wasOn) => {
 })
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
-// CHART-MEASURE-04（review M-1）：副图指标开关改变窗格布局，按规格清除当前测量（模式保留），不留错位 Select Box
-watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { cancelMeasureGesture(); closeMeasurement(); applySubchartPanes(); scheduleChartCapture() })
+// CHART-MEASURE-04（review M-1）：副图指标开关改变窗格布局，先清除当前测量（模式保留）不留错位 Select Box；
+// 既有「任一副图偏好切换立即生效、不发 chart.viewport」源码契约行保持原样（frontend-contract 锁定），本行独立叠加清理。
+watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { cancelMeasureGesture(); closeMeasurement() })
+watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
 onMounted(applyMaSettings)
 watch(appMaSettings, applyMaSettings)
 watch(() => [props.drawTool, props.multiSelect], () => { closeMeasurement(); closeStatistics() })
