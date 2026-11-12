@@ -80,3 +80,8 @@
 
 - Windows / Node 24 / Edge；`TDX_ROOT=D:\MySoftWares\TDX`；独立 run 的端口/SQLite/构建；未使用个人训练库。
 - 版本 1.3.7 仅本地候选：未 push tag、未发 GitHub Release、未移动更新 feed/上传镜像。
+## 2026-11-13 用户验收与回退（追加）
+
+- 用户人工验收：图表铺满、悬浮面板固定/调宽高**通过**；顶栏测量入口与既有 Shift 测量重复，要求移除（用户 2026-11-13 原话见 [V137 用户验收记录](../V137-user-acceptance/README.md)）。
+- 回退任务：[CHART-MEASURE-05](../../../work-items/tasks/CHART-MEASURE-05.md)（仅移除入口/模式，保留 Shift 两点测量）；版本进入 1.3.8。
+- **未发布**：安装包仅本地交付验收；未打 tag、未发 GitHub Release、未移动更新 feed、未上传镜像。

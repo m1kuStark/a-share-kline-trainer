@@ -28,7 +28,7 @@ import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
-import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil, Pin, PinOff, MoveDiagonal2, Ruler } from 'lucide-vue-next'
+import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil, Pin, PinOff, MoveDiagonal2 } from 'lucide-vue-next'
 import { withWeekday } from '../dateLabels'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
@@ -291,17 +291,6 @@ void fetchKeyboardShortcuts().then(view => {
 }).catch(() => { /* 首屏服务端不可用时继续使用本机缓存 */ })
 // 多选模式：框选拖拽变为划线批量选中（与画线取点模式互斥）
 const multiSelectMode = ref(false)
-// CHART-MEASURE-04 测量工具模式（Issue #8 可发现入口）：顶栏「测量」开关，进入后主图拖动/两次点击
-// 直接建立区间测量（复用既有 RangeMeasurement 数据窗口）。与画线工具/多选互斥；Esc/再点开关/
-// 切周期/结束训练退出并清除；滚轮/缩放/失焦只清当前测量（沿用图表既有清理路径）。
-const measureMode = ref(false)
-function toggleMeasureMode(): void {
-  measureMode.value = !measureMode.value
-  if (!measureMode.value) return
-  drawTool.value = null
-  multiSelectMode.value = false
-  chartRef.value?.clearMultiSelection()
-}
 const magnet = ref<'normal' | 'weak_magnet' | 'strong_magnet'>('weak_magnet')
 const allDrawings = ref<Drawing[] | null>(null)
 const initialDrawings = ref<Drawing[] | null>(null)
@@ -415,9 +404,9 @@ onUnmounted(() => {
 void loadDrawings()
 function toggleMultiSelectMode(): void {
   multiSelectMode.value = !multiSelectMode.value
-  if (multiSelectMode.value) { drawTool.value = null; measureMode.value = false }
+  if (multiSelectMode.value) drawTool.value = null
 }
-watch(drawTool, tool => { if (tool) { multiSelectMode.value = false; measureMode.value = false } })
+watch(drawTool, tool => { if (tool) multiSelectMode.value = false })
 
 function updateFavoriteTools(names: string[]): void {
   favoriteToolNames.value = names
@@ -431,7 +420,6 @@ function toggleToolCustomization(): void {
     toolbarCollapsed.value = false
     drawTool.value = null
     multiSelectMode.value = false
-    measureMode.value = false
     chartRef.value?.clearMultiSelection()
   }
 }
@@ -664,7 +652,6 @@ function viewportDateText(date: string | null): string | null {
 }
 const statusText = computed(() => {
   if (multiSelectMode.value) return '多选模式'
-  if (measureMode.value) return '测量模式'
   if (!drawTool.value) return message.value
   const label = DRAW_TOOLS.find(tool => tool.name === drawTool.value)?.label ?? drawTool.value
   return `画线模式：${label}`
@@ -992,13 +979,6 @@ function onKeydown(event: KeyboardEvent): void {
   if (isTyping(event) || textPanelOpen.value) return
   const direction = isShortcut('timeframeNext', event) ? 1 : isShortcut('timeframePrev', event) ? -1 : 0
   if (direction && !drawTool.value) { event.preventDefault(); tf.value = nextTimeframe(tf.value, direction); return }
-  // CHART-MEASURE-04（review I-1）：测量模式内交易/推进/删除热键按应用可配置键位判定并吞掉——与画线模式
-  // 同一键盘入口，避免硬编码 event.code/key 漏吞改绑后的键；输入框/中文输入法组合已由上方 isTyping 返回，
-  // matchesActionShortcut 内部再按 isComposing/isRepeat 守卫。
-  if (measureMode.value && (isShortcut('advance', event) || isShortcut('buy', event) || isShortcut('sell', event) || isShortcut('deleteDrawing', event))) {
-    event.preventDefault()
-    return
-  }
   if (isShortcut('undo', event) || isShortcut('redo', event)) {
     if (drawTool.value) { event.preventDefault(); return }
     event.preventDefault(); if (isShortcut('redo', event)) chartRef.value?.redoDrawing(); else chartRef.value?.undoDrawing(); return
@@ -1092,8 +1072,6 @@ function onMiniRefresh(): void {
 }
 
 watch(tf, (value, previous) => {
-  // CHART-MEASURE-04：切周期退出测量模式（口径冻结：模式跨周期常驻会让取点/框选仲裁与录像语义复杂化）
-  measureMode.value = false
   const op = recording.begin('chart.timeframe', { from: previous, to: value })
   // Chart data will be captured only after the matching load finishes.
   loading.value = true
@@ -1101,9 +1079,6 @@ watch(tf, (value, previous) => {
   recording.finish(op, 'accepted')
   void load()
 })
-
-// CHART-MEASURE-04：结束训练（结算/放弃确认弹层打开）即退出测量模式
-watch([settledView, endAction], () => { if (settledView.value || endAction.value) measureMode.value = false })
 
 // M6-04 副图指标开关（VOL/MACD/KDJ）：与周期按钮同行同区的应用偏好（localStorage 独立键，
 // 默认全开）；切换立即增删对应副图窗格并跨重启保持；不属于录像布局，回放按当前开关渲染。
@@ -1172,8 +1147,6 @@ void load()
       </div>
       <div class="training-actions">
         <button class="ghost-button draw-toolbar-toggle" :class="{ active: toolbarVisible }" :aria-pressed="toolbarVisible" title="显示/隐藏划线工具（可拖拽悬浮面板）" @click="toggleToolbar"><Pencil :size="14" />划线</button>
-        <!-- CHART-MEASURE-04：可发现的测量工具入口（类似 MT5 测量）。与划线同区；1024 档压缩为图标但保留可访问名称 -->
-        <button class="ghost-button measure-tool-toggle" :class="{ active: measureMode }" :aria-pressed="measureMode ? 'true' : 'false'" aria-label="测量" :title="measureMode ? '测量模式：拖动或两次点击选择起止K线，Esc 退出' : '测量：拖动或两次点击选择起止K线（无需 Shift；再次点击按钮退出）'" @click="toggleMeasureMode"><Ruler :size="14" aria-hidden="true" /><span class="measure-tool-label">测量</span></button>
         <button class="ghost-button data-refresh-btn" :class="{ 'is-updating': dataUpdating, attention: dataStatus?.freshness?.state === 'stale' && !dataUpdating, 'flash-ok': miniFlash === 'ok', 'flash-fail': miniFlash === 'fail' || !!dataRefreshError }" :disabled="dataUpdating" :title="miniTitle" :aria-label="`日线数据更新：${miniTitle}`" @click="onMiniRefresh">{{ miniLabel }}</button>
         <button class="ghost-button compact-icon-button" title="刷新图表" aria-label="刷新图表" :disabled="loading" @click="load"><RefreshCw :size="14" /></button>
         <button class="ghost-button compact-icon-button" title="回到最新K线" aria-label="回到最新K线" :disabled="loading" @click="chartRef?.resetView()"><SkipForward :size="14" /></button>
@@ -1210,14 +1183,14 @@ void load()
           :previous-close="previousClose"
           :drawing-price-basis="drawingPriceBasis"
           :timeframe="tf" :has-more-bars="hasMoreBars" :fetch-earlier="fetchEarlier"
-          :draw-tool="drawTool" :multi-select="multiSelectMode" :measure-mode="measureMode"
+          :draw-tool="drawTool" :multi-select="multiSelectMode"
           :magnet="magnet" :saved-drawings="initialDrawings" :all-drawings="allDrawings" :training-id="training.id"
           :hide-dates="axisDateHidden" :date-shift-days="axisDateShiftDays"
           :price-mirror="priceMirror"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
-          @tool-change="drawTool = $event" @measure-change="measureMode = $event"
+          @tool-change="drawTool = $event"
           @drawings-change="onDrawingsChange" @history-change="historyState = $event" @panel-change="textPanelOpen = $event"
         />
       </div>

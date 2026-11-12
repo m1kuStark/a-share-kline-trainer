@@ -407,3 +407,14 @@ test('random-time quote and range statistics keep dates concealed', async ({ pag
   expect(await measurementCard(page).innerText()).not.toMatch(/\d{4}-\d{2}-\d{2}/)
   await page.keyboard.press('Escape')
 })
+
+// CHART-MEASURE-05（用户 2026-11-13 验收反馈）：顶栏不再提供测量入口，Shift 两次点击仍是唯一区间测量方式。
+test('顶栏不再提供测量入口：Shift 两次点击仍是唯一区间测量方式', async ({ page }) => {
+  await openChart(page)
+  await expect(page.getByRole('button', { name: '测量', exact: true })).toHaveCount(0)
+  const from = await visibleStart(page)
+  await twoPoint(page, from, from + 10)
+  await expect(measurementCard(page).locator('dl > div').filter({ has: page.locator('dt', { hasText: /^K线数量/ }) }).locator('dd')).toHaveText('11 根')
+  await page.keyboard.press('Escape')
+  await expect(measurementCard(page)).not.toBeVisible()
+})
