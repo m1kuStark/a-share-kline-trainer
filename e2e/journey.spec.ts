@@ -34,7 +34,7 @@ await page.locator(".suggestions button").first().click()
   await expect(toolButton(page, '多选')).toBeVisible()
   // 模式机初始状态
   const mode = await page.evaluate(() => (window as any).__trainerChart.mode())
-  expect(mode).toEqual({ draw: null, multiSelect: false, axisScaleDrag: false })
+  expect(mode).toEqual({ draw: null, multiSelect: false, measure: false, axisScaleDrag: false })
 })
 
 test('Act5 买入推进卖出结算', async ({ page }) => {
@@ -416,9 +416,10 @@ test('Act4d 副图画线与多选框选（主副图同权）', async ({ page }) 
   await expect(page.locator('.status-strip')).toContainText('多选模式')
   const barsBefore = await page.locator('.view-count').textContent()
   const rangeBefore = await page.evaluate(() => (window as any).__trainerChart.visibleRange())
-  await page.mouse.move(host!.x + macd.width * .2, host!.y + macd.top + macd.height * .1)
+  // UI-TOOLBAR-01/02 悬浮工具面板默认左下停靠，会盖住图表左下区域：多选框从右侧起手避开浮层
+  await page.mouse.move(host!.x + macd.width * .62, host!.y + macd.top + macd.height * .1)
   await page.mouse.down()
-  await page.mouse.move(host!.x + macd.width * .85, host!.y + macd.top + macd.height * .9, { steps: 6 })
+  await page.mouse.move(host!.x + macd.width * .95, host!.y + macd.top + macd.height * .9, { steps: 6 })
   // 中途矩形可见（同 Act4a 的可见性回归）
   await expect(page.locator('.multi-rect')).toBeVisible()
   await page.mouse.up()

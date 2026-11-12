@@ -133,8 +133,9 @@ function expectPanesFillHost(m: LayoutSnapshot, label: string): void {
   const gaps: number[] = []
   for (let i = 0; i + 1 < panes.length; i++) gaps.push(panes[i + 1]!.top - (panes[i]!.top + panes[i]!.height))
   for (const gap of gaps) {
-    expect(gap, `${label}: 相邻窗格间隙 ${gap}（分隔条命中带为 7px，布局带应远小于它）`).toBeGreaterThanOrEqual(0)
-    expect(gap, `${label}: 相邻窗格间隙 ${gap}（不得出现空白带）`).toBeLessThanOrEqual(7)
+    expect(gap, `${label}: 相邻窗格间隙 ${gap}（不得出现空白带）`).toBeGreaterThanOrEqual(0)
+    // 分隔条布局带实测 1px（7px 是事件命中带，不参与布局）；收紧到 ≤2，避免 7px 级空白带被当作分隔条放过
+    expect(gap, `${label}: 相邻窗格间隙 ${gap}（不得出现空白带）`).toBeLessThanOrEqual(2)
   }
   const separator = gaps[0] ?? 0
   for (const gap of gaps) near(gap, separator, `${label}: 分隔条布局宽度一致`)
@@ -247,6 +248,7 @@ test('fill invariants survive MACD toggle, maximize/restore and window resize', 
   await settle(page)
   m = await layout(page)
   expectTrainingFill(m, 'macd-restored')
+  expectViewportClean(m, 'macd-restored')
 
   // 窗口 resize 1440 → 1024 → 1440：每次都在新的可用高度内铺满
   for (const size of [{ width: 1024, height: 680 }, { width: 1440, height: 900 }]) {

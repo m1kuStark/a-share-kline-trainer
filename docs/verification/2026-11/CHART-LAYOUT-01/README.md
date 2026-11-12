@@ -87,3 +87,15 @@ frame 流内子元素＝2（wrap、rail，flex 无空行）；host＝frame−rai
 ## 提交
 
 本记录与修复同一交付提交入库（`git log --oneline -1` 可核对提交 SHA）；集成人按 PR/合并提交回填任务卡 `integration_ref`。运行产物（含 `browser-results.json` 的 attachment 源）在隔离 run 目录，索引目录只保留报告与必要截图/几何快照。
+## 集成审查整改（2026-11-12，REL-137 轮）
+
+只读代码审查（code-review skill）裁决：**修后可合**（生产代码与新增测试本身可合；下列证据/测试修正已在本轮完成，随后进入 v1.3.7 集成门禁）。
+
+- **I1 根因表 1440×900 数字口径澄清**：根因表与 RED 记录中的 1440×900「224px 空白」是**首屏初始态（Quote 尚未 Teleport、未强制重排）**实测；`createTraining` + `settle` 后的 RED 测试流程内 1440×900 实测 host≈731 / 空白 29px（`red-failed-resize-1440x900.png` 即该流程）。已在 `web/src/components/KlineChart.vue` 布局注释同步注明「初始态 224px、流程内重排后 29px」，本表数字保留为初始态实测但口径明确。
+- **I2 交付提交/指纹**：本轮交付 = 功能提交 `c8dbeb5`（tree 见仓库）→ 合并提交 `8eec4cf`；审查复核用 `git diff 7895a22..c8dbeb5` 的 tree、GREEN/回归 run 的构建 CSS（flex 规则）与 spec 行号完成实质一致性核对。首轮 GREEN `run-68c3e4a6` 的 spec 与最终提交相差 2 行（最终提交新增行情条可见性断言，属加强，未放宽）。
+- **M1 测试收紧（本轮 e2e/layout-fill.spec.ts）**：窗格间隙容差 7px→2px（实测 1px），7px 级空白带不再能被当作分隔条放过。
+- **M3 对称补强（本轮）**：`macd-restored` 后补 `expectViewportClean`。
+- **M4 文案**：display.md「图表宿主持铺满」→「图表宿主铺满」（本轮）。
+- **M2（回放双主题）**：回放内联用例仍为 1366×705 单主题；双主题几何由训练页三尺寸双主题用例与既有回放回归旁证，登记为已知覆盖边界，不阻塞本批。
+- **M5 矩阵措辞**：uiux-workbench.yaml 的 oracle「网格无空余行」→「布局无空余行/空白带」（Lead 单写区）。
+- **M6 binding 退出码注记**：check-binding --strict 对 open 行的脚本契约为 exit 3；本记录早期记 exit 1 为 harness 包装归一化，不代表 RED（RED=0）。

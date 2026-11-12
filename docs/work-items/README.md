@@ -18,6 +18,17 @@
 
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 
+- [CHART-LAYOUT-01 图表铺满高度](tasks/CHART-LAYOUT-01.md)：修复行情条 Teleport 后图表容器残留空行导致的底部空白，图表宿主铺满面板可用高度（v1.3.7）。
+
+- [UI-TOOLBAR-03 面板固定与尺寸](tasks/UI-TOOLBAR-03.md)：悬浮工具面板固定（pin）与可调宽高（resize），持久化、双击复位、默认 6 列不变（v1.3.7）。
+
+- [CHART-MEASURE-04 测量工具](tasks/CHART-MEASURE-04.md)：顶栏「测量」开关，拖动/两次点击建立区间测量，复用数据窗口与可拖边界（v1.3.7）。
+
+- [REL-137 v1.3.7 集成与人工验收包](tasks/REL-137.md)：三项合入后的版本集成分发与 NSIS 候选包，用户人工验收节点（v1.3.7）。
+
+- [V137 v1.3.7 验收阶段](milestones/V137.md)：布局铺满＋悬浮面板形态＋测量工具的 v1.3.7 阶段与人工验收节点。
+
+
 - [TRAIN-FEE-01 个性化佣金费率](tasks/TRAIN-FEE-01.md)：训练默认设置可配佣金率/最低佣金（0＝免 5）/卖出印花税率，新训练冻结快照。
 
 - [SETUP-PASTE-01 目录粘贴](tasks/SETUP-PASTE-01.md)：连接通达信弹层支持手动输入/粘贴路径，保留原生选择器。

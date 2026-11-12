@@ -5,11 +5,11 @@
   "id": "CHART-MEASURE-04",
   "title": "可发现的测量工具：顶栏入口＋拖动/两次点击建立区间测量",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "GH-202611",
   "base_commit": "7895a22",
   "summary": "用户 2026-11-10 在 Issue #8 请求类似 MT5 的测量工具（快速得到价差/涨跌幅/根数）。现有 CHART-MEASURE-02/03 已具备 Shift 两次点击 K 线的区间测量与完整数据窗口，但入口不可发现。本任务新增顶栏「测量」开关：进入测量模式后无需 Shift，在主图拖动或两次点击起止 K 线即可建立同样的区间测量并显示既有数据窗口；端点可继续拖动调整；Esc/退出模式/切周期清除；与绘图取点/多选/框选/轴/分隔条/时间轴按既有仲裁互斥。不写训练/画线/录像，回放只读可用，镜像按真实价。",
-  "next_action": "先写 RED e2e（入口可见/拖动建立/两次点击建立/退出与仲裁）→ 接线测量模式与拖动建立 → 定向 chart-analysis/measure-tool GREEN → 单测/构建/impact/binding 门禁 → 证据、提交、draft PR。",
+  "next_action": "已合入 main（ab04972）并集成 v1.3.7（REL-137）；用户验收随 v1.3.7 人工验收节点。",
   "allowed_paths": [
     "web/src/components/KlineChart.vue",
     "web/src/components/RangeMeasurement.vue",
@@ -32,7 +32,7 @@
     "reason": "新增测量工具模式与拖动建立交互，需同步交互规格、用户使用说明、组件实现地图与 e2e 套件索引。"
   },
   "verification_refs": ["docs/verification/2026-11/CHART-MEASURE-04/README.md"],
-  "integration_ref": null,
+  "integration_ref": "ab04972",
   "acceptance_ref": null
 }
 ```

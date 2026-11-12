@@ -5,11 +5,11 @@
   "id": "UI-TOOLBAR-03",
   "title": "悬浮工具面板：固定（pin）与可调宽高（resize）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "GH-202611",
   "base_commit": "7895a22",
   "summary": "用户 2026-11-10 Issue #8 反馈：悬浮工具面板拉出后无法固定、形状/宽高不可调，遮挡与位置只能靠拖动。任务＝在紧凑面板（UI-TOOLBAR-02）基础上增加「固定」开关与右下角尺寸手柄：固定后面板位置锁定、拖动无效、刷新保持；尺寸手柄可在限定范围内调整宽高并持久化；内容区按需滚动、工具可点击区域不小于 32×32；窗口缩放后仍钳制在视口内。不改画线语义、工具顺序/常用自定义与既有拖拽位置记忆。",
-  "next_action": "先写 RED e2e（固定态不可拖动/持久化、尺寸手柄调整/持久化/边界、小窗钳制）→ 实现 pin 与 resize → 定向 toolbar-floating/uiux-training GREEN → verify:fast、docs:impact、binding 门禁 → 证据、提交、draft PR。",
+  "next_action": "已合入 main（599f40d）并集成 v1.3.7（REL-137）；用户验收随 v1.3.7 人工验收节点。",
   "allowed_paths": [
     "web/src/views/Training.vue",
     "web/src/styles.css",
@@ -26,7 +26,7 @@
     "reason": "悬浮工具面板新增固定态与尺寸调节能力：显示规格补充行为与持久化口径，用户 README 同步对用户可见的 pin/尺寸手柄/双击复位/窄矮面板滚动说明。"
   },
   "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-03/README.md"],
-  "integration_ref": null,
+  "integration_ref": "599f40d",
   "acceptance_ref": null
 }
 ```

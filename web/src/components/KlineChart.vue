@@ -2221,8 +2221,8 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
 /* CHART-LAYOUT-01（用户 2026-11-10 Issue #8 反馈）：图表宿主铺满面板可用高度。
    原先 3 行 grid（auto/minmax(0,1fr)/40px）假定行情条总在 frame 流内；训练页 ChartQuote 被
    Teleport 到状态条后，grid 首行 auto 被图表内容高度撑住（实测 536px），成交标记带落入中间
-   1fr 行并溢出到第 3 行，frame 底部残留空白（实测 1024×680 剩 4px、1366×705 剩 29px、
-   1440×900 剩 224px）。改为 flex 纵向列：frame 高度 = 行情条（内联形态，回放页）＋图表宿主
+   1fr 行并溢出到第 3 行，frame 底部残留空白（首屏初始态实测 1024×680 剩 4px、1366×705 剩 29px、
+   1440×900 剩 224px；CREATE 后强制重排的测试流程内 1440×900 为 29px）。改为 flex 纵向列：frame 高度 = 行情条（内联形态，回放页）＋图表宿主
    （占满剩余）＋成交标记带 40px；Teleport 与内联两种形态共用同一份样式，不再有空网格行。 */
 .chart-frame { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .statistics-selection { position: absolute; pointer-events: none; z-index: 5; border: 1px solid #54b8cc; background: #54b8cc25; box-sizing: border-box; }
