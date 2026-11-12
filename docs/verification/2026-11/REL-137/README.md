@@ -45,6 +45,17 @@
 - `e2e/kdj-indicator.spec.ts`：KDJ 窗格框选/双击/画线取点移到右侧避开浮层；隐藏浮层会取消画线工具，故不采用隐藏。
 - 上述同步属 UI-TOOLBAR-01/02 与 CHART-MEASURE-04 探针已验收行为的 spec 适配（E2E-SPEC-SYNC 先例），未删除断言、未放宽产品判定。
 
+### 全量 journey 最终结果（修复后复跑）
+
+| 分片 | run | 结果 |
+|---|---|---|
+| shard 1/2 | `run-ca8f01c6-da90-49ad-8c38-e0b140c4b195` | **128 passed / 0 failed / 1 skipped**（设计内跳过） |
+| shard 2/2 | `run-c1928131-efb4-4fff-beb0-a29e5cd5f135` | **124 passed / 1 failed**（唯一失败＝recording-long 已知满载环境 flake，保留首轮失败） |
+| 隔离复跑 | `run-a49f1d97-f3aa-43af-a27d-83948065499b` | `npm run journey -- e2e/recording-long.spec.ts --retries=0` **exit 0**（已知 flake 隔离通过） |
+| 修复后定向复核 | `run-1d0337a2-5fd7-4928-8c54-b20db888aa21` | `e2e/journey.spec.ts e2e/kdj-indicator.spec.ts` **exit 0** |
+
+按 TEST-SPEED-01：全量中仅既有环境 flaky 失败保留并隔离复跑，未用重跑覆盖首轮失败；新失败均已按要求修复。两分片合计 **252 passed / 1 failed / 1 skipped**。
+
 ## 主代理视觉检查（UI-VISUAL-ACCEPTANCE，2026-11-12）
 
 真实页面（隔离生产预览 run `run-cd7152c4-2895-42fa-b82c-68dd4511361a`，600519/2Y/2024-09-13）逐项检查，截图见 `screenshots/`：
