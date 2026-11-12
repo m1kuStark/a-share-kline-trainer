@@ -1,6 +1,6 @@
 # A股K线训练器（kline-trainer）
 
-离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的成绩与复盘。界面为中文，K线红涨绿跌。当前版本 **v1.3.6**。
+离线的A股K线逐日训练工具：读取你电脑里已有的通达信日线数据，逐日推进行情，练习判断、下单和画线，结束后查看这笔训练的成绩与复盘。界面为中文，K线红涨绿跌。当前版本 **v1.3.7**。
 
 [下载 Windows 版](https://github.com/m1kuStark/a-share-kline-trainer/releases/latest) · [使用指南](docs/user/README.md) · [反馈问题](https://github.com/m1kuStark/a-share-kline-trainer/issues/new/choose)
 

@@ -5,11 +5,11 @@
   "id": "CHART-LAYOUT-01",
   "title": "训练页图表铺满可用高度（消除底部空白行）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "GH-202611",
   "base_commit": "7895a22",
   "summary": "修复用户 2026-11-10 反馈的底部空白：实测 1366×705 下 .chart-frame 网格为 auto minmax(0,1fr) 40px，ChartQuote 被 Teleport 到状态条后 Grid 仍保留 29px 空行，成交标记带被挤入中间行并溢出，图表宿主高度小于面板可用高度。改为图表宿主占满「面板高度−成交标记带」，主图/副图/时间轴重新分配；切换指标、拖动分隔条、窗口 resize、窗格最大化后仍铺满。保持 paneHeights 录像语义、成交标记带 40px 与既有图表交互零回归。",
-  "next_action": "先写 RED 几何回归（layout-fill 三尺寸）→ 重构容器布局 → 三尺寸双主题 + resize/指标切换/最大化 GREEN → 定向 journey、verify:fast、docs:impact、binding 严格门禁 → 证据、提交、draft PR。",
+  "next_action": "已合入 main（8eec4cf）并集成 v1.3.7（REL-137）；审查整改见验证记录；用户验收随 v1.3.7 人工验收节点。原计划：先写 RED 几何回归（layout-fill 三尺寸）→ 重构容器布局 → 三尺寸双主题 + resize/指标切换/最大化 GREEN → 定向 journey、verify:fast、docs:impact、binding 严格门禁 → 证据、提交、draft PR。",
   "allowed_paths": [
     "web/src/components/KlineChart.vue",
     "web/src/styles.css",
@@ -27,7 +27,7 @@
     "reason": "图表容器改为铺满可用高度，显示规格补充布局约束；新增 layout-fill 套件写入 e2e 索引。"
   },
   "verification_refs": ["docs/verification/2026-11/CHART-LAYOUT-01/README.md"],
-  "integration_ref": null,
+  "integration_ref": "8eec4cf",
   "acceptance_ref": null
 }
 ```

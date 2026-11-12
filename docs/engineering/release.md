@@ -43,7 +43,9 @@
 6. `npm run release:tag -- --version X.Y.Z` dry-run 通过 → `--execute --push`；Release 资产按需用 `gh release create` 上传 → 核对 SHA256SUMS。
 7. 只移动对应通道的指针；稳定 feed 不指向预览。
 
-> 当前（2026-11-11）v1.3.4 / v1.3.5 / v1.3.6 已补**签名 annotated tag**（分别指向 100f5c8 / 3ef59fe / 527ab29）；GitHub 仅 **v1.3.6 为 pre-release**（setup / blockmap / ZIP / SHA256SUMS），latest 稳定版仍为 **v1.3.3**。v1.3.4/v1.3.5 无 GitHub Release；正式稳定版等 v1.4.0。
+> 当前（2026-11-12）**v1.3.7 候选**（CHART-LAYOUT-01 / UI-TOOLBAR-03 / CHART-MEASURE-04）已在本地打包交用户人工验收：未打 tag、未发 GitHub Release、未移动稳定更新 feed、未上传国内镜像；用户验收通过后才执行发布步骤。
+
+> 历史（2026-11-11）v1.3.4 / v1.3.5 / v1.3.6 已补**签名 annotated tag**（分别指向 100f5c8 / 3ef59fe / 527ab29）；GitHub 仅 **v1.3.6 为 pre-release**（setup / blockmap / ZIP / SHA256SUMS），latest 稳定版仍为 **v1.3.3**。v1.3.4/v1.3.5 无 GitHub Release；正式稳定版等 v1.4.0。
 
 ## 回滚
 
