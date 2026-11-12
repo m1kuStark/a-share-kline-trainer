@@ -541,6 +541,15 @@ body.dark .draw-toolbar.is-floating .tool-pin.active { color: #7fd0dc; backgroun
 body.dark .draw-toolbar.is-floating .toolbar-resize-handle { color: var(--text-muted); }
 body.dark .draw-toolbar.is-floating .toolbar-resize-handle:hover { color: #7fd0dc; background: rgba(43, 139, 153, .16); }
 body.dark .draw-toolbar-toggle.active { color: #7fd0dc; border-color: #2b8b99; background: rgba(43, 139, 153, .12); }
+/* CHART-MEASURE-04 顶栏「测量」入口：与「划线」同区；激活态复用划线开关配色（双主题走同一组覆盖）。
+   1024 档顶栏空间紧张时压缩为图标入口（中文 title/aria-label 保留可访问名称，不丢语义）。 */
+.measure-tool-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.measure-tool-toggle.active { border-color: #2b8b99; color: #1c6076; background: rgba(43, 139, 153, .08); }
+body.dark .measure-tool-toggle.active { color: #7fd0dc; border-color: #2b8b99; background: rgba(43, 139, 153, .12); }
+@media (max-width: 1180px) {
+  .training-actions .measure-tool-toggle { display: grid; place-items: center; width: 26px; padding: 0; }
+  .measure-tool-toggle .measure-tool-label { display: none; }
+}
 body.dark .draw-tool-hover { background: var(--surface-background, #202020); border-color: var(--surface-border); color: var(--text-primary); }
 body.dark .draw-tool-hover span { color: var(--text-secondary); }
 

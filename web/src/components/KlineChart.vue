@@ -55,6 +55,8 @@ const props = withDefaults(defineProps<{
   drawTool?: string | null
   /** 多选模式：主图空白处框选拖拽变为划线批量选中（不缩放 K 线），平移与键盘缩放不受影响 */
   multiSelect?: boolean
+  /** CHART-MEASURE-04 测量工具模式：顶栏「测量」开关；进入后无需 Shift，主图拖动或两次点击即建立区间测量 */
+  measureMode?: boolean
   savedDrawings?: Drawing[] | null
   /** 全周期画线持久面（周期隔离口径＝显示层过滤，用户 2026-10-19 拍板）：显示与撤销史仍按本周期
    *  过滤；仅录像 captureState 取他周期子集并入持久面（回放按录像时周期与样式还原显示） */
@@ -79,9 +81,9 @@ const props = withDefaults(defineProps<{
    *  首次启用时已加载序列首根收盘价，冻结不重算）。纯视图：capture/emit/画线持久面/标记数据
    *  全部走真实价，镜像只发生在 chart feed 前最后一跳与渲染锚定（displayValue）。 */
   priceMirror?: boolean
-}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0, priceMirror: false })
+}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, measureMode: false, readOnly: false, hideDates: false, dateShiftDays: 0, priceMirror: false })
 
-const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
+const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; measureChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
 const host = ref<HTMLElement | null>(null)
 type RuntimeOverlay = Overlay & { isDrawing(): boolean; forceComplete(): void }
 type ConvertFilter = Parameters<Chart['convertToPixel']>[1]
@@ -199,6 +201,13 @@ type MeasurementRange = { from: number; to: number }
 const measurementRange = ref<MeasurementRange | null>(null)
 const measurementAnchor = ref<{ index: number } | null>(null)
 const measurementTick = ref(0)
+// CHART-MEASURE-04 测量工具模式：顶栏开关进入后无需 Shift，主图拖动或两次点击直接建立区间测量。
+// 手势复用既有 window pointermove/pointerup 链（未新增全局监听器）；拖动期间只预览 Select Box，
+// 松手才出数据窗口；再次点击/拖动建立新测量（替换旧值）。模式本身只由 Esc/再次点开关/切周期/
+// 工具多选互斥/离开训练页退出；滚轮/缩放/失焦/视窗变化沿用既有 closeMeasurement 只清当前测量。
+type MeasureGesture = { pointerId: number; startIndex: number; startX: number; moved: boolean }
+let measureGesture: MeasureGesture | null = null
+const measurePreview = ref<MeasurementRange | null>(null)
 function dateFromTimestamp(timestamp: number): string {
   const date = new Date(timestamp)
   const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0')
@@ -252,10 +261,80 @@ const measurementAnchorLine = computed(() => {
   const x = chart.convertToPixel({ dataIndex: anchor.index }, { paneId: 'candle_pane' }).x
   return x === undefined || !Number.isFinite(x) ? null : { left: Math.max(plot.left, Math.min(x, plot.left + plot.width)), top: plot.top, height: plot.height }
 })
+// CHART-MEASURE-04：拖动建立期间只预览 Select Box（松手才出数据窗口，用户可感知范围增长）
+const measurePreviewBox = computed(() => {
+  measurementTick.value
+  const range = measurePreview.value, plot = chart?.getSize('candle_pane', 'main')
+  if (!range || !plot || !chart) return null
+  const a = chart.convertToPixel({ dataIndex: range.from }, { paneId: 'candle_pane' }).x ?? 0
+  const b = chart.convertToPixel({ dataIndex: range.to }, { paneId: 'candle_pane' }).x ?? 0
+  const left = Math.max(plot.left, Math.min(a, b))
+  const right = Math.min(plot.left + plot.width, Math.max(a, b))
+  return { left, top: plot.top, width: Math.max(1, right - left), height: plot.height }
+})
 function closeMeasurement(): void {
   const active = measurementRange.value !== null || measurementAnchor.value !== null
   measurementRange.value = null; measurementAnchor.value = null
   if (active) emit('panelChange', false)
+}
+function measurementActive(): boolean { return measurementRange.value !== null || measurementAnchor.value !== null }
+/** 取消进行中的拖动建立（window blur / 窗外松键 / pointercancel / 配置清理共用）：不建立半成品测量、不留幽灵预览 */
+function cancelMeasureGesture(): void {
+  if (!measureGesture && !measurePreview.value) return
+  measureGesture = null
+  measurePreview.value = null
+  measurementTick.value += 1
+}
+/** Esc/开关退出：清除当前测量并通知训练页收起测量模式（幂等） */
+function exitMeasureMode(): void {
+  cancelMeasureGesture()
+  closeMeasurement()
+  if (props.measureMode) emit('measureChange', false)
+}
+/** 两次点击路径：第一次＝起点虚线锚点，第二次＝终点并建立区间（替换旧值） */
+function applyMeasureClick(index: number): void {
+  const anchor = measurementAnchor.value
+  measurementAnchor.value = null; measurementRange.value = null
+  if (anchor) measurementRange.value = { from: Math.min(anchor.index, index), to: Math.max(anchor.index, index) }
+  else measurementAnchor.value = { index }
+  measurementTick.value += 1
+  emit('panelChange', true)
+}
+function beginMeasureGesture(event: PointerEvent, index: number): void {
+  hideHoverCard()
+  if (statisticsGesture || statisticsArmed.value || statisticsMenu.value || statisticsResult.value) closeStatistics()
+  deselectLibrarySelected()
+  measureGesture = { pointerId: event.pointerId, startIndex: index, startX: event.clientX, moved: false }
+  measurementTick.value += 1
+  event.preventDefault(); event.stopPropagation()
+}
+/** 拖动位移超阈值即转入拖动建立：清掉旧测量/锚点，实时增长 Select Box 预览 */
+function updateMeasureGesture(clientX: number): void {
+  const gesture = measureGesture, index = statisticsIndex(clientX)
+  if (!gesture || index === null) return
+  if (!gesture.moved && Math.abs(clientX - gesture.startX) >= 4) {
+    gesture.moved = true
+    // 转入拖动建立即丢弃旧测量/锚点；旧测量曾占用面板焦点时同时结算 panelChange，避免中途取消后状态失衡
+    const active = measurementActive()
+    measurementRange.value = null; measurementAnchor.value = null
+    if (active) emit('panelChange', false)
+  }
+  if (!gesture.moved) return
+  measurePreview.value = { from: Math.min(gesture.startIndex, index), to: Math.max(gesture.startIndex, index) }
+  measurementTick.value += 1
+}
+function finishMeasureGesture(event: PointerEvent, index: number | null): void {
+  const gesture = measureGesture
+  measureGesture = null
+  if (!gesture) return
+  const endIndex = index ?? gesture.startIndex
+  const moved = gesture.moved || Math.abs(event.clientX - gesture.startX) >= 4
+  measurePreview.value = null
+  if (!moved) { applyMeasureClick(endIndex); return }
+  measurementAnchor.value = null
+  measurementRange.value = { from: Math.min(gesture.startIndex, endIndex), to: Math.max(gesture.startIndex, endIndex) }
+  measurementTick.value += 1
+  emit('panelChange', true)
 }
 function moveMeasurementEdge(payload: { edge: 'start' | 'end'; clientX: number }): void {
   const range = measurementRange.value, index = statisticsIndex(payload.clientX)
@@ -281,6 +360,8 @@ function closeStatistics(restoreFocus = false): void {
   if (restoreFocus) void nextTick(() => host.value?.focus({ preventScroll: true }))
 }
 function cancelStatisticsGesture(): void {
+  // CHART-MEASURE-04：窗口失焦同样取消进行中的测量拖动（Alt+Tab/窗外松键后不留幽灵 Select Box）
+  cancelMeasureGesture()
   closeMeasurement()
   if (statisticsGesture || statisticsArmed.value || statisticsMenu.value) closeStatistics()
 }
@@ -1111,6 +1192,13 @@ function onPointerDown(event: PointerEvent): void {
       return
     }
   }
+  // CHART-MEASURE-04：测量模式在主图/副图绘图区的左键＝建立区间测量（拖动或两次点击）。
+  // 分隔条/价格轴/时间轴（CHART-PAN-01 已率先裁决）/修饰键/绘图取点/多选优先，本分支只在无工具冲突时接管。
+  if (props.measureMode && event.button === 0 && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey
+    && !props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag && statisticsHit(event)) {
+    const index = statisticsIndex(event.clientX)
+    if (index !== null) { beginMeasureGesture(event, index); return }
+  }
 
   if (event.button === 2) suppressStatisticsContext = !!props.drawTool
   if (!props.drawTool && !props.multiSelect && paneResizePointerId === null && !axisScaleDrag && statisticsHit(event)
@@ -1160,6 +1248,13 @@ function onPointerDown(event: PointerEvent): void {
   const rect = selectionRect(); if (rect) { rect.style.left = `${selectStartX}px`; rect.style.width = '0px'; rect.style.display = 'block'; if (plotBounds) { rect.style.top = `${plotBounds.top}px`; rect.style.height = `${Math.max(0, plotBounds.bottom - plotBounds.top)}px` } }
 }
 function onPointerMove(event: PointerEvent): void {
+  if (measureGesture) {
+    if (event.pointerId !== measureGesture.pointerId) return
+    // 窗口外松键时没有 pointerup：按钮已全部抬起即取消预览，避免回到页面后无按键仍跟手
+    if (event.buttons === 0) { cancelMeasureGesture(); return }
+    updateMeasureGesture(event.clientX)
+    return
+  }
   if (statisticsGesture) {
     if (event.pointerId !== statisticsGesture.pointerId) return
     const end = statisticsIndex(event.clientX)
@@ -1197,7 +1292,9 @@ function onPointerMove(event: PointerEvent): void {
   if (host.value && !props.drawTool && event.buttons === 0) {
     hostRect = host.value.getBoundingClientRect()
     // CHART-PAN-01：悬停时间轴显示抓手，提示可拖动平移；其余保持既有指针语义
-    host.value.style.cursor = paneIdAt(event.clientY) === 'x_axis_pane' ? 'grab' : hitTestUserOverlay(event.clientX, event.clientY) ? 'pointer' : ''
+    host.value.style.cursor = props.measureMode
+      ? (paneIdAt(event.clientY) === 'x_axis_pane' ? 'grab' : 'crosshair')
+      : paneIdAt(event.clientY) === 'x_axis_pane' ? 'grab' : hitTestUserOverlay(event.clientX, event.clientY) ? 'pointer' : ''
   }
   // 纵轴缩放拖拽中：把指针位置重路由回轴区域，库原生缩放持续生效（与框选互斥）
   if (axisScaleDrag) { dispatchSyntheticAxisMove(event); return }
@@ -1229,9 +1326,15 @@ function cancelTimeAxisPan(): void {
 }
 function onTimeAxisPanCancel(event: PointerEvent): void {
   if (timeAxisPan && event.pointerId === timeAxisPan.pointerId) cancelTimeAxisPan()
+  // CHART-MEASURE-04：拖动建立中途 pointercancel 时丢弃预览与手势（不建立半成品测量）
+  if (measureGesture && event.pointerId === measureGesture.pointerId) cancelMeasureGesture()
 }
 
 function onPointerUp(event: PointerEvent): void {
+  if (measureGesture && event.pointerId === measureGesture.pointerId) {
+    finishMeasureGesture(event, statisticsIndex(event.clientX))
+    return
+  }
   if (statisticsGesture && event.pointerId === statisticsGesture.pointerId && event.button === statisticsGesture.button) {
     const gesture = statisticsGesture
     statisticsGesture = null
@@ -1363,7 +1466,7 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
 
 // CHART-ZOOM-01：关闭 klinecharts 内置键盘热键（其 Shift+←/→ 会与应用平移快捷键重复执行）——应用快捷键系统唯一权威
 onMounted(() => { if (!host.value) return;
-  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('wheel', onGlobalWheelCancel, true); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { measurement: () => measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null, overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('wheel', onGlobalWheelCancel, true); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { measurement: () => measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null, overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, measure: props.measureMode ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
 onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); cancelHoverTimer(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('mouseleave', hideHoverCard); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('wheel', onGlobalWheelCancel, true); window.removeEventListener('pointercancel', onTimeAxisPanCancel); window.removeEventListener('blur', cancelTimeAxisPan); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
@@ -1589,6 +1692,15 @@ function confirmTextPanel(): void {
 }
 // 菜单/面板打开期间：Esc 关闭；训练热键拦截防误操作（capture 先于 Training 的 window 冒泡监听）
 function onPanelKeydown(event: KeyboardEvent): void {
+  // MA-01：原生模态 dialog 打开时由它接管焦点、Esc 与可编辑数字输入；必须先于测量模式的 Esc 判定
+  // （否则 MA 设置面板打开时 Esc 会先退出测量模式，CHART-MEASURE-04 review M-7）。
+  if (maSettingsOpen.value) return
+  // CHART-MEASURE-04：测量模式内 Esc 一步退出模式并清除；训练热键（推进/买卖/删除）由 Training 键盘入口
+  // 按应用可配置键位（keyboardShortcuts）判定并吞掉（I-1），此处只保留「已建立测量时激活期间全吞」的既有保护。
+  if (props.measureMode) {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); exitMeasureMode(); return }
+    if (measurementActive()) { event.preventDefault(); event.stopPropagation(); return }
+  }
   if (measurementRange.value || measurementAnchor.value) {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeMeasurement(); return }
     event.preventDefault(); event.stopPropagation(); return
@@ -1599,7 +1711,6 @@ function onPanelKeydown(event: KeyboardEvent): void {
     else if (!statisticsResult.value && !['Enter', ' ', 'Tab'].includes(event.key)) event.preventDefault()
     return
   }
-  if (maSettingsOpen.value) return // Native modal owns focus, Esc and editable number inputs.
   if (!ctxMenu.value && !editPanel.value && !textPanel.value) return
   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closePanels(); return }
   event.stopPropagation()
@@ -1632,7 +1743,8 @@ function onPanelTitlePointerUp(): void { panelDragging.value = false }
 function onGlobalPointerDown(event: PointerEvent): void {
   const overlayTarget = event.target as HTMLElement | null
   if (overlayTarget?.closest('.range-measure-panel, .range-measure-handle')) return
-  if (!(event.button === 0 && event.shiftKey && statisticsHit(event))) closeMeasurement()
+  // CHART-MEASURE-04：测量模式的两次点击之间必须保留起点锚点，因此模式内绘图区左键不预清测量
+  if (!(event.button === 0 && (event.shiftKey || props.measureMode) && statisticsHit(event))) closeMeasurement()
   if (statisticsMenu.value && !(event.target as HTMLElement | null)?.closest('.statistics-menu')) closeStatistics()
   if (statisticsArmed.value && !statisticsHit(event)) closeStatistics()
   if (!ctxMenu.value && !editPanel.value && !textPanel.value) return
@@ -1781,6 +1893,12 @@ function onHostMouseDown(event: MouseEvent): void {
   // 中键合成的左键 mousedown：直接放行给库（跳过本拦截器与冒泡修补，避免自我拦截）
   if ((event as MouseEvent & { __klineSynthetic?: boolean }).__klineSynthetic) return
   if (event.button === 0 && (paneResizePointerId !== null || isOverPaneSeparator(event))) return
+  // CHART-MEASURE-04：测量模式主图左键按下由测量手势拥有——拦截库的原生平移/画线选中；
+  // 价格轴（轴缩放）与时间轴（CHART-PAN-01）已被 statisticsHit 排除，仍走各自既有分支。
+  if (props.measureMode && event.button === 0 && !props.drawTool && !props.multiSelect
+    && paneResizePointerId === null && !isOverPaneSeparator(event) && statisticsHit(event)) {
+    event.preventDefault(); event.stopPropagation(); return
+  }
   if (props.drawTool && event.button === 0) resetLibraryClick()
   // 左键点选画线（Ctrl 组合，或多选模式下普通左键——用户 D4 验收反馈：仅靠 Ctrl 无法凸显多选价值）：
   // 加入/移出多选集合（点空白清空多选），拦截库的单选与平移；主副图同权。仅左键（右键放行给库的菜单链路）
@@ -1929,6 +2047,8 @@ onMounted(() => {
       const axis = paneAxis?.getXAxisPane?.().getXAxisComponent?.()
       return axis?.getTicks?.().map(tick => tick.text) ?? []
     },
+    // CHART-MEASURE-04 e2e 只读探针：测量工具模式状态（模式开关/起点锚点/已建立区间），仅 journey 暴露
+    measurementTool: () => ({ mode: props.measureMode === true, anchor: measurementAnchor.value ? measurementAnchor.value.index : null, range: measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null }),
     visibleRange: () => chart?.getVisibleRange(),
     costLine: () => {
       const overlay = chart?.getOverlays({ name: 'costLine' })[0]
@@ -2003,10 +2123,19 @@ watch(() => props.priceMirror, (_on, wasOn) => {
 })
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
+// CHART-MEASURE-04（review M-1）：副图指标开关改变窗格布局，先清除当前测量（模式保留）不留错位 Select Box；
+// 既有「任一副图偏好切换立即生效、不发 chart.viewport」源码契约行保持原样（frontend-contract 锁定），本行独立叠加清理。
+watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { cancelMeasureGesture(); closeMeasurement() })
 watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
 onMounted(applyMaSettings)
 watch(appMaSettings, applyMaSettings)
 watch(() => [props.drawTool, props.multiSelect], () => { closeMeasurement(); closeStatistics() })
+// CHART-MEASURE-04：模式关闭（Esc/按钮/切周期/工具互斥）一律清干净手势与预览，避免陈旧 Select Box/窗口
+watch(() => props.measureMode, on => {
+  if (on) { closeStatistics(); hideHoverCard(); return }
+  cancelMeasureGesture()
+  closeMeasurement()
+})
 defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMultiSelection, undoDrawing, redoDrawing, clearDrawings, drawings, captureState, captureReplayView })
 </script>
 
@@ -2020,8 +2149,13 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
     <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
     <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
     <button v-if="maHistoryError" class="ma-history-error" role="alert" @click="ensureMaHistory">{{ maHistoryError }}，点击重试</button>
-    <div ref="host" class="chart-host" tabindex="-1" :class="{ 'statistics-selecting': statisticsArmed || statisticsGesture }"></div>
-    <RangeMeasurement v-if="measurementRange && measurementModel && measurementBox" :box="measurementBox.box" :panel="measurementBox.panel" :model="measurementModel" :period="periodLabel" @close="closeMeasurement" @edge-move="moveMeasurementEdge" />
+    <div ref="host" class="chart-host" tabindex="-1" :class="{ 'statistics-selecting': statisticsArmed || statisticsGesture, 'measure-selecting': props.measureMode }"></div>
+    <!-- CHART-MEASURE-04：拖动建立期间的 Select Box 预览（松手才出数据窗口）与首次点击的虚线锚点提示 -->
+    <div v-if="measurePreviewBox" class="range-measure-preview" :style="{ left: `${measurePreviewBox.left}px`, top: `${measurePreviewBox.top}px`, width: `${measurePreviewBox.width}px`, height: `${measurePreviewBox.height}px` }"></div>
+    <div v-if="measurementAnchorLine" class="range-measure-anchor" :style="{ left: `${measurementAnchorLine.left}px`, top: `${measurementAnchorLine.top}px`, height: `${measurementAnchorLine.height}px` }"></div>
+    <!-- 模式提示只在尚未建立/无当前测量时显示：数据窗口出现后由状态条「测量模式」继续承载模式可见性，避免窗口遮挡提示 -->
+    <div v-if="props.measureMode && !measurementActive()" class="measure-hint" role="status">测量模式：拖动或两次点击选择起止K线，Esc 退出</div>
+    <RangeMeasurement v-if="measurementRange && measurementModel && measurementBox" :box="measurementBox.box" :panel="measurementBox.panel" :model="measurementModel" :period="periodLabel" :measure-mode="props.measureMode" @close="closeMeasurement" @edge-move="moveMeasurementEdge" />
     <div v-if="statisticsArmed" class="statistics-hint" role="status">拖选要统计的 K 线区间，Esc 取消</div>
     <div v-if="statisticsRect" class="statistics-selection" :style="{ left: `${statisticsRect.left}px`, top: `${statisticsRect.top}px`, width: `${statisticsRect.width}px`, height: `${statisticsRect.height}px` }"></div>
     <div v-if="statisticsMenu" class="ctx-menu statistics-menu" role="menu" aria-label="图表区间菜单" :style="{ left: `${statisticsMenu.x}px`, top: `${statisticsMenu.y}px` }" @pointerdown.stop @mousedown.stop @contextmenu.prevent>
@@ -2093,7 +2227,11 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
 .chart-frame { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .statistics-selection { position: absolute; pointer-events: none; z-index: 5; border: 1px solid #54b8cc; background: #54b8cc25; box-sizing: border-box; }
 .statistics-hint { position: absolute; z-index: 6; top: 35px; left: 8px; padding: 5px 8px; font-size: 12px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); border: 1px solid #54b8cc; pointer-events: none; }
-.statistics-selecting { cursor: crosshair; }
+.statistics-selecting, .measure-selecting { cursor: crosshair; }
+/* CHART-MEASURE-04 测量工具模式：拖动预览 Select Box、首次点击虚线锚点、模式提示条（样式同区间统计提示） */
+.range-measure-preview { position: absolute; z-index: 6; border: 1px dashed #54b8cc; background: color-mix(in srgb, #54b8cc 10%, transparent); box-sizing: border-box; pointer-events: none; }
+.range-measure-anchor { position: absolute; z-index: 6; width: 0; border-left: 1px dashed #54b8cc; pointer-events: none; }
+.measure-hint { position: absolute; z-index: 6; top: 35px; left: 8px; max-width: calc(100% - 16px); padding: 5px 8px; font-size: 12px; background: var(--surface-background, #fff); color: var(--text-primary, #25364b); border: 1px solid #54b8cc; border-radius: 4px; pointer-events: none; }
 .statistics-menu { max-width: calc(100% - 8px); }
 .statistics-menu button:focus-visible { outline: 2px solid #54b8cc; }
 .chart-wrap { position: relative; flex: 1 1 0; width: 100%; min-width: 0; min-height: 0; overflow: hidden; user-select: none; }
