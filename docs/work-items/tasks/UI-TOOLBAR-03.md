@@ -22,8 +22,8 @@
   ],
   "depends_on": ["UI-TOOLBAR-02"],
   "docs_impact": {
-    "update": ["docs/specs/chart/display.md"],
-    "reason": "悬浮工具面板新增固定态与尺寸调节能力，显示规格补充对应行为与持久化口径。"
+    "update": ["docs/specs/chart/display.md", "docs/user/README.md"],
+    "reason": "悬浮工具面板新增固定态与尺寸调节能力：显示规格补充行为与持久化口径，用户 README 同步对用户可见的 pin/尺寸手柄/双击复位/窄矮面板滚动说明。"
   },
   "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-03/README.md"],
   "integration_ref": null,
@@ -45,3 +45,4 @@
 - 持久化：固定态/尺寸各存独立键 `trainer.drawToolbar.pinned.v1`（`true`/`false`）与 `trainer.drawToolbar.size.v1`（`{width,height}`），位置沿用 `trainer.drawToolbar.position.v1`。
 - 测试：`e2e/toolbar-floating.spec.ts` 新增 3 个 pin/resize 用例（固定态锁定/刷新/取消固定恢复、尺寸范围与持久化/双击复位/滚动可达、1024×680/1366×705/1440×900 × 深浅主题截图）。
 - 证据：`docs/verification/2026-11/UI-TOOLBAR-03/README.md`（RED run / GREEN run / 截图清单 / 门禁表）。
+- 审查修复（lead 只读审查 Important×2 + Minor）：折叠态尺寸手柄只横向调宽并保留下一次展开高度（不再用 ~70px 折叠高度污染 `trainer.drawToolbar.size.v1`）；删除 pointerdown 时间戳启发式，只保留 `@dblclick` 复位（连续快速拖动不再误判）；保存状态栏右侧留 18px 避免尺寸手柄遮挡「重试保存」；pin 两态可访问名称与固定态拖拽手柄 title（「固定中，拖动已锁定」）补齐；`docs_impact.update` 补登 `docs/user/README.md`。

@@ -57,9 +57,7 @@ npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux
 - `npm run docs:check`：exit 0（0 errors，160 warnings）。
 - `npm run docs:status`：exit 0（生成区新增 UI-TOOLBAR-03 一行，diff 仅该行）；`npm run docs:status -- --check`：exit 0。
 - `npm run docs:impact -- --base 7895a22 --task UI-TOOLBAR-03`：exit 0（26 个变更路径，其中 3 个运行代码/配置/测试路径；工作树预检，不代表集成或验收）。
-- `check-binding --strict --include-untracked --matrix uiux-workbench.yaml`：**exit 1，矩阵 16 行 covered=14 open=2 RED=3**。
-  - open=2 即本任务 Lead 预登记的 planned 行 `UIUX-TOOLBAR-PIN` / `UIUX-TOOLBAR-RESIZE`（test_ids 待 Lead 升 covered 时填入，见最终报告）；
-  - base `7895a22` 上 RED=3 为 `UIUX-TRAINING-FILL-HEIGHT` 引用的 `e2e/layout-fill.spec.ts` 三个用例尚不存在（属 CHART-LAYOUT-01）；合并 origin/main（8eec4cf）后复跑 RED=0，见下方复跑记录。
+- `check-binding --strict --include-untracked --matrix uiux-workbench.yaml`：**最终 exit 0，矩阵 16 行 covered=16 open=0 RED=0**（`UIUX-TOOLBAR-PIN`/`UIUX-TOOLBAR-RESIZE` 升 covered 后复跑；此前历史：base `7895a22` 上 covered=14/open=2/RED=3，合并 origin/main 后 covered=14/open=2/RED=0，两行升 covered 后 16/0/0）。
 
 ## 复跑记录（合并 origin/main 8eec4cf 后）
 
@@ -70,6 +68,21 @@ npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux
 - `npm run docs:status` / `npm run docs:status -- --check`：exit 0 / exit 0。
 - `npm run docs:impact`：合并前 `--base 7895a22` exit 0（26 路径）；合并后以 merge base 计 `--base 8eec4cf` **exit 0**（26 路径，其中 3 个运行代码/配置/测试路径）。注：合并后若仍用 `--base 7895a22` 会把 main 上 CHART-LAYOUT-01 的路径计为「超出 allowed_paths」（19 errors，非本任务改动），故 post-merge 收据以 8eec4cf 为基。
 - `check-binding --strict --include-untracked --matrix uiux-workbench.yaml`（合并后）：**exit 1，矩阵 16 行 covered=14 open=2 RED=0**（严格模式因 2 个 planned 行判定失败；RED 已随 origin/main 的 `e2e/layout-fill.spec.ts` 合并清零；open 两行是本任务待 Lead 升 covered 的 `UIUX-TOOLBAR-PIN`/`UIUX-TOOLBAR-RESIZE`）。
+
+## 审查修复轮（PR #39 只读审查，2026-11-12）
+
+lead 只读审查裁决「修后可合」，Important×2 + Minor 若干；本轮追加修复与回归（不改变用户可见默认形态与既有语义）：
+
+- **Important-1 折叠态 resize 污染持久化高度**（已修复）：折叠态尺寸手柄只调整宽度；下一次展开高度取「已存 `size.height` ?? 折叠前展开高度」（`toolbarExpandedHeight` 在折叠瞬间 watch pre-flush 记录），位置钳制也按当前折叠高度计算——不再把 ~70px 折叠高度写入 `trainer.drawToolbar.size.v1`。回归用例：**折叠态横向调宽只保留宽度：展开与持久化高度不被折叠高度污染**（折叠→横向拖宽→展开后高度保持折叠前值、持久化 height 不被污染）。
+- **Important-2 连续两次快速拖动被误判双击复位**（已修复）：删除 pointerdown 时间戳启发式，只保留模板 `@dblclick="resetToolbarSize"`（含固定态）。回归用例：**连续两次快速尺寸拖动不被误判双击复位，保存状态栏为尺寸手柄留出空间**（两次真实 pointerdown 间隔 <350ms、尺寸为两次拖动累加值、尺寸键保留；随后真实 `page.mouse.dblclick` 复位仍有效）。
+- **Minor 修复**：保存状态栏 `padding-right: 18px` 使尺寸手柄不再压住「重试保存」（e2e 断言 computed padding-right ≥16）；pin 两态可访问名称（「固定工具面板」/「取消固定工具面板」+title 同步）与固定态拖拽手柄 title「固定中，拖动已锁定」补齐（e2e 断言）；`docs_impact.update` 补登 `docs/user/README.md`。
+- **本轮 RED**：run `run-60258bea-1bda-489c-a0b7-3100fb967f94`（pre-fix 代码 + 新 e2e）**3 failed / 4 passed**（2.6m）：固定态拖拽手柄 title 未锁定、折叠态横向调宽被误判复位（宽度停在 284）、第二次快速拖动未生效。
+- **本轮 GREEN**：`npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux-training.spec.ts --retries=0` → **exit 0**，run `run-89446e06-f076-44db-8933-73e750763e21`：**12 passed / 0 failed**（4.1m；toolbar-floating 7 + m3-feedback 3 + uiux-training 2）。
+- **本轮 unit（全量 server+desktop）**：`npm test`（合并 origin/main + 本轮修复后）→ **exit 0**（server 178 files / 2619 tests + desktop 34 files / 369 tests；日志 `.runs/unit-test-fixes.log`）。未删断言、未加 skip、未放宽 `frontend-contract` 源码形状契约；handler/样式改动未触发契约整改。
+- **本轮 docs**：`docs:check` exit 0（0 errors/162 warnings）、`docs:status` exit 0、`docs:status -- --check` exit 0、`docs:impact -- --base 8eec4cf --task UI-TOOLBAR-03` exit 0（26 路径，3 运行代码/配置/测试路径）。
+- **本轮 binding**：`check-binding --strict --include-untracked` → **exit 0，covered=16 open=0 RED=0**（矩阵两行升 covered 后复跑，test_ids 全部可解析）。
+- **本轮 verify:fast（build+定向 journey）**：`npm run verify:fast -- --journey e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux-training.spec.ts` → **exit 0**（docs:check PASS 2s、build PASS 15s 含 vue-tsc、journey PASS 333s；journey run `run-1610066a-7527-49d8-931d-ef416ce44e17`：**12 passed / 0 failed**）。
+- **proposed_default / 不修边界登记**（按 lead 裁决保留）：尺寸手柄视觉尺寸 16px 小于 WCAG 2.5.8 的 24px 目标；无键盘 resize 入口（仅指针拖动 + 双击复位）；窗口 resize 的尺寸回钳只更新内存、不写回 localStorage（刷新后按持久值再钳制）；125% 字体下命中区 ≥32×32 由既有断言覆盖。
 
 ## 视觉检查（主代理）
 
@@ -89,3 +102,6 @@ npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux
 ## 提交
 
 - 功能与证据同提交：`feat(ui): UI-TOOLBAR-03 …`（提交 SHA 见 PR；另含合并 origin/main 后的收据回填提交）。
+## 集成前最终复跑（2026-11-12 12:35，Lead 确认）
+
+- 审查修复轮代码（工作树未提交）：`npm test` 全量 **exit 0**（server 178 files / 2619 tests + desktop 34 files / 369 tests）；`npm run journey -- e2e/toolbar-floating.spec.ts e2e/m3-feedback.spec.ts e2e/uiux-training.spec.ts --retries=0` **exit 0**，run `run-205e2fbb-0eff-48fb-a114-c876cc3f2dff`（12 passed；manifest.commit=467813b，未提交工作树）。

@@ -85,6 +85,8 @@ const toolHover = ref<{ label: string; description: string; x: number; y: number
 const toolbarPosition = ref<{ x: number; y: number } | null>(loadToolbarPosition())
 const toolbarPinned = ref(loadToolbarPinned())
 const toolbarSize = ref<{ width: number; height: number } | null>(loadToolbarSize())
+// UI-TOOLBAR-03 审查修复：折叠态只横向调宽。折叠前记录展开高度（非持久化），避免用折叠高度(~70px)污染下一次展开高度。
+const toolbarExpandedHeight = ref<number | null>(null)
 // UI-TOOLBAR-03：列数随面板宽度自适应——默认宽 284px 仍为 UI-TOOLBAR-02 冻结的 6 列，
 // 收窄到 240px 为 5 列、拉宽到 560px 为 12 列；每列宽约 40px+，保证按钮命中区仍 ≥32×32。
 const toolbarToolColumns = computed(() => Math.max(5, Math.min(12, Math.floor(((toolbarSize.value?.width ?? 284) - 18) / 44))))
@@ -188,17 +190,8 @@ function onToolbarDragEnd(event: PointerEvent): void {
 }
 // UI-TOOLBAR-03：右下角尺寸手柄——pointer capture 独占该次手势，拖动改宽高；双击恢复默认尺寸。
 let toolbarResize: { pointerId: number; startX: number; startY: number; originWidth: number; originHeight: number } | null = null
-let lastResizeTap = 0
 function onToolbarResizeStart(event: PointerEvent): void {
   if (event.button !== 0) return
-  const now = Date.now()
-  if (now - lastResizeTap < 350) { // 双击（两次 pointerdown 间隔很短）→ 恢复默认尺寸
-    lastResizeTap = 0
-    resetToolbarSize()
-    event.preventDefault()
-    return
-  }
-  lastResizeTap = now
   const element = toolbarElement()
   if (!element) return
   const rect = element.getBoundingClientRect()
@@ -210,7 +203,18 @@ function onToolbarResizeStart(event: PointerEvent): void {
 }
 function onToolbarResizeMove(event: PointerEvent): void {
   if (!toolbarResize || event.pointerId !== toolbarResize.pointerId) return
-  const size = clampToolbarSize({ width: toolbarResize.originWidth + event.clientX - toolbarResize.startX, height: toolbarResize.originHeight + event.clientY - toolbarResize.startY })
+  const width = Math.round(Math.min(Math.max(TOOLBAR_MIN_WIDTH, toolbarResize.originWidth + event.clientX - toolbarResize.startX), toolbarMaxWidth()))
+  if (toolbarCollapsed.value) {
+    // 折叠态：高度由内容决定（只保留宽度）。持久化高度沿用已存尺寸或折叠前展开高度，
+    // 绝不把折叠高度(~70px)写入尺寸键；位置钳制也按当前折叠高度计算，避免面板跳动。
+    const preservedHeight = toolbarSize.value?.height ?? toolbarExpandedHeight.value ?? TOOLBAR_MIN_HEIGHT
+    toolbarSize.value = { width, height: preservedHeight }
+    const rect = toolbarElement()?.getBoundingClientRect()
+    const current = toolbarPosition.value ?? (rect ? { x: rect.left, y: rect.top } : null)
+    if (current) toolbarPosition.value = clampToolbarPoint(current.x, current.y, { width, height: rect?.height ?? TOOLBAR_MIN_HEIGHT })
+    return
+  }
+  const size = clampToolbarSize({ width, height: toolbarResize.originHeight + event.clientY - toolbarResize.startY })
   toolbarSize.value = size
   const rect = toolbarElement()?.getBoundingClientRect()
   const current = toolbarPosition.value ?? (rect ? { x: rect.left, y: rect.top } : null)
@@ -263,6 +267,12 @@ function onViewportResize(): void {
 }
 // UI-TOOLBAR-02：面板高度随折叠/展开/自定义内容变化时重新钳制，避免左下停靠在高内容下越出视口
 watch([toolbarVisible, toolbarCollapsed, otherToolsExpanded, customizingTools], () => { nextTick(() => ensureToolbarPosition()) })
+// UI-TOOLBAR-03 审查修复：折叠瞬间（watch pre-flush、DOM 仍为展开态）记录展开高度，供折叠态横向调宽时保留下一次展开高度
+watch(toolbarCollapsed, collapsed => {
+  const element = toolbarElement()
+  if (collapsed) { if (element) toolbarExpandedHeight.value = element.offsetHeight; return }
+  toolbarExpandedHeight.value = null
+})
 onMounted(() => { nextTick(() => ensureToolbarPosition()); window.addEventListener('resize', onViewportResize) })
 onUnmounted(() => { window.removeEventListener('resize', onViewportResize) })
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
@@ -1268,7 +1278,7 @@ void load()
         </div>
         <div v-show="toolbarVisible" class="draw-toolbar is-floating" :class="{ 'is-collapsed': toolbarCollapsed, 'has-other-tools': otherToolsExpanded || customizingTools, 'is-customizing': customizingTools, 'is-pinned': toolbarPinned, 'has-custom-size': !!toolbarSize && !toolbarCollapsed }" :style="toolbarStyle" @keydown="onToolbarKeydown">
           <div class="drawing-toolbar-heading" @pointerdown="onToolbarDragStart" @pointermove="onToolbarDragMove" @pointerup="onToolbarDragEnd" @pointercancel="onToolbarDragEnd">
-            <span class="toolbar-drag-handle" title="拖动移动工具面板" aria-hidden="true"><GripVertical :size="13" /></span>
+            <span class="toolbar-drag-handle" :title="toolbarPinned ? '固定中，拖动已锁定' : '拖动移动工具面板'" aria-hidden="true"><GripVertical :size="13" /></span>
             <button class="tool-collapse" :disabled="customizingTools" :title="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-label="toolbarCollapsed ? '展开画线工具条' : '折叠画线工具条'" :aria-expanded="!toolbarCollapsed" @click="toolbarCollapsed = !toolbarCollapsed"><ChevronDown v-if="toolbarCollapsed" :size="14"/><ChevronUp v-else :size="14"/></button>
             <span>常用工具</span>
             <button v-if="customizingTools" class="tool-reset" title="恢复默认常用工具" aria-label="恢复默认常用工具" @click="updateFavoriteTools([...DEFAULT_FAVORITE_TOOLS])"><RotateCcw :size="13"/></button>

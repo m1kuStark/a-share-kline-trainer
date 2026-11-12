@@ -168,12 +168,12 @@ async function dragHeading(page: Page, dx: number, dy: number): Promise<void> {
   await page.mouse.up()
 }
 // 尺寸手柄拖动到视口绝对坐标（真实鼠标；pointer capture 后越出面板仍由手柄接管）
-async function dragResizeHandleTo(page: Page, targetX: number, targetY: number): Promise<void> {
+async function dragResizeHandleTo(page: Page, targetX: number, targetY: number, steps = 10): Promise<void> {
   const handle = (await resizeHandle(page).boundingBox())!
   const x = handle.x + handle.width / 2, y = handle.y + handle.height / 2
   await page.mouse.move(x, y)
   await page.mouse.down()
-  await page.mouse.move(targetX, targetY, { steps: 10 })
+  await page.mouse.move(targetX, targetY, { steps })
   await page.mouse.up()
 }
 async function setThemeMode(page: Page, mode: 'light' | 'dark'): Promise<void> {
@@ -214,6 +214,7 @@ test('固定按钮锁定面板位置、标题栏拖动无效且刷新后保持�
   const title = await pin.getAttribute('title')
   expect(name, '固定按钮 requires 中文名称').toContain('固定')
   expect(title, '固定按钮 requires 中文 title').toContain('固定')
+  expect(await page.locator('.toolbar-drag-handle').getAttribute('title'), '未固定时拖拽手柄提示可拖动').toContain('拖动')
 
   // 先拖动标题栏产生持久化位置（既有键）
   await dragHeading(page, 120, -100)
@@ -226,6 +227,12 @@ test('固定按钮锁定面板位置、标题栏拖动无效且刷新后保持�
   await pin.click()
   await expect(pin).toHaveAttribute('aria-pressed', 'true')
   expect(JSON.parse((await readStorage(page, TOOLBAR_PINNED_KEY)) ?? 'false')).toBe(true)
+  // pin 两态可访问名称与拖拽手柄提示：固定态「取消固定工具面板」/「固定中，拖动已锁定」
+  expect(await pin.getAttribute('aria-label'), '固定态按钮名称为取消固定').toContain('取消固定')
+  expect(await pin.getAttribute('title'), '固定态 title 为取消固定').toContain('取消固定')
+  const pinnedHandleTitle = await page.locator('.toolbar-drag-handle').getAttribute('title')
+  expect(pinnedHandleTitle, '固定态拖拽手柄提示已锁定').toContain('固定')
+  expect(pinnedHandleTitle, '固定态拖拽手柄提示已锁定').toContain('锁定')
   expect(await page.locator('.drawing-toolbar-heading').evaluate(el => getComputedStyle(el).cursor)).not.toBe('grab')
 
   // 固定后标题栏拖动无效：内存位置与持久化都不变
@@ -260,6 +267,8 @@ test('固定按钮锁定面板位置、标题栏拖动无效且刷新后保持�
   await pin.click()
   await expect(pin).toHaveAttribute('aria-pressed', 'false')
   expect(JSON.parse((await readStorage(page, TOOLBAR_PINNED_KEY)) ?? 'true')).toBe(false)
+  expect(await pin.getAttribute('aria-label'), '取消固定后按钮名称为固定工具面板').toContain('固定工具面板')
+  expect(await page.locator('.toolbar-drag-handle').getAttribute('title'), '取消固定后手柄提示恢复拖动').toContain('拖动')
   const unlocked = await panelBox(page)
   await dragHeading(page, 90, -70)
   const draggedAfterUnpin = await panelBox(page)
@@ -485,5 +494,81 @@ test('固定与尺寸在 1024×680 / 1366×705 / 1440×900 深浅主题下刷新
       await page.screenshot({ path: evidencePath(`toolbar-restored-${viewport.width}x${viewport.height}-${mode}.png`) })
     }
   }
+  await abandonActive(page)
+})
+
+test('折叠态横向调宽只保留宽度：展开与持久化高度不被折叠高度污染', async ({ page }: { page: Page }) => {
+  test.setTimeout(240_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openTraining(page)
+  const defaultBox = await panelBox(page)
+  // 上移面板并先建立自定义高度（默认贴底，向下拖动空间不足）
+  await dragHeading(page, 100, -320)
+  const firstHandle = (await resizeHandle(page).boundingBox())!
+  await dragResizeHandleTo(page, firstHandle.x + firstHandle.width / 2, firstHandle.y + firstHandle.height / 2 + 40)
+  const expandedBeforeCollapse = await panelBox(page)
+  expect(expandedBeforeCollapse.height, '已建立自定义高度').toBeGreaterThan(defaultBox.height + 30)
+  expect(JSON.parse((await readStorage(page, TOOLBAR_SIZE_KEY)) ?? 'null')).not.toBeNull()
+
+  // 折叠：高度塌到内容高度；尺寸手柄仍可见
+  await page.getByRole('button', { name: '折叠画线工具条' }).click()
+  await expect(panel(page)).toHaveClass(/is-collapsed/)
+  const collapsedBox = await panelBox(page)
+  expect(collapsedBox.height, '折叠态高度由内容决定').toBeLessThan(expandedBeforeCollapse.height - 60)
+  const collapsedHandle = (await resizeHandle(page).boundingBox())!
+  expect(collapsedHandle.height, '折叠态仍显示尺寸手柄').toBeGreaterThanOrEqual(10)
+
+  // 折叠态横向拖宽：宽度增大、持久化 height 保持展开值（不被折叠高度污染）
+  await dragResizeHandleTo(page, collapsedHandle.x + collapsedHandle.width / 2 + 70, collapsedHandle.y + collapsedHandle.height / 2)
+  const collapsedResized = await panelBox(page)
+  expect(collapsedResized.width, '折叠态可横向调宽').toBeGreaterThan(collapsedBox.width + 50)
+  expect(Math.abs(collapsedResized.height - collapsedBox.height), '折叠态纵向高度不变').toBeLessThanOrEqual(2)
+  const collapsedStored = JSON.parse((await readStorage(page, TOOLBAR_SIZE_KEY)) ?? 'null')
+  expect(collapsedStored, '折叠态拖宽仍持久化尺寸').not.toBeNull()
+  expect(Math.abs(collapsedStored.height - expandedBeforeCollapse.height), '折叠高度不得污染持久化高度').toBeLessThanOrEqual(3)
+
+  // 展开：高度回到折叠前值，宽度保留
+  await page.getByRole('button', { name: '展开画线工具条' }).click()
+  await expect(panel(page)).not.toHaveClass(/is-collapsed/)
+  await page.waitForTimeout(150)
+  const expandedAfterCollapse = await panelBox(page)
+  expect(Math.abs(expandedAfterCollapse.height - expandedBeforeCollapse.height), '展开后高度保持折叠前值').toBeLessThanOrEqual(3)
+  expect(Math.abs(expandedAfterCollapse.width - collapsedResized.width), '展开后宽度保持折叠态调整值').toBeLessThanOrEqual(2)
+  expectInViewport(expandedAfterCollapse, { width: 1440, height: 900 })
+  await abandonActive(page)
+})
+
+test('连续两次快速尺寸拖动不被误判双击复位，保存状态栏为尺寸手柄留出空间', async ({ page }: { page: Page }) => {
+  test.setTimeout(240_000)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await openTraining(page)
+  const defaultBox = await panelBox(page)
+  await dragHeading(page, 100, -320)
+  await page.evaluate(() => {
+    const handle = document.querySelector('.toolbar-resize-handle')
+    ;(window as any).__uiToolbarResizeDowns = []
+    handle?.addEventListener('pointerdown', () => (window as any).__uiToolbarResizeDowns.push(Date.now()), true)
+  })
+  // 连续两次快速拖动（中间不做额外读取，保证两次 pointerdown 间隔 <350ms）
+  const q1 = (await resizeHandle(page).boundingBox())!
+  await dragResizeHandleTo(page, q1.x + q1.width / 2 + 40, q1.y + q1.height / 2 + 30, 2)
+  const q2 = (await resizeHandle(page).boundingBox())!
+  await dragResizeHandleTo(page, q2.x + q2.width / 2 + 40, q2.y + q2.height / 2 + 30, 2)
+  const second = await panelBox(page)
+  const downs = await page.evaluate(() => (window as any).__uiToolbarResizeDowns as number[])
+  expect(downs.length, '两次真实 pointerdown').toBe(2)
+  expect(downs[1] - downs[0], '两次拖动起点间隔 <350ms 才会触发原缺陷').toBeLessThan(350)
+  expect(Math.abs(second.width - (defaultBox.width + 80)), '第二次横向拖动生效（未被误判双击复位）').toBeLessThanOrEqual(6)
+  expect(Math.abs(second.height - (defaultBox.height + 60)), '第二次纵向拖动生效').toBeLessThanOrEqual(6)
+  expect(JSON.parse((await readStorage(page, TOOLBAR_SIZE_KEY)) ?? 'null'), '快速连续拖动后尺寸键仍在').not.toBeNull()
+  // @dblclick 复位仍然有效
+  const resetHandle = (await resizeHandle(page).boundingBox())!
+  await page.mouse.dblclick(resetHandle.x + resetHandle.width / 2, resetHandle.y + resetHandle.height / 2)
+  await page.waitForTimeout(150)
+  expect(Math.abs((await panelBox(page)).width - defaultBox.width), '双击仍恢复默认尺寸').toBeLessThanOrEqual(2)
+  expect(await readStorage(page, TOOLBAR_SIZE_KEY)).toBeNull()
+  // Minor：保存状态栏右侧为尺寸手柄留出空间（“重试保存”不被手柄遮挡）
+  const footerPaddingRight = await page.locator('.drawing-save-footer').evaluate(el => parseFloat(getComputedStyle(el).paddingRight))
+  expect(footerPaddingRight, '保存状态栏右侧留出手柄空间').toBeGreaterThanOrEqual(16)
   await abandonActive(page)
 })
