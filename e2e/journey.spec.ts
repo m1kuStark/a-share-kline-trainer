@@ -34,7 +34,7 @@ await page.locator(".suggestions button").first().click()
   await expect(toolButton(page, '多选')).toBeVisible()
   // 模式机初始状态
   const mode = await page.evaluate(() => (window as any).__trainerChart.mode())
-  expect(mode).toEqual({ draw: null, multiSelect: false, measure: false, axisScaleDrag: false })
+  expect(mode).toEqual({ draw: null, multiSelect: false, axisScaleDrag: false })
 })
 
 test('Act5 买入推进卖出结算', async ({ page }) => {

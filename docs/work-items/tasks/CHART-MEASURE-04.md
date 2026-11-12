@@ -5,11 +5,11 @@
   "id": "CHART-MEASURE-04",
   "title": "可发现的测量工具：顶栏入口＋拖动/两次点击建立区间测量",
   "owner": "integrator",
-  "state": "review",
+  "state": "cancelled",
   "milestone": "GH-202611",
   "base_commit": "7895a22",
   "summary": "用户 2026-11-10 在 Issue #8 请求类似 MT5 的测量工具（快速得到价差/涨跌幅/根数）。现有 CHART-MEASURE-02/03 已具备 Shift 两次点击 K 线的区间测量与完整数据窗口，但入口不可发现。本任务新增顶栏「测量」开关：进入测量模式后无需 Shift，在主图拖动或两次点击起止 K 线即可建立同样的区间测量并显示既有数据窗口；端点可继续拖动调整；Esc/退出模式/切周期清除；与绘图取点/多选/框选/轴/分隔条/时间轴按既有仲裁互斥。不写训练/画线/录像，回放只读可用，镜像按真实价。",
-  "next_action": "已合入 main（ab04972）并集成 v1.3.7（REL-137）；用户验收随 v1.3.7 人工验收节点。",
+  "next_action": "2026-11-13 用户验收反馈：顶栏测量入口与既有 Shift 两点测量重复，入口/模式已由 CHART-MEASURE-05 移除；本卡取消，实现与证据保留为 v1.3.7 历史。原计划：已合入 main（ab04972）并集成 v1.3.7（REL-137）；用户验收随 v1.3.7 人工验收节点。",
   "allowed_paths": [
     "web/src/components/KlineChart.vue",
     "web/src/components/RangeMeasurement.vue",
@@ -61,3 +61,6 @@
 - 评审整改（PR #38 只读评审）：I-1 训练热键吞改到 Training 键盘入口按 keyboardShortcuts 可配置键位（含 isTyping/isComposing 保护）；I-2 blur/窗外松键统一取消拖动预览；I-3 本卡与证据表格按 run 实际构成如实修正；M-1 副图指标开关 watch 内先清测量再增删窗格（e2e 断言）；M-4 run manifest.commit 与截图来源标注；M-5 用户指南补「空白处起手建立新测量」与面板 Esc 模式语义；M-7 MA 原生模态 Esc 判定前置。
 - CI 首轮失败与最终修法：整改最初直接修改副图开关 watch 的源码契约行，导致 `server/test/frontend-contract.test.ts:276` 失败（CI run 43094100947 verify fail，真实失败记录保留）。最终改为**保留原契约行不动、新增独立 watch** 做 `cancelMeasureGesture()+closeMeasurement()`，未改契约断言、未扩展 allowed_paths；CI 复跑收据见验证记录。
 - 未决/边界：回放页本轮不加顶栏入口（SessionReplay.vue 不在 allowed_paths，Lead 口径：回放仍用 Shift 测量且新模式零报错零写；一键入口如需另立卡）；按钮文案/位置/提示措辞属 proposed_default，随用户验收确认。
+## 2026-11-13 用户验收反馈（取消原因）
+
+用户实测确认顶栏「测量」按钮与既有 Shift+鼠标左键两次点击的区间测量功能重复（Issue #8 需求源于新功能不熟悉）。入口与测量模式由 [CHART-MEASURE-05](../tasks/CHART-MEASURE-05.md) 回退；既有 Shift 两点测量（CHART-MEASURE-02/03）保留。本卡 state=cancelled，代码与验证记录保留为 v1.3.7 验收历史，不再维护。

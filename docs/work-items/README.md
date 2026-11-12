@@ -22,7 +22,9 @@
 
 - [UI-TOOLBAR-03 面板固定与尺寸](tasks/UI-TOOLBAR-03.md)：悬浮工具面板固定（pin）与可调宽高（resize），持久化、双击复位、默认 6 列不变（v1.3.7）。
 
-- [CHART-MEASURE-04 测量工具](tasks/CHART-MEASURE-04.md)：顶栏「测量」开关，拖动/两次点击建立区间测量，复用数据窗口与可拖边界（v1.3.7）。
+- [CHART-MEASURE-04 测量工具（已回退）](tasks/CHART-MEASURE-04.md)：顶栏「测量」入口与模式已按用户 2026-11-13 验收反馈取消（保留 Shift 两点测量），记录保留为 v1.3.7 历史。
+
+- [CHART-MEASURE-05 移除顶栏测量入口](tasks/CHART-MEASURE-05.md)：回退重复的测量按钮/模式，保留既有 Shift 两点测量；v1.3.8（未发布）。
 
 - [REL-137 v1.3.7 集成与人工验收包](tasks/REL-137.md)：三项合入后的版本集成分发与 NSIS 候选包，用户人工验收节点（v1.3.7）。
 

@@ -9,7 +9,6 @@
 | 任务 | 正文与实现 |
 |---|---|
 | Shift两点区间测量 | KlineChart沿既有指针入口两次 Shift 点击取起止 K 线；[RangeMeasurement.vue](RangeMeasurement.vue) 展示 Select Box、可拖动边界与区间数据窗口，计算在[chartStatistics.ts](../chartStatistics.ts)，不接画线持久层。 |
-| 可发现测量工具（CHART-MEASURE-04） | [Training.vue](../views/Training.vue) 顶栏「测量」toggle（与画线/多选互斥、切周期/结束训练退出）；KlineChart 沿既有 pointerdown/window pointermove-up 链新增 measureMode 手势（拖动预览 Select Box＋松手出窗口、两次点击锚点），复用 RangeMeasurement 数据窗口/可拖边界与 chartStatistics 计算，不写画线/录像；journey 只读探针 measurementTool。 |
 | 常驻行情、区间统计 | KlineChart复用buildHoverModel展示常驻行情，沿既有指针入口接右键选区；[chartStatistics.ts](../chartStatistics.ts)仅对传入的已见数据计算，[统计窗口](RangeStatisticsDialog.vue)负责只读展示与模态焦点。 |
 | 主图均线参数 | [MaSettingsDialog.vue](./MaSettingsDialog.vue) 编辑八行草稿，[maSettings.ts](../maSettings.ts) 校验及浏览器持久化；KlineChart用公开overrideIndicator原位更新MA。日周月共用，默认25/60/144，0关闭。 |
 | 改指针、快捷键、窗格或视窗 | [事件仲裁与生命周期](./docs/interaction.md)；[chartNavigation.ts](../chartNavigation.ts) |
