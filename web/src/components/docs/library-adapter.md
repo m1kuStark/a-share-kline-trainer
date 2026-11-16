@@ -11,6 +11,7 @@
 | `getDataList` / `convertFromPixel` / `convertToPixel` / `getSize('candle_pane','main')` | CHART-ANALYSIS-01用公开API将拖选端点吸附/钳制到已加载K线，主图bounding限定选区；只读统计含原始date/amount附加字段。10.0.3右键图形事件在mousedown分发，故统计手势必须在host mousedown capture阻止；普通绘图右键继续放行，contextmenu仅处理自有菜单。升级须回归主图/副图边界、图形菜单、单根/反向区间、只读回放及日期遮蔽。 |
 | `getChartStore()._processDataLoad('forward')` | MA-01仅在长周期缺少预热历史时主动触发既有loader。10.0.3以_loading防并发，经callback调用_addData的forward分支，前插不改右侧偏移，指标自动重算；不执行init或滚动补偿。复核主动补载、失败重试、切周期作废旧响应及同名日期/画线保留。 |
 | `overrideIndicator({name,paneId,calcParams,styles,visible})` | MA-01通过公开API更新MA参数、颜色和可见性；10.0.3模板regenerateFigures按参数生成图例，calc在完整窗口后输出收盘价等权均值。变更参数触发重算；不重建图表或替换行情。 |
+| `registerIndicator`/`createIndicator`/`overrideIndicator`/`setPaneOptions`（公式指标） | M9-04C：单模板 calc 从 `indicator.extendData.points` 按 timestamp 查表返回 figure `line` 值；`createIndicator({name,paneId:'candle_pane'})` 叠主图、副图首行 `createIndicator(...,false)` 建 pane、后续输出行传首行 paneId 复用窗格；`overrideIndicator({id,extendData})` 更新数据；公式指标名固定 `FORMULA_<id>_<index>`；录像 paneHeights 捕获用 `formulaPaneIdsOf` 跳过公式 pane。升级复核：extendData 透传、override 触发 recalc、paneId 复用、副图最小高度与分隔条拖动。 |
 | `_chartStore.getLayoutOptions().barSpaceLimit.min/max` | onMounted 改为 0.1/300；允许窄屏多根和少根放大。实际 840 限制另由 `clampBarSpace` / `enforceVisibleLimit` 执行，范围变化后微任务再校正。 |
 | `yAxis.setAutoCalcTickFlag(false/true)` | 中键前设手动，`restoreYAxisAutoFit` 恢复自动；检查轴拖拽、框选、键盘缩放和复位组合。 |
 | `yAxis.getRange/setRange/valueToRealValue/realValueToDisplayValue` | 已知值域读写接口；getRange 用于只读断言，其余作为历史备用登记，不表示当前主动调用。 |
