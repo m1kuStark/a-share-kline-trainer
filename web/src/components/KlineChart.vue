@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { init, dispose, utils, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
+import { init, dispose, utils, registerIndicator, getSupportedIndicators, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
 import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
@@ -31,6 +31,7 @@ import { drawingFigureGeometry } from '../drawingGeometry'
 import { builtInGeometry, pointInPolygon, segmentInRect } from '../builtInGeometry'
 import { decorateAxisLabel, withWeekday } from '../dateLabels'
 import { formatHoverCard, hasPhasePrice, includePhasePriceRange, phasePriceColor, HOVER_CARD_DWELL_MS, type HoverCardModel } from '../phasePrice'
+import { formulaIndicatorName, formulaPaneIdsOf, isFormulaIndicatorName, paneHeightsForCapture, type FormulaChartLine, type FormulaChartRender } from '../formulaIndicators'
 
 registerDrawingOverlays()
 
@@ -79,9 +80,13 @@ const props = withDefaults(defineProps<{
    *  首次启用时已加载序列首根收盘价，冻结不重算）。纯视图：capture/emit/画线持久面/标记数据
    *  全部走真实价，镜像只发生在 chart feed 前最后一跳与渲染锚定（displayValue）。 */
   priceMirror?: boolean
-}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0, priceMirror: false })
+  /** M9-04C 公式图表线（父级对当前 bars 求值，按 timestamp 对齐）：主图挂 candle_pane，副图每公式一个 pane */
+  formulaLines?: FormulaChartRender[]
+  /** 公式库/配置版本：变化时重建公式指标（数据推进走 override 路径，不重建 pane） */
+  formulaConfigVersion?: number
+}>(), { chartCostPrice: null, currentPrice: null, orders: () => [], timeframe: '1D' as Timeframe, defaultCount: 150, hasMoreBars: false, drawTool: null, multiSelect: false, readOnly: false, hideDates: false, dateShiftDays: 0, priceMirror: false, formulaLines: () => [], formulaConfigVersion: 0 })
 
-const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }] }>()
+const emit = defineEmits<{ visibleCount: [number]; toolChange: [string | null]; drawingsChange: [Drawing[]]; historyChange: [{ undo: boolean; redo: boolean }]; panelChange: [boolean]; viewportDates: [{ visibleDate: string | null; latestDate: string | null; atLatest: boolean }]; chartCapture: [ChartCapture]; captureError: [string]; operation: [{ action: Action; params?: JsonValue }]; barsExtended: [Bar[]] }>()
 const host = ref<HTMLElement | null>(null)
 type RuntimeOverlay = Overlay & { isDrawing(): boolean; forceComplete(): void }
 type ConvertFilter = Parameters<Chart['convertToPixel']>[1]
@@ -525,6 +530,81 @@ function applySubchartPanes(): void {
     else if (!SUBCHART_PREFS[name].enabled() && existing.length) chart.removeIndicator({ name })
   }
 }
+
+// ===== M9-04C 公式指标：主图挂 candle_pane，副图每个公式一个 pane（与 VOL/MACD/KDJ 同 pane 机制） =====
+const FORMULA_LINE_COLORS = ['#f5c343', '#54b8cc', '#c793e0', '#ef8a62', '#7bc96f', '#e06c9f']
+function ensureFormulaTemplate(name: string): void {
+  if (getSupportedIndicators().includes(name)) return
+  registerIndicator({
+    name,
+    figures: [{ key: 'line', type: 'line' }],
+    calc: (dataList, indicator) => {
+      const points = (indicator.extendData as { points?: Record<number, number | null> } | undefined)?.points ?? {}
+      return dataList.map(item => {
+        const value = points[item.timestamp as number]
+        return { line: typeof value === 'number' && Number.isFinite(value) ? value : NaN }
+      })
+    },
+  })
+}
+function formulaPointsMap(line: FormulaChartLine, mirrorBasis: number | null): Record<number, number | null> {
+  const map: Record<number, number | null> = {}
+  for (const point of line.points) {
+    // CHART-INVERT-01：主图公式线随 K 线镜像（2P₀−p）；非价格谱线（副图）不镜像
+    const value = mirrorBasis !== null && point.value !== null ? 2 * mirrorBasis - point.value : point.value
+    map[point.timestamp] = value
+  }
+  return map
+}
+function removeFormulaIndicators(): void {
+  if (!chart) return
+  for (const indicator of chart.getIndicators()) {
+    if (isFormulaIndicatorName(indicator.name)) chart.removeIndicator({ id: indicator.id })
+  }
+}
+/** 公式库变更（增删改/启停）时重建指标：旧 pane/线不可复用，重建后副图回到默认高度（卡内边界） */
+function rebuildFormulaIndicators(): void {
+  removeFormulaIndicators()
+  applyFormulaIndicators()
+}
+/** 同步公式指标：删除过期项→按主/副图创建或更新；结果按 timestamp 对齐（bars 补历史/周期切换后由父级重发） */
+function applyFormulaIndicators(): void {
+  if (!chart || disposed) return
+  const desired = props.formulaLines ?? []
+  const keep = new Set<string>()
+  for (const formula of desired) formula.lines.forEach((_, index) => keep.add(formulaIndicatorName(formula.id, index)))
+  for (const indicator of chart.getIndicators()) {
+    if (isFormulaIndicatorName(indicator.name) && !keep.has(indicator.name)) chart.removeIndicator({ id: indicator.id })
+  }
+  const mirrorBasis = activeMirrorBasis()
+  for (const formula of desired) {
+    let paneId: string | undefined
+    formula.lines.forEach((line, index) => {
+      const name = formulaIndicatorName(formula.id, index)
+      ensureFormulaTemplate(name)
+      const points = formulaPointsMap(line, formula.placement === 'main' ? mirrorBasis : null)
+      const existing = chart!.getIndicators({ name })[0]
+      if (existing) {
+        chart!.overrideIndicator({ id: existing.id, name, extendData: { points } })
+        if (index === 0) paneId = existing.paneId
+        return
+      }
+      const styles = { lines: [{ color: FORMULA_LINE_COLORS[index % FORMULA_LINE_COLORS.length] }] }
+      // 图例显示公式名.线名（而不是内部 FORMULA_<id>_<index>）
+      const shortName = formula.name + '.' + line.name
+      if (formula.placement === 'main') {
+        chart!.createIndicator({ name, shortName, paneId: 'candle_pane', extendData: { points }, styles }, true)
+      } else {
+        chart!.createIndicator({ name, shortName, paneId, extendData: { points }, styles }, paneId !== undefined)
+      }
+      if (index === 0) {
+        paneId = chart!.getIndicators({ name })[0]?.paneId
+        // 副图公式窗格给最小可读高度（公式 pane 不进入录像 paneHeights，仅本地布局）
+        if (formula.placement === 'sub' && paneId) chart!.setPaneOptions({ id: paneId, height: 120, minHeight: 90 })
+      }
+    })
+  }
+}
 function drawings(): Drawing[] {
   return drawingsAt(activeMirrorBasis())
 }
@@ -653,6 +733,8 @@ async function loadEarlierBars(callback: (data: KLineData[], more?: DataLoadMore
     if (disposed || version !== dataVersion) return
     const older = result.bars.map(toK)
     if (older.length) { loadedData = [...older, ...loadedData]; rebuildBarTimestamps() }
+    // M9-04C：补历史后把完整已加载序列发给父级重算公式（公式线覆盖更早历史）
+    emit('barsExtended', toCaptureBars(loadedData))
     result.hasMore = result.hasMore && older.length > 0
     hasMoreForward = result.hasMore
     // 前插喂库同样走镜像最后一跳（loadedData 事实源保持真实价）
@@ -709,6 +791,8 @@ function feedData(): void {
       scheduleReplayRestore()
       scheduleChartCapture()
       queueMicrotask(ensureMaHistory)
+      queueMicrotask(applyFormulaIndicators)
+      emit('barsExtended', toCaptureBars(loadedData))
     },
   })
   applyLastPriceStyle()
@@ -719,16 +803,15 @@ function feedData(): void {
 // （含补载历史，绝不限 props.bars）；feed 完成/补历史/视窗变化后 150ms 尾沿外发不可变 chartCapture；
 // 只读回放与 replayView 程序恢复期间静默，避免捕获-恢复反馈循环。
 function semanticPaneHeights(): Record<string, number> {
-  const heights: Record<string, number> = {}
-  if (!chart) return heights
+  if (!chart) return {}
   const panes = chart.getPaneOptions()
   const list = (Array.isArray(panes) ? panes : [panes]) as Array<{ id: string }>
-  for (const pane of list) {
-    if (pane.id === 'x_axis_pane') continue
-    const height = chart.getSize(pane.id)?.height ?? 0
-    if (Number.isFinite(height) && height > 0) heights[paneName(pane.id)] = height
-  }
-  return heights
+  // M9-04C：公式 pane 不进入录像 paneHeights（不得把公式窗格高度写回 candle_pane）
+  const formulaPaneIds = formulaPaneIdsOf(chart.getIndicators())
+  const measured = list
+    .filter(pane => pane.id !== 'x_axis_pane')
+    .map(pane => ({ id: pane.id, height: chart!.getSize(pane.id)?.height ?? 0 }))
+  return paneHeightsForCapture(measured, formulaPaneIds, paneName)
 }
 // 录像持久面＝全周期画线（M2-DRAWING-01 缺陷③）：周期隔离是显示层口径（用户 2026-10-19
 // 拍板），captureState 不得继承视图过滤——当前周期以图上序列化为权威（含最新编辑），
@@ -1363,7 +1446,7 @@ function onWheel(event: WheelEvent): void {  event.preventDefault()
 
 // CHART-ZOOM-01：关闭 klinecharts 内置键盘热键（其 Shift+←/→ 会与应用平移快捷键重复执行）——应用快捷键系统唯一权威
 onMounted(() => { if (!host.value) return;
-  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('wheel', onGlobalWheelCancel, true); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { measurement: () => measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null, overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
+  chart = init(host.value, { locale: 'zh-CN', timezone: 'Asia/Shanghai', styles: chartStyles(theme.value), hotkey: { enabled: false } }) as RuntimeChart | null; if (!chart) return; const layout = (chart as unknown as { _chartStore?: { getLayoutOptions?: () => { barSpaceLimit?: { min?: number; max?: number } } } })._chartStore?.getLayoutOptions?.(); if (layout?.barSpaceLimit) { layout.barSpaceLimit.min = 0.1; layout.barSpaceLimit.max = BAR_SPACE_MAX; } chart.setSymbol({ ticker: 'training', pricePrecision: 2, volumePrecision: 0 }); chart.setPeriod({ type: 'day', span: 1 }); chart.setOffsetRightDistance(RIGHT_MARGIN); chart.setZoomEnabled(false); chart.setLeftMinVisibleBarCount(MIN_COUNT); chart.setRightMinVisibleBarCount(1); chart.createIndicator({ name: 'MA', calcParams: [25, 60, 144], paneId: 'candle_pane', styles: { lines: [{ color: '#f5a623' }, { color: '#54b8cc' }, { color: '#c793e0' }] } }, true); applySubchartPanes(); applyFormulaIndicators(); chart.subscribeAction('onVisibleRangeChange', () => { closeMeasurement(); emit('visibleCount', visibleCount()); updateAnchorDots(); scheduleChartCapture() }); chart.subscribeAction('onCrosshairChange', onCrosshairAction); host.value.addEventListener('mouseleave', hideHoverCard); host.value.addEventListener('wheel', onWheel, { passive: false }); host.value.addEventListener('pointerdown', onPointerDown, true); host.value.addEventListener('mousedown', onHostMouseDown, true); host.value.addEventListener('mousedown', onHostMouseDownBubble, false); host.value.addEventListener('dblclick', onPaneDblClick); host.value.addEventListener('contextmenu', suppressNativeContextMenu); window.addEventListener('pointermove', onPointerMove); window.addEventListener('pointerup', onPointerUp); window.addEventListener('wheel', onGlobalWheelCancel, true); window.addEventListener('pointercancel', onTimeAxisPanCancel); window.addEventListener('blur', cancelTimeAxisPan); window.addEventListener('keydown', onPanelKeydown, true); window.addEventListener('pointerdown', onGlobalPointerDown, true); feedData(); resetView(false); if (import.meta.env.MODE === 'journey') { (window as unknown as { __trainerChart?: unknown }).__trainerChart = { measurement: () => measurementRange.value ? { from: measurementRange.value.from, to: measurementRange.value.to, count: measurementRange.value.to - measurementRange.value.from + 1 } : null, overlayCount: (name?: string) => chart!.getOverlays(name ? { name } : {}).filter(overlay => !overlay.isDrawing()).length, selectedCount: () => multiSelectedIds.value.length, mode: () => ({ draw: props.drawTool ?? null, multiSelect: props.multiSelect ?? false, axisScaleDrag }), yRange: () => (chart!.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange: () => unknown } | undefined)?.getRange?.() ?? null, hitTest: (clientX: number, clientY: number) => { hostRect = host.value?.getBoundingClientRect() ?? null; return hitTestUserOverlay(clientX, clientY)?.id ?? null }, overlayInfo: (index: number) => { const o = (chart!.getOverlays() as unknown as Array<{ id: string; paneId: string; styles?: { line?: { color?: string } } }>)[index]; return o ? { id: o.id, paneId: o.paneId, lineColor: o.styles?.line?.color ?? null } : null }, singleSelected: () => selectedOverlayId.value, clickSelectedId: () => ((chart as unknown as { getChartStore: () => { getClickOverlayInfo: () => { overlay: { id: string } | null } } }).getChartStore().getClickOverlayInfo()?.overlay?.id ?? null) } } })
 onUnmounted(() => { cancelChartCapture(); cancelReplayRestore(); cancelViewportOperation(); cancelHoverTimer(); host.value?.removeEventListener('wheel', onWheel); host.value?.removeEventListener('mouseleave', hideHoverCard); host.value?.removeEventListener('pointerdown', onPointerDown, true); host.value?.removeEventListener('mousedown', onHostMouseDown, true); host.value?.removeEventListener('mousedown', onHostMouseDownBubble, false); host.value?.removeEventListener('dblclick', onPaneDblClick); host.value?.removeEventListener('contextmenu', suppressNativeContextMenu); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('wheel', onGlobalWheelCancel, true); window.removeEventListener('pointercancel', onTimeAxisPanCancel); window.removeEventListener('blur', cancelTimeAxisPan); window.removeEventListener('keydown', onPanelKeydown, true); window.removeEventListener('pointerdown', onGlobalPointerDown, true); if (host.value) dispose(host.value); chart = null })
 // 画线模式机：工具激活＝创建无 points 的 overlay 进入库内交互取点（step 模式，逐点点击）；
 // 取点期间锁定拖拽平移，避免取点与视图平移互相干扰；退出/切换工具前取消未完成的取点。
@@ -1914,6 +1997,7 @@ onMounted(() => {
       const indicator = chart?.getIndicators({ name: 'MA' })[0]
       return indicator ? { periods: indicator.calcParams, visible: indicator.visible, colors: indicator.styles?.lines?.map(line => line.color), result: indicator.result } : null
     },
+    formulaIndicators: () => (chart?.getIndicators() ?? []).filter(indicator => isFormulaIndicatorName(indicator.name)).map(indicator => ({ name: indicator.name, paneId: indicator.paneId, hasResult: Array.isArray((indicator as unknown as { result?: Array<{ line?: unknown }> }).result) && (indicator as unknown as { result: Array<{ line?: unknown }> }).result.some(point => typeof point.line === 'number' && Number.isFinite(point.line)) })),
     drawings,
     geometry: () => (chart?.getOverlays() ?? []).filter(overlay => !engineMarkNames.has(overlay.name) && !overlay.isDrawing()).map(overlay => ({ id: overlay.id, name: overlay.name, ...overlayHitGeometry(overlay as unknown as OverlayLike) })),
     panes: () => (chart?.getPaneOptions() as Array<{ id: string }> ?? []).filter(pane => pane.id !== 'x_axis_pane').map(pane => ({ id: pane.id, name: paneName(pane.id), ...chart!.getSize(pane.id) })),
@@ -2004,6 +2088,10 @@ watch(() => props.priceMirror, (_on, wasOn) => {
 // 副图偏好切换（任一）：立即增/删对应窗格（paneHeights 变化属布局结果，刷新捕获供后续
 // 检查点；非用户导航，不发 chart.viewport 操作）
 watch([appKdjSubchart, appVolSubchart, appMacdSubchart], () => { applySubchartPanes(); scheduleChartCapture() })
+// M9-04C：公式线变化（bars/周期/推进/公式库变化后父级重算）→ 同步指标
+watch(() => props.formulaLines, () => { applyFormulaIndicators() })
+watch(() => props.formulaConfigVersion, () => { rebuildFormulaIndicators() })
+watch(() => props.priceMirror, () => { queueMicrotask(applyFormulaIndicators) })
 onMounted(applyMaSettings)
 watch(appMaSettings, applyMaSettings)
 watch(() => [props.drawTool, props.multiSelect], () => { closeMeasurement(); closeStatistics() })

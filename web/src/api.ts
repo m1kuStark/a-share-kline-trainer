@@ -892,3 +892,16 @@ export function evaluateFormula(input: {
     body: JSON.stringify({ limit: 120, ...input }),
   })
 }
+
+// ===== M9-04C 公式证券上下文（训练图/回放求值注入 StockContext 的唯一来源） =====
+export interface FormulaIndexBar { timestamp: number; open: number; high: number; low: number; close: number; volume: number; amount: number }
+export interface FormulaContextPayload {
+  code: string
+  name: string
+  industry: { name: string; blockCode?: string | null; indexCode?: string | null } | null
+  industryIndexBars?: FormulaIndexBar[]
+  reason?: string
+}
+export function fetchFormulaContext(code: string): Promise<FormulaContextPayload> {
+  return request('/api/formulas/context?code=' + encodeURIComponent(code))
+}
