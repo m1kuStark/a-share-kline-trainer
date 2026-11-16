@@ -797,3 +797,98 @@ export function fetchDataStatus(): Promise<DataStatus> {
 export function postDataRefresh(): Promise<{ taskId: string; state: DataState; joined: boolean }> {
   return request('/api/data/refresh', { method: 'POST' })
 }
+
+// ===== M9-04B 公式指标（服务端 M9-04A 只读/CRUD 契约的前端镜像） =====
+
+export interface FormulaView {
+  id: number
+  name: string
+  description: string
+  placement: 'main' | 'sub'
+  source: string
+  enabled: boolean
+  builtin: boolean
+  futureFunctions: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FormulaValidationError {
+  kind: 'lexer' | 'parser' | 'runtime'
+  message: string
+  line?: number
+  column?: number
+}
+
+export type FormulaValidationResult =
+  | { ok: true; futureFunctions: string[]; warnings: string[] }
+  | { ok: false; error: FormulaValidationError; warnings: string[] }
+
+export interface FormulaOutputLine { name: string; style?: unknown; data: Array<number | null> }
+
+export interface FormulaDataSource { kind: 'training' | 'tdx'; note: string }
+
+export type FormulaEvaluationResult =
+  | {
+      ok: true
+      outputs: FormulaOutputLine[]
+      bars: Array<{ date: string; timestamp: number }>
+      futureFunctions: string[]
+      warnings: string[]
+      dataSource: FormulaDataSource
+    }
+  | { ok: false; error: FormulaValidationError; warnings: string[]; dataSource: FormulaDataSource }
+
+export interface FormulaInput {
+  name: string
+  description?: string
+  placement: 'main' | 'sub'
+  source: string
+}
+
+export function fetchFormulas(): Promise<{ formulas: FormulaView[] }> {
+  return request('/api/formulas')
+}
+
+export function createFormula(input: FormulaInput): Promise<FormulaView & { warnings?: string[] }> {
+  return request('/api/formulas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateFormula(id: number, patch: Partial<FormulaInput> & { enabled?: boolean }): Promise<FormulaView & { warnings?: string[] }> {
+  return request('/api/formulas/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  })
+}
+
+export function deleteFormula(id: number): Promise<void> {
+  return request('/api/formulas/' + id, { method: 'DELETE' })
+}
+
+export function validateFormula(source: string): Promise<FormulaValidationResult> {
+  return request('/api/formulas/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source }),
+  })
+}
+
+export function evaluateFormula(input: {
+  source?: string
+  formulaId?: number
+  trainingId?: number
+  code?: string
+  timeframe?: Timeframe
+  limit?: number
+}): Promise<FormulaEvaluationResult> {
+  return request('/api/formulas/evaluate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ limit: 120, ...input }),
+  })
+}
