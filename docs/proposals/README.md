@@ -13,4 +13,6 @@
 - [并行实施细节](parallel-development.md)：目标运行隔离、任务所有权与候选集成步骤。
 - [GPT 与 GLM 协作框架改进](zcode-orchestration-v2.md)：目标架构与落地顺序；统一文件状态、CLI 与适配已有候选实现，余下边界和验收以[ORCH-STATE-01](../work-items/tasks/ORCH-STATE-01.md)及[控制循环](../engineering/controller-loop.md)为准，不代表公开发布。
 
+- [M9-04 公式系统产品化](M9-04-formula-product-ui.md)：SQLite 公式库、只读 validate/evaluate API、主图/副图挂载与内置示例；2026-11-16 用户拍板默认方案，实施中。
+
 文档治理设计已接受并实施，现行规则见[工程协议](../engineering/README.md)，原稿移入[历史](../archive/2026-09/documentation-proposal/README.md)。提案描述目标，不代表当前实现或用户已验收。

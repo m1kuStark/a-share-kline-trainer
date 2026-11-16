@@ -524,7 +524,7 @@ async function buildAndPublish(repoRoot, { nodeArchive, nodeChecksums, artifactN
     for (const name of ROOT_FILES) await stageFile(staging, join(repoRoot, name), name)
     for (const name of LAUNCHER_FILES) await stageFile(staging, join(repoRoot, 'scripts/release', name), name)
     // Compiled server JS only: the tsconfig emits declarations/maps the package does not need.
-    await stageTree(staging, run.serverDir, 'server/dist', rel => rel.endsWith('.js'))
+    await stageTree(staging, run.serverDir, 'server/dist', rel => rel.endsWith('.js') || rel.endsWith('.mjs'))
     await stageTree(staging, run.webDir, 'web/dist')
     await stageTree(staging, join(prodDir, 'node_modules'), 'node_modules')
     // Exact docs/user hierarchy + root CONTRIBUTING/SECURITY + third-party notices tree,
