@@ -55,3 +55,14 @@
 ## 环境
 
 - 临时 TRAINER_DB（`:memory:`）与临时 TDX 目录夹具；TDX 只读；未使用个人训练库。
+
+## 全量门禁与 flake 归因（2026-11-16/17）
+
+| 检查 | 命令 | 结果 | 收据 |
+|---|---|---|---|
+| 生产构建（web+server+bundle） | `npm run build` | **0** | web 构建 11.15s（`dist/assets` 产物正常）；build:server 含引擎 bundle |
+| 全量单测（本地） | `npm test` | 1（2/2640 失败） | 745.63s；失败仅 `server/test/runtime-isolation.test.ts` 的临时目录 `EBUSY ... rmdir`（重启清理残留），隔离复跑第 1 次 1/15 失败、第 2 次 **15/15 通过** → 环境 flake，非代码回归 |
+| 全量 Journey（本地，2 shards） | `npm run journey:parallel -- --shards 2` | 1（239 通过/7 失败/1 跳过） | 失败集中在录像库“导入录制”按钮持续禁用与 30s 超时；该 flake 集群已于 [CHART-ANALYSIS-01](../../2026-10/CHART-ANALYSIS-01/README.md) 记录为环境性问题（新临时目录/满载时复现）。本卡 `git diff` 无 `web/**`/`e2e/**` 改动，录像 UI 路径未触达；隔离复跑 6 个失败 spec：15 通过/4 仍环境失败 |
+| CI verify（干净环境，权威） | GitHub Actions run 43908808980 job 133444795937 | **pass（4m1s）** | 全量单测+构建在干净 CI 通过；docs/pr-policy pass |
+
+归因结论：本地全量 flake 与 M9-04A 改动无因果关系（该卡仅新增服务端模块、路由注册、迁移与测试；无前端/录像/运行时脚本改动）。全量 Journey 绿灯留待 M9-04C 图表挂载（有前端改动）与整批集成轮在空闲机器执行，并在该卡证据中记录。
