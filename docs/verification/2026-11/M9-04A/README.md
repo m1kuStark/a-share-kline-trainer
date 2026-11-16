@@ -101,3 +101,9 @@
 
 - 训练上下文（真实训练夹具→截断/复权→求值成功用例）仍未覆盖；数据层仅 mock trainingBars 覆盖随机遮蔽，训练数据解析留 M9-04C 以真实训练覆盖。
 - 本地全量 `npm test`/Journey 的环境 flake 见上节；CI verify 在干净环境对 HEAD 重跑通过后以 CI 为权威收据（见最终 CI 行）。
+
+### 最终 CI 收据（HEAD 5ae6a6a，评审修复后）
+
+- GitHub Actions run **43919716831**：`verify` pass 4m39s、`docs` pass 47s、`pr-policy` pass 26s（干净环境全量单测＋构建）。
+- 本地全量第二跑：服务端/桌面其余全绿；仅 `desktop/test/port-tree-kill.test.ts` 真实 taskkill 用例 15s 超时（隔离复跑 2 次仍超时）。该用例无桌面代码改动（diff 仅 server/scripts/docs），CI 干净环境通过 → 判定为本机当前负载下环境 flake，如实记录。
+- harness 台账：`gate-report.mjs --task M9-04A` 已记录 binding/unit/build/docs/ci 收据（ai-harness-lab/harness-state.jsonl）。
