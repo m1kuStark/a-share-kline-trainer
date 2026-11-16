@@ -136,3 +136,16 @@ test('公式指标：桌面尺寸与深浅主题布局无横向溢出（视觉�
     await dialog.getByRole('button', { name: '关闭' }).click()
   }
 })
+
+test('公式指标：内置示例可见且不可删除', async ({ page }) => {
+  const { dialog, section } = await openFormulaSection(page)
+  const list = section.getByLabel('公式列表')
+  // M9-04D：启动幂等 seed 的 3 个内置示例在列表中可见（内置徽标 + 名称）
+  await expect(list.locator('.formula-badge', { hasText: '内置' }).first()).toBeVisible({ timeout: 15_000 })
+  await expect(list).toContainText(/WEEK_MACD_SUB|MA_BULL_MAIN|QINIU_B1_SUB/)
+  const builtinItem = list.locator('.formula-item', { hasText: '内置' }).first()
+  await builtinItem.click()
+  // 内置公式不可删除（服务端 403 + UI 不提供删除按钮）
+  await expect(section.getByRole('button', { name: '删除', exact: true })).toHaveCount(0)
+  await expect(dialog).toBeVisible()
+})
