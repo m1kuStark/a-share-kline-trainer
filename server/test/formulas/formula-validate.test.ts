@@ -19,7 +19,7 @@ describe('M9-04A 公式校验（parse + 未来函数标记）', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(['lexer', 'parser']).toContain(result.error.kind)
-    expect(result.error.message.length).toBeGreaterThan(0)
+    expect(result.error.message).toMatch(/[\\u4e00-\\u9fa5]/)
     expect(typeof result.error.line).toBe('number')
   })
 

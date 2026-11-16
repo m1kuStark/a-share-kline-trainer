@@ -8,9 +8,9 @@ export class FormulaStoreError extends Error {
   }
 }
 
-const NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/
+const MAX_NAME_LENGTH = 64
 const PLACEMENTS: FormulaPlacement[] = ['main', 'sub']
-const MAX_SOURCE_LENGTH = 20000
+export const MAX_SOURCE_LENGTH = 20000
 const MAX_DESCRIPTION_LENGTH = 500
 
 interface FormulaColumns {
@@ -56,16 +56,13 @@ export function getFormulaRowByName(database: DatabaseSync, name: string): Formu
   return row ? mapRow(row) : null
 }
 
-/** 输入校验：name 为 ASCII 标识符（供跨公式引用），description 中文说明，source 非空。 */
+/** 输入校验：name 1~64 字符（中文名可保存，跨公式引用需纯英文），description 中文说明，source 非空。 */
 export function parseFormulaFields(raw: unknown, options: { partial: boolean }): Partial<FormulaColumns> {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new FormulaStoreError('请求体必须是 JSON 对象')
   const body = raw as Record<string, unknown>
   const fields: Partial<FormulaColumns> = {}
   if (body.name !== undefined || !options.partial) {
-    if (typeof body.name !== 'string') throw new FormulaStoreError('name 必填（公式名，ASCII 标识符，供跨公式引用）')
-    const name = body.name.trim()
-    if (!NAME_PATTERN.test(name)) throw new FormulaStoreError('name 必须是以字母/下划线开头、仅含字母数字下划线的 ASCII 名称（最长 64）')
-    fields.name = name
+    fields.name = parseFormulaName(body.name)
   }
   if (body.description !== undefined || !options.partial) {
     const description = body.description === undefined ? '' : body.description
@@ -73,12 +70,14 @@ export function parseFormulaFields(raw: unknown, options: { partial: boolean }):
     if (description.length > MAX_DESCRIPTION_LENGTH) throw new FormulaStoreError('description 最长 500 字符')
     fields.description = description
   }
-  if (body.placement !== undefined || !options.partial) {
+  if (body.placement !== undefined) {
     const placement = body.placement
     if (typeof placement !== 'string' || !PLACEMENTS.includes(placement as FormulaPlacement)) {
       throw new FormulaStoreError("placement 必须是 'main' 或 'sub'")
     }
     fields.placement = placement as FormulaPlacement
+  } else if (!options.partial) {
+    fields.placement = 'main'
   }
   if (body.source !== undefined || !options.partial) {
     if (typeof body.source !== 'string' || body.source.trim().length === 0) throw new FormulaStoreError('source 必填（公式源码不能为空）')
@@ -90,6 +89,15 @@ export function parseFormulaFields(raw: unknown, options: { partial: boolean }):
     fields.enabled = body.enabled ? 1 : 0
   }
   return fields
+}
+
+function parseFormulaName(value: unknown): string {
+  if (typeof value !== 'string') throw new FormulaStoreError('name 必填（公式名，1~64 字符；中文名可保存，跨公式引用时需纯英文）')
+  const name = value.trim()
+  if (name.length === 0 || name.length > MAX_NAME_LENGTH) throw new FormulaStoreError('name 必填（1~64 字符）')
+  if (!/[\p{L}\p{N}_-]+/u.test(name) || /[\s\u0000-\u001f]/.test(name)) throw new FormulaStoreError('name 只能包含字母（含中文）、数字、下划线或短横线，不能含空白/控制字符')
+  if (!/\p{L}/u.test(name)) throw new FormulaStoreError('name 必须至少包含一个字母（含中文）')
+  return name
 }
 
 export function createFormulaRow(database: DatabaseSync, fields: FormulaColumns, now = new Date().toISOString()): FormulaRow {

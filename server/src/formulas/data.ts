@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { join } from 'node:path'
 import type { AppConfig } from '../config.js'
 import { trainingBars } from '../train/engine.js'
+import { transformRandomPayload, type RandomSession } from '../train/random-mode.js'
 import type { Timeframe } from '../tdx/kline.js'
 import { readDayFileRange, type DayBar } from '../tdx/dayfile.js'
 import { parseTdxSymbol } from '../tdx/symbol.js'
@@ -43,12 +44,25 @@ export interface FormulaDataRequest {
   limit: number
 }
 
+/** M7-01 随机训练：响应照常生成后再按会话规则遮蔽日期/时间戳与代码/名称，禁止旁路泄露 */
+export function maskFormulaEvaluationForRandomSession<T>(payload: T, session: RandomSession): T {
+  return transformRandomPayload(payload, session) as T
+}
+
 /** 训练上下文：必须先截断至推进日、再复权、再聚合（trainingBars 既有唯一链路） */
 export async function trainingFormulaData(database: DatabaseSync, config: AppConfig, trainingId: number, timeframe: Timeframe, limit: number): Promise<FormulaData> {
   const row = database.prepare('SELECT code, name FROM trainings WHERE id = ?').get(trainingId) as unknown as { code: string; name: string } | undefined
   if (!row) throw new FormulaStoreError('训练不存在', 404)
-  const series = await trainingBars(database, config, trainingId, timeframe, 250)
+  let series: Awaited<ReturnType<typeof trainingBars>>
+  try {
+    series = await trainingBars(database, config, trainingId, timeframe, 250)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new FormulaStoreError('训练行情读取失败：' + message, 422)
+  }
   const bars = series.slice(-limit)
+  const warnings: string[] = []
+  if (limit > bars.length) warnings.push('训练上下文本次最多返回 ' + bars.length + ' 根（请求 limit=' + limit + '，已按实际行情截断）')
   const context = await buildStockContext(database, config, row.code, row.name)
   return {
     bars: toFormulaBars(bars),
@@ -56,7 +70,7 @@ export async function trainingFormulaData(database: DatabaseSync, config: AppCon
     source: 'training',
     note: '训练上下文：已按推进日截断→复权→聚合（trainingBars 唯一链路）',
     stockContext: context.context,
-    warnings: context.warnings,
+    warnings: [...context.warnings, ...warnings],
   }
 }
 

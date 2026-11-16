@@ -29,21 +29,9 @@ function barsFromCloses(closes: number[]): { bars: FormulaBar[]; dates: string[]
 }
 
 describe('M9-04A 校验与只读求值服务', () => {
-  it('合法公式 ok＋未来函数清单', () => {
-    const result = validateSource(engine, 'MA5:MA(CLOSE,5); 未来:BACKSET(CLOSE>OPEN,3);')
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    expect(result.futureFunctions).toContain('BACKSET')
-  })
 
-  it('语法错误返回分类与行号人话', () => {
-    const result = validateSource(engine, 'A:MA(CLOSE,;')
-    expect(result.ok).toBe(false)
-    if (result.ok) return
-    expect(['lexer', 'parser']).toContain(result.error.kind)
-    expect(result.error.message.length).toBeGreaterThan(0)
-    expect(typeof result.error.line).toBe('number')
-  })
+
+
 
   it('MA3 输出线与手算一致（NaN→null、与 bars 等长）', () => {
     const closes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -80,7 +68,7 @@ describe('M9-04A 校验与只读求值服务', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.error.kind).toBe('runtime')
-    expect(result.error.message.length).toBeGreaterThan(0)
+    expect(result.error.message).toMatch(/[\\u4e00-\\u9fa5]/)
   })
 
   it('NaN/Infinity 输出归一为 null（JSON 安全）', () => {

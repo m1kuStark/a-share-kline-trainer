@@ -33,3 +33,12 @@
 - 不做：选股扫描、条件单联动、公式云同步、任意脚本执行（只执行公式 DSL）。
 - 公式来源可信度：公式为用户本机文本；引擎执行按既有沙箱（无 IO/网络能力）。
 - 内置示例随 M9-04D 入库；本批 A 卡不 seed。
+
+## 五、评审修订（2026-11-17，实施后冻结调整）
+
+- 求值请求字段：`limit`（10~2000）与 `bars` 互为别名；训练上下文返回根数受既有 840 可见+250 暖机上限约束，超出时响应 `warnings` 明示。
+- 公式名：1~64 字符，允许中文/字母/数字/下划线/短横线，禁止空白/控制字符；**跨公式引用要求纯英文名**（引擎标识符限制），UI 需提示。
+- 随机训练（M7-01）：运行中的 `random_time` 由 `transformRandomPayload` 偏移日期/时间戳；`random_stock` 不注入 StockContext（NAMELIKE/CODELIKE/HYBLOCK 报人话错误）；响应附遮蔽告警。已结束（settled）随机训练按揭晓态正常返回。
+- 引擎加载：生产加载构建期 bundle；dev/测试回退 `FormulaEngine.ts`＋`futureFunctions.ts` 纯值入口（不能加载 index.ts，其把纯类型按值导出）。
+- 错误消息：统一中文前缀＋行/列；常见引擎消息映射中文，未知细节保留原文便于排查。
+- 发布打包：ZIP/桌面包的 server/dist 必须包含 `formulas/engine-bundle/index.mjs`（`scripts/release/build.mjs` 已纳入 `.mjs`）。
