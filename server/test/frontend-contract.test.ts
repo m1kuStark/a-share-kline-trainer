@@ -515,9 +515,12 @@ describe('M2 chart interaction contract', () => {
     // devDependencies 于 PACK-01（桌面 exe 形态）按派发简报授权新增 electron＋electron-builder，
     // 均为构建工具链，不进生产依赖；dependencies 于 PACK-04（更新通道整合）按派发简报显式授权
     // 新增 electron-updater（桌面主进程运行时依赖，随 exe 打包；ODO 动效自身仍零依赖）。
+    // M9-04A：服务端公式引擎 bundle 需构建期 esbuild（devDependency，构建工具链，不进生产依赖），
+    // 用户 2026-11-16 拍板默认方案；引擎源码仍唯一在 web/src/formula-engine，不新增运行时依赖。
+    // M9-04A：devDependencies 增加构建期 esbuild（引擎 bundle 工具链，非运行时依赖；用户 2026-11-16 拍板）
     const raw = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> }
     expect(Object.keys(raw.dependencies).sort()).toEqual(['@fastify/cors', '@fastify/static', 'electron-updater', 'fastify', 'klinecharts', 'lucide-vue-next', 'pinia', 'pinyin-pro', 'vue'])
-    expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'electron', 'electron-builder', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
+    expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'electron', 'electron-builder', 'esbuild', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
   })
 
   it('keeps the blind toggle out of the creation form (V1 shows stock info openly)', async () => {
