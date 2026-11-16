@@ -57,3 +57,9 @@
 
 - 独立 Journey run（动态端口/临时 SQLite/独立构建，serve 后即销毁）；TDX_ROOT 只读（D:\MySoftWares\TDX）。
 - 已知环境 flake：tdx-snapshot 目录 rename 偶发 EPERM（隔离重跑通过，非代码路径）。
+
+## CI 收据（HEAD 8a86f62）
+
+- GitHub Actions run **43943940454**：verify pass 4m54s、docs pass 52s、pr-policy pass 29s（干净环境全量单测＋构建）。
+- 本地复跑差异均为主机环境退化：runtime-isolation cancel 用例超时、recording-long 时序失败、tdx-snapshot EPERM；均已用 main 基线同失败或隔离重跑通过佐证，非本卡代码路径。
+- harness 台账：gate-report 已记录 binding/unit/build/docs/ci/journey 收据（ai-harness-lab/harness-state.jsonl）。
