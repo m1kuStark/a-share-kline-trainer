@@ -19,7 +19,9 @@
 - [GH-202611 GitHub 反馈批次（2026-11）](milestones/GH-202611.md)：按 Issue #8 与本批 PR 处理顺序推进的批次阶段卡。
 - [M9 公式系统](milestones/M9.md)：通达信兼容公式引擎（vendor/跨周期/市场上下文），M9-04 产品化进行中。
 
-- [M9-04A 公式库与校验/只读求值服务](tasks/M9-04A.md)：SQLite formula 库、validate/evaluate 只读 API、通达信文本导入（M9-04 首卡；服务端工程自验完成）。
+- [M9-04A 公式库与校验/只读求值服务](tasks/M9-04A.md)：SQLite formula 库、validate/evaluate 只读 API、通达信文本导入（M9-04 首卡；PR #44 已合入 main）。
+
+- [M9-04B 公式管理 UI](tasks/M9-04B.md)：设置面板「公式指标」分栏（列表/编辑/校验反馈/粘贴导入/预览/删除）。
 
 - [CHART-LAYOUT-01 图表铺满高度](tasks/CHART-LAYOUT-01.md)：修复行情条 Teleport 后图表容器残留空行导致的底部空白，图表宿主铺满面板可用高度（v1.3.7）。
 

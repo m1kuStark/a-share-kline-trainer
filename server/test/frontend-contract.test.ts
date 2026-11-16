@@ -499,7 +499,8 @@ describe('M2 chart interaction contract', () => {
     // 顶栏负向断言：胶囊按钮与其分组容器不复存在（注释亦不留关键词——源码注释也是契约文本）
     expect(training).not.toMatch(/motion-toggle|动效开关/)
     // 设置面板：分栏结构可扩展（activeSection 增 'animation' 档；nav 按钮平铺追加）
-    expect(settings).toMatch(/'defaults' \| 'preferences' \| 'animation' \| 'data'/)
+    expect(settings).toMatch(/'defaults' \| 'preferences' \| 'animation' \| 'formula' \| 'data'/)
+    expect(settings).toMatch(/>公式指标<\/button>/)
     expect(settings).toMatch(/activeSection = 'animation'">动画效果<\/button>/)
     expect(settings).toMatch(/aria-label="动画效果"/)
     // 首项"数字滚动动效"开关：读 appOdoMotion、切换 setOdoMotion（即改即生效，localStorage）
