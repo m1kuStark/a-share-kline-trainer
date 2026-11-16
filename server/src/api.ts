@@ -20,6 +20,8 @@ import { registerAppSettingsRoutes } from './settings/app.js'
 import { registerShortcutSettingsRoutes } from './settings/shortcuts.js'
 import { registerTdxPathSettingsRoutes } from './settings/tdx-path.js'
 import { registerDataDirSettingsRoutes } from './settings/data-dir.js'
+// M9-04A：公式库/校验/只读求值（agent 只读接口；不写训练/画单）
+import { registerFormulaRoutes } from './formulas/api.js'
 import { ensureRecordingNamespace } from './db.js'
 import { DRAWINGS_BODY_LIMIT, readDrawings, writeDrawings } from './drawings.js'
 import { createDataRefreshCoordinator } from './data/refresh.js'
@@ -284,6 +286,8 @@ export async function registerApi(
   registerTdxPathSettingsRoutes(app, config, { dataDir: dirname(config.databasePath) })
   // V1.2.6：训练数据目录设置（写回启动器配置 dataDir，重启生效；独立运行 409）
   registerDataDirSettingsRoutes(app, config)
+  // M9-04A：公式库 CRUD / validate / evaluate（只读公式与行情，不写训练）
+  registerFormulaRoutes(app, config, database)
   // DATA-ARCH-01：录像归档目录只读信息（<dataDir>/recordings；写入走桌面 IPC 不经 HTTP）。
   // 供前端/设置页提示与校验；查询本身不创建目录。
   app.get('/api/settings/recordings-dir', async () => ({
