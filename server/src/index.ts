@@ -6,6 +6,7 @@ import { createDrainController, type DrainController } from './setup/drain-contr
 import { getActiveTraining } from './train/engine.js'
 import { loadConfig } from './config.js'
 import { ensureDatabaseDirectory, migrateDatabase, openDatabase } from './db.js'
+import { seedBuiltinFormulas } from './formulas/seed.js'
 import { registerUpdateApi } from './update/api.js'
 import { registerDiagnosticsApi } from './diagnostics/api.js'
 import { reconcileUpdateStatus, resolveStaleBusyMs } from './update/status.js'
@@ -42,6 +43,13 @@ export async function startTrainerServer(): Promise<StartedTrainerServer> {
   await ensureDatabaseDirectory(config.databasePath)
   const database = openDatabase(config.databasePath)
   migrateDatabase(database)
+  // M9-04D：内置示例公式幂等 seed（失败不阻断启动；公式库/接口仍可用，UI 可手动新建）
+  try {
+    const seeded = seedBuiltinFormulas(database)
+    if (seeded > 0) console.log('[formulas] seeded ' + seeded + ' builtin example(s)')
+  } catch (error) {
+    console.error('[formulas] builtin seed failed:', error instanceof Error ? error.message : error)
+  }
 
   const app = Fastify({ logger: true })
   app.addHook('onRequest', async (request, reply) => {

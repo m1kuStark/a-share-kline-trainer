@@ -6,6 +6,8 @@
 - [发布与版本](release.md)：稳定/预览通道、签名 tag、发布检查清单与回滚。
 - [渐进读取](reading.md)：规则继承、模块索引、上下文预算。
 - [文档更新](documentation.md)：任务、证据与状态的责任和命令。
+
+- [公式 agent 接口](formula-agent-api.md)：本地只读 validate/evaluate/list 契约、错误码、随机训练遮蔽、curl 与 scripts/formula-agent.mjs 示例。
 - [测试门禁](testing.md)：什么检查证明什么，何时必须浏览器和视觉验收。
 - [并行开发](parallel-development.md)：当前约束、任务所有权和集成方式。
 - [模型协作](model-delegation.md)：四路策略、强模型介入边界和GLM配置核验。

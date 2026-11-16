@@ -28,8 +28,8 @@ const warnings = ref<string[]>([])
 const preview = ref<OkEvaluation | null>(null)
 const previewError = ref('')
 const previewCode = ref('600519')
-const form = ref<{ name: string; description: string; placement: Placement; source: string }>({
-  name: '', description: '', placement: 'sub', source: '',
+const form = ref<{ name: string; description: string; placement: Placement; source: string; enabled: boolean }>({
+  name: '', description: '', placement: 'sub', source: '', enabled: true,
 })
 
 const isBuiltin = computed(() => items.value.find(item => item.id === selectedId.value)?.builtin ?? false)
@@ -92,14 +92,14 @@ async function load(): Promise<void> {
 function select(item: FormulaView): void {
   selectedId.value = item.id
   form.value = {
-    name: item.name, description: item.description, placement: item.placement, source: item.source,
+    name: item.name, description: item.description, placement: item.placement, source: item.source, enabled: item.enabled,
   }
   resetTransientState()
 }
 
 function startNew(): void {
   selectedId.value = null
-  form.value = { name: '', description: '', placement: 'sub', source: '' }
+  form.value = { name: '', description: '', placement: 'sub', source: '', enabled: true }
   resetTransientState()
 }
 
@@ -284,6 +284,10 @@ onMounted(async () => {
             {{ confirmDelete ? '再次点击确认删除' : '删除' }}
           </button>
         </div>
+        <label class="formula-field">
+          <span>在图表启用（主图叠加/副图窗格；内置示例默认停用，勾选后渲染）</span>
+          <span class="formula-enabled-toggle"><input v-model="form.enabled" type="checkbox" aria-label="在图表启用" :disabled="busy" /> 启用</span>
+        </label>
         <label v-if="preview === null" class="formula-field formula-preview-code">
           <span>预览证券代码（无进行中训练时使用，需已连接通达信日线）</span>
           <input v-model="previewCode" aria-label="预览证券代码" spellcheck="false" />
@@ -337,6 +341,8 @@ onMounted(async () => {
 .formula-field textarea { font-family: 'Cascadia Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.5; resize: vertical; }
 .formula-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .formula-actions .trade-action { flex: 0 0 auto; width: auto; min-width: 130px; }
+.formula-enabled-toggle { display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+.formula-enabled-toggle input { width: auto; }
 .formula-danger { color: var(--error, #c0392b); }
 .formula-status { margin: 0; font-size: var(--font-size-sm, 13px); }
 .formula-status.ok { color: #2f9e69; }
