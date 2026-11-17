@@ -9,7 +9,7 @@
   "milestone": "GH-202611",
   "base_commit": "7affecb",
   "summary": "Issue #8-D（S 半，计划拍板）：主图 Ctrl+滚轮缩放，复用键盘 zoomBy 口径（视图右端为锚；deltaY<0 放大、>0 缩小）；普通滚轮保持平移、价格轴滚轮保持原生纵轴缩放；新增 Shift+←/→ 平移快捷键（按当前柱宽移动整数根、可按住连发、默认不与交易/推进/缩放热键冲突），设置面板可改键，顶部帮助文案可见；键盘/滚轮均按既有用户导航路径上报录像视窗。",
-  "next_action": "随本批整批验收；通过后合入 main 并推送。",
+  "next_action": "功能已进入main；保留review与未记录的单卡人工验收，后续按当前候选复验缩放/平移与快捷键，不再等待合入。静态对账见ENG-PLAN-01。",
   "allowed_paths": [
     "web/src/keyboardShortcuts.ts",
     "web/src/components/KlineChart.vue",
@@ -43,8 +43,8 @@
     ],
     "reason": "主图新增 Ctrl+滚轮缩放与 Shift+←/→ 平移快捷键；普通滚轮平移、价格轴纵轴缩放与录像视窗上报口径不变；显示/交互规格与用户快捷键表同步。全量并行门禁发现既有 review-profile beforeEach 真实磁盘 I/O 超出 15s hook 预算，按既有先例放宽到 45s，断言不变。"
   },
-  "verification_refs": ["docs/verification/2026-11/CHART-ZOOM-01/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/CHART-ZOOM-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@4a8f44eacabfeb63a6c21f7ed3dfc5a5ec181be4",
   "acceptance_ref": null
 }
 ```

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "task": "RUNTIME-CANCEL-02",
+  "recordedAt": "2026-11-18T01:06:48.4758074+08:00",
+  "reviewer": "/root/docs_audit",
+  "verdict": "可合入",
+  "counts": {
+    "Critical": 0,
+    "Important": 0,
+    "Minor": 0
+  },
+  "scope": "冻结测试变更及原始证据；全局门禁由主代理集成后闭合",
+  "worktree": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\runtime-cancel-02\\a-share-kline-trainer",
+  "testedBase": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "taskBase": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
+  "taskBaseAncestorVerified": true,
+  "fiveDimensions": [
+    {
+      "result": "pass",
+      "dimension": "计划对齐"
+    },
+    {
+      "result": "pass",
+      "dimension": "代码质量"
+    },
+    {
+      "result": "pass",
+      "dimension": "架构与集成"
+    },
+    {
+      "result": "pass",
+      "dimension": "测试真实性"
+    },
+    {
+      "result": "verified-scoped",
+      "pending": "shared matrix/docs final gates",
+      "dimension": "harness收据"
+    }
+  ],
+  "findings": [],
+  "testIds": [
+    {
+      "id": "runtime processes > cancels an owned child command and preserves its failure log",
+      "file": "server/test/runtime-isolation.test.ts",
+      "line": 163,
+      "semanticKillLine": 227
+    },
+    {
+      "id": "PORT-COEXIST-V127-NODE: killTrainerTree 真实边界（真实两级进程树＋真实 taskkill） > PORT-COEXIST-V127-NODE: taskkill terminates a real two-level node process tree including the grandchild",
+      "file": "desktop/test/port-tree-kill.test.ts",
+      "line": 81,
+      "semanticKillLine": 142
+    }
+  ],
+  "evidenceIntegrity": {
+    "copiedRunsMismatches": 0,
+    "cacheFilesVerified": 77,
+    "productionDiffEmpty": true,
+    "copiedRunsVerified": 45,
+    "cacheMismatches": 0
+  },
+  "fingerprints": [
+    {
+      "path": "server/test/runtime-isolation.test.ts",
+      "sha256": "2F6A850D9A2615DCCE594577196BA0BC5BD6FEBDA09EE55F50EF2B5BA6A4721D"
+    },
+    {
+      "path": "desktop/test/port-tree-kill.test.ts",
+      "sha256": "8141ACAD504FC559D391E2379E09114B476C009A4AFCC653BBC2C4E1DDC75770"
+    },
+    {
+      "path": "scripts/runtime/run.ts",
+      "sha256": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC"
+    },
+    {
+      "path": "desktop/src/port-conflict.ts",
+      "sha256": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385"
+    }
+  ],
+  "fullSuite": {
+    "elapsedMs": 381365.7727,
+    "server": {
+      "passed": 2654,
+      "files": 188
+    },
+    "receipt": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/npm-test-final.receipt.json",
+    "total": 3023,
+    "missingCorpusMessages": 0,
+    "exit": 0,
+    "desktop": {
+      "passed": 369,
+      "files": 34
+    },
+    "skippedMessages": 0,
+    "command": "npm test"
+  },
+  "mutants": [
+    {
+      "result": "survived attached fixture; retained",
+      "exit": 0,
+      "receipt": "mutant-runtime-no-tree.receipt.json"
+    },
+    {
+      "result": "grandchild alive assertion",
+      "exit": 1,
+      "restoredByteExact": true,
+      "testLine": 227,
+      "receipt": "mutant-runtime-no-tree-detached.receipt.json"
+    },
+    {
+      "result": "masked by EBUSY; retained; not counted as semantic kill",
+      "exit": 1,
+      "restoredByteExact": true,
+      "receipt": "mutant-desktop-no-tree-detached.receipt.json"
+    },
+    {
+      "result": "grandchild alive assertion",
+      "exit": 1,
+      "restoredByteExact": true,
+      "testLine": 142,
+      "receipt": "mutant-desktop-no-tree-detached-02.receipt.json"
+    }
+  ],
+  "pendingGates": {
+    "docsCheckExit": 1,
+    "runtimeCancellationStrictExit": 3,
+    "launcherRowsCovered": 10,
+    "docsStatusExit": 1,
+    "owner": "/root",
+    "docsImpactExit": 1,
+    "runtimeRowsPlanned": 3,
+    "launcherLifecycleStrictExit": 0
+  },
+  "declinedToJudge": [
+    "post-integration shared matrix/docs gates",
+    "independent vitest list execution; actual executed log names verified instead",
+    "simultaneous exhaustion of every Windows deadline",
+    "non-Windows support and packaged product/user acceptance/release",
+    "rejected historical temp-directory cleanup"
+  ],
+  "report": "review-runtime.md",
+  "repositoryModified": false,
+  "testsRunByReviewer": false,
+  "ledgerWrittenByReviewer": false
+}

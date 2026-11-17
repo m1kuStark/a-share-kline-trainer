@@ -1,0 +1,7 @@
+{
+  "log": "docs-status-check.log",
+  "errors": 1,
+  "exit": 1,
+  "warnings": 0,
+  "command": "npx --no-install tsx scripts/docs.ts status --check"
+}

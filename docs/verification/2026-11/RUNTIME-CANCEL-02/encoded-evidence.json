@@ -1,0 +1,130 @@
+{
+  "firstCommitAttemptExit": 1,
+  "reason": "unchanged original machine logs rejected by pre-commit whitespace check",
+  "rawCachePreserved": true,
+  "encoding": "base64",
+  "entries": [
+    {
+      "encodedBytes": 9352,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\failure-excerpts.log",
+      "roundTripVerified": true,
+      "decodedBytes": 7012,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/historical-failures.txt.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/historical-failures.txt",
+      "decodedSha256": "A3A7E28F068D0ECFC22E1336E7377AB8B56BE9C5D082A19D70AC8C1951CE6837",
+      "encodedSha256": "C64BA054C9F0F020FB76A0C042164472703246307557F112B16EB6F6368E0134"
+    },
+    {
+      "encodedBytes": 360,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-restored.log",
+      "roundTripVerified": true,
+      "decodedBytes": 269,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-desktop-restored.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-desktop-restored.log",
+      "decodedSha256": "2DEA630906199AEE867CC2C2676647E8231C8E8C5989179411E2BFEC3DAF8F78",
+      "encodedSha256": "3C02118F991BAF496B716744BCAF07C52792AA6457DC054CCD8CCDF505E44ACF"
+    },
+    {
+      "encodedBytes": 368,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-restored.log",
+      "roundTripVerified": true,
+      "decodedBytes": 275,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-restored.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-restored.log",
+      "decodedSha256": "16608A5285D01D21F12C6741D0B2CD37E488809CFF8AE794A5D73705EA2A13E1",
+      "encodedSha256": "E447E38ECE1E10CB071762D3DC2F8B1BA8766EE949120FDF0E5E01E6A4CDF9D2"
+    },
+    {
+      "encodedBytes": 368,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.log",
+      "roundTripVerified": true,
+      "decodedBytes": 275,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec-02.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec-02.log",
+      "decodedSha256": "D0C4EEBF068C051D2BDA82DDFFFCB814FDC769BA832595F78C142F223E304886",
+      "encodedSha256": "C50DDF0E0D874489EE2BA93FA7614506A58315D9523727825920643AF9A6E489"
+    },
+    {
+      "encodedBytes": 1508,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec.log",
+      "roundTripVerified": true,
+      "decodedBytes": 1131,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec.log",
+      "decodedSha256": "9E2914B4BE7FE256F99DFEAD24BA83FA3C0CCD72FDAA67145CCDA2A1F187F62F",
+      "encodedSha256": "FDD6D2BEA8A4BA3B7EA617BBFBB2D6A4659FA4EE81F6AEFFF13C07118050E2B7"
+    },
+    {
+      "encodedBytes": 2056,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached-02.log",
+      "roundTripVerified": true,
+      "decodedBytes": 1541,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached-02.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached-02.log",
+      "decodedSha256": "065405E0DFA62BD3F30128DC7EFCC291E6F76EEB2DCD97A399E80CCC2AE880CC",
+      "encodedSha256": "0E1183A1ED355CC225378ED3078C804E976988874B9C8186BC7FFB24AE34FE1F"
+    },
+    {
+      "encodedBytes": 1676,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached.log",
+      "roundTripVerified": true,
+      "decodedBytes": 1256,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached.log",
+      "decodedSha256": "D570D2FE8854762065A81A0F540681CB7A37111AEFD8625004E389B747E16746",
+      "encodedSha256": "A652EA16DC69E09EAB4BDB4CC90978D29939E0B3ED57D9978654578BD0E1EC41"
+    },
+    {
+      "encodedBytes": 2664,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree-detached.log",
+      "roundTripVerified": true,
+      "decodedBytes": 1998,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree-detached.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree-detached.log",
+      "decodedSha256": "4351426A218757B4ABF52980A4AD52598F58574431EA9378E9D728F5976E00D8",
+      "encodedSha256": "E29DE4F1C6963D9AA3A2D1992E3122B50755387160B5F19E88558FE8EB78F276"
+    },
+    {
+      "encodedBytes": 384,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.log",
+      "roundTripVerified": true,
+      "decodedBytes": 287,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree.log",
+      "decodedSha256": "9F703F1BD3842D31BABD6FE67E7EC1B784BC981F884A3379936BCEBB281545B7",
+      "encodedSha256": "614D160F52EF820E21E377F17D44A4CBD5167CBFB41F40291689396D2136C94F"
+    },
+    {
+      "encodedBytes": 20188,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-test-final.log",
+      "roundTripVerified": true,
+      "decodedBytes": 15139,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/npm-test-final.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/npm-test-final.log",
+      "decodedSha256": "56EE116E3CF6334838C86332CA93B6B0201B1BDE998E038899E49763BBEF33D1",
+      "encodedSha256": "A5C888F86243EA90CED594B6E21457EA7C108C6016CED447EF5183AAB122858E"
+    },
+    {
+      "encodedBytes": 364,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.log",
+      "roundTripVerified": true,
+      "decodedBytes": 271,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-desktop.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-desktop.log",
+      "decodedSha256": "F853F105B6E8544DBB209656F37F530F682EA65870C6549E954CED9F0E127E80",
+      "encodedSha256": "01E9D80B4CBD1EACC3B3BE99B1724AC26ADF388749330A5527B7B7CC2CF30187"
+    },
+    {
+      "encodedBytes": 384,
+      "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.log",
+      "roundTripVerified": true,
+      "decodedBytes": 286,
+      "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-runtime.log.raw.b64",
+      "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-runtime.log",
+      "decodedSha256": "1CA5DE44876B6B3EFE569954D34799723748865B24DB5EACC0A2AAF59B61CCF4",
+      "encodedSha256": "114A7C0C356C640CBD5AF57CC8112234145516D1535F3E14C1A0E8956D95FCC8"
+    }
+  ],
+  "completeDiffCheckBeforeEncodingExit": 2,
+  "textFormat": "single ASCII line without final newline, stable under Git EOL conversion"
+}

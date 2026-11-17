@@ -1,0 +1,1 @@
+{"command":"npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts","exit":0,"elapsedSeconds":32.0744098,"log":"C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.log"}

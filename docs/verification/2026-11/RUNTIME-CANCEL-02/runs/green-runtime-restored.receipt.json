@@ -1,0 +1,6 @@
+{
+  "elapsedMs": 40059.8646,
+  "log": "green-runtime-restored.log",
+  "exit": 0,
+  "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts"
+}

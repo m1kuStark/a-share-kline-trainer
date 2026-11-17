@@ -1,0 +1,7 @@
+{
+  "exit": 1,
+  "command": "npx --no-install tsx scripts/docs.ts check",
+  "log": "docs-check.log",
+  "errors": 1,
+  "warnings": 178
+}

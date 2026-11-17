@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "PACK",
   "summary": "选型验证完成＋Electron 最小原型交付（工程验证）：选型 Electron 44.5.1＋electron-builder 26.15.3 实证（内置 Node 24.21.0 满足 engines>=24，node:sqlite 在完整主进程实测通过，进程内嵌成立、降级树未触发）；desktop/（主进程 main.ts＋纯函数 desktop-config.ts＋electron-builder.yml＋dev-window/package-desktop/smoke 三脚本）；server/src/index.ts 行为保持重构（startTrainerServer 导出，CLI 语义不变）；package.json 增 main/dev:desktop/build:desktop/test:desktop＋devDeps electron/electron-builder；便携 exe 99.0MB；打包冒烟 SMOKE_PASS（health 200＋currentVersion 1.2.7＋首页＋窗口「K线训练器」＋退出）；npm test 1521/1521；零破坏（scripts/release/web/launcher.cjs diff 空）；矩阵 desktop-app 4 covered/10 open（PACK-02..05 占位）；变异 2 行 executed 击杀。",
-  "next_action": "工程验证完成待架构师复核与用户验收：check-binding desktop-app strict exit 3（covered=4/open=10/RED=0，open 为设计内占位与手册行）；updater/launcher-lifecycle 回归 exit 0；6 项 proposed_default/登记项待拍板（默认数据目录 exe 同级 data、appId/productName、窗口标题固定、产物命名、依赖裁剪、矩阵 open 债务——见验证记录 README 第五节）",
+  "next_action": "Electron原型已进入main；PACK-02..05、后继数据迁移及现行安装/发布手册已继续实现，勿重做选型或以初版数据目录等proposed_default充当当前规则。当前包身份与人工验收另核，本轮未打包。",
   "base_commit": "c298bce",
   "allowed_paths": [
     "desktop/**（新建全部）",
@@ -32,10 +32,8 @@
     ],
     "reason": "桌面形态首任务；行为矩阵在工作区 harness skill（desktop-app.yaml）＋镜像 ai-harness-lab/skill-v1/matrix/，不入仓库。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/PACK-01/README.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/PACK-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@cc6289f87327466bff0b6d0cb207a78f21ced175",
   "acceptance_ref": null
 }
 ```

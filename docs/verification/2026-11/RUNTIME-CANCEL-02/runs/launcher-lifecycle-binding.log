@@ -1,0 +1,3 @@
+矩阵: 10 行 | covered=10 open(未闭合)=0 RED=0
+测试索引: 3112 用例 + 745 describe 组（工作树）
+结论: 所有 covered 行的 test_ids 均可解析（组名绑定仅提示不算 RED）✓

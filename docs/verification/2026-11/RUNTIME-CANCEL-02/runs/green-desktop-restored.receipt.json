@@ -1,0 +1,6 @@
+{
+  "elapsedMs": 10972.2289,
+  "log": "green-desktop-restored.log",
+  "exit": 0,
+  "command": "npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts"
+}

@@ -1,0 +1,6 @@
+{"ms":552,"type":"ready","mode":"desktop","root":"C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-tree-diagnostic-jltXIl","ids":{"parent":39228,"grandchild":69032},"sentinel":69056}
+{"ms":822,"type":"process-state","parent":true,"grandchild":true,"sentinel":true}
+{"ms":12833,"type":"process-state","parent":false,"grandchild":false,"sentinel":true}
+{"ms":12833,"type":"returned","mode":"desktop","result":{"exited":true},"killElapsedMs":12281,"parentAlive":false,"grandchildAlive":false,"sentinelAlive":true}
+{"ms":12836,"type":"directory-released"}
+{"ms":12837,"type":"cleanup","ownedAlive":[]}

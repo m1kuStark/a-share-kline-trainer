@@ -9,7 +9,7 @@
   "milestone": "GH-202611",
   "base_commit": "e37234e",
   "summary": "用户 2026-11-11 反馈 v1.3.6 悬浮工具面板：自定义常用工具较多时仍需纵向滚动、图标/按钮偏大、遮挡画面。按用户要求做紧凑图标优先方案：glyph 20→16px、按钮高 44→36px、5 列→6 列自适应、默认展开常用+其他工具、1024×680/1366×705 下工具列表无纵向滚动；保留拖拽/位置记忆、hover 名称/描述与常用工具自定义语义。",
-  "next_action": "定向 journey 7/7、verify:fast、uiux-workbench binding RED=0 已过（证据 docs/verification/2026-11/UI-TOOLBAR-02）；用户验收随整批；resize/pin 留后续辅助项。",
+  "next_action": "紧凑面板已进入main；resize/pin已由UI-TOOLBAR-03（599f40d，PR#39）实现，并在V137记录中获2026-11-13用户验收，不再作为未开发辅助项。保留本卡review及原单卡验收字段。",
   "allowed_paths": [
     "web/src/views/Training.vue",
     "web/src/styles.css",
@@ -36,8 +36,8 @@
     ],
     "reason": "画线悬浮面板改为紧凑图标优先网格、默认展开全部工具；用户文档与显示规格同步。"
   },
-  "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-02/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-02/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@0b369a7dcd0457b377b37e2191e171ff31c49faf",
   "acceptance_ref": null
 }
 ```

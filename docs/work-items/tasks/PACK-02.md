@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "PACK",
   "summary": "桌面生命周期工程验证完成：单实例（锁先于一切启动分支＋冒烟双实例断言）；优雅退出复用 SETUP-01 冻结排空（server 句柄新增 drain 字段＋9 行纯增量；in-app 口径 allowActiveTraining:true 训练保留 SQLite）→shutdown→退出，冒烟 CloseMainWindow 自然退出 exit 0＋端口可重绑＋health 拒连；排空超时 15s 默认（env 可覆盖）强制退出如实记录；端口冲突＝PORT-01 镜像自动回退（TRAINER_PORT_FALLBACK 注入）＋PORT-02 三应答（dialog 三选/TRAINER_DESKTOP_CONFLICT_ANSWER 注入；restart 复核 pid 才杀——冒烟假训练器实证接管）；外部链接系统浏览器＋deny 新窗；窗口 bounds 记忆（dataDir/window-state.json、1024×680 最小、工作区 clamp）；安全基线显式锁定。desktop 纯函数层 5 模块 34 新例（TDD RED→GREEN）；npm test 1556/1556；build＋build:desktop exit 0；SMOKE_PASS 53.4s 全断言；零破坏（scripts/release/web/launcher.cjs diff 空）；矩阵 desktop-app covered=12/open=8/RED=0 strict exit 3（open＝设计内占位）；变异 M1/M2 executed 击杀。",
-  "next_action": "工程验证完成待架构师复核与用户验收：8 项 proposed_default 待拍板（排空超时 15s/bounds 位置/最小尺寸/菜单形态/非训练器占用一律回退与 launcher 口径差/外部链接 deny 策略/无 preload/对话框文案——见验证记录 README 第五节）；PACK-03/04（electron-updater）/05（NSIS）待派发",
+  "next_action": "桌面生命周期已进入main；按当前实现及RUNTIME-CANCEL-02核对取消/进程树清理，不重新实现单实例、窗口记忆和退出主体。旧proposed_default需按后继规格核对，当前候选人工验收未记录。",
   "base_commit": "cc6289f",
   "allowed_paths": [
     "desktop/**",
@@ -26,8 +26,8 @@
     "update": ["docs/work-items/tasks/PACK-02.md", "docs/work-items/milestones/PACK.md"],
     "reason": "生命周期任务；行为矩阵在工作区 harness skill（desktop-app.yaml）＋镜像。"
   },
-  "verification_refs": ["docs/verification/2026-10/PACK-02/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/PACK-02/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@5f74db0ed3e46000f19754efb5ecf7ee7f3e4835",
   "acceptance_ref": null
 }
 ```

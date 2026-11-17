@@ -9,7 +9,7 @@
   "milestone": "GH-202611",
   "base_commit": "dac4c95",
   "summary": "Issue #8-C（用户 2026-11-07 拍板：悬浮卡＋时间轴＋状态条）：日K 日期统一追加中文星期——悬停信息卡日期行、X 轴时间刻度、底部状态条「可见至/末根」与常驻行情条日期；周K/月K 不加（无单一日内星期语义）；随机时间遮蔽态仍只呈现星号，不泄露日期/星期。纯展示层：不改 K 线/交易/录像/持久数据，星期由 ISO 日期串按 UTC 日历纯函数计算，非法日历日不臆造。",
-  "next_action": "随本批整批验收；通过后合入 main 并推送。",
+  "next_action": "功能已进入main；保留review与未记录的单卡人工验收，后续按当前候选复验日K星期及随机遮蔽，不再等待合入。静态对账见ENG-PLAN-01。",
   "allowed_paths": [
     "web/src/dateLabels.ts",
     "web/src/components/KlineChart.vue",
@@ -38,8 +38,8 @@
     ],
     "reason": "日K 悬浮卡/时间轴/状态条日期呈现口径新增中文星期，周月K与盲训遮蔽语义不变；显示规格与用户图表说明同步。全量并行门禁发现既有 train-range-preview 并发用例默认 5s 预算不足（真实 SQLite 双请求竞争），按既有先例放宽到 20s，断言不变。"
   },
-  "verification_refs": ["docs/verification/2026-11/CHART-WEEKDAY-01/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/CHART-WEEKDAY-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@7affecbf31bd41f7aa39b35406d07c586a430066",
   "acceptance_ref": null
 }
 ```

@@ -1,0 +1,7 @@
+{"ms":1116,"type":"ready","mode":"runtime","root":"C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-tree-diagnostic-xHIGI9","ids":{"parent":71608,"grandchild":73420},"sentinel":34120}
+{"ms":1184,"type":"process-state","parent":true,"grandchild":true,"sentinel":true}
+{"ms":12073,"type":"process-state","parent":false,"grandchild":false,"sentinel":true}
+{"ms":12075,"type":"returned","mode":"runtime","result":{"error":"diagnostic cancellation"},"killElapsedMs":10959,"parentAlive":false,"grandchildAlive":false,"sentinelAlive":true}
+{"ms":12076,"type":"log-retained","log":"owned tree ready\n"}
+{"ms":12085,"type":"directory-released"}
+{"ms":12086,"type":"cleanup","ownedAlive":[]}

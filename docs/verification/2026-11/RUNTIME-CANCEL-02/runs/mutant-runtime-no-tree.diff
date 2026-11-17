@@ -1,0 +1,13 @@
+diff --git a/scripts/runtime/run.ts b/scripts/runtime/run.ts
+index 0ce0e08..bcf31d4 100644
+--- a/scripts/runtime/run.ts
++++ b/scripts/runtime/run.ts
+@@ -146,7 +146,7 @@ async function stopChild(child: ChildProcess, done: Promise<unknown>, runId?: st
+       // Generic commands below still need tree cleanup for their descendants.
+       child.kill('SIGKILL')
+     } else if (process.platform === 'win32') {
+-      const killer = exec('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true })
++      const killer = exec('taskkill', ['/PID', String(child.pid), '/F'], { windowsHide: true })
+       const result = await Promise.race([
+         killer.then(() => 'completed' as const, error => ({ kind: 'failed' as const, error })),
+         delay(TREE_KILL_DEADLINE_MS).then(() => ({ kind: 'timed-out' as const })),

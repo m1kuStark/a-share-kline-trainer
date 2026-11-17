@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "PACK",
   "summary": "工程验证完成（2026-10-06 接续轮）：首启发现/原地采用（发现→采用/多候选对话框/无候选新建/二次幂等/旧 config 沿用）＋共存防线（launch.lock＋状态记录三应答＋反向记录＋身份复核清理）＋零丢失不变量（哈希前后对照）全交付；desktop 87/87、全量 1515/1516（1 例既有 flaky 单跑全绿）、build/build:desktop/冒烟 SMOKE_PASS(A-G) 全过；矩阵 desktop-app +7 行 covered（RED=0）；server/src、web、scripts/release、launcher.cjs 零改动。Electron/Windows 平台实测四发现＋隔离事故披露见验证记录 §五。",
-  "next_action": "用户验收 proposed_default 8 项（含提示形态收敛 console-only、--adopt-child 宿主规避）后转 done",
+  "next_action": "数据/配置兼容已进入main；后继MIG-ONECLICK-01/02与INSTALLER-UPGRADE-01继续处理迁移及覆盖安装。保留原卡状态；自然升级与旧数据覆盖只据对应候选收据判定，本轮未运行真实迁移。",
   "base_commit": "5f74db0",
   "allowed_paths": [
     "desktop/**",
@@ -32,10 +32,8 @@
     ],
     "reason": "数据兼容任务；行为矩阵在工作区 harness skill（desktop-app.yaml）＋镜像。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/PACK-03/README.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/PACK-03/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@091cf9810b9f88bc099dd1aff9359ae54fcee87a",
   "acceptance_ref": null
 }
 ```

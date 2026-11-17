@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "PACK",
   "summary": "工程验证完成（2026-10-05）：双通道更新交付——packaged→electron-updater 6.8.10（GitHub provider，feed 可经 env TRAINER_DESKTOP_UPDATE_FEED 注入；check 视图与 UPD HTTP 同形且 updateAvailable 复用 server version.ts compareVersions 单一口径），dev/源码/纯浏览器→既有 UPD HTTP 端点零变化（e2e 3/3 回归为证）。最小 IPC（preload.cts CJS 沙箱形态，desktopUpdates 四成员窄接口，contextIsolation/sandbox 不变）；安装必经排空退出管线（downloaded→drain.prepare(allowActiveTraining:true)→shutdown→exit 分支 resolveInstallActionOnExit→quitAndInstall(true,true)；forced 路径绝不安装）。desktop 102/102（含真实 NsisUpdater＋本地 fixture HTTP 集成 3 例，零 api.github.com）＋全量 1524/102＋build/build:desktop 过＋冒烟 SMOKE_PASS 161.5s（A-H，阶段 H：packaged exe 经 fixture feed 真实检出 v9.9.9）；矩阵 updater.yaml 22/22 covered（6 新行，变异 2 行 executed 击杀）、desktop-app 19 covered/8 open 设计内；禁改区（scripts/release/launcher.cjs/server/src）diff 空；package.json 仅新增 electron-updater。三平台实证：autoUpdater getter 导出须走 CJS default 通道、--publish never 不产 app-update.yml（extraResources 回退＋构建后核验）、sandboxed preload 须 CJS。",
-  "next_action": "用户验收 proposed_default 10 项（含手动检查不自动/安装前排空/feed 注入口/boot check 缝/新文案/desktop 不挡活动训练/app-update.yml 入包方式/无签名 fail-open 等，见验证记录 README 与 design §八）后转 done；真实更新全流程待 PACK-05 发布资产＋真机验收",
+  "next_action": "桌面更新通道已进入main；便携原地更新已由PORT-UPD-01及后继修订替代初版NSIS路径假设。按当前安装/便携形态分别核验真实更新、保留历史与旧录像，本轮未运行更新。",
   "base_commit": "091cf98",
   "allowed_paths": [
     "desktop/**（含新增 preload）",
@@ -29,8 +29,8 @@
     "update": ["docs/work-items/tasks/PACK-04.md", "docs/work-items/milestones/PACK.md"],
     "reason": "更新通道整合任务；行为矩阵在工作区 harness skill（updater.yaml desktop 行＋desktop-app.yaml）。"
   },
-  "verification_refs": ["docs/verification/2026-10/PACK-04/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/PACK-04/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@65540f41355ced89a3eaad5108e764f1d5a8f828",
   "acceptance_ref": null
 }
 ```
