@@ -9,7 +9,7 @@
   "milestone": "GH-202611",
   "base_commit": "529105a",
   "summary": "Issue #8 工具栏布局（用户 2026-11-07 拍板 Q8）：顶栏新增「划线」开关；工具面板改为可拖拽悬浮层（默认停靠主图右侧账户区上方、不压价格轴），23 个工具以 SVG 图形化图标＋短标签 5 列网格呈现，1024×680 展开「其他工具」也无需纵向滚动；hover/键盘聚焦显示中文名称与一句具体用途描述；拖动位置持久化并钳制在视口内；常用工具自定义/拖入移出/排序/刷新恢复/折叠能力保留。纯 UI 编排：画线语义、点击取点、快捷键与录像均不变。",
-  "next_action": "随本批整批验收；通过后合入 main 并推送。",
+  "next_action": "功能已进入main，布局已由UI-TOOLBAR-02/03继续演进；以当前紧凑、固定和调宽高面板复验，不重复恢复初版布局。保留review与未记录的单卡人工验收。",
   "allowed_paths": [
     "web/src/drawTools.ts",
     "web/src/components/ToolGlyph.vue",
@@ -38,8 +38,8 @@
     ],
     "reason": "画线工具入口从右栏常驻工具条改为顶栏开关＋可拖拽悬浮面板，新增图形图标与 hover 描述、位置持久化；显示规格与用户操作说明同步。"
   },
-  "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-01/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/UI-TOOLBAR-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@ae9f6b8fe5753ac0eb9401f93a26199b2ba10560",
   "acceptance_ref": null
 }
 ```

@@ -1,0 +1,138 @@
+{
+  "base": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "mode": "static-history-only",
+  "items": [
+    {
+      "id": "TRAIN-03",
+      "commit": "784a4d2e9e9afec6bd23ce585592e9817a2ec060",
+      "ancestorExit": 0,
+      "subject": "feat: add v1.2 clock orders and acceptance UX"
+    },
+    {
+      "id": "ORDER-01",
+      "commit": "784a4d2e9e9afec6bd23ce585592e9817a2ec060",
+      "ancestorExit": 0,
+      "subject": "feat: add v1.2 clock orders and acceptance UX"
+    },
+    {
+      "id": "TRAIN-FEE-01",
+      "commit": "3a91c4ca894d317d64c9290f36af6bb07abe35c1",
+      "ancestorExit": 0,
+      "subject": "feat(train): TRAIN-FEE-01 个性化佣金费率（Issue #8-A）——设置三项费率/快照冻结/费用取整到分/UI 预设与详情展示/文档与矩阵"
+    },
+    {
+      "id": "SETUP-PASTE-01",
+      "commit": "dac4c9541f7d6328def6f462ca2faedb334c9ef3",
+      "ancestorExit": 0,
+      "subject": "feat(setup): SETUP-PASTE-01 连接通达信弹层支持手动粘贴路径（保留原生选择器；检查通过才可保存）"
+    },
+    {
+      "id": "CHART-WEEKDAY-01",
+      "commit": "7affecbf31bd41f7aa39b35406d07c586a430066",
+      "ancestorExit": 0,
+      "subject": "feat(chart): CHART-WEEKDAY-01 日K 悬浮卡/时间轴/状态条显示星期（周月K不加、盲训遮蔽不泄露）"
+    },
+    {
+      "id": "CHART-ZOOM-01",
+      "commit": "4a8f44eacabfeb63a6c21f7ed3dfc5a5ec181be4",
+      "ancestorExit": 0,
+      "subject": "feat(chart): CHART-ZOOM-01 Ctrl+滚轮缩放＋Shift+←/→ 平移快捷键（关闭库内置热键避免叠加；设置可改键）"
+    },
+    {
+      "id": "CHART-PAN-01",
+      "commit": "529105a52d083164c7726053e9a0fef6b156c3b4",
+      "ancestorExit": 0,
+      "subject": "feat(chart): CHART-PAN-01 时间轴拖动平移（独占时间轴手势；回放可用；门禁稳定性收敛）"
+    },
+    {
+      "id": "UI-TOOLBAR-01",
+      "commit": "ae9f6b8fe5753ac0eb9401f93a26199b2ba10560",
+      "ancestorExit": 0,
+      "subject": "feat(ui): UI-TOOLBAR-01 顶栏「划线」开关＋可拖拽图形化悬浮工具面板（hover 名称/描述、位置持久化、1024 全工具可达）"
+    },
+    {
+      "id": "UI-TOOLBAR-02",
+      "commit": "0b369a7dcd0457b377b37e2191e171ff31c49faf",
+      "ancestorExit": 0,
+      "subject": "feat(ui): UI-TOOLBAR-02 紧凑工具面板——默认展开全部工具、常用 0/5/10/23 无滚动、glyph16/6列/默认左下（用户 2026-11-11 反馈）"
+    },
+    {
+      "id": "M7-01",
+      "commit": "825af6547c2105e66fc031c62ef54c0239b4538b",
+      "ancestorExit": 0,
+      "subject": "feat(train): M7-01 random training mode server core (3 dimensions, API-level hiding, settle reveal)"
+    },
+    {
+      "id": "M7-02",
+      "commit": "cd06a7120044af5c42b9e072ff7a553fcb047d1a",
+      "ancestorExit": 0,
+      "subject": "feat(web): M7-02 random mode home entry and frontend wiring"
+    },
+    {
+      "id": "PACK-01",
+      "commit": "cc6289f87327466bff0b6d0cb207a78f21ced175",
+      "ancestorExit": 0,
+      "subject": "feat(desktop): PACK-01 Electron exe form spike + minimal in-process prototype"
+    },
+    {
+      "id": "PACK-02",
+      "commit": "5f74db0ed3e46000f19754efb5ecf7ee7f3e4835",
+      "ancestorExit": 0,
+      "subject": "feat(desktop): PACK-02 desktop app lifecycle (single instance, graceful quit, port conflict, window memory)"
+    },
+    {
+      "id": "PACK-03",
+      "commit": "091cf9810b9f88bc099dd1aff9359ae54fcee87a",
+      "ancestorExit": 0,
+      "subject": "feat(desktop): PACK-03 data and config compatibility (zero-loss history defense)"
+    },
+    {
+      "id": "PACK-04",
+      "commit": "65540f41355ced89a3eaad5108e764f1d5a8f828",
+      "ancestorExit": 0,
+      "subject": "feat(desktop): PACK-04 update channel integration (electron-updater dual-channel, minimal IPC, drain-first install)"
+    },
+    {
+      "id": "PACK-05",
+      "commit": "ee6c16284acc814eabf8d418b976e0a57f433685",
+      "ancestorExit": 0,
+      "subject": "feat(desktop): PACK-05 release pipeline and packaging smoke gate (NSIS installer, latest.yml, checksums)"
+    },
+    {
+      "id": "UPD-01",
+      "commit": "098c44203fc9f5c7f67c9784645e1a407e56af77",
+      "ancestorExit": 0,
+      "subject": "feat(update): UPD-01 online update server core (check/apply/status, verified swap, detached updater)"
+    },
+    {
+      "id": "UPD-02",
+      "commit": "1844d3669a5cbfdff03bd77fa64146269f6b2d5c",
+      "ancestorExit": 0,
+      "subject": "feat(web): UPD-02 about & update settings section with e2e coverage"
+    },
+    {
+      "id": "UPD-BUSY-HEAL-01",
+      "commit": "3f68a3247d8e0132abdf8daa41ce6d52aa8eedac",
+      "ancestorExit": 0,
+      "subject": "merge: UPD-BUSY-HEAL-01 陈旧busy无感自愈（用户已验收）"
+    },
+    {
+      "id": "UPD-NSIS-RETRY-01",
+      "commit": "ad9766836f61c4e46e709fea2d18acd00ffb9751",
+      "ancestorExit": 0,
+      "subject": "merge: UPD-NSIS-RETRY-01 NSIS安装中断自愈重试（用户已验收）"
+    },
+    {
+      "id": "E2E-SPEC-SYNC-01",
+      "commit": "7a19e8185deb1a3add74e3bbf4979c2733835d9e",
+      "ancestorExit": 0,
+      "subject": "merge: E2E-SPEC-SYNC-01 桶B规格同步＋画线隔离口径（用户已验收）"
+    },
+    {
+      "id": "E2E-BASELINE-01",
+      "commit": "6533196d782768376b716af679987681427a3557",
+      "ancestorExit": 0,
+      "subject": "docs(work-items): U5-BRIEF 卡去除前向文件引用（简报由任务产出）"
+    }
+  ]
+}

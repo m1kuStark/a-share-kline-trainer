@@ -9,7 +9,7 @@
   "milestone": "GH-202611",
   "base_commit": "79b0f8a",
   "summary": "Issue #8-A（用户 2026-11-07 拍板推荐口径）：训练默认设置新增可配费率三项——佣金率、最低佣金（0＝免 5）、卖出印花税率；佣金与印花税各自四舍五入到分；单一当前费率不按历史日期回溯；暂不设过户费、排行不按费率分组。新训练创建时把数值冻结进 rules_json 快照，修改默认只影响新训练；旧两布尔/四字段客户端 PUT 兼容且不改写已存费率；损坏费率键 409 TRAINING_DEFAULTS_UNREADABLE 可行动报错。",
-  "next_action": "随本批整批验收；通过后合入 main 并推送。",
+  "next_action": "功能已进入main；保留review与未记录的单卡人工验收，后续按当前候选复验费率设置/新训练快照，不再等待合入。静态对账见ENG-PLAN-01。",
   "allowed_paths": [
     "server/src/settings/training.ts",
     "server/src/settings/creation-defaults.ts",
@@ -49,8 +49,8 @@
     ],
     "reason": "训练默认设置新增可编辑费率三项、费用取整口径与快照冻结语义；用户说明与后端会计说明同步。"
   },
-  "verification_refs": ["docs/verification/2026-11/TRAIN-FEE-01/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/TRAIN-FEE-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@3a91c4ca894d317d64c9290f36af6bb07abe35c1",
   "acceptance_ref": null
 }
 ```

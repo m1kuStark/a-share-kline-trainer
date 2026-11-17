@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "UPD",
   "summary": "消费 UPD-01 服务端契约（提交 098c442；契约全文＝docs/verification/2026-10/UPD-01/design.md §2）：设置面板新增「关于与更新」分栏（跟随 M6-07 动画分栏先例）——当前版本号（/api/health currentVersion）＋「检查更新」按钮；结果三态（有新版＝新版本号＋release notes 可折叠＋「下载并更新」／已是最新／检查失败＝error 人话＋可重试）；apply 流程＝确认提示（将自动重启）→POST /api/update/apply→202 轮询 /api/update/status 呈现状态机（下载进度→校验→备份→安装→重启中）→断线窗口按「正在重启，等待服务回来…」呈现并 2s×15 退避重连→恢复后 completed 以 health.currentVersion 显示已更新到 vX.Y.Z／failed 显示原因＋重试入口；守卫消息人话映射（UPDATE_NOT_PACKAGED／UPDATE_IN_PROGRESS／ACTIVE_TRAINING／UPDATE_NOT_AVAILABLE）。文案中文字面量（仓库无 i18n 惯例），全部列入拍板清单。前端纯逻辑（状态文案表、守卫映射、重连退避、终态判定）抽 web/src/updateFlow.ts 经 server/test transpile 提取执行模式单测（kdj 先例）；e2e e2e/update-settings.spec.ts 经 journey 隔离运行：spec 自起本地 fixture 清单 HTTP（临时端口、可变内容、零 api.github.com）＋次级真实服务（run.serverDir 编译产物＋种子 .runs/package.json 提供真实 currentVersion，env TRAINER_UPDATE_MANIFEST_URL 注入），覆盖分栏呈现/三态/守卫；真实换装全流程（发布包布局＋真重启）不进 e2e，留用户真机验收。既有分栏（训练默认/应用偏好/动画效果/数据目录）零回归。",
-  "next_action": "工程验证完成待架构师复核与用户验收：矩阵 updater.yaml 16/16 covered（5 新 UI 行＋UPD-01 11 行未动）、check-binding strict exit 0、定向 68/68（含 UPD-01 33 例零红）、npm test 1513/1513 exit 0、build 过、journey 新 spec 3/3＋animation-settings 抽查 1/1 exit 0、README 链接门禁 RED→GREEN；16 项 proposed_default（含 4 项行为类沿简报 provisional 决策）待拍板（验证记录 README §6）；附加授权修复（README 图片→docs/user/images/）独立提交",
+  "next_action": "关于与更新设置页已进入main，桌面形态由PACK-04/PORT-UPD-01继续接线；不重复开发设置页。历史文案/参数清单先对照后继规格，真实换装与旧数据保护按当前候选验收，本轮未动态复验。",
   "base_commit": "098c442",
   "allowed_paths": [
     "web/src/**",
@@ -31,11 +31,8 @@
     ],
     "reason": "行为矩阵在工作区 harness skill（.zcode/skills/ai-harness/matrix/updater.yaml）＋镜像，不入仓库；docs/status.md 仅经生成器更新。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/UPD-02/README.md",
-    "docs/verification/2026-10/UPD-02/design.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/UPD-02/README.md","docs/verification/2026-10/UPD-02/design.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@1844d3669a5cbfdff03bd77fa64146269f6b2d5c",
   "acceptance_ref": null
 }
 ```

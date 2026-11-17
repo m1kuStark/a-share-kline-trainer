@@ -8,7 +8,7 @@
   "state": "active",
   "milestone": "M5",
   "summary": "全套 journey 自 v1.2.0 起因 13 处 spec 文件损坏从未完整运行（V1.2.3 已修复损坏使全套可解析）；2026-10-02 首次完整运行 89/108，19 项失败经 stash 基线复跑证实全部为 v1.2.2 树上已存在的存量失败，尚未归因；2026-10-04 GITHUB-HEALTH-01 CI 双轮全量（各 125 项）均为 93 通过/29 失败/3 未运行且两轮逐项一致；2026-10-19 E2E-BASELINE-01 分类轮（提交 6533196，run-9db67e72，TDX_ROOT 按授权注入）：191 项＝171 过/18 败/2 跳过（exit 1），CI 基线 29 败中 12 项已自然修复、17 项仍在、新增 1 项；18 项全部归因——桶A 真bug 8 项（4 个根因：推进清空撤销历史、restoreDrawings 丢弃逐画线样式、画线按周期过滤不可见、周期过滤渗入录制捕获致回放丢画线）、桶B spec过时 9 项（v1.0.3~v1.1.1 UI 演进未回写断言，逐条呈报清单见验证报告第五节）、待复核 1 项（random-mask-axis 窗口相关）、设计内跳过 1 项（migration-v127 环境门控）。逐例证据与探针复现实录见 docs/verification/2026-10/E2E-BASELINE-01/README.md。",
-  "next_action": "清偿进行中（2026-10-19 E2E-SPEC-SYNC-01 完成一轮，见验证目录同名 README）：① 桶B 9 项已全部按用户批复更新断言并定向复跑转绿（data-update f) 按钮改连导向断言——分类报告「409 行内展示经该按钮仍可达」的假设经复跑证伪，已按报告备选建议改断言点击行为，409 行内展示由 data-update-feedback:96 独立覆盖；journey Act4d 动态窗格＋按 id 断言，Act6 级联一并恢复；training-flow「留在当前界面」两处；D23 extendData.text；report-feedback surface token；设置弹层「关闭」两处；F5 起止双输入）；② 桶A-③（跨周期画线）经用户拍板为正式口径「画线按周期隔离」（原话：画线不要跨周期可见，维持现状），三条用例（D30-D31 主副图/D31 快速切换/D31 锚点）已改隔离语义并复跑转绿，探针实证隔离＝过滤显示而非丢失，规格文档 interaction.md 与 drawing-persistence.md 已同步——移出桶A 待修复清单；③ 剩余待清偿：桶A-①（推进清撤销历史）、桶A-②（restoreDrawings 丢样式，m3-tools D26-D29 与 D28 混选两例复跑确认仍红）、桶A-④（录制捕获周期过滤）、待复核 1 项（random-mask-axis）；④ 桶C 登记 known（migration-v127 环境门控，非缺陷）；⑤ 'e2e 纳入发布门禁必过链'（用户拍板 6）前置更新为：桶A-①②④清零＋待复核定桶＋桶C 登记。",
+  "next_action": "2026-11-18已逐项静态对账原20项：E2E-SPEC-SYNC-01覆盖旧断言/周期隔离，M2-DRAWING-01覆盖撤销/样式/录像，M2-RANDOM-AXIS-01覆盖揭示日期；相关提交均为当前HEAD祖先。migration-v127仍有真实包门控。保留active，当前整轮和真实迁移未动态复验，不继续把旧18败当作今天仍红。",
   "allowed_paths": [
     "e2e/**",
     "server/test/**",
@@ -22,11 +22,8 @@
     ],
     "reason": "全套回归是发布门禁的一部分：存量失败若不归因，后续候选的门禁结论都无法区分新回归与旧欠账。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/V1.2.3-feedback/README.md",
-    "docs/verification/2026-10/GITHUB-HEALTH-01/report.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/V1.2.3-feedback/README.md","docs/verification/2026-10/GITHUB-HEALTH-01/report.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md","docs/verification/2026-10/E2E-BASELINE-01/README.md","docs/verification/2026-10/M2-DRAWING-01/README.md","docs/verification/2026-10/M2-RANDOM-AXIS-01/README.md"],
+  "integration_ref": "main@6533196d782768376b716af679987681427a3557",
   "acceptance_ref": null
 }
 ```

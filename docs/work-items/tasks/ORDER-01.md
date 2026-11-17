@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "planned",
   "milestone": "V4",
-  "summary": "实现单有效订单、限价/止损四种价格行为、跳空成交、取消过期和拒单记录。",
-  "next_action": "TRAIN-03 与 REC-04 完成后，先实现限价单，再补止损单和订单生命周期回归。",
+  "summary": "价格条件单与生命周期已有实现；V1.2.3反馈轮进一步实现多笔挂单、资金/可卖占用校验及统一下单面板。原单有效订单目标已被后继口径替代；录制和完整边界验收另行核实。",
+  "next_action": "价格条件单已进入main，1e965e5后继修订已解除单挂单限制并加入在途占用校验；以当前多挂单规格核对撮合边界、录制和回放残项，不重复开发限价/止损主体。本轮未动态复验。",
   "allowed_paths": [
     "server/src/db.ts",
     "server/src/train/**",
@@ -36,8 +36,8 @@
     ],
     "reason": "订单意图与成交流水分离，且日线 OHLC 触发规则、跳空价、T+1 和拒单语义需要进入现行规格。"
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@784a4d2e9e9afec6bd23ce585592e9817a2ec060；后继main@1e965e52c2b6e89bf0b00bbcd9d987658ba47c04（多挂单修订）",
   "acceptance_ref": null
 }
 ```

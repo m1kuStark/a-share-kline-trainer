@@ -8,7 +8,7 @@
   "state": "closed",
   "milestone": "M5",
   "summary": "用户 2026-10-19 验收批复 1：桶B（spec 过时）9 条按分类报告建议直接更新断言（不删例）；桶A-③「画线按周期过滤」经用户拍板为正式口径（原话：画线不要跨周期可见，维持现状）——受影响用例断言改为隔离语义，并同步规格文档 docs/specs/chart/interaction.md 与 web/src/components/docs/drawing-persistence.md。完成后定向复跑受影响 spec 应转绿。零产品码改动（若探针发现产品行为与隔离口径不符，停下呈报，不改产品）。",
-  "next_action": "按内嵌桶B清单逐条更新；画线三条先探针实证现行为再写断言；journey 定向复跑（TDX_ROOT 必填）。",
+  "next_action": "规格同步已合入main，历史12项定向转绿见原报告；后继M2-DRAWING-01与M2-RANDOM-AXIS-01已处理原剩余画线/揭示问题。无需再更新同批旧断言；当前整轮结果与环境门控沿E2E-BASELINE-01复核。",
   "allowed_paths": [
     "e2e/**",
     "docs/specs/**",
@@ -24,10 +24,8 @@
     ],
     "reason": "桶B 与 A-③ 处置结果回填分类账本；画线隔离口径入规格文档。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/E2E-BASELINE-01/README.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/E2E-BASELINE-01/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@7a19e8185deb1a3add74e3bbf4979c2733835d9e",
   "acceptance_ref": "docs/复盘缺口修补-开发计划.md"
 }
 ```
