@@ -5,18 +5,38 @@
   "id": "RUNTIME-CANCEL-02",
   "title": "修正 Windows 子进程取消与树终止测试生命周期",
   "owner": "integrator",
-  "state": "planned",
+  "state": "review",
   "milestone": "ENG",
-  "base_commit": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
+  "base_commit": "b1ff3e9f241e60b3e85c7572084dbc306b259d08",
   "summary": "已观测原生产实现正确终止受管父孙进程、保留日志并释放目录；确定两条显式15s测试预算短于20–30s taskkill上界，超时后异步命令未先排空还会撞到目录回收。本片仅修测试生命周期与预算，增加detached孙进程、树外哨兵、目录释放和原始取消理由断言；撤去/T的两条真实变异均因孙存活失败。生产实现保持原字节，完整npm test与审查结果见本任务验证记录。",
-  "next_action": "正式首轮完整npm test exit0，独立只读审查无阻断项；由主代理同步全局文档、矩阵、任务状态与集成。保留历史15s/EBUSY失败、夹具收尾失败、首个变异幸存及后续语义变异失败，不据测试通过推断产品验收。",
-  "allowed_paths": ["scripts/runtime/run.ts", "server/test/runtime-isolation.test.ts", "desktop/src/port-conflict.ts", "desktop/test/port-tree-kill.test.ts", "scripts/runtime/README.md", "docs/engineering/testing.md", "docs/work-items/tasks/RUNTIME-CANCEL-02.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md", "docs/verification/2026-11/RUNTIME-CANCEL-02/**"],
+  "next_action": "正式全量3023测试exit0，独立只读审查Critical/Important/Minor均0；root已将runtime三行L2提升并strict0。补齐共享文档门禁后走独立PR/CI，完整候选与Journey由后继M9整批同提交验证；本片无产品代码修改，不代表M9人工验收。",
+  "allowed_paths": [
+    "scripts/runtime/run.ts",
+    "server/test/runtime-isolation.test.ts",
+    "desktop/src/port-conflict.ts",
+    "desktop/test/port-tree-kill.test.ts",
+    "scripts/runtime/README.md",
+    "docs/engineering/testing.md",
+    "docs/work-items/tasks/RUNTIME-CANCEL-02.md",
+    "docs/work-items/milestones/ENG.md",
+    "docs/work-items/README.md",
+    "docs/status.md",
+    "docs/verification/2026-11/RUNTIME-CANCEL-02/**"
+  ],
   "depends_on": [],
   "docs_impact": {
-    "update": ["docs/work-items/tasks/RUNTIME-CANCEL-02.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md"],
+    "update": [
+      "docs/work-items/tasks/RUNTIME-CANCEL-02.md",
+      "docs/work-items/milestones/ENG.md",
+      "docs/work-items/README.md",
+      "docs/status.md"
+    ],
     "reason": "运行时取消可能影响验证清理和受管子进程生命周期；必须先证实根因，记录修复范围及真实进程回归。"
   },
-  "verification_refs": ["docs/verification/2026-11/ENG-HEALTH-02/validation.md", "docs/verification/2026-11/RUNTIME-CANCEL-02/validation.md"],
+  "verification_refs": [
+    "docs/verification/2026-11/ENG-HEALTH-02/validation.md",
+    "docs/verification/2026-11/RUNTIME-CANCEL-02/validation.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }
