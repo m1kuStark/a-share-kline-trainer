@@ -1,0 +1,26 @@
+{
+  "name": "pr-final",
+  "args": [
+    "gh",
+    "pr",
+    "view",
+    "54",
+    "--repo",
+    "m1kuStark/a-share-kline-trainer",
+    "--json",
+    "number,url,headRefOid,baseRefName,state,isDraft,statusCheckRollup"
+  ],
+  "startedAt": "2026-11-17T19:00:06.268669+00:00",
+  "endedAt": "2026-11-17T19:00:07.397863+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-final.stdout",
+    "bytes": 1103,
+    "sha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a"
+  },
+  "stderr": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-final.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
