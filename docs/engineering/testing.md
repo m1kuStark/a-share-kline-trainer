@@ -45,6 +45,8 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 
 隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。
 
+Windows 真实进程树用例必须先确认父进程、detached 孙进程和树外哨兵都存活，再验证取消理由/日志、受管进程退出、临时目录即时释放及哨兵继续存活。夹具按所有权登记，`finally` 与 `afterEach` 共用幂等清理，先等待命令和 ChildProcess close，再删目录；最终夹具回收可对 Windows EBUSY 做有界重试，成功路径的目录释放断言不重试。RUNTIME-CANCEL-02 的 runtime 单例预算为45s（8s就绪＋20s taskkill＋两段5s退出确认＋余量），desktop 为60s（5s就绪＋30s taskkill＋15s注入退出确认＋3s孙进程确认＋余量）；生产等待上限保持原值。测试应能在撤去 `/T` 时因孙进程仍存活而失败，不能只靠附着子进程随父进程退出。诊断、原失败和每次复跑见[验证记录](../verification/2026-11/RUNTIME-CANCEL-02/validation.md)。
+
 verify job 的测试命令经 scripts/ci/run-tests-with-retry.mjs：仅在“非 0 退出且无 Vitest 失败摘要”时重试一次（基础设施崩溃），真实断言失败不重试；重试记录打 GitHub warning，断言/用例集合/数据范围不变。desktop 全套在 desktop/vitest.config.ts 设 testTimeout 30s（TEST-BUDGET-04）；server 保持既有默认预算，个别用例的显式预算以测试声明为准。详见 [CI 门禁](ci.md)。
 
 迁移真实文件 I/O 用例（`desktop/test/mig-inline.test.ts`、`desktop/test/mig-import.test.ts` 的整库合并/幂等用例）使用真实临时目录、`server/dist/db.js` 与 SQLite。TEST-BUDGET-02（2026-11-11）先将这些用例预算放宽到 30s，以消除 CI verify 满载时的 5s 误拦 flake；随后由 TEST-BUDGET-04 将 desktop 套件统一设为 30s，接续该局部预算方案。断言与用例集合未因此改变，server 默认预算不变。

@@ -1,0 +1,8 @@
+{
+  "environment": "npm-test-environment.json",
+  "log": "npm-test-final.log",
+  "started": "2026-11-18T00:49:38.8258866+08:00",
+  "exit": 0,
+  "elapsedMs": 381365.7727,
+  "command": "npm test"
+}

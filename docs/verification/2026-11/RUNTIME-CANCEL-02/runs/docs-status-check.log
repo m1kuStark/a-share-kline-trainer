@@ -1,0 +1,2 @@
+ERROR docs/status.md: 生成区已过期；运行 npm run docs:status 后审查差异。
+INFO status: 1 errors, 0 warnings；不更改任务/验收状态。

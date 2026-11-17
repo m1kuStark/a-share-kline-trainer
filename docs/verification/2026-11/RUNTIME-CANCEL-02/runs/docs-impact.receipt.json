@@ -1,0 +1,7 @@
+{
+  "exit": 1,
+  "command": "npx --no-install tsx scripts/docs.ts impact --base 2c66477f0c4875ac3a100338fdbc42b4878dadd8 --task RUNTIME-CANCEL-02",
+  "log": "docs-impact.log",
+  "warnings": 0,
+  "errors": 3
+}
