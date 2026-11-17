@@ -83,8 +83,14 @@ describe('M9-04A formula storage', () => {
     try {
       const created = createFormulaRow(database, fields() as never)
       database.prepare('UPDATE formulas SET builtin = 1 WHERE id = ?').run(created.id)
+      expect(() => updateFormulaRow(database, created.id, { name: created.name })).toThrowError(/内置示例公式/)
+      expect(() => updateFormulaRow(database, created.id, { source: created.source })).toThrowError(/内置示例公式/)
       expect(() => updateFormulaRow(database, created.id, { source: 'A:1;' })).toThrowError(/内置示例公式/)
       expect(() => deleteFormulaRow(database, created.id)).toThrowError(/不可删除/)
+      const disabled = updateFormulaRow(database, created.id, parseFormulaFields({ enabled: false }, { partial: true }))
+      expect(disabled).toMatchObject({ enabled: 0, name: created.name, source: created.source, builtin: 1 })
+      const enabled = updateFormulaRow(database, created.id, parseFormulaFields({ enabled: true }, { partial: true }))
+      expect(enabled).toMatchObject({ enabled: 1, name: created.name, source: created.source, builtin: 1 })
     } finally {
       database.close()
     }

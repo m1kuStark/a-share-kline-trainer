@@ -1,0 +1,125 @@
+
+Running 5 tests using 1 worker
+
+(node:34308) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 e2e\formula-enable.spec.ts:72:1 › 公式启停：自定义创建停用、开启与停用保存后刷新仍保持 (10.8s)
+(node:40560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  2 e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用 (9.6s)
+(node:23132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  3 e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用 (10.4s)
+(node:74388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  4 e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用 (10.6s)
+(node:65560) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  5 e2e\formula-enable.spec.ts:167:1 › 公式启停：保存失败显示错误并清除上次成功提示 (25.6s)
+
+
+  1) e2e\formula-enable.spec.ts:72:1 › 公式启停：自定义创建停用、开启与停用保存后刷新仍保持 ──────────────────────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      82 |   expect(created.status()).toBe(201)
+      83 |   const saved = await created.json() as Formula
+    > 84 |   expect(saved.enabled).toBe(false)
+         |                         ^
+      85 |   expect(created.request().postDataJSON().enabled).toBe(false)
+      86 |   await expect(section.locator('.settings-saved')).toHaveText('已保存新公式')
+      87 |   await dialog.getByRole('button', { name: '关闭', exact: true }).click()
+        at C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\e2e\formula-enable.spec.ts:84:25
+
+    Error Context: .runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\test-results\formula-enable-公式启停：自定义创建停用、开启与停用保存后刷新仍保持\error-context.md
+
+  2) e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用 ─────────────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+      134 |     await section.getByRole('button', { name: '保存修改' }).click()
+      135 |     const response = await responsePromise
+    > 136 |     expect(response.status()).toBe(200)
+          |                               ^
+      137 |     const payload = response.request().postDataJSON()
+      138 |     expect(payload.enabled).toBe(true)
+      139 |     expect(payload).not.toHaveProperty('name')
+        at C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\e2e\formula-enable.spec.ts:136:31
+
+    Error Context: .runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\test-results\formula-enable-公式启停：内置-MA-BULL-MAIN-按预设位置显示、刷新和停用\error-context.md
+
+  3) e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用 ────────────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+      134 |     await section.getByRole('button', { name: '保存修改' }).click()
+      135 |     const response = await responsePromise
+    > 136 |     expect(response.status()).toBe(200)
+          |                               ^
+      137 |     const payload = response.request().postDataJSON()
+      138 |     expect(payload.enabled).toBe(true)
+      139 |     expect(payload).not.toHaveProperty('name')
+        at C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\e2e\formula-enable.spec.ts:136:31
+
+    Error Context: .runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\test-results\formula-enable-公式启停：内置-WEEK-MACD-SUB-按预设位置显示、刷新和停用\error-context.md
+
+  4) e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用 ─────────────────────────
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 403
+
+      134 |     await section.getByRole('button', { name: '保存修改' }).click()
+      135 |     const response = await responsePromise
+    > 136 |     expect(response.status()).toBe(200)
+          |                               ^
+      137 |     const payload = response.request().postDataJSON()
+      138 |     expect(payload.enabled).toBe(true)
+      139 |     expect(payload).not.toHaveProperty('name')
+        at C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\e2e\formula-enable.spec.ts:136:31
+
+    Error Context: .runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\test-results\formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用\error-context.md
+
+  5) e2e\formula-enable.spec.ts:167:1 › 公式启停：保存失败显示错误并清除上次成功提示 ─────────────────────────────────────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('dialog', { name: '训练默认设置' }).getByRole('region', { name: '公式指标' }).locator('.settings-saved')
+    Expected: 0
+    Received: 1
+    Timeout:  15000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('dialog', { name: '训练默认设置' }).getByRole('region', { name: '公式指标' }).locator('.settings-saved') with timeout 15000ms
+      - waiting for getByRole('dialog', { name: '训练默认设置' }).getByRole('region', { name: '公式指标' }).locator('.settings-saved')
+        33 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      180 |   await section.getByRole('button', { name: '保存修改' }).click()
+      181 |   await expect(section.getByRole('alert')).toContainText('保存故障')
+    > 182 |   await expect(section.locator('.settings-saved')).toHaveCount(0)
+          |                                                    ^
+      183 |   expect((await formulas(page)).find(item => item.id === saved.id)?.enabled).toBe(true)
+      184 | })
+      185 |
+        at C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\e2e\formula-enable.spec.ts:182:52
+
+    Error Context: .runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\test-results\formula-enable-公式启停：保存失败显示错误并清除上次成功提示\error-context.md
+
+  5 failed
+    e2e\formula-enable.spec.ts:72:1 › 公式启停：自定义创建停用、开启与停用保存后刷新仍保持 ───────────────────────────────────
+    e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用 ──────────────────────────
+    e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用 ─────────────────────────
+    e2e\formula-enable.spec.ts:122:3 › 公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用 ──────────────────────────
+    e2e\formula-enable.spec.ts:167:1 › 公式启停：保存失败显示错误并清除上次成功提示 ──────────────────────────────────────
