@@ -1,0 +1,81 @@
+{
+  "task": "DEP-SEC-MINIMATCH-01",
+  "reviewer": "local_health",
+  "reviewedAt": "2026-11-18T01:38:30.6096663+08:00",
+  "status": "complete",
+  "verdict": "可合入",
+  "scope": "fixed local dependency candidate; not full product acceptance",
+  "severity": {
+    "Important": 0,
+    "Minor": 0,
+    "Critical": 0
+  },
+  "baseCommit": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "sourceFingerprints": [
+    {
+      "path": "package.json",
+      "sha256": "cf1cdf0504cda7145d4b449a82a500c093eeec2d46610ec043430e55d32643b7"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "b6f5c55b431f92f98b14df1ef06132fb95500d6236bb803823b6a64fc12ef62d"
+    }
+  ],
+  "resultSha256": "d687cdfe06f72631260b3f01033a2ac16915eb4668cf5c345016ba4dbd066472",
+  "artifactVerification": {
+    "originalCacheMatches": 128,
+    "count": 134,
+    "stagedDiffCheckExit": 0,
+    "commands": 36,
+    "helperIndexComplete": true,
+    "encoded": 128,
+    "whitespaceChecksEnabled": true,
+    "mismatches": 0
+  },
+  "tests": {
+    "total": 3023,
+    "guard": 20,
+    "publicImport": 3,
+    "server": 2654,
+    "desktop": 369,
+    "legacy": 4
+  },
+  "nativeExit": {
+    "packagedInventory": 0,
+    "build": 0,
+    "packagedRuntime": 0,
+    "portable": 0,
+    "test": 0,
+    "desktopAppStrict": 3,
+    "nsis": 0
+  },
+  "actualArtifactHashes": {
+    "portable": "312b4dff58f71b1c1a492bf79b0b2e9d901fc0022f246173ebe593376a21dfca",
+    "asar": "8333463b41266a8f6306b7b2727f6d65609992b21a21571a00beeda26ec56639",
+    "nsis": "f8a890cdd2d11c72af283497b80ee1aabec2b1a10c1783a28b855b28fe0bfcde"
+  },
+  "readOnly": true,
+  "reviewerExecutedTests": false,
+  "declined": [
+    "product exploitability/resource-exhaustion PoC",
+    "macOS package",
+    "installer/UI/user acceptance",
+    "final integrated-commit acceptance ZIP",
+    "GitHub alert/PR/release"
+  ],
+  "integratorGates": [
+    "global docs/status/impact reconciliation",
+    "existing desktop-app 10 planned rows",
+    "normal precommit hooks and candidate commit identity"
+  ],
+  "reportSha256": "b3ff2c701ded0ab090caffe7f6fe604aea1b694e6cb7d64f81863b2ad103a875",
+  "commit": "f493364bdefb2165f36cf4924cd983ab98842592",
+  "commitSignature": "G",
+  "verifyCommitExit": 0,
+  "workingTreeClean": true,
+  "externalEvidenceVerified": {
+    "sha256": "26a4ded7e32ca145cf902418c2aefc5531ebeb0120129e465ebe7ab415344a37",
+    "kind": "redundant raw CRLF whitespace diagnostic",
+    "bytes": 1158738
+  }
+}
