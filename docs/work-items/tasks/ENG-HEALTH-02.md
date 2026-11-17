@@ -5,11 +5,11 @@
   "id": "ENG-HEALTH-02",
   "title": "工程健康检查、文档纠偏与过时跟踪分支清理",
   "owner": "integrator",
-  "state": "review",
+  "state": "closed",
   "milestone": "ENG",
   "base_commit": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
   "summary": "核对本地 Git、GitHub Issue/PR/CI/保护/发布及文档现状；清理已失效的本地远端跟踪引用，修正当前流程和任务摘要，登记后续维护事项。保留用户未提交改动、正式证据和历史验收结论，不改产品代码或发布资产。",
-  "next_action": "维护文档与状态已对账，经文档门禁及只读复核后交维护 PR；产品待修项沿 RUNTIME-CANCEL-02 / DEP-SEC-MINIMATCH-01 接续，M9 整批候选待组织；不发布。",
+  "next_action": "维护已通过 PR #48 合入；后续优先 RUNTIME-CANCEL-02 与 DEP-SEC-MINIMATCH-01，再组织 M9-04 整批候选并分诊 Issue #8 反馈；任务关闭仅表示维护交付，不代表产品验收或发布。",
   "allowed_paths": [
     "docs/README.md",
     "docs/status.md",
@@ -40,7 +40,7 @@
     "reason": "维护轮只修正文档事实与入口、补任务追溯和待办；不改变运行行为、测试预算、CI 或依赖。"
   },
   "verification_refs": ["docs/verification/2026-11/ENG-HEALTH-02/README.md"],
-  "integration_ref": null,
+  "integration_ref": "main@538d1b88ab2aaf3430cfa458ec8f9b17e522a803 (PR #48)",
   "acceptance_ref": null
 }
 ```
