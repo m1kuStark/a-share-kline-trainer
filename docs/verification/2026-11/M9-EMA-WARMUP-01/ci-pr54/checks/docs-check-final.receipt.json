@@ -1,0 +1,25 @@
+{
+  "name": "docs-check-final",
+  "args": [
+    "npm.cmd",
+    "run",
+    "docs:check"
+  ],
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "environmentOverrides": {
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  },
+  "startedAt": "2026-11-17T19:14:21.737639+00:00",
+  "endedAt": "2026-11-17T19:14:23.458628+00:00",
+  "nativeExitCode": 1,
+  "stdout": {
+    "archiveRelativePath": "checks/docs-check-final.stdout",
+    "bytes": 23946,
+    "sha256": "b5c20398da667683209c0edaa40b114ed3678774e8df85586917fe7d4ee72e52"
+  },
+  "stderr": {
+    "archiveRelativePath": "checks/docs-check-final.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

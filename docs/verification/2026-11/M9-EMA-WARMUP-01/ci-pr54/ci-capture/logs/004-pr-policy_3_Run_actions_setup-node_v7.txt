@@ -1,0 +1,16 @@
+﻿2026-11-17T18:54:31.7650473Z ##[group]Run actions/setup-node@v7
+2026-11-17T18:54:31.7651021Z with:
+2026-11-17T18:54:31.7651335Z   node-version: 24.15.0
+2026-11-17T18:54:31.7651664Z   check-latest: false
+2026-11-17T18:54:31.7654270Z   token: ***
+2026-11-17T18:54:31.7654575Z   package-manager-cache: true
+2026-11-17T18:54:31.7654892Z ##[endgroup]
+2026-11-17T18:54:31.9616807Z Attempting to download 24.15.0...
+2026-11-17T18:54:32.6086686Z Acquiring 24.15.0 - x64 from https://github.com/actions/node-versions/releases/download/24.15.0-24511264946/node-24.15.0-win32-x64.7z
+2026-11-17T18:54:33.0228044Z Extracting ...
+2026-11-17T18:54:35.1420508Z Adding to the cache ...
+2026-11-17T18:54:40.3175628Z ##[group]Environment details
+2026-11-17T18:54:42.1167202Z node: v24.15.0
+2026-11-17T18:54:42.1167709Z npm: 11.12.1
+2026-11-17T18:54:42.1168047Z yarn: 1.22.22
+2026-11-17T18:54:42.1168660Z ##[endgroup]

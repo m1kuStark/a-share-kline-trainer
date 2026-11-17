@@ -1,0 +1,16 @@
+{
+  "archiveFiles": 77,
+  "archiveBytes": 789176,
+  "allByteAndHashEqual": true,
+  "rawCapturesVerified": 9,
+  "jsonAliasesVerified": 7,
+  "zipCrcPassed": true,
+  "zipLogsByteAndHashEqual": 32,
+  "mergeCapturesVerified": 2,
+  "prState": "MERGED",
+  "actualMergeCommit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "actualMergeIsHeadAncestor": true,
+  "archiveHeadUnchanged": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "base64StoredFilesVerified": 13,
+  "preimageZipCrcPassed": true
+}

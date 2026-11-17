@@ -1,0 +1,23 @@
+{
+  "name": "diff-check",
+  "args": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "environmentOverrides": {},
+  "startedAt": "2026-11-17T19:14:25.651444+00:00",
+  "endedAt": "2026-11-17T19:14:25.766830+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "archiveRelativePath": "checks/diff-check.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "archiveRelativePath": "checks/diff-check.stderr",
+    "bytes": 264,
+    "sha256": "cde3b2ee382db94cb8cb2cf14eb58cdf4bdf3811e860515a7207e4c652edc525"
+  }
+}

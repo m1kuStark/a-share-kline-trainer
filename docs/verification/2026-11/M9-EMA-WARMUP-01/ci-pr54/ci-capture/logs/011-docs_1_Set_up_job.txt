@@ -1,0 +1,33 @@
+﻿2026-11-17T18:54:21.2167892Z Current runner version: '2.338.2'
+2026-11-17T18:54:21.2577660Z ##[group]Runner Image Provisioner
+2026-11-17T18:54:21.2578336Z Hosted Compute Agent
+2026-11-17T18:54:21.2578766Z Version: 20261103.629
+2026-11-17T18:54:21.2579307Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-17T18:54:21.2580566Z Build Date: 2026-11-03T17:26:59Z
+2026-11-17T18:54:21.2581109Z Worker ID: {980e5faf-31c2-4963-9926-0662a87571e5}
+2026-11-17T18:54:21.2581645Z Region: centralus
+2026-11-17T18:54:21.2582048Z Cloud: Azure
+2026-11-17T18:54:21.2582491Z ##[endgroup]
+2026-11-17T18:54:21.2583654Z ##[group]Operating System
+2026-11-17T18:54:21.2584159Z Microsoft Windows Server 2025
+2026-11-17T18:54:21.2584670Z 10.0.26100
+2026-11-17T18:54:21.2585071Z Datacenter
+2026-11-17T18:54:21.2585465Z ##[endgroup]
+2026-11-17T18:54:21.2585896Z ##[group]Runner Image
+2026-11-17T18:54:21.2586394Z Image: windows-2025-vs2026
+2026-11-17T18:54:21.2586888Z Version: 20261103.298.1
+2026-11-17T18:54:21.2587753Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261103.298/images/windows/Windows2025-VS2026-Readme.md
+2026-11-17T18:54:21.2589456Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261103.298
+2026-11-17T18:54:21.2590202Z ##[endgroup]
+2026-11-17T18:54:21.2591084Z ##[group]GITHUB_TOKEN Permissions
+2026-11-17T18:54:21.2592615Z Contents: read
+2026-11-17T18:54:21.2593090Z Metadata: read
+2026-11-17T18:54:21.2593519Z ##[endgroup]
+2026-11-17T18:54:21.2595263Z Secret source: Actions
+2026-11-17T18:54:21.2595966Z Cache mode: write
+2026-11-17T18:54:21.2596499Z Prepare workflow directory
+2026-11-17T18:54:21.3681580Z Prepare all required actions
+2026-11-17T18:54:21.3721495Z Getting action download info
+2026-11-17T18:54:21.5884111Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-17T18:54:21.7260016Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-17T18:54:22.0151302Z Complete job name: docs

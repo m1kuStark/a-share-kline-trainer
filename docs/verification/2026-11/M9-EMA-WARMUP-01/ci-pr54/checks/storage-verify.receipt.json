@@ -1,0 +1,24 @@
+{
+  "name": "storage-verify",
+  "args": [
+    "py",
+    "-X",
+    "utf8",
+    "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-EMA-WARMUP-01\\ci-pr54\\checks\\verify-archive.py"
+  ],
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:23:26.844802+00:00",
+  "endedAt": "2026-11-17T19:23:27.312039+00:00",
+  "nativeExitCode": 0,
+  "verifierSha256": "12a6aa2437d47e17cbdbb6bbda0dcc4908bdffc3fac2bbb84a7ea72cdb87b103",
+  "stdout": {
+    "archiveRelativePath": "checks/storage-verify.stdout",
+    "bytes": 505,
+    "sha256": "406a62a4d9c6b7233faa2240926e27af77fc0828957cad67b475413835b6f692"
+  },
+  "stderr": {
+    "archiveRelativePath": "checks/storage-verify.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
