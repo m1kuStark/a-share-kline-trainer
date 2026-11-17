@@ -1,0 +1,52 @@
+{
+  "schema": "m9-failed-candidate-copy-integrity-v1",
+  "capturedAt": "2026-11-17T20:30:36.030412+00:00",
+  "sourceCommit": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+  "runId": "run-42206f8c-3a30-4e98-9c72-822f4ad8382a",
+  "nativeExitCode": 1,
+  "notFinalPass": true,
+  "sourceFileCount": 61,
+  "sourceBytes": 8378485,
+  "failedTests": 18,
+  "errorContexts": 18,
+  "explicitSkipped": 1,
+  "serialDidNotRun": 13,
+  "passed": 229,
+  "total": 261,
+  "allDecodedArchiveMembersMatchOriginalBytesAndHashes": true,
+  "sourceFilesUnchangedDuringCapture": true,
+  "zipCrcsValid": true,
+  "verificationIncluded": true,
+  "proofAbsentAtCapture": true,
+  "recordedControlHashEqualityVerified": true,
+  "highConfidenceCredentialPatternFindings": 0,
+  "filesExcludingThisReceipt": [
+    {
+      "path": "artifact-index.json",
+      "bytes": 26359,
+      "sha256": "b76f10a34668ba740995241837838b9a9037e5de1ef350990286ec25147a6ab3"
+    },
+    {
+      "path": "failure-summary.json",
+      "bytes": 122406,
+      "sha256": "23df96bc23b016eaaab5794014a818f5c8c19571f0931fd92c0df3f971f285f8"
+    },
+    {
+      "path": "failure-summary.md",
+      "bytes": 4570,
+      "sha256": "8c2db55a209c19446dd3be333b5c9de9100ae258f693d20e640257a41c42cf89"
+    },
+    {
+      "path": "first-failed-candidate-f701371.zip",
+      "bytes": 2406622,
+      "sha256": "6bea89df49fbe274d950072f37144a3dfc62d5bcdea8177b6fc950ae796c07e8"
+    },
+    {
+      "path": "verify-archive.py",
+      "bytes": 934,
+      "sha256": "47a1d766236d68ea3463f5d68225dfcdd65a916275a8472ac93bc6168051317b"
+    }
+  ],
+  "physicalFilesIncludingThisReceipt": 6,
+  "physicalBytesIncludingThisReceipt": 2562546
+}

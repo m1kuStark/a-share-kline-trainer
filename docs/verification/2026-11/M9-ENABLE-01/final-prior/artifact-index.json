@@ -1,0 +1,1422 @@
+{
+  "schema": "m9-frozen-evidence-stage-v1",
+  "preparedAt": "2026-11-17T20:19:07.300508+00:00",
+  "productSourceFreeze": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+  "intendedDestination": "docs/verification/2026-11/M9-ENABLE-01/final",
+  "notFinalAcceptance": true,
+  "sourceAliasDefinition": "$CACHE is C:/Users/Stark_Du666/.codex/headroom-cache",
+  "sourceFiles": [
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/artifact-index.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/artifact-index.json",
+      "bytes": 6615,
+      "sha256": "d8031de1e97b3ab047006e8f9233108732f5a1d641d503ed7ed8519793ddfbf7",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "artifact-index.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/capture-ci.cjs",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/capture-ci.cjs",
+      "bytes": 6938,
+      "sha256": "a524d32d1918b701fc1f4432428ca01f3c3d877d0fa4e2c923bb25a98b5a6df9",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "capture-ci.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/inspect-logs-zip.py",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/inspect-logs-zip.py",
+      "bytes": 4513,
+      "sha256": "f064ec5f65177f6b7c0717c643518f94f86da27294d5eca49cc37ceb69f73f05",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "inspect-logs-zip.py",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/jobs-44160559239.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/jobs-44160559239.exit.json",
+      "bytes": 1009,
+      "sha256": "5b764435770ee9d214a53321f8a7904dcba309c25e60526717e32a0a80fda2b5",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "jobs-44160559239.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/jobs-44160559239.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/jobs-44160559239.json",
+      "bytes": 7108,
+      "sha256": "04cc0db0cca3abc2baa67ac52b2a8b327c74645ba0dfafcff2291419f2e5e04c",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "jobs-44160559239.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/jobs-44160559239.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/jobs-44160559239.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "jobs-44160559239.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/logs-44160559239.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/logs-44160559239.exit.json",
+      "bytes": 986,
+      "sha256": "e8646d1cce9d89df3cd2cbb8b7dd27e23d98c8fb280d6fa567572df2ad253ea5",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "logs-44160559239.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/logs-44160559239.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/logs-44160559239.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "logs-44160559239.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/logs-44160559239.zip",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/logs-44160559239.zip",
+      "bytes": 106268,
+      "sha256": "a0f9acd88126f978e2d534f2245486d5a95241771958076fc489ed1203c6bfdf",
+      "staged": {
+        "path": "source-ci/logs-44160559239.zip",
+        "encoding": "identity"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/main-active-rules.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/main-active-rules.exit.json",
+      "bytes": 978,
+      "sha256": "80533cba5a50f2c39e434eb6bc7cd2ed32c88bf9d9bc58149db006e3a28c2aae",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "main-active-rules.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/main-active-rules.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/main-active-rules.json",
+      "bytes": 1193,
+      "sha256": "a5ecdeca6b425cafba1d3adfe03cb1aec715cd2aea010cd46b19be026af26681",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "main-active-rules.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/main-active-rules.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/main-active-rules.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "main-active-rules.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-after.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-after.exit.json",
+      "bytes": 947,
+      "sha256": "526e1cd5ea09760123d064623029204d2eb6962421102d8f5e71f68d2987018a",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-after.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-after.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-after.json",
+      "bytes": 18507,
+      "sha256": "a078a6927147cca75aa974a8e3788463002eede3b0e309200d5a312b8d85f577",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-after.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-after.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-after.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-after.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-test-merge-git-commit.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-test-merge-git-commit.exit.json",
+      "bytes": 1038,
+      "sha256": "65918dd9a56938a8317e1d90c750ec7d30572a012ffbee80596401629f58a06a",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-test-merge-git-commit.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-test-merge-git-commit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-test-merge-git-commit.json",
+      "bytes": 2746,
+      "sha256": "478877178d9746319d9410318b13dd9d53fe95632958635529a6c4c6784b0f20",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-test-merge-git-commit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-test-merge-git-commit.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-test-merge-git-commit.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-test-merge-git-commit.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-view.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-view.exit.json",
+      "bytes": 1066,
+      "sha256": "b6333eff433750bd13119ba561135e431445120144438b0943f3ca0f45414cf9",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-view.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-view.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-view.json",
+      "bytes": 1356,
+      "sha256": "6c1e94b4f5527e0b819908ffb5a80883bfac38c52b90e8d2f8642c87b0b7df17",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-view.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55-view.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55-view.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55-view.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55.exit.json",
+      "bytes": 929,
+      "sha256": "ec75c2eb9454f1fe38512698e8cdf8dd9591265de178cedaad68f15dfbf3c9b0",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55.json",
+      "bytes": 18507,
+      "sha256": "a078a6927147cca75aa974a8e3788463002eede3b0e309200d5a312b8d85f577",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/pr55.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/pr55.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "pr55.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/README.md",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/README.md",
+      "bytes": 2210,
+      "sha256": "b443e3756ece8d5cac95d4e6ab01259c70c466dfe44835e1349751aed9160d39",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "README.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/required-checks.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/required-checks.exit.json",
+      "bytes": 1025,
+      "sha256": "4d2637bb3e5ea83399ad1ae4d298053f010466f4fd8b7345b75408e740f10eca",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "required-checks.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/required-checks.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/required-checks.json",
+      "bytes": 762,
+      "sha256": "0b853bffa61a3315a11c68dd38745ae3d15db2e9c304218ade5488b85dc0ac2f",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "required-checks.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/required-checks.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/required-checks.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "required-checks.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/run-44160559239.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/run-44160559239.exit.json",
+      "bytes": 978,
+      "sha256": "6be69cc415eb92be46029289a92805ff6a02140aab6d8964dfff686bf7b3426a",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "run-44160559239.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/run-44160559239.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/run-44160559239.json",
+      "bytes": 13868,
+      "sha256": "0bdd02639bd8e1a411a88d7671572c40da53553df7cac0fa4a361f3d3eddc823",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "run-44160559239.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/run-44160559239.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/run-44160559239.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "run-44160559239.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/source-ci-summary.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/source-ci-summary.json",
+      "bytes": 14568,
+      "sha256": "3c09ef49dc1e30e80e216cb850b1342d98f2d3042ac26e243987f443e1f64702",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "source-ci-summary.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/source-freeze-check-runs.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/source-freeze-check-runs.exit.json",
+      "bytes": 1053,
+      "sha256": "ae76b533925418343ad2dbadcdd3db9cd96485e818542ecc29549e2dc6b59c7b",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "source-freeze-check-runs.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/source-freeze-check-runs.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/source-freeze-check-runs.json",
+      "bytes": 10872,
+      "sha256": "5a168c954593d282d33c07cb55a3cf67df5bad10cee3a103c7fe8bdfbc5d1ee8",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "source-freeze-check-runs.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/source-freeze-check-runs.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/source-freeze-check-runs.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "source-freeze-check-runs.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/zip-analysis.exit.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/zip-analysis.exit.json",
+      "bytes": 681,
+      "sha256": "eb342ffaefc0564e4bb12a427160fbc487713cfb6a3bca05eefd2cb8b4d4657e",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "zip-analysis.exit.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/zip-analysis.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/zip-analysis.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "zip-analysis.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/zip-analysis.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/zip-analysis.stdout.log",
+      "bytes": 567,
+      "sha256": "4c673cbf0e70c547edd7558bbc731410754fd94aede5d6dfa82c14ed00ed36ef",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "zip-analysis.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/zip-member-hashes.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/zip-member-hashes.json",
+      "bytes": 7716,
+      "sha256": "e6c6fba4f1b973f3b3c785d49f5435e366bbe1acf2f101aa2c705f39d8b4944d",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "zip-member-hashes.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "source-ci",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-pr55-ci-source/zip-summary.json",
+      "sourceAlias": "$CACHE/M9-final-pr55-ci-source/zip-summary.json",
+      "bytes": 10970,
+      "sha256": "7a13ea3559133e3464e890a4b07d796163b9f8abaebe7adddddea3ced5ad03e0",
+      "staged": {
+        "container": "source-ci/source-ci-evidence.zip",
+        "member": "zip-summary.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/review.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/review.md",
+      "bytes": 7135,
+      "sha256": "e37c8da09285e788e3b2b8e32732b5dcfadf3c06195daa11f8a6aaf32ba03bf1",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "review.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/review-result.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/review-result.json",
+      "bytes": 1863,
+      "sha256": "606c7829277d8e6aaaf586c9d7652dd35fab0443950641cde3d4264e8869485f",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "review-result.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/review-completion.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/review-completion.receipt.json",
+      "bytes": 1712,
+      "sha256": "c3c8b64784a14d698e6a7c0287b1b42328047078f18cd093a98543225c5c7d49",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "review-completion.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/static-review-identity.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/static-review-identity.json",
+      "bytes": 4463,
+      "sha256": "ecae4172470dcbfeb27ed07a8e8d0f98c9a6941c12102fad6350696b84e6d59b",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "static-review-identity.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/targeted-receipt-review.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/targeted-receipt-review.json",
+      "bytes": 4053,
+      "sha256": "be1f8d5a00a530a841c16e397477c20b7117092d914160a6f5a39976caccd7f1",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "targeted-receipt-review.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/archive-index-review.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/archive-index-review.json",
+      "bytes": 17290,
+      "sha256": "0f7b734a1330a5194e542e62684a0caf6ebdb2a8ce741fad4eeb27069ddaeaf6",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "archive-index-review.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/reviewed-product.diff",
+      "sourceAlias": "$CACHE/M9-final-code-review/reviewed-product.diff",
+      "bytes": 18203,
+      "sha256": "d72ab42aa0b974d4c06fd0d0115a23fddd1df0fe02c12e95c83d361cd529cbe8",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "reviewed-product.diff",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/vitest-list.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/vitest-list.receipt.json",
+      "bytes": 804,
+      "sha256": "f56e199c11ccd9cb31a07c83082e08e142f56a5d432d4e37ca9fa876965fc0c1",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "vitest-list.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/vitest-list-first-preparation-error.txt",
+      "sourceAlias": "$CACHE/M9-final-code-review/vitest-list-first-preparation-error.txt",
+      "bytes": 402,
+      "sha256": "c37a1c292164bb9488fe6ae7f59e16b0443893b61143388cf322a7d29fe71d71",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "vitest-list-first-preparation-error.txt",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/vitest-list-first.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/vitest-list-first.log",
+      "bytes": 1316,
+      "sha256": "cc485f2e2974af6de6e5fe5d077487b14932d1182e5c09adf6046c1077526afb",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "vitest-list-first.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "review",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/vitest-list.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/vitest-list.log",
+      "bytes": 1316,
+      "sha256": "e1d446bf2aa6dd94d756c9fd9f220431ff147db6ebd634885d346dfbd2b310d3",
+      "staged": {
+        "container": "review/review-evidence.zip",
+        "member": "vitest-list.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-review.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-review.md",
+      "bytes": 3685,
+      "sha256": "d14feaa3772f04f3a4f29230d8d9d0acfdb408775cfdd372a27c795b44292b70",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-review.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-review.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-review.receipt.json",
+      "bytes": 4576,
+      "sha256": "e0e09f3aaddf5427e26143c114bf94d81e538270ad3ad9b63985612c72a07f7b",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-review.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/builder-exclusion-rule.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/builder-exclusion-rule.receipt.json",
+      "bytes": 1172,
+      "sha256": "2ed012f2501b62f24e75c40c640aa6928cb02fbe9999f47746fdc7193ca54473",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "builder-exclusion-rule.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-run.cjs",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-run.cjs",
+      "bytes": 7237,
+      "sha256": "f5acc747b706c14e0ff04863905af3db13bda1349b7221fa1e3ee101e9c7d234",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-run.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-case.cjs",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-case.cjs",
+      "bytes": 3287,
+      "sha256": "4833e1119e2c704f753389caf8b12e9e21c2fcb03951eee8550a1d8043a8df49",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-case.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/independent-extract.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/independent-extract.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/independent-extract.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/independent-extract.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/independent-extract.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/independent-extract.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/positive.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/positive.stdout.log",
+      "bytes": 147,
+      "sha256": "d869eaa34565e6e7dbe537e016d2715750a6f5b01c2925ffc341d8544ad118bc",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/positive.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/positive.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/positive.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/positive.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/positive/asar-identity-v2.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/positive/asar-identity-v2.receipt.json",
+      "bytes": 59384,
+      "sha256": "aee74f2bcaf4aa86396c95bb20b06d7e301274c7218f94c21187efc8ea5e4b22",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/positive/asar-identity-v2.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/positive/fixture.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/positive/fixture.json",
+      "bytes": 472,
+      "sha256": "146b6779e474bad85eee1cda8f4da09dfc426cf5ed6918c0108d20b30ef09558",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/positive/fixture.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-byte-change.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-byte-change.stdout.log",
+      "bytes": 148,
+      "sha256": "9c4e93c820bf88b3f604dfb59f35e036d05428e6a363ec3048ba64081962fb39",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-byte-change.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-byte-change.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-byte-change.stderr.log",
+      "bytes": 1000,
+      "sha256": "273e0833e1e110fe4407ba0743dadca7a694268b82f7cf97a663a80d71982933",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-byte-change.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-byte-change/asar-identity-v2.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-byte-change/asar-identity-v2.receipt.json",
+      "bytes": 59648,
+      "sha256": "5f4459f6bf89008cf5cf3b38946e9f003aa5a3f958b87410fc25085b846691d3",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-byte-change/asar-identity-v2.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-byte-change/fixture.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-byte-change/fixture.json",
+      "bytes": 595,
+      "sha256": "2d6e0b1fde45584f42b1793eae2ece5569723de8ecb17dd7d1cc50270444fab6",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-byte-change/fixture.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-missing.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-missing.stdout.log",
+      "bytes": 148,
+      "sha256": "d896bacea52eb259e968dc39154ef52c9c7fe23f2bf8aee649b7dd7987be0d61",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-missing.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-missing.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-missing.stderr.log",
+      "bytes": 1000,
+      "sha256": "d6359673cb5df01aec6d1c9300d272f947a7d814d9519f4ed8a5650f7b957eed",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-missing.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-missing/asar-identity-v2.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-missing/asar-identity-v2.receipt.json",
+      "bytes": 69604,
+      "sha256": "545f28108528f6a88f054c60ccef08d970ecfb43327bc713b248d10af3ad5314",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-missing/asar-identity-v2.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-missing/fixture.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-missing/fixture.json",
+      "bytes": 479,
+      "sha256": "9e14b5ddc6d17e362189fa20271d834d59f3aa4121437ce15fc5e9cd28cdf9ce",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-missing/fixture.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-extra.stdout.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-extra.stdout.log",
+      "bytes": 148,
+      "sha256": "9c4e93c820bf88b3f604dfb59f35e036d05428e6a363ec3048ba64081962fb39",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-extra.stdout.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-extra.stderr.log",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-extra.stderr.log",
+      "bytes": 1000,
+      "sha256": "273e0833e1e110fe4407ba0743dadca7a694268b82f7cf97a663a80d71982933",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-extra.stderr.log",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-extra/asar-identity-v2.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-extra/asar-identity-v2.receipt.json",
+      "bytes": 69537,
+      "sha256": "e598284ad2a5324d662bdcbb9c134a14266bc5afb710e1ecb74473bc49bd25bb",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-extra/asar-identity-v2.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-check/runtime-extra/fixture.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/runtime-extra/fixture.json",
+      "bytes": 538,
+      "sha256": "a24fceda796b5a4a26f512c1bce8b82a62cf682904f646a9f825309e056bb916",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-check/runtime-extra/fixture.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/asar-boundary-artifact-index.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-artifact-index.json",
+      "bytes": 4596,
+      "sha256": "6f1e93c1f69fbd067a0983c1abc7cd7d92aadb19744c1b7d1a1a60e1ec1719c8",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "asar-boundary-artifact-index.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "asar",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-run-20261118/verify-m9-asar-v2.cjs",
+      "sourceAlias": "$CACHE/M9-final-run-20261118/verify-m9-asar-v2.cjs",
+      "bytes": 3517,
+      "sha256": "8e0c055f3d0d1102876b23aacd0af2aa03543f945781f1dcfa41eb6e726d63d2",
+      "staged": {
+        "container": "asar/asar-boundary-evidence.zip",
+        "member": "verify-m9-asar-v2.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch",
+      "bytes": 960,
+      "sha256": "9b2149bb4aa12c3e3431255e1b45f36c494ddeca26ca3f3955b1fdc14a936ec6",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "01-red-postcondition.patch",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch.generation.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch.generation.json",
+      "bytes": 457,
+      "sha256": "b1854e5c6adbe337ed4ce78c27a0766cc7cc5d6a4a4d0f54c5472604ba195181",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "01-red-postcondition.patch.generation.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch",
+      "bytes": 2057,
+      "sha256": "fd0e987fc0dbcb7cd64198109a678ae748b5b4bd472c0238263398f544b46418",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "02-green-cleanup.patch",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch.generation.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch.generation.json",
+      "bytes": 458,
+      "sha256": "27519b8464bdad2634d3c47bdc5d9ebec69ae85d093952c7118a237dfa43694a",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "02-green-cleanup.patch.generation.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch",
+      "bytes": 1712,
+      "sha256": "3dd79ecb5fd12fa29930d42e4b2009d26217feedf78d4c7e6397568965f1d169",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "03-combined.patch",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch.generation.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch.generation.json",
+      "bytes": 459,
+      "sha256": "2528adf07915415b694067becaedf95d1b731e1bda537f54ee19e482995bb62e",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "03-combined.patch.generation.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/base.ts",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/base.ts",
+      "bytes": 10538,
+      "sha256": "1652959c8e0dd0750e2f99729970d28377a896b1216d28d2d3fee5042be81c06",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "base.ts",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-journey-Act2a-线段绘制编辑删除.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-journey-Act2a-线段绘制编辑删除.md",
+      "bytes": 22519,
+      "sha256": "b879f280002273cdbd5e2c690b34082e7a26c304e694b4e19e258fc145ba4268",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-journey-Act2a-线段绘制编辑删除.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes.md",
+      "bytes": 18102,
+      "sha256": "2ce1ded5e67aebffa44ee4fa05ba0ebf0865ffcc6b8e6656c650cbbc217082e4",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact.md",
+      "bytes": 18079,
+      "sha256": "f147f23b1b5ee775ff22e939aa86217fcd2355b6121f472d87cc42948c0ca15c",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload.md",
+      "bytes": 18089,
+      "sha256": "8ef4fdb13670f3060ac5bbca91be0e9f000a71456b167f186cfee44c1f1c0d0a",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-fill-invariant-8c674-e-restore-and-window-resize.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-fill-invariant-8c674-e-restore-and-window-resize.md",
+      "bytes": 22156,
+      "sha256": "ab4d7f5f2a74a01917c6a98c8a3c91f157a1b2942b8334207f4fd418eb3b7ed7",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-layout-fill-fill-invariant-8c674-e-restore-and-window-resize.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row.md",
+      "bytes": 22160,
+      "sha256": "e278d5323adb0cf80f60002dcd336b1e883642dd8dbe3da1edf03542fdd39517",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes.md",
+      "bytes": 22164,
+      "sha256": "46b84fd9e31de6cf1a375bbbb4aa81770f90041c20ceffaa7a987d067e1aee76",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "context-layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/fixture-diagnosis.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/fixture-diagnosis.receipt.json",
+      "bytes": 6188,
+      "sha256": "07b2c4be2190607add779fc052bc9868a17f6eca47e5b8ef1bbe514d65b6e3bc",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "fixture-diagnosis.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/green.ts",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/green.ts",
+      "bytes": 11092,
+      "sha256": "8f82fa752dc13af6736740e6fff5c8245bc921c9e8f76dc8baa44501dfde8eca",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "green.ts",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/patch-apply-check.receipt.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/patch-apply-check.receipt.json",
+      "bytes": 378,
+      "sha256": "2b78da15e17ba8acc5526da7e1e7b185376e20b7c0c8e95b5064820e36eb3639",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "patch-apply-check.receipt.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/red.ts",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/red.ts",
+      "bytes": 10944,
+      "sha256": "5224fda19964b662a589f70c921ca7a9118cb5fbae53856b2624285ea8558cbf",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "red.ts",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/report.md",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/report.md",
+      "bytes": 5037,
+      "sha256": "c3bc5cb805d1c57be1f92313ceb099fa50ffbce4568d40f540c1a3b590fda471",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "report.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/journey-fixture-diagnosis/artifact-index.json",
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/artifact-index.json",
+      "bytes": 3532,
+      "sha256": "a686629ebee67cda425cf4cc12d00d9995a912f628a554bf6c30dc5be197e9f0",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "artifact-index.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/generate-fixture-diagnosis.cjs",
+      "sourceAlias": "$CACHE/M9-final-code-review/generate-fixture-diagnosis.cjs",
+      "bytes": 7881,
+      "sha256": "49663846f9ada3ebe7a2614a6bec7db7b5010855538ab74c202133fc58f9c4ac",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "generation/generate-fixture-diagnosis.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "journey-fixture",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-code-review/finalize-fixture-diagnosis.cjs",
+      "sourceAlias": "$CACHE/M9-final-code-review/finalize-fixture-diagnosis.cjs",
+      "bytes": 7347,
+      "sha256": "035d3c4c86d764aa2c7a1ef009f1a9c6e2a06fd6d6bd3157b62d83f89ff2f7c5",
+      "staged": {
+        "container": "journey-fixture/journey-fixture-evidence.zip",
+        "member": "generation/finalize-fixture-diagnosis.cjs",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/chromium-152.0.7977.169-base-paths.cc",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/chromium-152.0.7977.169-base-paths.cc",
+      "bytes": 3909,
+      "sha256": "6370d403ef63f5e94bcd252fdd3d0eee858c671275d6f44873745adbe7c4f7da",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/chromium-152.0.7977.169-base-paths.cc",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/chromium-152.0.7977.169-file-util-win.cc",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/chromium-152.0.7977.169-file-util-win.cc",
+      "bytes": 61437,
+      "sha256": "e3ccbb71e8c1ece93c1d1ddfe8aecd89a3b1258ca47cc116f962805ff317fbd5",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/chromium-152.0.7977.169-file-util-win.cc",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/node-v24.22.2-os-api.md",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/node-v24.22.2-os-api.md",
+      "bytes": 37124,
+      "sha256": "00eafdab442c752c0edcc1375bbe226938efa5cb20670ee64591c4858573ab8d",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/node-v24.22.2-os-api.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/electron-v44.10.2-app-api.md",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/electron-v44.10.2-app-api.md",
+      "bytes": 80935,
+      "sha256": "88a44a73112276e58550629485bdcda7fd84f3b8fdfeca904bfafcafc8918ce8",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/electron-v44.10.2-app-api.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/microsoft-SHGetFolderPathW.md",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/microsoft-SHGetFolderPathW.md",
+      "bytes": 9633,
+      "sha256": "8b8f07412f3a61e590b9fc679aef3158796ecce11c09b04dd04f56d85ff94012",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/microsoft-SHGetFolderPathW.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/electron-v44.10.2-api-app.cc",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/electron-v44.10.2-api-app.cc",
+      "bytes": 74106,
+      "sha256": "938406b8513eb7b8cd796c5e6854ffac19112f80eaa63bf1e026ea041d814c40",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/electron-v44.10.2-api-app.cc",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/electron-v44.10.2-DEPS",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/electron-v44.10.2-DEPS",
+      "bytes": 8442,
+      "sha256": "3a86378a5bd5486542463e6c1b5341c34e004b90a971626d4b0a2010a0cef6d0",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "official-sources/electron-v44.10.2-DEPS",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/m9-home-isolation.historical-processes.json",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/m9-home-isolation.historical-processes.json",
+      "bytes": 740,
+      "sha256": "9dc66c8748ba16fa3d304225fac50f2e63717728d0de1c2610dbaebc43c26e8c",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "diagnosis/m9-home-isolation.historical-processes.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/m9-home-isolation.native-profile.json",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/m9-home-isolation.native-profile.json",
+      "bytes": 1663,
+      "sha256": "7ce287471ff63fea3251112b98d141ae37d7dc48b7cebc19c94e30051e630cfa",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "diagnosis/m9-home-isolation.native-profile.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/m9-home-isolation.official-sources.json",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/m9-home-isolation.official-sources.json",
+      "bytes": 5329,
+      "sha256": "0e88e4e3c258817bebcea999714cf883744b10ad709e0bc4f1c43087f11d8775",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "diagnosis/m9-home-isolation.official-sources.json",
+        "encoding": "zip-member-original-bytes"
+      }
+    },
+    {
+      "group": "home-isolation",
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-acceptance-brief/m9-home-isolation.read-only-diagnosis.md",
+      "sourceAlias": "$CACHE/M9-acceptance-brief/m9-home-isolation.read-only-diagnosis.md",
+      "bytes": 9571,
+      "sha256": "f5aa1471d47b36ac02195337409d6086f76eb92207db023e3c50c14b2644d33c",
+      "staged": {
+        "container": "home-isolation/home-isolation-evidence.zip",
+        "member": "diagnosis/m9-home-isolation.read-only-diagnosis.md",
+        "encoding": "zip-member-original-bytes"
+      }
+    }
+  ],
+  "payloads": [
+    {
+      "path": "source-ci/source-ci-evidence.zip",
+      "bytes": 37924,
+      "sha256": "55aa7088f8a5e602fb1b7c1d11879e12069ed65dec7a9d0f781bc4ad281960d0",
+      "members": 39,
+      "preservation": "ZIP member bytes identical to source"
+    },
+    {
+      "path": "review/review-evidence.zip",
+      "bytes": 18150,
+      "sha256": "31e2d956505e49b8ed4f9e8fa04d1d8f7aab32af9307163b27ea512552f82952",
+      "members": 11,
+      "preservation": "ZIP member bytes identical to source"
+    },
+    {
+      "path": "asar/asar-boundary-evidence.zip",
+      "bytes": 77036,
+      "sha256": "ebc163466a59d66c1fa23938cac8dc8185f3ec8a9b37626b4c4e68e4dd2bb4e7",
+      "members": 25,
+      "preservation": "ZIP member bytes identical to source"
+    },
+    {
+      "path": "journey-fixture/journey-fixture-evidence.zip",
+      "bytes": 74772,
+      "sha256": "0a3576b329af04115cf4364b65f123ed8d3a0afb2983083cf2d57ad45f078c89",
+      "members": 22,
+      "preservation": "ZIP member bytes identical to source"
+    },
+    {
+      "path": "home-isolation/home-isolation-evidence.zip",
+      "bytes": 82580,
+      "sha256": "f42aefada71e89e41cd869fd4f15dbd8f43a6bf9c5053bd89ade480937706953",
+      "members": 11,
+      "preservation": "ZIP member bytes identical to source"
+    },
+    {
+      "path": "source-ci/logs-44160559239.zip",
+      "bytes": 106268,
+      "sha256": "a0f9acd88126f978e2d534f2245486d5a95241771958076fc489ed1203c6bfdf",
+      "members": null,
+      "preservation": "Direct byte copy of original CI ZIP"
+    }
+  ],
+  "supportFiles": [
+    {
+      "path": "README.md",
+      "bytes": 3046,
+      "sha256": "dc5ef1cab08cc2f166e5e65088f3cdf7d58ed7692139e38e6d301631df7663ec"
+    },
+    {
+      "path": "verify-stage.py",
+      "bytes": 1373,
+      "sha256": "ad679775b58256afc908f0347c28810cf5f5c078edb35e056bb428e56e9f2306"
+    }
+  ],
+  "frozenSourceIndicesChecked": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-pr55-ci-source\\artifact-index.json",
+      "frozenEntriesVerified": 39
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\review-completion.receipt.json",
+      "frozenEntriesVerified": 6
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\asar-boundary-artifact-index.json",
+      "frozenEntriesVerified": 23
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\artifact-index.json",
+      "frozenEntriesVerified": 19,
+      "excludedLiveSnapshot": 1
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-home-isolation.official-sources.json",
+      "frozenEntriesVerified": 7
+    }
+  ],
+  "exclusions": [
+    {
+      "sourceAlias": "$CACHE/M9-final-code-review/asar-boundary-check/actual-asar-independent-extraction and per-case full extracted trees",
+      "reason": "Repeated runtime trees excluded by the original compact ASAR evidence index; exact ASAR identity, mutation recipes and case receipts are included."
+    },
+    {
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/journey.observed.log",
+      "sourceBytes": 20517,
+      "sourceSha256": "8d7774208e2cbe418141b570173971959ffd84194d5e9e5e8176d755fea280e4",
+      "reason": "Partial snapshot of a still-running Journey; deliberately omitted from final staging."
+    },
+    {
+      "sourceAlias": "$CACHE/M9-final-code-review/journey-fixture-diagnosis/apply-check",
+      "reason": "Temporary duplicate fixture copies; final patch-check receipt included."
+    },
+    {
+      "sourceAlias": "$CACHE/M9-acceptance-brief other scripts, exploratory aliases and unrelated acceptance artifacts",
+      "reason": "Scope limited to m9-home-isolation diagnosis and its seven exact official source archives."
+    }
+  ],
+  "pendingOrLimitedClaims": [
+    "No root final gate result is included.",
+    "CI source checks are distinct from local corpus, full Journey, packaged production and human acceptance.",
+    "Fixture RED/GREEN documents are original proposals at capture time; later execution must have separate receipts.",
+    "Home-isolation diagnosis did not execute a second product run or prove zero writes everywhere."
+  ]
+}

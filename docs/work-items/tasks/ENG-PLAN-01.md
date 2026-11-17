@@ -9,7 +9,7 @@
   "milestone": "ENG",
   "base_commit": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
   "summary": "阶段0纯文档维护：保存2026-11-18首批0—2开发范围/顺序与三内置公式默认停用的批准来源，对账已实现能力、集成提交、后继任务和验收证据，纠正旧任务下一步。保留原状态和历史证据，不改变产品、测试或发布资产。",
-  "next_action": "PR50已合入，22张旧卡及7张阶段卡事实对账完成；不补造用户验收。后续产品验证和M9阻断见M9-ENABLE-01。",
+  "next_action": "PR50已合入，22张旧卡及7张阶段卡事实对账完成；不补造用户验收。后续产品验证、M9统一候选与生产包接续见M9-ENABLE-01。",
   "allowed_paths": [
     "docs/work-items/tasks/ENG-PLAN-01.md",
     "docs/work-items/tasks/TRAIN-03.md",

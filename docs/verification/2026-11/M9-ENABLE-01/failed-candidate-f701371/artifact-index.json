@@ -1,0 +1,410 @@
+{
+  "schema": "m9-first-failed-candidate-archive-v1",
+  "capturedAt": "2026-11-17T20:30:36.030412+00:00",
+  "sourceCommit": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+  "runId": "run-42206f8c-3a30-4e98-9c72-822f4ad8382a",
+  "isFinalPass": false,
+  "originalNativeExitCode": 1,
+  "originalVerificationPassed": false,
+  "archive": {
+    "path": "first-failed-candidate-f701371.zip",
+    "bytes": 2406622,
+    "sha256": "6bea89df49fbe274d950072f37144a3dfc62d5bcdea8177b6fc950ae796c07e8",
+    "memberCount": 61
+  },
+  "members": [
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/manifest.json",
+      "member": "run/manifest.json",
+      "bytes": 1595,
+      "sha256": "1dcaa66edab1b3a9bdc949993f957ceebf1e46e52e1c4e8195e792512eeb82d7"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/tdx-snapshot/snapshot.json",
+      "member": "run/tdx-snapshot/snapshot.json",
+      "bytes": 1068,
+      "sha256": "1149d6447ef3cf4e564691cbd0bfd75ce2a402c9f1d17a2062184e38ff08fba5"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/backup-restore-receipt.json",
+      "member": "run/artifacts/backup-restore-receipt.json",
+      "bytes": 464,
+      "sha256": "87a1965a3eff1af2d7200a0d1248f3e969a43d0f5eedf855c727df633e16aa6d"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/browser-results.json",
+      "member": "run/artifacts/browser-results.json",
+      "bytes": 409253,
+      "sha256": "118e55c9cbdd2058e3c4f1fd2cd4491ff2daba4ad933106f9a5715f7fa2aff70"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/build-server.log",
+      "member": "run/artifacts/build-server.log",
+      "bytes": 380,
+      "sha256": "a88addc001edb187e38fb749ff60197680513db1f7d975ea73be0ba0a82dd9b6"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/build-web.log",
+      "member": "run/artifacts/build-web.log",
+      "bytes": 1897,
+      "sha256": "ce72295b593894a613aae8d43ac1228aa2b2a6e52c5732e8804bb6ebb807c8d2"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/docs.log",
+      "member": "run/artifacts/docs.log",
+      "bytes": 24079,
+      "sha256": "27a26f19da40dffb3b219ee063d047a8ef4f6cd75d946578a1f537519eda3ebd"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/impact.log",
+      "member": "run/artifacts/impact.log",
+      "bytes": 313,
+      "sha256": "5e639da18bb2161bc08b18f71207078b8ba3c57b946c987880d7e84d7428c4e8"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/journey.log",
+      "member": "run/artifacts/journey.log",
+      "bytes": 64540,
+      "sha256": "91ef020739057a146b39544c895af72dac7425f12a44bea4fe9cce2427120dd8"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/M2-e2e-report.md",
+      "member": "run/artifacts/M2-e2e-report.md",
+      "bytes": 4327,
+      "sha256": "cdd4b6f5a2e98170851e171d42962f80e0eb196aa83d4d28f2b9d2371fc580ff"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/m2.log",
+      "member": "run/artifacts/m2.log",
+      "bytes": 277,
+      "sha256": "43a9178a963303d00af509319e1991a49d2655aafb6ef6e681b13cd6f5a098c4"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/server.log",
+      "member": "run/artifacts/server.log",
+      "bytes": 3124779,
+      "sha256": "f5caa35f00f750719d7193d6fb72d1beff944fbba6379b0b162b6afcfb69492f"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/types.log",
+      "member": "run/artifacts/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/unit.log",
+      "member": "run/artifacts/unit.log",
+      "bytes": 14176,
+      "sha256": "b6382a3d9fd0179147481bb4125891494f4502e1038ec4c2998298177625db48"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/verification.json",
+      "member": "run/artifacts/verification.json",
+      "bytes": 56914,
+      "sha256": "cfb97a51d3e33be86897215ee949b28b61c9df039e122c7fcf6a9bf018b50146"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/logs/operations.log",
+      "member": "run/logs/operations.log",
+      "bytes": 1324268,
+      "sha256": "f0be4ddc5f59b6ba7360eb5805d7b50c209959507872ce761f11f11d272fde13"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/.last-run.json",
+      "member": "run/artifacts/test-results/.last-run.json",
+      "bytes": 1566,
+      "sha256": "5858ea871ee2978a67fa37db9b595d7751ada835d1c07fcf78ff6c07b09c599a"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/journey-Act2a-线段绘制编辑删除/error-context.md",
+      "member": "run/artifacts/test-results/journey-Act2a-线段绘制编辑删除/error-context.md",
+      "bytes": 22519,
+      "sha256": "b879f280002273cdbd5e2c690b34082e7a26c304e694b4e19e258fc145ba4268"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes/error-context.md",
+      "member": "run/artifacts/test-results/kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes/error-context.md",
+      "bytes": 18102,
+      "sha256": "2ce1ded5e67aebffa44ee4fa05ba0ebf0865ffcc6b8e6656c650cbbc217082e4"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact/error-context.md",
+      "member": "run/artifacts/test-results/kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact/error-context.md",
+      "bytes": 18079,
+      "sha256": "f147f23b1b5ee775ff22e939aa86217fcd2355b6121f472d87cc42948c0ca15c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload/error-context.md",
+      "member": "run/artifacts/test-results/kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload/error-context.md",
+      "bytes": 18089,
+      "sha256": "8ef4fdb13670f3060ac5bbca91be0e9f000a71456b167f186cfee44c1f1c0d0a"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/layout-fill-fill-invariant-8c674-e-restore-and-window-resize/error-context.md",
+      "member": "run/artifacts/test-results/layout-fill-fill-invariant-8c674-e-restore-and-window-resize/error-context.md",
+      "bytes": 22156,
+      "sha256": "ab4d7f5f2a74a01917c6a98c8a3c91f157a1b2942b8334207f4fd418eb3b7ed7"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row/error-context.md",
+      "member": "run/artifacts/test-results/layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row/error-context.md",
+      "bytes": 22160,
+      "sha256": "e278d5323adb0cf80f60002dcd336b1e883642dd8dbe3da1edf03542fdd39517"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes/error-context.md",
+      "member": "run/artifacts/test-results/layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes/error-context.md",
+      "bytes": 22164,
+      "sha256": "46b84fd9e31de6cf1a375bbbb4aa81770f90041c20ceffaa7a987d067e1aee76"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/m3-tools-M3-D28-文本线段混选编辑文本颜色内容并刷新恢复/error-context.md",
+      "member": "run/artifacts/test-results/m3-tools-M3-D28-文本线段混选编辑文本颜色内容并刷新恢复/error-context.md",
+      "bytes": 10428,
+      "sha256": "158ccc59877be087704b1e8206c3e6fcc6fd4d82f97fdb64fec5a2147bd3ccfa"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-candle-VOL-sep-5092c-t-right-drags-in-multi-mode/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-candle-VOL-sep-5092c-t-right-drags-in-multi-mode/error-context.md",
+      "bytes": 17260,
+      "sha256": "236ceb809184ff0a664d8f85be9d6680856a4d9d3bf24bf644f2a6bf803fc2d9"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-candle-VOL-sep-d60b6-right-drags-in-default-mode/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-candle-VOL-sep-d60b6-right-drags-in-default-mode/error-context.md",
+      "bytes": 17262,
+      "sha256": "5bfb30d39ce7aa55fa17c32ecf784118f494b9eea117b17ab299098ee31dd802"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-Ctrl-separator-2c918-through-the-right-axis-side/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-Ctrl-separator-2c918-through-the-right-axis-side/error-context.md",
+      "bytes": 17262,
+      "sha256": "6033120ea07b7f687b9d7570d3e1774bad8ce1379a523dc15944985a92646956"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-separator-drag-ce676-ximized-panes-remain-usable/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-separator-drag-ce676-ximized-panes-remain-usable/error-context.md",
+      "bytes": 17276,
+      "sha256": "03692a969e42c0fa6298df168c7c4279a923b3f8f28077d871a6fbab12b178fa"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-VOL-MACD-separ-6b813-right-drags-in-default-mode/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-VOL-MACD-separ-6b813-right-drags-in-default-mode/error-context.md",
+      "bytes": 17260,
+      "sha256": "94ef1cba0f241497a101f9e8c4fb8bceeedfffd8c88a47cbfaf713dcd057bec6"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/pane-resize-VOL-MACD-separ-bb339-t-right-drags-in-multi-mode/error-context.md",
+      "member": "run/artifacts/test-results/pane-resize-VOL-MACD-separ-bb339-t-right-drags-in-multi-mode/error-context.md",
+      "bytes": 17258,
+      "sha256": "1ccdfebaba265561097f48f9afdc7678c0c84c429299758b9bfdbd5e35c5e57c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/percent-hover-replay-view--85689--shows-the-gray-placeholder/error-context.md",
+      "member": "run/artifacts/test-results/percent-hover-replay-view--85689--shows-the-gray-placeholder/error-context.md",
+      "bytes": 18493,
+      "sha256": "dd5d79a32fa35a47873dba2d17ceee6ef403663bb8df4eb927c3c086a0e62eec"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放/error-context.md",
+      "member": "run/artifacts/test-results/recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放/error-context.md",
+      "bytes": 19908,
+      "sha256": "08f85b900698baee6e192e691379f8bd2aa14aab3abdfc0a582f6c8d12d2a25b"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/uiux-training-training-kee-35179-ing-chart-or-advance-target/error-context.md",
+      "member": "run/artifacts/test-results/uiux-training-training-kee-35179-ing-chart-or-advance-target/error-context.md",
+      "bytes": 18300,
+      "sha256": "64dc662144ef9d5ed6c5aaf95e4bbd8090333724ab00af4a2c87f893704fa16c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/test-results/uiux-training-training-kee-a871d-actual-minimum-content-size/error-context.md",
+      "member": "run/artifacts/test-results/uiux-training-training-kee-a871d-actual-minimum-content-size/error-context.md",
+      "bytes": 18314,
+      "sha256": "a3d0fe46e5d5d10a99d1f3fb570682197744b2e4c4d91d6fa1c947a7cce73265"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/screenshots/FAILED-fill-invariants-survive-MACD-toggle-maximize-restore-and-win.png",
+      "member": "run/artifacts/screenshots/FAILED-fill-invariants-survive-MACD-toggle-maximize-restore-and-win.png",
+      "bytes": 179164,
+      "sha256": "7d35cdca9ce59e14668336ea56377b4e8e1365bc1b9309a2e66c156c4745cd95"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/screenshots/FAILED-replay-page-keeps-the-inline-quote-and-fills-the-frame-witho.png",
+      "member": "run/artifacts/screenshots/FAILED-replay-page-keeps-the-inline-quote-and-fills-the-frame-witho.png",
+      "bytes": 157197,
+      "sha256": "4d24fb2877a00cadb0e127d450540ffd6125d053a37bcddaf5f24cb32a61c400"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/screenshots/FAILED-training-chart-fills-the-available-height-at-three-desktop-s.png",
+      "member": "run/artifacts/screenshots/FAILED-training-chart-fills-the-available-height-at-three-desktop-s.png",
+      "bytes": 179164,
+      "sha256": "7d35cdca9ce59e14668336ea56377b4e8e1365bc1b9309a2e66c156c4745cd95"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/064676bfe568e232be877f080fe645a652eeb05f.md",
+      "member": "run/artifacts/html/data/064676bfe568e232be877f080fe645a652eeb05f.md",
+      "bytes": 17262,
+      "sha256": "6033120ea07b7f687b9d7570d3e1774bad8ce1379a523dc15944985a92646956"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/0be72083ef311dd75dd65b4800f830ee319c4870.md",
+      "member": "run/artifacts/html/data/0be72083ef311dd75dd65b4800f830ee319c4870.md",
+      "bytes": 18300,
+      "sha256": "64dc662144ef9d5ed6c5aaf95e4bbd8090333724ab00af4a2c87f893704fa16c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/198a3cc9d5d54bb75da5e6fa423f48f83ef77620.md",
+      "member": "run/artifacts/html/data/198a3cc9d5d54bb75da5e6fa423f48f83ef77620.md",
+      "bytes": 17260,
+      "sha256": "94ef1cba0f241497a101f9e8c4fb8bceeedfffd8c88a47cbfaf713dcd057bec6"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/1f0b25499b40a8c0c2651b51be0ce6a44bd34ecb.md",
+      "member": "run/artifacts/html/data/1f0b25499b40a8c0c2651b51be0ce6a44bd34ecb.md",
+      "bytes": 18493,
+      "sha256": "dd5d79a32fa35a47873dba2d17ceee6ef403663bb8df4eb927c3c086a0e62eec"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/317da4e7aa3375567c995ced4d1e43ee28fc8abf.md",
+      "member": "run/artifacts/html/data/317da4e7aa3375567c995ced4d1e43ee28fc8abf.md",
+      "bytes": 18079,
+      "sha256": "f147f23b1b5ee775ff22e939aa86217fcd2355b6121f472d87cc42948c0ca15c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/31e390e5458f20084af603d002b543fd39390030.md",
+      "member": "run/artifacts/html/data/31e390e5458f20084af603d002b543fd39390030.md",
+      "bytes": 22156,
+      "sha256": "ab4d7f5f2a74a01917c6a98c8a3c91f157a1b2942b8334207f4fd418eb3b7ed7"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/4ec7f9290faa27e215f584a42549846d7285d0b5.md",
+      "member": "run/artifacts/html/data/4ec7f9290faa27e215f584a42549846d7285d0b5.md",
+      "bytes": 22160,
+      "sha256": "e278d5323adb0cf80f60002dcd336b1e883642dd8dbe3da1edf03542fdd39517"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/631e29c92e929f4ebc06c9f17e1fa2f452a43a07.md",
+      "member": "run/artifacts/html/data/631e29c92e929f4ebc06c9f17e1fa2f452a43a07.md",
+      "bytes": 22519,
+      "sha256": "b879f280002273cdbd5e2c690b34082e7a26c304e694b4e19e258fc145ba4268"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/683e83487494d91f902c260b2c6e5750261e022c.md",
+      "member": "run/artifacts/html/data/683e83487494d91f902c260b2c6e5750261e022c.md",
+      "bytes": 22164,
+      "sha256": "46b84fd9e31de6cf1a375bbbb4aa81770f90041c20ceffaa7a987d067e1aee76"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/77aff0d1aa4bfb292b565d0be4032e7acdb71e36.md",
+      "member": "run/artifacts/html/data/77aff0d1aa4bfb292b565d0be4032e7acdb71e36.md",
+      "bytes": 18102,
+      "sha256": "2ce1ded5e67aebffa44ee4fa05ba0ebf0865ffcc6b8e6656c650cbbc217082e4"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/7c6110ada6e94ef0e8e8fabfb14e01ff6ba7cad2.md",
+      "member": "run/artifacts/html/data/7c6110ada6e94ef0e8e8fabfb14e01ff6ba7cad2.md",
+      "bytes": 17276,
+      "sha256": "03692a969e42c0fa6298df168c7c4279a923b3f8f28077d871a6fbab12b178fa"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/9a20b013654f60b831cf2a3556c3854bf578e00d.md",
+      "member": "run/artifacts/html/data/9a20b013654f60b831cf2a3556c3854bf578e00d.md",
+      "bytes": 18089,
+      "sha256": "8ef4fdb13670f3060ac5bbca91be0e9f000a71456b167f186cfee44c1f1c0d0a"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/cb00ec54442b2a676ced70a9155be5322c7ea003.md",
+      "member": "run/artifacts/html/data/cb00ec54442b2a676ced70a9155be5322c7ea003.md",
+      "bytes": 17262,
+      "sha256": "5bfb30d39ce7aa55fa17c32ecf784118f494b9eea117b17ab299098ee31dd802"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/ced2af6901dd925a280f04f5a8d88beeb2c78d2c.md",
+      "member": "run/artifacts/html/data/ced2af6901dd925a280f04f5a8d88beeb2c78d2c.md",
+      "bytes": 19908,
+      "sha256": "08f85b900698baee6e192e691379f8bd2aa14aab3abdfc0a582f6c8d12d2a25b"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/e77e7970dded1aea4c4ec6aeee5d3d07c8110a35.md",
+      "member": "run/artifacts/html/data/e77e7970dded1aea4c4ec6aeee5d3d07c8110a35.md",
+      "bytes": 10428,
+      "sha256": "158ccc59877be087704b1e8206c3e6fcc6fd4d82f97fdb64fec5a2147bd3ccfa"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/ebe9a6e8e96d976ed297c5d53c0ce2d24117d519.md",
+      "member": "run/artifacts/html/data/ebe9a6e8e96d976ed297c5d53c0ce2d24117d519.md",
+      "bytes": 17258,
+      "sha256": "1ccdfebaba265561097f48f9afdc7678c0c84c429299758b9bfdbd5e35c5e57c"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/edfe752a978278b5bd5d449fa253fd329d3d0ddf.md",
+      "member": "run/artifacts/html/data/edfe752a978278b5bd5d449fa253fd329d3d0ddf.md",
+      "bytes": 18314,
+      "sha256": "a3d0fe46e5d5d10a99d1f3fb570682197744b2e4c4d91d6fa1c947a7cce73265"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/data/f0e88650323a902c45d0619bda8fb040e4c137de.md",
+      "member": "run/artifacts/html/data/f0e88650323a902c45d0619bda8fb040e4c137de.md",
+      "bytes": 17260,
+      "sha256": "236ceb809184ff0a664d8f85be9d6680856a4d9d3bf24bf644f2a6bf803fc2d9"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-42206f8c-3a30-4e98-9c72-822f4ad8382a/artifacts/html/index.html",
+      "member": "run/artifacts/html/index.html",
+      "bytes": 2165186,
+      "sha256": "94270cf85c1883136536e1de60c1a71d04dff98501e4165203c352f96f0a1044"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-run-20261118/candidate-f701371/candidate-isolation.receipt.json",
+      "member": "candidate-isolation/candidate-isolation.receipt.json",
+      "bytes": 1369,
+      "sha256": "a671d90a512b07f99afdc167dd13d2e5459d2a98b7d58404093be5948213ed60"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-run-20261118/candidate-f701371/candidate.log",
+      "member": "candidate-isolation/candidate.log",
+      "bytes": 1621,
+      "sha256": "aeaf1446b0a99554c0f5681eb25d0abd02989ff11062e2c7277aa11bb12fbba1"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-run-20261118/candidate-f701371/shared-status-after.log",
+      "member": "candidate-isolation/shared-status-after.log",
+      "bytes": 154,
+      "sha256": "6d3bcb35826e7d21814b9f1cd1c7a9815e40ace4a6eedd4700d9e1b436a2afef"
+    },
+    {
+      "sourcePath": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-final-run-20261118/candidate-f701371/shared-status-before.log",
+      "member": "candidate-isolation/shared-status-before.log",
+      "bytes": 154,
+      "sha256": "6d3bcb35826e7d21814b9f1cd1c7a9815e40ace4a6eedd4700d9e1b436a2afef"
+    }
+  ],
+  "proofPresence": {
+    "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/candidate-proof.json",
+    "existsAtCapture": false,
+    "association": "absent; failed run issued no promotion proof"
+  },
+  "exclusions": [
+    "trainer.sqlite and backup-trainer.sqlite",
+    "tdx-snapshot binary market files: only snapshot.json metadata included",
+    "run/server and run/web generated products",
+    "browser profiles and databases",
+    "non-failure screenshots and update-e2e binary fixture trees"
+  ],
+  "sourceBytesRecheckedAfterArchive": true,
+  "zipCrcsVerified": true,
+  "allMemberBytesEqualSources": true,
+  "credentialPatternScan": {
+    "selectedFiles": 61,
+    "highConfidenceFindings": 0,
+    "patterns": [
+      "github-token",
+      "openai-token",
+      "aws-access-key",
+      "private-key",
+      "literal-bearer"
+    ],
+    "limit": "Pattern scan limited to selected evidence; not a general security audit."
+  }
+}

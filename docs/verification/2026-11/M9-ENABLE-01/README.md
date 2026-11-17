@@ -2,7 +2,7 @@
 
 批准范围见[首批批准记录](../ENG-PLAN-01/approval.md)，产品口径见[公式规格](../../../specs/formulas.md)。本页记录工程检查，不代替 M9 用户整批验收或发布许可。
 
-当前接续：用户已批准的独立EMA修复经PR54合入main58ba0ff，并集成到M9提交3ec3d730。统一候选首次公式启停专项5/5通过；补充自定义主图与保存失败后刷新后，新一轮6/6通过，两轮原生exit0。整批门禁仍待执行。下文blocked与待拍板描述是批准前保留的验证快照，不代表当前仍待同一许可。
+当前接续：用户已批准的独立EMA修复经PR54合入main58ba0ff，并集成到M9提交3ec3d730。统一候选首次公式启停专项5/5通过；补充自定义主图与保存失败后刷新后，新一轮6/6通过，两轮原生exit0。f701首次完整候选失败，当前准备修复后重新冻结；详见文末。下文blocked与待拍板描述是批准前保留的验证快照，不代表当前仍待同一许可。
 
 本轮另发现并精确清理共享控制台账中的测试夹具投影，保留全部真实记录，见[恢复记录](control-recovery/README.md)。恢复未触及个人训练数据；后续单测与控制目录隔离。
 
@@ -53,3 +53,14 @@ PR50合入b1ff3e9；PR51合入f4bbc6a，首轮设置用例超时与同head第二
 PR43评审C0/I2/M0，待当前main集成和Electron44.11.3真实包验证；保持开放，未评论。Issue8的[现场视觉补记](issue8/live-review.md)、安装器技术草案和涨停起点待审方案仅归档，未实施新功能或回复外部人员。
 
 本轮源码身份见[source-identity.json](source-identity.json)，归档逐份解码/字节/SHA核对见[archive-index.json](archive-index.json)。缓存源清单可能列出额外原件；只有archive-index列出的复制文件算已入库，不声称完整run数据库和TDX样本已归档。
+
+
+## 2026-11-18 完整候选失败与准备修复
+
+f701371完整候选原生退出1：docs、impact、server2664、类型、构建、M2 24/24通过；Journey229通过、18失败、1跳过、13因serial前置失败未运行，无候选proof。全部首次失败见[归档](failed-candidate-f701371/failure-summary.md)，原始CI、ASAR和审查见[此前证据](final-prior/README.md)。
+
+formula-chart留下启用的CHART_SUB，使15个后继断言出现第5窗格。仅补严格用例后清理，原4个测试正文及窗格期望不变；新增后置断言RED正确发现CHART_MAIN/SUB，GREEN运行917219e4共8通过，另d0722af9共4通过。D28原超时直接原因未证实，定向通过不能代替完整候选。独立准备修复审查C0/I0/M0。
+
+旧ZIP真实CMD运行原生1，Windows PowerShell5.1误读无BOM源码中的中文exe名；仅增加UTF-8 BOM，脚本其余2525字节不变。PS5原版失败/BOM成功、PS7两版成功；新包CMD尚待实跑。生产验收脚本原nativeHome预期错误已分开保留，v3仍待实际执行，未声称包验收通过。
+
+RED/GREEN、原CMD失败、编码正反例、home oracle和五维审查原件见[准备修复归档](preparation-repair/M9-freeze-preparation-evidence.manifest.json)及其ZIP；128份源字节、131条目校验一致，未含运行态profile。官方v1.2.7迁移ZIP已匹配官方SHA清单和GitHub digest，将用于消除下一轮可避免跳过。个人库未作夹具。

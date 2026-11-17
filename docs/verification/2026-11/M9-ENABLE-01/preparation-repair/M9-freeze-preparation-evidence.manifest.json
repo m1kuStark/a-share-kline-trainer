@@ -1,0 +1,834 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-11-18T04:40:54.1929249+08:00",
+  "scope": "M9 freeze preparation supplemental evidence; original failure and RED/GREEN retained; no acceptance upgrade",
+  "files": [
+    {
+      "path": "evidence/M9-final-evidence-stage/artifact-index.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\artifact-index.json",
+      "bytes": 64603,
+      "sha256": "5a4f1e7e682feb2966b755e5ee4806ae53781f7b5a0d743c41cb4251e3a1c2d7"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/copy-integrity.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\copy-integrity.receipt.json",
+      "bytes": 2469,
+      "sha256": "a68ae722fff5e6c3b418cb9a0feaf7cd754d9c3f74389933abf1a27637ca1160"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/README.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\README.md",
+      "bytes": 3046,
+      "sha256": "dc5ef1cab08cc2f166e5e65088f3cdf7d58ed7692139e38e6d301631df7663ec"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/verify-stage.py",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\verify-stage.py",
+      "bytes": 1373,
+      "sha256": "ad679775b58256afc908f0347c28810cf5f5c078edb35e056bb428e56e9f2306"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/asar/asar-boundary-evidence.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\asar\\asar-boundary-evidence.zip",
+      "bytes": 77036,
+      "sha256": "ebc163466a59d66c1fa23938cac8dc8185f3ec8a9b37626b4c4e68e4dd2bb4e7"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/home-isolation/home-isolation-evidence.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\home-isolation\\home-isolation-evidence.zip",
+      "bytes": 82580,
+      "sha256": "f42aefada71e89e41cd869fd4f15dbd8f43a6bf9c5053bd89ade480937706953"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/journey-fixture/journey-fixture-evidence.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\journey-fixture\\journey-fixture-evidence.zip",
+      "bytes": 74772,
+      "sha256": "0a3576b329af04115cf4364b65f123ed8d3a0afb2983083cf2d57ad45f078c89"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/review/review-evidence.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\review\\review-evidence.zip",
+      "bytes": 18150,
+      "sha256": "31e2d956505e49b8ed4f9e8fa04d1d8f7aab32af9307163b27ea512552f82952"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/source-ci/logs-44160559239.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\source-ci\\logs-44160559239.zip",
+      "bytes": 106268,
+      "sha256": "a0f9acd88126f978e2d534f2245486d5a95241771958076fc489ed1203c6bfdf"
+    },
+    {
+      "path": "evidence/M9-final-evidence-stage/source-ci/source-ci-evidence.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-evidence-stage\\source-ci\\source-ci-evidence.zip",
+      "bytes": 37924,
+      "sha256": "55aa7088f8a5e602fb1b7c1d11879e12069ed65dec7a9d0f781bc4ad281960d0"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/artifact-index.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\artifact-index.json",
+      "bytes": 26359,
+      "sha256": "b76f10a34668ba740995241837838b9a9037e5de1ef350990286ec25147a6ab3"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/copy-integrity.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\copy-integrity.receipt.json",
+      "bytes": 1655,
+      "sha256": "ab3cf32cef2737c357ad8b3417e02db2b103f6231d3cbf29ca3d92beca897866"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/failure-summary.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\failure-summary.json",
+      "bytes": 122406,
+      "sha256": "23df96bc23b016eaaab5794014a818f5c8c19571f0931fd92c0df3f971f285f8"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/failure-summary.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\failure-summary.md",
+      "bytes": 4570,
+      "sha256": "8c2db55a209c19446dd3be333b5c9de9100ae258f693d20e640257a41c42cf89"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/first-failed-candidate-f701371.zip",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\first-failed-candidate-f701371.zip",
+      "bytes": 2406622,
+      "sha256": "6bea89df49fbe274d950072f37144a3dfc62d5bcdea8177b6fc950ae796c07e8"
+    },
+    {
+      "path": "evidence/M9-final-failed-candidate-f701371/verify-archive.py",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-failed-candidate-f701371\\verify-archive.py",
+      "bytes": 934,
+      "sha256": "47a1d766236d68ea3463f5d68225dfcdd65a916275a8472ac93bc6168051317b"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/artifact-hashes.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\artifact-hashes.json",
+      "bytes": 2489,
+      "sha256": "f5b81272e6764de7eb18aa1c253fd39c14abeaf53e612e01ac977c467d2a0cc3"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-binding.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-binding.log",
+      "bytes": 205,
+      "sha256": "c6f4714dc1319fdd8ea993fb901a3a336550e10cae4a6b2efe5ca5a166f6e0ae"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-binding.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-binding.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-cleanup-green.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-cleanup-green.log",
+      "bytes": 551,
+      "sha256": "ddbc68b610de8cb72c88b4d4554c0b1d371f90ba28df126f99c4c5e393be3238"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-cleanup-green.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-cleanup-green.receipt.json",
+      "bytes": 1292,
+      "sha256": "bb79a786a223e8663fa8346dda11e6839c20437f30cc3c1f292a87af62e3ef67"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-cleanup-red.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-cleanup-red.log",
+      "bytes": 665,
+      "sha256": "c6adf2ed8e0fb3799466cf3bfd86563551cc3ec8250b325ad48d8502f79924c9"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart-cleanup-red.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart-cleanup-red.receipt.json",
+      "bytes": 1216,
+      "sha256": "217eab57f35076b3bcbfe0cc122c343c63fc8421ecb8feebb043aa6609069974"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/formula-chart.spec.ts.snapshot.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\formula-chart.spec.ts.snapshot.txt",
+      "bytes": 11293,
+      "sha256": "43c0dd57768e78ffb26f8510ecd3a474cc638a78eb11b2a271af61e9a6a5f371"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/green.journey.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\green.journey.log",
+      "bytes": 1186,
+      "sha256": "fd7d2bb7a12eb4a97f842d277c3aa9cb0e8b3d6dc6842a419c63de0bf8a094c3"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/green.run-manifest.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\green.run-manifest.json",
+      "bytes": 1596,
+      "sha256": "241ce0da7560008a5db81fc6fe5251966f1c41b03de9f86bb3aa4f759f59b84f"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/red.journey.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\red.journey.log",
+      "bytes": 1900,
+      "sha256": "912acce089880c4d45437421361ff577a580cc0136972e41b165b92f4d658753"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/red.run-manifest.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\red.run-manifest.json",
+      "bytes": 1596,
+      "sha256": "b0a716a699fc258c711901442c6dd5bccb87d7a54e979e26f49c8a9836b3dddb"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/review.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\review.md",
+      "bytes": 3943,
+      "sha256": "e1e6a5c668449f8d91c168343785bce20d64ff139a8328a10434fcec75188f12"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/review.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\review.receipt.json",
+      "bytes": 2698,
+      "sha256": "7cc0fe9e8e427e5084a8ad0ce17aa8c64223b76b365054e772ea419419830e53"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/Start-Acceptance.snapshot.ps1",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\Start-Acceptance.snapshot.ps1",
+      "bytes": 2528,
+      "sha256": "abc8c09d9200fe291e17549d5c46270479dfbe7cad3b156b395e3f91f7243502"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/task.M9-ENABLE-01.snapshot.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\task.M9-ENABLE-01.snapshot.md",
+      "bytes": 6278,
+      "sha256": "40722304a95aa6fc842675a655656c2b049de76f361e41cb45eb9bd41117e043"
+    },
+    {
+      "path": "evidence/M9-preparation-fix-review/three-file.diff",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-preparation-fix-review\\three-file.diff",
+      "bytes": 3889,
+      "sha256": "e4040e50e0b2668073b3e198c03605e13f2bfd603bfd3bfae09dc5b783c64cfe"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/artifact-hashes.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\artifact-hashes.json",
+      "bytes": 3990,
+      "sha256": "42d5565bf38aed4ed8fc4d2e5bab11bdfd15b6fb9e26e9b64a244124d1b9eee3"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/diagnosis.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\diagnosis.md",
+      "bytes": 2321,
+      "sha256": "b79b0861c4d35a0f0dfa8ebdce4e74fbc08dbf50ec34233f5e8b77da3cb11830"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/diagnosis.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\diagnosis.receipt.json",
+      "bytes": 5869,
+      "sha256": "962754c12f8f8ce91944d2d56329bb55c56ded8424b779d2aaf5903d409d38f8"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/official-about_Character_Encoding.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\official-about_Character_Encoding.md",
+      "bytes": 9777,
+      "sha256": "b97366193e7cae866f87255ab979d5a88d4af566d3dee98979404a25be2bc9ab"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/official-sources.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\official-sources.json",
+      "bytes": 1268,
+      "sha256": "1a46a8cc80b151041ad9ef4f4f2b5cf82367306b54a4e7e719b1528af0406a3e"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/parse-executable-literal.ps1",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\parse-executable-literal.ps1",
+      "bytes": 2489,
+      "sha256": "2dff551d34f02622bf616f5f81e30d70b90f104afe7b6372a1a5018928ca1844"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/production-cmd-smoke-f7013718.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\production-cmd-smoke-f7013718.log",
+      "bytes": 354,
+      "sha256": "bb8556ac692c6649815534ac7b981e89d208757d1f5a9d71c0a48655a7d0f56d"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-no-bom.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-no-bom.log",
+      "bytes": 406,
+      "sha256": "22ae683cc8f17dd9e64569ab29f064295d8d49f42f3d45bbb9a997e9483a9e82"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-no-bom.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-no-bom.native-exit.txt",
+      "bytes": 1,
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-no-bom.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-no-bom.receipt.json",
+      "bytes": 2252,
+      "sha256": "775960a5b7fb43dd5cd3a2f4b0402ebc4d25f0ed902a56607ab8fdd19431b05b"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-utf8-bom.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-utf8-bom.log",
+      "bytes": 66,
+      "sha256": "aad277c60a8663f41d01493ed171a8fa318d31c68b0e688f54d615b943ff4bd8"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-utf8-bom.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-utf8-bom.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps5-utf8-bom.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps5-utf8-bom.receipt.json",
+      "bytes": 2156,
+      "sha256": "641614bbcb61569fb2dd351260ed5a16b3cb215aa993bc59ba0d0b5f0fdef783"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-no-bom.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-no-bom.log",
+      "bytes": 58,
+      "sha256": "4c049d8085d63d92dcb3a45e02fe0a653486076be091f980fe73a5f9cb121930"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-no-bom.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-no-bom.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-no-bom.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-no-bom.receipt.json",
+      "bytes": 1396,
+      "sha256": "9b5f9f84e9196ee45a6d8857d42815e60b7ff7e34233f7e9b7ae9c40f9e97556"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-utf8-bom.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-utf8-bom.log",
+      "bytes": 57,
+      "sha256": "364159ab3b9fc71a102eaeedaea1be733e10881a8ad489950a43cf923a55dce1"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-utf8-bom.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-utf8-bom.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/ps7-utf8-bom.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\ps7-utf8-bom.receipt.json",
+      "bytes": 1388,
+      "sha256": "7754e1a3258dc72a833572730e504ef07d4d6aad3a87614cabb2d2cf49d6676c"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/read-only-path-probe.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\read-only-path-probe.json",
+      "bytes": 523,
+      "sha256": "caf33d93f3dd75fe4f6e4d93c0c203931ddbdd51e05f42611db85e49359f6bd2"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/residual-cmd.read-only.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\residual-cmd.read-only.json",
+      "bytes": 168,
+      "sha256": "ca12a1726bdc2eea99670248bcfd94643d7c72dc72ce41f0f76f09e402846710"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/Start-Acceptance.original-no-bom.ps1",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\Start-Acceptance.original-no-bom.ps1",
+      "bytes": 2525,
+      "sha256": "d4adc34ba3eb2463a5c59e806d1cc8c89218eff96b5db3d488ae2a3a7efcedb4"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/Start-Acceptance.original.cmd",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\Start-Acceptance.original.cmd",
+      "bytes": 116,
+      "sha256": "1a9da08e4cd99a704596c47bac77dcd082632cf611b5fda4e3eb1a6e3fbd64ef"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/Start-Acceptance.utf8-bom.ps1",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\Start-Acceptance.utf8-bom.ps1",
+      "bytes": 2528,
+      "sha256": "abc8c09d9200fe291e17549d5c46270479dfbe7cad3b156b395e3f91f7243502"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/zip-launcher-failure.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\zip-launcher-failure.json",
+      "bytes": 1949,
+      "sha256": "9986741e89e88ab81a15b8c8f1c540d04c8538e3e7635cdf2c746e4af0312361"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/zip-launcher-stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\zip-launcher-stderr.log",
+      "bytes": 571,
+      "sha256": "64c2a518703ae351314d8d02dd4a1a6ee7b4f3336b769c41525b7a13e36072af"
+    },
+    {
+      "path": "evidence/M9-cmd-encoding-diagnosis/zip-launcher-stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-cmd-encoding-diagnosis\\zip-launcher-stdout.log",
+      "bytes": 20,
+      "sha256": "e8255cf59f157cd968682cb585d113397ecabca5d6769dae6195ecd070abc73f"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/artifact-manifest.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\artifact-manifest.json",
+      "bytes": 2507,
+      "sha256": "90b9cf64f43581f519b5a0992ca7206aa9474b74a27bbe761d6f8c26c0793982"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/assertion-comparison.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\assertion-comparison.json",
+      "bytes": 41827,
+      "sha256": "1d4c90b5e7ed621e537ff71bcad4f62c93bd10a3065c3cbda78d70c860ec83c5"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/change-map.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\change-map.json",
+      "bytes": 10920,
+      "sha256": "3f8df8a4379643bd3b7b7141ff01f35410f5a23ff86ffc798d9d9ffed06678d8"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/compare-v2-v3.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\compare-v2-v3.cjs",
+      "bytes": 5581,
+      "sha256": "8c1d1e4c48cdc6589cc92ec3a922986549d9b7b8808d080b0b9abad6090ea3a6"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/compare-v2-v3.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\compare-v2-v3.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/compare-v2-v3.stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\compare-v2-v3.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/compare-v2-v3.stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\compare-v2-v3.stdout.log",
+      "bytes": 88,
+      "sha256": "4d047399cdeada83a610b348ed3388564413e92e89678b8335879930b3ec0d40"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/HANDOFF-v3.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\HANDOFF-v3.md",
+      "bytes": 1925,
+      "sha256": "92b9ee6e3da4c53b4d803d464355415afa72dc14a5eb873ad5faafc11bdd27cf"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/HANDOFF.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\HANDOFF.md",
+      "bytes": 5388,
+      "sha256": "1fd749de5634f91ffb6d861886af8dec78884c99f09e4da537518b2a521051d2"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/m9-packaged-acceptance.original.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\m9-packaged-acceptance.original.cjs",
+      "bytes": 40816,
+      "sha256": "e809b3a2dee64e1d09f92a7961da1a7afe6cd4010e866019cda0587bc8763def"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/m9-packaged-acceptance.v2.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\m9-packaged-acceptance.v2.cjs",
+      "bytes": 46664,
+      "sha256": "91b5003fb8881854472958150cd3d1c73ebfdb5b5cfb9792e46c5c2e38cf759f"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/m9-packaged-acceptance.v3.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\m9-packaged-acceptance.v3.cjs",
+      "bytes": 49410,
+      "sha256": "98ca551098463324dcddace1a4952b4a7fd4a253604a5782588bbe058aca7eb1"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/node-check.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\node-check.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/node-check.stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\node-check.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/node-check.stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\node-check.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/original-manifest.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\original-manifest.json",
+      "bytes": 338,
+      "sha256": "281135559f4263e327f3657813cf945bc1a78906bd044ac1ae0624885b904c25"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/preparation-errors.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\preparation-errors.log",
+      "bytes": 730,
+      "sha256": "cd6d54495f51ec45592df4854bc367ebff25d72d8c460d7945de301deb07ebc1"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/preparation-verification.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\preparation-verification.json",
+      "bytes": 10465,
+      "sha256": "bd21dcee2b2d77447bc433fe14ca16bb1d9b96c8a9834e099bae045acdad309a"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/prepare-v2.py",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\prepare-v2.py",
+      "bytes": 11872,
+      "sha256": "0a181968ba36e8a8673a6e18902fd4cdd2697117bf8b2aa333ec46ccbf4e2b5e"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/prepare-v3.py",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\prepare-v3.py",
+      "bytes": 6159,
+      "sha256": "15fa539c5c832f75e8f6bbb2437623e99013f2869cd0eafe3299210048c3d155"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v2.diff",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v2.diff",
+      "bytes": 12309,
+      "sha256": "ae462b67a2222c01f1a2dde713ce6e7d2ba6f31ef8c2c839b4e0adb71eaf304d"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-assertion-comparison.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-assertion-comparison.json",
+      "bytes": 44145,
+      "sha256": "527856025e357c94ff4c9c55a2dbb2e303f082690bd4099764eecf25a0e28ba8"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-change-map.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-change-map.json",
+      "bytes": 5191,
+      "sha256": "c665dc863c0856ac995fbb5d1e748de950e6d7173cef3eddecf1376dcf7505d7"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-from-v2.diff",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-from-v2.diff",
+      "bytes": 5711,
+      "sha256": "1647e98d803de3098e0b741fd63691819a58d50d710cb55016f2f804851f69c4"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-node-check.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-node-check.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-node-check.stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-node-check.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-node-check.stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-node-check.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-preparation-verification.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-preparation-verification.json",
+      "bytes": 25488,
+      "sha256": "8e1052aadf7a4700970f836ef95653bd9925eff53b48361ec1ef3e61334bf6da"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/v3-v2-preservation.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\v3-v2-preservation.json",
+      "bytes": 43290,
+      "sha256": "37ab75ada9f962fc730d61323801d0c25ba57111a0ecbf24c66a0e7194401ee9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-preparation.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-preparation.cjs",
+      "bytes": 11471,
+      "sha256": "e076f9a745a77948397ed7369d8dd8a5446feb513d8866b8ea55e6b834146f4e"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-preparation.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-preparation.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-preparation.stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-preparation.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-preparation.stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-preparation.stdout.log",
+      "bytes": 194,
+      "sha256": "e2e47ef9a41c5ef5bb5ba672db1abfb5d86480b40e31ff8e64a00cfaa809f611"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-v3-preparation.cjs",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-v3-preparation.cjs",
+      "bytes": 15305,
+      "sha256": "cb42289324a6a024f69b4d291f3e815aa993c65c87d127f863e2fb02a7be7652"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-v3-preparation.native-exit.txt",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-v3-preparation.native-exit.txt",
+      "bytes": 1,
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-v3-preparation.stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-v3-preparation.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "evidence/M9-home-oracle-repair/verify-v3-preparation.stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-home-oracle-repair\\verify-v3-preparation.stdout.log",
+      "bytes": 194,
+      "sha256": "974dc349162bd582887b8718f4103ec73c3b5cf43fa10431ab9997e929522759"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\01-red-postcondition.patch",
+      "bytes": 960,
+      "sha256": "9b2149bb4aa12c3e3431255e1b45f36c494ddeca26ca3f3955b1fdc14a936ec6"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/01-red-postcondition.patch.generation.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\01-red-postcondition.patch.generation.json",
+      "bytes": 457,
+      "sha256": "b1854e5c6adbe337ed4ce78c27a0766cc7cc5d6a4a4d0f54c5472604ba195181"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\02-green-cleanup.patch",
+      "bytes": 2057,
+      "sha256": "fd0e987fc0dbcb7cd64198109a678ae748b5b4bd472c0238263398f544b46418"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/02-green-cleanup.patch.generation.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\02-green-cleanup.patch.generation.json",
+      "bytes": 458,
+      "sha256": "27519b8464bdad2634d3c47bdc5d9ebec69ae85d093952c7118a237dfa43694a"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\03-combined.patch",
+      "bytes": 1712,
+      "sha256": "3dd79ecb5fd12fa29930d42e4b2009d26217feedf78d4c7e6397568965f1d169"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/03-combined.patch.generation.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\03-combined.patch.generation.json",
+      "bytes": 459,
+      "sha256": "2528adf07915415b694067becaedf95d1b731e1bda537f54ee19e482995bb62e"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/artifact-index.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\artifact-index.json",
+      "bytes": 3532,
+      "sha256": "a686629ebee67cda425cf4cc12d00d9995a912f628a554bf6c30dc5be197e9f0"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/base.ts",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\base.ts",
+      "bytes": 10538,
+      "sha256": "1652959c8e0dd0750e2f99729970d28377a896b1216d28d2d3fee5042be81c06"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-journey-Act2a-线段绘制编辑删除.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-journey-Act2a-线段绘制编辑删除.md",
+      "bytes": 22519,
+      "sha256": "b879f280002273cdbd5e2c690b34082e7a26c304e694b4e19e258fc145ba4268"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes.md",
+      "bytes": 18102,
+      "sha256": "2ce1ded5e67aebffa44ee4fa05ba0ebf0865ffcc6b8e6656c650cbbc217082e4"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact.md",
+      "bytes": 18079,
+      "sha256": "f147f23b1b5ee775ff22e939aa86217fcd2355b6121f472d87cc42948c0ca15c"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload.md",
+      "bytes": 18089,
+      "sha256": "8ef4fdb13670f3060ac5bbca91be0e9f000a71456b167f186cfee44c1f1c0d0a"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-fill-invariant-8c674-e-restore-and-window-resize.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-layout-fill-fill-invariant-8c674-e-restore-and-window-resize.md",
+      "bytes": 22156,
+      "sha256": "ab4d7f5f2a74a01917c6a98c8a3c91f157a1b2942b8334207f4fd418eb3b7ed7"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row.md",
+      "bytes": 22160,
+      "sha256": "e278d5323adb0cf80f60002dcd336b1e883642dd8dbe3da1edf03542fdd39517"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/context-layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\context-layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes.md",
+      "bytes": 22164,
+      "sha256": "46b84fd9e31de6cf1a375bbbb4aa81770f90041c20ceffaa7a987d067e1aee76"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/fixture-diagnosis.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\fixture-diagnosis.receipt.json",
+      "bytes": 6188,
+      "sha256": "07b2c4be2190607add779fc052bc9868a17f6eca47e5b8ef1bbe514d65b6e3bc"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/green.ts",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\green.ts",
+      "bytes": 11092,
+      "sha256": "8f82fa752dc13af6736740e6fff5c8245bc921c9e8f76dc8baa44501dfde8eca"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/journey.observed.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\journey.observed.log",
+      "bytes": 20517,
+      "sha256": "8d7774208e2cbe418141b570173971959ffd84194d5e9e5e8176d755fea280e4"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/patch-apply-check.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\patch-apply-check.receipt.json",
+      "bytes": 378,
+      "sha256": "2b78da15e17ba8acc5526da7e1e7b185376e20b7c0c8e95b5064820e36eb3639"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/red.ts",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\red.ts",
+      "bytes": 10944,
+      "sha256": "5224fda19964b662a589f70c921ca7a9118cb5fbae53856b2624285ea8558cbf"
+    },
+    {
+      "path": "evidence/M9-final-code-review/journey-fixture-diagnosis/report.md",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-code-review\\journey-fixture-diagnosis\\report.md",
+      "bytes": 5037,
+      "sha256": "c3bc5cb805d1c57be1f92313ceb099fa50ffbce4568d40f540c1a3b590fda471"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/formula-chart-cleanup-green.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\formula-chart-cleanup-green.log",
+      "bytes": 551,
+      "sha256": "ddbc68b610de8cb72c88b4d4554c0b1d371f90ba28df126f99c4c5e393be3238"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/formula-chart-cleanup-green.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\formula-chart-cleanup-green.receipt.json",
+      "bytes": 1292,
+      "sha256": "bb79a786a223e8663fa8346dda11e6839c20437f30cc3c1f292a87af62e3ef67"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/remaining-failures-reproduction.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\remaining-failures-reproduction.log",
+      "bytes": 481,
+      "sha256": "e065521906643f55c6236f461cace136ce27a19378ced7ce2f68e848c27676d5"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/remaining-failures-reproduction.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\remaining-failures-reproduction.receipt.json",
+      "bytes": 1206,
+      "sha256": "58cf8674304166da19c9622051e1d7a63107f9bed8a137e213f5c20e858822b2"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/wrapper-bom-source-repair.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\wrapper-bom-source-repair.json",
+      "bytes": 339,
+      "sha256": "396bfabf0890b6752777c6fb6ab221cc336a1f157bdc57875de167a0411e3ee0"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/production-cmd-smoke-f7013718.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\production-cmd-smoke-f7013718.log",
+      "bytes": 354,
+      "sha256": "bb8556ac692c6649815534ac7b981e89d208757d1f5a9d71c0a48655a7d0f56d"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/cmd-smoke-f7013718/owned-paused-cmd-cleanup.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\cmd-smoke-f7013718\\owned-paused-cmd-cleanup.json",
+      "bytes": 545,
+      "sha256": "711470d2222be15f9ccf121b84fc10b745a0a67d2790dae28085a0b788d9da57"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/cmd-smoke-f7013718/zip-launcher-failure.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\cmd-smoke-f7013718\\zip-launcher-failure.json",
+      "bytes": 1949,
+      "sha256": "9986741e89e88ab81a15b8c8f1c540d04c8538e3e7635cdf2c746e4af0312361"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/cmd-smoke-f7013718/zip-launcher-stderr.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\cmd-smoke-f7013718\\zip-launcher-stderr.log",
+      "bytes": 571,
+      "sha256": "64c2a518703ae351314d8d02dd4a1a6ee7b4f3336b769c41525b7a13e36072af"
+    },
+    {
+      "path": "evidence/M9-final-run-20261118/cmd-smoke-f7013718/zip-launcher-stdout.log",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\cmd-smoke-f7013718\\zip-launcher-stdout.log",
+      "bytes": 20,
+      "sha256": "e8255cf59f157cd968682cb585d113397ecabca5d6769dae6195ecd070abc73f"
+    }
+  ],
+  "excluded": [
+    {
+      "path": "M9-home-oracle-repair/ccr/04bd90468b98.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/1b6f7309e570.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/722135ea4452.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/7eba8fb880b4.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/910daf01db4d.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/bbe8284db827.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/cbbc4a2f383b.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/e2f7b952eef3.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/e809b3a2dee6.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/ccr/ed414515c7df.txt",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-home-oracle-repair/pure-fixture/.acceptance-data/home/AppData/Local/Microsoft/Windows/PowerShell/StartupProfileData-NonInteractive",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-final-code-review/journey-fixture-diagnosis/apply-check/combined-from-base/e2e/formula-chart.spec.ts",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-final-code-review/journey-fixture-diagnosis/apply-check/green-from-red/e2e/formula-chart.spec.ts",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    },
+    {
+      "path": "M9-final-code-review/journey-fixture-diagnosis/apply-check/red-from-base/e2e/formula-chart.spec.ts",
+      "reason": "Runtime profile, redundant patch-apply work copy, or reversible compression cache; original evidence retained separately."
+    }
+  ],
+  "repoWrites": false
+}

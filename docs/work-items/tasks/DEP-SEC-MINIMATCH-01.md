@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "ENG",
   "base_commit": "f4bbc6af283562c8d567918fb4a59f3f51d71ffe",
-  "summary": "2026-11-18 独立本地候选：两条父包与 child 请求范围限定的 override 及生产 glob 锁定副本均升级至 minimatch 11.0.9，legacy 3.1.5/5.1.9 保留。npm ci/ls、20 项版本与消费者 API 检查、full/production audit、3023 项测试、build、portable 与 NSIS x64 打包、隔离包内模块运行均通过；候选待集成审查，不代表 GitHub 告警已关闭或用户验收。",
+  "summary": "2026-11-18 PR52已合入main df6cedd：两条父包与 child 请求范围限定的 override 及生产 glob 锁定副本均升级至 minimatch 11.0.9，legacy 3.1.5/5.1.9 保留。npm ci/ls、20 项版本与消费者 API 检查、full/production audit、3023 项测试、build、portable 与 NSIS x64 打包、隔离包内模块运行均通过；合入后复核告警48已自动fixed，未dismiss；包内模块探针不代表完整安装/UI或用户验收，后继整批由M9-ENABLE-01接续。",
   "next_action": "PR52已合入；三项required checks首轮成功。告警48于2026-11-17T17:50:36Z自动fixed，未dismiss，开放告警0；云端9条语料提前返回不能冒充本机实盘语料。PR43单独评审后保留开放，缺当前主线集成和Electron包运行验证。",
   "allowed_paths": [
     "package.json",

@@ -8,8 +8,8 @@
   "state": "active",
   "milestone": "M9",
   "base_commit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
-  "summary": "启停保存修复已集成公共EMA独立修复PR54（main58ba0ff）；原4/5和DEA失败保留，当前统一候选准备执行专项及完整门禁、主代理视觉、Windows实包录像回放；整批尚未通过。",
-  "next_action": "先冻结统一候选并重跑公式启停，再完成完整候选门禁、主代理视觉与同提交Windows生产包及录像回放；交用户整批验收，不发布。",
+  "summary": "EMA已独立合入PR54；启停6/6和API13/13通过。f701完整Journey229通过18失败1跳过13未运行；夹具清理RED/GREEN与BOM-only修复已备，当前冻结新候选重跑，整批未验收。",
+  "next_action": "冻结准备修复后完整重跑候选（含官方v1.2.7迁移夹具），验证同提交Windows包、实际CMD入口、主代理视觉和录像重启持久化，再交用户验收。",
   "allowed_paths": [
     "web/src/components/FormulaSettings.vue",
     "web/src/api.ts",
@@ -40,7 +40,9 @@
     "docs/proposals/development-plan-2026-11.md",
     "server/test/formula-seed.test.ts",
     "docs/work-items/tasks/M9-EMA-WARMUP-01.md",
-    "docs/verification/2026-11/M9-EMA-WARMUP-01/**"
+    "docs/verification/2026-11/M9-EMA-WARMUP-01/**",
+    "e2e/formula-chart.spec.ts",
+    "scripts/acceptance/Start-Acceptance.ps1"
   ],
   "depends_on": [
     "RUNTIME-CANCEL-02",
@@ -94,3 +96,9 @@
 ## 统一候选接续
 
 2026-11-18，独立EMA修复由PR54合入main58ba0ff，必需docs/verify/pr-policy均通过，CI同次3033项通过。将此main更新集成到本卡，候选对比基线改为58ba0ff；保存补丁未变。独立修复完整收据保留，M9后继检查从统一候选重新执行。
+
+## 整批验收准备修复范围
+
+2026-11-18，冻结候选f701371的完整Journey发现公式图表套件遗留启用中的CHART_SUB，使后续共库用例多出第五窗格。本轮补充formula-chart矩阵关联测试范围，只增加用例后清理、API状态和无残留断言，原产品断言与窗格预期保留；先记录RED，再验证GREEN及完整候选。其他超时逐项核实，不合并归因。
+
+真实CMD入口另复现Windows PowerShell 5.1误读无BOM脚本中的中文程序名。Start-Acceptance.ps1仅补UTF-8 BOM，原脚本主体逐字节不变；PS5/PS7解析正反例与全新解压后的实际CMD运行分别记录。以上属于本卡交付准备的明确缺陷修复，不扩展公式产品语义或发布权限。

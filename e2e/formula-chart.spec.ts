@@ -15,16 +15,30 @@ test.beforeEach(({ page }) => {
   errors.set(page, list)
   page.on('pageerror', error => list.push(error.message))
 })
-test.afterEach(({ page }) => { expect(errors.get(page)).toEqual([]) })
+test.afterEach(async ({ page }) => {
+  try {
+    expect(errors.get(page)).toEqual([])
+  } finally {
+    await cleanFormulas(page)
+    const response = await page.request.get('/api/formulas')
+    expect(response.status()).toBe(200)
+    const payload = (await response.json()) as { formulas: Array<{ name: string }> }
+    const leakedNames = payload.formulas.filter(formula => FORMULA_NAMES.includes(formula.name)).map(formula => formula.name)
+    expect(leakedNames, 'formula-chart 夹具必须在每个用例后全部清理').toEqual([])
+  }
+})
 
 const FORMULA_NAMES = ['CHART_MAIN', 'CHART_SUB', 'CHART_MACD', 'CHART_CTX', 'CHART_RANDOM_SUB']
 
 async function cleanFormulas(page: Page): Promise<void> {
   const response = await page.request.get('/api/formulas')
-  if (!response.ok()) return
+  expect(response.status()).toBe(200)
   const payload = (await response.json()) as { formulas: Array<{ id: number; name: string; builtin: boolean }> }
   for (const formula of payload.formulas) {
-    if (!formula.builtin && FORMULA_NAMES.includes(formula.name)) await page.request.delete('/api/formulas/' + formula.id)
+    if (!formula.builtin && FORMULA_NAMES.includes(formula.name)) {
+      const deleted = await page.request.delete('/api/formulas/' + formula.id)
+      expect(deleted.status()).toBe(204)
+    }
   }
 }
 

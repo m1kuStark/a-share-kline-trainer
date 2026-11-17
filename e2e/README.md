@@ -47,3 +47,8 @@
 真实鼠标/键盘与只读hooks纪律见[断言](docs/assertions.md)、[AGENTS](AGENTS.md)。主代理视觉检查后将选定证据归档，不能只凭浏览器命令通过替代人工阅读截图或用户验收。
 
 公式启停后继用例见[formula-enable](formula-enable.spec.ts)。2026-11-18集成PR54的EMA修复后，启停专项6项通过，覆盖自定义主/副图、三个内置和保存失败后刷新；原4通过/1失败的DEA记录保留。不代表M9整批已通过，完整门禁、生产包与用户验收见[M9证据](../docs/verification/2026-11/M9-ENABLE-01/README.md)。
+
+
+## 当前接续（2026-11-18）
+
+PR54公共EMA修复已合入main58ba0ff，启停6/6及种子/存储/API专项13/13通过。f701371完整Journey为229通过、18失败、1跳过、13未运行，整批仍active，待新冻结后完整复跑。夹具RED/GREEN后8项及另4项通过仅属定向；PS1仅补BOM，待真实Windows包验证。同候选实包、录像回放和用户整批验收未完成，不发布。当前收据见[M9验证记录](../docs/verification/2026-11/M9-ENABLE-01/README.md)；此前失败正文保留其历史结论。

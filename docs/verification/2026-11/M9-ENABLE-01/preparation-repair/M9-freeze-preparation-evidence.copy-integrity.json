@@ -1,0 +1,21 @@
+{
+  "verifiedAt": "2026-11-18T04:40:54.3740456+08:00",
+  "sourceFiles": 128,
+  "sourceStageHashMismatches": 0,
+  "zipEntriesVerified": 131,
+  "zipStageHashMismatches": 0,
+  "credentialPatternMatches": 0,
+  "zip": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-freeze-preparation-evidence.zip",
+    "bytes": 3039635,
+    "sha256": "651eb78534fc87736b2086e6a2aa92983efc7f1804001664ae97850eafb972a0"
+  },
+  "manifest": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-freeze-preparation-evidence.manifest.json",
+    "sha256": "4470ef84c40ea391ce1dc83582d254d635c3ee3c3a4e7a96ca68b20d0d768f03"
+  },
+  "excludedCount": 14,
+  "passed": true,
+  "noSourceBytesModified": true,
+  "repositoryWrites": false
+}

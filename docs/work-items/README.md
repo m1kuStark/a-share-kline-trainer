@@ -1,6 +1,6 @@
 # 任务与阶段
 
-- [M9-ENABLE-01 公式启停与整批候选](tasks/M9-ENABLE-01.md)：已集成独立EMA修复；启停专项6项及种子/存储/API专项13项通过，接续完整候选、主代理视觉与Windows生产包；用户整批验收仍待完成。
+- [M9-ENABLE-01 公式启停与整批候选](tasks/M9-ENABLE-01.md)：已集成独立EMA修复；启停专项6项及种子/存储/API专项13项通过，完整候选f701371仍有Journey失败，待新冻结复跑及真实Windows包；用户整批验收仍待完成。
 - [M9-EMA-WARMUP-01 公共 EMA 暖机](tasks/M9-EMA-WARMUP-01.md)：PR54已合入58ba0ffc，保持正常输入结果和现有断言；独立修复的本地及CI收据已归档，由M9统一完成最终整批与Windows包验收。
 
 - [ENG-PLAN-01 首批计划与任务对账](tasks/ENG-PLAN-01.md)：[批准记录](../verification/2026-11/ENG-PLAN-01/approval.md)、[22卡事实与旧E2E静态对账](../verification/2026-11/ENG-PLAN-01/README.md)；产品当前动态结果和新增用户验收未验证。
@@ -122,3 +122,8 @@ state 取 planned、active、blocked、review、closed 或 cancelled，表示工
 
 - [MON-02](tasks/MON-02.md): current versus superseded dashboard attempts.
 - [GLM-MONITOR-02](tasks/GLM-MONITOR-02.md)：原生用量、官方额度与会话信息，已安装并完成工程验收；ORCH保持关闭。
+
+
+## 当前接续（2026-11-18）
+
+PR54公共EMA修复已合入main58ba0ff，启停6/6及种子/存储/API专项13/13通过。f701371完整Journey为229通过、18失败、1跳过、13未运行，整批仍active，待新冻结后完整复跑。夹具RED/GREEN后8项及另4项通过仅属定向；PS1仅补BOM，待真实Windows包验证。同候选实包、录像回放和用户整批验收未完成，不发布。当前收据见[M9验证记录](../verification/2026-11/M9-ENABLE-01/README.md)；此前失败正文保留其历史结论。
