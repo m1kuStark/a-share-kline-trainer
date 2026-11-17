@@ -1,0 +1,29 @@
+{
+  "step": "red-targeted",
+  "program": "npx.cmd",
+  "args": [
+    "--no-install",
+    "vitest",
+    "run",
+    "--config",
+    "server/vitest.config.ts",
+    "server/test/formula-engine/interpreter/functions/math.test.ts",
+    "server/test/formula-engine/integration/FormulaEngine.test.ts",
+    "server/test/formula-seed.test.ts",
+    "server/test/formula-chart.test.ts"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:19:57.8275204Z",
+  "endedAt": "2026-11-17T18:20:00.7138429Z",
+  "nativeExitCode": 1,
+  "exitCodeCapture": "$LASTEXITCODE immediately after native command; no pipeline",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\red-targeted.log",
+  "bytes": 11847,
+  "sha256": "e9bbde497fdafc179fe84dafd60e6d600fb0e4fb9d7bf37b828cb863f249b0e6",
+  "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "environment": {
+    "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  }
+}

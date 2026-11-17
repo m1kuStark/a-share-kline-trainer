@@ -1,0 +1,20 @@
+{
+  "step": "docs-status",
+  "executable": "npm.cmd",
+  "args": [
+    "run",
+    "docs:status",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:49:31.5413369Z",
+  "endedAt": "2026-11-17T18:49:32.6353801Z",
+  "nativeExitCode": 0,
+  "logSha256": "6d3bcb35826e7d21814b9f1cd1c7a9815e40ace4a6eedd4700d9e1b436a2afef",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-review\\docs-status.final.log",
+  "environment": {
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  },
+  "exitCapture": "LASTEXITCODE immediately after command, no pipeline"
+}

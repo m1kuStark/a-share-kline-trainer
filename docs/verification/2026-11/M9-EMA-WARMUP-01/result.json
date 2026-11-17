@@ -1,0 +1,179 @@
+{
+  "task": "M9-EMA-WARMUP-01",
+  "baseline": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "branch": "task/M9-EMA-WARMUP-01",
+  "recordedAt": "2026-11-17T18:44:00.2144797Z",
+  "worker": "local_health",
+  "state": "uncommitted candidate",
+  "implementation": {
+    "scope": "EMA leading NaN warmup for positive integer periods",
+    "onlyProductFile": "web/src/formula-engine/interpreter/functions/math.ts",
+    "onlyProductFunction": "EMA",
+    "sha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb",
+    "periodValidationAdded": false,
+    "skipOnlyLeadingNaN": true,
+    "keepOriginalContiguousSeedAndRecurrence": true,
+    "restartAfterLaterNaN": false,
+    "skipInfinity": false,
+    "productAndTestsChangedAfterGreen": false,
+    "readmeOnlyPositiveIntegerScopeClarifiedAfterSnapshot": true
+  },
+  "verification": [
+    {
+      "step": "red-targeted",
+      "nativeExitCode": 1,
+      "testFiles": 4,
+      "tests": 112,
+      "passed": 104,
+      "failed": 8,
+      "reason": "expected semantic regressions before product patch"
+    },
+    {
+      "step": "green-targeted",
+      "nativeExitCode": 0,
+      "testFiles": 4,
+      "tests": 112,
+      "passed": 112,
+      "failed": 0
+    },
+    {
+      "step": "mutant-old-ema",
+      "nativeExitCode": 1,
+      "testFiles": 4,
+      "tests": 112,
+      "passed": 104,
+      "failed": 8,
+      "reason": "actual patch removal revived the same eight semantic failures"
+    },
+    {
+      "step": "restored-targeted",
+      "nativeExitCode": 0,
+      "testFiles": 4,
+      "tests": 112,
+      "passed": 112,
+      "failed": 0
+    },
+    {
+      "step": "corpus-targeted",
+      "nativeExitCode": 0,
+      "testFiles": 3,
+      "tests": 43,
+      "passed": 43,
+      "failed": 0,
+      "realFiles": 6,
+      "corpusBlocks": 23,
+      "allInputsPresent": true
+    },
+    {
+      "step": "build",
+      "nativeExitCode": 0,
+      "command": "npm run build",
+      "includes": [
+        "typecheck",
+        "server build and engine bundle",
+        "web build"
+      ]
+    },
+    {
+      "step": "workflow-docs-isolated",
+      "nativeExitCode": 0,
+      "testFiles": 1,
+      "tests": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "step": "full-test-isolated-control",
+      "nativeExitCode": 0,
+      "command": "npm test",
+      "server": {
+        "testFiles": 188,
+        "tests": 2664,
+        "passed": 2664,
+        "failed": 0
+      },
+      "desktop": {
+        "testFiles": 34,
+        "tests": 369,
+        "passed": 369,
+        "failed": 0
+      },
+      "singleCompleteRun": true,
+      "logSha256": "d11d0bcfb5beccd43d3e755540b0080e25f8c69be84492f380f158198d7e613f"
+    }
+  ],
+  "preservedPreparationFailures": [
+    {
+      "step": "full-test",
+      "nativeExitCode": -1073740791,
+      "hex": "0xC0000409",
+      "assertionSummaryPresent": false,
+      "desktopExecuted": false,
+      "diagnosis": "Native crash cause remains unconfirmed; no matching Windows application event, no OOM evidence; no source/config mitigation was applied"
+    },
+    {
+      "step": "full-test-retry1",
+      "nativeExitCode": 1,
+      "serverTestFiles": 188,
+      "serverTests": 2664,
+      "passed": 2661,
+      "failed": 3,
+      "failedSuite": "server/test/workflow-docs.test.ts",
+      "desktopExecuted": false,
+      "diagnosis": "Inherited TRAINER_CONTROL_ROOT selected the real shared control before fixture-local control"
+    },
+    {
+      "step": "docs-check",
+      "nativeExitCode": 1,
+      "errors": 1,
+      "warnings": 181,
+      "scope": "initial shared docs state before root integration"
+    },
+    {
+      "step": "docs-status-check",
+      "nativeExitCode": 1,
+      "scope": "initial shared docs state before root integration"
+    },
+    {
+      "step": "docs-impact",
+      "nativeExitCode": 1,
+      "diagnosis": "invocation omitted required base/task arguments"
+    },
+    {
+      "step": "docs-impact-scoped",
+      "nativeExitCode": 1,
+      "scope": "initial task docs_impact referred to missing docs/specs/formulas.md; root owns final shared-doc gates"
+    }
+  ],
+  "environmentCorrection": {
+    "authorization": "root explicitly approved process-scoped environment isolation after diagnosing findControlRoot priority",
+    "runner": "artifacts/run-step.ps1.raw.b64",
+    "removedOnlyFromUnitProcess": "TRAINER_CONTROL_ROOT",
+    "retained": [
+      "TRAINER_TDX_FORMULA_DIR",
+      "TRAINER_FORMULA_CORPUS_DIR"
+    ],
+    "sourceTestsConfigConcurrencyTimeoutsUnchanged": true,
+    "proofStep": "workflow-docs-isolated",
+    "completeStep": "full-test-isolated-control",
+    "finalDocsCommands": "root retains explicit real TRAINER_CONTROL_ROOT for final docs gates"
+  },
+  "evidence": {
+    "inventory": "evidence-inventory.json",
+    "exactTestBindings": "artifacts/test-bindings.json",
+    "sourceFingerprints": "artifacts/source-fingerprints-final.json",
+    "logCount": 15,
+    "nativeReceiptCount": 14,
+    "encodedFiles": 22,
+    "allEncodedRoundtripsVerified": true,
+    "nativeExitCodeCapture": "LASTEXITCODE immediately after native command; no pipeline",
+    "receiptLogPaths": "original cache paths; mapped to repository base64 evidence by inventory"
+  },
+  "limits": [
+    "positive integer periods only; illegal periods receive no new validation",
+    "initial native crash root cause remains unconfirmed",
+    "worker did not run browser journeys or Windows package acceptance",
+    "root owns final shared docs/matrix/control aggregation and M9 acceptance",
+    "no commit push PR or merge performed by worker"
+  ]
+}

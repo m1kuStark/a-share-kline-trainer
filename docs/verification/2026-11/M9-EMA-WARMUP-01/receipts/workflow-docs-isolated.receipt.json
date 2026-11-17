@@ -1,0 +1,27 @@
+{
+  "step": "workflow-docs-isolated",
+  "program": "npx.cmd",
+  "args": [
+    "--no-install",
+    "vitest",
+    "run",
+    "--config",
+    "server/vitest.config.ts",
+    "server/test/workflow-docs.test.ts"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:34:07.2892032Z",
+  "endedAt": "2026-11-17T18:34:09.3077033Z",
+  "nativeExitCode": 0,
+  "exitCodeCapture": "$LASTEXITCODE immediately after native command; no pipeline",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\workflow-docs-isolated.log",
+  "bytes": 267,
+  "sha256": "72b96592278183a9bce4d2fef739f5b06b7f54cc7209fe36fb4d0d8162fe40ac",
+  "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "isolatedUnitControl": true,
+  "environment": {
+    "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+    "TRAINER_CONTROL_ROOT": null
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "step": "full-test",
+  "program": "npm.cmd",
+  "args": [
+    "test"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:24:10.1162206Z",
+  "endedAt": "2026-11-17T18:24:29.1396205Z",
+  "nativeExitCode": -1073740791,
+  "exitCodeCapture": "$LASTEXITCODE immediately after native command; no pipeline",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test.log",
+  "bytes": 207,
+  "sha256": "1e8aa169518aa768fc7ee842aa9be51f1cc55e5c3ac53e8fa32f640f9b415252",
+  "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "environment": {
+    "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  }
+}

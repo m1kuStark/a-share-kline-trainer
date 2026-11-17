@@ -1,6 +1,49 @@
 import { describe, it, expect } from 'vitest';
 import { MA, EMA, SUM, MAX, MIN, ABS, SQRT, POW, MOD, ROUND } from '../../../../../web/src/formula-engine/interpreter/functions/math';
 
+describe('M9 EMA warmup contract', () => {
+  it('seeds after only the leading NaN prefix with the hand calculated SMA', () => {
+    expect(EMA([NaN, NaN, 2, 4, 6, 8], 3)).toEqual([NaN, NaN, NaN, NaN, 4, 6]);
+  });
+
+  it('keeps empty all NaN and insufficient post prefix inputs unseeded', () => {
+    expect(EMA([], 3)).toEqual([]);
+    expect(EMA([NaN, NaN, NaN, NaN], 3)).toEqual([NaN, NaN, NaN, NaN]);
+    expect(EMA([NaN, NaN, 2, 4], 3)).toEqual([NaN, NaN, NaN, NaN]);
+  });
+
+  it('warms period one after leading NaN without restarting after a later NaN', () => {
+    expect(EMA([NaN, NaN, 2, 4, NaN, 8], 1)).toEqual([NaN, NaN, 2, 4, NaN, NaN]);
+  });
+
+  it('does not collect across an internal hole or restart poisoned recurrence', () => {
+    expect(EMA([NaN, 2, NaN, 6, 8, 10], 3)).toEqual([NaN, NaN, NaN, NaN, NaN, NaN]);
+    expect(EMA([NaN, 2, 4, 6, NaN, 10, 12], 3)).toEqual([NaN, NaN, NaN, 4, NaN, NaN, NaN]);
+  });
+
+  it('preserves exact frozen old vectors for uninterrupted valid inputs', () => {
+    // Frozen from df6cedd before this patch; expected values never call EMA.
+    expect(EMA([2, 8, 4, 10, 0, 6], 3)).toEqual([NaN, NaN, 4.666666666666667, 7.333333333333334, 3.666666666666667, 4.833333333333334]);
+    expect(EMA([1e16, -1e16, 1, 4, 8, 2], 3)).toEqual([NaN, NaN, 0, 2, 5, 3.5]);
+    expect(EMA([1e16, 1, -1e16, 4], 1)).toEqual([1e16, 0, -1e16, 4]);
+    expect(EMA([7, 7, 7, 7, 7], 3)).toEqual([NaN, NaN, 7, 7, 7]);
+    expect(EMA([1, 2], 3)).toEqual([NaN, NaN]);
+    const wave = Array.from({ length: 32 }, (_, index) => 50 + 10 * Math.sin(index / 5) + 0.05 * index);
+    expect(EMA(wave, 26)).toEqual([
+      ...Array(25).fill(NaN), 51.81356923264605, 51.12111621117586, 50.565652426973216,
+      50.15985103395867, 49.91126786150709, 49.82197728050736, 49.888431257642004,
+    ]);
+  });
+
+  it('retains later non finite propagation and never skips leading Infinity', () => {
+    expect(EMA([2, 4, 6, NaN, 10, 12], 3)).toEqual([NaN, NaN, 4, NaN, NaN, NaN]);
+    expect(EMA([2, 4, 6, Infinity, 8, 10], 3)).toEqual([NaN, NaN, 4, Infinity, NaN, NaN]);
+    expect(EMA([2, 4, 6, -Infinity, 8, 10], 3)).toEqual([NaN, NaN, 4, -Infinity, NaN, NaN]);
+    expect(EMA([NaN, Infinity, 1, 2, 3], 3)).toEqual([NaN, NaN, NaN, Infinity, NaN]);
+    expect(EMA([NaN, -Infinity, 1, 2, 3], 3)).toEqual([NaN, NaN, NaN, -Infinity, NaN]);
+  });
+});
+
 describe('Math Functions', () => {
   describe('MA - Simple Moving Average', () => {
     it('should calculate MA correctly for valid input', () => {

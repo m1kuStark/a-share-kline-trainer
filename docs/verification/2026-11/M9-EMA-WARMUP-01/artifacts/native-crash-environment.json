@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-11-18T02:27:34.3562036+08:00",
+  "scopedNodeProcesses": [
+    {
+      "ProcessId": 22172,
+      "ParentProcessId": 73796,
+      "CommandLine": "\"node\"   \"C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-ema-warmup-01\\a-share-kline-trainer\\node_modules\\.bin\\\\..\\vitest\\vitest.mjs\" run --config server/vitest.config.ts"
+    }
+  ],
+  "allNodeCount": 48,
+  "memory": {
+    "FreePhysicalMemory": 39922844,
+    "TotalVisibleMemorySize": 66286472
+  },
+  "applicationEventQueryMatches": 0,
+  "nodeVersion": "v24.15.0",
+  "npmVersion": "11.12.1",
+  "pool": "threads",
+  "maxWorkers": 2,
+  "nodeOptions": null,
+  "otherHeavyRootVerification": "root confirmed paused parallel heavy verification"
+}

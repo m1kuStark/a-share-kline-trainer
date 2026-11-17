@@ -1,0 +1,18 @@
+{
+  "step": "diff-check",
+  "executable": "git",
+  "args": [
+    "diff",
+    "--check"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:49:32.6391626Z",
+  "endedAt": "2026-11-17T18:49:32.7560149Z",
+  "nativeExitCode": 0,
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-review\\diff-check.final.log",
+  "environment": {
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  },
+  "exitCapture": "LASTEXITCODE immediately after command, no pipeline"
+}
