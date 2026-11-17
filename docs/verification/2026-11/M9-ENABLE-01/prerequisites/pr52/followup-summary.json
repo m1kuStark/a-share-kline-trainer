@@ -1,0 +1,483 @@
+{
+  "recordedAt": "2026-11-17T17:54:20.816Z",
+  "mode": "read-only GitHub follow-up; no workflow retry, comments, dismissals, merges or remote mutations by worker",
+  "pullRequest": {
+    "headRefOid": "b01632aadc62f0b7c8879f2b6e8ce8ed9a9bb1c6",
+    "mergeCommit": {
+      "oid": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    "mergedAt": "2026-11-17T17:50:28Z",
+    "number": 52,
+    "state": "MERGED",
+    "url": "https://github.com/m1kuStark/a-share-kline-trainer/pull/52"
+  },
+  "sourceChecks": {
+    "runId": 44140361177,
+    "head": "b01632aadc62f0b7c8879f2b6e8ce8ed9a9bb1c6",
+    "status": "completed",
+    "conclusion": "success",
+    "requiredChecks": [
+      {
+        "bucket": "pass",
+        "link": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/44140361177/job/134241174581",
+        "name": "docs",
+        "state": "SUCCESS",
+        "workflow": "Source checks"
+      },
+      {
+        "bucket": "pass",
+        "link": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/44140361177/job/134241174038",
+        "name": "verify",
+        "state": "SUCCESS",
+        "workflow": "Source checks"
+      },
+      {
+        "bucket": "pass",
+        "link": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/44140361177/job/134241174470",
+        "name": "pr-policy",
+        "state": "SUCCESS",
+        "workflow": "Source checks"
+      }
+    ],
+    "jobs": [
+      {
+        "id": 134241174038,
+        "name": "verify",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-11-17T17:44:57Z",
+        "completedAt": "2026-11-17T17:48:50Z"
+      },
+      {
+        "id": 134241174470,
+        "name": "pr-policy",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-11-17T17:44:56Z",
+        "completedAt": "2026-11-17T17:45:15Z"
+      },
+      {
+        "id": 134241174581,
+        "name": "docs",
+        "status": "completed",
+        "conclusion": "success",
+        "startedAt": "2026-11-17T17:44:57Z",
+        "completedAt": "2026-11-17T17:45:40Z"
+      }
+    ],
+    "watchNativeReceipt": {
+      "finished": "2026-11-18T01:48:56.2025131+08:00",
+      "started": "2026-11-18T01:46:42.5906651+08:00",
+      "exitCode": 0,
+      "command": "gh run watch 44140361177 --interval 30 --exit-status"
+    },
+    "finalReadbackNativeReceipt": {
+      "finished": "2026-11-18T01:53:16.5689300+08:00",
+      "requiredChecksExitCode": 0,
+      "prViewExitCode": 0
+    },
+    "serverSummary": {
+      "filesPassed": 188,
+      "testsPassed": 2654,
+      "printedSummary": "188 passed (188); 2654 passed (2654)"
+    },
+    "desktopSummary": {
+      "filesPassed": 34,
+      "testsPassed": 369,
+      "printedSummary": "34 passed (34); 369 passed (369)"
+    },
+    "totalPassedInFrameworkSummary": 3023,
+    "automaticInfraRetryObserved": false,
+    "executionLimits": [
+      "All-passed Vitest summary does not imply all assertion bodies ran. Inline return guards are not counted as framework skipped tests.",
+      "crossPeriod logs missing real formula corpus and skips that case.",
+      "corpus-smoke logs missing corpus directory, 23 blocks and two single-line files, followed by seven explicit skipped-assertion-body messages.",
+      "marketContext logs missing fangliang single-line formula file and skips that file.",
+      "These are nine explicit corpus bypass messages. Local formal 3023-test receipts with explicit TRAINER_TDX_FORMULA_DIR and TRAINER_FORMULA_CORPUS_DIR remain the complete-corpus evidence.",
+      "The upload step logged missing test-results.json and uploaded no artifact. gh run download returned no valid artifacts. Test counts come from the full job log, not a nonexistent JSON artifact.",
+      "Docs job uses TRAINER_DOCS_ALLOW_MISSING_STATE=1; it does not validate unavailable workspace external state.",
+      "No Windows packaging, installer wizard, full packaged UI or user acceptance was run by this cloud Source checks workflow."
+    ],
+    "localFullEvidence": {
+      "workerCommit": "f493364bdefb2165f36cf4924cd983ab98842592",
+      "resultSha256": "d687cdfe06f72631260b3f01033a2ac16915eb4668cf5c345016ba4dbd066472",
+      "path": "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/result.json"
+    }
+  },
+  "postMerge": {
+    "main": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+    "alert48": {
+      "state": "fixed",
+      "fixedAt": "2026-11-17T17:50:36Z",
+      "dismissedAt": null,
+      "ghsa": "GHSA-g3hv-75wg-m249",
+      "automaticFixedAfterMergeSeconds": 8
+    },
+    "openAlertCount": 0,
+    "openAlertReceipt": "dependabot-open-postmerge-all.json",
+    "dependencyGraphCreatedAt": "2026-11-17T17:51:29Z",
+    "dependencyGraphMinimatch": [
+      "3.1.5",
+      "11.0.9",
+      "5.1.9"
+    ],
+    "mergedLockCopies": [
+      {
+        "path": "node_modules/@electron/asar/node_modules/minimatch",
+        "version": "3.1.5",
+        "development": true
+      },
+      {
+        "path": "node_modules/@electron/universal/node_modules/minimatch",
+        "version": "11.0.9",
+        "development": true
+      },
+      {
+        "path": "node_modules/dir-compare/node_modules/minimatch",
+        "version": "3.1.5",
+        "development": true
+      },
+      {
+        "path": "node_modules/filelist/node_modules/minimatch",
+        "version": "5.1.9",
+        "development": true
+      },
+      {
+        "path": "node_modules/glob/node_modules/minimatch",
+        "version": "11.0.9",
+        "development": false
+      },
+      {
+        "path": "node_modules/minimatch",
+        "version": "11.0.9",
+        "development": true
+      },
+      {
+        "path": "node_modules/rimraf/node_modules/minimatch",
+        "version": "3.1.5",
+        "development": true
+      }
+    ],
+    "newerAdvisory": {
+      "ghsa": "GHSA-hqmv-qgp3-jx75",
+      "upstreamState": "published",
+      "upstreamPublishedAt": "2026-11-11T09:50:24Z",
+      "affected": [
+        {
+          "package": {
+            "ecosystem": "npm",
+            "name": "minimatch"
+          },
+          "vulnerable_version_range": ">= 11.0.3, <= 11.0.7",
+          "patched_versions": "11.0.8",
+          "vulnerable_functions": []
+        }
+      ],
+      "globalAdvisoryApiStatus": 404,
+      "distinction": "Upstream published advisory exists, while the GitHub global advisory API returns 404 for this ID. Zero open repository alerts is not proof the global advisory service has ingested the new advisory. Independently checked merged modern version 11.0.9 is outside >=11.0.3 <=11.0.7; upstream patched_versions is 11.0.8. No manual dismissal occurred.",
+      "publisherBodyHasStaleNoPatchWording": true
+    }
+  },
+  "retrievalFailuresRetained": [
+    "Artifact download failed because workflow uploaded no test-results.json; complete source-check log retained.",
+    "First open-alert query used an ampersand in a gh.cmd argument and returned a shell error. Corrected read-only GET fields with pagination returned zero alerts; incomplete first response is not the final source.",
+    "GitHub global advisory lookup returned HTTP 404; upstream repository advisory lookup succeeded."
+  ],
+  "artifacts": [
+    {
+      "path": "artifact-download.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifact-download.stderr.log",
+      "bytes": 38,
+      "sha256": "27e515e22e13e9c2faf2cf3a379ce0c7a726e048c25ce60f509e014417ae9166"
+    },
+    {
+      "path": "build-followup-summary.cjs",
+      "bytes": 6012,
+      "sha256": "00155d6c539fc9ce8edbd417709605556f85fec398e01311e81543a14116b37c"
+    },
+    {
+      "path": "dependabot-open-postmerge-all.exit.json",
+      "bytes": 240,
+      "sha256": "91938af5169ad383761e35b9572679ffb04bc64d61ad911e01c985cf802a7dd8"
+    },
+    {
+      "path": "dependabot-open-postmerge-all.json",
+      "bytes": 4,
+      "sha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05"
+    },
+    {
+      "path": "dependabot-open-postmerge-all.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dependabot-open-postmerge.exit.json",
+      "bytes": 230,
+      "sha256": "1503ede2f6f84ae9773552c1b8e90ef65d6d59ec20ab95f41f593aa376abc18b"
+    },
+    {
+      "path": "dependabot-open-postmerge.json",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "path": "dependabot-open-postmerge.stderr.log",
+      "bytes": 99,
+      "sha256": "7d454587ff47a24e568c6e40e8c71189a99f6193978342a76e435384957c6834"
+    },
+    {
+      "path": "dependabot48-current.json",
+      "bytes": 3553,
+      "sha256": "8be82184f3144d3e6644e0879ce95a5d59dd4af922ea3b0df9d1e2c7866dbf3a"
+    },
+    {
+      "path": "dependabot48-current.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dependabot48-final.json",
+      "bytes": 3553,
+      "sha256": "8be82184f3144d3e6644e0879ce95a5d59dd4af922ea3b0df9d1e2c7866dbf3a"
+    },
+    {
+      "path": "dependabot48-final.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dependabot48-postmerge.exit.json",
+      "bytes": 209,
+      "sha256": "f64051cb70293a0c226aa6e0d02f7e51baac294f46cd2fc04481007bcc517405"
+    },
+    {
+      "path": "dependabot48-postmerge.json",
+      "bytes": 3572,
+      "sha256": "bb1107b22dab830ec270d1c0ac9c91d67de2f0846bc90421aa5110518bd9c20d"
+    },
+    {
+      "path": "dependabot48-postmerge.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "dependency-sbom-postmerge.exit.json",
+      "bytes": 210,
+      "sha256": "08d0e008ad1113c465da4d50495f69af06d20d4c0200e73b6bca299ff4a08727"
+    },
+    {
+      "path": "dependency-sbom-postmerge.json",
+      "bytes": 290836,
+      "sha256": "fb4219c5fbd82cdca80c892e463956225df6a288d36ff3365d67f9308f2eb48f"
+    },
+    {
+      "path": "dependency-sbom-postmerge.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-readback.exit.json",
+      "bytes": 113,
+      "sha256": "7e2dfe13a81ff2e126e3669dba27d690717423778a7882d42c9583a91cbad317"
+    },
+    {
+      "path": "main-ref-postmerge.exit.json",
+      "bytes": 207,
+      "sha256": "9bb227baa129586093082c6993e76127965d7f71a159fcbe1590987affc4540f"
+    },
+    {
+      "path": "main-ref-postmerge.json",
+      "bytes": 360,
+      "sha256": "73dd72a7ee3fe11a7b3639ff0205ccff4b6ff0ddacafb1237bd858f18d0cd290"
+    },
+    {
+      "path": "main-ref-postmerge.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "merged-package-lock.exit.json",
+      "bytes": 260,
+      "sha256": "fefb1c3ecbbccac42179e0aeeccdc8ff4b5498093667ad1e5554604ba7703c0b"
+    },
+    {
+      "path": "merged-package-lock.json",
+      "bytes": 232947,
+      "sha256": "b6f5c55b431f92f98b14df1ef06132fb95500d6236bb803823b6a64fc12ef62d"
+    },
+    {
+      "path": "merged-package-lock.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "new-advisory-global.exit.json",
+      "bytes": 181,
+      "sha256": "0a54fc52e24355b3d57c37365bbcdbbeaaac88c9dfa63077f62c2b0c9c5fa54f"
+    },
+    {
+      "path": "new-advisory-global.json",
+      "bytes": 158,
+      "sha256": "2218b50c8a811e2f609d256cc18fa9a5c1ecabca78a58f10ea7977e8a8392684"
+    },
+    {
+      "path": "new-advisory-global.stderr.log",
+      "bytes": 26,
+      "sha256": "a610a1e09352bf51f3b6947315b340b22127697a464711d72e80bea47f576fdc"
+    },
+    {
+      "path": "new-advisory-upstream.exit.json",
+      "bytes": 213,
+      "sha256": "4a6ca652195c3d9e0e1f896bf6e2cf4003fd89a830dd28b61253c19a5e548f3c"
+    },
+    {
+      "path": "new-advisory-upstream.json",
+      "bytes": 8382,
+      "sha256": "2999b592d1847521e5fe2658f18b12f794d2e0e16a744368696c1a369707b942"
+    },
+    {
+      "path": "new-advisory-upstream.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pr52-current.json",
+      "bytes": 1119,
+      "sha256": "616aac752b21a61e5e0a7e209641634476d7dde2fe1ad85098acd00dd330943a"
+    },
+    {
+      "path": "pr52-current.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pr52-final.json",
+      "bytes": 1026,
+      "sha256": "b8d1c3b95b3c1fbede6a4d9ecf0e79a92793dd1883968e458ab2e66b654037cd"
+    },
+    {
+      "path": "pr52-final.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pr52-merged.json",
+      "bytes": 253,
+      "sha256": "0275c717e2155c310d70fce0ec64c5103683ff251101b510bef48d06555e0990"
+    },
+    {
+      "path": "pr52-merged.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "required-checks-current.json",
+      "bytes": 553,
+      "sha256": "d5c18b685636c0c5d50e1011475f776738d7150e984aba0f75c5fc587ee28362"
+    },
+    {
+      "path": "required-checks-current.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "required-checks-final.json",
+      "bytes": 546,
+      "sha256": "4e4315495a8f5089dac144f27ea3f58871f3e39629a7d6fabf1c51debcc6b408"
+    },
+    {
+      "path": "required-checks-final.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "run-tests-with-retry-head.mjs",
+      "bytes": 2053,
+      "sha256": "82d089f8fcbd292c93b14067b1bbe2894c4fec81824261537ea8b683c32fe39b"
+    },
+    {
+      "path": "run-tests-with-retry-head.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-api.json",
+      "bytes": 13866,
+      "sha256": "ae012c26a48b908ff85771e3f2357fd6a8ae6ee86002603252d145697a45479b"
+    },
+    {
+      "path": "source-checks-api.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-complete.log",
+      "bytes": 254891,
+      "sha256": "4d12a661fc6f6f59537f193c85ee00c27a4bec7a877a0831d43935ae5a5df951"
+    },
+    {
+      "path": "source-checks-complete.normalized.log",
+      "bytes": 254891,
+      "sha256": "4d12a661fc6f6f59537f193c85ee00c27a4bec7a877a0831d43935ae5a5df951"
+    },
+    {
+      "path": "source-checks-complete.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-current.json",
+      "bytes": 5149,
+      "sha256": "f89bcb07f5360608bbb234e40fcb2ae50b8620bb59cd94e6a0846548fb218afe"
+    },
+    {
+      "path": "source-checks-current.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-execution-boundaries.json",
+      "bytes": 7162,
+      "sha256": "125f12aa2e493d54d2a6bcae791dd616d2b3c5d5586bfae953759703e6e6e1c9"
+    },
+    {
+      "path": "source-checks-final.json",
+      "bytes": 5343,
+      "sha256": "3c438dcf17a4b15f44e9b966e7aef443cd13a826de1a7933adceab7a3b3c5b6a"
+    },
+    {
+      "path": "source-checks-final.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-head.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-checks-head.yml",
+      "bytes": 1958,
+      "sha256": "7e4dc07c8dd8c756f6559d3842feca8010253e8bec9cbf6c7d84c48011e81c67"
+    },
+    {
+      "path": "source-checks-watch.exit.json",
+      "bytes": 196,
+      "sha256": "6f22d812adaa0b4deebc2bf41f88440378d08a66b7de1b7021859903c8adde4b"
+    },
+    {
+      "path": "source-checks-watch.log",
+      "bytes": 5131,
+      "sha256": "2b35a32bba23ac6e44b19b2e5c2f7ea09c343f118cc1bf2c83efb8ad3f49a653"
+    },
+    {
+      "path": "source-checks-watch.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}
