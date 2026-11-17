@@ -1,0 +1,106 @@
+[
+  {
+    "ref": "refs/remotes/origin/dependabot/github_actions/github-actions-c923ae5b31",
+    "sha": "e60daad948d0bd6015fb2d32cefd7488905418ba"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/electron-44.9.1",
+    "sha": "bd9b8759530f19120216e718804a1907dd95fb31"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/fastify-5.12.6",
+    "sha": "71aac87514e07efb49cdf9b26f61ec44941e0bf2"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/lucide-vue-next-1.0.0",
+    "sha": "4887a97b633ca8d291cb4dfeff9db859360889b5"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/multi-456d42d8d4",
+    "sha": "f1058824a0f3dbab18fa012124638f6f47fb68f7"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/npm-development-d91c9cdd7e",
+    "sha": "90e58b1f078db4845a881b509dcf3ce982c4abdf"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/npm-production-164e544a6f",
+    "sha": "76d749b9a7119ee6c850d138c502e4bad38b5b58"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/typescript-7.0.2",
+    "sha": "9ea0a2cdac8e841d3c63cc37e86b2b29d07a0c08"
+  },
+  {
+    "ref": "refs/remotes/origin/dependabot/npm_and_yarn/vitest-5.1.0",
+    "sha": "40ed41952782a5a5f458a6cea4267a0ed8c602f7"
+  },
+  {
+    "ref": "refs/remotes/origin/task/CHART-LAYOUT-01",
+    "sha": "c8dbeb5ecc9740510257d36711b48bf745b11855"
+  },
+  {
+    "ref": "refs/remotes/origin/task/CHART-MEASURE-04",
+    "sha": "a58964d8c55c6b90dfbbfef2f4d935751b56eeaa"
+  },
+  {
+    "ref": "refs/remotes/origin/task/CHART-MEASURE-05",
+    "sha": "52e983058bee216636863bf05ab03b3f6a3a0fd5"
+  },
+  {
+    "ref": "refs/remotes/origin/task/CI-STABILITY-01",
+    "sha": "7732011a62db2c9e3b96cc81d797d7f8d4527fa1"
+  },
+  {
+    "ref": "refs/remotes/origin/task/DEP-POLICY-01",
+    "sha": "7ff3cc730c2d44872fb6c5b452656b22a266a8d4"
+  },
+  {
+    "ref": "refs/remotes/origin/task/ENG-GOV-01",
+    "sha": "3f9c1d8f11fb32230909f21c7f076c70efce5245"
+  },
+  {
+    "ref": "refs/remotes/origin/task/ENG-GOV-03",
+    "sha": "124a837dcded2929002690232e8392a10a06cb62"
+  },
+  {
+    "ref": "refs/remotes/origin/task/GOV-CLOSE-01",
+    "sha": "cea9f8c7dccc25dc9405ca9a91c473994fd27fe5"
+  },
+  {
+    "ref": "refs/remotes/origin/task/M9-04A",
+    "sha": "a0eb17889aba4978ebd7692f3d698684f0e410ab"
+  },
+  {
+    "ref": "refs/remotes/origin/task/M9-04B",
+    "sha": "3b6d4403c479ab4c7a07b044472c9639ef9388c3"
+  },
+  {
+    "ref": "refs/remotes/origin/task/M9-04C",
+    "sha": "273d83dee4eec980049a6c91d49834fcdfcacb85"
+  },
+  {
+    "ref": "refs/remotes/origin/task/M9-04D",
+    "sha": "17a3deb2ec1af910aa6e9c50b921602c0793881c"
+  },
+  {
+    "ref": "refs/remotes/origin/task/REL-137",
+    "sha": "1afb215adeca3c60bc2e5e22fa6bad5050a2040e"
+  },
+  {
+    "ref": "refs/remotes/origin/task/TEST-BUDGET-02",
+    "sha": "e9fec56eb6c58ff27922e73fb6a29b17377c1fc0"
+  },
+  {
+    "ref": "refs/remotes/origin/task/TEST-BUDGET-03",
+    "sha": "24dfe0869e1f8382e915ab5e450bd88b26a072d2"
+  },
+  {
+    "ref": "refs/remotes/origin/task/TEST-BUDGET-04",
+    "sha": "c5d401a296da7692725079c3c5159535070e4c2f"
+  },
+  {
+    "ref": "refs/remotes/origin/task/UI-TOOLBAR-03",
+    "sha": "413bd52549b790f0b33a224b601b4ac900100ef4"
+  }
+]

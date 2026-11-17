@@ -2,7 +2,7 @@
 
 | 要做什么 | 入口 |
 |---|---|
-| 接续 2026-10-04 当前会话 | [交接快照](verification/2026-10/handover-20261004-session/README.md)：修复与发布、GitHub 检查、录像现场及待办 |
+| 核对最近一次工程健康检查 | [2026-11-17 检查记录](verification/2026-11/ENG-HEALTH-02/README.md)：本地与 GitHub 对账、文档清理及后续待办；这是当日快照 |
 | 接续开发与看阻塞 | [当前状态](status.md) → [任务/阶段](work-items/README.md) |
 | 明确产品行为 | [规格](specs/README.md) |
 | 理解跨层数据流 | [架构](architecture/README.md) |

@@ -6,7 +6,7 @@
 
 | 层 | 触发 | 命令 | 证明范围 |
 |---|---|---|---|
-| L1 本地 pre-commit | 每次 `git commit` | `git diff --cached --check`、`scripts/git/check-staged-secrets.mjs`；docs 变更时 `npm run docs:check` | 空白错误、高置信密钥、文档断链 |
+| L1 本地 pre-commit | 每次 `git commit` | `git diff --cached --check`、`scripts/git/check-staged-secrets.mjs` | 空白错误、高置信密钥 |
 | L1 本地 commit-msg | 每次 `git commit` | `scripts/git/check-commit-msg.mjs` | Conventional Commits + Task trailer |
 | L1 本地 pre-push | `git push` | `scripts/git/check-push.mjs` | 禁止从当前分支直推 main；分支命名提示 |
 | L2 PR `docs` | PR / push main | `npm run docs:check`、`npm run docs:status -- --check` | 链接、任务卡元信息、状态生成区 |

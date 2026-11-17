@@ -15,9 +15,9 @@
 
 生产代码交付保持单测＋构建＋全量Journey；改变数据解析/复权时另跑M1，改变账户/训练时另跑M2。新基线收录跨模块既有改动时执行M2和浏览器全量，M1外部证据过期必须单独记录，不能以其他绿灯替代。
 
-Vitest使用threads池、最多4个worker。Windows CI曾在fork池发生ERR_IPC_CHANNEL_CLOSED，日志未提供worker原始退出原因，不能称作业务断言失败。保留完整用例和断言，以线程池避开该IPC路径；需要独立cwd的用例启动真实子进程验证，不在测试worker里chdir。单独GLM定向测试可用maxWorkers=2；Journey每run仍1worker。
+server 与 desktop 的 Vitest 均使用 threads 池、maxWorkers=2。Windows CI曾在fork池发生ERR_IPC_CHANNEL_CLOSED，日志未提供worker原始退出原因，不能称作业务断言失败。保留完整用例和断言，以线程池避开该IPC路径；需要独立cwd的用例启动真实子进程验证，不在测试worker里chdir。Journey每run仍1worker。
 
-GitHub Source checks 在 Windows 与 Ubuntu 上先执行 `npm ci` 和 `npm run build`，再执行完整 `npm test`。启动器装配测试需要 `server/dist` 中的真实重启模块，不能依赖开发机残留构建产物。每个平台保留 JSON 测试报告供失败排查。Windows 路径解析使用 `path.win32`；操作真实临时文件的测试使用宿主绝对路径，平台专用查询通过明确的平台夹具验证。
+GitHub Source checks 仅在 Windows 上先执行 `npm ci` 和 `npm run build`，再执行完整 `npm test`。启动器装配测试需要 `server/dist` 中的真实重启模块，不能依赖开发机残留构建产物。CI 保留 JSON 测试报告供失败排查。Windows 路径解析使用 `path.win32`；操作真实临时文件的测试使用宿主绝对路径，平台专用查询通过明确的平台夹具验证。
 
 ## UI-VISUAL-ACCEPTANCE
 
@@ -45,9 +45,9 @@ Journey每run独立端口/SQLite/前后端构建/证据，内部仍单worker。�
 
 隔离服务器在IPC关闭宽限后直接终止自身Node进程（OPEN_BROWSER=0，无子进程），避免Windows taskkill进程树扫描拖住验收清理；通用构建/浏览器命令仍清理其进程树。候选失败优先读取本次verification.json的失败检查与日志，proof仅在全通过时存在，不能用缺失proof覆盖真实错误。
 
-verify job 的测试命令经 scripts/ci/run-tests-with-retry.mjs：仅在“非 0 退出且无 Vitest 失败摘要”时重试一次（基础设施崩溃），真实断言失败不重试；重试记录打 GitHub warning，断言/用例集合/数据范围不变。desktop 套件在 desktop/vitest.config.ts 设 testTimeout 30s（TEST-BUDGET-04）；server 与本地纯逻辑用例默认仍为 5s。详见 [CI 门禁](ci.md)。
+verify job 的测试命令经 scripts/ci/run-tests-with-retry.mjs：仅在“非 0 退出且无 Vitest 失败摘要”时重试一次（基础设施崩溃），真实断言失败不重试；重试记录打 GitHub warning，断言/用例集合/数据范围不变。desktop 全套在 desktop/vitest.config.ts 设 testTimeout 30s（TEST-BUDGET-04）；server 保持既有默认预算，个别用例的显式预算以测试声明为准。详见 [CI 门禁](ci.md)。
 
-迁移真实文件 I/O 用例（`desktop/test/mig-inline.test.ts`、`desktop/test/mig-import.test.ts` 的整库合并/幂等用例）使用真实临时目录、`server/dist/db.js` 与 SQLite，单测预算放宽到 30s（TEST-BUDGET-02，2026-11-11）；断言与用例集合不变。全局默认 5s 仍适用于纯内存/纯逻辑用例，不得整体放宽 desktop `testTimeout`。该调整用于消除 CI verify 满载时的 5s 误拦 flake。
+迁移真实文件 I/O 用例（`desktop/test/mig-inline.test.ts`、`desktop/test/mig-import.test.ts` 的整库合并/幂等用例）使用真实临时目录、`server/dist/db.js` 与 SQLite。TEST-BUDGET-02（2026-11-11）先将这些用例预算放宽到 30s，以消除 CI verify 满载时的 5s 误拦 flake；随后由 TEST-BUDGET-04 将 desktop 套件统一设为 30s，接续该局部预算方案。断言与用例集合未因此改变，server 默认预算不变。
 
 公式引擎的实盘语料回放（`server/test/formula-engine/crossPeriod.test.ts`、`corpus-smoke.test.ts`、`marketContext.test.ts`）依赖工作区 `tdx/选股公式` 与 `ai-harness-lab/formula-recon`，不随仓库分发；路径可用 `TRAINER_TDX_FORMULA_DIR` / `TRAINER_FORMULA_CORPUS_DIR` 覆盖。CI/无语料机器会醒目跳过这些用例（其余合成夹具仍覆盖跨周期、市场上下文语义）；公式引擎交付必须在有语料的机器跑全量并保留收据，不能用 CI skip 冒充语料通过。
 

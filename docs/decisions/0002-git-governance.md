@@ -28,3 +28,9 @@
 - Ruleset 与 required checks 的 job 名成为契约；改 CI 必须同步改 Ruleset。
 - 签名是唯一需要用户手动注册公钥的步骤；在完成前不启用 required signatures，避免锁死自己。
 - 后续 ENG-GOV-03（发布追溯）、ENG-GOV-04（安全审计）在此基线上推进。
+
+## 现行规则补记（2026-11-17）
+
+以上保留 2026-11-11 决策原文。签名公钥注册后，main 的 required signatures 已启用；Ruleset 与 `docs` / `verify` / `pr-policy` required checks 为现行合入边界，无 bypass actor。
+
+外部贡献的默认合并策略已调整为 squash，由 GitHub 生成签名提交；确需保留作者提交而使用 merge commit 时，相关提交必须已签名。维护者任务同样默认 squash。日常操作以 [Git 工作流](../engineering/git-workflow.md) 为准，本地候选工具不能替代 PR 合并。

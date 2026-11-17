@@ -5,11 +5,11 @@
   "id": "CHART-MEASURE-05",
   "title": "按用户验收反馈移除顶栏「测量」入口与测量模式（保留既有 Shift 两点测量）",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "GH-202611",
   "base_commit": "7687766",
   "summary": "用户 2026-11-13 验收反馈：顶栏新增的「测量」按钮/模式与既有 Shift+鼠标左键两次点击的区间测量功能重复（Issue #8 的需求源于对新功能不熟悉）。本任务回退 CHART-MEASURE-04 的入口与测量模式交互：删除顶栏按钮、measureMode/拖动建立/两次点击模式代码、测量模式提示与探针字段、对应 e2e 套件与文档说明；保留 CHART-MEASURE-02/03 既有 Shift+左键两点区间测量（数据窗口/可拖边界/镜像真实价/回放只读）零回归。其余 v1.3.7 验收内容（布局铺满、面板固定/调宽高）通过，本版本仅移除重复入口；按要求不发布。",
-  "next_action": "RED（无测量按钮且 Shift 测量仍通过）→ 回退入口与模式代码/测试/文档 → 全量门禁（unit/build/全量 journey）→ 证据、版本 1.3.8、提交、draft PR；合并后清理本地分支与工作树并准备下一批开发计划。",
+  "next_action": "PR #42 已合入 31455cb；保持暂不发布，后续候选核对 Shift 测量。",
   "allowed_paths": [
     "web/src/components/KlineChart.vue",
     "web/src/components/RangeMeasurement.vue",
@@ -45,7 +45,7 @@
     "reason": "移除用户可见入口与测量模式：版本/更新记录、交互规格、用户指南、组件索引、e2e 套件表、批次与任务索引同步。"
   },
   "verification_refs": ["docs/verification/2026-11/CHART-MEASURE-05/README.md"],
-  "integration_ref": null,
+  "integration_ref": "31455cb (PR #42)",
   "acceptance_ref": "docs/verification/2026-11/V137-user-acceptance/README.md"
 }
 ```
@@ -65,4 +65,4 @@
 
 ## 本轮交付
 
-（由实现者填写：回退清单、RED/GREEN、门禁收据）
+收据见[验证记录](../../verification/2026-11/CHART-MEASURE-05/README.md)，不替代用户验收。
