@@ -1,0 +1,5 @@
+ERROR task:RUNTIME-CANCEL-02: docs/work-items/milestones/ENG.md 已声明但相对基线未更新
+ERROR task:RUNTIME-CANCEL-02: docs/work-items/README.md 已声明但相对基线未更新
+ERROR task:RUNTIME-CANCEL-02: docs/status.md 已声明但相对基线未更新
+INFO RUNTIME-CANCEL-02: 相对 2c66477f0c4875ac3a100338fdbc42b4878dadd8 检查 28 个变更路径（工作树、暂存区及未跟踪的并集），其中 6 个运行代码/配置/测试路径；这是工作树预检，不代表集成或验收。
+INFO impact: 3 errors, 0 warnings；不更改任务/验收状态。

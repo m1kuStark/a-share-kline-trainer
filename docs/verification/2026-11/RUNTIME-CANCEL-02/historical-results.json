@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-17T22:29:49.7164246+08:00",
+  "repo": "a-share-kline-trainer",
+  "testedCommit": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
+  "runtimeFingerprint": {
+    "changed": 0,
+    "files": 617,
+    "removed": 0,
+    "afterSHA256": "81FE7E88418C393427AE2E344D86B5CC191E9D16CDE70FA21C770E0ABC34EA14",
+    "beforeSHA256": "81FE7E88418C393427AE2E344D86B5CC191E9D16CDE70FA21C770E0ABC34EA14"
+  },
+  "checks": [
+    {
+      "warningType": "length guidance only",
+      "command": "npm run docs:check",
+      "warnings": 176,
+      "errors": 0,
+      "log": "docs-check.log",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "errors": 0,
+      "log": "docs-status-check.log",
+      "warnings": 0,
+      "command": "npm run docs:status -- --check"
+    },
+    {
+      "exit": 0,
+      "log": "git-fsck.log",
+      "dangling": {
+        "tree": 10,
+        "blob": 63,
+        "commit": 74
+      },
+      "command": "git fsck --no-reflogs"
+    },
+    {
+      "exit": 0,
+      "log": "build.log",
+      "warning": "Vite chunk exceeds 500kB",
+      "command": "npm run build"
+    },
+    {
+      "durationSeconds": 648.52,
+      "command": "npm test",
+      "tests": {
+        "passed": 2652,
+        "total": 2654,
+        "failed": 2
+      },
+      "files": {
+        "passed": 186,
+        "total": 188,
+        "failed": 2
+      },
+      "log": "npm-test.log",
+      "desktopNotRunByThisCommand": true,
+      "exit": 1
+    },
+    {
+      "exit": 1,
+      "tests": {
+        "passed": 14,
+        "total": 15,
+        "failed": 1
+      },
+      "log": "rerun-runtime-isolation.log",
+      "durationSeconds": 49.77,
+      "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts"
+    },
+    {
+      "exit": 0,
+      "tests": {
+        "passed": 9,
+        "total": 9,
+        "failed": 0
+      },
+      "log": "rerun-updater-stale-busy.log",
+      "durationSeconds": 5.84,
+      "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/updater-stale-busy.test.ts"
+    },
+    {
+      "durationSeconds": 27.11,
+      "command": "npm run test:desktop",
+      "tests": {
+        "passed": 368,
+        "total": 369,
+        "failed": 1
+      },
+      "files": {
+        "passed": 33,
+        "total": 34,
+        "failed": 1
+      },
+      "log": "desktop-test.log",
+      "exit": 1,
+      "warning": "portable-updater-smoke.test.ts duplicate maxTries key"
+    },
+    {
+      "exit": 1,
+      "tests": {
+        "passed": 6,
+        "total": 7,
+        "failed": 1
+      },
+      "log": "rerun-port-tree-kill.log",
+      "durationSeconds": 15.86,
+      "command": "npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts"
+    }
+  ],
+  "isolation": {
+    "personalDataUsed": false,
+    "TRAINER_DATA_DIR": "isolated-data",
+    "TRAINER_DB": "isolated-data/health.sqlite"
+  },
+  "git": {
+    "tagSigning": true,
+    "branchesInitially": [
+      "main"
+    ],
+    "commitSigning": true,
+    "hooksPath": ".githooks",
+    "fsckPrunePerformed": false,
+    "ignoredDeletionPerformed": false,
+    "worktreesInitially": 1,
+    "signingFormat": "ssh",
+    "indexHiddenFlags": 0
+  },
+  "interpretation": [
+    "Local full npm test remains failed.",
+    "Runtime cancellation and desktop process-tree termination failed again in isolated unchanged reruns.",
+    "Updater boot timeout passed an unchanged isolated rerun; initial failure remains recorded.",
+    "Build and unit checks are not user acceptance or release approval."
+  ],
+  "failureExcerpts": "failure-excerpts.log"
+}

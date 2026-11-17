@@ -1,22 +1,42 @@
-# RUNTIME-CANCEL-02 Windows 子进程取消与清理失败
+# RUNTIME-CANCEL-02 Windows 子进程测试生命周期修正
 
 ```json
 {
   "id": "RUNTIME-CANCEL-02",
-  "title": "定位并修复 Windows 子进程取消与进程树清理失败",
+  "title": "修正 Windows 子进程取消与树终止测试生命周期",
   "owner": "integrator",
-  "state": "planned",
+  "state": "review",
   "milestone": "ENG",
-  "base_commit": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
-  "summary": "ENG-HEALTH-02 在本机完整 npm test 与原配置隔离复跑均复现 runtime-isolation 取消用例15s超时及 EBUSY；desktop 真实进程树终止用例首轮与隔离复跑也均15s超时。实现 taskkill 的20–30s上界与测试15s预算冲突是待核实线索；尚未修复，不归类为已消除flaky。",
-  "next_action": "以原失败用例为 RED，观测受管进程树退出与目录句柄释放；确认是取消实现、进程清理或测试预算问题，再做最小修复。不能只加 timeout/skip 令测试转绿；保留首次失败、隔离复跑及完整验证收据。",
-  "allowed_paths": ["scripts/runtime/run.ts", "server/test/runtime-isolation.test.ts", "desktop/src/port-conflict.ts", "desktop/test/port-tree-kill.test.ts", "scripts/runtime/README.md", "docs/engineering/testing.md", "docs/work-items/tasks/RUNTIME-CANCEL-02.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md", "docs/verification/2026-11/RUNTIME-CANCEL-02/**"],
+  "base_commit": "b1ff3e9f241e60b3e85c7572084dbc306b259d08",
+  "summary": "已观测原生产实现正确终止受管父孙进程、保留日志并释放目录；确定两条显式15s测试预算短于20–30s taskkill上界，超时后异步命令未先排空还会撞到目录回收。本片仅修测试生命周期与预算，增加detached孙进程、树外哨兵、目录释放和原始取消理由断言；撤去/T的两条真实变异均因孙存活失败。生产实现保持原字节，完整npm test与审查结果见本任务验证记录。",
+  "next_action": "正式全量3023测试exit0，独立只读审查Critical/Important/Minor均0；root已将runtime三行L2提升并strict0。补齐共享文档门禁后走独立PR/CI，完整候选与Journey由后继M9整批同提交验证；本片无产品代码修改，不代表M9人工验收。",
+  "allowed_paths": [
+    "scripts/runtime/run.ts",
+    "server/test/runtime-isolation.test.ts",
+    "desktop/src/port-conflict.ts",
+    "desktop/test/port-tree-kill.test.ts",
+    "scripts/runtime/README.md",
+    "docs/engineering/testing.md",
+    "docs/work-items/tasks/RUNTIME-CANCEL-02.md",
+    "docs/work-items/milestones/ENG.md",
+    "docs/work-items/README.md",
+    "docs/status.md",
+    "docs/verification/2026-11/RUNTIME-CANCEL-02/**"
+  ],
   "depends_on": [],
   "docs_impact": {
-    "update": ["docs/work-items/tasks/RUNTIME-CANCEL-02.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md"],
+    "update": [
+      "docs/work-items/tasks/RUNTIME-CANCEL-02.md",
+      "docs/work-items/milestones/ENG.md",
+      "docs/work-items/README.md",
+      "docs/status.md"
+    ],
     "reason": "运行时取消可能影响验证清理和受管子进程生命周期；必须先证实根因，记录修复范围及真实进程回归。"
   },
-  "verification_refs": ["docs/verification/2026-11/ENG-HEALTH-02/validation.md"],
+  "verification_refs": [
+    "docs/verification/2026-11/ENG-HEALTH-02/validation.md",
+    "docs/verification/2026-11/RUNTIME-CANCEL-02/validation.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }
@@ -25,3 +45,5 @@
 失败位置：`server/test/runtime-isolation.test.ts` 的 `cancels an owned child command and preserves its failure log`。首轮 `npm test` exit 1，隔离同 spec 复跑 exit 1（1 failed / 14 passed）；错误同时包含 15000ms timeout 与临时目录 `EBUSY`。个人训练数据未参与。
 
 桌面对应边界：`desktop/test/port-tree-kill.test.ts` 的真实两级 Node 进程树终止测试，首轮与隔离复跑均15s超时（复跑1 failed /6 passed）；实现位于 `desktop/src/port-conflict.ts`，taskkill guard 为30s。预算冲突尚不足以单独证明根因，应同时观测实际退出与目录句柄释放。
+
+2026-11-18 接续调查：原实现的真实诊断中，runtime 取消返回用时10.959s、desktop 终止返回12.281s；父孙均已退出、哨兵存活、目录可删除。独立原样复跑本次通过，历史失败仍成立。保留原断言，补齐生命周期保护并按已有等待上界给出45s/60s测试预算；detached孙进程保证只杀父进程会被断言识别。生产文件未修改，结论是测试预算及夹具清理缺陷，未证实生产进程泄漏。完整历史、尝试与边界见[验证记录](../../verification/2026-11/RUNTIME-CANCEL-02/validation.md)。

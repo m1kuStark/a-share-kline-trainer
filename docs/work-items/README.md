@@ -4,7 +4,7 @@
 
 - [ENG-HEALTH-02 工程健康检查](tasks/ENG-HEALTH-02.md)：2026-11-17 本地/GitHub 对账、过时跟踪引用与文档整理；[检查记录和后续清单](../verification/2026-11/ENG-HEALTH-02/README.md)。
 - [DEP-SEC-MINIMATCH-01 构建依赖安全维护](tasks/DEP-SEC-MINIMATCH-01.md)：Dependabot alert #48，先评估受影响依赖链与兼容修复，再独立实施。
-- [RUNTIME-CANCEL-02 子进程取消失败](tasks/RUNTIME-CANCEL-02.md)：本轮完整单测与原配置隔离复跑均失败，先定位 Windows 进程退出、目录锁定与预算冲突。
+- [RUNTIME-CANCEL-02 取消测试生命周期](tasks/RUNTIME-CANCEL-02.md)：真实诊断未证实产品泄漏；修正测试预算与夹具清理，增强父孙退出/目录释放/树外哨兵断言；[全量和变异证据](../verification/2026-11/RUNTIME-CANCEL-02/validation.md)。
 
 - [ENG 工程基础设施](milestones/ENG.md)：Git/PR/发布规范与操作门禁基线（ENG-GOV-01）＋迁移用例测试预算（TEST-BUDGET-02）。
 

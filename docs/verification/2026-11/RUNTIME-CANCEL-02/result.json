@@ -1,0 +1,973 @@
+{
+  "schemaVersion": 1,
+  "task": "RUNTIME-CANCEL-02",
+  "recordedAt": "2026-11-18T00:59:32.8942183+08:00",
+  "testedBase": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "taskBase": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
+  "environment": {
+    "npm": "11.12.1",
+    "buildServerReceipt": "build-server-baseline.receipt.json",
+    "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\runtime-cancel-02\\a-share-kline-trainer",
+    "node": "v24.15.0",
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+    "TRAINER_DATA_DIR": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\full-test-isolated\\data",
+    "base": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+    "OPEN_BROWSER": "0",
+    "command": "npm test",
+    "started": "2026-11-18T00:49:38.8258866+08:00",
+    "TRAINER_DB": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\full-test-isolated\\trainer.sqlite"
+  },
+  "testFiles": [
+    {
+      "path": "server/test/runtime-isolation.test.ts",
+      "sha256": "2F6A850D9A2615DCCE594577196BA0BC5BD6FEBDA09EE55F50EF2B5BA6A4721D"
+    },
+    {
+      "path": "desktop/test/port-tree-kill.test.ts",
+      "sha256": "8141ACAD504FC559D391E2379E09114B476C009A4AFCC653BBC2C4E1DDC75770"
+    }
+  ],
+  "productionUnchanged": [
+    {
+      "path": "scripts/runtime/run.ts",
+      "sha256": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC"
+    },
+    {
+      "path": "desktop/src/port-conflict.ts",
+      "sha256": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385"
+    }
+  ],
+  "fullSuite": {
+    "desktop": {
+      "durationSeconds": 18.04,
+      "files": 34,
+      "passed": 369,
+      "failed": 0
+    },
+    "skippedMessages": 0,
+    "server": {
+      "durationSeconds": 359.84,
+      "files": 188,
+      "passed": 2654,
+      "failed": 0
+    },
+    "status": "passed",
+    "missingCorpusMessages": 0,
+    "receipt": {
+      "environment": "npm-test-environment.json",
+      "log": "npm-test-final.log",
+      "started": "2026-11-18T00:49:38.8258866+08:00",
+      "exit": 0,
+      "elapsedMs": 381365.7727,
+      "command": "npm test"
+    },
+    "warning": "existing duplicate maxTries key in desktop/test/portable-updater-smoke.test.ts"
+  },
+  "cacheFiles": [
+    {
+      "sha256": "36948D72971F543BF7CB4811F85FC423B8B8F21A6CBAC9B6E852D172B25204AE",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\build-server-baseline.log",
+      "bytes": 281
+    },
+    {
+      "sha256": "0BA6BB09C8FB66D5F82CDB05D44E1FEEC4F0A84AE7F8E1401185F5D5E16A5D10",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\build-server-baseline.receipt.json",
+      "bytes": 155
+    },
+    {
+      "sha256": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\desktop-before-detached-mutation.ts",
+      "bytes": 15315
+    },
+    {
+      "sha256": "51A107FB984646F79EC45A8CE60E939CA64AD03021E12C85F1ED10FA698CB90D",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\diagnostic-desktop.log",
+      "bytes": 606
+    },
+    {
+      "sha256": "F004AA40B13FDC34991DCA3271CE3A732661C2FBB300769FDDB94626DC9786BC",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\diagnostic-runtime.log",
+      "bytes": 691
+    },
+    {
+      "sha256": "A636E30838C1A6E2D45D156738F2FA7FB9F54F1E1776476FB572F535A10E5865",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-check.log",
+      "bytes": 22433
+    },
+    {
+      "sha256": "7314D10A0E0D9D8AE2BAEC307E891514278CE5430EF97D53B022309C14BE5459",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-check.receipt.json",
+      "bytes": 143
+    },
+    {
+      "sha256": "6F4DA548AEF784E473183E90496824801C7E99795196522A718EA9C907330031",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-impact.log",
+      "bytes": 587
+    },
+    {
+      "sha256": "F038D4269657B1A6D2181A0B98F9CF36471AC30961D5ABDA01441531A563DD38",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-impact.receipt.json",
+      "bytes": 216
+    },
+    {
+      "sha256": "1431CC75A6E962E88CFAC4B7D3A46FA5C3E1EB7E7B38E5B210BD0850CF29F060",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-status-check.log",
+      "bytes": 159
+    },
+    {
+      "sha256": "FD09E7FD12ED4977775F4BBC17450C9A27FA739639340409D10A3340C34EF0F3",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\docs-status-check.receipt.json",
+      "bytes": 157
+    },
+    {
+      "sha256": "1B46A0CD5057E2516523F3BAE2B4742C080662A05BD30E304AC551131AA8F187",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-detached.log",
+      "bytes": 269
+    },
+    {
+      "sha256": "23B30CDB6F10A7C9931F519CD63DA59A702A34F8BC8EFE89D08585ED8B8A117D",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-detached.receipt.json",
+      "bytes": 178
+    },
+    {
+      "sha256": "2DEA630906199AEE867CC2C2676647E8231C8E8C5989179411E2BFEC3DAF8F78",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-restored.log",
+      "bytes": 269
+    },
+    {
+      "sha256": "817722EE1DEDB390479E80EC0CF0124066E29671FF33AE5BB94F1FF3AEC1B7BD",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-restored.receipt.json",
+      "bytes": 202
+    },
+    {
+      "sha256": "A08B206E57E3D6B71900C3A20B3EECACFC71DB7B1E0865917B8764E968065000",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-spec.log",
+      "bytes": 271
+    },
+    {
+      "sha256": "044FBAB323551E1CC82ED410E4D10BF553C149AB131AF36043DEBECEC59D2DA1",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-spec.receipt.json",
+      "bytes": 257
+    },
+    {
+      "sha256": "75C58C97905338747A27115F5A8FD4CDF9CBB4A430413BA40E71772B1733C995",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-detached.log",
+      "bytes": 287
+    },
+    {
+      "sha256": "DB470B701C8C572F2F77DAAF0447A826ECB254AF6BBE88400F9BA4A21A79ADF5",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-detached.receipt.json",
+      "bytes": 186
+    },
+    {
+      "sha256": "16608A5285D01D21F12C6741D0B2CD37E488809CFF8AE794A5D73705EA2A13E1",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-restored.log",
+      "bytes": 275
+    },
+    {
+      "sha256": "D229CFC04014DE9DDBA31E99E8721ED2241A6E7471C9B4F78C6D0770EBAC1712",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-restored.receipt.json",
+      "bytes": 203
+    },
+    {
+      "sha256": "D0C4EEBF068C051D2BDA82DDFFFCB814FDC769BA832595F78C142F223E304886",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.log",
+      "bytes": 275
+    },
+    {
+      "sha256": "904DAF22BB647A736CEF7901FD364B996E8B489DAF78CC05F16ED64440B6A2DA",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.receipt.json",
+      "bytes": 261
+    },
+    {
+      "sha256": "9E2914B4BE7FE256F99DFEAD24BA83FA3C0CCD72FDAA67145CCDA2A1F187F62F",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec.log",
+      "bytes": 1131
+    },
+    {
+      "sha256": "A41B84DD746A85EDBE4F59DDC2C28133963B97E0E3EFE5627900D8B8BF8095D6",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec.receipt.json",
+      "bytes": 258
+    },
+    {
+      "sha256": "06E33324FBB5CF127B40EAA36A2BAD0DED98D637A7B3CBC2FC21F6E1B67B681A",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\launcher-lifecycle-binding.log",
+      "bytes": 207
+    },
+    {
+      "sha256": "4DD65C73D241169CE93F3DE3E4AB8DDFD6B3FBA637B1B59C7A464A397AA94D5E",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\launcher-lifecycle-binding.receipt.json",
+      "bytes": 127
+    },
+    {
+      "sha256": "0741A6B1CFF3BCE29FAB98457397B53FF0336DDCAF545237F47AC09DAA06D3FA",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached-02.diff",
+      "bytes": 553
+    },
+    {
+      "sha256": "065405E0DFA62BD3F30128DC7EFCC291E6F76EEB2DCD97A399E80CCC2AE880CC",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached-02.log",
+      "bytes": 1541
+    },
+    {
+      "sha256": "36A0D0007510F8C67BE2C2D6EB4043921B7CE48ACBAC9F6445CCC72AD57A2886",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached-02.receipt.json",
+      "bytes": 449
+    },
+    {
+      "sha256": "0741A6B1CFF3BCE29FAB98457397B53FF0336DDCAF545237F47AC09DAA06D3FA",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached.diff",
+      "bytes": 553
+    },
+    {
+      "sha256": "D570D2FE8854762065A81A0F540681CB7A37111AEFD8625004E389B747E16746",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached.log",
+      "bytes": 1256
+    },
+    {
+      "sha256": "353F6A92D0CF68E68F1D740CBCB8C83E8CB60AEBD5E95022052F10C333924074",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached.receipt.json",
+      "bytes": 420
+    },
+    {
+      "sha256": "3E3533B64F5E4F2B5F019D39CD2A429A83E17ACD83A3DA72F7370E693496EBE4",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree-detached.diff",
+      "bytes": 844
+    },
+    {
+      "sha256": "4351426A218757B4ABF52980A4AD52598F58574431EA9378E9D728F5976E00D8",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree-detached.log",
+      "bytes": 1998
+    },
+    {
+      "sha256": "9FE9DE56DF29C0FEE84453AF36BA656E5B80B4EC8D507E0E79E90114801EBBC8",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree-detached.receipt.json",
+      "bytes": 429
+    },
+    {
+      "sha256": "72DEB97AE5BBDF10D208C4B1FA6895B103B32424BB18A8D4E92ACE1723CE04E5",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.diff",
+      "bytes": 831
+    },
+    {
+      "sha256": "9F703F1BD3842D31BABD6FE67E7EC1B784BC981F884A3379936BCEBB281545B7",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.log",
+      "bytes": 287
+    },
+    {
+      "sha256": "ED20CFFE24CC7063D1BCF76108CB86C2E91F4703B39422506115C76CDD2B6592",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.receipt.json",
+      "bytes": 261
+    },
+    {
+      "sha256": "3886B99BF115FBAADFBAC4781C1D9EDEFC7AF6C15F3513FB794F364D532753AD",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-ci.log",
+      "bytes": 1363
+    },
+    {
+      "sha256": "9C961E1A9BB13474B80B889859384E86A948850B06FB4A7EB83829EF68CDB0F3",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-ci.receipt.json",
+      "bytes": 126
+    },
+    {
+      "sha256": "0094771A324ED2E61D5121FDF6487DA45336389A51F32F971EF692A59604A969",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-test-environment.json",
+      "bytes": 824
+    },
+    {
+      "sha256": "56EE116E3CF6334838C86332CA93B6B0201B1BDE998E038899E49763BBEF33D1",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-test-final.log",
+      "bytes": 15139
+    },
+    {
+      "sha256": "7F8EE2D05E3811FEB2B1AD00829AF7920EB729DCDD9306164184231F6307482D",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-test-final.receipt.json",
+      "bytes": 204
+    },
+    {
+      "sha256": "B23D3E6CD0DEBE803E8B30F9C9801BFF51AF9F8184459D669388277DA234FEC3",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\owned-fixture-cleanup-rejected.json",
+      "bytes": 380
+    },
+    {
+      "sha256": "F853F105B6E8544DBB209656F37F530F682EA65870C6549E954CED9F0E127E80",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.log",
+      "bytes": 271
+    },
+    {
+      "sha256": "7BE2E6C0ACF9CEB24CB6B1B184CDAB2138C179AE9FE54B5A7DC5E18C2C9F9660",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.receipt.json",
+      "bytes": 259
+    },
+    {
+      "sha256": "1CA5DE44876B6B3EFE569954D34799723748865B24DB5EACC0A2AAF59B61CCF4",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.log",
+      "bytes": 286
+    },
+    {
+      "sha256": "8FF1A0BAF51588A91D1EBAF1E3466A282282A270DAAB0F87208EA0DAE5A3E510",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.receipt.json",
+      "bytes": 286
+    },
+    {
+      "sha256": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\runtime-before-detached-mutation.ts",
+      "bytes": 16212
+    },
+    {
+      "sha256": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\runtime-before-mutation.ts",
+      "bytes": 16212
+    },
+    {
+      "sha256": "1ACE030CA134D466AC3FD2E33886BFAB323077B199E14EDF0282E5F01128AE9A",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\runtime-cancellation-binding.log",
+      "bytes": 756
+    },
+    {
+      "sha256": "C9396759CCB2201C67D47CF2DD7ACA8BBCA3BF3CA4B2EF71374DCA0B0731AE24",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\runtime-cancellation-binding.receipt.json",
+      "bytes": 131
+    },
+    {
+      "sha256": "0179F38EA9561F55044F95786F65DCFD5B7408CE98A10E29BD6BEFB5852E389E",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\tree-diagnostic.mjs",
+      "bytes": 3707
+    },
+    {
+      "sha256": "F7C46340771911F21D523DD8663907DC68CF394054F8C732C18049B699800916",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\baseline-exits.json",
+      "bytes": 49
+    },
+    {
+      "sha256": "2C3781E0A3A633BF1F1DB545F2FF727B081EC9328EF88CFC4395829FCCEDFBB3",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\build-exit.json",
+      "bytes": 20
+    },
+    {
+      "sha256": "BA64DC879D2FE00780C175E99C4855B8A0E82070EC73E87F9F67153551DAF13F",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\build.log",
+      "bytes": 1321
+    },
+    {
+      "sha256": "4DC3E5C8553672AECF8EF0C3C831861C5C9CA82C121585D11C785C1B457E85C9",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\desktop-exit.json",
+      "bytes": 22
+    },
+    {
+      "sha256": "B05BDA798B47AF6EF911F89AECD718A08D8D09A62ED43F0E24366CFC8533951D",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\desktop-test.log",
+      "bytes": 1979
+    },
+    {
+      "sha256": "E45919EB729A6B6AF03D9F8C1FD5073AB2D85CCBF29A59ABE4FCD79BCF40521C",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\docs-check.log",
+      "bytes": 22163
+    },
+    {
+      "sha256": "6D3BCB35826E7D21814B9F1CD1C7A9815E40ACE4A6EEDD4700D9E1B436A2AFEF",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\docs-status-check.log",
+      "bytes": 154
+    },
+    {
+      "sha256": "A3A7E28F068D0ECFC22E1336E7377AB8B56BE9C5D082A19D70AC8C1951CE6837",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\failure-excerpts.log",
+      "bytes": 7012
+    },
+    {
+      "sha256": "21A95A5347638BEFBEDC42BF6CC07278748BEC2E35039D3DA5BADBD00AAAC33F",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\git-fsck.log",
+      "bytes": 8380
+    },
+    {
+      "sha256": "F2AAE75AECB1D4A06E73E57213D165965F22C9A931B9A5A681B05D23D450A3E8",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\head-before.txt",
+      "bytes": 41
+    },
+    {
+      "sha256": "A9BA3FE2CD5DB69414B234D051E3D053C0C2FE6975041E684A76D3A74F1E98B7",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\ignored-dry-run.txt",
+      "bytes": 340
+    },
+    {
+      "sha256": "01F479213025F0EA30D0C21F562B428BF6090B60BBDD92BCC9CAB3DDE4DAE0A9",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\npm-test.log",
+      "bytes": 17714
+    },
+    {
+      "sha256": "06740001A610704BFDE76B7F0F307F21D04E23252BDEB0EAD9272E36B4E9B324",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-port-tree-exit.json",
+      "bytes": 27
+    },
+    {
+      "sha256": "630697B838B8928FA1ADBA2923F468F4C95466E42FCC4887DF1162A0C8DFCE33",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-port-tree-kill.log",
+      "bytes": 1499
+    },
+    {
+      "sha256": "5AB472334BA7B99F6B93EFC5A868CACB70ED2EC203B92B099EC3F11D9C984053",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-runtime-exit.json",
+      "bytes": 22
+    },
+    {
+      "sha256": "3D9343A092B110D77EF91D532E1B10D90B8A6F129EBD2C7E72BE39F5339AAF08",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-runtime-isolation.log",
+      "bytes": 1508
+    },
+    {
+      "sha256": "1564BD54EB365583FACECC2D4E25AA2026EE00D2F616D343E9A47A1F94C5FEC2",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-updater-exit.json",
+      "bytes": 22
+    },
+    {
+      "sha256": "1589289B37131C03E96B3DF7FB6C8102B65249CA4DE1AF91D9AFAD70164D1307",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\rerun-updater-stale-busy.log",
+      "bytes": 490
+    },
+    {
+      "sha256": "FA57CF9AA5607EA843B76A078948D5125382C128E1C7274A2D2E3CC2CFBCB688",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\results.json",
+      "bytes": 3759
+    },
+    {
+      "sha256": "81FE7E88418C393427AE2E344D86B5CC191E9D16CDE70FA21C770E0ABC34EA14",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\source-after-build.json",
+      "bytes": 88930
+    },
+    {
+      "sha256": "81FE7E88418C393427AE2E344D86B5CC191E9D16CDE70FA21C770E0ABC34EA14",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\source-after-final.json",
+      "bytes": 88930
+    },
+    {
+      "sha256": "81FE7E88418C393427AE2E344D86B5CC191E9D16CDE70FA21C770E0ABC34EA14",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\source-before.json",
+      "bytes": 88930
+    },
+    {
+      "sha256": "7A1D883BA30C8495810FD977D53A2AA37FB2443116E15F904A2BC8B7426CC78B",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\test-exit.json",
+      "bytes": 249
+    }
+  ],
+  "personalDatabaseUsed": false,
+  "productUiStarted": false,
+  "pushed": false,
+  "scope": "test lifecycle and budgets only; production unchanged",
+  "checks": [
+    {
+      "receiptFile": "build-server-baseline.receipt.json",
+      "receipt": {
+        "command": "npm run build:server",
+        "exit": 0,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\build-server-baseline.log"
+      }
+    },
+    {
+      "receiptFile": "docs-check.receipt.json",
+      "receipt": {
+        "exit": 1,
+        "command": "npx --no-install tsx scripts/docs.ts check",
+        "log": "docs-check.log",
+        "errors": 1,
+        "warnings": 178
+      }
+    },
+    {
+      "receiptFile": "docs-impact.receipt.json",
+      "receipt": {
+        "exit": 1,
+        "command": "npx --no-install tsx scripts/docs.ts impact --base 2c66477f0c4875ac3a100338fdbc42b4878dadd8 --task RUNTIME-CANCEL-02",
+        "log": "docs-impact.log",
+        "warnings": 0,
+        "errors": 3
+      }
+    },
+    {
+      "receiptFile": "docs-status-check.receipt.json",
+      "receipt": {
+        "log": "docs-status-check.log",
+        "errors": 1,
+        "exit": 1,
+        "warnings": 0,
+        "command": "npx --no-install tsx scripts/docs.ts status --check"
+      }
+    },
+    {
+      "receiptFile": "green-desktop-detached.receipt.json",
+      "receipt": {
+        "command": "desktop tree spec with detached grandchild",
+        "exit": 0,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-detached.log"
+      }
+    },
+    {
+      "receiptFile": "green-desktop-restored.receipt.json",
+      "receipt": {
+        "elapsedMs": 10972.2289,
+        "log": "green-desktop-restored.log",
+        "exit": 0,
+        "command": "npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts"
+      }
+    },
+    {
+      "receiptFile": "green-desktop-spec.receipt.json",
+      "receipt": {
+        "command": "npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts",
+        "exit": 0,
+        "elapsedSeconds": 15.9366845,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-spec.log"
+      }
+    },
+    {
+      "receiptFile": "green-runtime-detached.receipt.json",
+      "receipt": {
+        "command": "runtime cancellation test with detached grandchild",
+        "exit": 0,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-detached.log"
+      }
+    },
+    {
+      "receiptFile": "green-runtime-restored.receipt.json",
+      "receipt": {
+        "elapsedMs": 40059.8646,
+        "log": "green-runtime-restored.log",
+        "exit": 0,
+        "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts"
+      }
+    },
+    {
+      "receiptFile": "green-runtime-spec-02.receipt.json",
+      "receipt": {
+        "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts",
+        "exit": 0,
+        "elapsedSeconds": 32.0744098,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.log"
+      }
+    },
+    {
+      "receiptFile": "green-runtime-spec.receipt.json",
+      "receipt": {
+        "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts",
+        "exit": 1,
+        "elapsedSeconds": 38.0189586,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec.log"
+      }
+    },
+    {
+      "receiptFile": "launcher-lifecycle-binding.receipt.json",
+      "receipt": {
+        "log": "launcher-lifecycle-binding.log",
+        "command": "check-binding --strict launcher-lifecycle.yaml",
+        "exit": 0
+      }
+    },
+    {
+      "receiptFile": "mutant-desktop-no-tree-detached-02.receipt.json",
+      "receipt": {
+        "exit": 1,
+        "productionAfter": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385",
+        "started": "2026-11-18T00:47:16.1766223+08:00",
+        "log": "mutant-desktop-no-tree-detached-02.log",
+        "productionBefore": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385",
+        "elapsedMs": 9657.2565,
+        "restoredByteExact": true,
+        "command": "desktop tree detached fixture with /T removed; bounded fixture teardown"
+      }
+    },
+    {
+      "receiptFile": "mutant-desktop-no-tree-detached.receipt.json",
+      "receipt": {
+        "productionBefore": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385",
+        "exit": 1,
+        "started": "2026-11-18T00:45:38.7264604+08:00",
+        "log": "mutant-desktop-no-tree-detached.log",
+        "command": "desktop tree detached fixture with /T removed",
+        "elapsedMs": 13346.878,
+        "restoredByteExact": true,
+        "productionAfter": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385"
+      }
+    },
+    {
+      "receiptFile": "mutant-runtime-no-tree-detached.receipt.json",
+      "receipt": {
+        "command": "runtime cancellation detached fixture with /T removed",
+        "productionBefore": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC",
+        "elapsedMs": 10445.9834,
+        "log": "mutant-runtime-no-tree-detached.log",
+        "exit": 1,
+        "restoredByteExact": true,
+        "started": "2026-11-18T00:44:54.2550589+08:00",
+        "productionAfter": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC"
+      }
+    },
+    {
+      "receiptFile": "mutant-runtime-no-tree.receipt.json",
+      "receipt": {
+        "command": "runtime cancellation test with /T removed",
+        "exit": 0,
+        "restoredSha256": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC",
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.log"
+      }
+    },
+    {
+      "receiptFile": "npm-ci.receipt.json",
+      "receipt": {
+        "command": "npm ci",
+        "exit": 0,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-ci.log"
+      }
+    },
+    {
+      "receiptFile": "npm-test-final.receipt.json",
+      "receipt": {
+        "environment": "npm-test-environment.json",
+        "log": "npm-test-final.log",
+        "started": "2026-11-18T00:49:38.8258866+08:00",
+        "exit": 0,
+        "elapsedMs": 381365.7727,
+        "command": "npm test"
+      }
+    },
+    {
+      "receiptFile": "red-original-desktop.receipt.json",
+      "receipt": {
+        "command": "npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts",
+        "exit": 0,
+        "elapsedSeconds": 16.0383636,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.log"
+      }
+    },
+    {
+      "receiptFile": "red-original-runtime.receipt.json",
+      "receipt": {
+        "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts -t cancels-an-owned-child",
+        "exit": 0,
+        "elapsedSeconds": 13.4025497,
+        "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.log"
+      }
+    },
+    {
+      "receiptFile": "runtime-cancellation-binding.receipt.json",
+      "receipt": {
+        "log": "runtime-cancellation-binding.log",
+        "exit": 3,
+        "command": "check-binding --strict runtime-cancellation.yaml"
+      }
+    }
+  ],
+  "remaining": [
+    "root-owned generated status and milestone/index integration",
+    "runtime matrix status update by root after L2 review",
+    "no product Journey or user acceptance performed"
+  ],
+  "cleanupRejection": {
+    "executed": false,
+    "reason": "blocked by policy",
+    "action": "recursive deletion of two known failed test fixtures",
+    "retriedWithAlternateMechanism": false,
+    "paths": [
+      "C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-runtime-H1KS7d",
+      "C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-port-tree-UpFHFj"
+    ],
+    "additionalReasonProvided": false
+  },
+  "formulaCorpus": {
+    "readonly": true,
+    "files": [
+      {
+        "sha256": "AC7D90442B2E431B5D8128E2902C7E71D024A3FA2335D3577049492E2B990070",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘辅助公式.txt",
+        "bytes": 74
+      },
+      {
+        "sha256": "A68D7B5495348BB810750F942B57635E9DF8DD01896CA2D96357FBFD346BCABC",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘日线25MA之上选股公式.txt",
+        "bytes": 95
+      },
+      {
+        "sha256": "CEC564A9C0D6EE8DCC78A57CE743316377C880BEF3FA57E122C59109E173B8C3",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\左峰诅咒线主图公式_单行粘贴版.txt",
+        "bytes": 33385
+      },
+      {
+        "sha256": "595C54A483D3ABA7FBD040CEFBFAAC5F850157022AA7F0052AED184884FB8450",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\浪型背离副图_单行粘贴版.txt",
+        "bytes": 7486
+      },
+      {
+        "sha256": "03F3F5772AE6AE464C8B2AC855E8E666521156A84C552777DA346C188DA9F31B",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\放量解放选股_单行粘贴版.txt",
+        "bytes": 511
+      },
+      {
+        "sha256": "01F356C12A3B40188720F8C1A21FC3BD9BD020420BEAE078CF1A01C6647EE9FC",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\骑牛买1公式.md",
+        "bytes": 2927
+      },
+      {
+        "sha256": "BB9151D02956510950B374951F72B4875A685466926DE037B5E85B623B4E5843",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-1.txt",
+        "bytes": 113
+      },
+      {
+        "sha256": "BBED09DB3CBDAB0D7D997CB83F665E87D13720994A8225D9AA5F85294A7106B1",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-2.txt",
+        "bytes": 194
+      },
+      {
+        "sha256": "13803D6F954E8917BD68C5FF12D5C7CB1A6593C1FFFA4E2220655C21D182A29B",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-3.txt",
+        "bytes": 194
+      },
+      {
+        "sha256": "41A1B40E8A8399B7DECBD7439DA40569EC302877843BFDF813347ED80D8EC892",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-4.txt",
+        "bytes": 218
+      },
+      {
+        "sha256": "AB4CFE4CFC5C4995BFCB77398537AFD1AD558417C36E051A7E7CA3BB8D5F2AA4",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-1.txt",
+        "bytes": 202
+      },
+      {
+        "sha256": "CC4FF3E926B291B0417D997F6A0D358469735A159108D5C4162084DC4179F1F9",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-2.txt",
+        "bytes": 245
+      },
+      {
+        "sha256": "8BC1EFD4EE984DC95B433B9FFF327B1B86FA9318DE2F3829F0B4C7836E923B3A",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-1.txt",
+        "bytes": 346
+      },
+      {
+        "sha256": "08180583193787EA14FDD760845F121ACF852AF928A860245F2980B7B08FFB6D",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-2.txt",
+        "bytes": 345
+      },
+      {
+        "sha256": "60AF737445221AC790604023B2BF185E83039935A98D6FA48A69FCA9B994DC52",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-3.txt",
+        "bytes": 239
+      },
+      {
+        "sha256": "4C2878E8858738B7393F87C4A835F45E8CD62DE6BB08A21C4DDB80F9B83C87A3",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-4.txt",
+        "bytes": 262
+      },
+      {
+        "sha256": "D560A195202FBACA863AB74891EF4E496929AAF1A8C4E8962E2A3BEAA29CC109",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-5.txt",
+        "bytes": 470
+      },
+      {
+        "sha256": "9A206C9CA32A7312B31624C9E299CB3D5C3BC399C195996445119CA83798FB54",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-6.txt",
+        "bytes": 163
+      },
+      {
+        "sha256": "3865F3ADCB9EE303ADC29C7A14E5823D36F3D37D17CDB9EFB73E711348A90F0D",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-7.txt",
+        "bytes": 63
+      },
+      {
+        "sha256": "30998C39775B2AD5B51685C391E811ABF2B07C01152A30C125D5288A3706C1D7",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-8.txt",
+        "bytes": 175
+      },
+      {
+        "sha256": "4520AE4141493310151CF4D9FC056D0ABD1A9D665CB1DA22BB449E8BD8BFFE80",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-1.txt",
+        "bytes": 105
+      },
+      {
+        "sha256": "4520AE4141493310151CF4D9FC056D0ABD1A9D665CB1DA22BB449E8BD8BFFE80",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-2.txt",
+        "bytes": 105
+      },
+      {
+        "sha256": "DDC968E0329E878B2B93FAB0A90C5B042C0B94E52197A0A6AEF1AA7B9D2427EC",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买2_生命线诅咒线选股公式-1.txt",
+        "bytes": 1295
+      },
+      {
+        "sha256": "DE371DF5FF32BC2455307CB526E55C5B0827B18D6190C5481C66B5128A31F2A6",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-1.txt",
+        "bytes": 224
+      },
+      {
+        "sha256": "CC76A3B4C2CD0A96EF54973B99477108C81092CDAA918F0391EEDBAE6084A2D3",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-2.txt",
+        "bytes": 224
+      },
+      {
+        "sha256": "D7009BBCF4BA1A92BCFEDD4EC2DC5931CC6560BA82B77189CEFA9393537F91E4",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-3.txt",
+        "bytes": 1665
+      },
+      {
+        "sha256": "4520AE4141493310151CF4D9FC056D0ABD1A9D665CB1DA22BB449E8BD8BFFE80",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-4.txt",
+        "bytes": 105
+      },
+      {
+        "sha256": "3B929C2C246D7DA40303FEAE49F79E1D30B04B079114DC85BE90B4D516222F24",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-5.txt",
+        "bytes": 248
+      },
+      {
+        "sha256": "F8D637C52D2FC8EEE945698ED518AFCEAC3E4424CC5F70AB40D5D84F79F7735F",
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-万能过左峰公式-1.txt",
+        "bytes": 1774
+      }
+    ],
+    "corpusBlocks": 23,
+    "formulaFiles": 6
+  },
+  "readonlyReview": {
+    "source": "reviewer and root coordination messages; full report maintained by root",
+    "reviewer": "/root/docs_audit",
+    "important": 0,
+    "confirmed": [
+      "full npm test exit0 and3023 total",
+      "both final no-T mutations fail at grandchild-alive assertions",
+      "production bytes restored exactly"
+    ],
+    "cacheFilesVerified": 77,
+    "critical": 0,
+    "report": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\RUNTIME-CANCEL-02-review\\review-runtime.md"
+  },
+  "evidenceEncoding": {
+    "firstCommitAttemptExit": 1,
+    "reason": "unchanged original machine logs rejected by pre-commit whitespace check",
+    "rawCachePreserved": true,
+    "encoding": "base64",
+    "entries": [
+      {
+        "encodedBytes": 9352,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-health-20261117-local\\failure-excerpts.log",
+        "roundTripVerified": true,
+        "decodedBytes": 7012,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/historical-failures.txt.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/historical-failures.txt",
+        "decodedSha256": "A3A7E28F068D0ECFC22E1336E7377AB8B56BE9C5D082A19D70AC8C1951CE6837",
+        "encodedSha256": "C64BA054C9F0F020FB76A0C042164472703246307557F112B16EB6F6368E0134"
+      },
+      {
+        "encodedBytes": 360,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-desktop-restored.log",
+        "roundTripVerified": true,
+        "decodedBytes": 269,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-desktop-restored.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-desktop-restored.log",
+        "decodedSha256": "2DEA630906199AEE867CC2C2676647E8231C8E8C5989179411E2BFEC3DAF8F78",
+        "encodedSha256": "3C02118F991BAF496B716744BCAF07C52792AA6457DC054CCD8CCDF505E44ACF"
+      },
+      {
+        "encodedBytes": 368,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-restored.log",
+        "roundTripVerified": true,
+        "decodedBytes": 275,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-restored.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-restored.log",
+        "decodedSha256": "16608A5285D01D21F12C6741D0B2CD37E488809CFF8AE794A5D73705EA2A13E1",
+        "encodedSha256": "E447E38ECE1E10CB071762D3DC2F8B1BA8766EE949120FDF0E5E01E6A4CDF9D2"
+      },
+      {
+        "encodedBytes": 368,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec-02.log",
+        "roundTripVerified": true,
+        "decodedBytes": 275,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec-02.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec-02.log",
+        "decodedSha256": "D0C4EEBF068C051D2BDA82DDFFFCB814FDC769BA832595F78C142F223E304886",
+        "encodedSha256": "C50DDF0E0D874489EE2BA93FA7614506A58315D9523727825920643AF9A6E489"
+      },
+      {
+        "encodedBytes": 1508,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\green-runtime-spec.log",
+        "roundTripVerified": true,
+        "decodedBytes": 1131,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/green-runtime-spec.log",
+        "decodedSha256": "9E2914B4BE7FE256F99DFEAD24BA83FA3C0CCD72FDAA67145CCDA2A1F187F62F",
+        "encodedSha256": "FDD6D2BEA8A4BA3B7EA617BBFBB2D6A4659FA4EE81F6AEFFF13C07118050E2B7"
+      },
+      {
+        "encodedBytes": 2056,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached-02.log",
+        "roundTripVerified": true,
+        "decodedBytes": 1541,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached-02.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached-02.log",
+        "decodedSha256": "065405E0DFA62BD3F30128DC7EFCC291E6F76EEB2DCD97A399E80CCC2AE880CC",
+        "encodedSha256": "0E1183A1ED355CC225378ED3078C804E976988874B9C8186BC7FFB24AE34FE1F"
+      },
+      {
+        "encodedBytes": 1676,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-desktop-no-tree-detached.log",
+        "roundTripVerified": true,
+        "decodedBytes": 1256,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-desktop-no-tree-detached.log",
+        "decodedSha256": "D570D2FE8854762065A81A0F540681CB7A37111AEFD8625004E389B747E16746",
+        "encodedSha256": "A652EA16DC69E09EAB4BDB4CC90978D29939E0B3ED57D9978654578BD0E1EC41"
+      },
+      {
+        "encodedBytes": 2664,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree-detached.log",
+        "roundTripVerified": true,
+        "decodedBytes": 1998,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree-detached.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree-detached.log",
+        "decodedSha256": "4351426A218757B4ABF52980A4AD52598F58574431EA9378E9D728F5976E00D8",
+        "encodedSha256": "E29DE4F1C6963D9AA3A2D1992E3122B50755387160B5F19E88558FE8EB78F276"
+      },
+      {
+        "encodedBytes": 384,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\mutant-runtime-no-tree.log",
+        "roundTripVerified": true,
+        "decodedBytes": 287,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/mutant-runtime-no-tree.log",
+        "decodedSha256": "9F703F1BD3842D31BABD6FE67E7EC1B784BC981F884A3379936BCEBB281545B7",
+        "encodedSha256": "614D160F52EF820E21E377F17D44A4CBD5167CBFB41F40291689396D2136C94F"
+      },
+      {
+        "encodedBytes": 20188,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\npm-test-final.log",
+        "roundTripVerified": true,
+        "decodedBytes": 15139,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/npm-test-final.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/npm-test-final.log",
+        "decodedSha256": "56EE116E3CF6334838C86332CA93B6B0201B1BDE998E038899E49763BBEF33D1",
+        "encodedSha256": "A5C888F86243EA90CED594B6E21457EA7C108C6016CED447EF5183AAB122858E"
+      },
+      {
+        "encodedBytes": 364,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.log",
+        "roundTripVerified": true,
+        "decodedBytes": 271,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-desktop.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-desktop.log",
+        "decodedSha256": "F853F105B6E8544DBB209656F37F530F682EA65870C6549E954CED9F0E127E80",
+        "encodedSha256": "01E9D80B4CBD1EACC3B3BE99B1724AC26ADF388749330A5527B7B7CC2CF30187"
+      },
+      {
+        "encodedBytes": 384,
+        "originalCachePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.log",
+        "roundTripVerified": true,
+        "decodedBytes": 286,
+        "encodedRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-runtime.log.raw.b64",
+        "originalRepoPath": "docs/verification/2026-11/RUNTIME-CANCEL-02/runs/red-original-runtime.log",
+        "decodedSha256": "1CA5DE44876B6B3EFE569954D34799723748865B24DB5EACC0A2AAF59B61CCF4",
+        "encodedSha256": "114A7C0C356C640CBD5AF57CC8112234145516D1535F3E14C1A0E8956D95FCC8"
+      }
+    ],
+    "completeDiffCheckBeforeEncodingExit": 2,
+    "textFormat": "single ASCII line without final newline, stable under Git EOL conversion",
+    "completeDiffCheckAfterEncodingExit": 0,
+    "hooksBypassed": false
+  }
+}

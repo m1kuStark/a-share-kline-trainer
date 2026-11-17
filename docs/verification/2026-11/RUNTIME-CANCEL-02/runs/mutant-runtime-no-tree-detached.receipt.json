@@ -1,0 +1,10 @@
+{
+  "command": "runtime cancellation detached fixture with /T removed",
+  "productionBefore": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC",
+  "elapsedMs": 10445.9834,
+  "log": "mutant-runtime-no-tree-detached.log",
+  "exit": 1,
+  "restoredByteExact": true,
+  "started": "2026-11-18T00:44:54.2550589+08:00",
+  "productionAfter": "76458A4B5D9C85913D371D0255A1D4382B026FC56162FD0B62DB96F3DCD7A6CC"
+}

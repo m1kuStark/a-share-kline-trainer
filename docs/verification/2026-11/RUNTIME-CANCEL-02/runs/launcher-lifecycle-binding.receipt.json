@@ -1,0 +1,5 @@
+{
+  "log": "launcher-lifecycle-binding.log",
+  "command": "check-binding --strict launcher-lifecycle.yaml",
+  "exit": 0
+}

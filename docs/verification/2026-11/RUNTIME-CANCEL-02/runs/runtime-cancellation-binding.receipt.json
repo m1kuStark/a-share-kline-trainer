@@ -1,0 +1,5 @@
+{
+  "log": "runtime-cancellation-binding.log",
+  "exit": 3,
+  "command": "check-binding --strict runtime-cancellation.yaml"
+}

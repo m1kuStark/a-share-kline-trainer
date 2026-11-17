@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadConfig } from '../src/config.js'
 import { resolveConfig } from 'vite'
 import { DatabaseSync } from 'node:sqlite'
-import { cp, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { access, cp, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -12,6 +13,7 @@ vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 })
 
 const roots: string[] = []
 const activeServers: { stop(): Promise<void> }[] = []
+const activeCommands: { stop(): Promise<void> }[] = []
 async function temporaryRoot() {
   const root = await mkdtemp(join(tmpdir(), 'trainer-runtime-'))
   roots.push(root)
@@ -20,6 +22,7 @@ async function temporaryRoot() {
 
 afterEach(async () => {
   vi.unstubAllEnvs()
+  for (const command of activeCommands.splice(0)) await command.stop()
   for (const server of activeServers.splice(0)) await server.stop()
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true })
 })
@@ -161,19 +164,71 @@ describe('runtime processes', () => {
     const { createRun, runNode } = await import('../../scripts/runtime/run.js')
     const run = await createRun(await temporaryRoot(), 'verify')
     const controller = new AbortController()
+    const reason = new Error('abort requested')
     const logPath = join(run.artifactsDir, 'cancel.log')
-    const running = runNode(run, ['-e', 'console.log("child alive");setInterval(() => {},1000)'], 'cancel.log', { signal: controller.signal })
+    const pidPath = join(run.artifactsDir, 'command-pids.json')
+    const grandchildReady = join(run.artifactsDir, 'grandchild.ready')
+    const grandchildScript = `require('node:fs').writeFileSync(${JSON.stringify(grandchildReady)}, String(process.pid));setInterval(() => {},1000)`
+    const script = [
+      'const { spawn } = require("node:child_process")',
+      // Detached matches the legacy launcher service and survives a root-only kill.
+      `const child = spawn(process.execPath, ['-e', ${JSON.stringify(grandchildScript)}], { cwd: process.env.TRAINER_VERIFY_DIR, detached: true, windowsHide: true, stdio: 'ignore' })`,
+      `require('node:fs').writeFileSync(${JSON.stringify(pidPath)}, JSON.stringify({ parent: process.pid, grandchild: child.pid }))`,
+      'console.log("child alive");setInterval(() => {},1000)',
+    ].join('\n')
+    // A separate sibling must survive cancellation of the command's tree.
+    const sentinel = spawn(process.execPath, ['-e', 'setInterval(() => {},1000)'], { cwd: run.root, windowsHide: true, stdio: 'ignore' })
+    const sentinelClosed = new Promise<void>(resolve => sentinel.once('close', () => resolve()))
+    const ownedPids = new Set<number>(sentinel.pid ? [sentinel.pid] : [])
+    const alive = (pid: number) => {
+      try { process.kill(pid, 0); return true } catch (error) { return (error as NodeJS.ErrnoException).code === 'EPERM' }
+    }
+    const readPids = async () => {
+      const pids = JSON.parse(await readFile(pidPath, 'utf8')) as { parent: number; grandchild: number }
+      for (const pid of [pids.parent, pids.grandchild]) if (Number.isInteger(pid) && pid > 0) ownedPids.add(pid)
+      return pids
+    }
+    const running = runNode(run, ['-e', script], 'cancel.log', { signal: controller.signal })
     running.catch(() => {})
+    let cleanup: Promise<void> | undefined
+    const stop = () => cleanup ??= (async () => {
+      if (!controller.signal.aborted) controller.abort(new Error('test cleanup'))
+      await running.catch(() => {})
+      await readPids().catch(() => {})
+      for (const pid of ownedPids) if (alive(pid)) { try { process.kill(pid, 'SIGKILL') } catch { /* already exited */ } }
+      const deadline = Date.now() + 5_000
+      while ([...ownedPids].some(alive) && Date.now() < deadline) await delay(25)
+      if ([...ownedPids].some(alive)) throw new Error('Owned cancellation fixture did not exit during cleanup')
+      const closed = await Promise.race([sentinelClosed.then(() => true), delay(5_000).then(() => false)])
+      if (!closed) throw new Error('Owned cancellation sentinel did not close during cleanup')
+    })()
+    // Vitest timeouts do not cancel an in-flight Promise. Drain it before rm.
+    activeCommands.push({ stop })
     try {
       const deadline = Date.now() + 8_000
       while (Date.now() < deadline) {
-        if ((await readFile(logPath, 'utf8').catch(() => '')).includes('child alive')) break
+        if ((await readFile(logPath, 'utf8').catch(() => '')).includes('child alive')
+          && await readFile(grandchildReady, 'utf8').catch(() => '')) break
         await delay(25)
       }
       expect(await readFile(logPath, 'utf8')).toContain('child alive')
-      controller.abort(new Error('abort requested'))
+      const pids = await readPids()
+      expect(Number.isInteger(pids.parent) && pids.parent > 0).toBe(true)
+      expect(Number.isInteger(pids.grandchild) && pids.grandchild > 0).toBe(true)
+      expect(alive(pids.parent)).toBe(true)
+      expect(alive(pids.grandchild)).toBe(true)
+      expect(sentinel.pid && alive(sentinel.pid)).toBe(true)
+      const cancelledAt = Date.now()
+      controller.abort(reason)
       await expect(running).rejects.toThrow(/abort/i)
+      await expect(running).rejects.toBe(reason)
       expect(await readFile(logPath, 'utf8')).toContain('child alive')
+      expect(alive(pids.parent), 'owned parent must exit before cancellation returns').toBe(false)
+      expect(alive(pids.grandchild), 'owned grandchild must exit before cancellation returns').toBe(false)
+      expect(sentinel.pid && alive(sentinel.pid), 'tree-external sibling must survive').toBe(true)
+      await rm(run.runDir, { recursive: true })
+      await expect(access(run.runDir)).rejects.toMatchObject({ code: 'ENOENT' })
+      console.info('Owned cancellation receipt:', { pids, elapsedMs: Date.now() - cancelledAt, logRetained: true, directoryReleased: true, sentinelAlive: true })
     } catch (error) {
       if (!controller.signal.aborted) controller.abort(new Error('test cleanup'))
       const failure = await running.catch(reason => reason)
@@ -184,8 +239,10 @@ describe('runtime processes', () => {
     } finally {
       if (!controller.signal.aborted) controller.abort(new Error('test cleanup'))
       await running.catch(() => {})
+      await stop()
     }
-  }, 15_000)
+  // 8s readiness + 20s taskkill + two 5s close checks + assertion margin.
+  }, 45_000)
 
   it('builds and serves two concurrent runs without replacing production assets or sharing ports/databases', async () => {
     const { createRun, buildRun, startServer, readRun } = await import('../../scripts/runtime/run.js')
