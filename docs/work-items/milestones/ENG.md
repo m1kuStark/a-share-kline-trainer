@@ -22,10 +22,12 @@
   ],
   "verification_refs": [
     "docs/verification/2026-11/ENG-HEALTH-02/README.md",
-    "docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"
+    "docs/verification/2026-11/ENG-PLAN-01/reconciliation.md",
+    "docs/verification/2026-11/RUNTIME-CANCEL-02/validation.md",
+    "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "ENG-PLAN-01阶段0已按用户2026-11-18批准范围做静态对账；根控制状态及最终status由集成人单写。接续RUNTIME-CANCEL-02和独立DEP-SEC-MINIMATCH-01，再组织M9使用链路与整批候选；不据本轮文档交付推断产品通过或授权发布。"
+  "next_action": "ENG-PLAN-01已由PR50合入b1ff3e9；RUNTIME-CANCEL-02由PR51合入f4bbc6a，CI首轮设置用例超时及同提交第二次完整通过均保留。依赖安全维护本地验证和独立审查通过，完成其独立PR/CI和告警核对，再组织M9整批候选。不据工程测试推断人工验收或授权发布。"
 }
 ```
 

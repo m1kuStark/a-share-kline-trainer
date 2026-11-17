@@ -1,0 +1,14 @@
+{
+  "npm": "11.12.1",
+  "buildServerReceipt": "build-server-baseline.receipt.json",
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\runtime-cancel-02\\a-share-kline-trainer",
+  "node": "v24.15.0",
+  "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+  "TRAINER_DATA_DIR": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\full-test-isolated\\data",
+  "base": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+  "OPEN_BROWSER": "0",
+  "command": "npm test",
+  "started": "2026-11-18T00:49:38.8258866+08:00",
+  "TRAINER_DB": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\full-test-isolated\\trainer.sqlite"
+}

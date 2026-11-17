@@ -1,0 +1,11 @@
+{
+  "executed": false,
+  "reason": "blocked by policy",
+  "action": "recursive deletion of two known failed test fixtures",
+  "retriedWithAlternateMechanism": false,
+  "paths": [
+    "C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-runtime-H1KS7d",
+    "C:\\Users\\STARK_~1\\AppData\\Local\\Temp\\trainer-port-tree-UpFHFj"
+  ],
+  "additionalReasonProvided": false
+}

@@ -1,0 +1,1 @@
+{"command":"npx --no-install vitest run --config server/vitest.config.ts server/test/runtime-isolation.test.ts -t cancels-an-owned-child","exit":0,"elapsedSeconds":13.4025497,"log":"C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-runtime.log"}

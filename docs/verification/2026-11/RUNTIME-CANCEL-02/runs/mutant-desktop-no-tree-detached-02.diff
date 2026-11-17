@@ -1,0 +1,13 @@
+diff --git a/desktop/src/port-conflict.ts b/desktop/src/port-conflict.ts
+index 4e7b1eb..2b00e6b 100644
+--- a/desktop/src/port-conflict.ts
++++ b/desktop/src/port-conflict.ts
+@@ -253,7 +253,7 @@ export function taskkillTreeKillWindows(pid: number): Promise<TreeKillOutcome> {
+     })
+   }
+   return new Promise(resolve => {
+-    const child = spawn('taskkill', ['/PID', String(pid), '/T', '/F'], {
++    const child = spawn('taskkill', ['/PID', String(pid), '/F'], {
+       stdio: ['ignore', 'pipe', 'pipe'],
+       windowsHide: true,
+     })

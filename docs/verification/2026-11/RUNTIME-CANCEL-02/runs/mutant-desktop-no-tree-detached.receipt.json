@@ -1,0 +1,10 @@
+{
+  "productionBefore": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385",
+  "exit": 1,
+  "started": "2026-11-18T00:45:38.7264604+08:00",
+  "log": "mutant-desktop-no-tree-detached.log",
+  "command": "desktop tree detached fixture with /T removed",
+  "elapsedMs": 13346.878,
+  "restoredByteExact": true,
+  "productionAfter": "B5A9996ADF6CAFC202DE7BC13167425794AE7B1D014732359D0638D5FC10E385"
+}

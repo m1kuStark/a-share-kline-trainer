@@ -1,0 +1,1 @@
+{"command":"npx --no-install vitest run --config desktop/vitest.config.ts desktop/test/port-tree-kill.test.ts","exit":0,"elapsedSeconds":16.0383636,"log":"C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\runtime-cancel-02-20261118\\red-original-desktop.log"}

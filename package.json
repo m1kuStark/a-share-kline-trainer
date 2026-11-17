@@ -70,7 +70,13 @@
     "esbuild": "^0.28.2"
   },
   "overrides": {
-    "shell-quote": "1.12.0"
+    "shell-quote": "1.12.0",
+    "app-builder-lib@26.18.0": {
+      "minimatch@^10.2.5": "11.0.9"
+    },
+    "@electron/universal@2.0.3": {
+      "minimatch@^9.0.3": "11.0.9"
+    }
   },
   "license": "MIT",
   "repository": {
