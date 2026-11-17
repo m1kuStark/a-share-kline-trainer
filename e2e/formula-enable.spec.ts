@@ -70,12 +70,12 @@ async function chartLines(page: Page, id: number): Promise<Array<{ name: string;
   }, id)
 }
 
-test('公式启停：自定义创建停用、开启与停用保存后刷新仍保持', async ({ page }) => {
+async function exerciseCustom(page: Page, placement: 'main' | 'sub'): Promise<void> {
   let { dialog, section } = await openSettings(page)
   await section.getByRole('button', { name: '新建', exact: true }).click()
   await section.getByLabel('公式名称', { exact: true }).fill(CUSTOM)
   await section.getByLabel('公式源码', { exact: true }).fill('MA5:MA(CLOSE,5);')
-  await section.getByLabel('显示位置').selectOption('sub')
+  await section.getByLabel('显示位置').selectOption(placement)
   await section.getByLabel('在图表启用', { exact: true }).uncheck()
   const createdResponse = page.waitForResponse(response => response.url().endsWith('/api/formulas') && response.request().method() === 'POST')
   await section.getByRole('button', { name: '保存新公式' }).click()
@@ -83,6 +83,7 @@ test('公式启停：自定义创建停用、开启与停用保存后刷新仍�
   expect(created.status()).toBe(201)
   const saved = await created.json() as Formula
   expect(saved.enabled).toBe(false)
+  expect(saved.placement).toBe(placement)
   expect(created.request().postDataJSON().enabled).toBe(false)
   await expect(section.locator('.settings-saved')).toHaveText('已保存新公式')
   await dialog.getByRole('button', { name: '关闭', exact: true }).click()
@@ -99,7 +100,8 @@ test('公式启停：自定义创建停用、开启与停用保存后刷新仍�
   await expect.poll(() => chartLines(page, saved.id)).toHaveLength(1)
   await expect.poll(async () => (await chartLines(page, saved.id)).map(line => line.hasResult)).toEqual([true])
   expect((await chartLines(page, saved.id))[0]).toMatchObject({ hasResult: true })
-  expect((await chartLines(page, saved.id))[0].paneId).not.toBe('candle_pane')
+  if (placement === 'main') expect((await chartLines(page, saved.id))[0].paneId).toBe('candle_pane')
+  else expect((await chartLines(page, saved.id))[0].paneId).not.toBe('candle_pane')
 
   await page.reload()
   await expect.poll(() => chartLines(page, saved.id)).toHaveLength(1)
@@ -114,6 +116,17 @@ test('公式启停：自定义创建停用、开启与停用保存后刷新仍�
   await page.reload()
   expect((await formulas(page)).find(item => item.id === saved.id)?.enabled).toBe(false)
   await expect.poll(() => chartLines(page, saved.id)).toEqual([])
+  ;({ section } = await openSettings(page))
+  await section.getByLabel('公式列表').getByRole('button', { name: new RegExp(CUSTOM) }).click()
+  await expect(section.getByLabel('在图表启用', { exact: true })).not.toBeChecked()
+}
+
+test('公式启停：自定义创建停用、开启与停用保存后刷新仍保持', async ({ page }) => {
+  await exerciseCustom(page, 'sub')
+})
+
+test('公式启停：自定义主图创建停用、开启与停用保存后刷新仍保持', async ({ page }) => {
+  await exerciseCustom(page, 'main')
 })
 
 async function exerciseBuiltin(page: Page, preset: { name: string; placement: 'main' | 'sub'; lines: number }): Promise<void> {
@@ -187,5 +200,13 @@ test('公式启停：保存失败显示错误并清除上次成功提示', async
   await section.getByRole('button', { name: '保存修改' }).click()
   await expect(section.getByRole('alert')).toContainText('保存故障')
   await expect(section.locator('.settings-saved')).toHaveCount(0)
+  expect((await formulas(page)).find(item => item.id === saved.id)?.enabled).toBe(true)
+  await page.unroute('**/api/formulas/' + saved.id)
+  await page.reload()
+  await expect.poll(() => chartLines(page, saved.id)).toHaveLength(1)
+  const reopened = await openSettings(page)
+  await reopened.section.getByLabel('公式列表').getByRole('button', { name: new RegExp(CUSTOM) }).click()
+  await expect(reopened.section.getByLabel('在图表启用', { exact: true })).toBeChecked()
+  await expect(reopened.section.locator('.settings-saved')).toHaveCount(0)
   expect((await formulas(page)).find(item => item.id === saved.id)?.enabled).toBe(true)
 })

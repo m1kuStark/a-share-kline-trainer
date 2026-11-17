@@ -1,0 +1,73 @@
+schema_version: "harness-matrix-v2"
+module: "formula-ui"
+spec_source: "M9-04B（docs/work-items/tasks/M9-04B.md / docs/proposals/M9-04-formula-product-ui.md；用户 2026-11-16 默认方案拍板）"
+note: "设置面板公式指标分栏：列表/编辑/校验反馈/粘贴导入/预览/删除；只读展示，不写训练/下单。"
+axes:
+  placement: ["main", "sub"]
+  source: ["tdx-code", "training"]
+  state: ["valid", "invalid", "empty"]
+rows:
+  - id: "FORMULA-UI-CUSTOM-ENABLE"
+    ears: "WHEN 用户保存自定义公式的启用或停用状态 THE SYSTEM SHALL 将该状态持久化，刷新后保持，并按预设位置显示或移除图表公式"
+    axes: {placement: "main|sub"}
+    oracle: "M9-ENABLE-01；2026-11-18用户批准首批启停修复；真实UI开启/保存/刷新/停用和API持久状态对应。"
+    test_ids:
+      - "e2e/formula-enable.spec.ts::公式启停：自定义创建停用、开启与停用保存后刷新仍保持"
+      - "e2e/formula-enable.spec.ts::公式启停：自定义主图创建停用、开启与停用保存后刷新仍保持"
+    status: "covered"
+  - id: "FORMULA-UI-BUILTIN-ENABLE"
+    ears: "WHEN 用户只切换内置示例的启用状态并保存 THE SYSTEM SHALL 保存成功且刷新后保持，自动按预设主图或副图显示，同时继续禁止修改内置名称和源码"
+    axes: {placement: "main|sub"}
+    oracle: "docs/verification/2026-11/ENG-PLAN-01/approval.md 用户原话与批准方案；启停请求不携带受保护字段，服务端保护不放开。"
+    test_ids:
+      - "e2e/formula-enable.spec.ts::公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用"
+      - "e2e/formula-enable.spec.ts::公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用"
+      - "e2e/formula-enable.spec.ts::公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用"
+      - "server/test/formulas/formula-storage.test.ts::内置公式不可改名/改源码/删除（M9-04D 预留保护）"
+      - "server/test/formula-seed.test.ts::内置公式不可删除/改源码（服务端 403），可禁用"
+    status: "covered"
+  - id: "FORMULA-UI-BUILTIN-DEFAULT-OFF"
+    ears: "WHEN 首次初始化三个内置示例公式 THE SYSTEM SHALL 默认停用，用户逐个开启后无需额外挂载即可在预设位置显示"
+    axes: {placement: "main|sub"}
+    oracle: "用户2026-11-18明确接受三示例默认停用与自动预设挂载；新库种子默认值及真实设置/训练页验证。"
+    test_ids:
+      - "server/test/formula-seed.test.ts::空库幂等写入 3 个内置示例，重复 seed 不重复"
+      - "e2e/formula-enable.spec.ts::公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用"
+      - "e2e/formula-enable.spec.ts::公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用"
+      - "e2e/formula-enable.spec.ts::公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用"
+    status: "covered"
+  - id: "FORMULA-UI-SAVE-FAILURE"
+    ears: "WHEN 公式保存被服务端拒绝 THE SYSTEM SHALL 显示失败原因，不报告保存成功，也不将未保存的启停状态冒充为已持久化"
+    axes: {state: "invalid"}
+    oracle: "M9启停修复的失败诚实性；通过HTTP拒绝与UI提示/重新加载持久值独立核验。"
+    test_ids:
+      - "e2e/formula-enable.spec.ts::公式启停：保存失败显示错误并清除上次成功提示"
+    status: "covered"
+  - id: "FORMULA-UI-ENTRY"
+    ears: "WHEN 用户在设置面板查看类别导航 THE SYSTEM SHALL 提供「公式指标」分栏并可进入（与既有分栏同导航）"
+    axes: {placement: "main|sub"}
+    oracle: "E2E：打开训练默认设置→点击「公式指标」→区域可见（含新建按钮与公式列表）"
+    test_ids:
+      - "e2e/formula-manager.spec.ts::公式指标：新建/校验/预览/保存持久化/删除（副图指标）"
+    status: "covered"
+  - id: "FORMULA-UI-MANAGE"
+    ears: "WHEN 用户新建/编辑/保存公式并关闭重开设置 THE SYSTEM SHALL 在列表中保留公式（SQLite 持久化），删除需二次确认且不影响其他公式"
+    axes: {placement: "main|sub"}
+    oracle: "E2E：新建 E2E_MA5→保存→关闭重开仍在→二次确认删除→列表不再包含；服务端 409/403 错误显示人话"
+    test_ids:
+      - "e2e/formula-manager.spec.ts::公式指标：新建/校验/预览/保存持久化/删除（副图指标）"
+    status: "covered"
+  - id: "FORMULA-UI-VALIDATE-FEEDBACK"
+    ears: "WHEN 用户校验公式 THE SYSTEM SHALL 显示中文错误/行号、未来函数显式标记与全角标点告警，且校验失败不保存"
+    axes: {state: "valid|invalid"}
+    oracle: "E2E：语法错显示「语法错误」；BACKSET 显示未来函数标记；全角逗号显示告警；单行粘贴版校验通过"
+    test_ids:
+      - "e2e/formula-manager.spec.ts::公式指标：中文错误/未来函数标记/全角告警/中文名单行导入"
+    status: "covered"
+  - id: "FORMULA-UI-PREVIEW"
+    ears: "WHEN 用户点击预览 THE SYSTEM SHALL 以只读 evaluate 返回输出线并绘制 SVG 曲线，标注数据来源（无训练时不复权日线）"
+    axes: {source: "tdx-code|training"}
+    oracle: "E2E：预览后 SVG 可见（aria-label 含公式预览曲线）、图例含线名、区域文本含数据来源说明"
+    test_ids:
+      - "e2e/formula-manager.spec.ts::公式指标：新建/校验/预览/保存持久化/删除（副图指标）"
+    status: "covered"

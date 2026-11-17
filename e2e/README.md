@@ -46,4 +46,4 @@
 
 真实鼠标/键盘与只读hooks纪律见[断言](docs/assertions.md)、[AGENTS](AGENTS.md)。主代理视觉检查后将选定证据归档，不能只凭浏览器命令通过替代人工阅读截图或用户验收。
 
-公式启停后继用例见[formula-enable](formula-enable.spec.ts)。2026-11-18最后一轮5项中4通过/1失败（QINIU DEA无有效值）；等待独立EMA修复范围，不代表M9整批已通过，完整记录见[M9证据](../docs/verification/2026-11/M9-ENABLE-01/README.md)。
+公式启停后继用例见[formula-enable](formula-enable.spec.ts)。2026-11-18集成PR54的EMA修复后，启停专项6项通过，覆盖自定义主/副图、三个内置和保存失败后刷新；原4通过/1失败的DEA记录保留。不代表M9整批已通过，完整门禁、生产包与用户验收见[M9证据](../docs/verification/2026-11/M9-ENABLE-01/README.md)。

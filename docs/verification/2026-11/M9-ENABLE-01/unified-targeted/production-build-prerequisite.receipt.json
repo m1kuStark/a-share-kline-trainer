@@ -1,0 +1,23 @@
+{
+  "step": "production-build-prerequisite",
+  "program": "npm.cmd",
+  "args": [
+    "run",
+    "build"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:09:25.5178965Z",
+  "endedAt": "2026-11-17T19:09:41.6276352Z",
+  "nativeExitCode": 0,
+  "head": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\production-build-prerequisite.log",
+  "bytes": 1333,
+  "sha256": "17aa2331247926bf339f82164a3c5ded85d9c5543eedb2aee56f7c54ea0a94e2",
+  "environment": {
+    "TRAINER_CONTROL_ROOT": null,
+    "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式"
+  },
+  "exitCapture": "LASTEXITCODE immediately after native command, no pipeline"
+}

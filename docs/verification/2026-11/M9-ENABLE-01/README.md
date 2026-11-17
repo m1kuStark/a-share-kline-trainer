@@ -2,7 +2,9 @@
 
 批准范围见[首批批准记录](../ENG-PLAN-01/approval.md)，产品口径见[公式规格](../../../specs/formulas.md)。本页记录工程检查，不代替 M9 用户整批验收或发布许可。
 
-当前接续：用户随后已批准独立EMA修复，范围见[批准记录](ema-scope-approval.md)，当前任务active。下文blocked与待拍板描述是批准前保留的验证快照；整批仍未通过。
+当前接续：用户已批准的独立EMA修复经PR54合入main58ba0ff，并集成到M9提交3ec3d730。统一候选首次公式启停专项5/5通过；补充自定义主图与保存失败后刷新后，新一轮6/6通过，两轮原生exit0。整批门禁仍待执行。下文blocked与待拍板描述是批准前保留的验证快照，不代表当前仍待同一许可。
+
+本轮另发现并精确清理共享控制台账中的测试夹具投影，保留全部真实记录，见[恢复记录](control-recovery/README.md)。恢复未触及个人训练数据；后续单测与控制目录隔离。
 
 ## 首轮 RED
 
@@ -36,7 +38,7 @@ run 为 `run-59e8bc10-9892-412f-9a5c-4fda6828f7d4`；完整错误和原生日志
 
 本轮最后失败只有error-context，没有QINIU失败截图。两张final-attempt截图分别属于MA/WEEK成功阶段，不能充当QINIU视觉通过证据。新增等待保留长度、有效值、pane、刷新、停用全部断言；未用skip或降低hasResult。
 
-## 当前阻断与待审范围
+## 批准前的阻断与待审范围快照
 
 [保存修复五维审查](review/saving-fix-review.md)未发现新增C/I/M，完整交付仍有EMA I1。公共EMA在绝对period-1处对含前导NaN的窗口播种，导致DEA永久NaN、B1漏信号；独立数值诊断和可审阅最小候选见[诊断报告](review/ema-diagnosis.md)。候选补丁仅归档，未应用。
 
