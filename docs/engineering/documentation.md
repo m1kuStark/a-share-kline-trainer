@@ -33,7 +33,7 @@ npm run docs:status -- --check
 
 check校验当前链接/锚点、任务元信息/ID/引用、状态漂移及规范命名；历史旧引用只警示，当前入口不得断链。impact包含未跟踪源码，检查路径范围和文档影响。status只改标记生成区；worker通过统一状态 API 交接真实结果并更新自己的静态契约和证据索引，集成人对账后生成全局页，不各自改全局进度。
 
-这些检查已接入 `verify:baseline`；它不是远端分支保护，当前未启用自动CI拦截。审核仍需判断文字与证据是否真实，脚本不能证明用户同意或测试充分。工具实现与边界见[脚本](../../scripts/README.md)。
+这些检查已接入 `verify:baseline`；远端 main 已启用 Ruleset 与 `docs` / `verify` / `pr-policy` required checks，实际 CI 检查范围见 [CI 门禁](ci.md)。审核仍需判断文字与证据是否真实，脚本不能证明用户同意或测试充分。工具实现与边界见[脚本](../../scripts/README.md)。
 
 ## 验证与提交的先后
 

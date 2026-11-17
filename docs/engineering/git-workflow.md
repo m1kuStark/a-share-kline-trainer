@@ -8,7 +8,7 @@
 2. **所有变更走 PR**：main 禁止直接 push、force push 和删除；required checks 见 [CI 门禁](ci.md)。
 3. **一个任务 = 一个分支 `task/<ID>` = 至多一个 worktree**：分支 ID 与任务卡一致，合并后立即删除。
 4. **提交可追溯**：Conventional Commits + 维护者任务分支的 `Task: <ID>` trailer；发布只从 main 打签名 tag。
-5. **push ≠ 发布**：main 持续推送；只有 Release / 更新 feed 需要等用户验收。不要再用"验收前不 push"把本地和远端拆成两个项目。
+5. **push ≠ 发布**：任务提交持续推送，经 PR 合入 main；只有 Release / 更新 feed 需要等用户验收。不要再用"验收前不 push"把本地和远端拆成两个项目。
 6. **不 rebase 已推送历史**：修正用新提交或 `git revert`；共享历史禁止 `reset --hard`。
 7. **短期分支**：一个任务一个分支，不长期养分支；审查/对照 worktree 的生命周期等于一次审查。
 
@@ -44,7 +44,6 @@ gh pr ready
 gh pr merge --squash --delete-branch
 git -C $repo switch main
 git -C $repo pull --ff-only
-git -C $repo push origin main
 ```
 
 合并后回填任务卡 `integration_ref`（合并提交 SHA）和验证记录；状态变化后运行 `npm run docs:status`，提交前 `npm run docs:status -- --check`。
@@ -58,7 +57,7 @@ git -C $repo push origin main
 
 ## 保护与审计
 
-- main Ruleset：Require a pull request、required checks `docs` / `verify` / `pr-policy`、block force pushes、restrict deletions；签名要求（required signatures）在 SSH 签名公钥注册并验证后再启用。
+- main Ruleset 已启用：Require a pull request、required checks `docs` / `verify` / `pr-policy`、block force pushes、restrict deletions、required signatures；无 bypass actor。
 - Secret scanning + push protection；自动删除头分支；**required signatures 已启用**（2026-11-11，SSH 签名，未签名提交不能合入）。
 - 每个 commit 可追溯：`Task` trailer → PR → 合并提交 → 任务卡 `integration_ref` → 签名 tag/Release → 验证记录。
 - 每周体检：`git fetch -p`、`git branch -vv`、`git worktree list`、`gh pr list`、`gh release list`、main CI 状态、Dependabot/Scorecard。

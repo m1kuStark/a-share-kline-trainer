@@ -1,10 +1,12 @@
 # 验证与验收证据
 
-最新公开交付：[v1.2.7 替换发布](2026-10/V1.2.7-published/README.md)与[用户验收](2026-10/V1.2.7-user-acceptance/README.md)。发布后源码检查及展示整理见 [GITHUB-HEALTH-01](2026-10/GITHUB-HEALTH-01/report.md)；接续本会话见 [2026-10-04 交接](2026-10/handover-20261004-session/README.md)。旧版本记录保留历史适用范围，不能代替当前包来源或验证结论。
+最近一次工程健康核对见 [ENG-HEALTH-02（2026-11-17）](2026-11/ENG-HEALTH-02/README.md)。当前开发沿[状态](../status.md)与对应任务接续；发布状态按[发布协议](../engineering/release.md)核对 GitHub Release、tag 与更新 feed，不能由历史报告标题推断。
+
+[v1.2.7 替换发布](2026-10/V1.2.7-published/README.md)、[用户验收](2026-10/V1.2.7-user-acceptance/README.md)、[GITHUB-HEALTH-01](2026-10/GITHUB-HEALTH-01/report.md)与[2026-10-04 交接](2026-10/handover-20261004-session/README.md)保留各自历史范围，不能代替当前包来源或验证结论。
 
 新记录按`YYYY-MM/任务ID-时间或短标识/`组织；一个run记录一个测试对象，失败与复跑分开。短报告负责结论，result.json负责命令/退出码、环境、提交或工作树指纹、数据范围与附件引用。普通运行临时文件不入Git。
 
-## 当前入口
+## 历史证据入口
 
 - [M5-01开发片交付](2026-09/M5-01/report.md)：应用偏好（自动检查日线数据）与TDX路径设置的服务端模块、设置面板两区块与dataStatus门闩；tdx-path RED先行、定向41/41、全量1194/1199（已知基线失败1＋负载抖动3串行复绿）；api.ts注册与浏览器e2e待集成；含F4归属修正（web Launcher.vue，非launcher.cjs）。
 
@@ -14,7 +16,7 @@
 
 - [TRAIN-02第一片服务端交付](2026-09/TRAIN-02-server/report.md)：范围预览/创建复核/兼容迁移，RED先行与全量874测试；[并发与权息指纹修复](2026-09/TRAIN-02-server/wake02-fix.md)：GPT-WAKE-02两项P2。
 
-- [当前返修交付](2026-09/ACCEPT-01-release/report.md)：完整工程验收通过，已更新7529，待用户验收。
+- [2026-09 返修交付](2026-09/ACCEPT-01-release/report.md)：该轮工程验收与交付记录，具体范围以报告为准。
 
 - [夜间返修与工具核验](2026-09/ACCEPT-01-night/report.md)：日回放、官方CLI资料及多模态实测。
 

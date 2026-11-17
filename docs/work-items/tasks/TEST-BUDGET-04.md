@@ -9,7 +9,7 @@
   "milestone": "ENG",
   "base_commit": "2cc83d9",
   "summary": "main CI 在 2cc83d9 又因 desktop mig-import 用例 5000ms 超时失败；定位到 TEST-BUDGET-03 把 --testTimeout 追加到 npm test 的参数，但嵌套 npm run test:desktop 不会把该 flag 传给 vitest（日志仍是 5000ms）。改为 desktop/vitest.config.ts 显式 testTimeout: 30_000（桌面套件含真实 fs/SQLite/子进程用例），并撤销误导性 CLI flag；断言/用例集合/数据范围不变。",
-  "next_action": "改 desktop config、撤销 runner CLI flag、更新文档与 TEST-BUDGET-03 更正；跑 desktop 套件与门禁后发 PR。",
+  "next_action": "已由 PR #36 合入 main 7895a22；保留现有测试断言与预算，后续 CI 失败按原始日志分诊，不重复执行已完成的实现步骤。",
   "allowed_paths": [
     "desktop/vitest.config.ts",
     "scripts/ci/run-tests-with-retry.mjs",
@@ -36,7 +36,7 @@
     "reason": "测试预算实现方式修正：从 CLI flag 改为 desktop config；需在测试/CI 文档与旧任务证据中更正，避免继续误导。"
   },
   "verification_refs": ["docs/verification/2026-11/TEST-BUDGET-04/README.md"],
-  "integration_ref": null,
+  "integration_ref": "main@7895a224baa77dbed7c539ca146216456a3e44af (PR #36)",
   "acceptance_ref": null
 }
 ```

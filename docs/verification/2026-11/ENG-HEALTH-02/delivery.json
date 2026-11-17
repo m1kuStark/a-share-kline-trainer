@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "task": "ENG-HEALTH-02",
+  "baseCommit": "3b5fb110e506eb2e139f754c966cee3a64f55ea1",
+  "branch": "task/ENG-HEALTH-02",
+  "checkedAt": "2026-11-17T22:35:04.7818037+08:00",
+  "status": "documentation checks passed; existing runtime test failures remain",
+  "changedRuntimePaths": 0,
+  "productBehaviorChanged": false,
+  "releasePerformed": false,
+  "checks": [
+    {
+      "command": "npm run docs:check",
+      "exit": 0,
+      "log": "docs-final-check.log"
+    },
+    {
+      "command": "npm run docs:impact -- --base 3b5fb110e506eb2e139f754c966cee3a64f55ea1 --task ENG-HEALTH-02",
+      "exit": 0,
+      "log": "docs-final-impact.log"
+    },
+    {
+      "command": "npm run docs:status -- --check",
+      "exit": 0,
+      "log": "docs-final-status.log"
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0
+    },
+    {
+      "command": "git diff --cached --check",
+      "exit": 0
+    },
+    {
+      "command": "node scripts/git/check-staged-secrets.mjs",
+      "exit": 0
+    }
+  ],
+  "testResults": "results.json",
+  "failures": "failure-excerpts.txt",
+  "trackingCleanup": "pruned-tracking.json",
+  "userFileSHA256": "7b4ca69a4b620d891749ecab7cbc3cd542870b18a66139e7245cde0dd04a93e0",
+  "precommitWhitespace": [
+    {
+      "command": "git diff --cached --check",
+      "exit": 2,
+      "reason": "New blank line at EOF in github.md and failure-excerpts.txt; error text retained, trailing empty lines removed."
+    },
+    {
+      "command": "git diff --cached --check",
+      "exit": 0
+    }
+  ],
+  "review": {
+    "verdict": "can merge maintenance diff",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "scope": "Does not approve runtime behavior or release."
+  },
+  "stagedPathCount": 28,
+  "evidenceFormatNote": "Renamed non-executable failure excerpt from ignored .log to .txt; error text retained; docs impact no longer treats the evidence extension as runtime."
+}
