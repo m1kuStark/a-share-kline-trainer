@@ -7,16 +7,16 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "ENG",
-  "base_commit": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "base_commit": "f4bbc6af283562c8d567918fb4a59f3f51d71ffe",
   "summary": "2026-11-18 独立本地候选：两条父包与 child 请求范围限定的 override 及生产 glob 锁定副本均升级至 minimatch 11.0.9，legacy 3.1.5/5.1.9 保留。npm ci/ls、20 项版本与消费者 API 检查、full/production audit、3023 项测试、build、portable 与 NSIS x64 打包、隔离包内模块运行均通过；候选待集成审查，不代表 GitHub 告警已关闭或用户验收。",
-  "next_action": "集成人核对独立审查、ENG/work-items/生成 status 与矩阵台账，完成候选集成；后续 PR、合并及远端告警核对另行执行。安装向导、完整 UI 与用户验收仍需独立安排。",
+  "next_action": "独立五维审查 C0/I0/M0，已吸收 PR50/51 主线；更新聚合门禁后创建独立 PR，核对当前 head 的 CI 并合入，再刷新 Dependabot 告警。安装向导、完整 UI 与用户验收不由模块探针替代。",
   "allowed_paths": ["package.json", "package-lock.json", "docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/**"],
   "depends_on": [],
   "docs_impact": {
     "update": ["docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md"],
     "reason": "构建依赖升级需要明确受影响链、兼容性与打包收据，不能以当前 CI 绿色替代安全修复。"
   },
-  "verification_refs": ["docs/verification/2026-11/DEP-SEC-MINIMATCH-01/README.md"],
+  "verification_refs": ["docs/verification/2026-11/DEP-SEC-MINIMATCH-01/README.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/review-dependency.md"],
   "integration_ref": null,
   "acceptance_ref": null
 }
