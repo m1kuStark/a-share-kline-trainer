@@ -1,0 +1,724 @@
+{
+  "source": "DIF:EMA(CLOSE,12)-EMA(CLOSE,26);\nDEA:EMA(DIF,9);\nB1:IF(CROSS(DIF,DEA),1,0);",
+  "tiny": {
+    "actual": {
+      "length": 6,
+      "firstFinite": -1,
+      "finiteCount": 0,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        }
+      ]
+    },
+    "oracle": {
+      "length": 6,
+      "firstFinite": 4,
+      "finiteCount": 2,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": 4
+        },
+        {
+          "index": 5,
+          "value": 6
+        }
+      ]
+    }
+  },
+  "plainFinite": {
+    "length": 4,
+    "firstFinite": 2,
+    "finiteCount": 2,
+    "sample": [
+      {
+        "index": 0,
+        "value": "NaN"
+      },
+      {
+        "index": 2,
+        "value": 4
+      },
+      {
+        "index": 3,
+        "value": 6
+      }
+    ]
+  },
+  "builtInMACDDEA": {
+    "length": 120,
+    "firstFinite": 33,
+    "finiteCount": 87,
+    "sample": [
+      {
+        "index": 0,
+        "value": "NaN"
+      },
+      {
+        "index": 2,
+        "value": "NaN"
+      },
+      {
+        "index": 4,
+        "value": "NaN"
+      },
+      {
+        "index": 5,
+        "value": "NaN"
+      },
+      {
+        "index": 8,
+        "value": "NaN"
+      },
+      {
+        "index": 11,
+        "value": "NaN"
+      },
+      {
+        "index": 25,
+        "value": "NaN"
+      },
+      {
+        "index": 32,
+        "value": "NaN"
+      },
+      {
+        "index": 33,
+        "value": 7
+      },
+      {
+        "index": 119,
+        "value": 7
+      }
+    ]
+  },
+  "engine": [
+    {
+      "name": "DIF",
+      "length": 120,
+      "firstFinite": 25,
+      "finiteCount": 95,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        },
+        {
+          "index": 8,
+          "value": "NaN"
+        },
+        {
+          "index": 11,
+          "value": "NaN"
+        },
+        {
+          "index": 25,
+          "value": 7
+        },
+        {
+          "index": 32,
+          "value": 7
+        },
+        {
+          "index": 33,
+          "value": 7
+        },
+        {
+          "index": 119,
+          "value": 7
+        }
+      ]
+    },
+    {
+      "name": "DEA",
+      "length": 120,
+      "firstFinite": -1,
+      "finiteCount": 0,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        },
+        {
+          "index": 8,
+          "value": "NaN"
+        },
+        {
+          "index": 11,
+          "value": "NaN"
+        },
+        {
+          "index": 25,
+          "value": "NaN"
+        },
+        {
+          "index": 32,
+          "value": "NaN"
+        },
+        {
+          "index": 33,
+          "value": "NaN"
+        },
+        {
+          "index": 119,
+          "value": "NaN"
+        }
+      ]
+    },
+    {
+      "name": "B1",
+      "length": 120,
+      "firstFinite": 0,
+      "finiteCount": 120,
+      "sample": [
+        {
+          "index": 0,
+          "value": 0
+        },
+        {
+          "index": 2,
+          "value": 0
+        },
+        {
+          "index": 4,
+          "value": 0
+        },
+        {
+          "index": 5,
+          "value": 0
+        },
+        {
+          "index": 8,
+          "value": 0
+        },
+        {
+          "index": 11,
+          "value": 0
+        },
+        {
+          "index": 25,
+          "value": 0
+        },
+        {
+          "index": 32,
+          "value": 0
+        },
+        {
+          "index": 33,
+          "value": 0
+        },
+        {
+          "index": 119,
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "chart": {
+    "error": null,
+    "lines": [
+      {
+        "name": "DIF",
+        "length": 120,
+        "firstFinite": 25,
+        "finiteCount": 95,
+        "sample": [
+          {
+            "index": 0,
+            "value": null
+          },
+          {
+            "index": 2,
+            "value": null
+          },
+          {
+            "index": 4,
+            "value": null
+          },
+          {
+            "index": 5,
+            "value": null
+          },
+          {
+            "index": 8,
+            "value": null
+          },
+          {
+            "index": 11,
+            "value": null
+          },
+          {
+            "index": 25,
+            "value": 7
+          },
+          {
+            "index": 32,
+            "value": 7
+          },
+          {
+            "index": 33,
+            "value": 7
+          },
+          {
+            "index": 119,
+            "value": 7
+          }
+        ]
+      },
+      {
+        "name": "DEA",
+        "length": 120,
+        "firstFinite": -1,
+        "finiteCount": 0,
+        "sample": [
+          {
+            "index": 0,
+            "value": null
+          },
+          {
+            "index": 2,
+            "value": null
+          },
+          {
+            "index": 4,
+            "value": null
+          },
+          {
+            "index": 5,
+            "value": null
+          },
+          {
+            "index": 8,
+            "value": null
+          },
+          {
+            "index": 11,
+            "value": null
+          },
+          {
+            "index": 25,
+            "value": null
+          },
+          {
+            "index": 32,
+            "value": null
+          },
+          {
+            "index": 33,
+            "value": null
+          },
+          {
+            "index": 119,
+            "value": null
+          }
+        ]
+      },
+      {
+        "name": "B1",
+        "length": 120,
+        "firstFinite": 0,
+        "finiteCount": 120,
+        "sample": [
+          {
+            "index": 0,
+            "value": 0
+          },
+          {
+            "index": 2,
+            "value": 0
+          },
+          {
+            "index": 4,
+            "value": 0
+          },
+          {
+            "index": 5,
+            "value": 0
+          },
+          {
+            "index": 8,
+            "value": 0
+          },
+          {
+            "index": 11,
+            "value": 0
+          },
+          {
+            "index": 25,
+            "value": 0
+          },
+          {
+            "index": 32,
+            "value": 0
+          },
+          {
+            "index": 33,
+            "value": 0
+          },
+          {
+            "index": 119,
+            "value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "server": {
+    "ok": true,
+    "lines": [
+      {
+        "name": "DIF",
+        "length": 120,
+        "firstFinite": 25,
+        "finiteCount": 95,
+        "sample": [
+          {
+            "index": 0,
+            "value": null
+          },
+          {
+            "index": 2,
+            "value": null
+          },
+          {
+            "index": 4,
+            "value": null
+          },
+          {
+            "index": 5,
+            "value": null
+          },
+          {
+            "index": 8,
+            "value": null
+          },
+          {
+            "index": 11,
+            "value": null
+          },
+          {
+            "index": 25,
+            "value": 7
+          },
+          {
+            "index": 32,
+            "value": 7
+          },
+          {
+            "index": 33,
+            "value": 7
+          },
+          {
+            "index": 119,
+            "value": 7
+          }
+        ]
+      },
+      {
+        "name": "DEA",
+        "length": 120,
+        "firstFinite": -1,
+        "finiteCount": 0,
+        "sample": [
+          {
+            "index": 0,
+            "value": null
+          },
+          {
+            "index": 2,
+            "value": null
+          },
+          {
+            "index": 4,
+            "value": null
+          },
+          {
+            "index": 5,
+            "value": null
+          },
+          {
+            "index": 8,
+            "value": null
+          },
+          {
+            "index": 11,
+            "value": null
+          },
+          {
+            "index": 25,
+            "value": null
+          },
+          {
+            "index": 32,
+            "value": null
+          },
+          {
+            "index": 33,
+            "value": null
+          },
+          {
+            "index": 119,
+            "value": null
+          }
+        ]
+      },
+      {
+        "name": "B1",
+        "length": 120,
+        "firstFinite": 0,
+        "finiteCount": 120,
+        "sample": [
+          {
+            "index": 0,
+            "value": 0
+          },
+          {
+            "index": 2,
+            "value": 0
+          },
+          {
+            "index": 4,
+            "value": 0
+          },
+          {
+            "index": 5,
+            "value": 0
+          },
+          {
+            "index": 8,
+            "value": 0
+          },
+          {
+            "index": 11,
+            "value": 0
+          },
+          {
+            "index": 25,
+            "value": 0
+          },
+          {
+            "index": 32,
+            "value": 0
+          },
+          {
+            "index": 33,
+            "value": 0
+          },
+          {
+            "index": 119,
+            "value": 0
+          }
+        ]
+      }
+    ]
+  },
+  "oracle": {
+    "dif": {
+      "length": 120,
+      "firstFinite": 25,
+      "finiteCount": 95,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        },
+        {
+          "index": 8,
+          "value": "NaN"
+        },
+        {
+          "index": 11,
+          "value": "NaN"
+        },
+        {
+          "index": 25,
+          "value": 7
+        },
+        {
+          "index": 32,
+          "value": 7
+        },
+        {
+          "index": 33,
+          "value": 7
+        },
+        {
+          "index": 119,
+          "value": 7
+        }
+      ]
+    },
+    "dea": {
+      "length": 120,
+      "firstFinite": 33,
+      "finiteCount": 87,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": "NaN"
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        },
+        {
+          "index": 8,
+          "value": "NaN"
+        },
+        {
+          "index": 11,
+          "value": "NaN"
+        },
+        {
+          "index": 25,
+          "value": "NaN"
+        },
+        {
+          "index": 32,
+          "value": "NaN"
+        },
+        {
+          "index": 33,
+          "value": 7
+        },
+        {
+          "index": 119,
+          "value": 7.000000000000002
+        }
+      ]
+    }
+  },
+  "variedSeries": {
+    "definition": "50 + 10*sin(index/5) + 0.05*index; 120 bars",
+    "oracleCrossIndexes": [
+      61,
+      93
+    ],
+    "actualCrossIndexes": []
+  },
+  "laterNonFinite": {
+    "nan": {
+      "length": 6,
+      "firstFinite": 2,
+      "finiteCount": 1,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": 2
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        }
+      ]
+    },
+    "infinity": {
+      "length": 6,
+      "firstFinite": 2,
+      "finiteCount": 1,
+      "sample": [
+        {
+          "index": 0,
+          "value": "NaN"
+        },
+        {
+          "index": 2,
+          "value": 2
+        },
+        {
+          "index": 4,
+          "value": "NaN"
+        },
+        {
+          "index": 5,
+          "value": "NaN"
+        }
+      ]
+    }
+  },
+  "hashes": {
+    "web/src/formula-engine/interpreter/functions/math.ts": "96841db54525c3817c04c67b5cc1dbf96b732acfadddb1e387c8941170709348",
+    "web/src/formula-engine/interpreter/functions/indicators.ts": "9216804b25da0d632b469062807a40d0b91a6eb5d035393b680d37323f09c332",
+    "web/src/formula-engine/interpreter/functions/logical.ts": "ea050fb2861a9fce31a1ee90527534e58fc447d8fd1edca3d678342476a266c3",
+    "web/src/formulaIndicators.ts": "9b522bc1385bc301cc2e5cde40f40947f6c71adcf801785c892f98373b2f4fe3",
+    "server/src/formulas/engine.ts": "b52274c1062cd16bf951fe5f9415d90ec01326a916a24214bad618f738ce1f18",
+    "server/src/formulas/evaluate.ts": "e309fb6ac58fd0e817026239ed981cacea73d3bfe43aecd7d7071d7480de6285",
+    "server/src/formulas/seed.ts": "2b024222b20d0fed6a121b0fb7ccc024b58b2ab390ad2ae3d1f573b54771d26d",
+    "server/test/formula-seed.test.ts": "0ce599c2fd66d1a308ccf939f077217180cf4aa4d48e83597c1a7daef33bb587",
+    "e2e/formula-enable.spec.ts": "bba7429692e6a5157033b91b3d69a77ea9f55cfb5095f0b8521732274258888e"
+  }
+}

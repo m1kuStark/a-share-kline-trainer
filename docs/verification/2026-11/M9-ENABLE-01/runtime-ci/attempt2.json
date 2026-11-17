@@ -1,0 +1,11 @@
+{
+  "run": "44134386620",
+  "attempt": 2,
+  "server": 2654,
+  "mergedCommit": "f4bbc6af283562c8d567918fb4a59f3f51d71ffe",
+  "desktop": 369,
+  "conclusion": "success",
+  "decodedSha256": "92618d9ed08cb8669c08a1b2fbab06a9148c03983a3f090e5ffb25f4e8e44963",
+  "head": "50dde90836d2121ddff84eeed146b94e44198822",
+  "encodedSha256": "b26243f87761169034d9d07d0f6453bad23f4b6b0da911223079cdadb98100ce"
+}

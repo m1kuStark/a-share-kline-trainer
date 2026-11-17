@@ -1,0 +1,118 @@
+[
+  {
+    "line": 293,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:46:22.8496148Z ^[[22m^[[39m[crossPeriod] 实盘公式语料缺失，跳过该用例：D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式"
+  },
+  {
+    "line": 344,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:07.5561786Z      ^[[33m^[[2m✓^[[22m^[[39m refuses the docs exemption while skip-worktree or assume-unchanged flags hide worktree state ^[[33m 1103^[[2mms^[[22m^[[39m"
+  },
+  {
+    "line": 408,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1546180Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts"
+  },
+  {
+    "line": 409,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1547271Z ^[[22m^[[39m[corpus-smoke] 侦察语料目录不存在或为空，跳过回放：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon（缺失块数 23＋单行版 2）"
+  },
+  {
+    "line": 411,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1582300Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mreplays all corpus blocks with parse pass count at least 22 of 23"
+  },
+  {
+    "line": 412,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1583595Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 414,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1585888Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mkeeps all eight baseline exec-passing blocks passing with zero loss"
+  },
+  {
+    "line": 415,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1586952Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 417,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1589920Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mparses both production single-line formulas zuofeng curse line and wave divergence"
+  },
+  {
+    "line": 418,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1591388Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 420,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1592866Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mlifts corpus exec passing to at least 13 of 23 with cross period support"
+  },
+  {
+    "line": 421,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1593750Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 423,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1597185Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mlifts corpus exec passing to at least 16 of 23 with market context injected"
+  },
+  {
+    "line": 424,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1599714Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 426,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1600916Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mreplays fangliang single line formula with market context passing board gate"
+  },
+  {
+    "line": 427,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1602477Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 429,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1603649Z ^[[90mstderr^[[2m | server/test/formula-engine/corpus-smoke.test.ts^[[2m > ^[[22m^[[2mM9-01 corpus smoke replay^[[2m > ^[[22m^[[2mreplays qiniu1 strict and loose full formulas with cross period references"
+  },
+  {
+    "line": 430,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1604672Z ^[[22m^[[39m[corpus-smoke] 语料缺失，本用例跳过断言体：D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon"
+  },
+  {
+    "line": 432,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:23.1611665Z  ^[[32m✓^[[39m server/test/formula-engine/corpus-smoke.test.ts ^[[2m(^[[22m^[[2m7 tests^[[22m^[[2m)^[[22m^[[32m 4^[[2mms^[[22m^[[39m"
+  },
+  {
+    "line": 498,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:47:39.3785904Z ^[[22m^[[39m[marketContext] 放量解放语料缺失，跳过该文件：D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\放量解放选股_单行粘贴版.txt"
+  },
+  {
+    "line": 862,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:48:42.0076596Z      ^[[33m^[[2m✓^[[22m^[[39m 空目标库：老库 2 局全部导入；重跑同一路径全部 skipped；ns 与既有库不受影响 ^[[33m 3397^[[2mms^[[22m^[[39m"
+  },
+  {
+    "line": 867,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:48:42.1013758Z      ^[[33m^[[2m✓^[[22m^[[39m stageHistoryImport: 目标库不存在时按空库采用（首启干净场景） ^[[33m 345^[[2mms^[[22m^[[39m"
+  },
+  {
+    "line": 870,
+    "text": "verify\tTest source and compiled launcher\t2026-11-17T17:48:42.1016217Z      ^[[33m^[[2m✓^[[22m^[[39m applyPendingHistoryAtBoot: 目标不存在时直接采用 pending（无备份产生） ^[[33m 341^[[2mms^[[22m^[[39m"
+  },
+  {
+    "line": 941,
+    "text": "verify\tRetain test results\t2026-11-17T17:48:46.9659786Z No files were found with the provided path: test-results.json. No artifacts will be uploaded."
+  },
+  {
+    "line": 1203,
+    "text": "docs\tRun actions/checkout@v7\t2026-11-17T17:44:58.4825116Z   TRAINER_DOCS_ALLOW_MISSING_STATE: 1"
+  },
+  {
+    "line": 1281,
+    "text": "docs\tRun actions/setup-node@v7\t2026-11-17T17:45:07.3926874Z   TRAINER_DOCS_ALLOW_MISSING_STATE: 1"
+  },
+  {
+    "line": 1299,
+    "text": "docs\tRun npm ci\t2026-11-17T17:45:15.8396497Z   TRAINER_DOCS_ALLOW_MISSING_STATE: 1"
+  },
+  {
+    "line": 1331,
+    "text": "docs\tRun npm run docs:check\t2026-11-17T17:45:33.5009410Z   TRAINER_DOCS_ALLOW_MISSING_STATE: 1"
+  },
+  {
+    "line": 1524,
+    "text": "docs\tRun npm run docs:status -- --check\t2026-11-17T17:45:34.7956050Z   TRAINER_DOCS_ALLOW_MISSING_STATE: 1"
+  }
+]
