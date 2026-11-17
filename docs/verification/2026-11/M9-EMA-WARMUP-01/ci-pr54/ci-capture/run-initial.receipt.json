@@ -1,0 +1,21 @@
+{
+  "name": "run-initial",
+  "args": [
+    "gh",
+    "api",
+    "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795"
+  ],
+  "startedAt": "2026-11-17T18:56:30.249620+00:00",
+  "endedAt": "2026-11-17T18:56:31.624349+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-initial.stdout",
+    "bytes": 14131,
+    "sha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163"
+  },
+  "stderr": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-initial.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
