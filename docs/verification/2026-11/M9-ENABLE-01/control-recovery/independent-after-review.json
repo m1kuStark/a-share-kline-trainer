@@ -1,0 +1,103 @@
+{
+  "reviewedAt": "2026-11-17T19:16:13.298Z",
+  "operation": "Independent read-only canonical control review after recovery and M9 task CLI update",
+  "actualFile": "D:/Superlinear_Academy/Stock_WorkSpace/.control/trainer-state.json",
+  "actualSha256": "9f643e75a9dfde04af2e5ded84fc4b1463604199e22ae5b57abffd572fe29276",
+  "beforeRevision": 233,
+  "currentRevision": 235,
+  "planSha256": "6b226f50e89a8ce1a66fa2563f26d39d54338767c8f2a620ee9919c3944556ef",
+  "signatureAlgorithm": "SHA256(JSON.stringify(value)) in original parsed property order; comparisons also independently use deep equality",
+  "passed": true,
+  "checks": {
+    "frozenPlanSha256MatchesRecoveryReceipt": true,
+    "beforeSnapshotMatchesPlanAndRecovery": true,
+    "plannedCandidateOriginalSignaturesMatch": true,
+    "plannedEventOriginalSignaturesMatch": true,
+    "exact33CandidatesRemoved": true,
+    "noCandidatesAdded": true,
+    "all11RealCandidatesUnchanged": true,
+    "candidatePointerRestoredExactly": true,
+    "exact75EventsRemoved": true,
+    "all16OriginalEventsUnchangedInOrder": true,
+    "exactlyOneRecoveryEventAdded": true,
+    "recoveryEventIdentityAndPayloadCorrect": true,
+    "taskKeysPreserved": true,
+    "onlyM9EnableTaskUpdated": true,
+    "M9EnableUpdateIsActiveAndOnlyCliFields": true,
+    "otherFourPostBackupTasksPreserved": true,
+    "protectedFieldsUnchanged": true,
+    "revisionsFollowRecoveryThenCliUpdate": true,
+    "activeTaskIsM9Enable": true,
+    "updatedAtAfterRecovery": true,
+    "sourceStableDuringReview": true
+  },
+  "counts": {
+    "removedCandidates": 33,
+    "retainedRealCandidates": 11,
+    "removedEvents": 75,
+    "retainedOriginalEvents": 16,
+    "addedRecoveryEvents": 1,
+    "totalCurrentEvents": 17
+  },
+  "candidate": {
+    "candidate_id": "v1.2.7-20261004-published",
+    "task_id": "REL-V1-01",
+    "status": "promoted",
+    "updated_at": "2026-10-03T16:33:43.410Z",
+    "base_commit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+    "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+    "tree": "1d3c214ac6ec6e01ba0b12b34a513fe8982b69e5",
+    "worktree_alias": "main-checkout",
+    "artifact_id": "v1.2.7-20261004-published"
+  },
+  "recoveryEvent": {
+    "event_id": "control:fixture-recovery:M9-ENABLE-01:20261118",
+    "kind": "control_metadata_recovered",
+    "timestamp": "2026-11-17T19:11:19.980Z",
+    "task_id": "M9-ENABLE-01",
+    "reason": "Removed exact workflow test fixture projections after whole-record signature verification; preserved real tasks, candidates, runs, artifacts and acceptance.",
+    "payload": {
+      "removed_candidates": 33,
+      "removed_events": 75,
+      "plan_sha256": "6b226f50e89a8ce1a66fa2563f26d39d54338767c8f2a620ee9919c3944556ef",
+      "before_revision": 233,
+      "evidence": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/"
+    }
+  },
+  "allowedCliChanges": {
+    "taskIdsChanged": [
+      "M9-ENABLE-01"
+    ],
+    "M9EnableFieldsChanged": [
+      "summary",
+      "updated_at"
+    ],
+    "previousM9Enable": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "启停保存修复4/5；用户已明确批准独立EMA前导NaN暖机修复，先执行独立任务，再完成M9整批候选与Windows包。尚未通过整批验收。",
+      "updated_at": "2026-11-17T18:11:32.877Z"
+    },
+    "currentM9Enable": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "EMA PR54 integrated; exact workflow fixture cleanup completed; unified M9 validation underway.",
+      "updated_at": "2026-11-17T19:12:03.570Z"
+    },
+    "previousActiveTask": "M9-EMA-WARMUP-01",
+    "currentActiveTask": "M9-ENABLE-01",
+    "previousNextAction": "完成EMA独立PR与M9统一候选、主代理视觉和Windows实包录像回放；用户验收待交付，不发布。",
+    "currentNextAction": "Complete full M9 source, visual and Windows package acceptance; user review pending; no release."
+  },
+  "protectedFieldResults": {
+    "schema_version": true,
+    "project_id": true,
+    "runs": true,
+    "artifacts": true,
+    "acceptance": true,
+    "reconcile": true
+  },
+  "actualControlWritten": false,
+  "repositoryWritten": false,
+  "userDataRead": false
+}
