@@ -25,3 +25,5 @@
 第一次 root docs:impact 原生 exit 1：任务卡遗漏了批准阶段0要求更新的 `docs/status.md` allowed_paths。原始失败保存在 headroom-cache/ENG-PLAN-01/root-docs-impact.log；按已批准的阶段0范围补卡后重新检查。本次补卡只允许生成状态摘要，不扩大产品范围或修改测试。
 
 旧卡状态和 acceptance_ref 保持原值；本任务的 review 表示文档变更等待 PR 集成。机器验证、打包与用户验收仍分别留证。
+
+补充收据：按控制层运行 `verify:candidate -- --base 2c66477 --task ENG-PLAN-01` 时，非执行验证 JSON 被保守分类为 full，命令进入 unit。该额外运行被集成人有意中止（原生命令 exit 1），没有产生候选 proof，不作为任何单测或整版通过证据。确认只终止本树受管命令树；taskkill 返回128，部分子进程已先退出的诊断保存在原始收据。正式整批完整验证将在维护修正和 M9 修复汇合后执行。本任务仍以文档结构、影响和权威状态三项 exit 0 为交付证据。
