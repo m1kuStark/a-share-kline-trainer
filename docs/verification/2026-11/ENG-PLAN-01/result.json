@@ -1,0 +1,230 @@
+{
+  "task_id": "ENG-PLAN-01",
+  "date": "2026-11-18",
+  "timezone": "Asia/Shanghai",
+  "base_commit": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "branch": "task/ENG-PLAN-01",
+  "worktree": "C:/Users/Stark_Du666/.codex/worktrees/eng-plan-01/a-share-kline-trainer",
+  "node_version": "v24.15.0",
+  "dependency_install": {
+    "normal_install": true,
+    "exit_code": 0,
+    "node_modules_junction": false,
+    "command": "npm ci"
+  },
+  "environment": {
+    "external_state_missing": true,
+    "TRAINER_DOCS_ALLOW_MISSING_STATE": "1"
+  },
+  "commands": [
+    {
+      "command": "npm run docs:check",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 179,
+      "log": "C:/Users/Stark_Du666/.codex/headroom-cache/ENG-PLAN-01/docs-check.log",
+      "log_sha256": "8183f9e68669810a1bd03008b519299c9ec09769d52361f95861dbbb3001b597"
+    },
+    {
+      "command": "npm run docs:status -- --check",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 1,
+      "log": "C:/Users/Stark_Du666/.codex/headroom-cache/ENG-PLAN-01/docs-status-check.log",
+      "log_sha256": "5ce56fb0e1736d348a331516c1134dcc4ba57f00260085b33cbc9a6aab0e795e"
+    },
+    {
+      "command": "npm run docs:impact -- --base 2c66477 --task ENG-PLAN-01",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "log": "C:/Users/Stark_Du666/.codex/headroom-cache/ENG-PLAN-01/docs-impact.log",
+      "log_sha256": "278ab59460481726a2a35f80c56bd1cb30264975fc11e06dd9284babc88b025c"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "review": {
+    "milestones": 7,
+    "manual_diff_review": true,
+    "historical_task_cards": 22,
+    "product_paths_changed": 0,
+    "ancestry_checks": "ancestry.json",
+    "state_and_acceptance_fields_preserved": true
+  },
+  "limitations": [
+    "Only static source/card reconciliation and limited documentation checks performed.",
+    "Root owns authoritative .control state and final docs/status.md generation/check.",
+    "No product tests, browser journeys, build, Windows packaging or user acceptance performed.",
+    "No product oracle, shared matrix, release assets, push or merge changed."
+  ],
+  "fingerprint_scope": "Changed files before result.json creation; not a post-commit tree fingerprint.",
+  "file_fingerprints": [
+    {
+      "path": "docs/proposals/development-batch-2026-11.md",
+      "sha256": "bdb5f377ad5907d4c43d5a9c2894ccf0f7ef905d425b75a345603f84290937c2"
+    },
+    {
+      "path": "docs/proposals/development-plan-2026-11.md",
+      "sha256": "8bb9093c19aac40ef2e813d6501028709d8b842bdbbdcab4a0eb97c873833478"
+    },
+    {
+      "path": "docs/proposals/README.md",
+      "sha256": "bbed62cbb5399df7bf32006111adc0ac87cc100300237ca06c18801b5ba2cdb2"
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "9ddf4796007db05fe53d55dbf418b2cdaadf628f6908a18ea9dfdb5e3d087e0f"
+    },
+    {
+      "path": "docs/verification/2026-11/ENG-PLAN-01/ancestry.json",
+      "sha256": "52c11d646c59cfefb736bc966c3640b26c994d92c4a2e1f1707608ad8388542a"
+    },
+    {
+      "path": "docs/verification/2026-11/ENG-PLAN-01/approval.md",
+      "sha256": "ba01d1751a265b955c3b9fe5da84e43f09aa19a9496b946f4b5a0de66f5a7e8f"
+    },
+    {
+      "path": "docs/verification/2026-11/ENG-PLAN-01/e2e-static.md",
+      "sha256": "c93c5c848cb77e6ff5cf8a70cbee927a62bd5d5e9e96a94b7d1bbcd2aaf0b2df"
+    },
+    {
+      "path": "docs/verification/2026-11/ENG-PLAN-01/README.md",
+      "sha256": "0f5e4ae3b919de5b10e9ebbf10fc867f780798108105c5a01fdb54ee40a3a501"
+    },
+    {
+      "path": "docs/verification/2026-11/ENG-PLAN-01/reconciliation.md",
+      "sha256": "ce729650d223c4ee7afe6e9d22d8c4e63d367938487a0ffc3ab3a3ae4683b4cf"
+    },
+    {
+      "path": "docs/verification/README.md",
+      "sha256": "1cd79aaaf8626b88afc41a27756e9e2a0336be69971c11395272c665dc6e8a22"
+    },
+    {
+      "path": "docs/work-items/milestones/ENG.md",
+      "sha256": "d0aea781f0d2a39bab7204a6e6fdee746f9f0a3b09571f38bea5192e1258d3b2"
+    },
+    {
+      "path": "docs/work-items/milestones/GH-202611.md",
+      "sha256": "226fb6393b256333998bec35db116d4e2b2b37607958608141fa635a055353a4"
+    },
+    {
+      "path": "docs/work-items/milestones/M5.md",
+      "sha256": "7453e5a2a1035d9502c65c3160e174c0d98d33e6c53866b52777c9528d0060ff"
+    },
+    {
+      "path": "docs/work-items/milestones/M7.md",
+      "sha256": "42f00fa49dc3019a5782bcf901e25ca7bb4d0e2906d235d06b70dee2c97b1e1c"
+    },
+    {
+      "path": "docs/work-items/milestones/PACK.md",
+      "sha256": "4e70c07a9e5d88542dbc80e43aae0d68a25b1d33abff2015ca5d682c9a3101c6"
+    },
+    {
+      "path": "docs/work-items/milestones/UPD.md",
+      "sha256": "0ceacf7708427c7a4635591a2a522bad7203c9c19a9cffb290c17e4cb7f739cd"
+    },
+    {
+      "path": "docs/work-items/milestones/V4.md",
+      "sha256": "f139c6d2c1cc994e04f1cfb7643b3ffb5e37c944e9976422dbe6ba3dca337ff2"
+    },
+    {
+      "path": "docs/work-items/README.md",
+      "sha256": "3699a4a96f74ae547a283f350d8297c11a0dc301f89de1bc3044f8e681573692"
+    },
+    {
+      "path": "docs/work-items/tasks/CHART-PAN-01.md",
+      "sha256": "2d7d348dde2d21fafa2e0209bde2c892595364ab5fe828f5556f144d7a983f33"
+    },
+    {
+      "path": "docs/work-items/tasks/CHART-WEEKDAY-01.md",
+      "sha256": "31a891415382cbc7235dd145f79bf917380f9dbe29267de47be48f30e40e753a"
+    },
+    {
+      "path": "docs/work-items/tasks/CHART-ZOOM-01.md",
+      "sha256": "2b880c94f6c94f44a16a14573003529df76fec02d12249e469ae67caa0315f26"
+    },
+    {
+      "path": "docs/work-items/tasks/E2E-BASELINE-01.md",
+      "sha256": "cd22115223191ac45d5ed2788b68d1582c9f5255f382431cdeff3cfa70621b70"
+    },
+    {
+      "path": "docs/work-items/tasks/E2E-SPEC-SYNC-01.md",
+      "sha256": "11924ce8aae346fc7eafaea2ff74b4374220f01340eca48cdcc8e3bacd3bb7da"
+    },
+    {
+      "path": "docs/work-items/tasks/ENG-PLAN-01.md",
+      "sha256": "d8312cf5299dfc21e8eb7c7da3d63eb54d1e145895b053b26cb29e2e6f2d4fe8"
+    },
+    {
+      "path": "docs/work-items/tasks/M7-01.md",
+      "sha256": "73a0073b83293a0cbe2d4735c433af05069e1aed10c0e066d3801a0212d8ccb0"
+    },
+    {
+      "path": "docs/work-items/tasks/M7-02.md",
+      "sha256": "a9aea05e7f655771027119c83965c0691b0a4fe24bbd01424e7cb7368032df52"
+    },
+    {
+      "path": "docs/work-items/tasks/ORDER-01.md",
+      "sha256": "bd4158532cf828e402ff5cfd3453c526b7569cedb763918299135c01f5170736"
+    },
+    {
+      "path": "docs/work-items/tasks/PACK-01.md",
+      "sha256": "9b55684ca4287fac3fd66f686cf07d6d0f90f772cba7d4a594f7e7dec75bb2a1"
+    },
+    {
+      "path": "docs/work-items/tasks/PACK-02.md",
+      "sha256": "6ae98f291a3e8b4ab2f3bdc1470b33cae62c88c5d2b3cdb9b7d461b234bcb4c6"
+    },
+    {
+      "path": "docs/work-items/tasks/PACK-03.md",
+      "sha256": "affed1f2ebf5451adbd194d4d9b1226309f90ea725a5dcf264c0da689524e8f8"
+    },
+    {
+      "path": "docs/work-items/tasks/PACK-04.md",
+      "sha256": "74a7abd80528e9385ddf56ebfd44cb86ec2157dd69695f66ed7f12fbcb2cc583"
+    },
+    {
+      "path": "docs/work-items/tasks/PACK-05.md",
+      "sha256": "36e5e4544313f7aa57575a6b17b0eb0ccd6dc89920c9990f62a3022a02fcafe1"
+    },
+    {
+      "path": "docs/work-items/tasks/SETUP-PASTE-01.md",
+      "sha256": "81a7eb3c985989b82b5c435773e655d41d5008e597ea3c10f9d962f2fc7d7014"
+    },
+    {
+      "path": "docs/work-items/tasks/TRAIN-03.md",
+      "sha256": "f41189c1eacff19016eccd58b3ab72580a39715b167f2e52fde85b5f5d94df97"
+    },
+    {
+      "path": "docs/work-items/tasks/TRAIN-FEE-01.md",
+      "sha256": "287d2e4a38849897761ca504595660ccde94c3cc1d848129e8d04211c98d6351"
+    },
+    {
+      "path": "docs/work-items/tasks/UI-TOOLBAR-01.md",
+      "sha256": "568c4ccb1e371743dd97844072731c271bee7517168bdf07cb8f8f9bbea5e062"
+    },
+    {
+      "path": "docs/work-items/tasks/UI-TOOLBAR-02.md",
+      "sha256": "d0ccc292a5938f6d7debb680ee2dcd31a96a6f190f442d2048b51497ff0ef239"
+    },
+    {
+      "path": "docs/work-items/tasks/UPD-01.md",
+      "sha256": "314ff345580c8b3e882ae0682fbc611f9381fc8626515d8c4b25c51ff0e428da"
+    },
+    {
+      "path": "docs/work-items/tasks/UPD-02.md",
+      "sha256": "06471ca146e2c30ff0ac1fb1c567ea0ced2c29589e68cb95676ae8c8f0e98b65"
+    },
+    {
+      "path": "docs/work-items/tasks/UPD-BUSY-HEAL-01.md",
+      "sha256": "2f017b233a635d9dabbc8a0bda05ed9298d05d8b952bbd27f7269d37e6ce62bc"
+    },
+    {
+      "path": "docs/work-items/tasks/UPD-NSIS-RETRY-01.md",
+      "sha256": "124975e7e91de69d5d18f3e74ae1e54b8dddf8225ccbe50fa10a1c267e44c0f2"
+    }
+  ]
+}
