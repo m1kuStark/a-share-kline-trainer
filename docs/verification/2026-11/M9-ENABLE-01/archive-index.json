@@ -1,0 +1,620 @@
+{
+  "capturedAt": "2026-11-17T18:06:00.503Z",
+  "notes": [
+    "Only listed copies are archived; cache source inventories include additional files.",
+    "raw.b64 decodes to original bytes.",
+    "Native exit codes in historical wrappers remain root-observed; fresh post-maintenance receipts have explicit exitCode.",
+    "Prepared package script is not an executed package acceptance.",
+    "Initial staged whitespace check rejected verbatim machine-generated Markdown whitespace; affected originals stored losslessly as raw.b64 without changing hooks."
+  ],
+  "artifacts": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\manifest.json",
+      "archive": "final-attempt/manifest.json",
+      "encoding": "identity",
+      "bytes": 1596,
+      "sha256": "f4c34ec94a82e38b2c5ba97fe04b486a4345bf2f9ebe352a6eadbe5f587a9308",
+      "archivedSha256": "f4c34ec94a82e38b2c5ba97fe04b486a4345bf2f9ebe352a6eadbe5f587a9308"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\browser-results.json",
+      "archive": "final-attempt/artifacts/browser-results.json",
+      "encoding": "identity",
+      "bytes": 14975,
+      "sha256": "e1ff92374a30fd8d5c9155ad021f736ef61ea171ca2977a6e21baf8edaed041e",
+      "archivedSha256": "e1ff92374a30fd8d5c9155ad021f736ef61ea171ca2977a6e21baf8edaed041e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\build-server.log",
+      "archive": "final-attempt/artifacts/build-server.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 190,
+      "sha256": "34c8408c9263ce1f2a3d89b3755dc0b0c7762b269d113bf9ce09e6d24d26ced7",
+      "archivedSha256": "b50e0dcedf954234a9e9ace567064ef48fac4702267120cad71bb05165fc01c1"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\build-web.log",
+      "archive": "final-attempt/artifacts/build-web.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 947,
+      "sha256": "fedf2e0ea9e5877c5bf5f95826175caffed97e02249db600c94884ad5c7e3b4f",
+      "archivedSha256": "5d2b62d39dd8058ff9d1909472dc0082e423928f98f58673715ccaa72c2ea61c"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\html\\data\\1d20198c73eedc70c34e4ed6a8759431972352c0.md",
+      "archive": "final-attempt/artifacts/html/data/1d20198c73eedc70c34e4ed6a8759431972352c0.md.raw.b64",
+      "encoding": "base64",
+      "bytes": 19864,
+      "sha256": "060191d4ebeeede89bb3b139a97656a775c09558b8e4081cccaa173e2aa9bc90",
+      "archivedSha256": "763398c7b417918819ef976c9229b9ed7e878a1619b6b9ec98d9971a1c94fffe"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\html\\index.html",
+      "archive": "final-attempt/artifacts/html/index.html.raw.b64",
+      "encoding": "base64",
+      "bytes": 562694,
+      "sha256": "156e17a0b4fff79defcf9b4ef03aaf0a0396ae37e268ffa7da78adc69a0e59fd",
+      "archivedSha256": "eb32b5b8cd66806dcf4e6065698b396421cfcc9472d5c899750f8be8ac0c674f"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\journey.log",
+      "archive": "final-attempt/artifacts/journey.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 2758,
+      "sha256": "2596ad678a6787093f77dd2b97cadea0d5d4c78e943bcc99bbbc3a443135be34",
+      "archivedSha256": "b647cd9adc44ad7d3cf473ab3aa4e0d85ce5637bad32eff6ec70377acd380755"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-MA_BULL_MAIN.png",
+      "archive": "final-attempt/artifacts/screenshots/formula-enabled-MA_BULL_MAIN.png",
+      "encoding": "identity",
+      "bytes": 177927,
+      "sha256": "f4e2095262401178c93f35150f3b9502fc2ee7c259767885426840f22b4d0dac",
+      "archivedSha256": "f4e2095262401178c93f35150f3b9502fc2ee7c259767885426840f22b4d0dac"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-WEEK_MACD_SUB.png",
+      "archive": "final-attempt/artifacts/screenshots/formula-enabled-WEEK_MACD_SUB.png",
+      "encoding": "identity",
+      "bytes": 157385,
+      "sha256": "28ecfa6d91c8f4b0339b140d85fa63f29127624403aa78a6af42d7ef8bd546db",
+      "archivedSha256": "28ecfa6d91c8f4b0339b140d85fa63f29127624403aa78a6af42d7ef8bd546db"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\server.log",
+      "archive": "final-attempt/artifacts/server.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 134967,
+      "sha256": "05a1ef2e200b4eb85c37e54acc56a985a0afe84f413d81dfdcd037e85b2a3f54",
+      "archivedSha256": "2556d8d86e9fec78b1c7ddce697834b9ea9b860b1a04c8e4ae00e27786d12f71"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\.last-run.json",
+      "archive": "final-attempt/artifacts/test-results/.last-run.json",
+      "encoding": "identity",
+      "bytes": 96,
+      "sha256": "7fc263104a085487eed0d8f819e52953ad686b3e81347a2e0bf1a105c865c32b",
+      "archivedSha256": "7fc263104a085487eed0d8f819e52953ad686b3e81347a2e0bf1a105c865c32b"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用\\error-context.md",
+      "archive": "final-attempt/artifacts/test-results/formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用/error-context.md.raw.b64",
+      "encoding": "base64",
+      "bytes": 19864,
+      "sha256": "060191d4ebeeede89bb3b139a97656a775c09558b8e4081cccaa173e2aa9bc90",
+      "archivedSha256": "763398c7b417918819ef976c9229b9ed7e878a1619b6b9ec98d9971a1c94fffe"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\logs\\operations.log",
+      "archive": "final-attempt/logs/operations.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 57506,
+      "sha256": "d14386797530da698a64484a87969bad0c4110952d573106c8e593d70e7f0bdc",
+      "archivedSha256": "9290826eac1da783937c189902ca0fe745eacbc18f9b57d0245d94166ccbabcd"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable-results.txt",
+      "archive": "cache-logs/green-formula-enable-results.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 625,
+      "sha256": "f4bcbfef657b2339803f67585bd44e21e46d626fda4413e4b666281581cd3d39",
+      "archivedSha256": "612b1e92d99c0528b63efdbc9c4cc118f3e863fcba20684838de85629571eca2"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable-ready.txt",
+      "archive": "cache-logs/green-formula-enable-ready.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 626,
+      "sha256": "fbdfa8dfb1e99fe17d43952f11f2bea5ee58a71fc6a4688276c9aa070ad17a06",
+      "archivedSha256": "9bd785ded0949efc4f1b785f75fe850b9b5165cd9457763f2b7c286a8db0db4a"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable.txt",
+      "archive": "cache-logs/green-formula-enable.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 625,
+      "sha256": "c428c02b30b2996643ebc1772ff6989620a119fdc886bf654c9136395c37a0e7",
+      "archivedSha256": "4e80944dd813d3e6203f2dc4a8c481f5845f6197a1a3622258f6950c77a63e39"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-existing-formulas.txt",
+      "archive": "cache-logs/green-existing-formulas.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 482,
+      "sha256": "ed2b666e8834191236c03b94c428592be84b21bff30588563027dcd637711e58",
+      "archivedSha256": "31236041da2a9a292957e5f8a8a117d293585058f58f2fad42d225c702f8a4c0"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-server-targeted.txt",
+      "archive": "cache-logs/green-server-targeted.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 268,
+      "sha256": "56c475caf824776de5f70265ee4f6828c867809f9a555c5b34d8b8b91f0ed3e2",
+      "archivedSha256": "f945cd2f6e5897cf944b3985689de0332f4a6f50481791cec0bc1c88e077f16a"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-formula-enable.log",
+      "archive": "cache-logs/red-formula-enable.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 625,
+      "sha256": "5ff65f7d825ccdd7c6854abd6d44c27efee8ac3b41cee317b330cfbeadd418af",
+      "archivedSha256": "e3cdf118f37d0afe903dd1c6bee5ed9806cc7566aaae1b08b82f292694d69edd"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-journey-detail.log",
+      "archive": "cache-logs/red-journey-detail.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 8326,
+      "sha256": "59053324b124d2dba8bc5120dfa40790810c5dd4c47077ccaad12289957bd998",
+      "archivedSha256": "33adcebda5e8e2c8922272c2502481d9ea358af8ec5a3d9a9254875eef7f10ed"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-literal.txt",
+      "archive": "cache-logs/red-literal.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 626,
+      "sha256": "67dee4437ad4ba366c3426b7e0ddff7cf26db8e8281fda9123b221a790c526a4",
+      "archivedSha256": "4bc762c99d224b100f11671789325844df2aa32a7193fc90e9ea371a21943bea"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\manifest-current.md",
+      "archive": "cache-logs/manifest-current.md",
+      "encoding": "identity",
+      "bytes": 3645,
+      "sha256": "31330046bd81598857743219d985a48f120c21f8c6de7bc26dc1b931b6fc704e",
+      "archivedSha256": "31330046bd81598857743219d985a48f120c21f8c6de7bc26dc1b931b6fc704e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1600-light.png",
+      "archive": "issue8/live/issue8-1600-light.png",
+      "encoding": "identity",
+      "bytes": 180381,
+      "sha256": "3aafdad09d82cac7e49a311ec869ee9fdd75080966f64ff832cd1ee87923f65c",
+      "archivedSha256": "3aafdad09d82cac7e49a311ec869ee9fdd75080966f64ff832cd1ee87923f65c"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1600-dark.png",
+      "archive": "issue8/live/issue8-1600-dark.png",
+      "encoding": "identity",
+      "bytes": 175547,
+      "sha256": "ea62bc958e2bceec36676a764a330b50dbbe5c9eb6300e91cd33001b7ed91ae3",
+      "archivedSha256": "ea62bc958e2bceec36676a764a330b50dbbe5c9eb6300e91cd33001b7ed91ae3"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1280-light.png",
+      "archive": "issue8/live/issue8-1280-light.png",
+      "encoding": "identity",
+      "bytes": 148193,
+      "sha256": "aea0bbca9e73bddc3c5af354f2be304e749b3bf24b6c024b264281ef3fa4163c",
+      "archivedSha256": "aea0bbca9e73bddc3c5af354f2be304e749b3bf24b6c024b264281ef3fa4163c"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1280-dark.png",
+      "archive": "issue8/live/issue8-1280-dark.png",
+      "encoding": "identity",
+      "bytes": 142496,
+      "sha256": "18f3ce18c5ac8ec76c14d8c4e45864f9e192d806b6cb9c2f1379c7b7c37d863e",
+      "archivedSha256": "18f3ce18c5ac8ec76c14d8c4e45864f9e192d806b6cb9c2f1379c7b7c37d863e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\live-result.json",
+      "archive": "issue8/live/live-result.json",
+      "encoding": "identity",
+      "bytes": 7938,
+      "sha256": "ab3d025346e2b55c21b8d2ee9252a43462958b712ff1aa217e06b08d8287baed",
+      "archivedSha256": "ab3d025346e2b55c21b8d2ee9252a43462958b712ff1aa217e06b08d8287baed"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live-run.txt",
+      "archive": "issue8/live-run.txt.raw.b64",
+      "encoding": "base64",
+      "bytes": 99,
+      "sha256": "12793ed36067c4022fb908950c7b880f8dfcc95e5f2f6805fcde15f0ec999b67",
+      "archivedSha256": "041117f4e1f87a644af88a5a2126b274959531fb99e31d451e7198bb3d52aceb"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\issue8-live.mts",
+      "archive": "issue8/issue8-live.mts.raw.b64",
+      "encoding": "base64",
+      "bytes": 3682,
+      "sha256": "1382f90260848eda2d80bf6f415ca3d80da4beb30290657ef4910d8c0fd9bf74",
+      "archivedSha256": "d57d1b95e9217f82d7867e9d24619b6c6c1e9887c59101ac4fe3b8106b9c281a"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\manifest.json",
+      "archive": "issue8/live/manifest.json",
+      "encoding": "identity",
+      "bytes": 1592,
+      "sha256": "398643f139ff0ec206782df3569cdfc6bd5af370e43f9e5ed2cf06bfa23d0de9",
+      "archivedSha256": "398643f139ff0ec206782df3569cdfc6bd5af370e43f9e5ed2cf06bfa23d0de9"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-acceptance-zip-brief.md",
+      "archive": "preparation-only/m9-acceptance-zip-brief.md",
+      "encoding": "identity",
+      "bytes": 3475,
+      "sha256": "702ece4110206e8536ceeb227653c49210091c9bf7d580725c19d71d52962a01",
+      "archivedSha256": "702ece4110206e8536ceeb227653c49210091c9bf7d580725c19d71d52962a01"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-packaged-acceptance.cjs",
+      "archive": "preparation-only/m9-packaged-acceptance.cjs.raw.b64",
+      "encoding": "base64",
+      "bytes": 24216,
+      "sha256": "b7a10880ea8d107b89a805a548697d0c5dc990c35e5df58cc2b18411ae7e311c",
+      "archivedSha256": "97fc643c4b799e31407483450eede2547703ef5b10d721a614d93b93b6740c40"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-script-handoff.md",
+      "archive": "preparation-only/m9-script-handoff.md",
+      "encoding": "identity",
+      "bytes": 4803,
+      "sha256": "f93de79f5dd01285343903c3eb78b13b3ab7e21428b1992a87083b121bde6ed2",
+      "archivedSha256": "f93de79f5dd01285343903c3eb78b13b3ab7e21428b1992a87083b121bde6ed2"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-script-preparation.json",
+      "archive": "preparation-only/m9-script-preparation.json",
+      "encoding": "identity",
+      "bytes": 1009,
+      "sha256": "6e5a666582bcc511ec2fc3a586f4de04916c7509c4a3e4bad23419e668954343",
+      "archivedSha256": "6e5a666582bcc511ec2fc3a586f4de04916c7509c4a3e4bad23419e668954343"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\archive-handoff.json",
+      "archive": "archive-handoff.json",
+      "encoding": "identity",
+      "bytes": 31788,
+      "sha256": "657fcdbc8f0102dfd3dda1ffa4de4194f8cd8548e0f793d33ce943a72e3e1a6d",
+      "archivedSha256": "657fcdbc8f0102dfd3dda1ffa4de4194f8cd8548e0f793d33ce943a72e3e1a6d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\archive-handoff.md",
+      "archive": "archive-handoff.md.raw.b64",
+      "encoding": "base64",
+      "bytes": 3938,
+      "sha256": "ae245194bfc555cca13b1bc378217ab3fd5e467b57ff37e17a27a63a48200ab6",
+      "archivedSha256": "790d3d7c5b61bd208dd557d8307b9766bb369d4da2421da4dfd737b62ae0051f"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnosis.md",
+      "archive": "review/ema-diagnosis.md",
+      "encoding": "identity",
+      "bytes": 11247,
+      "sha256": "6e38a80e02f837df729973932fbb73b38493ebd75960f1c774a4c8d9416241e9",
+      "archivedSha256": "6e38a80e02f837df729973932fbb73b38493ebd75960f1c774a4c8d9416241e9"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnosis-result.json",
+      "archive": "review/ema-diagnosis-result.json",
+      "encoding": "identity",
+      "bytes": 1239,
+      "sha256": "b374874d61e6ea0f5cdf520ccd7c7781db2ee968f083e0db89fb17dfe266ffce",
+      "archivedSha256": "b374874d61e6ea0f5cdf520ccd7c7781db2ee968f083e0db89fb17dfe266ffce"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnostic.json",
+      "archive": "review/ema-diagnostic.json",
+      "encoding": "identity",
+      "bytes": 13330,
+      "sha256": "9306d2cb424c0ec29a31cd4d00fe73f0926cfc7b0642951224d54b6bd67d8c85",
+      "archivedSha256": "9306d2cb424c0ec29a31cd4d00fe73f0926cfc7b0642951224d54b6bd67d8c85"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnostic.mts",
+      "archive": "review/ema-diagnostic.mts.raw.b64",
+      "encoding": "base64",
+      "bytes": 7599,
+      "sha256": "b008278ec3a0e2c16e7b40c357dd249d0f9774150867bcbd36225b956301cc63",
+      "archivedSha256": "ec6b7023e4bd771250281a6144fdd39ba88f55bb26afd7ab68e76534784fa8c5"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnostic.raw.log",
+      "archive": "review/ema-diagnostic.raw.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 2250,
+      "sha256": "c740667b8aa5667368ccda6ba062a4ff79999768c666f52c1f2f55106b749c98",
+      "archivedSha256": "e152c2598f3f752a1fb3e5837dfe1cd1409c0d91b57ccec8e23a75457b002209"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-review-receipt.json",
+      "archive": "review/ema-review-receipt.json",
+      "encoding": "identity",
+      "bytes": 646,
+      "sha256": "dd84277abdd1693fc1a3c9f479d8a1983da760e6cad9f848b909475d6822edb0",
+      "archivedSha256": "dd84277abdd1693fc1a3c9f479d8a1983da760e6cad9f848b909475d6822edb0"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-leading-nan.optional.patch",
+      "archive": "review/ema-leading-nan.optional.patch.raw.b64",
+      "encoding": "base64",
+      "bytes": 996,
+      "sha256": "1e8fe30f9a72092a90c3f218037e16e506974f10a3bd1334e3f052ab2190c1b7",
+      "archivedSha256": "4bba1632b8791cc41d76d788a34aae52e3f5c51dace7285c5a606cec003be521"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-candidate-validation.json",
+      "archive": "review/ema-candidate-validation.json",
+      "encoding": "identity",
+      "bytes": 793,
+      "sha256": "bdc1d397f8846c9ae332b0ce3c370bd76c2d766247956dc69e6fb9c8d02ea1ac",
+      "archivedSha256": "bdc1d397f8846c9ae332b0ce3c370bd76c2d766247956dc69e6fb9c8d02ea1ac"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-candidate-validation.mts",
+      "archive": "review/ema-candidate-validation.mts.raw.b64",
+      "encoding": "base64",
+      "bytes": 4176,
+      "sha256": "56927aca8cbfbd64f3a43e164a958305c9c4817806752c4df2e04963dfc9398b",
+      "archivedSha256": "6b80358a11b4ca4cce71a1485ee4404531b19f81de219a6e20f9dfae012e5032"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-candidate-validation.raw.log",
+      "archive": "review/ema-candidate-validation.raw.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 615,
+      "sha256": "5e542167ebe3d64cef0be8ff3b9e13695feb0a77c6313f25060036f54660c3e4",
+      "archivedSha256": "893f63395d57d25a944c0840ce3ad2dcf6277e73b03d202d2119fb943d22a633"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\saving-fix-review.md",
+      "archive": "review/saving-fix-review.md",
+      "encoding": "identity",
+      "bytes": 7514,
+      "sha256": "3925acb7e74bd3533f085a3c05774d99f04c194d7197ab0b573d62b6af45d112",
+      "archivedSha256": "3925acb7e74bd3533f085a3c05774d99f04c194d7197ab0b573d62b6af45d112"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\saving-fix-review-result.json",
+      "archive": "review/saving-fix-review-result.json",
+      "encoding": "identity",
+      "bytes": 2709,
+      "sha256": "1b049e55ec26abe8ac1f18e64b27bdc6fa3b848fdab6ba83c0e8a9099705fa8e",
+      "archivedSha256": "1b049e55ec26abe8ac1f18e64b27bdc6fa3b848fdab6ba83c0e8a9099705fa8e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\saving-fix-review-receipt.json",
+      "archive": "review/saving-fix-review-receipt.json",
+      "encoding": "identity",
+      "bytes": 1182,
+      "sha256": "99339845a3ab703ea14e1d81a09163fde4e87846668a5976aa3651a520b18d03",
+      "archivedSha256": "99339845a3ab703ea14e1d81a09163fde4e87846668a5976aa3651a520b18d03"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\saving-fix-review-final.diff",
+      "archive": "review/saving-fix-review-final.diff.raw.b64",
+      "encoding": "base64",
+      "bytes": 6023,
+      "sha256": "4603d76266603b0c7f4af336d5b957889d41c32cd394bfbf820d8761e099a56b",
+      "archivedSha256": "d945218db09c41ac8ffa5377494d92b0dfc1b9e7cde4d93ffc653c1375853abe"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\DEP-SEC-MINIMATCH-01-review\\review-dependency.md",
+      "archive": "prerequisites/review-dependency.md",
+      "encoding": "identity",
+      "bytes": 7195,
+      "sha256": "3abee253ebcc67dbad398c59a61f53bc32c7adeeefb51274412396cc1816653e",
+      "archivedSha256": "3abee253ebcc67dbad398c59a61f53bc32c7adeeefb51274412396cc1816653e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\DEP-SEC-MINIMATCH-01-review\\review-dependency.json",
+      "archive": "prerequisites/review-dependency.json",
+      "encoding": "identity",
+      "bytes": 2659,
+      "sha256": "87ae23f80f5cd64a9bb19f987dc8a49c13045d00903bad1cc49419d02aa668b9",
+      "archivedSha256": "87ae23f80f5cd64a9bb19f987dc8a49c13045d00903bad1cc49419d02aa668b9"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\followup-summary.json",
+      "archive": "prerequisites/pr52/followup-summary.json",
+      "encoding": "identity",
+      "bytes": 16731,
+      "sha256": "3737414f2b751a2761e53d77140d0fab8cf5c1e8370ebe6ec4f226d5b128f961",
+      "archivedSha256": "3737414f2b751a2761e53d77140d0fab8cf5c1e8370ebe6ec4f226d5b128f961"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\followup-summary.md",
+      "archive": "prerequisites/pr52/followup-summary.md",
+      "encoding": "identity",
+      "bytes": 1709,
+      "sha256": "63ba5ba1f1919a160a6b6b7dc50d005e3b0b74114b286dff5ed8732536f140c5",
+      "archivedSha256": "63ba5ba1f1919a160a6b6b7dc50d005e3b0b74114b286dff5ed8732536f140c5"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\source-checks-complete.log",
+      "archive": "prerequisites/pr52/source-checks-complete.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 254891,
+      "sha256": "4d12a661fc6f6f59537f193c85ee00c27a4bec7a877a0831d43935ae5a5df951",
+      "archivedSha256": "49be7fccfe64d0d5762e93ab3d89f65a73c704ba4c00c39d5d554666da61a60b"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\source-checks-final.json",
+      "archive": "prerequisites/pr52/source-checks-final.json",
+      "encoding": "identity",
+      "bytes": 5343,
+      "sha256": "3c438dcf17a4b15f44e9b966e7aef443cd13a826de1a7933adceab7a3b3c5b6a",
+      "archivedSha256": "3c438dcf17a4b15f44e9b966e7aef443cd13a826de1a7933adceab7a3b3c5b6a"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\source-checks-execution-boundaries.json",
+      "archive": "prerequisites/pr52/source-checks-execution-boundaries.json",
+      "encoding": "identity",
+      "bytes": 7162,
+      "sha256": "125f12aa2e493d54d2a6bcae791dd616d2b3c5d5586bfae953759703e6e6e1c9",
+      "archivedSha256": "125f12aa2e493d54d2a6bcae791dd616d2b3c5d5586bfae953759703e6e6e1c9"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\required-checks-final.json",
+      "archive": "prerequisites/pr52/required-checks-final.json",
+      "encoding": "identity",
+      "bytes": 546,
+      "sha256": "4e4315495a8f5089dac144f27ea3f58871f3e39629a7d6fabf1c51debcc6b408",
+      "archivedSha256": "4e4315495a8f5089dac144f27ea3f58871f3e39629a7d6fabf1c51debcc6b408"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\pr52-final.json",
+      "archive": "prerequisites/pr52/pr52-final.json",
+      "encoding": "identity",
+      "bytes": 1026,
+      "sha256": "b8d1c3b95b3c1fbede6a4d9ecf0e79a92793dd1883968e458ab2e66b654037cd",
+      "archivedSha256": "b8d1c3b95b3c1fbede6a4d9ecf0e79a92793dd1883968e458ab2e66b654037cd"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependabot48-postmerge.json",
+      "archive": "prerequisites/pr52/dependabot48-postmerge.json",
+      "encoding": "identity",
+      "bytes": 3572,
+      "sha256": "bb1107b22dab830ec270d1c0ac9c91d67de2f0846bc90421aa5110518bd9c20d",
+      "archivedSha256": "bb1107b22dab830ec270d1c0ac9c91d67de2f0846bc90421aa5110518bd9c20d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependabot48-postmerge.exit.json",
+      "archive": "prerequisites/pr52/dependabot48-postmerge.exit.json",
+      "encoding": "identity",
+      "bytes": 209,
+      "sha256": "f64051cb70293a0c226aa6e0d02f7e51baac294f46cd2fc04481007bcc517405",
+      "archivedSha256": "f64051cb70293a0c226aa6e0d02f7e51baac294f46cd2fc04481007bcc517405"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependabot-open-postmerge-all.json",
+      "archive": "prerequisites/pr52/dependabot-open-postmerge-all.json",
+      "encoding": "identity",
+      "bytes": 4,
+      "sha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05",
+      "archivedSha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependabot-open-postmerge-all.exit.json",
+      "archive": "prerequisites/pr52/dependabot-open-postmerge-all.exit.json",
+      "encoding": "identity",
+      "bytes": 240,
+      "sha256": "91938af5169ad383761e35b9572679ffb04bc64d61ad911e01c985cf802a7dd8",
+      "archivedSha256": "91938af5169ad383761e35b9572679ffb04bc64d61ad911e01c985cf802a7dd8"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependency-sbom-postmerge.json",
+      "archive": "prerequisites/pr52/dependency-sbom-postmerge.json",
+      "encoding": "identity",
+      "bytes": 290836,
+      "sha256": "fb4219c5fbd82cdca80c892e463956225df6a288d36ff3365d67f9308f2eb48f",
+      "archivedSha256": "fb4219c5fbd82cdca80c892e463956225df6a288d36ff3365d67f9308f2eb48f"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\dependency-sbom-postmerge.exit.json",
+      "archive": "prerequisites/pr52/dependency-sbom-postmerge.exit.json",
+      "encoding": "identity",
+      "bytes": 210,
+      "sha256": "08d0e008ad1113c465da4d50495f69af06d20d4c0200e73b6bca299ff4a08727",
+      "archivedSha256": "08d0e008ad1113c465da4d50495f69af06d20d4c0200e73b6bca299ff4a08727"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\new-advisory-global.json",
+      "archive": "prerequisites/pr52/new-advisory-global.json",
+      "encoding": "identity",
+      "bytes": 158,
+      "sha256": "2218b50c8a811e2f609d256cc18fa9a5c1ecabca78a58f10ea7977e8a8392684",
+      "archivedSha256": "2218b50c8a811e2f609d256cc18fa9a5c1ecabca78a58f10ea7977e8a8392684"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\new-advisory-global.exit.json",
+      "archive": "prerequisites/pr52/new-advisory-global.exit.json",
+      "encoding": "identity",
+      "bytes": 181,
+      "sha256": "0a54fc52e24355b3d57c37365bbcdbbeaaac88c9dfa63077f62c2b0c9c5fa54f",
+      "archivedSha256": "0a54fc52e24355b3d57c37365bbcdbbeaaac88c9dfa63077f62c2b0c9c5fa54f"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\trainer-batch-20261118\\dependency\\pr52\\new-advisory-upstream.json",
+      "archive": "prerequisites/pr52/new-advisory-upstream.json",
+      "encoding": "identity",
+      "bytes": 8382,
+      "sha256": "2999b592d1847521e5fe2658f18b12f794d2e0e16a744368696c1a369707b942",
+      "archivedSha256": "2999b592d1847521e5fe2658f18b12f794d2e0e16a744368696c1a369707b942"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\npm-ci-maintenance.log",
+      "archive": "post-maintenance/npm-ci-maintenance.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 1363,
+      "sha256": "d62c5c9872fbc4e7d0c0b3cb143e0d424dce0fbb79ccfd9b8dd7174f84b0044f",
+      "archivedSha256": "96589abd2324733865bed69c1610e2c3a378ab3a668397ffb73656137b84530d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\build-maintenance.log",
+      "archive": "post-maintenance/build-maintenance.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 1333,
+      "sha256": "0c84306976702a27524c3b22aaf9f7f35fbe3438e4480e3aa12102f4206e6e49",
+      "archivedSha256": "fb28518ab507e5558eb767b003cf2d5478cf7b464543c59df400d33c2f8aee7b"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\server-targeted-maintenance.log",
+      "archive": "post-maintenance/server-targeted-maintenance.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 268,
+      "sha256": "4b51824a5dca10596a14e3604715e40d28e898d4167d725f8889894f7696b668",
+      "archivedSha256": "8e190b36fff12f3311a178418662f94f9cd1f3b06dbd4aa2603861e618ea8fb7"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\post-maintenance-receipts.json",
+      "archive": "post-maintenance/post-maintenance-receipts.json",
+      "encoding": "identity",
+      "bytes": 576,
+      "sha256": "eb1e2fda64862aaf64fa38c9821617824eda34b513b158b0861dfffeac2f230e",
+      "archivedSha256": "eb1e2fda64862aaf64fa38c9821617824eda34b513b158b0861dfffeac2f230e"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\matrix-after-saving.log",
+      "archive": "post-maintenance/matrix-after-saving.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 978,
+      "sha256": "6e4a5380d8c14a6ad81fbfaaec88c08194549ed795a049a409009c103773b5d7",
+      "archivedSha256": "40413c1b350c7028ba0722d5178386fb1fd0051751d763710fe2f18a67eab380"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6eb1ecab-8032-4fac-a5bb-80aa2dc58a2b\\manifest.json",
+      "archive": "existing-formula-journeys/manifest.json",
+      "encoding": "identity",
+      "bytes": 1596,
+      "sha256": "183dc61694a507dd8799247b1d40e8067d88c72d23eed431d35bdeee225d6d26",
+      "archivedSha256": "183dc61694a507dd8799247b1d40e8067d88c72d23eed431d35bdeee225d6d26"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6eb1ecab-8032-4fac-a5bb-80aa2dc58a2b\\artifacts\\journey.log",
+      "archive": "existing-formula-journeys/artifacts/journey.log.raw.b64",
+      "encoding": "base64",
+      "bytes": 1205,
+      "sha256": "2807c40efa8856fc95e8fc0ab268d9b686eec2ed4f8082f30b429e387a11632b",
+      "archivedSha256": "05da85305275f80c9688fb521bdb3ce9038d65ab656855a32bb8451dbff499a6"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6eb1ecab-8032-4fac-a5bb-80aa2dc58a2b\\artifacts\\browser-results.json",
+      "archive": "existing-formula-journeys/artifacts/browser-results.json",
+      "encoding": "identity",
+      "bytes": 12415,
+      "sha256": "ca200d855615c8ae125433ae88b3cf5531309a9106c7c791f7f69b7860477a6a",
+      "archivedSha256": "ca200d855615c8ae125433ae88b3cf5531309a9106c7c791f7f69b7860477a6a"
+    }
+  ]
+}

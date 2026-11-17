@@ -1,0 +1,324 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/formula-enable.spec.ts",
+      "--retries=0"
+    ],
+    "configFile": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\playwright.config.ts",
+    "rootDir": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-6698a681-156b-49c2-956f-edc72f314b56/artifacts/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e",
+        "snapshotDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:8672",
+          "channel": "msedge",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "trace": "off"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\browser-results.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\html"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "formula-enable.spec.ts",
+      "file": "formula-enable.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "公式启停：自定义创建停用、开启与停用保存后刷新仍保持",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 22708,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T17:37:16.177Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4cccca869a5bbc494cb7-69fc0d537d96925a3e9d",
+          "file": "formula-enable.spec.ts",
+          "line": 73,
+          "column": 1
+        },
+        {
+          "title": "公式启停：内置 MA_BULL_MAIN 按预设位置显示、刷新和停用",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20693,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T17:37:39.334Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4cccca869a5bbc494cb7-0eb641b78316ac4bc8b0",
+          "file": "formula-enable.spec.ts",
+          "line": 164,
+          "column": 1
+        },
+        {
+          "title": "公式启停：内置 WEEK_MACD_SUB 按预设位置显示、刷新和停用",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21253,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T17:38:00.043Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4cccca869a5bbc494cb7-761190557b50c7c340d0",
+          "file": "formula-enable.spec.ts",
+          "line": 167,
+          "column": 1
+        },
+        {
+          "title": "公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 24640,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[2m    true,\u001b[22m\n\u001b[32m-   true,\u001b[39m\n\u001b[31m+   false,\u001b[39m\n\u001b[2m    true,\u001b[22m\n\u001b[2m  ]\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[2m    true,\u001b[22m\n\u001b[32m-   true,\u001b[39m\n\u001b[31m+   false,\u001b[39m\n\u001b[2m    true,\u001b[22m\n\u001b[2m  ]\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at exerciseBuiltin (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:141:93)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:171:3",
+                    "location": {
+                      "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts",
+                      "column": 93,
+                      "line": 141
+                    },
+                    "snippet": " \u001b[90m 139 |\u001b[39m     \u001b[36mawait\u001b[39m dialog\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'关闭'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 140 |\u001b[39m     \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m chartLines(page\u001b[33m,\u001b[39m id))\u001b[33m.\u001b[39mtoHaveLength(preset\u001b[33m.\u001b[39mlines)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 141 |\u001b[39m     \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(\u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m (\u001b[36mawait\u001b[39m chartLines(page\u001b[33m,\u001b[39m id))\u001b[33m.\u001b[39mmap(line \u001b[33m=>\u001b[39m line\u001b[33m.\u001b[39mhasResult))\u001b[33m.\u001b[39mtoEqual(\u001b[33mArray\u001b[39m(preset\u001b[33m.\u001b[39mlines)\u001b[33m.\u001b[39mfill(\u001b[36mtrue\u001b[39m))\n \u001b[90m     |\u001b[39m                                                                                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 142 |\u001b[39m     \u001b[36mconst\u001b[39m lines \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m chartLines(page\u001b[33m,\u001b[39m id)\n \u001b[90m 143 |\u001b[39m     expect(lines\u001b[33m.\u001b[39mevery(line \u001b[33m=>\u001b[39m line\u001b[33m.\u001b[39mhasResult))\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\n \u001b[90m 144 |\u001b[39m     expect(\u001b[36mnew\u001b[39m \u001b[33mSet\u001b[39m(lines\u001b[33m.\u001b[39mmap(line \u001b[33m=>\u001b[39m line\u001b[33m.\u001b[39mpaneId))\u001b[33m.\u001b[39msize)\u001b[33m.\u001b[39mtoBe(\u001b[35m1\u001b[39m)"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts",
+                        "column": 93,
+                        "line": 141
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[2m    true,\u001b[22m\n\u001b[32m-   true,\u001b[39m\n\u001b[31m+   false,\u001b[39m\n\u001b[2m    true,\u001b[22m\n\u001b[2m  ]\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  139 |     await dialog.getByRole('button', { name: '关闭', exact: true }).click()\n  140 |     await expect.poll(() => chartLines(page, id)).toHaveLength(preset.lines)\n> 141 |     await expect.poll(async () => (await chartLines(page, id)).map(line => line.hasResult)).toEqual(Array(preset.lines).fill(true))\n      |                                                                                             ^\n  142 |     const lines = await chartLines(page, id)\n  143 |     expect(lines.every(line => line.hasResult)).toBe(true)\n  144 |     expect(new Set(lines.map(line => line.paneId)).size).toBe(1)\n    at exerciseBuiltin (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:141:93)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:171:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T17:38:21.306Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts",
+                    "column": 93,
+                    "line": 141
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4cccca869a5bbc494cb7-71d2af73057c817e18a6",
+          "file": "formula-enable.spec.ts",
+          "line": 170,
+          "column": 1
+        },
+        {
+          "title": "公式启停：保存失败显示错误并清除上次成功提示",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8765,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T17:38:46.681Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "4cccca869a5bbc494cb7-348dda7a88bd17c8e987",
+          "file": "formula-enable.spec.ts",
+          "line": 174,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-17T17:37:15.621Z",
+    "duration": 100637.104,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
