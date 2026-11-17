@@ -38,14 +38,16 @@ export function MA(data: number[], period: number): number[] {
 export function EMA(data: number[], period: number): number[] {
   const result: number[] = new Array(data.length);
   const multiplier = 2 / (period + 1);
+  const firstValidIndex = data.findIndex(value => !Number.isNaN(value));
+  const seedIndex = firstValidIndex === -1 ? data.length : firstValidIndex + period - 1;
 
   for (let i = 0; i < data.length; i++) {
-    if (i < period - 1) {
+    if (i < seedIndex) {
       result[i] = NaN;
       continue;
     }
 
-    if (i === period - 1) {
+    if (i === seedIndex) {
       // First EMA value = SMA
       let sum = 0;
       for (let j = 0; j < period; j++) {

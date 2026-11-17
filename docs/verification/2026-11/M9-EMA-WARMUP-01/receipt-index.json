@@ -1,0 +1,344 @@
+{
+  "task": "M9-EMA-WARMUP-01",
+  "nativeReceiptCount": 14,
+  "allReceiptsCopiedByteForByte": true,
+  "receipts": [
+    {
+      "step": "build",
+      "receipt": "receipts/build.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "build"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:23:13.6266158Z",
+      "endedAt": "2026-11-17T18:23:27.4533855Z",
+      "nativeExitCode": 0,
+      "log": "logs/build.raw.b64",
+      "rawLogSha256": "8063e85ead86f7f80257ea33665c762a68b2b84a2ab3f847d30126abce7b2677",
+      "rawLogBytes": 1337,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "corpus-targeted",
+      "receipt": "receipts/corpus-targeted.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "--reporter=verbose",
+        "server/test/formula-engine/corpus-smoke.test.ts",
+        "server/test/formula-engine/crossPeriod.test.ts",
+        "server/test/formula-engine/marketContext.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:22:46.6530747Z",
+      "endedAt": "2026-11-17T18:22:49.2190855Z",
+      "nativeExitCode": 0,
+      "log": "logs/corpus-targeted.raw.b64",
+      "rawLogSha256": "5ea1ff603e595283ce19c65b391a0ecf520a219ea795322c9efdc3cb2b8eae2e",
+      "rawLogBytes": 7007,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "docs-check",
+      "receipt": "receipts/docs-check.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:check"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:25:20.7971732Z",
+      "endedAt": "2026-11-17T18:25:22.7202351Z",
+      "nativeExitCode": 1,
+      "log": "logs/docs-check.raw.b64",
+      "rawLogSha256": "7315eb938c6a845933b7269d33e385cbdb42625cb2079a1fd0ab927924fae818",
+      "rawLogBytes": 22913,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "docs-impact-scoped",
+      "receipt": "receipts/docs-impact-scoped.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:impact",
+        "--",
+        "--base",
+        "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+        "--task",
+        "M9-EMA-WARMUP-01"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:25:34.1764729Z",
+      "endedAt": "2026-11-17T18:25:35.2925505Z",
+      "nativeExitCode": 1,
+      "log": "logs/docs-impact-scoped.raw.b64",
+      "rawLogSha256": "2ae0d02a3836987517aaa7438f7e477e47bffdf69d661691fdaa81eca588f4d0",
+      "rawLogBytes": 315,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "docs-impact",
+      "receipt": "receipts/docs-impact.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:impact"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:25:20.8045772Z",
+      "endedAt": "2026-11-17T18:25:21.9056738Z",
+      "nativeExitCode": 1,
+      "log": "logs/docs-impact.raw.b64",
+      "rawLogSha256": "b941d5db8787d5933ef9afb1201a3cb993038f2452cf29bf93c5dea98aaed235",
+      "rawLogBytes": 166,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "docs-status-check",
+      "receipt": "receipts/docs-status-check.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:status",
+        "--",
+        "--check"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:25:20.8387888Z",
+      "endedAt": "2026-11-17T18:25:22.1166661Z",
+      "nativeExitCode": 1,
+      "log": "logs/docs-status-check.raw.b64",
+      "rawLogSha256": "864f6044ee3f56eca4d4b5d70fd46c38a93a2b577ab57dc2ea80ae22d4207228",
+      "rawLogBytes": 251,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "full-test-isolated-control",
+      "receipt": "receipts/full-test-isolated-control.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:36:22.7938035Z",
+      "endedAt": "2026-11-17T18:42:26.9871566Z",
+      "nativeExitCode": 0,
+      "log": "logs/full-test-isolated-control.raw.b64",
+      "rawLogSha256": "d11d0bcfb5beccd43d3e755540b0080e25f8c69be84492f380f158198d7e613f",
+      "rawLogBytes": 15112,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": null
+      }
+    },
+    {
+      "step": "full-test-retry1",
+      "receipt": "receipts/full-test-retry1.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:26:43.8132876Z",
+      "endedAt": "2026-11-17T18:32:51.2791997Z",
+      "nativeExitCode": 1,
+      "log": "logs/full-test-retry1.raw.b64",
+      "rawLogSha256": "ee0b0ce592949083df96593973ec1296ef55b9598718caf4a2823a20b606917e",
+      "rawLogBytes": 18127,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "full-test",
+      "receipt": "receipts/full-test.receipt.json",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:24:10.1162206Z",
+      "endedAt": "2026-11-17T18:24:29.1396205Z",
+      "nativeExitCode": -1073740791,
+      "log": "logs/full-test.raw.b64",
+      "rawLogSha256": "1e8aa169518aa768fc7ee842aa9be51f1cc55e5c3ac53e8fa32f640f9b415252",
+      "rawLogBytes": 207,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "green-targeted",
+      "receipt": "receipts/green-targeted.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:20:36.2171854Z",
+      "endedAt": "2026-11-17T18:20:38.9177787Z",
+      "nativeExitCode": 0,
+      "log": "logs/green-targeted.raw.b64",
+      "rawLogSha256": "a0840ebace62ae1564ca52ad633a569441910762a2ec0641e67ddff3c745c9a7",
+      "rawLogBytes": 274,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "mutant-old-ema",
+      "receipt": "receipts/mutant-old-ema.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:21:00.9346615Z",
+      "endedAt": "2026-11-17T18:21:03.6490715Z",
+      "nativeExitCode": 1,
+      "log": "logs/mutant-old-ema.raw.b64",
+      "rawLogSha256": "7111e1209fe62d49d81c9f5296a70a6c25046328967714eaca2b364f6bfe7e87",
+      "rawLogBytes": 11847,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "red-targeted",
+      "receipt": "receipts/red-targeted.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:19:57.8275204Z",
+      "endedAt": "2026-11-17T18:20:00.7138429Z",
+      "nativeExitCode": 1,
+      "log": "logs/red-targeted.raw.b64",
+      "rawLogSha256": "e9bbde497fdafc179fe84dafd60e6d600fb0e4fb9d7bf37b828cb863f249b0e6",
+      "rawLogBytes": 11847,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "restored-targeted",
+      "receipt": "receipts/restored-targeted.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:21:20.9473397Z",
+      "endedAt": "2026-11-17T18:21:23.6768305Z",
+      "nativeExitCode": 0,
+      "log": "logs/restored-targeted.raw.b64",
+      "rawLogSha256": "ac5d626da0eb4aed64b3eba9f189a36d2466ea151042607dd10acda30eb243b0",
+      "rawLogBytes": 274,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+      }
+    },
+    {
+      "step": "workflow-docs-isolated",
+      "receipt": "receipts/workflow-docs-isolated.receipt.json",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/workflow-docs.test.ts"
+      ],
+      "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+      "startedAt": "2026-11-17T18:34:07.2892032Z",
+      "endedAt": "2026-11-17T18:34:09.3077033Z",
+      "nativeExitCode": 0,
+      "log": "logs/workflow-docs-isolated.raw.b64",
+      "rawLogSha256": "72b96592278183a9bce4d2fef739f5b06b7f54cc7209fe36fb4d0d8162fe40ac",
+      "rawLogBytes": 267,
+      "environment": {
+        "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式",
+        "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+        "TRAINER_CONTROL_ROOT": null
+      }
+    }
+  ]
+}

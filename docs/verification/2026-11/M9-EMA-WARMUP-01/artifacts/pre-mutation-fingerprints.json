@@ -1,0 +1,21 @@
+{
+  "candidateMathSha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb",
+  "testHashes": [
+    {
+      "path": "server/test/formula-engine/interpreter/functions/math.test.ts",
+      "sha256": "f0fb31849403ff22d728c019ce9fd72ea3614360da0c3aab53a9fac1fad419f9"
+    },
+    {
+      "path": "server/test/formula-engine/integration/FormulaEngine.test.ts",
+      "sha256": "83a11948ba19a22dc9d58078e588a81d5b39f1cb5138a9a1400decabc558180b"
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "sha256": "1858c7fe783c417edb7be11516caab5c3ce09239b0aa971f71684ec414d21916"
+    },
+    {
+      "path": "server/test/formula-chart.test.ts",
+      "sha256": "493b4d1050a6c373a1729186497e229840a489c97c7991e67b732ea36fa83a11"
+    }
+  ]
+}

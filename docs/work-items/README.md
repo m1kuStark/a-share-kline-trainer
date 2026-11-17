@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [M9-EMA-WARMUP-01 公共 EMA 暖机](tasks/M9-EMA-WARMUP-01.md)：用户已批准独立修复前导 NaN，保持正常输入结果和现有断言；专项回归和独立审查后，由 M9 统一完成最终整批及 Windows 包验收。
+
 - [ENG-PLAN-01 首批计划与任务对账](tasks/ENG-PLAN-01.md)：[批准记录](../verification/2026-11/ENG-PLAN-01/approval.md)、[22卡事实与旧E2E静态对账](../verification/2026-11/ENG-PLAN-01/README.md)；产品当前动态结果和新增用户验收未验证。
 
 - [ENG-HEALTH-02 工程健康检查](tasks/ENG-HEALTH-02.md)：2026-11-17 本地/GitHub 对账、过时跟踪引用与文档整理；[检查记录和后续清单](../verification/2026-11/ENG-HEALTH-02/README.md)。

@@ -1,0 +1,22 @@
+{
+  "candidateRestored": true,
+  "mathSha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb",
+  "testFilesUnchanged": [
+    {
+      "path": "server/test/formula-engine/interpreter/functions/math.test.ts",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-engine/integration/FormulaEngine.test.ts",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-chart.test.ts",
+      "matches": true
+    }
+  ]
+}

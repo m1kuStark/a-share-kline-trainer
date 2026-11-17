@@ -1,0 +1,22 @@
+{
+  "FE-EMA-LEADING-NAN": [
+    "server/test/formula-engine/interpreter/functions/math.test.ts::seeds after only the leading NaN prefix with the hand calculated SMA",
+    "server/test/formula-engine/interpreter/functions/math.test.ts::keeps empty all NaN and insufficient post prefix inputs unseeded",
+    "server/test/formula-engine/interpreter/functions/math.test.ts::warms period one after leading NaN without restarting after a later NaN",
+    "server/test/formula-engine/interpreter/functions/math.test.ts::does not collect across an internal hole or restart poisoned recurrence"
+  ],
+  "FE-EMA-FINITE-COMPAT": [
+    "server/test/formula-engine/interpreter/functions/math.test.ts::preserves exact frozen old vectors for uninterrupted valid inputs",
+    "server/test/formula-engine/interpreter/functions/math.test.ts::retains later non finite propagation and never skips leading Infinity"
+  ],
+  "FE-EMA-NESTED": [
+    "server/test/formula-engine/integration/FormulaEngine.test.ts::evaluates nested EMA3 with four warmup NaNs then the hand values 3 4 5"
+  ],
+  "FE-EMA-QINIU-DEA": [
+    "server/test/formula-seed.test.ts::真实 QINIU seed 在引擎和服务端保留 DIF25 DEA33 暖机与线性 B1 全零",
+    "server/test/formula-chart.test.ts::真实 QINIU 图表输出 DIF25 DEA33 后为7且前段null与B1全零"
+  ],
+  "FE-EMA-QINIU-CROSS": [
+    "server/test/formula-engine/integration/FormulaEngine.test.ts::evaluates the real QINIU wave DEA against independent weights and B1 only at 61 and 93"
+  ]
+}

@@ -1,0 +1,593 @@
+{
+  "reviewedAt": "2026-11-17T18:43:09.905Z",
+  "base": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "reviewedPatchSha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+  "reviewedPatchBytes": 13711,
+  "oldMathSha256": "e4cfdd6f98fa026780aec5815037df9b09a860b1aeb6143d15644f9c25fdb49b",
+  "candidateMathSha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb",
+  "rawBeforeMatchesGitBlob": false,
+  "rawBeforeSha256": "96841db54525c3817c04c67b5cc1dbf96b732acfadddb1e387c8941170709348",
+  "rawBeforeBytes": 7807,
+  "gitBlobBytes": 7476,
+  "rawBeforeMatchesGitBlobAfterCrlf": true,
+  "frozenChecks": [
+    {
+      "vector": 0,
+      "oldExact": true,
+      "candidateExact": true
+    },
+    {
+      "vector": 1,
+      "oldExact": true,
+      "candidateExact": true
+    },
+    {
+      "vector": 2,
+      "oldExact": true,
+      "candidateExact": true
+    },
+    {
+      "vector": 3,
+      "oldExact": true,
+      "candidateExact": true
+    },
+    {
+      "vector": 4,
+      "oldExact": true,
+      "candidateExact": true
+    },
+    {
+      "vector": 5,
+      "oldExact": true,
+      "candidateExact": true
+    }
+  ],
+  "finiteCompatibility": {
+    "cases": 900,
+    "mismatch": []
+  },
+  "testChecks": [
+    {
+      "path": "server/test/formula-engine/interpreter/functions/math.test.ts",
+      "sha256": "f0fb31849403ff22d728c019ce9fd72ea3614360da0c3aab53a9fac1fad419f9",
+      "currentSha256": "f0fb31849403ff22d728c019ce9fd72ea3614360da0c3aab53a9fac1fad419f9",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-engine/integration/FormulaEngine.test.ts",
+      "sha256": "83a11948ba19a22dc9d58078e588a81d5b39f1cb5138a9a1400decabc558180b",
+      "currentSha256": "83a11948ba19a22dc9d58078e588a81d5b39f1cb5138a9a1400decabc558180b",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "sha256": "1858c7fe783c417edb7be11516caab5c3ce09239b0aa971f71684ec414d21916",
+      "currentSha256": "1858c7fe783c417edb7be11516caab5c3ce09239b0aa971f71684ec414d21916",
+      "matches": true
+    },
+    {
+      "path": "server/test/formula-chart.test.ts",
+      "sha256": "493b4d1050a6c373a1729186497e229840a489c97c7991e67b732ea36fa83a11",
+      "currentSha256": "493b4d1050a6c373a1729186497e229840a489c97c7991e67b732ea36fa83a11",
+      "matches": true
+    }
+  ],
+  "receipts": [
+    {
+      "step": "build",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:23:13.6266158Z",
+      "end": "2026-11-17T18:23:27.4533855Z",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "build"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "corpus-targeted",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:22:46.6530747Z",
+      "end": "2026-11-17T18:22:49.2190855Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "--reporter=verbose",
+        "server/test/formula-engine/corpus-smoke.test.ts",
+        "server/test/formula-engine/crossPeriod.test.ts",
+        "server/test/formula-engine/marketContext.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "docs-check",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:25:20.7971732Z",
+      "end": "2026-11-17T18:25:22.7202351Z",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:check"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "docs-impact-scoped",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:25:34.1764729Z",
+      "end": "2026-11-17T18:25:35.2925505Z",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:impact",
+        "--",
+        "--base",
+        "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+        "--task",
+        "M9-EMA-WARMUP-01"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "docs-impact",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:25:20.8045772Z",
+      "end": "2026-11-17T18:25:21.9056738Z",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:impact"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "docs-status-check",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:25:20.8387888Z",
+      "end": "2026-11-17T18:25:22.1166661Z",
+      "program": "npm.cmd",
+      "args": [
+        "run",
+        "docs:status",
+        "--",
+        "--check"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "full-test-isolated-control",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:36:22.7938035Z",
+      "end": "2026-11-17T18:42:26.9871566Z",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "full-test-retry1",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:26:43.8132876Z",
+      "end": "2026-11-17T18:32:51.2791997Z",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "full-test",
+      "nativeExit": -1073740791,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:24:10.1162206Z",
+      "end": "2026-11-17T18:24:29.1396205Z",
+      "program": "npm.cmd",
+      "args": [
+        "test"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "green-targeted",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:20:36.2171854Z",
+      "end": "2026-11-17T18:20:38.9177787Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "mutant-old-ema",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:21:00.9346615Z",
+      "end": "2026-11-17T18:21:03.6490715Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "red-targeted",
+      "nativeExit": 1,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:19:57.8275204Z",
+      "end": "2026-11-17T18:20:00.7138429Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "restored-targeted",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:21:20.9473397Z",
+      "end": "2026-11-17T18:21:23.6768305Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/formula-engine/interpreter/functions/math.test.ts",
+        "server/test/formula-engine/integration/FormulaEngine.test.ts",
+        "server/test/formula-seed.test.ts",
+        "server/test/formula-chart.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    },
+    {
+      "step": "workflow-docs-isolated",
+      "nativeExit": 0,
+      "hashMatches": true,
+      "bytesMatch": true,
+      "start": "2026-11-17T18:34:07.2892032Z",
+      "end": "2026-11-17T18:34:09.3077033Z",
+      "program": "npx.cmd",
+      "args": [
+        "--no-install",
+        "vitest",
+        "run",
+        "--config",
+        "server/vitest.config.ts",
+        "server/test/workflow-docs.test.ts"
+      ],
+      "head": "df6cedd82fa3fe591615724259f83d16f6bb70fa"
+    }
+  ],
+  "corpus": {
+    "realFileCount": 6,
+    "corpusBlockCount": 23,
+    "checked": 29,
+    "checks": [
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\左峰诅咒线主图公式_单行粘贴版.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\浪型背离副图_单行粘贴版.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\放量解放选股_单行粘贴版.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\骑牛买1公式.md",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘辅助公式.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘日线25MA之上选股公式.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-2.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-3.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-4.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-2.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-2.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-3.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-4.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-5.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-6.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-7.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-8.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-2.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买2_生命线诅咒线选股公式-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-2.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-3.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-4.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-5.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      },
+      {
+        "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-万能过左峰公式-1.txt",
+        "exists": true,
+        "matches": true,
+        "bytesMatch": true
+      }
+    ]
+  },
+  "mutation": {
+    "identicalFailedIDs": true,
+    "red": {
+      "ids": [
+        " FAIL  server/test/formula-chart.test.ts > M9-04C 公式图表求值（浏览器侧纯函数） > 真实 QINIU 图表输出 DIF25 DEA33 后为7且前段null与B1全零",
+        " FAIL  server/test/formula-seed.test.ts > M9-04D 内置示例公式 seed > 真实 QINIU seed 在引擎和服务端保留 DIF25 DEA33 暖机与线性 B1 全零",
+        " FAIL  server/test/formula-engine/integration/FormulaEngine.test.ts > M9 EMA composition regression > evaluates nested EMA3 with four warmup NaNs then the hand values 3 4 5",
+        " FAIL  server/test/formula-engine/integration/FormulaEngine.test.ts > M9 EMA composition regression > evaluates the real QINIU wave DEA against independent weights and B1 only at 61 and 93",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > seeds after only the leading NaN prefix with the hand calculated SMA",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > warms period one after leading NaN without restarting after a later NaN",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > does not collect across an internal hole or restart poisoned recurrence",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > retains later non finite propagation and never skips leading Infinity"
+      ],
+      "assertions": [
+        "AssertionError: expected [ Array(120) ] to deeply equal [ Array(120) ]",
+        "AssertionError: expected [ Array(120) ] to deeply equal [ Array(120) ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, NaN, 3, 4, 5 ]",
+        "AssertionError: expected NaN to be close to -4.550520464607697, received difference is NaN, but expected 5e-11",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, NaN, 4, 6 ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, 2, 4, NaN, NaN ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, 4, NaN, NaN, NaN ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, Infinity, NaN ]"
+      ],
+      "environmentErrors": []
+    },
+    "mutant": {
+      "ids": [
+        " FAIL  server/test/formula-chart.test.ts > M9-04C 公式图表求值（浏览器侧纯函数） > 真实 QINIU 图表输出 DIF25 DEA33 后为7且前段null与B1全零",
+        " FAIL  server/test/formula-seed.test.ts > M9-04D 内置示例公式 seed > 真实 QINIU seed 在引擎和服务端保留 DIF25 DEA33 暖机与线性 B1 全零",
+        " FAIL  server/test/formula-engine/integration/FormulaEngine.test.ts > M9 EMA composition regression > evaluates nested EMA3 with four warmup NaNs then the hand values 3 4 5",
+        " FAIL  server/test/formula-engine/integration/FormulaEngine.test.ts > M9 EMA composition regression > evaluates the real QINIU wave DEA against independent weights and B1 only at 61 and 93",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > seeds after only the leading NaN prefix with the hand calculated SMA",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > warms period one after leading NaN without restarting after a later NaN",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > does not collect across an internal hole or restart poisoned recurrence",
+        " FAIL  server/test/formula-engine/interpreter/functions/math.test.ts > M9 EMA warmup contract > retains later non finite propagation and never skips leading Infinity"
+      ],
+      "assertions": [
+        "AssertionError: expected [ Array(120) ] to deeply equal [ Array(120) ]",
+        "AssertionError: expected [ Array(120) ] to deeply equal [ Array(120) ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, NaN, 3, 4, 5 ]",
+        "AssertionError: expected NaN to be close to -4.550520464607697, received difference is NaN, but expected 5e-11",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, NaN, 4, 6 ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, 2, 4, NaN, NaN ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, 4, NaN, NaN, NaN ]",
+        "AssertionError: expected [ NaN, NaN, NaN, NaN, NaN ] to deeply equal [ NaN, NaN, NaN, Infinity, NaN ]"
+      ],
+      "environmentErrors": []
+    }
+  },
+  "fingerprints": [
+    {
+      "path": "web/src/formula-engine/interpreter/functions/math.ts",
+      "bytes": 7969,
+      "sha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb"
+    },
+    {
+      "path": "server/test/formula-engine/interpreter/functions/math.test.ts",
+      "bytes": 11475,
+      "sha256": "f0fb31849403ff22d728c019ce9fd72ea3614360da0c3aab53a9fac1fad419f9"
+    },
+    {
+      "path": "server/test/formula-engine/integration/FormulaEngine.test.ts",
+      "bytes": 40495,
+      "sha256": "83a11948ba19a22dc9d58078e588a81d5b39f1cb5138a9a1400decabc558180b"
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "bytes": 7986,
+      "sha256": "1858c7fe783c417edb7be11516caab5c3ce09239b0aa971f71684ec414d21916"
+    },
+    {
+      "path": "server/test/formula-chart.test.ts",
+      "bytes": 5869,
+      "sha256": "493b4d1050a6c373a1729186497e229840a489c97c7991e67b732ea36fa83a11"
+    },
+    {
+      "path": "web/src/formula-engine/README.md",
+      "bytes": 11411,
+      "sha256": "678daacf7c3281d2b1da03e25be863b81f42d38201fbbf26524b9bfd3f948978"
+    },
+    {
+      "path": "server/src/formulas/seed.ts",
+      "bytes": 2591,
+      "sha256": "94086a4fdfd979ad5233fd58e60430b70316079937de4b3835955e8d7039a018"
+    },
+    {
+      "path": "web/src/formula-engine/interpreter/Interpreter.ts",
+      "bytes": 57354,
+      "sha256": "b21726c0c9ea89e639a3758a53df7115b9980cffca0edec29a2dc9294b6cd927"
+    },
+    {
+      "path": "docs/work-items/tasks/M9-EMA-WARMUP-01.md",
+      "bytes": 3633,
+      "sha256": "4b1cc47451fef64481045f51841e301580cd06b079baf01db501dd2541c3b91f"
+    }
+  ]
+}

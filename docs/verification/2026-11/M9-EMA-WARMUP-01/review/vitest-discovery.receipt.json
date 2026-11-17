@@ -1,0 +1,9 @@
+{
+  "command": "npx.cmd --no-install vitest list --config server/vitest.config.ts [two files] --testNamePattern [two literal titles]",
+  "startedAt": "2026-11-17T18:31:44.0373041Z",
+  "endedAt": "2026-11-17T18:31:46.3582854Z",
+  "nativeExitCode": 0,
+  "log": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-EMA-WARMUP-01-review/vitest-discovery.log",
+  "sha256": "f173e7f44cb32824a8f2ccb121da0509374c4b4aa817f6d35fb31534298860c6",
+  "bytes": 339
+}

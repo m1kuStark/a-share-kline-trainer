@@ -1,0 +1,61 @@
+{
+  "base": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "branch": "task/M9-EMA-WARMUP-01",
+  "dirty": true,
+  "productAndTestsChangedAfterGreen": false,
+  "scope": [
+    "web/src/formula-engine/interpreter/functions/math.ts",
+    "server/test/formula-engine/interpreter/functions/math.test.ts",
+    "server/test/formula-engine/integration/FormulaEngine.test.ts",
+    "server/test/formula-seed.test.ts",
+    "server/test/formula-chart.test.ts",
+    "web/src/formula-engine/README.md"
+  ],
+  "files": [
+    {
+      "path": "web/src/formula-engine/interpreter/functions/math.ts",
+      "bytes": 7969,
+      "sha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb"
+    },
+    {
+      "path": "server/test/formula-engine/interpreter/functions/math.test.ts",
+      "bytes": 11475,
+      "sha256": "f0fb31849403ff22d728c019ce9fd72ea3614360da0c3aab53a9fac1fad419f9"
+    },
+    {
+      "path": "server/test/formula-engine/integration/FormulaEngine.test.ts",
+      "bytes": 40495,
+      "sha256": "83a11948ba19a22dc9d58078e588a81d5b39f1cb5138a9a1400decabc558180b"
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "bytes": 7986,
+      "sha256": "1858c7fe783c417edb7be11516caab5c3ce09239b0aa971f71684ec414d21916"
+    },
+    {
+      "path": "server/test/formula-chart.test.ts",
+      "bytes": 5869,
+      "sha256": "493b4d1050a6c373a1729186497e229840a489c97c7991e67b732ea36fa83a11"
+    },
+    {
+      "path": "web/src/formula-engine/README.md",
+      "bytes": 11411,
+      "sha256": "678daacf7c3281d2b1da03e25be863b81f42d38201fbbf26524b9bfd3f948978"
+    }
+  ],
+  "status": [
+    " M docs/specs/README.md",
+    " M docs/status.md",
+    " M docs/work-items/README.md",
+    " M docs/work-items/milestones/M9.md",
+    " M server/test/formula-chart.test.ts",
+    " M server/test/formula-engine/integration/FormulaEngine.test.ts",
+    " M server/test/formula-engine/interpreter/functions/math.test.ts",
+    " M server/test/formula-seed.test.ts",
+    " M web/src/formula-engine/README.md",
+    " M web/src/formula-engine/interpreter/functions/math.ts",
+    "?? docs/specs/formulas.md",
+    "?? docs/verification/2026-11/M9-EMA-WARMUP-01/",
+    "?? docs/work-items/tasks/M9-EMA-WARMUP-01.md"
+  ]
+}

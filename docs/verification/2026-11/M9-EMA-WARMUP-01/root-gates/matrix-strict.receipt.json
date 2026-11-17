@@ -1,0 +1,23 @@
+{
+  "step": "matrix-strict",
+  "executable": "node",
+  "args": [
+    "D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/scripts/check-binding.mjs",
+    "--repo",
+    "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+    "--matrix",
+    "D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/formula-engine.yaml",
+    "--strict",
+    "--include-untracked"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-ema-warmup-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T18:49:27.5271947Z",
+  "endedAt": "2026-11-17T18:49:28.1548014Z",
+  "nativeExitCode": 0,
+  "logSha256": "f1a74f17251ca8db52a25fa6476c010fef042896310ee9f3e0d6d1569177b1b0",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-review\\matrix-strict.final.log",
+  "environment": {
+    "TRAINER_CONTROL_ROOT": "D:/Superlinear_Academy/Stock_WorkSpace/.control"
+  },
+  "exitCapture": "LASTEXITCODE immediately after command, no pipeline"
+}

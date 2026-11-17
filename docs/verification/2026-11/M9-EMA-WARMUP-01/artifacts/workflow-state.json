@@ -1,0 +1,1174 @@
+
+> a-share-kline-trainer@1.3.8 workflow:state
+> tsx scripts/workflow/state-cli.ts task --control-root D:/Superlinear_Academy/Stock_WorkSpace/.control --id M9-EMA-WARMUP-01 --status active --owner integrator --summary 用户已批准独立EMA前导NaN暖机修复；专项RED与变异证据已取得，完整单测及独立审查进行中。 --next-action 完成独立EMA审查和PR/CI后合入M9最终候选，继续整批与Windows包，不发布。
+
+{
+  "schema_version": 1,
+  "state_revision": 177,
+  "project_id": "a-share-kline-trainer",
+  "active_task": "M9-EMA-WARMUP-01",
+  "candidate": {
+    "candidate_id": "TASK-01-cef3802c9037",
+    "task_id": "TASK-01",
+    "status": "prepared",
+    "updated_at": "2026-11-17T16:50:34.711Z",
+    "base_commit": "e9af0bf4256034ff40fb1688c13395b02ab2b24e",
+    "commit": "2f587497630d9b9d7e1e8d14590bbc9493d570d7",
+    "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+    "worktree_alias": "integration/TASK-01-cef3802c9037"
+  },
+  "tasks": {
+    "ORCH-STATE-01": {
+      "status": "active",
+      "owner": "integrator",
+      "updated_at": "2026-10-01T05:48:54.184Z",
+      "summary": "统一状态文件已回填 V1.2.0 候选、包校验和与用户验收边界"
+    },
+    "V1.1-TDX": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户确认通达信目录连接流程已完成",
+      "updated_at": "2026-09-30T21:28:44.338Z"
+    },
+    "V1.1-HISTORY": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "历史删除、成绩单浮窗、收益率对比接口已完成",
+      "updated_at": "2026-09-30T21:28:44.569Z"
+    },
+    "V1.1-RANKING": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "自定义区间与行业排行已实现，待目录数据和用户验收",
+      "updated_at": "2026-09-30T21:28:44.726Z"
+    },
+    "REL-V1-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-03T16:33:43.410Z",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "summary": "v1.2.7 已按用户验收授权替换发布；最终包应用文件与验收包一致，GitHub ZIP 与 SHA256SUMS 均核验通过，MySoftWares 仅保留 fix 验收目录。"
+    },
+    "V4-01": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "V1.2.3 修订已完成用户验收反馈三项，并在 v1.2.7 中发布自定义范围训练的阶段模式和条件单开关修复；理由录制、订单事件回放和完整旧数据验收仍待完成。",
+      "updated_at": "2026-10-03T16:33:43.410Z"
+    },
+    "UI-FEEDBACK-04": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户验收通过（随 V1.2.6 包）",
+      "updated_at": "2026-10-02T23:55:00+08:00"
+    },
+    "ORDER-TRIGGER-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户验收通过（2026-10-02）：条件单到价触发语义（随 V1.2.6 包验收）",
+      "updated_at": "2026-10-02T23:55:00+08:00"
+    },
+    "DATA-DIR-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户验收通过（2026-10-02）：训练数据目录设置＋版本独立默认（V1.2.6 包）",
+      "updated_at": "2026-10-02T23:55:00+08:00"
+    },
+    "SETUP-RESTART-FIX-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "首配受控重启、Chromium 无 Origin 同源轮询与失败终态均已修复；用户验收后随 v1.2.7 最终包发布。",
+      "updated_at": "2026-10-03T16:33:43.410Z",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472"
+    },
+    "REC-LIBRARY-FIX-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-03T16:33:43.410Z",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "summary": "录像库隔离、来源分栏、删除保护和深色退出页已通过用户验收，并随 v1.2.7 最终包发布。"
+    },
+    "GITHUB-HEALTH-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "Source checks 双平台修复已推送并通过远端完整单测；个人主页、仓库入口和安全设置已更新，两公开仓库当前开放依赖告警为零。",
+      "updated_at": "2026-10-03T18:19:40.819Z"
+    },
+    "M6-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T10:31:03.773Z",
+      "summary": "用户验收通过 2026-10-05"
+    },
+    "M6-02": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T10:31:05.063Z",
+      "summary": "用户验收通过 2026-10-05；展示形式由 M6-03 重构"
+    },
+    "M6-03": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T13:28:21.264Z",
+      "summary": "用户验收通过 2026-10-05"
+    },
+    "M6-04": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T13:28:22.589Z",
+      "summary": "用户验收通过 2026-10-05"
+    },
+    "M6-05": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T15:42:21.620Z",
+      "summary": "用户验收通过 2026-10-06（动画效果验收，含 M6-05R 动效门修复；时长量纲呈现类默认随验收确认）"
+    },
+    "M6-06": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T15:42:28.463Z",
+      "summary": "用户验收通过 2026-10-06（动画效果验收）：权益滚动帧取整无幻影小数＋两层 tabular-nums 字宽稳定"
+    },
+    "M6-07": {
+      "status": "closed",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T15:42:30.321Z",
+      "summary": "用户验收通过 2026-10-06（动画效果验收；分栏/文案呈现类默认随验收确认）：设置面板动画效果分栏收纳数字滚动开关，顶栏滚动胶囊按钮移除"
+    },
+    "PORT-02": {
+      "status": "review",
+      "owner": "zcode:PORT-02-dev",
+      "summary": "用户2026-10-06指令：Start遇训练器占用端口改为弹框询问（确认→复用已有服务；拒绝→清理后新进程启动）；Stop不再限于本包state记录、直接关闭全部经验证(isTrainerHealth)的训练器进程，不明进程依旧不杀",
+      "updated_at": "2026-10-05T16:32:58.557Z"
+    },
+    "M7-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "服务端核心工程验证完成：14/14 新测试、全量 1467/1468（唯一失败环境性已复核）、build 过、strict 绑定 exit0、双变异击杀；待架构师复核与用户拍板",
+      "updated_at": "2026-10-05T17:29:07.879Z"
+    },
+    "M7-02": {
+      "status": "review",
+      "owner": "integrator",
+      "updated_at": "2026-10-05T18:23:08.803Z"
+    },
+    "UPD-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "服务端核心完成工程验证：矩阵11行covered、33例零网络测试、npm test 1501/1501、build过、变异2行击杀；8项proposed_default待拍板",
+      "updated_at": "2026-10-05T19:38:12.666Z"
+    },
+    "UPD-02": {
+      "status": "review",
+      "owner": "zcode:UPD-02-dev",
+      "summary": "UPD-02 设置页「关于与更新」分栏：检查更新三态呈现、apply 守卫人话、状态机轮询＋断线重连（真实换装留真机验收）；e2e 经次级服务＋本地 fixture 清单注入（零 api.github.com）",
+      "updated_at": "2026-10-05T20:20:04.241Z"
+    },
+    "PACK-01": {
+      "status": "review",
+      "owner": "integrator",
+      "updated_at": "2026-10-06T06:53:31.803Z"
+    },
+    "PACK-02": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "桌面应用生命周期：单实例/优雅退出（冻结排空复用）/端口冲突三应答/外部链接/窗口 bounds 记忆/安全基线；design+矩阵行升级+TDD+冒烟扩展",
+      "updated_at": "2026-10-06T08:12:17.461Z"
+    },
+    "PACK-03": {
+      "status": "review",
+      "owner": "integrator",
+      "updated_at": "2026-11-07T05:48:34.922Z"
+    },
+    "MIG-01": {
+      "status": "review",
+      "owner": "zcode:mig-tool",
+      "updated_at": "2026-10-10T15:59:29.270Z"
+    },
+    "CN-FEED-01": {
+      "status": "review",
+      "updated_at": "2026-10-13T02:56:12.454Z"
+    },
+    "UIUX-REFINE-01": {
+      "status": "review",
+      "owner": "codex:root",
+      "summary": "UIUX候选22项定向组合通过、单测1912通过、NSIS隔离包已生成；全量仍17项失败待关闭，未发布。",
+      "updated_at": "2026-10-17T14:26:42.375Z"
+    },
+    "GAP4-DOCS": {
+      "status": "active",
+      "owner": "integrator",
+      "updated_at": "2026-10-19T02:52:19.697Z"
+    },
+    "REL-MIGRATE-SCOPE-01": {
+      "status": "review",
+      "updated_at": "2026-10-19T07:31:30.814Z"
+    },
+    "BUILDER-REVIEW-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "候选 81558ad 已保存，工作树干净；本地访问守卫、恢复验证、画线日期修复与说明已落实。单测 1750+357、build、M2 24 项通过。",
+      "updated_at": "2026-10-19T16:13:45.276Z"
+    },
+    "BUILDER-ACCEPT-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "成绩单与文档错误修复；单测 1750+357、M2 24、完整 Journey 196/196 通过。真实 v1.2.7 历史/录像迁入实际桌面、独立 ZIP 全新解压启动已验证；待用户验收，未发布。",
+      "updated_at": "2026-10-19T17:47:23.399Z"
+    },
+    "REC-COLLECT-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户 2026-10-29 验收通过（UI v2 方案 A＋复验三项收敛）；矩阵 10/10 covered；关闭",
+      "updated_at": "2026-10-28T17:56:35.081Z"
+    },
+    "CHART-INVERT-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "用户 2026-10-29 验收通过（基本通过＋三项整改复验确认）；矩阵 9/9 covered 含 SUPERSEDED 行；feat 1e2dfeb＋整改 5393b25",
+      "updated_at": "2026-10-28T16:22:50.183Z"
+    },
+    "M9-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "公式引擎 vendor＋适配一期工程验证完成（feat 046634a）：上游 717 全量移植、六缺口补丁、corpus 22/23、矩阵 8/8 covered；验收 deferred 排队第三",
+      "updated_at": "2026-10-26T12:12:54.461Z"
+    },
+    "M9-02": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "跨周期/跨公式引用工程验证完成（feat 2bd4f47）：骑牛买系列端到端跑通、矩阵 7/7＋引擎 8/8 零回归；验收 deferred 排队第四",
+      "updated_at": "2026-10-26T13:14:32.617Z"
+    },
+    "M9-03": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "市场上下文函数族工程验证完成（feat ed72c6a）：StockContext/FINANCE(3)/NAMELIKE/CODELIKE/HYBLOCK 族/HY_INDEX 对齐＋context 接口；全量 2581/2581 零 flake；矩阵 7/7；验收 deferred（建议随 M9-04 一起）",
+      "updated_at": "2026-10-28T18:30:31.187Z"
+    },
+    "CHART-ANALYSIS-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "PR #7 已本地 --no-ff 合入候选；完成镜像态真实价适配与镜像 e2e；门禁收据见 docs/verification/2026-11/CHART-PR7-MERGE；用户验收随本批",
+      "updated_at": "2026-11-07T05:59:52.447Z"
+    },
+    "CHART-MEASURE-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "PR #7 已本地 --no-ff 合入候选；完成镜像态真实价适配与镜像 e2e；门禁收据见 docs/verification/2026-11/CHART-PR7-MERGE；用户验收随本批",
+      "updated_at": "2026-11-07T06:00:04.897Z"
+    },
+    "GH-202611": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "GitHub 反馈批次（2026-11）：TRAIN-FEE-01 开发中，后续 SETUP-PASTE-01/CHART-WEEKDAY-01/CHART-ZOOM-01/CHART-PAN-01/UI-TOOLBAR-01 按序推进",
+      "updated_at": "2026-11-07T06:43:26.367Z"
+    },
+    "TRAIN-FEE-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试/docs/impact/binding8-8/journey10-10）；用户验收随本批",
+      "updated_at": "2026-11-07T09:09:22.887Z"
+    },
+    "SETUP-PASTE-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试/docs/impact/journey10-10；binding RED=0，既有2行planned非本任务）",
+      "updated_at": "2026-11-07T09:35:25.556Z"
+    },
+    "CHART-WEEKDAY-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试174文件2599用例/docs/impact/binding4-4/journey7-7）；用户验收随整批",
+      "updated_at": "2026-11-07T10:07:14.282Z"
+    },
+    "CHART-ZOOM-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试174文件2601用例/docs/impact/binding5-5/journey1-1）；用户验收随整批",
+      "updated_at": "2026-11-07T11:01:47.558Z"
+    },
+    "CHART-PAN-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试174文件2602用例/docs/impact/binding8-8/journey2-2）；用户验收随整批",
+      "updated_at": "2026-11-07T11:44:43.384Z"
+    },
+    "UI-TOOLBAR-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（build/全量测试175文件2604用例/docs/impact/binding11-11/journey5-5+18-18回归）",
+      "updated_at": "2026-11-07T12:16:24.124Z"
+    },
+    "F7-DEPS-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "工程门禁全绿（真实安装后 build/全量测试175文件2604用例/docs/impact/journey2-2）",
+      "updated_at": "2026-11-07T12:27:52.406Z"
+    },
+    "TEST-BUDGET-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "真实 git I/O 测试预算 30s→90s；断言不变；待 verify:baseline 全绿",
+      "updated_at": "2026-11-07T12:35:58.910Z"
+    },
+    "REVIEW-FIX-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "审查整改 10 项完成；定向检查绿；待 verify:baseline",
+      "updated_at": "2026-11-07T12:41:38.170Z"
+    },
+    "DIAG-OPLOG-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "v1.3.4 已打包并发布 CloudBase 镜像；全量 go 门禁全绿；待用户从 v1.3.3 更新验收",
+      "updated_at": "2026-11-07T22:44:05.190Z"
+    },
+    "CHART-MEASURE-02": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "v1.3.5 功能/定向门禁通过；全量门禁为环境 flaky（两项隔离复跑全绿）；CloudBase 已发布待用户验收",
+      "updated_at": "2026-11-08T16:34:18.996Z"
+    },
+    "UI-TOOLBAR-02": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "紧凑图标优先工具面板已完成：默认展开 23 工具、常用 0/5/10/23 无纵向滚动、glyph16/按钮36/6列/宽284/默认左下；定向 journey 7/7、verify:fast、binding RED=0",
+      "updated_at": "2026-11-10T18:59:14.817Z"
+    },
+    "ENG-GOV-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "治理收尾：main 保护/Ruleset/签名/CI 基线已完成并合入；用户 2026-11-12 指示收尾转产品开发",
+      "updated_at": "2026-11-11T16:33:04.727Z"
+    },
+    "TEST-BUDGET-02": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "治理收尾：迁移用例 30s 预算已合入并绿；用户 2026-11-12 指示收尾转产品开发",
+      "updated_at": "2026-11-11T16:33:05.541Z"
+    },
+    "CI-STABILITY-01": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "治理收尾：无摘要崩溃重试 runner 已合入并绿；用户 2026-11-12 指示收尾转产品开发",
+      "updated_at": "2026-11-11T16:33:06.333Z"
+    },
+    "ENG-GOV-03": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "治理收尾：tag-release + 签名 tag + v1.3.6 pre-release 已完成；用户 2026-11-12 指示收尾转产品开发",
+      "updated_at": "2026-11-11T16:33:07.151Z"
+    },
+    "TEST-BUDGET-03": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "治理收尾：CI desktop 30s 预算已合入并绿；用户 2026-11-12 指示收尾转产品开发",
+      "updated_at": "2026-11-11T16:33:07.957Z"
+    },
+    "GOV-CLOSE-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "治理收尾与任务状态对账；Dependabot 开放 PR 清零；产品代码零改动，待用户验收后关闭",
+      "updated_at": "2026-11-11T16:33:08.857Z"
+    },
+    "DEP-POLICY-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "Dependabot 全局忽略 major（npm/actions），klinecharts 全忽略；#29 合并、#30-33 关闭；开放 PR 清零",
+      "updated_at": "2026-11-11T16:46:59.885Z"
+    },
+    "TEST-BUDGET-04": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "已合入 main 7895a22（PR #36）；desktop 套件 30s 配置与撤销无效 CLI flag 已集成，保留既有证据",
+      "updated_at": "2026-11-17T14:16:46.044Z"
+    },
+    "CHART-LAYOUT-01": {
+      "status": "review",
+      "summary": "v1.3.7 集成：图表铺满可用高度已合入 main 8eec4cf；用户验收随 v1.3.7 人工验收",
+      "updated_at": "2026-11-12T05:02:22.668Z"
+    },
+    "CHART-MEASURE-04": {
+      "status": "cancelled",
+      "summary": "2026-11-13 用户验收：顶栏测量入口与 Shift 测量重复，已由 CHART-MEASURE-05 移除入口/模式；卡取消，实现记录保留为 v1.3.7 历史",
+      "updated_at": "2026-11-12T17:30:31.128Z"
+    },
+    "UI-TOOLBAR-03": {
+      "status": "review",
+      "summary": "v1.3.7 集成：面板固定/调宽高已合入 main 599f40d；用户验收随 v1.3.7 人工验收",
+      "updated_at": "2026-11-12T05:02:23.939Z"
+    },
+    "REL-137": {
+      "status": "review",
+      "summary": "v1.3.7 已验收（布局/面板通过；测量入口由 CHART-MEASURE-05 移除）；用户要求暂不发布",
+      "updated_at": "2026-11-12T17:30:32.775Z"
+    },
+    "CHART-MEASURE-05": {
+      "status": "review",
+      "summary": "已合入 main 31455cb（PR #42，v1.3.8 未发布）；移除顶栏测量入口、保留 Shift 测量，历史用户反馈与回退后验收区分记录",
+      "updated_at": "2026-11-17T14:16:46.044Z",
+      "owner": "integrator"
+    },
+    "V137": {
+      "status": "active",
+      "summary": "v1.3.7 用户验收 2026-11-13：布局/面板通过；测量入口按反馈回退；未发布",
+      "updated_at": "2026-11-12T17:30:33.598Z"
+    },
+    "M9-04A": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "已由 PR #44 合入 main 53b516f；公式库与只读服务工程验证完成，整批候选和用户验收待组织",
+      "updated_at": "2026-11-17T14:16:46.041Z"
+    },
+    "M9-04B": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "已由 PR #45 合入 main fd017dc；公式管理 UI 工程验证完成，整批候选和用户验收待组织",
+      "updated_at": "2026-11-17T14:16:46.044Z"
+    },
+    "M9-04C": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "已由 PR #46 合入 main fef6293；图表挂载工程验证完成，整批候选和用户验收待组织",
+      "updated_at": "2026-11-17T14:16:46.044Z"
+    },
+    "M9-04D": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "已由 PR #47 合入 main 3b5fb11；内置示例与只读 agent 接口已集成，默认停用/无 UI 启停入口须明确后继口径，整批待验收",
+      "updated_at": "2026-11-17T14:16:46.044Z"
+    },
+    "DEP-SEC-MINIMATCH-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "依赖定向维护和本地完整验证通过，独立五维审查无阻断，待独立PR与当前CI核对。",
+      "updated_at": "2026-11-17T17:42:38.173Z"
+    },
+    "ENG-HEALTH-02": {
+      "status": "closed",
+      "owner": "integrator",
+      "summary": "工程维护已通过 PR #48 合入；26 个失效跟踪引用已清理，文档与任务已对账。本地进程取消/清理测试失败及中危开发依赖告警已登记；未做产品验收或发布。",
+      "updated_at": "2026-11-17T14:52:47.359Z",
+      "commit": "538d1b88ab2aaf3430cfa458ec8f9b17e522a803"
+    },
+    "RUNTIME-CANCEL-02": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "测试生命周期修正与增强回归；正式完整3023项通过，独立审查无问题，产品字节不变。",
+      "updated_at": "2026-11-17T17:11:28.082Z"
+    },
+    "ENG-PLAN-01": {
+      "status": "review",
+      "owner": "integrator",
+      "summary": "22张历史卡和7阶段已按实际集成及后继任务静态对账；首批计划及内置默认停用获批准，保留全部原状态与人工验收边界",
+      "updated_at": "2026-11-17T16:44:34.289Z"
+    },
+    "M9-ENABLE-01": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "启停保存修复4/5；用户已明确批准独立EMA前导NaN暖机修复，先执行独立任务，再完成M9整批候选与Windows包。尚未通过整批验收。",
+      "updated_at": "2026-11-17T18:11:32.877Z"
+    },
+    "M9-EMA-WARMUP-01": {
+      "status": "active",
+      "owner": "integrator",
+      "summary": "用户已批准独立EMA前导NaN暖机修复；专项RED与变异证据已取得，完整单测及独立审查进行中。",
+      "updated_at": "2026-11-17T18:26:32.720Z"
+    }
+  },
+  "runs": {},
+  "artifacts": {
+    "v1.1.0-20261001": {
+      "artifact_id": "v1.1.0-20261001",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-09-30T22:05:09.122Z",
+      "commit": "8990eb779d9161eb7f5b6325625b70153178ac3c",
+      "sha256": "588d804f3a681d3712f1d52b722acc687fe0f607bef04877bcccb8fe83742292",
+      "path_alias": "output/v1.1.0-20261001"
+    },
+    "v1.1.1-20261001": {
+      "artifact_id": "v1.1.1-20261001",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-01T05:48:54.184Z",
+      "commit": "c06563b6cbb5b6701d9fe5ca578d674c11ce5594",
+      "sha256": "404a55615505c652bdb56587a00bb28c7de24930d088af6be9fe092917f5d99d",
+      "path_alias": "output/v1.1.1-20261001"
+    },
+    "v1.1.2-20261001": {
+      "artifact_id": "v1.1.2-20261001",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-01T08:59:45Z",
+      "commit": "53661fb9841dc95c19457f7082a6ce9b2a62f5dd",
+      "sha256": "fefbb37e57a3b859bc32c3d2d54ee1ad24c0d44badeaecc1153435709bb01ed8",
+      "path_alias": "output/v1.1.2-20261001"
+    },
+    "v1.2.0-20261001": {
+      "artifact_id": "v1.2.0-20261001",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-01T11:36:44Z",
+      "commit": "d0c867b42d8dc6a7d34acd78b97bbfcd32b0ba61",
+      "sha256": "cefcd4dc70c2f5bd56e76457fddb9b1abb18f76d0d7d050aae2c8ff8113c5c5c",
+      "path_alias": "output/v1.2.0-20261001"
+    },
+    "v1.2.1-20261001": {
+      "artifact_id": "v1.2.1-20261001",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-01T15:15:00Z",
+      "commit": "a45bdf4b43242c365f7c4612e51fbbb09aa5e4a6",
+      "sha256": "0580e01125cd7b3b8ce2f95eeb7b56438fba64a865af2fef567fba592c165b55",
+      "path_alias": "output/v1.2.1-20261001"
+    },
+    "v1.2.2-20261002": {
+      "artifact_id": "v1.2.2-20261002",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-02T00:40:00Z",
+      "commit": "5a9173dca4226f1fea315cf15b17edaa6f8c7c42",
+      "sha256": "ba7ff4d06de326d8b25efed0af8b200e3d7a32d91b0f3b20724cfef5f6915c2d",
+      "path_alias": "output/v1.2.2-20261002"
+    },
+    "v1.2.3-20261002": {
+      "artifact_id": "v1.2.3-20261002",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-02T04:05:00+08:00",
+      "commit": "1e965e52c2b6e89bf0b00bbcd9d987658ba47c04",
+      "sha256": "f92f18448310c70ff0b4d0b81ca31950051edeb1162327b467ba6c4ab7f9782e",
+      "path_alias": "output/v1.2.3-20261002",
+      "payload_note": "zip 内 release.json 绑定源码提交 1e965e5（打包时工作树）；候选/事件指向其后的交接文档提交 5dd01e8"
+    },
+    "v1.2.5-20261002": {
+      "artifact_id": "v1.2.5-20261002",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-02T16:40:00+08:00",
+      "commit": "c062971253cc2bee5e8ffba043254f078ed01eb4",
+      "sha256": "47f03894d220b7f5af1af10f2c4174c97d4e5a50fe2232c9f6ac70927c2d1e98",
+      "path_alias": "output/v1.2.5-20261002"
+    },
+    "v1.2.6-20261002": {
+      "artifact_id": "v1.2.6-20261002",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-02T23:40:00+08:00",
+      "commit": "36319a9f56c035910879426cb58793c8e691ee8c",
+      "sha256": "4cb982f915d20100ddf7662924e566105633d6e9af94e144dae7261e983722f0",
+      "path_alias": "output/v1.2.6-20261002"
+    },
+    "v1.2.7-20261003": {
+      "artifact_id": "v1.2.7-20261003",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-03T15:30:00+08:00",
+      "commit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+      "sha256": "67781f8d956dfcecbb538a43c095fb69b8b2b0a3110d0583ec51c08092962544",
+      "path_alias": "output/v1.2.7-20261003"
+    },
+    "v1.2.7-20261004-published": {
+      "artifact_id": "v1.2.7-20261004-published",
+      "kind": "package",
+      "status": "verified",
+      "updated_at": "2026-10-03T16:33:43.410Z",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "sha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5",
+      "path_alias": "a-share-kline-trainer/.runs/release-v1.2.7-published-20261004/kline-trainer-v1.2.7-windows-x64.zip"
+    }
+  },
+  "acceptance": {
+    "engineering": "passed",
+    "user": "accepted",
+    "publish": "approved"
+  },
+  "events": [
+    {
+      "event_id": "v1.2.7-user-acceptance-20261003",
+      "kind": "user.acceptance.passed",
+      "timestamp": "2026-10-03T16:00:00+08:00",
+      "task_id": "SETUP-RESTART-FIX-01",
+      "commit": "3199674a80ec00d881534c1c49a32319ac3ef3d8",
+      "artifact_id": "v1.2.7-20261003",
+      "reason": "用户完成 Windows 包验收：首次配置通达信不再卡死，录像库来源分栏与清理、深色退出页面、自定义范围条件单均符合预期，授权发布 GitHub v1.2.7。"
+    },
+    {
+      "event_id": "v1.2.7-published-20261003",
+      "kind": "release.published",
+      "timestamp": "2026-10-03T15:30:00+08:00",
+      "task_id": "SETUP-RESTART-FIX-01",
+      "commit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+      "artifact_id": "v1.2.7-20261003",
+      "reason": "用户报障 v1.2.6 从零首配超时：根因＝main() 传 restartAttemptPath 而函数读 attemptPath，supervisor 启动即崩且无终态；修复＋CLI 装配层回归补盲；v1.2.7 Release 402384887 发布（digest 与本地一致），v1.2.6 release 401958681 已删除（tag 保留）"
+    },
+    {
+      "event_id": "v1.2.6-published-20261003",
+      "kind": "release.published",
+      "timestamp": "2026-10-03T00:30:00+08:00",
+      "task_id": "REL-V1-01",
+      "commit": "36319a9f56c035910879426cb58793c8e691ee8c",
+      "artifact_id": "v1.2.6-20261002",
+      "reason": "main/origin 同步 36319a9；tag v1.2.6；GitHub Release v1.2.6 含安装包（GitHub digest 与本地 sha256 一致）；未来开发基线＝main@36319a9（1.2.6）"
+    },
+    {
+      "event_id": "v1.2.6-user-acceptance-20261002",
+      "kind": "user.acceptance.passed",
+      "timestamp": "2026-10-02T23:55:00+08:00",
+      "task_id": "DATA-DIR-01",
+      "commit": "36319a9f56c035910879426cb58793c8e691ee8c",
+      "artifact_id": "v1.2.6-20261002",
+      "reason": "用户验收通过 v1.2.6 包（含 V1.2.5 条件单到价触发语义与 V1.2.6 训练数据目录设置）；授权 GitHub 发布与本地清理归档"
+    },
+    {
+      "event_id": "v1.2.5-release-c062971-20261002",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-02T16:40:00+08:00",
+      "task_id": "ORDER-TRIGGER-01",
+      "commit": "c062971253cc2bee5e8ffba043254f078ed01eb4",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.5-20261002",
+      "reason": "V1.2.5 条件单触发语义修订（到价才触发）：工程自验通过（定向 7 例＋全量 1381/1390 存量 9 项与基线一致＋定向 e2e 8/8＋构建）；包 sha256 47f03894…；GitHub 推送暂停待用户验收"
+    },
+    {
+      "event_id": "v1.2.3-release-5dd01e8-20261002",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-02T04:05:00+08:00",
+      "task_id": "REL-V1-01",
+      "commit": "5dd01e8ffaf5e5564e95eb79dd0d05b2970af312",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.3-20261002",
+      "reason": "V1.2.3 用户反馈返修（三项）工程自验通过：定向单测/构建/新增 e2e 全绿，全套浏览器回归 89/108 且 19 项失败经 stash 基线复跑证实为存量（E2E-BASELINE-01 登记）；包 manifest 绑定源码提交 1e965e5；交接文档 5dd01e8"
+    },
+    {
+      "event_id": "v1.2.2-release-23ae0da-20261002",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-02T00:40:00Z",
+      "task_id": "REL-V1-01",
+      "commit": "5a9173dca4226f1fea315cf15b17edaa6f8c7c42",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.2-20261002",
+      "reason": "V1.2.2 Windows 包基于已验证运行时依赖重建，manifest、版本和提交绑定；Node 24 官方归档未在本机提供，未宣称严格发布脚本校验通过"
+    },
+    {
+      "event_id": "v1.2.1-release-a45bdf4-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T15:15:00Z",
+      "task_id": "REL-V1-01",
+      "commit": "a45bdf4b43242c365f7c4612e51fbbb09aa5e4a6",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.1-20261001",
+      "reason": "V1.2.1 Windows 包基于已验证 V1.2.0 运行时依赖重建，manifest、版本和提交绑定；Node 24 官方归档未在本机提供，未宣称严格发布脚本校验通过"
+    },
+    {
+      "event_id": "orch-state-01-created-20261001",
+      "kind": "task.created",
+      "timestamp": "2026-10-01T00:12:07+08:00",
+      "task_id": "ORCH-STATE-01",
+      "reason": "用户要求统一 GPT/GLM/zcode/Git 状态记录"
+    },
+    {
+      "event_id": "v1.1-release-8d304fc-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T05:40:00+08:00",
+      "task_id": "ORCH-STATE-01",
+      "commit": "8d304fc6ba994c9ed14905bb61e9b24c1fa476f2",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.0-20261001",
+      "source": "integrator",
+      "evidence": "output/v1.1.0-20261001/SHA256SUMS"
+    },
+    {
+      "event_id": "v1.1-release-8990eb7-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T06:05:00+08:00",
+      "task_id": "ORCH-STATE-01",
+      "commit": "8990eb779d9161eb7f5b6325625b70153178ac3c",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.0-20261001",
+      "source": "integrator",
+      "evidence": "output/v1.1.0-20261001/SHA256SUMS"
+    },
+    {
+      "event_id": "v1.1.1-release-1b7e21e-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T05:42:56.687Z",
+      "task_id": "REL-V1-01",
+      "commit": "1b7e21e2b0e706d28807f29b84511eb6ad575460",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.1-20261001",
+      "reason": "V1.1.1 Windows 包构建、manifest 与 SHA256 校验通过，用户验收保持 unknown"
+    },
+    {
+      "event_id": "v1.1.1-release-c06563b-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T05:48:54.184Z",
+      "task_id": "REL-V1-01",
+      "commit": "c06563b6cbb5b6701d9fe5ca578d674c11ce5594",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.1-20261001",
+      "reason": "V1.1.1 Windows 包重建、manifest 与 SHA256 校验通过，用户验收保持 unknown"
+    },
+    {
+      "event_id": "v1.1.2-release-53661fb-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T08:59:45Z",
+      "task_id": "REL-V1-01",
+      "commit": "53661fb9841dc95c19457f7082a6ce9b2a62f5dd",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.2-20261001",
+      "reason": "V1.1.2 Windows 包构建、manifest 与 SHA256 校验通过，用户验收保持 unknown"
+    },
+    {
+      "event_id": "v1.2.0-release-d0c867b-20261001",
+      "kind": "candidate.verified",
+      "timestamp": "2026-10-01T11:36:44Z",
+      "task_id": "V4-01",
+      "commit": "d0c867b42d8dc6a7d34acd78b97bbfcd32b0ba61",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.0-20261001",
+      "reason": "V1.2.0 Windows 包构建、manifest 与 SHA256 校验通过，用户验收保持 unknown"
+    },
+    {
+      "event_id": "release-v1.2.7-republished-20261004",
+      "kind": "release.published",
+      "timestamp": "2026-10-03T16:33:43.410Z",
+      "task_id": "REL-V1-01",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "tree": "1d3c214ac6ec6e01ba0b12b34a513fe8982b69e5",
+      "worktree_alias": "main-checkout",
+      "artifact_id": "v1.2.7-20261004-published",
+      "reason": "User authorized publication after acceptance; subsequent changes only update documentation and metadata.",
+      "payload": {
+        "release_id": 402384887,
+        "release_url": "https://github.com/m1kuStark/a-share-kline-trainer/releases/tag/v1.2.7",
+        "zip_sha256": "704cfa03f2a13bdcab70e7e32ffd475760ab92f4a3b6eb46fbcccc63fd8d05a5",
+        "accepted_application_match": true,
+        "zip_asset_id": 608131607,
+        "checksum_asset_id": 608141422
+      }
+    },
+    {
+      "event_id": "candidate:TASK-01-ef1a04a37def:prepared:badcb455abc02c21ff1f73270f7af79ce69badd7",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:48:12.543Z",
+      "task_id": "TASK-01",
+      "commit": "badcb455abc02c21ff1f73270f7af79ce69badd7",
+      "tree": "5516efbeba66779398b43e241f208b176cca79b3",
+      "worktree_alias": "integration/TASK-01-ef1a04a37def",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-893d3522b0fb:failed:a9d91360299fb254c403586ff4c44b26cac7965e",
+      "kind": "candidate.failed",
+      "timestamp": "2026-11-17T16:48:22.485Z",
+      "task_id": "TASK-01",
+      "commit": "a9d91360299fb254c403586ff4c44b26cac7965e",
+      "tree": "aeb53edad53ba1ac354b6bab7aa0f99cd2a535e1",
+      "worktree_alias": "integration/TASK-01-893d3522b0fb",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-814a512303d1:prepared:a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:48:55.202Z",
+      "task_id": "TASK-01",
+      "commit": "a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-814a512303d1",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-814a512303d1:verified:a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:49:00.429Z",
+      "task_id": "TASK-01",
+      "commit": "a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-814a512303d1",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-814a512303d1:promoted:a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "kind": "candidate.promoted",
+      "timestamp": "2026-11-17T16:49:02.832Z",
+      "task_id": "TASK-01",
+      "commit": "a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-814a512303d1",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-814a512303d1:cleaned:a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "kind": "candidate.cleaned",
+      "timestamp": "2026-11-17T16:49:04.731Z",
+      "task_id": "TASK-01",
+      "commit": "a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-814a512303d1",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-7a6105940d62:prepared:831eccc9b51ffb27104ac1cf833ad726cd500071",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:49:11.484Z",
+      "task_id": "TASK-01",
+      "commit": "831eccc9b51ffb27104ac1cf833ad726cd500071",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-7a6105940d62",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-7a6105940d62:verified:831eccc9b51ffb27104ac1cf833ad726cd500071",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:49:17.188Z",
+      "task_id": "TASK-01",
+      "commit": "831eccc9b51ffb27104ac1cf833ad726cd500071",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-7a6105940d62",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-df520f957a24:prepared:63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:49:26.690Z",
+      "task_id": "TASK-01",
+      "commit": "63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-df520f957a24",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-df520f957a24:verified:63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:49:31.880Z",
+      "task_id": "TASK-01",
+      "commit": "63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-df520f957a24",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-df520f957a24:promoted:63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "kind": "candidate.promoted",
+      "timestamp": "2026-11-17T16:49:35.401Z",
+      "task_id": "TASK-01",
+      "commit": "63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-df520f957a24",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-2d56152d42ef:prepared:158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:49:42.859Z",
+      "task_id": "DOCS-01",
+      "commit": "158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-2d56152d42ef",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-2d56152d42ef:verified:158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:49:49.629Z",
+      "task_id": "DOCS-01",
+      "commit": "158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-2d56152d42ef",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-2d56152d42ef:promoted:158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "kind": "candidate.promoted",
+      "timestamp": "2026-11-17T16:49:53.568Z",
+      "task_id": "DOCS-01",
+      "commit": "158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-2d56152d42ef",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-09c0bd8aa8bb:prepared:087090ba300380159e13e326e42669b38263b6ed",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:50:01.831Z",
+      "task_id": "DOCS-01",
+      "commit": "087090ba300380159e13e326e42669b38263b6ed",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-09c0bd8aa8bb",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-09c0bd8aa8bb:verified:087090ba300380159e13e326e42669b38263b6ed",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:50:07.903Z",
+      "task_id": "DOCS-01",
+      "commit": "087090ba300380159e13e326e42669b38263b6ed",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-09c0bd8aa8bb",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:DOCS-01-09c0bd8aa8bb:promoted:087090ba300380159e13e326e42669b38263b6ed",
+      "kind": "candidate.promoted",
+      "timestamp": "2026-11-17T16:50:13.717Z",
+      "task_id": "DOCS-01",
+      "commit": "087090ba300380159e13e326e42669b38263b6ed",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-09c0bd8aa8bb",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-976a0a947a0a:prepared:a41567ae09775c197acacbcaadcf326837534631",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:50:20.650Z",
+      "task_id": "TASK-01",
+      "commit": "a41567ae09775c197acacbcaadcf326837534631",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-976a0a947a0a",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-976a0a947a0a:verified:a41567ae09775c197acacbcaadcf326837534631",
+      "kind": "candidate.verified",
+      "timestamp": "2026-11-17T16:50:26.002Z",
+      "task_id": "TASK-01",
+      "commit": "a41567ae09775c197acacbcaadcf326837534631",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-976a0a947a0a",
+      "reason": "candidate lifecycle projection"
+    },
+    {
+      "event_id": "candidate:TASK-01-cef3802c9037:prepared:2f587497630d9b9d7e1e8d14590bbc9493d570d7",
+      "kind": "candidate.prepared",
+      "timestamp": "2026-11-17T16:50:34.711Z",
+      "task_id": "TASK-01",
+      "commit": "2f587497630d9b9d7e1e8d14590bbc9493d570d7",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-cef3802c9037",
+      "reason": "candidate lifecycle projection"
+    }
+  ],
+  "reconcile": {
+    "status": "clean",
+    "checked_at": "2026-10-03T16:33:43.410Z",
+    "reason": "Published tag, package metadata, accepted application files, and GitHub digests agree."
+  },
+  "next_action": "完成独立EMA审查和PR/CI后合入M9最终候选，继续整批与Windows包，不发布。",
+  "updated_at": "2026-11-17T18:26:32.721Z",
+  "candidates": {
+    "v1.1.0-20261001": {
+      "candidate_id": "v1.1.0-20261001",
+      "task_id": "ORCH-STATE-01",
+      "status": "verified",
+      "updated_at": "2026-09-30T22:05:09.122Z",
+      "commit": "8990eb779d9161eb7f5b6325625b70153178ac3c",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.0-20261001"
+    },
+    "v1.1.1-20261001": {
+      "candidate_id": "v1.1.1-20261001",
+      "task_id": "REL-V1-01",
+      "status": "verified",
+      "updated_at": "2026-10-01T05:48:54.184Z",
+      "commit": "c06563b6cbb5b6701d9fe5ca578d674c11ce5594",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.1-20261001"
+    },
+    "v1.1.2-20261001": {
+      "candidate_id": "v1.1.2-20261001",
+      "task_id": "REL-V1-01",
+      "status": "verified",
+      "updated_at": "2026-10-01T08:59:45Z",
+      "commit": "53661fb9841dc95c19457f7082a6ce9b2a62f5dd",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.1.2-20261001"
+    },
+    "v1.2.0-20261001": {
+      "candidate_id": "v1.2.0-20261001",
+      "task_id": "V4-01",
+      "status": "verified",
+      "updated_at": "2026-10-01T11:36:44Z",
+      "commit": "d0c867b42d8dc6a7d34acd78b97bbfcd32b0ba61",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.0-20261001"
+    },
+    "v1.2.1-20261001": {
+      "candidate_id": "v1.2.1-20261001",
+      "task_id": "REL-V1-01",
+      "status": "verified",
+      "updated_at": "2026-10-01T15:15:00Z",
+      "commit": "a45bdf4b43242c365f7c4612e51fbbb09aa5e4a6",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.1-20261001"
+    },
+    "v1.2.2-20261002": {
+      "candidate_id": "v1.2.2-20261002",
+      "task_id": "REL-V1-01",
+      "status": "verified",
+      "updated_at": "2026-10-02T00:40:00Z",
+      "commit": "5a9173dca4226f1fea315cf15b17edaa6f8c7c42",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.2-20261002"
+    },
+    "v1.2.3-20261002": {
+      "candidate_id": "v1.2.3-20261002",
+      "task_id": "V4-01",
+      "status": "verified",
+      "updated_at": "2026-10-02T05:20:00+08:00",
+      "commit": "5dd01e8ffaf5e5564e95eb79dd0d05b2970af312",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.3-20261002"
+    },
+    "v1.2.5-20261002": {
+      "candidate_id": "v1.2.5-20261002",
+      "task_id": "ORDER-TRIGGER-01",
+      "status": "verified",
+      "updated_at": "2026-10-02T16:40:00+08:00",
+      "commit": "c062971253cc2bee5e8ffba043254f078ed01eb4",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.5-20261002"
+    },
+    "v1.2.6-20261002": {
+      "candidate_id": "v1.2.6-20261002",
+      "task_id": "DATA-DIR-01",
+      "status": "verified",
+      "updated_at": "2026-10-02T23:40:00+08:00",
+      "commit": "36319a9f56c035910879426cb58793c8e691ee8c",
+      "tree": "clean",
+      "worktree_alias": "int-v1",
+      "artifact_id": "v1.2.6-20261002"
+    },
+    "v1.2.7-20261003": {
+      "candidate_id": "v1.2.7-20261003",
+      "task_id": "SETUP-RESTART-FIX-01",
+      "status": "verified",
+      "updated_at": "2026-10-03T15:30:00+08:00",
+      "commit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+      "tree": "clean",
+      "worktree_alias": "main-checkout",
+      "artifact_id": "v1.2.7-20261003"
+    },
+    "v1.2.7-20261004-published": {
+      "candidate_id": "v1.2.7-20261004-published",
+      "task_id": "REL-V1-01",
+      "status": "promoted",
+      "updated_at": "2026-10-03T16:33:43.410Z",
+      "base_commit": "81be8ef922870ec25578fcb1f6175074b46f1ee4",
+      "commit": "bbd368b09a463183364861678db83a9ae86b1472",
+      "tree": "1d3c214ac6ec6e01ba0b12b34a513fe8982b69e5",
+      "worktree_alias": "main-checkout",
+      "artifact_id": "v1.2.7-20261004-published"
+    },
+    "TASK-01-ef1a04a37def": {
+      "candidate_id": "TASK-01-ef1a04a37def",
+      "task_id": "TASK-01",
+      "status": "prepared",
+      "updated_at": "2026-11-17T16:48:12.543Z",
+      "base_commit": "8296de0db4f824d2c373437dd6bd01b13bb16f29",
+      "commit": "badcb455abc02c21ff1f73270f7af79ce69badd7",
+      "tree": "5516efbeba66779398b43e241f208b176cca79b3",
+      "worktree_alias": "integration/TASK-01-ef1a04a37def"
+    },
+    "TASK-01-893d3522b0fb": {
+      "candidate_id": "TASK-01-893d3522b0fb",
+      "task_id": "TASK-01",
+      "status": "failed",
+      "updated_at": "2026-11-17T16:48:22.485Z",
+      "base_commit": "a9d91360299fb254c403586ff4c44b26cac7965e",
+      "commit": "a9d91360299fb254c403586ff4c44b26cac7965e",
+      "tree": "aeb53edad53ba1ac354b6bab7aa0f99cd2a535e1",
+      "worktree_alias": "integration/TASK-01-893d3522b0fb"
+    },
+    "TASK-01-814a512303d1": {
+      "candidate_id": "TASK-01-814a512303d1",
+      "task_id": "TASK-01",
+      "status": "cleaned",
+      "updated_at": "2026-11-17T16:49:04.731Z",
+      "base_commit": "2faa2fd3ba12408872d99d3bfbed0f8ac32651d0",
+      "commit": "a8ad18d385508e226c6bc7d83b2d537cfbbc4bf9",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-814a512303d1"
+    },
+    "TASK-01-7a6105940d62": {
+      "candidate_id": "TASK-01-7a6105940d62",
+      "task_id": "TASK-01",
+      "status": "verified",
+      "updated_at": "2026-11-17T16:49:17.188Z",
+      "base_commit": "fdb7edcb79efba5bf8778018989e4bc0d3cb3299",
+      "commit": "831eccc9b51ffb27104ac1cf833ad726cd500071",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-7a6105940d62"
+    },
+    "TASK-01-df520f957a24": {
+      "candidate_id": "TASK-01-df520f957a24",
+      "task_id": "TASK-01",
+      "status": "promoted",
+      "updated_at": "2026-11-17T16:49:35.401Z",
+      "base_commit": "93c07b2d1f02d33fc2ea9034721b40bd104ed123",
+      "commit": "63df82b2851af6bd1eccc13ecf7d6f9943038221",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-df520f957a24"
+    },
+    "DOCS-01-2d56152d42ef": {
+      "candidate_id": "DOCS-01-2d56152d42ef",
+      "task_id": "DOCS-01",
+      "status": "promoted",
+      "updated_at": "2026-11-17T16:49:53.568Z",
+      "base_commit": "0b1c9247122d8d444a5cb563a00607a54a05c5b8",
+      "commit": "158901188dd41a31763f72a9955f5d7dc9f1cac5",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-2d56152d42ef"
+    },
+    "DOCS-01-09c0bd8aa8bb": {
+      "candidate_id": "DOCS-01-09c0bd8aa8bb",
+      "task_id": "DOCS-01",
+      "status": "promoted",
+      "updated_at": "2026-11-17T16:50:13.717Z",
+      "base_commit": "a241d5bf05dbc62b228f84b26991944366e58cd5",
+      "commit": "087090ba300380159e13e326e42669b38263b6ed",
+      "tree": "e94caf0ddb2b2d971288a6c811dc53d937349022",
+      "worktree_alias": "integration/DOCS-01-09c0bd8aa8bb"
+    },
+    "TASK-01-976a0a947a0a": {
+      "candidate_id": "TASK-01-976a0a947a0a",
+      "task_id": "TASK-01",
+      "status": "verified",
+      "updated_at": "2026-11-17T16:50:26.002Z",
+      "base_commit": "93815a0c00eaf1ebc9efbd0bf35a30d686f5d197",
+      "commit": "a41567ae09775c197acacbcaadcf326837534631",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-976a0a947a0a"
+    },
+    "TASK-01-cef3802c9037": {
+      "candidate_id": "TASK-01-cef3802c9037",
+      "task_id": "TASK-01",
+      "status": "prepared",
+      "updated_at": "2026-11-17T16:50:34.711Z",
+      "base_commit": "e9af0bf4256034ff40fb1688c13395b02ab2b24e",
+      "commit": "2f587497630d9b9d7e1e8d14590bbc9493d570d7",
+      "tree": "f50d4ad86534c92f9572f93537531645074b20a7",
+      "worktree_alias": "integration/TASK-01-cef3802c9037"
+    }
+  }
+}

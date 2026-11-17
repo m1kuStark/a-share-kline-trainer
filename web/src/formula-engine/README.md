@@ -62,6 +62,14 @@
 - `HYBLOCK` 返回字符串（非数值序列）：输出行 `X:HYBLOCK;`（数值输出位）会报 must be numeric——字符串仅作为 STRCAT/DRAWTEXT 文本路径的中间态，通达信同款用法。
 - 上下文函数未注册进 FunctionRegistry（其 execute 签名无法承载字符串/上下文），分发在 Interpreter switch＋Identifier 兜底，与 marketData 函数族（OPEN/CLOSE…）同模式。
 
+## 公共 EMA 暖机（M9-EMA-WARMUP-01 批准例外）
+
+用户于 2026-11-18 明确批准公共 `interpreter/functions/math.ts::EMA` 的前导 NaN 修复，作为冻结基线的独立例外。本次契约适用于正整数周期 N；非法周期未新增数值校验。EMA 跳过前导 NaN，从首个非 NaN 位置起使用原数组连续 N 个位置的 SMA 播种；播种前仍为 NaN。全空或余下长度不足 N 时全为 NaN，N=1 同样遵循此规则。
+
+SMA 的逆序求和、`2/(N+1)` 系数及后续递推保持原运算，因此没有前导 NaN 的连续有效输入逐项保持原数值。内部 NaN 不被跨过或重启；Infinity 不被过滤，其后仍按原生算术传播。此补丁不定义空洞恢复策略，不修改其他 EMA helper、内置 MACD、CROSS/IF 或示例源码。
+
+嵌套 `EMA(EMA(CLOSE,3),3)` 在 CLOSE=1..7 时前四项为空，随后为 3/4/5。实际 QINIU 种子因此可以完成 DIF→DEA 的两次暖机；产品整批、图表视觉及包验收仍由 M9 后继验证负责。批准来源和验证事实见[任务卡](../../../docs/work-items/tasks/M9-EMA-WARMUP-01.md)及其 verification 入口。
+
 ## 导出面
 
 沿用上游 `index.ts` 结构（FormulaEngine、错误类、AST、核心组件、内置函数全量导出），另导出补丁层 `scanFutureFunctions` / `FUTURE_FUNCTIONS`（M9-01）、`crossPeriod.ts` 全部类型与纯函数（`resampleBars`/`broadcastReferenceLine`/`aggregateBars`/`FormulaEvaluationOptions` 等，M9-02）与 `marketContext.ts` 全部类型与纯函数（`StockContext`/`boardTypeOfCode`/`alignIndexField`/`prefixMatchSeries` 等，M9-03）。

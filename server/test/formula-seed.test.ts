@@ -39,6 +39,30 @@ function syntheticBars(count: number): { bars: FormulaBar[]; dates: string[] } {
 }
 
 describe('M9-04D 内置示例公式 seed', () => {
+  it('真实 QINIU seed 在引擎和服务端保留 DIF25 DEA33 暖机与线性 B1 全零', () => {
+    const database = freshDatabase()
+    try {
+      seedBuiltinFormulas(database)
+      const source = builtinRows(database).find(row => row.name === 'QINIU_B1_SUB')!.source
+      const { bars, dates } = syntheticBars(120)
+      const linear = bars.map((bar, index) => ({ ...bar, open: index + 1, high: index + 2, low: index, close: index + 1 }))
+      const engine = new FormulaEngine().evaluate(source, linear)
+      expect(engine.outputs.map(line => line.name)).toEqual(['DIF', 'DEA', 'B1'])
+      expect(engine.outputs[0].data).toEqual([...Array(25).fill(NaN), ...Array(95).fill(7)])
+      expect(engine.outputs[1].data).toEqual([...Array(33).fill(NaN), ...Array(87).fill(7)])
+      expect(engine.outputs[2].data).toEqual(Array(120).fill(0))
+      const server = evaluateOnBars(engineModule, { source, bars: linear, dates, limit: 120 })
+      expect(server.ok).toBe(true)
+      if (!server.ok) throw new Error('真实 QINIU seed 求值失败')
+      expect(server.outputs.map(line => line.name)).toEqual(['DIF', 'DEA', 'B1'])
+      expect(server.outputs[0].data).toEqual([...Array(25).fill(null), ...Array(95).fill(7)])
+      expect(server.outputs[1].data).toEqual([...Array(33).fill(null), ...Array(87).fill(7)])
+      expect(server.outputs[2].data).toEqual(Array(120).fill(0))
+    } finally {
+      database.close()
+    }
+  })
+
   it('空库幂等写入 3 个内置示例，重复 seed 不重复', () => {
     const database = freshDatabase()
     try {

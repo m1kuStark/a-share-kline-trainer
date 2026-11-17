@@ -1,0 +1,76 @@
+{
+  "task_id": "M9-EMA-WARMUP-01",
+  "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "status": "code_review_complete_root_finalization_pending",
+  "verdict": "可合入",
+  "code_findings": [],
+  "severity_counts": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0
+  },
+  "dimensions": {
+    "plan_alignment": "pass_within_approved_scope",
+    "code_quality": "pass_for_positive_integer_periods",
+    "architecture": "pass",
+    "test_authenticity": "pass",
+    "harness_receipts": "verified_full_test_build_targeted_mutation_corpus; root_matrix_docs_candidate_finalization_remains"
+  },
+  "candidate_math_sha256": "2b43e59bd8e6549cf155b6c55fb53b45a5bf16015e9f07bc7dfffd6d19c6becb",
+  "reviewed_six_file_patch_sha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+  "independent_audit": "independent-audit.json",
+  "test_discovery_receipt": "vitest-discovery.receipt.json",
+  "preserved_failures": [
+    {
+      "step": "red-targeted",
+      "native_exit": 1,
+      "failed": 8,
+      "passed": 104,
+      "kind": "numeric_assertions"
+    },
+    {
+      "step": "mutant-old-ema",
+      "native_exit": 1,
+      "failed": 8,
+      "passed": 104,
+      "kind": "same_numeric_assertions"
+    },
+    {
+      "step": "full-test",
+      "native_exit": -1073740791,
+      "kind": "process_exit_without_suite_results"
+    },
+    {
+      "step": "full-test-retry1",
+      "native_exit": 1,
+      "failed": 3,
+      "passed": 2661,
+      "total": 2664,
+      "kind": "control_environment_overrode_temporary_fixtures",
+      "desktop_executed": false
+    }
+  ],
+  "limitations": [
+    "Compatibility contract applies to positive integer periods; illegal period validation remains preexisting debt.",
+    "Raw old worktree bytes differ from Git blob only in CRLF versus LF; do not claim byte identity.",
+    "No actual TDX, browser, full Journey, themes, package, recording, replay or human acceptance verified.",
+    "Five new matrix rows and aggregate docs are root-owned and not yet finalized at this snapshot."
+  ],
+  "verdict_scope": "approved isolated EMA repair for positive integer periods; not M9 acceptance or release",
+  "full_test": {
+    "step": "full-test-isolated-control",
+    "native_exit": 0,
+    "server": {
+      "files": 188,
+      "tests": 2664
+    },
+    "desktop": {
+      "files": 34,
+      "tests": 369
+    },
+    "log_sha256": "d11d0bcfb5beccd43d3e755540b0080e25f8c69be84492f380f158198d7e613f",
+    "single_complete_invocation": true,
+    "control_env": null
+  },
+  "completed_at": "2026-11-17T18:43:46.587Z"
+}
