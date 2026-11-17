@@ -6,6 +6,7 @@
 | [结算历史与成绩单](training/history.md) | 历史列表、只读事实成绩单与防未来守卫；已交付 |
 | [五档排行与成绩单入口](training/rankings.md) | 排行分组、冻结指标口径与成绩单入口；K 线复盘展示暂缓 |
 | [图表与工具](chart/interaction.md) | 显示、周期、手势、画线与保存 |
+| [公式指标](formulas.md) | 自定义及内置公式的启停、持久化、主副图和权限 |
 | [行情与更新](market-data/requirements.md) | 来源、覆盖、历史修订和更新入口 |
 | [后续范围](roadmap.md) | M4/M5/R2与V2 |
 | [操作录制](recording.md) | 默认开启、开关、状态提示、导出分享与回放；已交付并验收 |
