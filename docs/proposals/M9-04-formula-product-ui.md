@@ -43,3 +43,7 @@
 - 引擎加载：生产加载构建期 bundle；dev/测试回退 `FormulaEngine.ts`＋`futureFunctions.ts` 纯值入口（不能加载 index.ts，其把纯类型按值导出）。
 - 错误消息：统一中文前缀＋行/列；常见引擎消息映射中文，未知细节保留原文便于排查。
 - 发布打包：ZIP/桌面包的 server/dist 必须包含 `formulas/engine-bundle/index.mjs`（`scripts/release/build.mjs` 已纳入 `.mjs`）。
+
+## 2026-11-18 候选阻断
+
+三示例默认停用、逐个开启自动按预设主副图显示已获批准；保存修复和回归由[M9-ENABLE-01](../work-items/tasks/M9-ENABLE-01.md)接续。QINIU DEA全空来自公共EMA前导NaN暖机，独立引擎范围尚待用户决定；不得删曲线有效值断言或修改示例公式来交付。完整候选、Windows包及人工验收仍未完成。

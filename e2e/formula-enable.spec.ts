@@ -62,6 +62,7 @@ async function openSettings(page: Page) {
 }
 
 async function chartLines(page: Page, id: number): Promise<Array<{ name: string; paneId: string; hasResult: boolean }>> {
+  await expect.poll(() => page.evaluate(() => typeof (window as any).__trainerChart?.formulaIndicators)).toBe('function')
   return page.evaluate(formulaId => {
     const probe = (window as any).__trainerChart?.formulaIndicators
     if (!probe) throw new Error('formulaIndicators read-only probe missing')
@@ -96,6 +97,7 @@ test('公式启停：自定义创建停用、开启与停用保存后刷新仍�
   expect((await formulas(page)).find(item => item.id === saved.id)?.enabled).toBe(true)
   await dialog.getByRole('button', { name: '关闭', exact: true }).click()
   await expect.poll(() => chartLines(page, saved.id)).toHaveLength(1)
+  await expect.poll(async () => (await chartLines(page, saved.id)).map(line => line.hasResult)).toEqual([true])
   expect((await chartLines(page, saved.id))[0]).toMatchObject({ hasResult: true })
   expect((await chartLines(page, saved.id))[0].paneId).not.toBe('candle_pane')
 
@@ -136,6 +138,7 @@ async function exerciseBuiltin(page: Page, preset: { name: string; placement: 'm
     await expect(section.locator('.settings-saved')).toHaveText('已保存修改')
     await dialog.getByRole('button', { name: '关闭', exact: true }).click()
     await expect.poll(() => chartLines(page, id)).toHaveLength(preset.lines)
+    await expect.poll(async () => (await chartLines(page, id)).map(line => line.hasResult)).toEqual(Array(preset.lines).fill(true))
     const lines = await chartLines(page, id)
     expect(lines.every(line => line.hasResult)).toBe(true)
     expect(new Set(lines.map(line => line.paneId)).size).toBe(1)

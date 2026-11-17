@@ -5,11 +5,11 @@
   "id": "M9-ENABLE-01",
   "title": "修复公式启停保存并准备 M9 整批验收候选",
   "owner": "integrator",
-  "state": "planned",
+  "state": "active",
   "milestone": "M9",
-  "base_commit": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
-  "summary": "首批开发计划已获用户批准：三个内置示例默认停用，逐个开启后自动按预设主图/副图显示。先复现自定义 enabled 未保存与内置保存被 name/source 保护拒绝，再修请求字段，保留后端保护；完整验证后交付同提交 Windows 验收包。",
-  "next_action": "在维护基线稳定后执行 RED→GREEN；核验真实设置交互、图表刷新、M9 全批回归及主代理深浅主题检查。用户验收和发布均未授权。",
+  "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
+  "summary": "启停保存修复已有4/5旅程，QINIU DEA缺陷已定位；用户随后明确批准独立EMA前导NaN暖机修复，按M9-EMA-WARMUP-01先RED→GREEN再完成M9整批和Windows候选。保存补丁与诊断/原失败均保留，尚未整批通过。",
+  "next_action": "执行用户刚批准的独立EMA最小修复；其专项审查/合入后，完整重跑M9、主代理视觉并验证同提交Windows包与录像回放，再交用户整批验收；不发布。",
   "allowed_paths": [
     "web/src/components/FormulaSettings.vue",
     "web/src/api.ts",
@@ -37,14 +37,37 @@
     "docs/work-items/milestones/ENG.md",
     "docs/work-items/milestones/GH-202611.md",
     "docs/proposals/development-batch-2026-11.md",
-    "docs/proposals/development-plan-2026-11.md"
+    "docs/proposals/development-plan-2026-11.md",
+    "server/test/formula-seed.test.ts",
+    "docs/work-items/tasks/M9-EMA-WARMUP-01.md",
+    "docs/verification/2026-11/M9-EMA-WARMUP-01/**"
   ],
-  "depends_on": ["RUNTIME-CANCEL-02", "DEP-SEC-MINIMATCH-01", "M9-04D"],
+  "depends_on": [
+    "RUNTIME-CANCEL-02",
+    "DEP-SEC-MINIMATCH-01",
+    "M9-04D",
+    "M9-EMA-WARMUP-01"
+  ],
   "docs_impact": {
-    "update": ["docs/specs/formulas.md", "docs/specs/README.md", "docs/proposals/M9-04-formula-product-ui.md", "docs/work-items/tasks/M9-04B.md", "docs/work-items/tasks/M9-04C.md", "docs/work-items/tasks/M9-04D.md", "docs/work-items/milestones/M9.md", "docs/work-items/README.md", "docs/status.md", "e2e/README.md"],
+    "update": [
+      "docs/specs/formulas.md",
+      "docs/specs/README.md",
+      "docs/proposals/M9-04-formula-product-ui.md",
+      "docs/work-items/tasks/M9-04B.md",
+      "docs/work-items/tasks/M9-04C.md",
+      "docs/work-items/tasks/M9-04D.md",
+      "docs/work-items/milestones/M9.md",
+      "docs/work-items/README.md",
+      "docs/status.md",
+      "e2e/README.md"
+    ],
     "reason": "冻结已批准的内置启停口径，纠正已有开关却未持久化的实施描述；记录整批候选与人工验收边界。集成人另回填本批前置任务的实际合入引用、阶段计划和Issue8分诊；不修改前置实现或补造人工验收。"
   },
-  "verification_refs": [],
+  "verification_refs": [
+    "docs/verification/2026-11/M9-ENABLE-01/README.md",
+    "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review.md",
+    "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnosis.md"
+  ],
   "integration_ref": null,
   "acceptance_ref": null
 }
@@ -57,3 +80,13 @@
 整批检查包含 M9 引擎本机语料、导入/错误、三个示例、主副图、日周月、推进、随机遮蔽、镜像、只读 API 和录像回放。当前回放使用现公式库、公式 pane 高度不录入、公式 pane 画线回落主图为待用户验收的已知限制，不在本卡改行为。
 
 2026-11-18 集成人范围补记：本批前置卡合并后，在此卡回填真实 integration_ref 和下一步，并同步 ENG/GH 阶段入口与已批准的执行计划；Issue #8 仅复现、分诊及形成后续方案，证据归本卡 verification。不会修改该反馈对应产品行为，也不向 Issue 自动回复。
+
+## 2026-11-18 接续状态
+
+原立项基线为2c66477；已签名合入维护主线 df6cedd82fa3fe591615724259f83d16f6bb70fa，本轮归档时HEAD为c83cae6。前导NaN的EMA修复明确超出本卡“不改变公式引擎语义”的范围，已提交独立方案，未获答复，未应用候选补丁。当前blocked是交付阻断，不表示启停字段补丁未保存。
+
+默认停用的保护另由seed测试锁定，E2E主动停用夹具不能替代默认值证据。公式UI矩阵仍8行、covered4/open4/RED0、strict退出3，未据局部绿提升。原始失败、后续就绪修正和最后DEA失败全部保留。
+
+## 独立范围已获批准
+
+用户在本轮随后明确选择“批准独立修复，再完成M9”，准确范围见[EMA批准记录](../../verification/2026-11/M9-ENABLE-01/ema-scope-approval.md)。此前blocked与待拍板记录保留为历史；当前active，先独立修复，不提前声称交付通过。

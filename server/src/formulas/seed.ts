@@ -8,7 +8,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * - builtin=1：UI 显示「内置」徽标，服务端禁止改名/改源码/删除（既有 403 保护）。
  * - enabled=0（默认停用）：避免开箱改变既有训练/回放图表的窗格布局与录像 paneHeights；
  *   示例在设置「公式指标」中始终可见、可预览；启用可通过 PUT /api/formulas/:id {enabled:true}
- *   （设置面板的开关留待后续卡；本卡不扩 UI）。
+ *   或通过设置面板的启用开关保存；再次初始化保留用户已保存的选择。
  * - source 必须能被引擎 parse/求值（回归见 server/test/formula-seed.test.ts 用真实引擎跑通）。
  */
 export interface BuiltinFormulaSeed {

@@ -1,9 +1,9 @@
 # 任务与阶段
 
-- [ENG-PLAN-01 首批计划与任务对账](tasks/ENG-PLAN-01.md)：[批准记录](../verification/2026-11/ENG-PLAN-01/approval.md)、[22卡事实与旧E2E静态对账](../verification/2026-11/ENG-PLAN-01/README.md)；产品当前动态结果和新增用户验收未验证。
+- [ENG-PLAN-01 首批计划与任务对账](tasks/ENG-PLAN-01.md)：[批准记录](../verification/2026-11/ENG-PLAN-01/approval.md)、[22卡事实与旧E2E静态对账](../verification/2026-11/ENG-PLAN-01/README.md)；PR50已合入，产品动态结果与人工验收按后继任务分别记录。
 
 - [ENG-HEALTH-02 工程健康检查](tasks/ENG-HEALTH-02.md)：2026-11-17 本地/GitHub 对账、过时跟踪引用与文档整理；[检查记录和后续清单](../verification/2026-11/ENG-HEALTH-02/README.md)。
-- [DEP-SEC-MINIMATCH-01 构建依赖安全维护](tasks/DEP-SEC-MINIMATCH-01.md)：定向依赖维护、完整测试、Windows包与包内模块检查通过，独立审查无阻断；待独立PR/CI和远端告警核对，见[集成记录](../verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md)。
+- [DEP-SEC-MINIMATCH-01 构建依赖安全维护](tasks/DEP-SEC-MINIMATCH-01.md)：定向依赖维护、完整测试、Windows包与包内模块检查通过，独立审查无阻断；PR52已合入，告警48自动fixed；云端语料缺失边界见[集成记录](../verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md)。
 - [RUNTIME-CANCEL-02 取消测试生命周期](tasks/RUNTIME-CANCEL-02.md)：PR51已合入f4bbc6a；修正测试预算与夹具生命周期，生产字节不变。首轮CI设置用例超时及同提交第二轮完整通过均保留，M9后继统一整批验收。
 
 - [ENG 工程基础设施](milestones/ENG.md)：Git/PR/发布规范与操作门禁基线（ENG-GOV-01）＋迁移用例测试预算（TEST-BUDGET-02）。
@@ -119,3 +119,5 @@ state 取 planned、active、blocked、review、closed 或 cancelled，表示工
 
 - [MON-02](tasks/MON-02.md): current versus superseded dashboard attempts.
 - [GLM-MONITOR-02](tasks/GLM-MONITOR-02.md)：原生用量、官方额度与会话信息，已安装并完成工程验收；ORCH保持关闭。
+
+- [M9-ENABLE-01 公式启停保存](tasks/M9-ENABLE-01.md)：保存补丁已完成，5条新旅程4通过/1失败；用户已批准独立EMA暖机修复，执行后继续整批候选。证据和所有失败见[当前记录](../verification/2026-11/M9-ENABLE-01/README.md)。

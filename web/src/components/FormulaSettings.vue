@@ -126,17 +126,18 @@ async function save(): Promise<void> {
   if (form.value.source.trim() === '') return
   busy.value = true
   error.value = ''
+  saveMessage.value = ''
   try {
     const payload = {
-      name: form.value.name.trim(),
       description: form.value.description.trim(),
       placement: form.value.placement,
-      source: form.value.source,
+      enabled: form.value.enabled,
+      ...(!isBuiltin.value ? { name: form.value.name.trim(), source: form.value.source } : {}),
     }
     const currentId = selectedId.value
     const creating = currentId === null
     const saved = currentId === null
-      ? await createFormula(payload)
+      ? await createFormula({ ...payload, name: form.value.name.trim(), source: form.value.source })
       : await updateFormula(currentId, payload)
     selectedId.value = saved.id
     warnings.value = saved.warnings ?? []

@@ -47,15 +47,19 @@ describe('M9-04D 内置示例公式 seed', () => {
       expect(rows).toHaveLength(3)
       expect(rows.map(row => row.name).sort()).toEqual(['MA_BULL_MAIN', 'QINIU_B1_SUB', 'WEEK_MACD_SUB'])
       expect(rows.every(row => row.builtin === 1)).toBe(true)
-      // 设计口径：内置示例默认停用，避免开箱改变既有图表布局与录像窗格；可在设置中预览/后续启用。
+      // 内置示例默认停用；用户在设置中开启后，后续初始化保留其选择。
       expect(rows.every(row => row.enabled === 0)).toBe(true)
       expect(rows.find(row => row.name === 'WEEK_MACD_SUB')?.placement).toBe('sub')
       expect(rows.find(row => row.name === 'MA_BULL_MAIN')?.placement).toBe('main')
       expect(rows.find(row => row.name === 'QINIU_B1_SUB')?.placement).toBe('sub')
       for (const row of rows) expect(row.source.length).toBeGreaterThan(0)
 
+      database.prepare('UPDATE formulas SET enabled = 1 WHERE name = ?').run('MA_BULL_MAIN')
       expect(seedBuiltinFormulas(database)).toBe(0)
-      expect(builtinRows(database)).toHaveLength(3)
+      const reseeded = builtinRows(database)
+      expect(reseeded).toHaveLength(3)
+      expect(reseeded.find(row => row.name === 'MA_BULL_MAIN')?.enabled).toBe(1)
+      expect(reseeded.filter(row => row.name !== 'MA_BULL_MAIN').every(row => row.enabled === 0)).toBe(true)
     } finally {
       database.close()
     }

@@ -27,7 +27,7 @@
     "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "ENG-PLAN-01已由PR50合入b1ff3e9；RUNTIME-CANCEL-02由PR51合入f4bbc6a，CI首轮设置用例超时及同提交第二次完整通过均保留。依赖安全维护本地验证和独立审查通过，完成其独立PR/CI和告警核对，再组织M9整批候选。不据工程测试推断人工验收或授权发布。"
+  "next_action": "阶段0对账PR50、取消测试生命周期PR51、minimatch维护PR52均已合入，真实integration_ref已回填。告警48自动fixed；PR43保留待当前主线与包验证。M9启停保存进入草稿审查，公共EMA缺陷阻断整批交付，等待独立范围决定。工程收据不代替用户验收或发布许可。"
 }
 ```
 

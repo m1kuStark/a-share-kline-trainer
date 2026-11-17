@@ -13,3 +13,5 @@
 | [v0.4 设计提案](../proposals/v0.4-training-clock-orders-notes.md) | 开盘/收盘训练时钟与价格型条件单已在 v1.2.7 部分交付；成交理由和完整回放兼容仍待实现 |
 
 规则定义应有行为；实现缺口见[任务](../work-items/README.md)。既有M0/M1/M2验收见[基线阶段](../work-items/milestones/BASE.md)。
+
+公式启停的当前验证缺口见[公式规格](formulas.md)与[M9-ENABLE-01证据](../verification/2026-11/M9-ENABLE-01/README.md)：保存补丁不等于整个公式系统验收通过。
