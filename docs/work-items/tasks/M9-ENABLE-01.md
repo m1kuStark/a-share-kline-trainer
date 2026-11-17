@@ -7,9 +7,9 @@
   "owner": "integrator",
   "state": "active",
   "milestone": "M9",
-  "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
-  "summary": "启停保存修复已有4/5旅程，QINIU DEA缺陷已定位；用户随后明确批准独立EMA前导NaN暖机修复，按M9-EMA-WARMUP-01先RED→GREEN再完成M9整批和Windows候选。保存补丁与诊断/原失败均保留，尚未整批通过。",
-  "next_action": "执行用户刚批准的独立EMA最小修复；其专项审查/合入后，完整重跑M9、主代理视觉并验证同提交Windows包与录像回放，再交用户整批验收；不发布。",
+  "base_commit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "summary": "启停保存修复已集成公共EMA独立修复PR54（main58ba0ff）；原4/5和DEA失败保留，当前统一候选准备执行专项及完整门禁、主代理视觉、Windows实包录像回放；整批尚未通过。",
+  "next_action": "先冻结统一候选并重跑公式启停，再完成完整候选门禁、主代理视觉与同提交Windows生产包及录像回放；交用户整批验收，不发布。",
   "allowed_paths": [
     "web/src/components/FormulaSettings.vue",
     "web/src/api.ts",
@@ -90,3 +90,7 @@
 ## 独立范围已获批准
 
 用户在本轮随后明确选择“批准独立修复，再完成M9”，准确范围见[EMA批准记录](../../verification/2026-11/M9-ENABLE-01/ema-scope-approval.md)。此前blocked与待拍板记录保留为历史；当前active，先独立修复，不提前声称交付通过。
+
+## 统一候选接续
+
+2026-11-18，独立EMA修复由PR54合入main58ba0ff，必需docs/verify/pr-policy均通过，CI同次3033项通过。将此main更新集成到本卡，候选对比基线改为58ba0ff；保存补丁未变。独立修复完整收据保留，M9后继检查从统一候选重新执行。

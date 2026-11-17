@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Bar, FormulaView } from '../../web/src/api'
+import { BUILTIN_FORMULAS } from '../src/formulas/seed.js'
 import {
   barTimestamp, evaluateFormulaChart, formulaIndicatorName, formulaPaneIdsOf,
   isFormulaIndicatorName, paneHeightsForCapture,
@@ -25,6 +26,22 @@ function formula(overrides: Partial<FormulaView> = {}): FormulaView {
 }
 
 describe('M9-04C 公式图表求值（浏览器侧纯函数）', () => {
+  it('真实 QINIU 图表输出 DIF25 DEA33 后为7且前段null与B1全零', () => {
+    const bars = Array.from({ length: 120 }, (_, index) => ({
+      date: new Date(Date.UTC(2026, 0, index + 1)).toISOString().slice(0, 10),
+      open: index + 1, high: index + 2, low: index, close: index + 1, volume: 1000, amount: 1000,
+    }))
+    const builtin = BUILTIN_FORMULAS.find(item => item.name === 'QINIU_B1_SUB')!
+    const renders = evaluateFormulaChart({ bars, formulas: [formula({ ...builtin, builtin: true, enabled: true })] })
+    expect(renders).toHaveLength(1)
+    expect(renders[0].error).toBeNull()
+    expect(renders[0].lines.map(line => line.name)).toEqual(['DIF', 'DEA', 'B1'])
+    expect(renders[0].lines[0].points.map(point => point.value)).toEqual([...Array(25).fill(null), ...Array(95).fill(7)])
+    expect(renders[0].lines[1].points.map(point => point.value)).toEqual([...Array(33).fill(null), ...Array(87).fill(7)])
+    expect(renders[0].lines[2].points.map(point => point.value)).toEqual(Array(120).fill(0))
+    expect(renders[0].lines[1].points.map(point => point.timestamp)).toEqual(bars.map(bar => barTimestamp(bar.date)))
+  })
+
   it('图表 timestamp 统一 UTC 午夜（与 KlineChart dateTimestamp 同源）', () => {
     expect(barTimestamp('2026-01-05')).toBe(Date.parse('2026-01-05T00:00:00Z'))
     expect(barTimestamp('2026-01')).toBe(Date.parse('2026-01-01T00:00:00Z'))

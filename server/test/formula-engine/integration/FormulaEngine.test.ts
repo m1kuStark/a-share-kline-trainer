@@ -2,6 +2,54 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { FormulaEngine } from '../../../../web/src/formula-engine/FormulaEngine';
 import { MarketData } from '../../../../web/src/formula-engine/types/MarketData';
 import { LexerError, ParserError } from '../../../../web/src/formula-engine/errors';
+import { BUILTIN_FORMULAS } from '../../../src/formulas/seed.js';
+
+describe('M9 EMA composition regression', () => {
+  function barsFor(closes: number[]): MarketData[] {
+    return closes.map((close, index) => ({
+      timestamp: Date.UTC(2026, 0, index + 1), open: close, high: close + 1,
+      low: close - 1, close, volume: 1000,
+    }));
+  }
+
+  it('evaluates nested EMA3 with four warmup NaNs then the hand values 3 4 5', () => {
+    const result = new FormulaEngine().evaluate('X:EMA(EMA(CLOSE,3),3);', barsFor([1, 2, 3, 4, 5, 6, 7]));
+    expect(result.outputs[0].data).toEqual([NaN, NaN, NaN, NaN, 3, 4, 5]);
+  });
+
+  it('evaluates the real QINIU wave DEA against independent weights and B1 only at 61 and 93', () => {
+    const closes = Array.from({ length: 120 }, (_, index) => 50 + 10 * Math.sin(index / 5) + 0.05 * index);
+    // Independent closed-form weights, with explicit approved seed indexes.
+    // No production EMA, helper or recurrence is used to calculate expected.
+    function weightedOracle(data: number[], period: number, seedIndex: number): number[] {
+      const values = Array(data.length).fill(NaN);
+      const seed = data.slice(seedIndex - period + 1, seedIndex + 1).reduce((sum, value) => sum + value, 0) / period;
+      const alpha = 2 / (period + 1);
+      const decay = 1 - alpha;
+      for (let index = seedIndex; index < data.length; index += 1) {
+        let value = seed * decay ** (index - seedIndex);
+        for (let input = seedIndex + 1; input <= index; input += 1) {
+          value += alpha * data[input] * decay ** (index - input);
+        }
+        values[index] = value;
+      }
+      return values;
+    }
+    const fast = weightedOracle(closes, 12, 11);
+    const slow = weightedOracle(closes, 26, 25);
+    const dif = fast.map((value, index) => value - slow[index]);
+    const dea = weightedOracle(dif, 9, 33);
+    const source = BUILTIN_FORMULAS.find(item => item.name === 'QINIU_B1_SUB')!.source;
+    const result = new FormulaEngine().evaluate(source, barsFor(closes));
+    expect(result.outputs.map(line => line.name)).toEqual(['DIF', 'DEA', 'B1']);
+    const actualDea = result.outputs.find(line => line.name === 'DEA')!.data;
+    expect(actualDea.slice(0, 33)).toEqual(Array(33).fill(NaN));
+    expect(actualDea.slice(33)).toHaveLength(87);
+    for (let index = 33; index < closes.length; index += 1) expect(actualDea[index]).toBeCloseTo(dea[index], 10);
+    const b1 = result.outputs.find(line => line.name === 'B1')!.data;
+    expect(b1).toEqual(Array.from({ length: 120 }, (_, index) => index === 61 || index === 93 ? 1 : 0));
+  });
+});
 
 describe('FormulaEngine - End-to-End Integration Tests', () => {
   let engine: FormulaEngine;

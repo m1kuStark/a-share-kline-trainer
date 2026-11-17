@@ -1,0 +1,14 @@
+{
+  "path": "D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/formula-engine.yaml",
+  "sha256": "a8e1e31b0c06ecd4d9f2bc990d46c8b1d1bef4ee0b7e73817f6f858e8241f76b",
+  "rows": [
+    "FE-EMA-LEADING-NAN",
+    "FE-EMA-FINITE-COMPAT",
+    "FE-EMA-NESTED",
+    "FE-EMA-QINIU-DEA",
+    "FE-EMA-QINIU-CROSS"
+  ],
+  "l1": "pending strict execution",
+  "l2": "reviewed by root; executed old-EMA mutation revives eight numeric assertion failures",
+  "runtime": "targeted112/corpus43/full3033 native0; see immutable original receipts"
+}

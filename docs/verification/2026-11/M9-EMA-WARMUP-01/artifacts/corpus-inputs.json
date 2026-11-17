@@ -1,0 +1,154 @@
+{
+  "realFileCount": 6,
+  "corpusBlockCount": 23,
+  "allPresent": true,
+  "sourceReadOnly": true,
+  "files": [
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\左峰诅咒线主图公式_单行粘贴版.txt",
+      "bytes": 33385,
+      "sha256": "cec564a9c0d6ee8dcc78a57ce743316377c880bef3fa57e122c59109e173b8c3"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\浪型背离副图_单行粘贴版.txt",
+      "bytes": 7486,
+      "sha256": "595c54a483d3aba7fbd040cefbfaac5f850157022aa7f0052aed184884fb8450"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\my_xg\\放量解放选股_单行粘贴版.txt",
+      "bytes": 511,
+      "sha256": "03f3f5772ae6ae464c8b2ac855e8e666521156a84c552777da346c188da9f31b"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\骑牛买1公式.md",
+      "bytes": 2927,
+      "sha256": "01f356c12a3b40188720f8c1a21fc3bd9bd020420beae078cf1a01c6647ee9fc"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘辅助公式.txt",
+      "bytes": 74,
+      "sha256": "ac7d90442b2e431b5d8128e2902c7e71d024a3fa2335d3577049492e2b990070"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式\\周线144MA上翘日线25MA之上选股公式.txt",
+      "bytes": 95,
+      "sha256": "a68d7b5495348bb810750f942b57635e9df8dd01896ca2d96357fbfd346bcabc"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-1.txt",
+      "bytes": 113,
+      "sha256": "bb9151d02956510950b374951f72b4875a685466926de037b5e85b623b4e5843"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-2.txt",
+      "bytes": 194,
+      "sha256": "bbed09db3cbdab0d7d997cb83f665e87d13720994a8225d9aa5f85294a7106b1"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-3.txt",
+      "bytes": 194,
+      "sha256": "13803d6f954e8917bd68c5ff12d5c7cb1a6593c1fffa4e2220655c21d182a29b"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-分金定穴-4.txt",
+      "bytes": 218,
+      "sha256": "41a1b40e8a8399b7decbd7439da40569ec302877843bfdf813347ed80d8ec892"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-1.txt",
+      "bytes": 202,
+      "sha256": "ab4cfe4cfc5c4995bfcb77398537afd1ad558417c36e051a7e7ca3bb8d5f2aa4"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-乖离度与5日擒牛副图指标公式-2.txt",
+      "bytes": 245,
+      "sha256": "cc4ff3e926b291b0417d997f6a0d358469735a159108d5c4162084dc4179f1f9"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-1.txt",
+      "bytes": 346,
+      "sha256": "8bc1efd4ee984dc95b433b9fff327b1b86fa9318de2f3829f0b4c7836e923b3a"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-2.txt",
+      "bytes": 345,
+      "sha256": "08180583193787ea14fdd760845f121acf852af928a860245f2980b7b08ffb6d"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-3.txt",
+      "bytes": 239,
+      "sha256": "60af737445221ac790604023b2bf185e83039935a98d6fa48a69fca9b994dc52"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-4.txt",
+      "bytes": 262,
+      "sha256": "4c2878e8858738b7393f87c4a835f45e8cd62de6bb08a21c4ddb80f9b83c87a3"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-5.txt",
+      "bytes": 470,
+      "sha256": "d560a195202fbaca863ab74891ef4e496929aaf1a8c4e8962e2a3beaa29cc109"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-6.txt",
+      "bytes": 163,
+      "sha256": "9a206c9ca32a7312b31624c9e299cb3d5c3bc399c195996445119ca83798fb54"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-7.txt",
+      "bytes": 63,
+      "sha256": "3865f3adcb9ee303adc29c7a14e5823d36f3d37d17cdb9efb73e711348a90f0d"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-六龙连山-8.txt",
+      "bytes": 175,
+      "sha256": "30998c39775b2ad5b51685c391e811abf2b07c01152a30c125d5288a3706c1d7"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-1.txt",
+      "bytes": 105,
+      "sha256": "4520ae4141493310151cf4d9fc056d0abd1a9d665cb1da22bb449e8bd8bffe80"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买1公式-2.txt",
+      "bytes": 105,
+      "sha256": "4520ae4141493310151cf4d9fc056d0abd1a9d665cb1da22bb449e8bd8bffe80"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买2_生命线诅咒线选股公式-1.txt",
+      "bytes": 1295,
+      "sha256": "ddc968e0329e878b2b93fab0a90c5b042c0b94e52197a0a6aef1aa7b9d2427ec"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-1.txt",
+      "bytes": 224,
+      "sha256": "de371df5ff32bc2455307cb526e55c5b0827b18d6190c5481c66b5128a31f2a6"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-2.txt",
+      "bytes": 224,
+      "sha256": "cc76a3b4c2cd0a96ef54973b99477108c81092cdaa918f0391eedbae6084a2d3"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-3.txt",
+      "bytes": 1665,
+      "sha256": "d7009bbcf4ba1a92bcfedd4ec2dc5931cc6560ba82b77189cefa9393537f91e4"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-4.txt",
+      "bytes": 105,
+      "sha256": "4520ae4141493310151cf4d9fc056d0abd1a9d665cb1da22bb449e8bd8bffe80"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-骑牛买3_过左峰选股公式-5.txt",
+      "bytes": 248,
+      "sha256": "3b929c2c246d7da40303feae49f79e1d30b04b079114dc85be90b4d516222f24"
+    },
+    {
+      "path": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon\\corpus-万能过左峰公式-1.txt",
+      "bytes": 1774,
+      "sha256": "f8d637c52d2fc8eee945698ed518afceac3e4424cc5f70ab40d5d84f79f7735f"
+    }
+  ],
+  "executionEvidence": "follow corpus-targeted.log: existing tests guard evaluates true, exact 23 count and real file existence prechecked; missing/skip warnings are forbidden"
+}

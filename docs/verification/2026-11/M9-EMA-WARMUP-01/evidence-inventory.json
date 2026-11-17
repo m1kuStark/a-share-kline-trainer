@@ -1,0 +1,389 @@
+{
+  "task": "M9-EMA-WARMUP-01",
+  "createdAt": "2026-11-17T18:42:50.6004754Z",
+  "capturedBy": "local_health worker",
+  "records": [
+    {
+      "path": "logs/build.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\build.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 1337,
+      "rawSha256": "8063e85ead86f7f80257ea33665c762a68b2b84a2ab3f847d30126abce7b2677",
+      "receipt": "receipts/build.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "8063e85ead86f7f80257ea33665c762a68b2b84a2ab3f847d30126abce7b2677",
+      "decodedBytes": 1337,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/corpus-targeted.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\corpus-targeted.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 7007,
+      "rawSha256": "5ea1ff603e595283ce19c65b391a0ecf520a219ea795322c9efdc3cb2b8eae2e",
+      "receipt": "receipts/corpus-targeted.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "5ea1ff603e595283ce19c65b391a0ecf520a219ea795322c9efdc3cb2b8eae2e",
+      "decodedBytes": 7007,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/docs-check.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-check.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 22913,
+      "rawSha256": "7315eb938c6a845933b7269d33e385cbdb42625cb2079a1fd0ab927924fae818",
+      "receipt": "receipts/docs-check.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "7315eb938c6a845933b7269d33e385cbdb42625cb2079a1fd0ab927924fae818",
+      "decodedBytes": 22913,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/docs-impact-scoped.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-impact-scoped.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 315,
+      "rawSha256": "2ae0d02a3836987517aaa7438f7e477e47bffdf69d661691fdaa81eca588f4d0",
+      "receipt": "receipts/docs-impact-scoped.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "2ae0d02a3836987517aaa7438f7e477e47bffdf69d661691fdaa81eca588f4d0",
+      "decodedBytes": 315,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/docs-impact.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-impact.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 166,
+      "rawSha256": "b941d5db8787d5933ef9afb1201a3cb993038f2452cf29bf93c5dea98aaed235",
+      "receipt": "receipts/docs-impact.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "b941d5db8787d5933ef9afb1201a3cb993038f2452cf29bf93c5dea98aaed235",
+      "decodedBytes": 166,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/docs-status-check.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-status-check.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 251,
+      "rawSha256": "864f6044ee3f56eca4d4b5d70fd46c38a93a2b577ab57dc2ea80ae22d4207228",
+      "receipt": "receipts/docs-status-check.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "864f6044ee3f56eca4d4b5d70fd46c38a93a2b577ab57dc2ea80ae22d4207228",
+      "decodedBytes": 251,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/full-test-isolated-control.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test-isolated-control.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 15112,
+      "rawSha256": "d11d0bcfb5beccd43d3e755540b0080e25f8c69be84492f380f158198d7e613f",
+      "receipt": "receipts/full-test-isolated-control.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "d11d0bcfb5beccd43d3e755540b0080e25f8c69be84492f380f158198d7e613f",
+      "decodedBytes": 15112,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/full-test-retry1.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test-retry1.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 18127,
+      "rawSha256": "ee0b0ce592949083df96593973ec1296ef55b9598718caf4a2823a20b606917e",
+      "receipt": "receipts/full-test-retry1.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "ee0b0ce592949083df96593973ec1296ef55b9598718caf4a2823a20b606917e",
+      "decodedBytes": 18127,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/full-test.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 207,
+      "rawSha256": "1e8aa169518aa768fc7ee842aa9be51f1cc55e5c3ac53e8fa32f640f9b415252",
+      "receipt": "receipts/full-test.receipt.json",
+      "nativeExitCode": -1073740791,
+      "decodedSha256": "1e8aa169518aa768fc7ee842aa9be51f1cc55e5c3ac53e8fa32f640f9b415252",
+      "decodedBytes": 207,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/green-targeted.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\green-targeted.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 274,
+      "rawSha256": "a0840ebace62ae1564ca52ad633a569441910762a2ec0641e67ddff3c745c9a7",
+      "receipt": "receipts/green-targeted.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "a0840ebace62ae1564ca52ad633a569441910762a2ec0641e67ddff3c745c9a7",
+      "decodedBytes": 274,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/matrix-before.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\matrix-before.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 915,
+      "rawSha256": "a3640b8600729200bdc726a313c07d4ee38fa77a02cd1a1003990fa83e6e5230",
+      "receipt": null,
+      "nativeExitCode": null,
+      "decodedSha256": "a3640b8600729200bdc726a313c07d4ee38fa77a02cd1a1003990fa83e6e5230",
+      "decodedBytes": 915,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/mutant-old-ema.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\mutant-old-ema.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 11847,
+      "rawSha256": "7111e1209fe62d49d81c9f5296a70a6c25046328967714eaca2b364f6bfe7e87",
+      "receipt": "receipts/mutant-old-ema.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "7111e1209fe62d49d81c9f5296a70a6c25046328967714eaca2b364f6bfe7e87",
+      "decodedBytes": 11847,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/red-targeted.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\red-targeted.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 11847,
+      "rawSha256": "e9bbde497fdafc179fe84dafd60e6d600fb0e4fb9d7bf37b828cb863f249b0e6",
+      "receipt": "receipts/red-targeted.receipt.json",
+      "nativeExitCode": 1,
+      "decodedSha256": "e9bbde497fdafc179fe84dafd60e6d600fb0e4fb9d7bf37b828cb863f249b0e6",
+      "decodedBytes": 11847,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/restored-targeted.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\restored-targeted.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 274,
+      "rawSha256": "ac5d626da0eb4aed64b3eba9f189a36d2466ea151042607dd10acda30eb243b0",
+      "receipt": "receipts/restored-targeted.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "ac5d626da0eb4aed64b3eba9f189a36d2466ea151042607dd10acda30eb243b0",
+      "decodedBytes": 274,
+      "roundtripVerified": true
+    },
+    {
+      "path": "logs/workflow-docs-isolated.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\workflow-docs-isolated.log",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 267,
+      "rawSha256": "72b96592278183a9bce4d2fef739f5b06b7f54cc7209fe36fb4d0d8162fe40ac",
+      "receipt": "receipts/workflow-docs-isolated.receipt.json",
+      "nativeExitCode": 0,
+      "decodedSha256": "72b96592278183a9bce4d2fef739f5b06b7f54cc7209fe36fb4d0d8162fe40ac",
+      "decodedBytes": 267,
+      "roundtripVerified": true
+    },
+    {
+      "path": "receipts/build.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\build.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "174d5ac8a6a73eb2481684e15e6de6866a185a7e209e7158857ced98ea9f7fa8"
+    },
+    {
+      "path": "receipts/corpus-targeted.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\corpus-targeted.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "df9fc75d0e9276605e8f99de04510f257aef6160d3e2f2b5c0bdc75bba7d7cfa"
+    },
+    {
+      "path": "receipts/docs-check.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-check.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "dbf61ad53ec10f8a7140087f5a9b3a3c9a15e13fec8a3380fc1c2679e7465ceb"
+    },
+    {
+      "path": "receipts/docs-impact-scoped.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-impact-scoped.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "e1b97bb2c13e1bcdd10718d8d0f3d9c271920bdd71acefbec13a50761cde3954"
+    },
+    {
+      "path": "receipts/docs-impact.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-impact.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "f6ee2611a375f634e57509581bef68d320efae96c90cff4638f19bb86ea826e2"
+    },
+    {
+      "path": "receipts/docs-status-check.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\docs-status-check.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "c3658f355e957fb42e2251cfd5b7417e29255cfb1139ce016fc9e431de00c5e8"
+    },
+    {
+      "path": "receipts/full-test-isolated-control.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test-isolated-control.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "1369fe94bc5c73b21db1acc0be86e94a26505b4f8e241ecea2d6ea6d69736851"
+    },
+    {
+      "path": "receipts/full-test-retry1.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test-retry1.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "ca972546b14a3fc5b7d683be02ad9381ac27c19327fcbb96bf8af005701ce596"
+    },
+    {
+      "path": "receipts/full-test.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\full-test.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "f406fef3a8d97d84c8ada0a3dbac4a9979ee3986ff357bdad5a06322c36a7a67"
+    },
+    {
+      "path": "receipts/green-targeted.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\green-targeted.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "0c2b43298cea48a49d26a2cc48b7f20238bf2682335ad94fe1d66d0ce793cb8e"
+    },
+    {
+      "path": "receipts/mutant-old-ema.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\mutant-old-ema.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "d300dec1eb558b1abcb43a746d27b1da3ce90391ad8bbc24221d4fd27e0aea70"
+    },
+    {
+      "path": "receipts/red-targeted.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\red-targeted.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "ae6baf616aa743afee1151045f776bb083b7c7431152fe7d7a753d50bea7d079"
+    },
+    {
+      "path": "receipts/restored-targeted.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\restored-targeted.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "e52990861319d5afc356aa73a3bd6bb13d43d1d0884557107b60571834b24faa"
+    },
+    {
+      "path": "receipts/workflow-docs-isolated.receipt.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\workflow-docs-isolated.receipt.json",
+      "encoding": "original bytes",
+      "sha256": "13870a795c3f6e8a6bb390984fd93ef8f7f0b56ca8fd05e788e692051a26d840"
+    },
+    {
+      "path": "artifacts/test-bindings.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\test-bindings.json",
+      "encoding": "original bytes",
+      "sha256": "0917566df1019638171cd6ae4e49be9936800a4a5fe37fa105f2099f140afc5a"
+    },
+    {
+      "path": "artifacts/corpus-inputs.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\corpus-inputs.json",
+      "encoding": "original bytes",
+      "sha256": "bb795daabe1af52222644df579f57a8e01ccadbbdf49b2ca8845159306d73aa4"
+    },
+    {
+      "path": "artifacts/mutation-restoration.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\mutation-restoration.json",
+      "encoding": "original bytes",
+      "sha256": "f9c5615f0cf3ddeca6e46ad6391826dc1ad7dfb88acafdc4d9ecec2c83f9937d"
+    },
+    {
+      "path": "artifacts/pre-mutation-fingerprints.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\pre-mutation-fingerprints.json",
+      "encoding": "original bytes",
+      "sha256": "3339de154ad44f03a2ca5fca08575e44c4fa01458347da400aba4ba40dadadae"
+    },
+    {
+      "path": "artifacts/native-crash-environment.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\native-crash-environment.json",
+      "encoding": "original bytes",
+      "sha256": "41b5fcfa5fc12ed7e016ea06ee1c0aa2431431b19fb524ae26319162ec491558"
+    },
+    {
+      "path": "artifacts/candidate-source-fingerprints.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\candidate-source-fingerprints.json",
+      "encoding": "original bytes",
+      "sha256": "0cc33aec16e08fb17a10a77665b10116e53b96f7b67114dd28a6869bb036bcfd"
+    },
+    {
+      "path": "artifacts/workflow-state.json",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\workflow-state.json",
+      "encoding": "original bytes",
+      "sha256": "b9e8dda561e5781ef34fcec563d0b4593c0e188ebc778c160c36424c32814c9f"
+    },
+    {
+      "path": "artifacts/math-before.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\math-before.raw.b64",
+      "encoding": "original bytes",
+      "sha256": "7beba7ab3ca1485700fa38e66ff5a3f27cfb85c6df13ab10290b4bceab71da2e",
+      "decodedSha256": "96841db54525c3817c04c67b5cc1dbf96b732acfadddb1e387c8941170709348",
+      "decodedBytes": 7807,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/ema-fix.patch.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\ema-fix.patch",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 972,
+      "rawSha256": "1fff3a44a05608d933d864dec23fb5c39f2a0df579f83f2e32d3956461450c5c",
+      "decodedSha256": "1fff3a44a05608d933d864dec23fb5c39f2a0df579f83f2e32d3956461450c5c",
+      "decodedBytes": 972,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/red-tests.patch.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\red-tests.patch",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 10463,
+      "rawSha256": "025f165a99f02fcf056cac7b4d5255c7490eedd3c3ddb6aa65657feeb26ac308",
+      "decodedSha256": "025f165a99f02fcf056cac7b4d5255c7490eedd3c3ddb6aa65657feeb26ac308",
+      "decodedBytes": 10463,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/candidate-code-docs.patch.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\candidate-code-docs.patch",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 13711,
+      "rawSha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+      "decodedSha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+      "decodedBytes": 13711,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/manifest-start.md.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\manifest-start.md",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 3091,
+      "rawSha256": "9677bd83e5939d657f65719219fd4e0300fb6dd354ffab43b3c85af2a37245a3",
+      "decodedSha256": "9677bd83e5939d657f65719219fd4e0300fb6dd354ffab43b3c85af2a37245a3",
+      "decodedBytes": 3091,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/run-step.ps1.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\run-step.ps1",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 2223,
+      "rawSha256": "00ed715e24fc65f87cbd0f7470b0cd1587663ba89caea206c8623edb73fcad9f",
+      "decodedSha256": "00ed715e24fc65f87cbd0f7470b0cd1587663ba89caea206c8623edb73fcad9f",
+      "decodedBytes": 2223,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/candidate-code-docs-final.patch.raw.b64",
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-ema-warmup-01-20261118\\candidate-code-docs-final.patch",
+      "encoding": "base64 of original bytes",
+      "rawBytes": 13711,
+      "rawSha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+      "decodedSha256": "c4aaa24bc7f67a76e33a13234ad47ea0739ec12c17c425376f8bd98c466f2591",
+      "decodedBytes": 13711,
+      "roundtripVerified": true
+    },
+    {
+      "path": "artifacts/source-fingerprints-final.json",
+      "source": "generated current source snapshot",
+      "encoding": "UTF-8 JSON",
+      "sha256": "0c94f68a8ee0557a40c231d1dc523e8949d089dc90903e29a838b8f244aa0c00"
+    }
+  ],
+  "note": "Receipts are copied byte-for-byte; receipt.log points to original cache; inventory maps those logs to reversible repository evidence. Historical failures remain unedited."
+}

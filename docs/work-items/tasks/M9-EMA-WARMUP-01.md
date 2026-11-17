@@ -5,11 +5,11 @@
   "id": "M9-EMA-WARMUP-01",
   "title": "修复公共EMA前导NaN暖机并保留正常输入结果",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "M9",
   "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
-  "summary": "用户2026-11-18明确批准独立EMA前导空值暖机修复，再完成M9。仅平移公共EMA初始SMA窗口越过前导NaN，保留正常输入的原求和/递推；锁定嵌套EMA、QINIU DEA与B1。当前尚未实现或验证。",
-  "next_action": "先写专项RED并以真实缺陷失败，最小修改公共EMA，再完成专项/真实语料/全量单测/构建与独立审查；合入后由M9-ENABLE-01执行最终整批和同提交Windows包。",
+  "summary": "公共EMA前导NaN暖机已完成：专项112项、真实语料43项、完整server2664＋desktop369同次3033项通过；回退修复8项语义失败，独立五维审查可合入。仅正整数周期契约，M9整批/Windows包/用户验收另行执行。",
+  "next_action": "独立修复已由PR54合入main；M9-ENABLE-01负责最终统一候选、浏览器整批、视觉与Windows包及录像回放，待用户整批验收。",
   "allowed_paths": [
     "web/src/formula-engine/interpreter/functions/math.ts",
     "server/test/formula-engine/interpreter/functions/math.test.ts",
@@ -25,13 +25,25 @@
     "docs/status.md",
     "docs/verification/2026-11/M9-EMA-WARMUP-01/**"
   ],
-  "depends_on": ["DEP-SEC-MINIMATCH-01"],
+  "depends_on": [
+    "DEP-SEC-MINIMATCH-01"
+  ],
   "docs_impact": {
-    "update": ["web/src/formula-engine/README.md", "docs/specs/formulas.md", "docs/specs/README.md", "docs/work-items/tasks/M9-EMA-WARMUP-01.md", "docs/work-items/milestones/M9.md", "docs/work-items/README.md", "docs/status.md"],
+    "update": [
+      "web/src/formula-engine/README.md",
+      "docs/specs/formulas.md",
+      "docs/specs/README.md",
+      "docs/work-items/tasks/M9-EMA-WARMUP-01.md",
+      "docs/work-items/milestones/M9.md",
+      "docs/work-items/README.md",
+      "docs/status.md"
+    ],
     "reason": "公共EMA是冻结vendor语义的明确已批准例外，记录暖机边界、正常输入兼容性、实际回归和M9后继交付边界。root单写矩阵、统一状态和聚合文档。"
   },
-  "verification_refs": ["docs/verification/2026-11/M9-EMA-WARMUP-01/README.md"],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-11/M9-EMA-WARMUP-01/README.md"
+  ],
+  "integration_ref": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
   "acceptance_ref": null
 }
 ```
@@ -45,3 +57,7 @@
 矩阵由root预登记FE-EMA-LEADING-NAN、FE-EMA-FINITE-COMPAT、FE-EMA-NESTED、FE-EMA-QINIU-DEA、FE-EMA-QINIU-CROSS；worker不编辑矩阵或共享状态。保留旧FE-VENDOR-BASELINE和FE-CORPUS-SMOKE断言，冻结基线仅新增这项明确例外。
 
 TDD和验证：先保存专项原生RED，修复后执行函数/引擎/seed/chart测试；真实6文件和23语料不可跳过，独立npm ci/build后跑完整server+desktop。定向变异验证只回退本次EMA补丁，保留所有断言；确认RED后复原精确候选再绿。最终M9完整Journey、深浅主题视觉、Windows实包训练/公式/录像回放由root在合入后的统一候选执行。
+
+## 工程验证与后继
+
+专项 RED→GREEN、真实语料、完整3033项、实际变异及独立五维审查收据均已归档于[验证记录](../../verification/2026-11/M9-EMA-WARMUP-01/README.md)。首次原生崩溃和后续控制环境污染失败原样保留；正常输入浮点向量和旧验收断言保持。当前 review 表示独立修复具备集成条件，M9 浏览器/Windows包和人工验收没有由此转正。
