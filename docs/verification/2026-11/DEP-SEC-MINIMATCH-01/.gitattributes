@@ -1,0 +1,7 @@
+# Keep reversible Base64 receipts and helpers as ordinary LF text.
+.gitattributes text eol=lf
+*.cjs text eol=lf
+*.mjs text eol=lf
+README.md text eol=lf
+result.json text eol=lf
+receipts/** text eol=lf
