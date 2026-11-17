@@ -7,8 +7,8 @@
   "owner": "integrator",
   "state": "planned",
   "milestone": "V4",
-  "summary": "保留默认 close_only 收盘模式，并为显式开启的训练增加 open/close 阶段、形成中 K 线和旧训练迁移。",
-  "next_action": "先补 clock_mode、open/close 状态机、数据库迁移和防未来回归；完成后由 REC-04 接入理由合同。",
+  "summary": "默认close_only与显式open_close阶段时钟、形成中K线及数据库迁移已有实现；旧planned标签不表示功能缺失，完整录制/理由与旧数据验收沿后继任务核实。",
+  "next_action": "阶段时钟与形成中K线已进入main；close_only/open_close及迁移入口当前仍在。原planned保留为工作流历史，不再从零实现；按V4-01及REC-04/NOTE-01确认录制、理由和旧数据残项。本轮未动态复验。",
   "allowed_paths": [
     "server/src/db.ts",
     "server/src/train/**",
@@ -35,8 +35,8 @@
     ],
     "reason": "阶段状态、成交时点、形成中 K 线和 equity_curve 主键都会改变训练与录制语义。"
   },
-  "verification_refs": [],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@784a4d2e9e9afec6bd23ce585592e9817a2ec060",
   "acceptance_ref": null
 }
 ```

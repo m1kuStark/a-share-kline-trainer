@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "UPD",
   "summary": "冷审 P1-2 修复（用户 2026-10-19 批复 2：无感自动诊断与处理）。现状：NSIS 静默安装中断（A6/A7 窗口）后应用可能停在旧版本且无人知晓——repo 无观测无恢复，缓存 setup 路径无 UI 暴露（证据：cold-review.md A6/A7 条）。修复：quitAndInstall 排空退出前在数据目录落「更新意图标记」（fromVersion/toVersion/时间戳）；下次启动校验——版本==target 清标记（成功收尾）；版本≠target 且标记在 → 静默自动重走 check→download→verify→install（有界重试，超界才呈现人话指引），用户不感知中断发生过。矩阵行 UPD-NSIS-INTENT-RETRY 已由 root 预登记（worker 不得编辑矩阵）。硬约束：不改 GAP1 冻结的诊断字段集（DESKTOP-DIAG-CLIPBOARD EARS），信息呈现走更新状态既有面。2026-10-19 实现完成：desktop/src/update-intent.ts＋main.ts 接线＋26 用例（desktop 全量 351/351 绿）；验证记录 docs/verification/2026-10/UPD-NSIS-RETRY-01/README.md；真机中断场景 deferred（gpu3060 关机）。",
-  "next_action": "root 回填矩阵 UPD-NSIS-INTENT-RETRY 的 test_ids（清单见验证 README §6）并升 covered；真机中断自愈验收（gpu3060 可用时）。",
+  "next_action": "修复已合入main；共享updater矩阵UPD-NSIS-INTENT-RETRY已有test_ids且为covered，无需重复回填。真机中断自愈收据仍需按当前候选核验，本轮未执行；保留review，不从合并标题推断用户已接受全部场景。",
   "allowed_paths": [
     "desktop/src/**",
     "desktop/test/**",
@@ -22,10 +22,8 @@
     ],
     "reason": "冷审 P1 修复的证据与验收记录承载。"
   },
-  "verification_refs": [
-    "docs/verification/2026-10/U5-BRIEF/cold-review.md"
-  ],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/U5-BRIEF/cold-review.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md","docs/verification/2026-10/UPD-NSIS-RETRY-01/README.md"],
+  "integration_ref": "main@ad9766836f61c4e46e709fea2d18acd00ffb9751",
   "acceptance_ref": "docs/复盘缺口修补-开发计划.md"
 }
 ```

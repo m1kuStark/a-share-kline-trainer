@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [ENG-PLAN-01 首批计划与任务对账](tasks/ENG-PLAN-01.md)：[批准记录](../verification/2026-11/ENG-PLAN-01/approval.md)、[22卡事实与旧E2E静态对账](../verification/2026-11/ENG-PLAN-01/README.md)；产品当前动态结果和新增用户验收未验证。
+
 - [ENG-HEALTH-02 工程健康检查](tasks/ENG-HEALTH-02.md)：2026-11-17 本地/GitHub 对账、过时跟踪引用与文档整理；[检查记录和后续清单](../verification/2026-11/ENG-HEALTH-02/README.md)。
 - [DEP-SEC-MINIMATCH-01 构建依赖安全维护](tasks/DEP-SEC-MINIMATCH-01.md)：Dependabot alert #48，先评估受影响依赖链与兼容修复，再独立实施。
 - [RUNTIME-CANCEL-02 子进程取消失败](tasks/RUNTIME-CANCEL-02.md)：本轮完整单测与原配置隔离复跑均失败，先定位 Windows 进程退出、目录锁定与预算冲突。

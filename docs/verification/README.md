@@ -1,5 +1,7 @@
 # 验证与验收证据
 
+[ENG-PLAN-01（2026-11-18）](2026-11/ENG-PLAN-01/README.md)记录首批开发批准、22卡集成事实与原20项E2E静态对账；未运行产品或新增用户验收。
+
 最近一次工程健康核对见 [ENG-HEALTH-02（2026-11-17）](2026-11/ENG-HEALTH-02/README.md)。当前开发沿[状态](../status.md)与对应任务接续；发布状态按[发布协议](../engineering/release.md)核对 GitHub Release、tag 与更新 feed，不能由历史报告标题推断。
 
 [v1.2.7 替换发布](2026-10/V1.2.7-published/README.md)、[用户验收](2026-10/V1.2.7-user-acceptance/README.md)、[GITHUB-HEALTH-01](2026-10/GITHUB-HEALTH-01/report.md)与[2026-10-04 交接](2026-10/handover-20261004-session/README.md)保留各自历史范围，不能代替当前包来源或验证结论。
