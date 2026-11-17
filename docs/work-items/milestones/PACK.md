@@ -18,14 +18,17 @@
     "docs/verification/2026-10/PACK-02/README.md",
     "docs/verification/2026-10/PACK-03/README.md",
     "docs/verification/2026-10/PACK-04/README.md",
-    "docs/verification/2026-10/PACK-05/README.md"
+    "docs/verification/2026-10/PACK-05/README.md",
+    "docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"
   ],
   "acceptance_ref": null,
-  "next_action": "PACK-01..05 全部完成工程验证（review 态）。PACK-05 交付发布流水线（release:desktop 全产物＋NSIS 静默安装冒烟门禁＋发布手册＋用户升级指引；desktop-app 矩阵 PACK-05 六行落位）。待用户：拍板 PACK-02 8 项＋PACK-03 8 项＋PACK-04 10 项＋PACK-05 4 项 proposed_default；按发布手册人工上传首个双形态 Release；真机验收安装版在线更新端到端。"
+  "next_action": "PACK-01..05已集成main，数据迁移、覆盖安装与便携更新另有MIG-ONECLICK-01/02、INSTALLER-UPGRADE-01、PORT-UPD-01后继。旧首个Release上传及初版proposed_default不是当前操作指令；按当前候选核验包身份、自然升级及人工残项，保持暂不发布。"
 }
 ```
 
-## 冻结边界（PACK-01 派发简报）
+## PACK-01历史派发边界（只供追溯）
+
+以下限制属于PACK-01当轮范围，不覆盖PACK-02..05及后继已批准的实现；当前行为沿现行规格与发布手册核对。
 
 - 禁改 `web/src/**`、`scripts/release/**`、`launcher.cjs`、`server/src` 除 index.ts 入口外的业务代码、数据库 schema；越界即停。
 - `git diff --stat origin/main..HEAD` 不得包含 scripts/release/**、web/**、launcher.cjs（零破坏证明）。

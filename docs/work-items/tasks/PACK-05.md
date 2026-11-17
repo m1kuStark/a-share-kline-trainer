@@ -8,7 +8,7 @@
   "state": "review",
   "milestone": "PACK",
   "summary": "工程验证完成（2026-10-06）：发布流水线全套交付——`npm run release:desktop`（desktop/scripts/release-desktop.mjs 编排＋release-desktop-lib.mjs 纯函数层）一键产出 NSIS 安装器（one-click=false 向导式/per-user/setup 命名）＋便携 exe＋latest.yml（electron-builder 原生产出＋字节级核验的双路径，--publish never 不触 GitHub）＋SHA256SUMS-desktop.txt（异名避 UPD-01 精确名资产，有测试锁定）。打包冒烟门禁双目标：portable A-H 回归（SMOKE_PASS 119.3s）＋NSIS 静默安装/运行/优雅退出/静默卸载无残留（SMOKE_PASS 37.9s；含 PACK-04 extraResources 回退 NSIS 形态实证＝安装目录 resources/app-update.yml 存在断言）。desktop 115/115（新增 13 例 TDD 先红后绿）＋全量 1524（flaky 2 例逐名登记）＋build/build:desktop:main 过；矩阵 desktop-app 23 covered/9 open 设计内（PACK-05 占位行升实义六行：4 covered＋2 收据行）＋updater 22/22 零降级；禁改区 diff 空；变异 M1/M2 executed 击杀。发布手册（docs/release/desktop-release-manual.md）＋用户升级指引（desktop-upgrade-guide.md）落地。平台实证三条：NSIS 静默安装仍建快捷方式且 shell 目录不受 env 重定向（快照→差集→卸载→断言消失消化）；latest.yml 在 --publish never 下仍原生产出（与包内 app-update.yml 行为不同）；node windowsHide:true 的 SW_HIDE 会被直启 Electron 首窗口继承（窗口不显示但渲染/心跳正常，冒烟已固定 false）。",
-  "next_action": "用户验收 proposed_default 4 项（NSIS 向导式/per-user/快捷方式默认、zip 兜底双形态、latest.yml 双路径、发布人工环节清单，见验证记录 §九）后转 done；首个双形态 Release 上传（人工，按发布手册 §三）后真机走通安装版在线更新端到端（UPD-DESKTOP-INSTALL-DRAINS-FIRST 最后一环）",
+  "next_action": "发布流水线和双形态打包已有实现；旧首个双形态Release上传及proposed_default清单不能直接作当前操作指令。按现行发布手册核验候选身份和升级残项，保持暂不发布；本轮无打包/上传。",
   "base_commit": "65540f4",
   "allowed_paths": [
     "desktop/**（electron-builder.yml/脚本/冒烟/build-resources）",
@@ -26,8 +26,8 @@
     "update": ["docs/work-items/tasks/PACK-05.md", "docs/work-items/milestones/PACK.md"],
     "reason": "PACK 收官任务：发布流水线＋冒烟门禁；矩阵在工作区 harness skill（desktop-app.yaml 六行升实义）。"
   },
-  "verification_refs": ["docs/verification/2026-10/PACK-05/README.md"],
-  "integration_ref": null,
+  "verification_refs": ["docs/verification/2026-10/PACK-05/README.md","docs/verification/2026-11/ENG-PLAN-01/reconciliation.md"],
+  "integration_ref": "main@ee6c16284acc814eabf8d418b976e0a57f433685",
   "acceptance_ref": null
 }
 ```
