@@ -1,0 +1,25 @@
+{
+  "preparedAt": "2026-11-18T01:46:39.4440187+08:00",
+  "script": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-packaged-acceptance.cjs",
+  "sha256": "b7a10880ea8d107b89a805a548697d0c5dc990c35e5df58cc2b18411ae7e311c",
+  "syntaxCommand": "node --check <cache>/m9-packaged-acceptance.cjs",
+  "syntaxExit": 0,
+  "productLaunched": false,
+  "runtimeVerified": false,
+  "repositoryEdited": false,
+  "sourceReferences": [
+    "scripts/acceptance/Start-Acceptance.ps1",
+    "scripts/acceptance/packaged.mjs",
+    "e2e/training-flow.ts",
+    "web/src/components/FormulaSettings.vue",
+    "web/src/components/RecordingLibrary.vue",
+    "web/src/views/SessionReplay.vue",
+    "web/src/components/KlineChart.vue"
+  ],
+  "knownBoundaries": [
+    "Playwright direct packaged exe launch, not CMD launcher",
+    "No production journey chart hooks used",
+    "DOM pane changes require root visual curve review",
+    "App dialogs explicit; unknown native dialogs fail"
+  ]
+}

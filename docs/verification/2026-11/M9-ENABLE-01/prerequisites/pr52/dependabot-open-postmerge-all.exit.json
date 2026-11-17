@@ -1,0 +1,6 @@
+{
+  "started": "2026-11-18T01:51:51.6720218+08:00",
+  "finished": "2026-11-18T01:51:52.8030661+08:00",
+  "exitCode": 0,
+  "command": "gh api --method GET repos/.../dependabot/alerts -f state=open -F per_page=100 --paginate --slurp"
+}

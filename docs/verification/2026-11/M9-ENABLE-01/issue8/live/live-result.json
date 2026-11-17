@@ -1,0 +1,105 @@
+{
+  "run": {
+    "schemaVersion": 1,
+    "runId": "run-d29a01d3-a4f4-440b-b6fb-2c86ae705216",
+    "mode": "dev",
+    "root": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+    "runDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216",
+    "manifestPath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\manifest.json",
+    "databasePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\trainer.sqlite",
+    "webDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\web",
+    "serverDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\server",
+    "artifactsDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\artifacts",
+    "readyFile": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\ready.json",
+    "tdxRoot": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\tdx-snapshot",
+    "commit": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+    "createdAt": "2026-11-17T17:47:08.016Z",
+    "port": 5676,
+    "baseURL": "http://127.0.0.1:5676"
+  },
+  "productModified": false,
+  "fixture": "HTTP POST to isolated run database",
+  "pageErrors": [],
+  "screenshots": [
+    {
+      "filename": "issue8-1600-light.png",
+      "width": 1600,
+      "theme": "light",
+      "dimensions": {
+        "scrollWidth": 1600,
+        "clientWidth": 1600,
+        "bodyText": "25-01-02\n日K\n周K\n月K\nVOL\nMACD\nKDJ\n多空反转\n划线\n更新\n推进下一日\n提前结算\n放弃训练\n训练就绪\n日K 2025-01-02 周四\n开 1524.00\n高 1524.49\n低 1480.00\n收 1488.00\n日涨幅 -2.36%\n最近已知K线\n空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Shift←→ 平移 · Del 删线\n可见至 2025-01-02 周四\n153 / 840 根\nMA 设置\n训练账户\n● 进行中\n账户权益\n¥1,000,000\n+0.00%\n可用资金\n¥1,000,000\n持仓市值\n¥0\n持仓（可卖）\n0（0）\n摊薄成本\n--\n普通下单\n按当日收盘价成交\n10%\n20%\n25%\n30%\n50%\n75%\n100%\n留空则按左侧比例\n买入\n卖出\n常用工具\n自定义常用\n线段\n射线\n直线\n水平直线\n垂直直线\n价位线\n百分比线\n其他工具\n16\n水平线段\n水平射线\n垂直线段\n垂直射线\n平行直线\n价格通道线\n斐波那契线\n画笔\n矩形\n圆圈\n圆弧\n箭头线\n看涨箭头\n看跌箭头\n诅咒线\n文本\n多选\n关闭\n弱吸附\n强吸附\n已保存"
+      }
+    },
+    {
+      "filename": "issue8-1600-dark.png",
+      "width": 1600,
+      "theme": "dark",
+      "dimensions": {
+        "scrollWidth": 1600,
+        "clientWidth": 1600,
+        "bodyText": "25-01-02\n日K\n周K\n月K\nVOL\nMACD\nKDJ\n多空反转\n划线\n更新\n推进下一日\n提前结算\n放弃训练\n训练就绪\n日K 2025-01-02 周四\n开 1524.00\n高 1524.49\n低 1480.00\n收 1488.00\n日涨幅 -2.36%\n最近已知K线\n空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Shift←→ 平移 · Del 删线\n可见至 2025-01-02 周四\n153 / 840 根\nMA 设置\n训练账户\n● 进行中\n账户权益\n¥1,000,000\n+0.00%\n可用资金\n¥1,000,000\n持仓市值\n¥0\n持仓（可卖）\n0（0）\n摊薄成本\n--\n普通下单\n按当日收盘价成交\n10%\n20%\n25%\n30%\n50%\n75%\n100%\n留空则按左侧比例\n买入\n卖出\n常用工具\n自定义常用\n线段\n射线\n直线\n水平直线\n垂直直线\n价位线\n百分比线\n其他工具\n16\n水平线段\n水平射线\n垂直线段\n垂直射线\n平行直线\n价格通道线\n斐波那契线\n画笔\n矩形\n圆圈\n圆弧\n箭头线\n看涨箭头\n看跌箭头\n诅咒线\n文本\n多选\n关闭\n弱吸附\n强吸附\n已保存"
+      }
+    },
+    {
+      "filename": "issue8-1280-light.png",
+      "width": 1280,
+      "theme": "light",
+      "dimensions": {
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "bodyText": "25-01-02\n日K\n周K\n月K\nVOL\nMACD\nKDJ\n多空反转\n划线\n更新\n推进下一日\n提前结算\n放弃训练\n训练就绪\n日K 2025-01-02 周四\n开 1524.00\n高 1524.49\n低 1480.00\n收 1488.00\n日涨幅 -2.36%\n最近已知K线\n空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Shift←→ 平移 · Del 删线\n可见至 2025-01-02 周四\n110 / 840 根\nMA 设置\n训练账户\n● 进行中\n账户权益\n¥1,000,000\n+0.00%\n可用资金\n¥1,000,000\n持仓市值\n¥0\n持仓（可卖）\n0（0）\n摊薄成本\n--\n普通下单\n按当日收盘价成交\n10%\n20%\n25%\n30%\n50%\n75%\n100%\n留空则按左侧比例\n买入\n卖出\n常用工具\n自定义常用\n线段\n射线\n直线\n水平直线\n垂直直线\n价位线\n百分比线\n其他工具\n16\n水平线段\n水平射线\n垂直线段\n垂直射线\n平行直线\n价格通道线\n斐波那契线\n画笔\n矩形\n圆圈\n圆弧\n箭头线\n看涨箭头\n看跌箭头\n诅咒线\n文本\n多选\n关闭\n弱吸附\n强吸附\n已保存"
+      }
+    },
+    {
+      "filename": "issue8-1280-dark.png",
+      "width": 1280,
+      "theme": "dark",
+      "dimensions": {
+        "scrollWidth": 1280,
+        "clientWidth": 1280,
+        "bodyText": "25-01-02\n日K\n周K\n月K\nVOL\nMACD\nKDJ\n多空反转\n划线\n更新\n推进下一日\n提前结算\n放弃训练\n训练就绪\n日K 2025-01-02 周四\n开 1524.00\n高 1524.49\n低 1480.00\n收 1488.00\n日涨幅 -2.36%\n最近已知K线\n空格 下一日 · [ ] 周期 · Home 最新 · ↑↓ 缩放 · Shift←→ 平移 · Del 删线\n可见至 2025-01-02 周四\n110 / 840 根\nMA 设置\n训练账户\n● 进行中\n账户权益\n¥1,000,000\n+0.00%\n可用资金\n¥1,000,000\n持仓市值\n¥0\n持仓（可卖）\n0（0）\n摊薄成本\n--\n普通下单\n按当日收盘价成交\n10%\n20%\n25%\n30%\n50%\n75%\n100%\n留空则按左侧比例\n买入\n卖出\n常用工具\n自定义常用\n线段\n射线\n直线\n水平直线\n垂直直线\n价位线\n百分比线\n其他工具\n16\n水平线段\n水平射线\n垂直线段\n垂直射线\n平行直线\n价格通道线\n斐波那契线\n画笔\n矩形\n圆圈\n圆弧\n箭头线\n看涨箭头\n看跌箭头\n诅咒线\n文本\n多选\n关闭\n弱吸附\n强吸附\n已保存"
+      }
+    }
+  ],
+  "training": {
+    "training": {
+      "id": 1,
+      "tier": "1Y",
+      "code": "600519",
+      "name": "贵州茅台",
+      "market": "sh",
+      "startDate": "2025-01-02",
+      "plannedEnd": "2026-01-02",
+      "currentDate": "2025-01-02",
+      "currentPhase": "close",
+      "clockMode": "close_only",
+      "currentOpen": null,
+      "currentClose": 1488,
+      "ordersEnabled": false,
+      "status": "running",
+      "settleDate": null,
+      "earlySettle": false,
+      "blind": false,
+      "adjustMode": "forward",
+      "initialCash": 1000000,
+      "createdAt": "2026-11-17T17:47:23.396Z",
+      "rules": {
+        "version": 1,
+        "feesEnabled": false,
+        "tPlusOne": true,
+        "commissionRate": 0.00025,
+        "minimumCommission": 5,
+        "stampDutyRate": 0.0005,
+        "lotSize": 100,
+        "execution": "same-day-raw-close",
+        "weightBasis": "total-equity",
+        "corporateActionPolicy": "cash-shares-v1",
+        "capturedAt": "2026-11-17T17:47:23.396Z",
+        "origin": "created"
+      }
+    }
+  },
+  "componentSha256": "7cdc70a2368fc359dc9fe99f73fa687698c7dcad30d2ac22bbdc50d384ac3803",
+  "exitCode": 0
+}

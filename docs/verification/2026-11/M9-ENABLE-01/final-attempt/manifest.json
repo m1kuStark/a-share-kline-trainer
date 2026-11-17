@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-6698a681-156b-49c2-956f-edc72f314b56",
+  "mode": "journey",
+  "root": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "runDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56",
+  "manifestPath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\manifest.json",
+  "databasePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\trainer.sqlite",
+  "webDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\web",
+  "serverDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\server",
+  "artifactsDir": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts",
+  "readyFile": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\ready.json",
+  "tdxRoot": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot",
+  "commit": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+  "createdAt": "2026-11-17T17:37:04.602Z",
+  "port": 8672,
+  "baseURL": "http://127.0.0.1:8672"
+}
