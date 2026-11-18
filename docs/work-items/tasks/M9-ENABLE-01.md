@@ -8,8 +8,8 @@
   "state": "active",
   "milestone": "M9",
   "base_commit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
-  "summary": "EMA已独立合入PR54；启停6/6和API13/13通过。f701完整Journey229通过18失败1跳过13未运行；夹具清理RED/GREEN与BOM-only修复已备，当前冻结新候选重跑，整批未验收。",
-  "next_action": "冻结准备修复后完整重跑候选（含官方v1.2.7迁移夹具），验证同提交Windows包、实际CMD入口、主代理视觉和录像重启持久化，再交用户验收。",
+  "summary": "EMA已由PR54合入；启停、密集布局与录制排空修复已有专项证据，旧完整候选失败均保留。待冻结新候选完整复跑，再验证同提交Windows包并交用户验收。",
+  "next_action": "归档原失败和本轮回归，冻结新候选并完整复跑（含官方v1.2.7迁移），验证同提交Windows包、CMD入口、真实导出导入回放及重启持久化，再交用户验收；不发布。",
   "allowed_paths": [
     "web/src/components/FormulaSettings.vue",
     "web/src/api.ts",
@@ -42,7 +42,18 @@
     "docs/work-items/tasks/M9-EMA-WARMUP-01.md",
     "docs/verification/2026-11/M9-EMA-WARMUP-01/**",
     "e2e/formula-chart.spec.ts",
-    "scripts/acceptance/Start-Acceptance.ps1"
+    "scripts/acceptance/Start-Acceptance.ps1",
+    "web/src/components/KlineChart.vue",
+    "web/src/chartPaneLayout.ts",
+    "server/test/chart-pane-layout.test.ts",
+    "docs/specs/chart/display.md",
+    "web/src/components/docs/library-adapter.md",
+    "web/src/components/docs/interaction.md",
+    "e2e/recording-long.spec.ts",
+    "e2e/local-origin.spec.ts",
+    "web/src/recording/recordingFile.ts",
+    "web/src/recording/recording-file.md",
+    "server/test/recording-file.test.ts"
   ],
   "depends_on": [
     "RUNTIME-CANCEL-02",
@@ -61,7 +72,11 @@
       "docs/work-items/milestones/M9.md",
       "docs/work-items/README.md",
       "docs/status.md",
-      "e2e/README.md"
+      "e2e/README.md",
+      "docs/specs/chart/display.md",
+      "web/src/components/docs/library-adapter.md",
+      "web/src/components/docs/interaction.md",
+      "web/src/recording/recording-file.md"
     ],
     "reason": "冻结已批准的内置启停口径，纠正已有开关却未持久化的实施描述；记录整批候选与人工验收边界。集成人另回填本批前置任务的实际合入引用、阶段计划和Issue8分诊；不修改前置实现或补造人工验收。"
   },
@@ -102,3 +117,7 @@
 2026-11-18，冻结候选f701371的完整Journey发现公式图表套件遗留启用中的CHART_SUB，使后续共库用例多出第五窗格。本轮补充formula-chart矩阵关联测试范围，只增加用例后清理、API状态和无残留断言，原产品断言与窗格预期保留；先记录RED，再验证GREEN及完整候选。其他超时逐项核实，不合并归因。
 
 真实CMD入口另复现Windows PowerShell 5.1误读无BOM脚本中的中文程序名。Start-Acceptance.ps1仅补UTF-8 BOM，原脚本主体逐字节不变；PS5/PS7解析正反例与全新解压后的实际CMD运行分别记录。以上属于本卡交付准备的明确缺陷修复，不扩展公式产品语义或发布权限。
+
+## 录制导入收尾修复范围
+
+相关旅程 run841877 的两年训练已完成并导出完整 gzip；浏览器导入时报 JSON 截断，未进入回放。受控 Edge 实验在原生解压读取端注入调度让步，确认输入 close 已完成不代表输出 draining 已完成；原实现先 cancel 输出端会丢尾。无注入原版可通过，因此机制证明与本次原始时序分别记录。集成人将正常成功路径等待 draining 后再清理列入本卡整批导入回放准备范围；先补有效 RED，再做最小修复，不变更格式、预算、公式语义或异常取消保护，保留原失败并完整重跑候选。

@@ -1,0 +1,40 @@
+{
+  "label": "layout-replay-dense-green-v1",
+  "startedAt": "2026-11-18T03:54:27.8907690Z",
+  "repo": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "commit": "f9454fec92017eba74de2904abf9982deb685ab4",
+  "tdxRoot": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-89c83849-aaae-4f07-a5cd-7cd58edf29f8\\tdx-snapshot",
+  "command": [
+    "npm.cmd",
+    "run",
+    "journey",
+    "--",
+    "e2e/formula-chart.spec.ts",
+    "--retries=0",
+    "--forbid-only",
+    "--grep",
+    "只读回放页"
+  ],
+  "diff": [
+    " docs/proposals/development-batch-2026-11.md      |   2 +-",
+    " docs/proposals/development-plan-2026-11.md       |   2 +-",
+    " docs/specs/chart/display.md                      |   2 +",
+    " docs/status.md                                   |   2 +-",
+    " docs/verification/2026-11/M9-ENABLE-01/README.md |   2 +-",
+    " docs/work-items/milestones/ENG.md                |   2 +-",
+    " docs/work-items/milestones/M9.md                 |   2 +-",
+    " docs/work-items/tasks/M9-ENABLE-01.md            |  27 ++-",
+    " e2e/README.md                                    |   8 +-",
+    " e2e/formula-chart.spec.ts                        | 294 +++++++++++++++++++++++",
+    " e2e/local-origin.spec.ts                         |  14 +-",
+    " e2e/recording-long.spec.ts                       |  16 +-",
+    " web/src/components/KlineChart.vue                | 119 ++++++++-",
+    " web/src/components/docs/interaction.md           |   3 +",
+    " web/src/components/docs/library-adapter.md       |   2 +",
+    " 15 files changed, 470 insertions(+), 27 deletions(-)"
+  ],
+  "scriptSha256": "3264d340b4d94d037218c315695d0252420a808007b28497dd5eec7a46d6ae2b",
+  "nativeExitCode": 0,
+  "endedAt": "2026-11-18T03:54:52.6287742Z",
+  "logSha256": "36d469e847518d4c45c36cda0d2d76b8ca41fd6693533ac52c6a17c699e9092b"
+}

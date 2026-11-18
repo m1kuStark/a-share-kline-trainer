@@ -1,0 +1,518 @@
+[
+  {
+    "path": "diagnosis/artifact-manifest.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\artifact-manifest.json",
+    "bytes": 8942,
+    "sha256": "68f1e3451f7e616bb680b1604e937e22c63c21987428393bf21dee772714e92f"
+  },
+  {
+    "path": "diagnosis/browser-drain-schedule.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\browser-drain-schedule.cjs",
+    "bytes": 4983,
+    "sha256": "d91eb5d854c937e0602573aeb0936a9ede209cbcf2392a6aea8d2ee24a407187"
+  },
+  {
+    "path": "diagnosis/browser-drain.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\browser-drain.cjs",
+    "bytes": 7329,
+    "sha256": "c05c0b0d12a3c82c5adcc90a69d2eca90559dfea3e38abe42af449542e9076c1"
+  },
+  {
+    "path": "diagnosis/collect.py",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\collect.py",
+    "bytes": 4290,
+    "sha256": "58d68fb2709c69f8a05eb1cefc9a279b87245cc11d7a4c5da5924ff97174cbb9"
+  },
+  {
+    "path": "diagnosis/controlled-browser/candidate.bundle.js",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\candidate.bundle.js",
+    "bytes": 90949,
+    "sha256": "d71dfdb8219415db623564974c569aa4de30a4cfd61cbfd36cf6cbbfcafc91f6"
+  },
+  {
+    "path": "diagnosis/controlled-browser/current.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\current.json.gz",
+    "bytes": 636191,
+    "sha256": "0f9a1fde3d5514a6b0bc04f034ba14e98034eede0fd204fddd93b7b136958ee1"
+  },
+  {
+    "path": "diagnosis/controlled-browser/old-green.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\old-green.json.gz",
+    "bytes": 635705,
+    "sha256": "30c652d33528ff7957271a5e69c7d779102c359ef33e5b94359940a47c25318a"
+  },
+  {
+    "path": "diagnosis/controlled-browser/original.bundle.js",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\original.bundle.js",
+    "bytes": 90856,
+    "sha256": "d49578737aaf93eb77c86f1e669627b264c25fd829824e2ece41c089b34f9d72"
+  },
+  {
+    "path": "diagnosis/controlled-browser/receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\receipt.json",
+    "bytes": 57897,
+    "sha256": "bc07a97d002724ec8acca09077ae263e3761772c3b59655544db436035f46314"
+  },
+  {
+    "path": "diagnosis/controlled-browser/recordingFile.candidate.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\recordingFile.candidate.ts",
+    "bytes": 12931,
+    "sha256": "7eb1ef4a1626198a24bd94c7415b4829d82f0eca16829e9a8d5dc32f4bbd900b"
+  },
+  {
+    "path": "diagnosis/controlled-browser/recordingFile.original.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\recordingFile.original.ts",
+    "bytes": 12766,
+    "sha256": "9ead6891f7b7dd6dd1d0ff85734f94994397228cbdb14ab7024a7b707953c4df"
+  },
+  {
+    "path": "diagnosis/controlled-browser/trials.jsonl",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-browser\\trials.jsonl",
+    "bytes": 32926,
+    "sha256": "89e3e837aebfaa122b86ce66c8da7148226adcc708a479759072ed2983cc629e"
+  },
+  {
+    "path": "diagnosis/controlled-drain-schedule/receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-drain-schedule\\receipt.json",
+    "bytes": 13378,
+    "sha256": "1d47d40fc0367f42620fc811808dd24b9f3447f5a57365b4a655aff64ae476f3"
+  },
+  {
+    "path": "diagnosis/controlled-drain-schedule/trials.jsonl",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\controlled-drain-schedule\\trials.jsonl",
+    "bytes": 7054,
+    "sha256": "54b5f6e895c471bf9148b1341d2e89e053b70b6a2b876ebad26859d5d629bae2"
+  },
+  {
+    "path": "diagnosis/current/artifacts/browser-results.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\artifacts\\browser-results.json",
+    "bytes": 90766,
+    "sha256": "3f121965baabb31ff6ebbb48c688ff95c71eb4a23846d991a1559c63390efa7f"
+  },
+  {
+    "path": "diagnosis/current/artifacts/journey.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\artifacts\\journey.log",
+    "bytes": 4544,
+    "sha256": "804474e9055287db7674984ff1e5a73b68898391b59ec339d91c592a2cf5c76b"
+  },
+  {
+    "path": "diagnosis/current/artifacts/server.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\artifacts\\server.log",
+    "bytes": 852461,
+    "sha256": "6aab4fc323e8754df19097b62c3258796f71867f523023cac0b5f5f6c7422f2b"
+  },
+  {
+    "path": "diagnosis/current/error-context.md",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\error-context.md",
+    "bytes": 12581,
+    "sha256": "f7704a7d74a11a8cf7fd6488bc899ca3cb31f1dc8abfa03a46242752f4ff8ea7"
+  },
+  {
+    "path": "diagnosis/current/formula-setting-requests.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\formula-setting-requests.json",
+    "bytes": 19578,
+    "sha256": "28763ea21e18a6ff7549871d22da5e40c834a33e0013375fec5a1cbbfbecc00c"
+  },
+  {
+    "path": "diagnosis/current/gzip-summary.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\gzip-summary.json",
+    "bytes": 5253,
+    "sha256": "cc0467b78f97a6e4ded221a1c753f127b1ac5df5766841f40b33b323f7904189"
+  },
+  {
+    "path": "diagnosis/current/manifest.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\current\\manifest.json",
+    "bytes": 1596,
+    "sha256": "e9fb106f4a31d8c56f2cd826ddb94dc269f40c52dccaeb303828eeeec9207e35"
+  },
+  {
+    "path": "diagnosis/deterministic-close-queue/candidate.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\deterministic-close-queue\\candidate.cjs",
+    "bytes": 87671,
+    "sha256": "00a1ecddf7b7fb7b593eb625525308c51ee0ac5edce79bf77d90e83ec03c8d0e"
+  },
+  {
+    "path": "diagnosis/deterministic-close-queue/original.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\deterministic-close-queue\\original.cjs",
+    "bytes": 87581,
+    "sha256": "6d7077cd3759317c568690e36ea07e3c95f30c9868727cacbd2c93c312d7d0e2"
+  },
+  {
+    "path": "diagnosis/deterministic-close-queue/receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\deterministic-close-queue\\receipt.json",
+    "bytes": 6131,
+    "sha256": "6b67e1e8e024b327fb31ecf3b14b136378ec71e6b319150e97b0bba93e09ea87"
+  },
+  {
+    "path": "diagnosis/deterministic-close-queue.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\deterministic-close-queue.cjs",
+    "bytes": 3186,
+    "sha256": "8bfbea27d7710410bb3d9076cefcb44d62d1e3d8208372e93f4c657474747118"
+  },
+  {
+    "path": "diagnosis/f701371-recordingFile.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\f701371-recordingFile.ts",
+    "bytes": 12484,
+    "sha256": "eb66af9ede802432dd30363cc9730a9d04f086eaaeaf895851928dc7374b5b3a"
+  },
+  {
+    "path": "diagnosis/f9454fe-recordingFile.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\f9454fe-recordingFile.ts",
+    "bytes": 12484,
+    "sha256": "eb66af9ede802432dd30363cc9730a9d04f086eaaeaf895851928dc7374b5b3a"
+  },
+  {
+    "path": "diagnosis/node-native-drain-schedule-probe.cjs",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\node-native-drain-schedule-probe.cjs",
+    "bytes": 1669,
+    "sha256": "c42ec2c72ab43670523545df4720cc9a2e360642912f36e235bd7f2c8e1a8853"
+  },
+  {
+    "path": "diagnosis/node-native-drain-schedule-probe.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\node-native-drain-schedule-probe.json",
+    "bytes": 1756,
+    "sha256": "74ed8d689ec0f1717042ecc9014980fdc0bdb1edddec878abcf88c93001dfd7d"
+  },
+  {
+    "path": "diagnosis/old-green/artifacts/browser-results.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\artifacts\\browser-results.json",
+    "bytes": 8265,
+    "sha256": "62bbec8a2a3f07f1fcaff840a105b5e285efeddf72984d0d55daa1f22136aa30"
+  },
+  {
+    "path": "diagnosis/old-green/artifacts/journey.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\artifacts\\journey.log",
+    "bytes": 975,
+    "sha256": "1bb2d5d3c8dac4df3c9bef0bb233a6630b79f2657638e6f7c25a3447c8c06a69"
+  },
+  {
+    "path": "diagnosis/old-green/artifacts/screenshots/recording-two-year-metrics.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\artifacts\\screenshots\\recording-two-year-metrics.json",
+    "bytes": 225,
+    "sha256": "6a846fa028971b18dc467e7066bf9ba079b7664acee91a453db256dc6aabe73e"
+  },
+  {
+    "path": "diagnosis/old-green/artifacts/server.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\artifacts\\server.log",
+    "bytes": 674841,
+    "sha256": "d8bcdaf7170c2994d9ec6b7fa025de80c4cfd0bcaea1a72c458b8a722c62ec29"
+  },
+  {
+    "path": "diagnosis/old-green/formula-setting-requests.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\formula-setting-requests.json",
+    "bytes": 3403,
+    "sha256": "c118a0fe9688dc25fa5ccf38496d0b54c73311a370fc822be7944ccd7a06f5f8"
+  },
+  {
+    "path": "diagnosis/old-green/gzip-summary.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\gzip-summary.json",
+    "bytes": 5253,
+    "sha256": "16692226fdb27311945cb946040244c89712a0311b1838faa82df42fb1129fdb"
+  },
+  {
+    "path": "diagnosis/old-green/manifest.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\old-green\\manifest.json",
+    "bytes": 1596,
+    "sha256": "b1d23d6e3d09d69a711f40f2aa6283107e0ea33abcecf5bc765920816732f211"
+  },
+  {
+    "path": "diagnosis/README.md",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\README.md",
+    "bytes": 12346,
+    "sha256": "1c1c53c641fc6bbcc4214f75db3c5443d9054f963603bca6940d539c1075d00a"
+  },
+  {
+    "path": "diagnosis/recording-file-version-comparison.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\recording-file-version-comparison.json",
+    "bytes": 505,
+    "sha256": "e997c3e6d6a3f2e00868a540fcd81155734ea924013bf55e61e60973c8720437"
+  },
+  {
+    "path": "diagnosis/recording-import-code-excerpt.txt",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\recording-import-code-excerpt.txt",
+    "bytes": 1887,
+    "sha256": "9d2982da4aa08d4a7043d0491e701eb73a1efaf8ecf49a9ee0c97c6e791f2bd9"
+  },
+  {
+    "path": "diagnosis/report-verification.receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\report-verification.receipt.json",
+    "bytes": 222,
+    "sha256": "f77a5dc78db6fdd24211ef6fe49d4d596450e7a99ddfd2f6ec46764eb1e032b7"
+  },
+  {
+    "path": "diagnosis/source/e2e/chart-toggles.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\e2e\\chart-toggles.spec.ts",
+    "bytes": 9274,
+    "sha256": "af50aba16159285a7ec56a1020aa20d39ef21f6df5bbd32061c817628cfc8b56"
+  },
+  {
+    "path": "diagnosis/source/e2e/formula-chart.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\e2e\\formula-chart.spec.ts",
+    "bytes": 29844,
+    "sha256": "907d952b5b77a67b12d5dafd9baf54909a2ce257c87d4763ad2188a4771b73f6"
+  },
+  {
+    "path": "diagnosis/source/e2e/layout-fill.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\e2e\\layout-fill.spec.ts",
+    "bytes": 16686,
+    "sha256": "301986de4cd790d70d69c806e78870203cdde35be7f98b8cc91ea9ed789a056e"
+  },
+  {
+    "path": "diagnosis/source/e2e/pane-resize.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\e2e\\pane-resize.spec.ts",
+    "bytes": 9271,
+    "sha256": "c9c302644bd0a579c06b18228abf285345d09b83b44a73c9efec81db651f5c78"
+  },
+  {
+    "path": "diagnosis/source/e2e/recording-long.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\e2e\\recording-long.spec.ts",
+    "bytes": 9604,
+    "sha256": "a67e1e34cde668c1f254d18a438729da758492d72f90b19436d796905ee6e6f4"
+  },
+  {
+    "path": "diagnosis/source/playwright.config.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\playwright.config.ts",
+    "bytes": 1649,
+    "sha256": "99a3db0d9854aab0e9e0a7626f05b2f8aff95c366ecb403d84c6bcd9fc77d281"
+  },
+  {
+    "path": "diagnosis/source/web/src/App.vue",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\web\\src\\App.vue",
+    "bytes": 60457,
+    "sha256": "81e52a2264333c4da6fb29965ab976e2c06b0850a08e6b0399c43c66cb5a9d7d"
+  },
+  {
+    "path": "diagnosis/source/web/src/components/KlineChart.vue",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\web\\src\\components\\KlineChart.vue",
+    "bytes": 164084,
+    "sha256": "7fa6c17eb44c3f225af92b0cae7f3e9537de826a329c9183b074b0c256df9acc"
+  },
+  {
+    "path": "diagnosis/source/web/src/components/RecordingLibrary.vue",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\web\\src\\components\\RecordingLibrary.vue",
+    "bytes": 40436,
+    "sha256": "d34f0df03ad3581a610e7eccc9e1afb1fb7c7857325a2076ab58aa443efc62c1"
+  },
+  {
+    "path": "diagnosis/source/web/src/recording/recordingFile.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\web\\src\\recording\\recordingFile.ts",
+    "bytes": 12766,
+    "sha256": "9ead6891f7b7dd6dd1d0ff85734f94994397228cbdb14ab7024a7b707953c4df"
+  },
+  {
+    "path": "diagnosis/source/web/src/views/SessionReplay.vue",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source\\web\\src\\views\\SessionReplay.vue",
+    "bytes": 35256,
+    "sha256": "0109826296d27c5cf2f703deb99307b6e84452c6e6e8dfebeac54d70f8e9a988"
+  },
+  {
+    "path": "diagnosis/source-excerpts.txt",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source-excerpts.txt",
+    "bytes": 29562,
+    "sha256": "dbf0aee46f289215d6828272db478e66933da83b7f5f6214824ef4bd3bb3a70b"
+  },
+  {
+    "path": "diagnosis/source-hashes.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\source-hashes.json",
+    "bytes": 1519,
+    "sha256": "97ea08fa119103020608686d6753ed0c23a1d08bfb6c0d8c3e203bb35d88f890"
+  },
+  {
+    "path": "diagnosis/test-red/native.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\test-red\\native.log",
+    "bytes": 1189,
+    "sha256": "e0c89e8d3ec6e138f224d185f181d53a16eed75041005dfafcd0807d33ceeb9b"
+  },
+  {
+    "path": "diagnosis/test-red/receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\test-red\\receipt.json",
+    "bytes": 830,
+    "sha256": "248e413906a39d6a0ab9b701dcceb28ac3dfe12fe3786ab6a17424b4714762a9"
+  },
+  {
+    "path": "diagnosis/test-red/recording-file.test.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\test-red\\recording-file.test.ts",
+    "bytes": 26866,
+    "sha256": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4"
+  },
+  {
+    "path": "diagnosis/test-red/regression.patch",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\test-red\\regression.patch",
+    "bytes": 2531,
+    "sha256": "765131fd9358ad774108265c8fc02920cd81fa667812d4d863924aae8f9c404c"
+  },
+  {
+    "path": "diagnosis/test-red-task-manifest.txt",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-related-pending-diagnosis\\test-red-task-manifest.txt",
+    "bytes": 4304,
+    "sha256": "330a4f6650a50ef6fc5875c180229c599484e486a5c58d0b2f6fd61ace746bae"
+  },
+  {
+    "path": "original-exports-8418/two-year-initial.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-841877c0-d471-479d-8169-577c4d7a1606\\artifacts\\screenshots\\two-year-initial.json.gz",
+    "bytes": 34273,
+    "sha256": "e436988028f8f2e0cbd57205ea000e51890eddc2a7b03537f8142c3124b9acad"
+  },
+  {
+    "path": "original-exports-8418/two-year-final.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-841877c0-d471-479d-8169-577c4d7a1606\\artifacts\\screenshots\\two-year-final.json.gz",
+    "bytes": 636191,
+    "sha256": "0f9a1fde3d5514a6b0bc04f034ba14e98034eede0fd204fddd93b7b136958ee1"
+  },
+  {
+    "path": "failed-journey-controller/layout-related-green-v3.receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-pane-layout-preparation\\layout-related-green-v3.receipt.json",
+    "bytes": 1362,
+    "sha256": "8dad2a55f1a9f396f084b52373a9b2dcc699ae8eb3fbffa3798fb0827aa3a080"
+  },
+  {
+    "path": "failed-journey-controller/layout-related-green-v3.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-pane-layout-preparation\\layout-related-green-v3.log",
+    "bytes": 764,
+    "sha256": "09c3262342a6deb56c4a7bb092cfeb3ac88a7f863258cdd240cc4e0ed864a682"
+  },
+  {
+    "path": "journey-controller/run-journey.ps1",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-pane-layout-preparation\\run-journey.ps1",
+    "bytes": 1745,
+    "sha256": "3264d340b4d94d037218c315695d0252420a808007b28497dd5eec7a46d6ae2b"
+  },
+  {
+    "path": "unit-green/build.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-drain-green\\build.log",
+    "bytes": 1333,
+    "sha256": "e38b8247002e27be4a4174561bd17e945b1e1c081ae9664689253468f839638c"
+  },
+  {
+    "path": "unit-green/build.receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-drain-green\\build.receipt.json",
+    "bytes": 222,
+    "sha256": "bdd13a83064db01f8cefc2fd956cdd06bd3dcdfdfd7daa0ccc21f43d262bbfab"
+  },
+  {
+    "path": "unit-green/native.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-drain-green\\native.log",
+    "bytes": 268,
+    "sha256": "26d510413bc6e2d0a601e1127d295260efb2b51d679d6c5150f792ac70565c34"
+  },
+  {
+    "path": "unit-green/receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-drain-green\\receipt.json",
+    "bytes": 517,
+    "sha256": "d8b09bf74cc6e1273d15c8be6d1c2b9272d1c4a9d7822fdf750164b52238769b"
+  },
+  {
+    "path": "green-journey-controller/recording-long-drain-green-v1.receipt.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-pane-layout-preparation\\recording-long-drain-green-v1.receipt.json",
+    "bytes": 2045,
+    "sha256": "3908169cd8ff44cb64760ca629d963012b76574e84b5f20a77eca2bface17535"
+  },
+  {
+    "path": "green-journey-controller/recording-long-drain-green-v1.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-pane-layout-preparation\\recording-long-drain-green-v1.log",
+    "bytes": 470,
+    "sha256": "28cbc5f1e1a6e65314c3eedd72c4ec07e571de8360376535a2fa96e48a8c8ab7"
+  },
+  {
+    "path": "journey-green-b8cb/manifest.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\manifest.json",
+    "bytes": 1598,
+    "sha256": "3bd7befe6e80ff154cf9b8dd73d051c4fe174919e834274698facb47ae48cc73"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/journey.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\journey.log",
+    "bytes": 347,
+    "sha256": "f034b767c6218df4041eee2702d169c41b3330f4900e7b486acac997e1477b8d"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/browser-results.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\browser-results.json",
+    "bytes": 4803,
+    "sha256": "9b6ae554f8d14e0bdd451a6781865952faa5849801b3152918685cdc11a90933"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/server.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\server.log",
+    "bytes": 657146,
+    "sha256": "fcc1b708f1c6cbfc9cc6fbca8ba4d9ce308ad160034abafd581135f0b5a11cbd"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/build-server.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\build-server.log",
+    "bytes": 190,
+    "sha256": "1e003e003a2cfedae56e351a0e1b732645f7de36b52f5361a2d81bf4fc2261c1"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/build-web.log",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\build-web.log",
+    "bytes": 947,
+    "sha256": "6601417755085cd7474906f2a7652ca134421d81bbc8637333b5dca16c74b14c"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/test-results/.last-run.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\test-results\\.last-run.json",
+    "bytes": 45,
+    "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/recording-two-year-metrics.json",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\screenshots\\recording-two-year-metrics.json",
+    "bytes": 225,
+    "sha256": "93aead4fa8d1a220d4601f8c5af2a389b9214af7037ed833c25c7bcabeae477d"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/recording-two-year-replay.png",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\screenshots\\recording-two-year-replay.png",
+    "bytes": 156793,
+    "sha256": "7d3782532faa9d25763aae7082b04f984946b71544a95eb5acb19228f892956e"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/two-year-final.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\screenshots\\two-year-final.json.gz",
+    "bytes": 636120,
+    "sha256": "f03b8d2d9da1720b8019397c489a3bce64391ffd854da449e8b5d382a3af1813"
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/two-year-initial.json.gz",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1\\artifacts\\screenshots\\two-year-initial.json.gz",
+    "bytes": 34274,
+    "sha256": "48119102c3335e0ac87d815225990cec9c7819dde759dc304ed7f3255988394d"
+  },
+  {
+    "path": "source-final/web/src/recording/recordingFile.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\web\\src\\recording\\recordingFile.ts",
+    "bytes": 13086,
+    "sha256": "1536368e2ba6e080c96d4d18c05ab40aa43cf4f38278c0e826bd0b0c10716180"
+  },
+  {
+    "path": "source-final/web/src/recording/recording-file.md",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\web\\src\\recording\\recording-file.md",
+    "bytes": 12467,
+    "sha256": "e0a3702dc54735896374c6c463082bd5817eaccaeff57e4114534a2c1b4779b3"
+  },
+  {
+    "path": "source-final/server/test/recording-file.test.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\server\\test\\recording-file.test.ts",
+    "bytes": 26866,
+    "sha256": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4"
+  },
+  {
+    "path": "source-final/server/test/recording-bundle.test.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\server\\test\\recording-bundle.test.ts",
+    "bytes": 14170,
+    "sha256": "2444524a00ed35de8d0d6d9cbc5f135c156aff99ab5bd4111ac028bd76bbbc82"
+  },
+  {
+    "path": "source-final/e2e/recording-long.spec.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts",
+    "bytes": 9604,
+    "sha256": "a67e1e34cde668c1f254d18a438729da758492d72f90b19436d796905ee6e6f4"
+  },
+  {
+    "path": "source-final/e2e/recording-file.ts",
+    "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-file.ts",
+    "bytes": 620,
+    "sha256": "10e8ffc6fd424ed98e4d1e81f63596b96ebf332ebe25bd0532c8acf414cb1c67"
+  }
+]

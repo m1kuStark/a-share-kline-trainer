@@ -27,7 +27,7 @@
     "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "阶段0对账PR50、取消测试生命周期PR51、minimatch维护PR52均已合入，真实integration_ref已回填。告警48自动fixed；PR43保留待当前主线与包验证。公共EMA独立范围已获批准并由PR54合入58ba0ff；M9启停专项已有独立通过收据，统一候选f701371完整Journey仍有失败，先修复并完整复跑，再接续主代理视觉、同提交Windows生产包与录像回放。工程收据不代替用户验收或发布许可。"
+  "next_action": "PR50—52已合入并回填integration_ref，告警48自动fixed；PR43仍待当前主线与包验证。EMA已由PR54合入58ba0ff；M9整批候选、同提交Windows包及用户验收待完成，接续与失败历史见docs/verification/2026-11/M9-ENABLE-01/README.md；不发布。"
 }
 ```
 

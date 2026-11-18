@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-11-18T03:52:49.742678+00:00",
+  "verdict": "可合入（pane产品补丁范围）",
+  "critical": 0,
+  "important": 0,
+  "minor": 0,
+  "baseCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+  "readOnlyFixedSnapshotReview": true,
+  "noAppTestsBuildOrGitHubCommands": true,
+  "noRepoControlMatrixWrites": true,
+  "originalFixtureFailurePreserved": true,
+  "finalDonorCorrectionReviewed": true,
+  "files": [
+    {
+      "path": "review.md",
+      "bytes": 7005,
+      "sha256": "5fb0eae5b258381015eb4b83019ac1e2aa2611005abb9c9ae8bc28bb45eb4ecc"
+    },
+    {
+      "path": "snapshot.receipt.json",
+      "bytes": 3323,
+      "sha256": "7be4075be8cf42b3f6fa76d0c5e057fbdb803ac0455bd95b5729bb96da50bfd7"
+    },
+    {
+      "path": "final-snapshot.receipt.json",
+      "bytes": 551,
+      "sha256": "c1dbd5e37c56f296dbb6a788ce116b561acf6a9f49d0107ebd1891ecccd4e69e"
+    },
+    {
+      "path": "current-product.patch",
+      "bytes": 31921,
+      "sha256": "4acdf69e233ea6a8c282eece0319469180932f7d0550163adea524cc922835d8"
+    },
+    {
+      "path": "held-donor-fixture.normalized.diff",
+      "bytes": 1408,
+      "sha256": "c5742bb915f9d976f26534b0eee0fec2511f58943462913aa9fb0e097c44877f"
+    },
+    {
+      "path": "source/web/src/components/KlineChart.vue",
+      "bytes": 164103,
+      "sha256": "99afbf345f0f7eae54e2304b47b0961247d1bfd31cf72ad5d1e240bfd0a1c2b7"
+    },
+    {
+      "path": "source/web/src/chartPaneLayout.ts",
+      "bytes": 1725,
+      "sha256": "a2605ee875919516d601acaa998315624ccc36d7dc18894f59ea1f7c599e1cf0"
+    },
+    {
+      "path": "source/server/test/chart-pane-layout.test.ts",
+      "bytes": 2565,
+      "sha256": "5369cb581dbb74777f3c1275eac4949c417fb330df4567d6286dc623a4332d5d"
+    },
+    {
+      "path": "final-source/e2e/formula-chart.spec.ts",
+      "bytes": 30129,
+      "sha256": "081f33d8e6e1b15f81dd91dac44416254161c02d9add1ce4d155d5382b16e4de"
+    },
+    {
+      "path": "baseline/klinecharts-10.0.3-index.esm.js",
+      "bytes": 674474,
+      "sha256": "bcb3e91af61046a1e6d8e4e9d9198887898175ed818febe71922616682e1e264"
+    },
+    {
+      "path": "held-resize-failure/browser-results.json",
+      "bytes": 21393,
+      "sha256": "4daeb5a9e4531bb8e08415f9790ee8dc2a1777a6ae26bd88b12cff859aa9301b"
+    },
+    {
+      "path": "held-resize-failure/dense-compressed-separator-drag.json",
+      "bytes": 7640,
+      "sha256": "51312c5d2613f6e605d1834fe8c3ca1630fa36cae15a702e3ab4cf24b1e8d8f7"
+    },
+    {
+      "path": "final-green-observation/artifacts/browser-results.json",
+      "bytes": 55433,
+      "sha256": "c5e17d20b7bbf1297cd7fbe8429a9a6abc5e447afe1edc518959207b56e21f84"
+    },
+    {
+      "path": "final-green-observation/dense-compressed-separator-drag.json",
+      "bytes": 7640,
+      "sha256": "250a5ea7a0b68ebe7a478191ad90bd762170f0508d495fbe84e9ccf90d3acc5f"
+    },
+    {
+      "path": "final-green-observation/dense-resize-during-held-drag.json",
+      "bytes": 2983,
+      "sha256": "a3da380192507ada192350bbfa924b5eb200e3bc00538d4cc71be342b3880c60"
+    }
+  ]
+}

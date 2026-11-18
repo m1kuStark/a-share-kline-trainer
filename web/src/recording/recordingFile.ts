@@ -163,6 +163,9 @@ export async function inflateGzipWithBudget(
   } catch (err) {
     inputError = err
   }
+  // close 只保证写端结束，读端仍可能有排队尾块；正常路径必须排空后才能 cancel。
+  // 读取中触发的预算/损坏异常已由 draining 记录并 interrupt，下方仍统一分类。
+  if (!budgetHit && decompressError === null && inputError === null) await draining.catch(() => {})
   // 兜底收尾：正常/中断路径到此各端都已了结或被interrupt打断，逐项幂等清理；
   // 只触发不await——abort在close挂起时自身不settle，此时主流程已不被任何一端阻塞
   sourceReader.cancel().catch(() => {})

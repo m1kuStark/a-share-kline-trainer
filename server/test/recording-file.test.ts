@@ -1,7 +1,7 @@
 // REC-FILE-V2：gzip文件封装（web/src/recording/recordingFile.ts）
 // 读：magic识别gzip、流式计数解压、fatal UTF-8、v1迁移/v2校验；写：先校验再默认gzip。
 // 预算测试通过内部stream helper注入更小阈值，不构造真实大文件。
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { decodedLegacyCheckpoint } from './helpers/legacy-recording'
 import { randomBytes } from 'node:crypto'
 import {
@@ -474,6 +474,38 @@ describe('解压取消时限（高压缩率死锁回归）', () => {
       const out = await withDeadline(inflateGzipWithBudget(stream, 2 * 1024 * 1024), 30_000, `1MiB往返(块=${chunkSize})`)
       expect(out.byteLength).toBe(plain.byteLength)
       expect(Buffer.from(out).equals(Buffer.from(plain))).toBe(true)
+    }
+  })
+
+  it('正常gzip关闭写端后仍排空延迟读取的全部尾块', async () => {
+    const plain = Uint8Array.from({ length: 256 * 1024 + 123 }, (_, index) => (index * 73 + 19) % 251)
+    const gz = await gzipOfBytes(plain)
+    const NativeDecompressionStream = globalThis.DecompressionStream
+    // 保留真实解压器，只让输出读取跨一个任务调度；write/close/cancel 的原生语义不变。
+    // 写端关闭不代表读端队列已排空，正常收尾不得取消仍待读取的尾块。
+    class DelayedOutputDecompressionStream extends NativeDecompressionStream {
+      constructor(format: CompressionFormat) {
+        super(format)
+        const reader = this.readable.getReader()
+        const read = reader.read.bind(reader)
+        reader.read = async () => {
+          await new Promise<void>(resolve => setTimeout(resolve, 1))
+          return read()
+        }
+        Object.defineProperty(this.readable, 'getReader', { value: () => reader })
+      }
+    }
+    try {
+      vi.stubGlobal('DecompressionStream', DelayedOutputDecompressionStream)
+      const out = await withDeadline(
+        inflateGzipWithBudget(new Blob([gz]).stream(), RECORDING_FILE_BUDGETS.decompressedBytes),
+        5_000,
+        '正常gzip延迟输出排空',
+      )
+      expect(out.byteLength).toBe(plain.byteLength)
+      expect(Buffer.from(out).equals(Buffer.from(plain))).toBe(true)
+    } finally {
+      vi.unstubAllGlobals()
     }
   })
 

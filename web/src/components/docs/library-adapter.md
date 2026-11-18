@@ -12,6 +12,7 @@
 | `getChartStore()._processDataLoad('forward')` | MA-01仅在长周期缺少预热历史时主动触发既有loader。10.0.3以_loading防并发，经callback调用_addData的forward分支，前插不改右侧偏移，指标自动重算；不执行init或滚动补偿。复核主动补载、失败重试、切周期作废旧响应及同名日期/画线保留。 |
 | `overrideIndicator({name,paneId,calcParams,styles,visible})` | MA-01通过公开API更新MA参数、颜色和可见性；10.0.3模板regenerateFigures按参数生成图例，calc在完整窗口后输出收盘价等权均值。变更参数触发重算；不重建图表或替换行情。 |
 | `registerIndicator`/`createIndicator`/`overrideIndicator`/`setPaneOptions`（公式指标） | M9-04C：单模板 calc 从 `indicator.extendData.points` 按 timestamp 查表返回 figure `line` 值；`createIndicator({name,paneId:'candle_pane'})` 叠主图、副图首行 `createIndicator(...,false)` 建 pane、后续输出行传首行 paneId 复用窗格；`overrideIndicator({id,extendData})` 更新数据；公式指标名固定 `FORMULA_<id>_<index>`；录像 paneHeights 捕获用 `formulaPaneIdsOf` 跳过公式 pane。升级复核：extendData 透传、override 触发 recalc、paneId 复用、副图最小高度与分隔条拖动。 |
+| `getPaneOptions` / `setPaneOptions` / `getSize('x_axis_pane')` / `styles.separator.size`（密集布局） | 10.0.3 先扣轴/分隔线，再分副图，正常 candle 仅得余高；单设主图 minHeight 无效。组件与 `chartPaneLayout.ts` 分开首选/有效高度并预留主图。原生拖动先同步写 options.height，再异步 layout，松手预算读取实时值。升级复核压缩恢复、两类分隔拖动、全停用和最大化；见[显示规格](../../../../docs/specs/chart/display.md)。 |
 | `_chartStore.getLayoutOptions().barSpaceLimit.min/max` | onMounted 改为 0.1/300；允许窄屏多根和少根放大。实际 840 限制另由 `clampBarSpace` / `enforceVisibleLimit` 执行，范围变化后微任务再校正。 |
 | `yAxis.setAutoCalcTickFlag(false/true)` | 中键前设手动，`restoreYAxisAutoFit` 恢复自动；检查轴拖拽、框选、键盘缩放和复位组合。 |
 | `yAxis.getRange/setRange/valueToRealValue/realValueToDisplayValue` | 已知值域读写接口；getRange 用于只读断言，其余作为历史备用登记，不表示当前主动调用。 |
@@ -20,6 +21,7 @@
 | `getChartStore().getPressedOverlayInfo/setPressedOverlayInfo` 与 overlay `startPressedMove` | 7px 自定义命中补足库未命中的 2~7px 区间，避免拖线变成整图平移；坐标换算后再写 pressed 状态。 |
 | `_chartEvent._event._resetClickTimeout()` | 新工具和每次取点前清双击累计，防 500ms 内第二击被吞或提前完成。 |
 | `getSeparatorPanes()` → `getBounding()/getWidget().getContainer()` | 从实际容器获得原生 7px 命中带和宽度；顶部按 `round((容器高 - separator.size)/2)` 偏移，忽略 height=0，保留原生最小高度与 dragEnabled 行为。 |
+| `SeparatorWidget` 的 `throttle(..., 20)` | 10.0.3 只有前沿、无尾沿补发，可能丢弃鼠标末步；等待布局不能补回。精确回归超过20ms后真实重送终点，保留位移/松手高度断言。升级复核节流与 mouseup，丢步不是固定坐标偏移。 |
 | overlay `forceComplete()`、store `progressOverlayComplete()` | 折线右键结束时移除预览点并转入完成集合；恢复折线走相同完成路径。 |
 | figure `checkEventOn` 的 `DEVIATION=2` | 线/矩形等库命中容差小于本项目 7px，需检查 bubble 选中补齐是否仍必要。 |
 | overlay `createPointFigures` | 注册钩子名不可写成 `createFigures`，否则静默不渲染；检查 [overlays.ts](../../overlays.ts) 与 [drawingOverlays.ts](../../drawingOverlays.ts)。 |

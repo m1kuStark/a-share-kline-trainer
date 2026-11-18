@@ -9,10 +9,10 @@
 | [formula-enable](formula-enable.spec.ts) | 自定义启停持久化、三个内置按预设位置挂载/刷新/停用、保存失败清除旧成功提示；真实设置事件与只读图表核验 |
 | [chart-analysis](chart-analysis.spec.ts) | 常驻行情、右键区间统计；Shift两点测量五字段、双向/同根价格与数量、取消/边界/绘图多选优先、无写请求和视窗画线保持；只读回放、随机日期遮蔽及双主题桌面截图 |
 | [report-narrow](report-narrow.spec.ts) | 真实买入后固定本局报告，390/1024/1440 深浅主题无对话框横向溢出，成交全部列支持键盘与鼠标滚动查看 |
-| [local-origin](local-origin.spec.ts) | 应用同源读写成功；另一站点的真实浏览器读取和写入被拒，偏好保持不变 |
+| [local-origin](local-origin.spec.ts) | 应用同源读写成功；独立高端口外站夹具确认页面与来源后，真实浏览器读取和写入被拒，偏好保持不变 |
 | [backup-restore](backup-restore.spec.ts) | 独立 SQLite 一致快照恢复训练/成交/画线/报告，空浏览器导入录像并只读回放；不覆盖桌面安装和自动归档 |
 | [formula-manager](formula-manager.spec.ts) | 设置「公式指标」分栏：列表/新建/编辑/保存持久化、校验中文错误与未来函数/全角告警、单行粘贴、只读预览曲线、二次确认删除；内置示例可见且不可删除（M9-04B/D） |
-| [formula-chart](formula-chart.spec.ts) | 公式图表挂载：主图 candle_pane 公式线/副图每公式独立窗格、推进与周K 重算、随机训练上下文人话提示且不泄露隐藏信息、只读回放页渲染（M9-04C） |
+| [formula-chart](formula-chart.spec.ts) | 公式图表挂载、推进与周K重算、随机信息隐藏及只读回放；密集副图覆盖深浅主题与窗口尺寸、主K线及全部窗格可见、缩放窗恢复首选高度、真实分隔条拖动松手不回弹及主边界往返、全停用后恢复普通布局 |
 | [ma-settings](ma-settings.spec.ts) | 八条MA参数、草稿/取消/校验、颜色和持久化、周期共用、1000周期预热、视窗画线保留及双主题尺寸 |
 | [acceptance-feedback](acceptance-feedback.spec.ts) | 录像入口、活动训练往返、快捷键与顶部空间 |
 | [drawing-basis](drawing-basis.spec.ts) | 除权推进/轴缩放/撤销刷新时画线锚点对齐 |
@@ -42,6 +42,8 @@
 
 同run保持单worker与单活动训练；每例清理活动训练，不依赖前例选中状态。不同run的数据库、端口、构建和报告独立，允许不同工作副本并行。证据路径统一由[runtime helper](runtime.ts)提供；新测试不得硬编码端口或写docs截图目录。
 
+夹具须在页面挂载读取默认值前完成准备：`recording-long` 先保存足以成交一手的训练资金，再打开 Launcher。`local-origin` 直接绑定 20000–60000 范围的独立随机端口，最多仅对 `EADDRINUSE` 重选，避免操作系统分配浏览器禁用端口；不预探测再释放端口，也不修改浏览器安全选项或产品来源校验。
+
 冻结样本有日期及文件哈希；复制不等于历史全版本保护，DATA-03仍是业务待办。测试快照不提交私人源数据；正式报告可提交指纹和必要截图。来源缺失报错，不自动安装数据源或下载。
 
 真实鼠标/键盘与只读hooks纪律见[断言](docs/assertions.md)、[AGENTS](AGENTS.md)。主代理视觉检查后将选定证据归档，不能只凭浏览器命令通过替代人工阅读截图或用户验收。
@@ -51,4 +53,4 @@
 
 ## 当前接续（2026-11-18）
 
-PR54公共EMA修复已合入main58ba0ff，启停6/6及种子/存储/API专项13/13通过。f701371完整Journey为229通过、18失败、1跳过、13未运行，整批仍active，待新冻结后完整复跑。夹具RED/GREEN后8项及另4项通过仅属定向；PS1仅补BOM，待真实Windows包验证。同候选实包、录像回放和用户整批验收未完成，不发布。当前收据见[M9验证记录](../docs/verification/2026-11/M9-ENABLE-01/README.md)；此前失败正文保留其历史结论。
+M9 整批候选仍在验证，最新事实及原失败统一见 [M9 验证记录](../docs/verification/2026-11/M9-ENABLE-01/README.md)；用户验收与发布许可未记录。
