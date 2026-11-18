@@ -17,6 +17,7 @@ async function open(page: Page): Promise<number> {
   await expect(page.locator('.drawing-save-status')).toHaveText('已保存', { timeout: 15_000 })
   await expect(page.locator('.loading-dot')).not.toBeVisible()
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__trainerChart?.bars?.().length))).toBe(true)
+  await expect(page.locator('.training-grid')).not.toHaveAttribute('inert', '')
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
   return id
 }

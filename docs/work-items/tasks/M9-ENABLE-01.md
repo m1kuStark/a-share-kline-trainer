@@ -17,6 +17,7 @@
     "server/test/formulas/formula-storage.test.ts",
     "server/test/formula-library-api.test.ts",
     "e2e/formula-enable.spec.ts",
+    "e2e/m3-round3.spec.ts",
     "e2e/README.md",
     "docs/specs/formulas.md",
     "docs/specs/README.md",
@@ -121,3 +122,9 @@
 ## 录制导入收尾修复范围
 
 相关旅程 run841877 的两年训练已完成并导出完整 gzip；浏览器导入时报 JSON 截断，未进入回放。受控 Edge 实验在原生解压读取端注入调度让步，确认输入 close 已完成不代表输出 draining 已完成；原实现先 cancel 输出端会丢尾。无注入原版可通过，因此机制证明与本次原始时序分别记录。集成人将正常成功路径等待 draining 后再清理列入本卡整批导入回放准备范围；先补有效 RED，再做最小修复，不变更格式、预算、公式语义或异常取消保护，保留原失败并完整重跑候选。
+
+## 快捷键回归准备修复范围
+
+候选4fce44d的完整运行f33为261通过、1失败：m3-round3首次右括号后仍为日K，未产生候选证明。独立受控实验确认，原open的图表等待条件完成时录制仍可能准备中，真实快捷键会按保护规则被拦截；解除准备后同一真实按键成功。无hold五次均通过，原失败没有按键时点记录，故不宣称精确复现f33或确认产品热键回归。
+
+本次仅给m3-round3的open补现有套件使用的training-grid无inert等待，保持双向周期、输入、自定义和未完成画线隔离等全部断言及超时。生产逻辑不改；诊断、首次EPERM准备失败及复跑边界见[准备诊断](../../verification/2026-11/M9-ENABLE-01/shortcut-readiness.md)。修正后冻结新提交，从头完整候选并重构建同提交Windows包，旧4fce44d结果不改绑。

@@ -26,7 +26,7 @@
 | [journey](journey.spec.ts) | 创建、交易、画线、手势、多选、周期、主题 |
 | [m3-tools](m3-tools.spec.ts) | 23工具、保存恢复、跨窗格、故障注入 |
 | [m3-feedback](m3-feedback.spec.ts) | 收藏拖拽、自定义隔离、保存栏布局 |
-| [m3-round3](m3-round3.spec.ts) | 840根、周期快捷键、纯黑、成交带、诅咒线 |
+| [m3-round3](m3-round3.spec.ts) | 等待录制准备完成、训练页解除inert后，核验840根、周期快捷键及输入/自定义/画线隔离、纯黑、成交带、诅咒线 |
 | [compact-chart](compact-chart.spec.ts) | 紧凑布局、实际日期、刷新与回到最新 |
 | [layout-fill](layout-fill.spec.ts) | 训练页图表铺满可用高度：三尺寸（1024×680/1366×705/1440×900）深浅主题无空行、host=frame−成交标记带、主副图+时间轴填满 host；指标开关/最大化/resize 后不变量成立；回放页行情条内联形态兼容（CHART-LAYOUT-01） |
 | [cost-basis](cost-basis.spec.ts) | 权息成本、清仓后GET失败、周期恢复 |
