@@ -1,0 +1,11 @@
+
+> a-share-kline-trainer@1.3.8 docs:check
+> tsx scripts/docs.ts check
+... [elided 4 lines] ...
+WARN docs/engineering/glm-failure-patterns.md: 长度 5747 字符超过建议 5000；按主题审查，不自动截断。
+... [elided 183 lines] ...
+WARN web/src/formula-engine/README.md: 长度 6748 字符超过建议 2000；按主题审查，不自动截断。
+WARN web/src/recording/README.md: 长度 2353 字符超过建议 2000；按主题审查，不自动截断。
+WARN web/src/recording/recording-file.md: 长度 6944 字符超过建议 5000；按主题审查，不自动截断。
+ERROR docs/status.md: 生成区已过期；运行 npm run docs:status 后审查差异。
+INFO check: 1 errors, 190 warnings；不更改任务/验收状态。

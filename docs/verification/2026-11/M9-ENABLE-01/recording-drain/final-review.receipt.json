@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-11-18T04:06:48.503654+00:00",
+  "reviewer": "github_audit",
+  "verdict": "approve-scoped",
+  "severityCounts": {
+    "critical": 0,
+    "important": 0,
+    "minor": 0
+  },
+  "findings": [],
+  "repo": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "head": "f9454fec92017eba74de2904abf9982deb685ab4",
+  "scope": {
+    "web/src/recording/recordingFile.ts": "1536368e2ba6e080c96d4d18c05ab40aa43cf4f38278c0e826bd0b0c10716180",
+    "server/test/recording-file.test.ts": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4"
+  },
+  "fixedDiffSha256": "ba356f535f0a50dab546d623de2c6a289cc2b9812cbb6e914f42a8d368a6e029",
+  "sourceStableThroughReport": true,
+  "reviewSha256": "9c30c5d798b7de3898988fe4a51a14ce1f8a7a5289182a36be4c0f157a6252af",
+  "actions": {
+    "appRun": false,
+    "testsRun": false,
+    "buildRun": false,
+    "repoWrites": false,
+    "controlWrites": false,
+    "matrixWrites": false,
+    "gateReportWrites": false
+  },
+  "evidence": [
+    {
+      "path": "evidence/test-green/receipt.json",
+      "sha256": "d8b09bf74cc6e1273d15c8be6d1c2b9272d1c4a9d7822fdf750164b52238769b",
+      "bytes": 517
+    },
+    {
+      "path": "evidence/test-green/native.log",
+      "sha256": "26d510413bc6e2d0a601e1127d295260efb2b51d679d6c5150f792ac70565c34",
+      "bytes": 268
+    },
+    {
+      "path": "evidence/long-journey/wrapper.receipt.json",
+      "sha256": "3908169cd8ff44cb64760ca629d963012b76574e84b5f20a77eca2bface17535",
+      "bytes": 2045
+    },
+    {
+      "path": "evidence/long-journey/wrapper.log",
+      "sha256": "28cbc5f1e1a6e65314c3eedd72c4ec07e571de8360376535a2fa96e48a8c8ab7",
+      "bytes": 470
+    },
+    {
+      "path": "evidence/long-journey/manifest.json",
+      "sha256": "3bd7befe6e80ff154cf9b8dd73d051c4fe174919e834274698facb47ae48cc73",
+      "bytes": 1598
+    },
+    {
+      "path": "evidence/long-journey/metrics.json",
+      "sha256": "93aead4fa8d1a220d4601f8c5af2a389b9214af7037ed833c25c7bcabeae477d",
+      "bytes": 225
+    },
+    {
+      "path": "evidence/long-journey/browser-results.json",
+      "sha256": "9b6ae554f8d14e0bdd451a6781865952faa5849801b3152918685cdc11a90933",
+      "bytes": 4803
+    },
+    {
+      "path": "evidence/long-journey/journey.log",
+      "sha256": "f034b767c6218df4041eee2702d169c41b3330f4900e7b486acac997e1477b8d",
+      "bytes": 347
+    }
+  ],
+  "fileBundleGreen": {
+    "nativeExitCode": 0,
+    "testFilesPassed": 2,
+    "testsPassed": 44,
+    "sourceAndTestHashesMatch": true
+  },
+  "longJourney": {
+    "runId": "run-b8cb3f18-211d-4fd1-a4d3-0dd36ced0af1",
+    "nativeExitCode": 0,
+    "stats": {
+      "startTime": "2026-11-18T03:59:14.268Z",
+      "duration": 63361.562,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "metrics": {
+      "steps": 483,
+      "events": 974,
+      "checkpoints": 975,
+      "fileBytes": 636120,
+      "jsonBytes": 4218652,
+      "exportMs": 462,
+      "importMs": 374,
+      "advanceP95Ms": 104,
+      "restoredCheckpoints": 975,
+      "unexpectedPageErrors": []
+    },
+    "wrapperLogHashMatches": true,
+    "commitMatches": true,
+    "manifestHasPerSourceHashes": false
+  },
+  "limits": [
+    "No uninjected exact reproduction of original failure timing",
+    "No independent test/app/build execution by reviewer",
+    "No complete M9/product/package/human acceptance claim",
+    "Long Journey metadata binds commit and run, not individual dirty source files"
+  ]
+}

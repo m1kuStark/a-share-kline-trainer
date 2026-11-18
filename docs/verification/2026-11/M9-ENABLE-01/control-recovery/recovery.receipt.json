@@ -1,0 +1,40 @@
+{
+  "operation": "Exact incremental workflow fixture cleanup via updateWorkflowState",
+  "planSha256": "6b226f50e89a8ce1a66fa2563f26d39d54338767c8f2a620ee9919c3944556ef",
+  "beforeSha256": "5e0ca4f38a35ba5e4d4b3f50055edd95a39d103ed1a866408e794331a8413fc6",
+  "afterSha256": "baf59f51b71d595ef23323107fd1e8029cd861bb5d5ec615a7c4417cb0af3aad",
+  "beforeRevision": 233,
+  "afterRevision": 234,
+  "removedCandidates": 33,
+  "removedEvents": 75,
+  "preservedCandidates": 11,
+  "preservedOriginalEvents": 16,
+  "preservedExactly": [
+    "schema_version",
+    "project_id",
+    "active_task",
+    "tasks",
+    "runs",
+    "artifacts",
+    "acceptance",
+    "reconcile",
+    "next_action"
+  ],
+  "candidateRestoredFromVerifiedBackup": true,
+  "recoveryEvent": {
+    "event_id": "control:fixture-recovery:M9-ENABLE-01:20261118",
+    "kind": "control_metadata_recovered",
+    "timestamp": "2026-11-17T19:11:19.980Z",
+    "task_id": "M9-ENABLE-01",
+    "reason": "Removed exact workflow test fixture projections after whole-record signature verification; preserved real tasks, candidates, runs, artifacts and acceptance.",
+    "payload": {
+      "removed_candidates": 33,
+      "removed_events": 75,
+      "plan_sha256": "6b226f50e89a8ce1a66fa2563f26d39d54338767c8f2a620ee9919c3944556ef",
+      "before_revision": 233,
+      "evidence": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/"
+    }
+  },
+  "productPersonalDataAccessed": false,
+  "assertions": "all passed"
+}

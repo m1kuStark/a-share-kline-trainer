@@ -1,0 +1,16 @@
+schema_version: "harness-matrix-v2"
+module: "recording-inflate-drain"
+spec_source: "REC-FILE-V2 existing lossless gzip read/write contract; web/src/recording/recording-file.md; M9-ENABLE-01 import/replay delivery"
+note: "Scoped successful decompression lifecycle; format, budgets and error cancellation stay unchanged."
+axes:
+  input: ["gzip"]
+  output: ["queued-tail"]
+rows:
+  - id: "RECORDING-INFLATE-DRAIN-TAIL"
+    ears: "WHEN valid gzip input is closed while decompressed output remains queued THE SYSTEM SHALL consume every output byte before cleanup and return the complete original payload"
+    axes: {input: "gzip", output: "queued-tail"}
+    oracle: "Existing lossless file roundtrip contract, independent expected byte sequence and native Edge decompressor scheduling probe; writable close does not prove readable drain completion."
+    test_ids:
+      - "server/test/recording-file.test.ts::正常gzip关闭写端后仍排空延迟读取的全部尾块"
+      - "e2e/recording-long.spec.ts::两年前复权训练含交易画线周期切换，可压缩导出并离线回放"
+    status: "covered"

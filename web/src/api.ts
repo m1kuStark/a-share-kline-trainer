@@ -844,6 +844,7 @@ export interface FormulaInput {
   description?: string
   placement: 'main' | 'sub'
   source: string
+  enabled?: boolean
 }
 
 export function fetchFormulas(): Promise<{ formulas: FormulaView[] }> {

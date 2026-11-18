@@ -29,14 +29,7 @@ test('两年前复权训练含交易画线周期切换，可压缩导出并离�
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
   const pageErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))
-  await page.goto('/')
-  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
-await expect(page.locator(".suggestions button").first()).toBeVisible()
-await page.locator(".suggestions button").first().click()
-  await expect(page.getByText(/已选：/)).toBeVisible()
-  await page.getByRole('button', { name: '2年', exact: true }).click()
-  await page.locator('input[type="date"]').fill('2024-09-13')
-  // 全量套件共享设置库：前置用例可能改过初始资金；本用例需要一手可成交，先固定默认初始资金并保存
+  // 全量套件共享设置库：前置用例可能改过初始资金；本用例需要一手可成交，须在 Launcher 挂载读取默认值之前固定初始资金并保存
   const trainingDefaults = await (await page.request.get('/api/settings/training')).json() as Record<string, unknown>
   const defaultsPut = await page.request.put('/api/settings/training', {
     data: {
@@ -50,6 +43,13 @@ await page.locator(".suggestions button").first().click()
     },
   })
   expect(defaultsPut.status()).toBe(200)
+  await page.goto('/')
+  await page.getByPlaceholder('股票代码，如 600519').fill('600519')
+await expect(page.locator(".suggestions button").first()).toBeVisible()
+await page.locator(".suggestions button").first().click()
+  await expect(page.getByText(/已选：/)).toBeVisible()
+  await page.getByRole('button', { name: '2年', exact: true }).click()
+  await page.locator('input[type="date"]').fill('2024-09-13')
   await startTrainingFromForm(page)
   const recording = page.getByRole('status').filter({ hasText: '正在记录' })
   await expect(recording).toBeVisible()

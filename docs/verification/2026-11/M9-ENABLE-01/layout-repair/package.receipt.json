@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-18T03:58:34.9824081Z",
+  "endedAt": "2026-11-18T03:58:35.5522422Z",
+  "scope": "Offline packaging of completed layout evidence only; no App/Journey/repository writes",
+  "scriptSha256": "6e5325f7721972bc6be0f82dd6c2b70dd1dc59497bb745a08d75af227f940b73",
+  "zip": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-layout-final-evidence\\M9-layout-final-evidence.zip",
+  "zipBytes": 10468070,
+  "zipSha256": "b21dca93e76a94af11f97b860fceca6c4e8978e1005d1b120742e6d92d60d584",
+  "manifest": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-layout-final-evidence\\M9-layout-final-evidence.manifest.json",
+  "manifestSha256": "a02240c980e933c3116a123b3ef5e4cc8208b577989b4bb282c21ffd0b28efed",
+  "expectedPayloadEntries": 244,
+  "verifiedZipMembers": 245,
+  "failureCount": 0,
+  "failures": [],
+  "includedOriginalsRechecked": 213,
+  "allIncludedOriginalsStillMatch": true,
+  "memberReceipt": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-layout-final-evidence\\member-verification.json",
+  "memberReceiptSha256": "993eeab77ccd4d57c838136ce367501083fdac1bf2a4910348501bb001a478a0",
+  "note": "ZIP members checked as stored bytes and gzip-decoded original bytes. This is packaging verification, not product acceptance."
+}

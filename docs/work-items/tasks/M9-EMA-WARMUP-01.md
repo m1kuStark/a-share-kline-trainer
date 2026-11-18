@@ -9,7 +9,7 @@
   "milestone": "M9",
   "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
   "summary": "公共EMA前导NaN暖机已完成：专项112项、真实语料43项、完整server2664＋desktop369同次3033项通过；回退修复8项语义失败，独立五维审查可合入。仅正整数周期契约，M9整批/Windows包/用户验收另行执行。",
-  "next_action": "经文档和矩阵最终门禁后走独立PR合入；M9-ENABLE-01集成同一修复后运行最终整批候选、主代理视觉与Windows实包录像回放，交用户验收。",
+  "next_action": "独立修复已由PR54合入main；M9-ENABLE-01负责最终统一候选、浏览器整批、视觉与Windows包及录像回放，待用户整批验收。",
   "allowed_paths": [
     "web/src/formula-engine/interpreter/functions/math.ts",
     "server/test/formula-engine/interpreter/functions/math.test.ts",
@@ -43,7 +43,7 @@
   "verification_refs": [
     "docs/verification/2026-11/M9-EMA-WARMUP-01/README.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
   "acceptance_ref": null
 }
 ```

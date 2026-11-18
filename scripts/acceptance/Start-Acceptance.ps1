@@ -1,4 +1,4 @@
-param([string]$AcceptanceRoot = $PSScriptRoot)
+﻿param([string]$AcceptanceRoot = $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
 $packageRoot = [IO.Path]::GetFullPath($AcceptanceRoot)
 $exePath = Join-Path $packageRoot 'app\K线训练器.exe'

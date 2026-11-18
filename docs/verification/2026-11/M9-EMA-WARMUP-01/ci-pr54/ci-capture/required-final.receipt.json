@@ -1,0 +1,27 @@
+{
+  "name": "required-final",
+  "args": [
+    "gh",
+    "pr",
+    "checks",
+    "54",
+    "--repo",
+    "m1kuStark/a-share-kline-trainer",
+    "--required",
+    "--json",
+    "name,state,bucket,workflow,link"
+  ],
+  "startedAt": "2026-11-17T19:00:06.269671+00:00",
+  "endedAt": "2026-11-17T19:00:08.284183+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-final.stdout",
+    "bytes": 546,
+    "sha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c"
+  },
+  "stderr": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-final.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

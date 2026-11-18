@@ -1,0 +1,75 @@
+{
+  "schema": "m9-stage-copy-integrity-v1",
+  "preparedAt": "2026-11-17T20:19:07.300508+00:00",
+  "productSourceFreeze": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+  "intendedDestination": "docs/verification/2026-11/M9-ENABLE-01/final",
+  "sourceFileCount": 109,
+  "sourceFileBytes": 1101647,
+  "physicalFileCountIncludingThisReceipt": 10,
+  "physicalBytesIncludingThisReceipt": 468221,
+  "allOriginalSourceBytesStillMatch": true,
+  "allDecodedStagedBytesMatch": true,
+  "zipContainerCrcsValid": true,
+  "originalCiZipCopiedIdentity": true,
+  "originalCiZipSha256": "a0f9acd88126f978e2d534f2245486d5a95241771958076fc489ed1203c6bfdf",
+  "secretScan": {
+    "scannedPayloadsIncludingCiZipMembers": 141,
+    "highConfidencePatternFindings": 0,
+    "rules": [
+      "github-token",
+      "openai-token",
+      "aws-access-key",
+      "private-key",
+      "literal-bearer"
+    ],
+    "credentialFilesSelected": false
+  },
+  "excludedStillRunningJourneyLog": true,
+  "filesExcludingThisReceipt": [
+    {
+      "path": "artifact-index.json",
+      "bytes": 64603,
+      "sha256": "5a4f1e7e682feb2966b755e5ee4806ae53781f7b5a0d743c41cb4251e3a1c2d7"
+    },
+    {
+      "path": "asar/asar-boundary-evidence.zip",
+      "bytes": 77036,
+      "sha256": "ebc163466a59d66c1fa23938cac8dc8185f3ec8a9b37626b4c4e68e4dd2bb4e7"
+    },
+    {
+      "path": "home-isolation/home-isolation-evidence.zip",
+      "bytes": 82580,
+      "sha256": "f42aefada71e89e41cd869fd4f15dbd8f43a6bf9c5053bd89ade480937706953"
+    },
+    {
+      "path": "journey-fixture/journey-fixture-evidence.zip",
+      "bytes": 74772,
+      "sha256": "0a3576b329af04115cf4364b65f123ed8d3a0afb2983083cf2d57ad45f078c89"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3046,
+      "sha256": "dc5ef1cab08cc2f166e5e65088f3cdf7d58ed7692139e38e6d301631df7663ec"
+    },
+    {
+      "path": "review/review-evidence.zip",
+      "bytes": 18150,
+      "sha256": "31e2d956505e49b8ed4f9e8fa04d1d8f7aab32af9307163b27ea512552f82952"
+    },
+    {
+      "path": "source-ci/logs-44160559239.zip",
+      "bytes": 106268,
+      "sha256": "a0f9acd88126f978e2d534f2245486d5a95241771958076fc489ed1203c6bfdf"
+    },
+    {
+      "path": "source-ci/source-ci-evidence.zip",
+      "bytes": 37924,
+      "sha256": "55aa7088f8a5e602fb1b7c1d11879e12069ed65dec7a9d0f781bc4ad281960d0"
+    },
+    {
+      "path": "verify-stage.py",
+      "bytes": 1373,
+      "sha256": "ad679775b58256afc908f0347c28810cf5f5c078edb35e056bb428e56e9f2306"
+    }
+  ]
+}

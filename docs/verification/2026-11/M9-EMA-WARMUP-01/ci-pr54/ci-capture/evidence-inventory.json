@@ -1,0 +1,458 @@
+{
+  "archive": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-logs.zip",
+    "bytes": 103033,
+    "sha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+    "zipCrcValidated": true
+  },
+  "logEntries": [
+    {
+      "archive_name": "0_pr-policy.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\000-0_pr-policy.txt",
+      "bytes": 15797,
+      "sha256": "55a4e2da11a2ec871051979c11a8b3fabce9cd3a558048193b544ed298b1d4eb"
+    },
+    {
+      "archive_name": "pr-policy/system.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\001-pr-policy_system.txt",
+      "bytes": 720,
+      "sha256": "feaa06a4b62ae4fc38f95da6be0efa5c31b584a039bd008043926ec7f3428b63"
+    },
+    {
+      "archive_name": "pr-policy/1_Set up job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\002-pr-policy_1_Set_up_job.txt",
+      "bytes": 2113,
+      "sha256": "ee8d503751b43204a372b3225922973c35c3d66fda8aa05a2054e50baf5b7a95"
+    },
+    {
+      "archive_name": "pr-policy/2_Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\003-pr-policy_2_Run_actions_checkout_v7.txt",
+      "bytes": 7760,
+      "sha256": "eb85b4dc05d3d8682dcc3e366242eefa4c1fbf5d966fc277da6f40b9b19eb80f"
+    },
+    {
+      "archive_name": "pr-policy/3_Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\004-pr-policy_3_Run_actions_setup-node_v7.txt",
+      "bytes": 917,
+      "sha256": "12ea563592d8343cedec48e127b8c6cc278508fe680d47876781645ad4b37005"
+    },
+    {
+      "archive_name": "pr-policy/4_Run node scripts_ci_check-pr-policy.mjs.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\005-pr-policy_4_Run_node_scripts_ci_check-pr-policy.mjs.txt",
+      "bytes": 359,
+      "sha256": "2a36492a214d129015c10b35c51ba9a33805061b76b49b6879cf5609fdb8476f"
+    },
+    {
+      "archive_name": "pr-policy/7_Post Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\006-pr-policy_7_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 51,
+      "sha256": "aff41e09ee2c58c3f76ce67ee32507020806a7a35e774583614a9049650b9261"
+    },
+    {
+      "archive_name": "pr-policy/8_Post Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\007-pr-policy_8_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sha256": "5dd371d9086959885effa0a6989c159997043db639e725c71865f461477ea84f"
+    },
+    {
+      "archive_name": "pr-policy/9_Complete job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\008-pr-policy_9_Complete_job.txt",
+      "bytes": 62,
+      "sha256": "b866379fa0eb7a44c217c2b4cd75f8c0872e04a135ad95cc9ddebb9edb7d9e60"
+    },
+    {
+      "archive_name": "1_docs.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\009-1_docs.txt",
+      "bytes": 49410,
+      "sha256": "b3734b4231896deb4e38109fad095afe8c00ba0c0ba8be1dda0861c737050f6e"
+    },
+    {
+      "archive_name": "docs/system.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\010-docs_system.txt",
+      "bytes": 586,
+      "sha256": "59aa3c697b8fa9373dd5c4d109d59cb1fa587dd90f5f5636a0049bf3c2ee053f"
+    },
+    {
+      "archive_name": "docs/1_Set up job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\011-docs_1_Set_up_job.txt",
+      "bytes": 2110,
+      "sha256": "d062b54338baf2da92425a7ae613a499d2af0e141fdafcf93201a01c8d2c65e7"
+    },
+    {
+      "archive_name": "docs/2_Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\012-docs_2_Run_actions_checkout_v7.txt",
+      "bytes": 7863,
+      "sha256": "ce7b74898f379c82e145f451c4ce1ef7e3b6babb3b212f0dc006440c7d18d31d"
+    },
+    {
+      "archive_name": "docs/3_Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\013-docs_3_Run_actions_setup-node_v7.txt",
+      "bytes": 1983,
+      "sha256": "110d1f6731ee31a6a7b74b8980b51c63dcd47d0918c7d43cb4ff120c1b82e292"
+    },
+    {
+      "archive_name": "docs/4_Run npm ci.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\014-docs_4_Run_npm_ci.txt",
+      "bytes": 2712,
+      "sha256": "50abf31a72b025716e8e1183e791cca15179616e54a2dc7395e4ef5e82180194"
+    },
+    {
+      "archive_name": "docs/5_Run npm run docscheck.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\015-docs_5_Run_npm_run_docscheck.txt",
+      "bytes": 28986,
+      "sha256": "58a409a8b72b0fc9482de5c7ef88266078bf186371088bc7b7104606582a6e0d"
+    },
+    {
+      "archive_name": "docs/6_Run npm run docsstatus -- --check.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\016-docs_6_Run_npm_run_docsstatus_--_--check.txt",
+      "bytes": 935,
+      "sha256": "4c033736b7589236dab8a13d52ca32331deab9d3c292c9595ccf934808a8535d"
+    },
+    {
+      "archive_name": "docs/11_Post Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\017-docs_11_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 230,
+      "sha256": "46582066d94a7df948e64a4b64d077bc7e9a6ed49f02b0d3a72e75b0776a8d04"
+    },
+    {
+      "archive_name": "docs/12_Post Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\018-docs_12_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sha256": "35a214d05b39c57a34d1943f3ae9ae2f69a62e851a289aff3140408e6a33765d"
+    },
+    {
+      "archive_name": "docs/13_Complete job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\019-docs_13_Complete_job.txt",
+      "bytes": 62,
+      "sha256": "94c705ce6c48800f6cd101636e143f3d1eb103ce6787d1ba03a904b14b134b67"
+    },
+    {
+      "archive_name": "2_verify.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\020-2_verify.txt",
+      "bytes": 140177,
+      "sha256": "dcae73218643c53a89cc43218cf3fb30d335c9847705e540d47ab523341df18d"
+    },
+    {
+      "archive_name": "verify/system.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\021-verify_system.txt",
+      "bytes": 588,
+      "sha256": "7e4c81fcf9c1062be5ada5eb3a5d7fd11319c0c60ee90c4d7d992a2a6b96685c"
+    },
+    {
+      "archive_name": "verify/1_Set up job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\022-verify_1_Set_up_job.txt",
+      "bytes": 2243,
+      "sha256": "edd9bec6d59acc48a99d6cff9fe353dc7a66ca649c592db821345bb9f422a401"
+    },
+    {
+      "archive_name": "verify/2_Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\023-verify_2_Run_actions_checkout_v7.txt",
+      "bytes": 7760,
+      "sha256": "1b76c6d6e7e07135baf201c1c8ac89cd52168b9755e90ea2e3cf5a19f65b776e"
+    },
+    {
+      "archive_name": "verify/3_Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\024-verify_3_Run_actions_setup-node_v7.txt",
+      "bytes": 1881,
+      "sha256": "778fcb92f0c6a057c02ac18c39b98b285d10f78fa6c518df9eb42f45201fd8d8"
+    },
+    {
+      "archive_name": "verify/4_Run npm ci.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\025-verify_4_Run_npm_ci.txt",
+      "bytes": 2609,
+      "sha256": "f39162209090129ee4d34b12afc4655e7faefa0519a797b84b5fd61136223c9b"
+    },
+    {
+      "archive_name": "verify/5_Run npm run build.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\026-verify_5_Run_npm_run_build.txt",
+      "bytes": 2737,
+      "sha256": "106c5d48891da7c4ef7c5630f2c28736449bc9675c1b878997bed3b093897a49"
+    },
+    {
+      "archive_name": "verify/6_Test source and compiled launcher.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\027-verify_6_Test_source_and_compiled_launcher.txt",
+      "bytes": 117415,
+      "sha256": "76428a3a1589ea3f55ae8d8435d1a6c1652846fbcde5b0d5b6ec247fce15bba3"
+    },
+    {
+      "archive_name": "verify/7_Retain test results.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\028-verify_7_Retain_test_results.txt",
+      "bytes": 714,
+      "sha256": "c4e630e8f0811527767c9c96d629fe62b009aaec83586cfa0026246881768922"
+    },
+    {
+      "archive_name": "verify/13_Post Run actions_setup-node@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\029-verify_13_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 230,
+      "sha256": "94f9292c0e41adae5bc3bfc0a30d9e5ebb89d43133487d11aca21cce48a1c8f1"
+    },
+    {
+      "archive_name": "verify/14_Post Run actions_checkout@v7.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\030-verify_14_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sha256": "54a063bf573069251a4e7acacdadf75ed37707491802c278018c8f0bb6b85c91"
+    },
+    {
+      "archive_name": "verify/15_Complete job.txt",
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\logs\\031-verify_15_Complete_job.txt",
+      "bytes": 62,
+      "sha256": "90c5c86513b713639b22eaff7ac51c9c4c9ab364bb3ef3a3d912510640033318"
+    }
+  ],
+  "rawReceipts": [
+    {
+      "name": "jobs-final",
+      "args": [
+        "gh",
+        "api",
+        "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795/jobs?per_page=100"
+      ],
+      "startedAt": "2026-11-17T19:00:07.231305+00:00",
+      "endedAt": "2026-11-17T19:00:08.358745+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\jobs-final.stdout",
+        "bytes": 7120,
+        "sha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\jobs-final.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "pr-final",
+      "args": [
+        "gh",
+        "pr",
+        "view",
+        "54",
+        "--repo",
+        "m1kuStark/a-share-kline-trainer",
+        "--json",
+        "number,url,headRefOid,baseRefName,state,isDraft,statusCheckRollup"
+      ],
+      "startedAt": "2026-11-17T19:00:06.268669+00:00",
+      "endedAt": "2026-11-17T19:00:07.397863+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-final.stdout",
+        "bytes": 1103,
+        "sha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-final.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "pr-initial",
+      "args": [
+        "gh",
+        "pr",
+        "view",
+        "54",
+        "--repo",
+        "m1kuStark/a-share-kline-trainer",
+        "--json",
+        "number,url,headRefOid,baseRefName,state,isDraft,statusCheckRollup"
+      ],
+      "startedAt": "2026-11-17T18:56:30.249620+00:00",
+      "endedAt": "2026-11-17T18:56:31.386686+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-initial.stdout",
+        "bytes": 1098,
+        "sha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-initial.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "required-final",
+      "args": [
+        "gh",
+        "pr",
+        "checks",
+        "54",
+        "--repo",
+        "m1kuStark/a-share-kline-trainer",
+        "--required",
+        "--json",
+        "name,state,bucket,workflow,link"
+      ],
+      "startedAt": "2026-11-17T19:00:06.269671+00:00",
+      "endedAt": "2026-11-17T19:00:08.284183+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-final.stdout",
+        "bytes": 546,
+        "sha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-final.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "required-initial",
+      "args": [
+        "gh",
+        "pr",
+        "checks",
+        "54",
+        "--repo",
+        "m1kuStark/a-share-kline-trainer",
+        "--required",
+        "--json",
+        "name,state,bucket,workflow,link"
+      ],
+      "startedAt": "2026-11-17T18:56:30.249620+00:00",
+      "endedAt": "2026-11-17T18:56:31.889516+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-initial.stdout",
+        "bytes": 553,
+        "sha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-initial.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "run-final",
+      "args": [
+        "gh",
+        "api",
+        "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795"
+      ],
+      "startedAt": "2026-11-17T19:00:06.269671+00:00",
+      "endedAt": "2026-11-17T19:00:07.228304+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-final.stdout",
+        "bytes": 14134,
+        "sha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-final.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "run-initial",
+      "args": [
+        "gh",
+        "api",
+        "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795"
+      ],
+      "startedAt": "2026-11-17T18:56:30.249620+00:00",
+      "endedAt": "2026-11-17T18:56:31.624349+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-initial.stdout",
+        "bytes": 14131,
+        "sha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-initial.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "run-logs-archive",
+      "args": [
+        "gh",
+        "api",
+        "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795/logs"
+      ],
+      "startedAt": "2026-11-17T19:00:07.400878+00:00",
+      "endedAt": "2026-11-17T19:00:10.154373+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-logs-archive.stdout",
+        "bytes": 103033,
+        "sha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-logs-archive.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "run-watch",
+      "args": [
+        "gh",
+        "run",
+        "watch",
+        "44152821795",
+        "--repo",
+        "m1kuStark/a-share-kline-trainer",
+        "--interval",
+        "60",
+        "--exit-status"
+      ],
+      "startedAt": "2026-11-17T18:57:38.171467+00:00",
+      "endedAt": "2026-11-17T18:59:47.428329+00:00",
+      "nativeExitCode": 0,
+      "stdout": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-watch.stdout",
+        "bytes": 3058,
+        "sha256": "28a9af514a9e0c4b1dbd14d7939470b25609acd6fe18b0305d0684d6ede50149"
+      },
+      "stderr": {
+        "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-watch.stderr",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "rawJsonAliases": [
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-initial.raw.json",
+      "bytes": 1098,
+      "sha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-initial.raw.json",
+      "bytes": 14131,
+      "sha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-initial.raw.json",
+      "bytes": 553,
+      "sha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\pr-final.raw.json",
+      "bytes": 1103,
+      "sha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\run-final.raw.json",
+      "bytes": 14134,
+      "sha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\required-final.raw.json",
+      "bytes": 546,
+      "sha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c"
+    },
+    {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\jobs-final.raw.json",
+      "bytes": 7120,
+      "sha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63"
+    }
+  ]
+}

@@ -1,0 +1,2297 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-11-18T03:57:30.033Z",
+  "name": "M9-layout-final-evidence",
+  "originalInputsStableBeforeAfter": true,
+  "originalInputCount": 213,
+  "scope": "Completed layout runs and selected static/unit/type evidence; no full candidate pass, no root visual verdict, no new recording diagnosis",
+  "entries": [
+    {
+      "storedPath": "derived/attachments/layout-green-endpoint-v2/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "c0fa7bb58ca31623c6db6f4a52d578a2c06134e8a2c603a0e030f1c49fa5eb90",
+      "storedBytes": 248,
+      "storedSha256": "d29a0bdebe31dd446525c3225bb213df896a50a3b802a9f3e518b535112a98a1",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-endpoint-v2/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "5667162c919cd07327b2c499f3cd773c7cc83250c9200771163fb37de1f66985",
+      "storedBytes": 370,
+      "storedSha256": "7a30053145d993431c2389fc724cd6cc29a38afeb4697dcbbf9586a8fb0eb3b4",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-endpoint-v2/03-dense-main-boundary-grow.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 8406,
+      "rawSha256": "1251362afe1a9373f1f8a9838926d388764aab4cdb3ce4de7e3b90866d690d6c",
+      "storedBytes": 399,
+      "storedSha256": "ab5c66328ed24e2f045196fd31e79f127037d3164c87e34c11cb20af6df4413c",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-grow"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-endpoint-v2/04-dense-main-boundary-shrink-back.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 16818,
+      "rawSha256": "d68cc753008d6d2b790b4ef6eb73e0afd9ba8fd5457d25fb7747e6ca8e0f9fe7",
+      "storedBytes": 495,
+      "storedSha256": "fa196b8e2370da02e43e45793486e6b5be59c30d376d86b9a752e61e56e5dc25",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-shrink-back"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-final-v4/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "afbd8c720e3d8f134510330babbf37c6bee9c6743cb568ab854786193fef881c",
+      "storedBytes": 252,
+      "storedSha256": "021ea70a86a79c57baa908cda1c78137c4b0fb0812e650d73c5f4ee6cf78ffe5",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-final-v4/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "51312c5d2613f6e605d1834fe8c3ca1630fa36cae15a702e3ab4cf24b1e8d8f7",
+      "storedBytes": 375,
+      "storedSha256": "e480525cf47de3a544cab9304bbe73b3e7ca268c74012ad3cb919d3508633124",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-first/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "17593f2d153eac04f0156a9573b7b6a01d17a47e84532bbb8d59d34400e1d6bf",
+      "storedBytes": 249,
+      "storedSha256": "83fbe01e43f4faa77e487e7589931b4119172bb4fe30d4b19b39253eddb91f2a",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-first/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "dd265fb71c88bff68663cfe0c1a6d58c913d40bf81c7cbe116ee7d6e6b902aec",
+      "storedBytes": 374,
+      "storedSha256": "94d113f07dcf5f0bafa566d78e42c1f6ab03edfb797c8a3adcfd2a1e59b4f61f",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-first/03-dense-main-boundary-grow.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 8406,
+      "rawSha256": "1a3422f968d5164977da940ee7d0216efa5077a6bb907278c6b4cd8cc4604595",
+      "storedBytes": 404,
+      "storedSha256": "562048d89eb17b3cba62f486d49b4b4643498b3cc43057e9e9576c310544db48",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-grow"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-held-donor-v5/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "d58c69eb33b88989f73f9d723710fd78bfe6e6618397ef24e084efc55749ec7a",
+      "storedBytes": 252,
+      "storedSha256": "f35f37be8460ce6004742e59fb07f8e5f6967059d13e4bdd4a672a6936984814",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-held-donor-v5/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "250a5ea7a0b68ebe7a478191ad90bd762170f0508d495fbe84e9ccf90d3acc5f",
+      "storedBytes": 374,
+      "storedSha256": "a1bccc0dfb988a4d14a080beea0168fe8e259ceddd8762ebd2de0caa83e3d15a",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-held-donor-v5/03-dense-resize-during-held-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2983,
+      "rawSha256": "a3da380192507ada192350bbfa924b5eb200e3bc00538d4cc71be342b3880c60",
+      "storedBytes": 381,
+      "storedSha256": "1ffbc741bd7132d1d897effcb3a494ff6ba2e45fd5eb1c6021a84aca3ff8995c",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-resize-during-held-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-held-donor-v5/04-dense-main-boundary-grow.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 8406,
+      "rawSha256": "475f90df786ab78a619d2ab0db00e0393972ed81888154850cc83343c94859e7",
+      "storedBytes": 402,
+      "storedSha256": "e57ed49e5cc89e697dc90c6ba1d3ac59e2a37a469ed5ea71861191b4fd3251f9",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-grow"
+    },
+    {
+      "storedPath": "derived/attachments/layout-green-held-donor-v5/05-dense-main-boundary-shrink-back.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 16818,
+      "rawSha256": "0787ff41b5cd156373759b9501493d21033a6c6431a7cb41414de1affa14ac9d",
+      "storedBytes": 499,
+      "storedSha256": "8dec35cdb3ff1d5c23a041ca54fa9ba3b2a3f2ba5db26a5732993208bb2b4464",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-shrink-back"
+    },
+    {
+      "storedPath": "derived/attachments/layout-main-zero-red-f945/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1213,
+      "rawSha256": "6234a433cbe39e2c5726aace8313b6bd05e166191327b61a8a14c9223436d8b8",
+      "storedBytes": 219,
+      "storedSha256": "ec9f54cc13bb1aee6e494a61fb5c20fc0a3a1bd3af1dbdae0470dd9535d9f71f",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-mutant-A-no-main-reserve-v1/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1372,
+      "rawSha256": "6426d3ecc9665742d4f06d8b05901df540030d76f551e8445a895049d0ba7ac8",
+      "storedBytes": 269,
+      "storedSha256": "dfb35c8a92550bfac8350edbf549b1f6b2c3dd814f882684ea8b29910a03e13a",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-mutant-B-no-inverse-v1/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "20cf8f11e6bb9608d990314550ccb79e7baf18ceb0fd3993a6aef2180c2e3b2b",
+      "storedBytes": 252,
+      "storedSha256": "e95ee3f4a2c532eac7f2d18f667b2d7b20f9123414db93d067c068f1114331e8",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-mutant-B-no-inverse-v1/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7627,
+      "rawSha256": "d9a1a5fce9d03b7f39949013e803e36df064349c63dd34ad3e08bf6b8f0e6cbc",
+      "storedBytes": 414,
+      "storedSha256": "444bb5f2966c68dc5038ad020110eb2b7c64ab5791dce806c190297106f40a8e",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/01-dense-main-visibility.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1346,
+      "rawSha256": "89e289c684f4ed5b8e35d175f9df0418b74a7000190cfba6d3b2b68a5bac19e0",
+      "storedBytes": 252,
+      "storedSha256": "5e00f1208682606cee7b735842a459ed9df9c9696afb1e861ceecb3234e52f3a",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-visibility"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/02-dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "93f60cd9280278f4c8cd2b42abd4345f90847b7019901064c808bfcf81e74425",
+      "storedBytes": 375,
+      "storedSha256": "6c6c876906f9c99e9258395c0596ad65ea5caf75830aec0cfd818e34c5a4a3d0",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-compressed-separator-drag"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/03-dense-main-boundary-grow.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 8406,
+      "rawSha256": "03788682b2216276772beed9541656f2f5c98fcad0ca66bf9a7fbc5eabb0e6a3",
+      "storedBytes": 403,
+      "storedSha256": "430bb1483aec6e3dc73e6e15afab91b4b044502746eb9a5bb35bfa2a3d7eda0b",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-grow"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/04-dense-main-boundary-shrink-back.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 16818,
+      "rawSha256": "250bd0245e86b72c1209990d77a860185e0056dda24ecd8fb4e183f8ad603d36",
+      "storedBytes": 500,
+      "storedSha256": "1db03bb8513d616ea7ee6c84bcbcb84baf36f801b535b7f5fd9219d912e35c22",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "dense formula panes keep main K lines visible and restore roomy pane heights",
+      "attachmentName": "dense-main-boundary-shrink-back"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/05-layout-1024x680-dark.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2004,
+      "rawSha256": "30f8151e506cd1ca2d7ac2b3fc671318130c313ff198c84d92fb8832c2f313dc",
+      "storedBytes": 495,
+      "storedSha256": "dc8e5ed0088bef742ad7bc7e735fb00810af8533c46f84ba92f2cd308a609836",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1024x680-dark"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/06-layout-1024x680-light.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2004,
+      "rawSha256": "30f8151e506cd1ca2d7ac2b3fc671318130c313ff198c84d92fb8832c2f313dc",
+      "storedBytes": 495,
+      "storedSha256": "dc8e5ed0088bef742ad7bc7e735fb00810af8533c46f84ba92f2cd308a609836",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1024x680-light"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/07-layout-1366x705-dark.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2026,
+      "rawSha256": "83a0369c1a555ba6dcab4bf197deff8189ec60be70191d608b216903994ccc65",
+      "storedBytes": 505,
+      "storedSha256": "9271d1330480c028c3ae93977786663abf85c72c47d8884a0f0eb6c1a05aeed9",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1366x705-dark"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/08-layout-1366x705-light.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2026,
+      "rawSha256": "83a0369c1a555ba6dcab4bf197deff8189ec60be70191d608b216903994ccc65",
+      "storedBytes": 505,
+      "storedSha256": "9271d1330480c028c3ae93977786663abf85c72c47d8884a0f0eb6c1a05aeed9",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1366x705-light"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/09-layout-1440x900-dark.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2035,
+      "rawSha256": "f07138da84ae9196542d58427ee8b2fda215a44f966cf7c7ea72b1c2f50a8e9f",
+      "storedBytes": 505,
+      "storedSha256": "633548e9f9e7c667dbbf02345f77b16958d9d21c7f14927389546489fa709d03",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1440x900-dark"
+    },
+    {
+      "storedPath": "derived/attachments/layout-related-green-v3/10-layout-1440x900-light.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2035,
+      "rawSha256": "f07138da84ae9196542d58427ee8b2fda215a44f966cf7c7ea72b1c2f50a8e9f",
+      "storedBytes": 505,
+      "storedSha256": "633548e9f9e7c667dbbf02345f77b16958d9d21c7f14927389546489fa709d03",
+      "derivedFrom": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json",
+      "derivation": "base64-decoded Playwright attachment body; original browser-results preserved",
+      "testTitle": "training chart fills the available height at three desktop sizes in both themes",
+      "attachmentName": "layout-1440x900-light"
+    },
+    {
+      "storedPath": "derived/fixture-donor-delta.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 623,
+      "rawSha256": "cd0903e3eb83135123263eac27064a6bed05c9b84d9305898a4fe16955f94eab",
+      "storedBytes": 420,
+      "storedSha256": "a6240db3b3244cedc46d35bc20ac578f06cf7836d9de3631fe2859a5da4f775e",
+      "derivation": "Exact reversible comparison of two fixed e2e snapshots"
+    },
+    {
+      "storedPath": "README.md",
+      "encoding": "identity",
+      "rawBytes": 6372,
+      "rawSha256": "bf6e8ae117157a06d1275fbe4896a0068927b4d9390776ee2a16f3017e0aa0ad",
+      "storedBytes": 6372,
+      "storedSha256": "bf6e8ae117157a06d1275fbe4896a0068927b4d9390776ee2a16f3017e0aa0ad",
+      "generated": true
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 51255,
+      "rawSha256": "a32e9ffa80240d43fcec8b038308ebe2276dcbbd6882a5146e211eadea76b84f",
+      "storedBytes": 3664,
+      "storedSha256": "3f3751c45a72aae6877dcf7f187bf3fad96a026f0e999c9f7d6cb1d46540a98b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "389f89182c8e26a19d6dd2007f4b28133055591470ce6934e75a16be35f31349",
+      "storedBytes": 168,
+      "storedSha256": "072e34ea91ac06c5cc1e03e67918ab9792e487dcc134aba36a077360bb82cb95",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "9bccf9c7e2ef5a4dea138f40fb04b4f8459f311355c80c5a6f477404182674ea",
+      "storedBytes": 501,
+      "storedSha256": "c890eb312f7a4c725b5e4298d81875fef87a0864d3f3b8a56fde2f0d00b417f7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 344,
+      "rawSha256": "54167c97df5614d6b52e96ed1524d49bc6b101e8795999258193ced81490bad8",
+      "storedBytes": 266,
+      "storedSha256": "8f9fe7f025efed2cd4c92b87414900b8c872501269a44fdb16320675e5451ab5",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 128415,
+      "rawSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "storedBytes": 128415,
+      "storedSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 135836,
+      "rawSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "storedBytes": 135836,
+      "storedSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 151682,
+      "rawSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "storedBytes": 151682,
+      "storedSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 158572,
+      "rawSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "storedBytes": 158572,
+      "storedSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 170100,
+      "rawSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "storedBytes": 170100,
+      "storedSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 177232,
+      "rawSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "storedBytes": 177232,
+      "storedSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png",
+      "encoding": "identity",
+      "rawBytes": 187380,
+      "rawSha256": "50f46469a2ff8f18537aca275b0dec40a4adb41a6c990de0b0e1f1bfa03a518d",
+      "storedBytes": 187380,
+      "storedSha256": "50f46469a2ff8f18537aca275b0dec40a4adb41a6c990de0b0e1f1bfa03a518d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/screenshots/formula-dense-electron-content-1008x641.png",
+      "encoding": "identity",
+      "rawBytes": 120894,
+      "rawSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "storedBytes": 120894,
+      "storedSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/screenshots/formula-dense-electron-content-1008x641.png"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 18067,
+      "rawSha256": "98d23937803f4a21250060651692cd5a5e4d082541f179e56df01d81d457fe34",
+      "storedBytes": 1638,
+      "storedSha256": "b563a5ed43a0c78cc61ab9322517b13c97b4061660e1db088ce614135df8477e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 45,
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "storedBytes": 60,
+      "storedSha256": "b42f1508e649a2088ab5babff17dfa7e0616a46398f3d531c95befbec258046f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "95b8b74949409fd072710ab052cf32e7dc1ce9c04f06d7be4bb89fece826342b",
+      "storedBytes": 400,
+      "storedSha256": "1114e4e1fce0f2a79a39c51e28c532ffcb30e07363716f8721a5c7af508228ad",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-250bd1e5-c181-45c5-b26c-affd57f6c04e/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 495,
+      "rawSha256": "50d36b3a23555ca178b4e56212caa715698bf5f32fbb7e4fca3e407e2df699a3",
+      "storedBytes": 290,
+      "storedSha256": "05445cbcc6bb35189fcd287745466f2d698baee484524b4d38ab3e3a0c8ee518",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-endpoint-v2.log"
+    },
+    {
+      "storedPath": "runs/layout-green-endpoint-v2/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1239,
+      "rawSha256": "88fe3bad49e5e62657708ad6bc2cbac78f92995a2390625473164a6e368c693b",
+      "storedBytes": 678,
+      "storedSha256": "7ae5292bc05561addbb15997d3bb84178671435825b77ee92296d59e6d85c299",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-endpoint-v2.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 21393,
+      "rawSha256": "4daeb5a9e4531bb8e08415f9790ee8dc2a1777a6ae26bd88b12cff859aa9301b",
+      "storedBytes": 3363,
+      "storedSha256": "048a871e8c3606a5cecf6e0f8b2a0a3c7703218a70a7897ff2c5aff891b45ee6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "add8234d2d9f8abf229630865ded5b02ee1fc9b2d45aaf54d0c3d84974e80380",
+      "storedBytes": 168,
+      "storedSha256": "63ea0103d3dacfc9af98a04aec948be211dfc980d7f0afd01d41c4b5aaa9e1a2",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "8e37d0581c1459cf65b45312ec16e71e74c128976ab202f1a091a8cd93f03f85",
+      "storedBytes": 501,
+      "storedSha256": "46db02f174e8ea715bbfc35d48ec3379cc1d8b931cb5aa8c5c2233efa9325982",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1425,
+      "rawSha256": "84523a8010352a1a03853ddf973bb17caf27b1ef8e807668dc173c50e032e2b0",
+      "storedBytes": 649,
+      "storedSha256": "8d8c8a7f612a093b62c2c8fa4cff25452c562f94d5f893b1f4bfe50de79a5668",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 114580,
+      "rawSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "storedBytes": 114580,
+      "storedSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 116611,
+      "rawSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "storedBytes": 116611,
+      "storedSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 139388,
+      "rawSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "storedBytes": 139388,
+      "storedSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 140248,
+      "rawSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "storedBytes": 140248,
+      "storedSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 155499,
+      "rawSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "storedBytes": 155499,
+      "storedSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 155885,
+      "rawSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "storedBytes": 155885,
+      "storedSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/screenshots/formula-dense-electron-content-1008x641.png",
+      "encoding": "identity",
+      "rawBytes": 102815,
+      "rawSha256": "2e35ece92b592ec98f2e9b2851ca16837f1fc352e6849d5f8fb2095f20c71c93",
+      "storedBytes": 102815,
+      "storedSha256": "2e35ece92b592ec98f2e9b2851ca16837f1fc352e6849d5f8fb2095f20c71c93",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/screenshots/formula-dense-electron-content-1008x641.png"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12916,
+      "rawSha256": "7a053d73a19a18c77ddc265a4c2fd29806a9b31524a697daf2f163bbd7b89d93",
+      "storedBytes": 1306,
+      "storedSha256": "5af0d04d8db4d8c80c2b647adf739cdff8c879433cce292ab1bf3c86063efea0",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 21536,
+      "rawSha256": "a5f6e39fb34d66e1a09dc0eb002f6d96c79b6b488946e6b606cbe408270fec4d",
+      "storedBytes": 6126,
+      "storedSha256": "c29236adac312a114093ba8be858d7e185fc3dd5e72d4c55f12b64f4be3a3902",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "0495a9bf9eb428de7780337a09804dcc6af646b6bde2f9774d5eaf87aa627c08",
+      "storedBytes": 399,
+      "storedSha256": "44a05f111c38779030920655656c738929f102d46ebdcfbe6fda9047dc74f62e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-cc3ce6c6-5973-4c82-99ef-31306dfa0e98/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 665,
+      "rawSha256": "4474e359e9fa024959b268ea27ae8858d4f5bd3bdfd4aa7bb5b11d85f2c657b9",
+      "storedBytes": 318,
+      "storedSha256": "5d3ce3f52d3c4ce5afc2ba79c78c0ef0c8009bf6c0ff91695a27129de9343b6a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-final-v4.log"
+    },
+    {
+      "storedPath": "runs/layout-green-final-v4/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1940,
+      "rawSha256": "a0ee57dfaea5339e3b17a7c04aa1f02573d095e7bf59002d0aaf588812d0dc24",
+      "storedBytes": 835,
+      "storedSha256": "ed8cd52d276443ca610a1d58aa9e2603045800ad45b9f2a289d7a52f35256f25",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-final-v4.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 34157,
+      "rawSha256": "06e2cfca1e917a3b164810c7ccb0360b52ab154e313bae8e679aec42377a2961",
+      "storedBytes": 4111,
+      "storedSha256": "5c8feaa16e1bbe0f756d03e4768471d0740f1146e35f80dc6504a862a01e8c91",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "4e54a91ab39d5385cba10d0c90003677144cd74bb591d3524579a5b249f99e34",
+      "storedBytes": 168,
+      "storedSha256": "118e41fb8a18e34bce102472ada287df99bf49158ca79a009113d9d3eb25e5b9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "d765b9712ac81486b20ede60b88e9eb61152e96282428d2e514d04291c8de4a7",
+      "storedBytes": 502,
+      "storedSha256": "174eae1b8014c311cf3ae11c16698d0f43ef59fcdbdeaa2f6c46d17e75b33b9b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1834,
+      "rawSha256": "c78d13f2b747bf3a1dbb6d28a8ffcd06f232fed4831fcb3f7b9d2d23bcb7969a",
+      "storedBytes": 744,
+      "storedSha256": "52e028c0c528d2d0b604a71bc2228a9d19892a0812545538a68225b8a9b842ca",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 128415,
+      "rawSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "storedBytes": 128415,
+      "storedSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 135836,
+      "rawSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "storedBytes": 135836,
+      "storedSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 151682,
+      "rawSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "storedBytes": 151682,
+      "storedSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 158572,
+      "rawSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "storedBytes": 158572,
+      "storedSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 170100,
+      "rawSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "storedBytes": 170100,
+      "storedSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 177232,
+      "rawSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "storedBytes": 177232,
+      "storedSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/screenshots/formula-dense-electron-content-1008x641.png",
+      "encoding": "identity",
+      "rawBytes": 120894,
+      "rawSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "storedBytes": 120894,
+      "storedSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/screenshots/formula-dense-electron-content-1008x641.png"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12514,
+      "rawSha256": "7c909682bd65c1705e86c65843635caf3ddf050ef223ea1eda79462ad68d1685",
+      "storedBytes": 1284,
+      "storedSha256": "91ff3f7d3b5625ffbacb9da83cec27430f16c28b76d8ae3a17a320fcf4bb01d0",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-green-first/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 21157,
+      "rawSha256": "c0a31f6ce11f2d2e8c6761c5c05aebf901779cb35c185a3490b903b06d090d9b",
+      "storedBytes": 6140,
+      "storedSha256": "5db3377d602e6300341f5a641ed61f37400ac4c9750929d000ee9fbaec344fc7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-green-first/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "5cb457c2f5e9d2be1ffd540ab5a261808b63899a5eac94481129ed54282dccc3",
+      "storedBytes": 398,
+      "storedSha256": "45cbf0e7a9dfdfea7a566a4838a59f2f32d770da71e303175272e688d5d493a1",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-bb22a898-979c-4b11-8a57-86ef69799368/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-green-first/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 665,
+      "rawSha256": "3855e8f6edc3fa18fd9ebfc4827c8c5f6886509f2a471ffb4c2e69d9b6b97818",
+      "storedBytes": 319,
+      "storedSha256": "dc56525faa68e7a74de46e0af7eaed8f9ab8ca55d16fbd615b08a28d682fcf20",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-first.log"
+    },
+    {
+      "storedPath": "runs/layout-green-first/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1177,
+      "rawSha256": "d87774e8b340b594f6b3cc16dcd7ff0b8ad546e4a1cde67d8638d42ab7fe3dc9",
+      "storedBytes": 654,
+      "storedSha256": "6a89cb1a09351386395fe7c2797d6d2d7047cf42c340c7d2b21a2a243cceb869",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-first.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 55433,
+      "rawSha256": "c5e17d20b7bbf1297cd7fbe8429a9a6abc5e447afe1edc518959207b56e21f84",
+      "storedBytes": 3867,
+      "storedSha256": "2881c7894212521d6d2a89c765b97a757d64cf8955ec45bca7af31063a124cbf",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "336d68d71613f3c00e3dba302426b41bdfb6cb4dcc671d54a16f64d6f95c9baf",
+      "storedBytes": 169,
+      "storedSha256": "c6312f3d28de8fa91b598f2a17516166e5db707651f6b67bbcbf506b05970602",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "45cc83ba2f3575fc4387f500e87a90e599f3586f820cd1d01b80550f62ac415c",
+      "storedBytes": 501,
+      "storedSha256": "dcaa66890f4fd174b67a45e2de5c6ad2d4f9b65439afed2e34e3779acba04393",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 344,
+      "rawSha256": "e0f169dd90fde03864fb04ee2317d60d0fb728e69e84512f692e5cc58e549052",
+      "storedBytes": 266,
+      "storedSha256": "f40ea33cbe227bfb3b101b1549211a5bec5e5cf8a3eba9c01c3074e21ecbf615",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 114580,
+      "rawSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "storedBytes": 114580,
+      "storedSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 116611,
+      "rawSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "storedBytes": 116611,
+      "storedSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 139388,
+      "rawSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "storedBytes": 139388,
+      "storedSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 140248,
+      "rawSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "storedBytes": 140248,
+      "storedSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 155499,
+      "rawSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "storedBytes": 155499,
+      "storedSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 155885,
+      "rawSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "storedBytes": 155885,
+      "storedSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png",
+      "encoding": "identity",
+      "rawBytes": 167211,
+      "rawSha256": "0ba2c2694b543f0d3a5e4939a86be525aa5c3185e9618ae2a1f1fbd89582f0eb",
+      "storedBytes": 167211,
+      "storedSha256": "0ba2c2694b543f0d3a5e4939a86be525aa5c3185e9618ae2a1f1fbd89582f0eb",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/screenshots/formula-dense-electron-content-1008x641.png",
+      "encoding": "identity",
+      "rawBytes": 102815,
+      "rawSha256": "2e35ece92b592ec98f2e9b2851ca16837f1fc352e6849d5f8fb2095f20c71c93",
+      "storedBytes": 102815,
+      "storedSha256": "2e35ece92b592ec98f2e9b2851ca16837f1fc352e6849d5f8fb2095f20c71c93",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/screenshots/formula-dense-electron-content-1008x641.png"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 18085,
+      "rawSha256": "98301b03210121a6b293791d56d53e13a9e375b99b4905dbc27474fae9d19c96",
+      "storedBytes": 1649,
+      "storedSha256": "2fa5520fa8b29e3fc66dcc6e6b26fbf2926bf7953db0e5e060a686cd8786bb40",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 45,
+      "rawSha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "storedBytes": 60,
+      "storedSha256": "b42f1508e649a2088ab5babff17dfa7e0616a46398f3d531c95befbec258046f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "2add0ecb574739917223e4d307ff7dff3baa2d56c01eeababda97adb732cb415",
+      "storedBytes": 400,
+      "storedSha256": "d90edab644f4e5d0be12bad48c77037d4f6c5a3352248fdf4c44b3b22e055e8a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-99cc271f-0f3a-4213-8fdc-858236eb85d8/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 495,
+      "rawSha256": "dc6a0a91325d83c58a70746b138740fc9bcb2aedd97025620918d7c776f05d65",
+      "storedBytes": 291,
+      "storedSha256": "ec32e385dd63a7fd860d749294260c57a5d4e2b37639fe8dd228df229924f4ae",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-held-donor-v5.log"
+    },
+    {
+      "storedPath": "runs/layout-green-held-donor-v5/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1945,
+      "rawSha256": "5d6971d7759f66ffb1c892a02b4262dce6d0f5d14271f1c5e608a79e48d24364",
+      "storedBytes": 837,
+      "storedSha256": "9706a1891cccbd35e6e54072d01b875a9b633225325c2cc1a4078ba2fea4b9c3",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-green-held-donor-v5.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 11606,
+      "rawSha256": "e2f4688bc25381c29b10e085245d6c5d9479bc98edcc4172027693330ef0a6b0",
+      "storedBytes": 2753,
+      "storedSha256": "02ca1314bfd1b5187dfe543c30853cf27f3f61932bbd935f42e385b6652b9d9a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "624467cf4ea9f82d3e44fd5c4f79aeb1010398f30eeffc1fe9dede94001d5ff9",
+      "storedBytes": 169,
+      "storedSha256": "ae4976d6880b2a025f887868413fd80b126480b75902777a4f6b14edf0510f5e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "d1d37cde7d9dce284b8e60410b411fa34fd579971e3b803c7e0ee05d96315d22",
+      "storedBytes": 502,
+      "storedSha256": "6409e88f98e128f8318195119fd6700805afa9448f59e3b2eabe082b655c9dae",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1612,
+      "rawSha256": "d191ea3a87ff688b4ec9b35dfafd15f9b76bc216fcab6284a12b9eb80b40a60a",
+      "storedBytes": 779,
+      "storedSha256": "dee44faae16a095ab79ad2e564420c6049196a7b4a277b705609722b5e5a5a79",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12126,
+      "rawSha256": "bab6ca6aefdfcc8aacae8f2610c6fe0ad231870349c619a33e4f1505b1edc62d",
+      "storedBytes": 1266,
+      "storedSha256": "a028c8aa39061031acf6f6f52f0a362ca64b91b37db07b34ff34245c2e327760",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 24398,
+      "rawSha256": "d7092b11629d7c21a03b38ed75a352665674def48421b5dac9306b5f380f6357",
+      "storedBytes": 7010,
+      "storedSha256": "374e412f7585b84e81fa98c5f32e453487c409d59c052592ba7de06bdad67448",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "38f99f59c2d150ce1b58944333cf63c87b0bc337ed2624c524b525a8ac9f2266",
+      "storedBytes": 399,
+      "storedSha256": "5cd46e585abad3b4eb3e71a542d4a45bfeac2fb43a9fcfcafedde1488a34e1e5",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-b84f02c3-c035-4c8d-81b9-d46e1492f8e1/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 665,
+      "rawSha256": "47ab81999bd5c4efe4d75c30f573d3ca8ee99fc6f96c33c481a4a4198eba0fff",
+      "storedBytes": 319,
+      "storedSha256": "4264ef3da346129414c5b1094876c98622962b5cb32171c556c7b179401a8423",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-main-zero-red-f945.log"
+    },
+    {
+      "storedPath": "runs/layout-main-zero-red-f945/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1055,
+      "rawSha256": "07c5dce69690351910b7bc313bcd35a215daf96bff4abc5ec548867d577e338f",
+      "storedBytes": 606,
+      "storedSha256": "571f318e0573d5c848c6ef70a68b2598ed12f518f26097225666e840007b36e7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-main-zero-red-f945.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 11742,
+      "rawSha256": "862431034d0bb7a9aafb6bba6ea5fbcd1b44efae892c9ab0bc8e338cb4cfe4a5",
+      "storedBytes": 2785,
+      "storedSha256": "1c5046ef927857fb05b5573ac55b1bf4fc54884d3f7017545b4d19ba05c462fe",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "ac6b7aff2b3cdc34d3fc9d7d1d0c71e1a69d1e2ce1f2793e425d7701898249f2",
+      "storedBytes": 169,
+      "storedSha256": "ac6e2fe0381a07931c96d2c8d97ca79f557af1dfb060269ba72e741b06c07d33",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "3c3156a362fbd00f6555c7b503fc3215c263509e4405ed571ded7ece3ad2c001",
+      "storedBytes": 499,
+      "storedSha256": "17ba6ecae6949ad327fe6cbb8bfbcb7d6367c0d6c20bb612620fe608ee947c60",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1720,
+      "rawSha256": "d5455d1806bf251ca40e738b7bbbe13a05ca5113e5eafad81a8cf0e3e94674db",
+      "storedBytes": 728,
+      "storedSha256": "c179371c9bf1d9bf6edea2517722b0750b5b2bab9f8ca8d93af09e27c078b71f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12528,
+      "rawSha256": "348e9f9e8f2d67e2cbfe709157fe5926f4825111f348cbcbbc7210fa3378529f",
+      "storedBytes": 1290,
+      "storedSha256": "b2c8c4c0461413349392b17b599a14cfbcff7b0f17199a6653166461e3285314",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 21615,
+      "rawSha256": "a95bc2bb317dac03b2f272501bcf8ad51a32ea88f5a612d84cd523a8cc76d5c1",
+      "storedBytes": 6432,
+      "storedSha256": "e559020de85f1706ed71c4a2dc1219f00c783c812bcc76b7295e6f109724b16b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "54444cbf62e3fc100773a413df260b3f8736b897938365d5e9692f7495dc9d4e",
+      "storedBytes": 398,
+      "storedSha256": "aa4069620efe3880a1898ce67f583a471a2432f6b9ad2e3830b574cadfece857",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-1935a082-0fbe-41fd-8cf7-4e35203bd1dc/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 665,
+      "rawSha256": "d9acb2dc24678342f859900489ade99ff03d6f27b72e29fd7433371a94c015c8",
+      "storedBytes": 318,
+      "storedSha256": "88685fa67041cd5ecde8ae648a250db53b405e73d0444b4202e8cb45dcea5372",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-mutant-A-no-main-reserve-v1.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-A-no-main-reserve-v1/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1752,
+      "rawSha256": "e7d8e35847d97dd419931cc770aeae09d57f23f41aa5bf59cb81c8fdcfe372c7",
+      "storedBytes": 813,
+      "storedSha256": "1396dd6f2703fdfb14eca7b25a05f3c67c2fddce47a521b8ca2c214fec47f85b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-mutant-A-no-main-reserve-v1.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 22753,
+      "rawSha256": "24e25f5ffe28718eddf19d0aa2b24f3e8df7de60ac86cb5dc7ee486147eb4695",
+      "storedBytes": 3631,
+      "storedSha256": "a632407574d25d7f37112178656d4ebd0eef1ce74ef730caa5f717a685963a94",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "096ec2bf3072479d3f26c8179b31c7d2e498a190efc06bca01fb003bd72b19a3",
+      "storedBytes": 168,
+      "storedSha256": "4215d73cf2d6febed01abebbf611bf871653bb358b365b930244c8f429f676ce",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "a011deb409003fa301b9408b05f02ff8e2e7d8f42269861caa931fe35b31c296",
+      "storedBytes": 502,
+      "storedSha256": "9b907147bbbb52607636c064a169e1193f9cdf4f67da095419adb3a3c352a48e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1826,
+      "rawSha256": "89a4515326f5de495df161856ffd1b30c941db3504869ed27c3287d06ed00e82",
+      "storedBytes": 780,
+      "storedSha256": "ca6c38d453b875a3953d5b094e8f88031eae3e1df033f1d2d2cfdf3093471cab",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 114580,
+      "rawSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "storedBytes": 114580,
+      "storedSha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 116611,
+      "rawSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "storedBytes": 116611,
+      "storedSha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 139388,
+      "rawSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "storedBytes": 139388,
+      "storedSha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 140248,
+      "rawSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "storedBytes": 140248,
+      "storedSha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 155499,
+      "rawSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "storedBytes": 155499,
+      "storedSha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 155885,
+      "rawSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "storedBytes": 155885,
+      "storedSha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12998,
+      "rawSha256": "b076a0487c58184a1f24051aa2a2d41c4e9c0fda778022e98c772834a9052889",
+      "storedBytes": 1314,
+      "storedSha256": "d23e3a9586eeecd1c26236f23c1eb8401f5f34a2e7c8490c019de4f23961a654",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 21996,
+      "rawSha256": "5958a2ccdc2e9e0c36c2ec57ba75206a365dedff01f491d94925d1252e2f733c",
+      "storedBytes": 6060,
+      "storedSha256": "0111777972c1e8d42e64b0bd937b1e52206b31fb33cbe975a277661f8f5bdfb6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1598,
+      "rawSha256": "398d1ef94001acccef82ede6dabe907c58f2f61e2385f8ef9469553ef80aeff1",
+      "storedBytes": 398,
+      "storedSha256": "b5089aa045f023c883e21dd6bf0c30fc918146476465ca456eca62f25300217a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-51acf228-b9e9-44b4-a5cd-eec630b45216/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 666,
+      "rawSha256": "f2019bbd687b57ff98312cd3c8383e9db0842b873c47da083859405a5ad8f6f3",
+      "storedBytes": 319,
+      "storedSha256": "70fd4f54f3c0087912c1bd353f95c1794399611ab0ec5c4969a3208c86db8e02",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-mutant-B-no-inverse-v1.log"
+    },
+    {
+      "storedPath": "runs/layout-mutant-B-no-inverse-v1/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1747,
+      "rawSha256": "316325baa6ce40f06acfbd366c6f051a65e35a39429029fa101f35ab5cc41645",
+      "storedBytes": 809,
+      "storedSha256": "e22d21fe9a542c447be94844404dc24a6e78ab2ef7f101b8f51b723ab5610049",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-mutant-B-no-inverse-v1.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 9721,
+      "rawSha256": "8255abef35cd7750e079d6e2eb95e8da5781e162fae55e70071d069d86fbb569",
+      "storedBytes": 2145,
+      "storedSha256": "92a3896578f32e493777aedd788176886a10ef2bbc5a6cb61e92639439da0cac",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "b37ed2dd5a2f7aea91c5ea5776fb67ce2a2233948623b5c4200bff54f866f7a5",
+      "storedBytes": 168,
+      "storedSha256": "6ff54d4dfb066c31088a4eaf82619f309747dc5076187b10c0ea1b6a56df44cf",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "f48bd1a434d5b469256e609bba1547a30cca12a67d3c109cc0d55bf3012d7657",
+      "storedBytes": 502,
+      "storedSha256": "f3f8158492f7258ecc28b4e123ced21f4d866bcd4e94c0ca4fa58ff08c1d0088",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1720,
+      "rawSha256": "a9be408380a49daf759c3a962b5a1d872725bcc6973123006b7275df45ffa43e",
+      "storedBytes": 725,
+      "storedSha256": "9a77efb58919c9bfeea9f75006a37275d1adfa77a9332e43088749d3679f7e25",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 12172,
+      "rawSha256": "ed35e57b34298afb229d12e33ade8e6bef12a591d01d548c6a1e6f9a7b9686b4",
+      "storedBytes": 1270,
+      "storedSha256": "3a88fbe373aa3ab1f6555ec84e5a23185814e76ee731ada9cbf51342e9039b22",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "91f26b17e07b77a435d2dc55ccb7f04719875c74941723053951b193f9938f52",
+      "storedBytes": 106,
+      "storedSha256": "591c41cc95ef7d070a95558c3a4bb64708b1d77ceb0548285b37a7eeeda0991f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 24375,
+      "rawSha256": "7bbe1edc4788e535122f2e89e14fe2a4cca69c4d7beb587251bfdfd91adbf27d",
+      "storedBytes": 7068,
+      "storedSha256": "d180f1b193b41bc5850ac30030b0d0cb209324c8236645f514d45904c4c5fa17",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/artifacts/test-results/formula-chart-dense-formul-3398e--restore-roomy-pane-heights/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1598,
+      "rawSha256": "b1d0aa06d726bc3571cfe23a69c93528f67ae670fb5801b990ecdba2272478a8",
+      "storedBytes": 398,
+      "storedSha256": "649196a2b63e06101a7a9f27c068d2ab3f84ab7778a1157e135919adde713941",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-9620a16d-b254-45a1-80de-036282ca864d/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 666,
+      "rawSha256": "0156cd552842e6c2c393f4c7a0dc2c52eb81ab2ec67ef26cdbea45642fc9287d",
+      "storedBytes": 319,
+      "storedSha256": "a69a5f2a557557ba77ec8680286d2f5a252568f254c6040f6740bf7587772e53",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-red-f945.log"
+    },
+    {
+      "storedPath": "runs/layout-red-f945/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1046,
+      "rawSha256": "2f3098b531486fc52b4133f4fcc5cdc71b931f428b899661ffa875deeb9e0f17",
+      "storedBytes": 599,
+      "storedSha256": "78debe18f4d8148fa6e0c84c290fe974452401ac4121885ee43eaee44ea065d8",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-red-f945.receipt.json"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 90766,
+      "rawSha256": "3f121965baabb31ff6ebbb48c688ff95c71eb4a23846d991a1559c63390efa7f",
+      "storedBytes": 8139,
+      "storedSha256": "f9b115e1ee400843ff8b35ff6aba428776d015275a560aa97f9a0fba82451e04",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/browser-results.json"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/build-server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 190,
+      "rawSha256": "531d885b16f55b8a6d255db27a8ccad6528f5ebd30bad064b7a7ef7c3990f4d3",
+      "storedBytes": 168,
+      "storedSha256": "63cca23d6c431ef18f86cf0836e8c62f5c42ccedeec2ff7ab09490c93592c27e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/build-server.log"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/build-web.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 947,
+      "rawSha256": "4388f0654a69930cf7986192153f26dfefc9f532014751ae443866fad5a55ae7",
+      "storedBytes": 501,
+      "storedSha256": "565dd51f6b1fdcd05c418cbc663031d69db15c58261260f4b32a20c13425a39c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/build-web.log"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/journey.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 4544,
+      "rawSha256": "804474e9055287db7674984ff1e5a73b68898391b59ec339d91c592a2cf5c76b",
+      "storedBytes": 1985,
+      "storedSha256": "cfcd8393d3c1b077bf891818efe9d92dc920996860b17dc7240f00c1bf735aa8",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/journey.log"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/chart-toggles-all-back-on.png",
+      "encoding": "identity",
+      "rawBytes": 151383,
+      "rawSha256": "020fefd4880e631c6f864a42cf73faac878f33e8e3cdd16356ff05688723f53f",
+      "storedBytes": 151383,
+      "storedSha256": "020fefd4880e631c6f864a42cf73faac878f33e8e3cdd16356ff05688723f53f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/chart-toggles-all-back-on.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/chart-toggles-off-compat-drawing.png",
+      "encoding": "identity",
+      "rawBytes": 130853,
+      "rawSha256": "68deb1c660132f9f6edf55998bd166511b9885a8ac8d3c13c20ea6dffca30233",
+      "storedBytes": 130853,
+      "storedSha256": "68deb1c660132f9f6edf55998bd166511b9885a8ac8d3c13c20ea6dffca30233",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/chart-toggles-off-compat-drawing.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/chart-toggles-period-row.png",
+      "encoding": "identity",
+      "rawBytes": 150915,
+      "rawSha256": "8ac90d4dcec830c88adb7c2d78d46a0ecb9a8ac85427dd2d0214bd06dcb19459",
+      "storedBytes": 150915,
+      "storedSha256": "8ac90d4dcec830c88adb7c2d78d46a0ecb9a8ac85427dd2d0214bd06dcb19459",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/chart-toggles-period-row.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-1024x680-light.png",
+      "encoding": "identity",
+      "rawBytes": 120901,
+      "rawSha256": "b8e8e1bb0175e6546ac02cebbd33542b593e5bd6091f8f83cfab18aca38447d9",
+      "storedBytes": 120901,
+      "storedSha256": "b8e8e1bb0175e6546ac02cebbd33542b593e5bd6091f8f83cfab18aca38447d9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-1024x680-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-1366x705-light.png",
+      "encoding": "identity",
+      "rawBytes": 192202,
+      "rawSha256": "f38a19ac249424b76d6c4157083258fd091ec05cdd2a3d29817b88b92380f5df",
+      "storedBytes": 192202,
+      "storedSha256": "f38a19ac249424b76d6c4157083258fd091ec05cdd2a3d29817b88b92380f5df",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-1366x705-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 161248,
+      "rawSha256": "20b52a2d1e3d502316a9b95ef756d9538ce4382ea68011c2b79a96bddc32eeef",
+      "storedBytes": 161248,
+      "storedSha256": "20b52a2d1e3d502316a9b95ef756d9538ce4382ea68011c2b79a96bddc32eeef",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 161718,
+      "rawSha256": "6d8e0f18799e08da2fcf3571feedb4597990adbbce13554711d01ce1d7c0153b",
+      "storedBytes": 161718,
+      "storedSha256": "6d8e0f18799e08da2fcf3571feedb4597990adbbce13554711d01ce1d7c0153b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-random.png",
+      "encoding": "identity",
+      "rawBytes": 175080,
+      "rawSha256": "bfd72a12b4f646558debf9cd26309e5c858a7a1406e3b8252327d2f6670ecf7c",
+      "storedBytes": 175080,
+      "storedSha256": "bfd72a12b4f646558debf9cd26309e5c858a7a1406e3b8252327d2f6670ecf7c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-random.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-replay.png",
+      "encoding": "identity",
+      "rawBytes": 137321,
+      "rawSha256": "561c122a779e8c89ab33054f11e532aadbb8cfe3c613e14db9d7466e80652510",
+      "storedBytes": 137321,
+      "storedSha256": "561c122a779e8c89ab33054f11e532aadbb8cfe3c613e14db9d7466e80652510",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-replay.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-training.png",
+      "encoding": "identity",
+      "rawBytes": 160889,
+      "rawSha256": "e6f0c12c9a1107bd8679b54fa659523a2a30e76c2cae0ecdb615aab3999df7df",
+      "storedBytes": 160889,
+      "storedSha256": "e6f0c12c9a1107bd8679b54fa659523a2a30e76c2cae0ecdb615aab3999df7df",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-training.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-chart-weekly.png",
+      "encoding": "identity",
+      "rawBytes": 176213,
+      "rawSha256": "be2e7df275e54697e3becc6b7272a19afeacca00d4f6456bb43fa886da1f4efc",
+      "storedBytes": 176213,
+      "storedSha256": "be2e7df275e54697e3becc6b7272a19afeacca00d4f6456bb43fa886da1f4efc",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-chart-weekly.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1024x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 128415,
+      "rawSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "storedBytes": 128415,
+      "storedSha256": "495af835c2af17947e1adf0855072c2deca9c45a4f0df2408b879fbc25c57fc7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1024x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1024x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 135836,
+      "rawSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "storedBytes": 135836,
+      "storedSha256": "c0f6120156e1bb5309187ea9d88923796f34d84b2450b02743278cec543531c9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1024x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1366x768-dark.png",
+      "encoding": "identity",
+      "rawBytes": 151682,
+      "rawSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "storedBytes": 151682,
+      "storedSha256": "d6e86366cb9da6a7a4a0a94af2205da8ea344fa3c1b55b86aaa881456cd2e0cf",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1366x768-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1366x768-light.png",
+      "encoding": "identity",
+      "rawBytes": 158572,
+      "rawSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "storedBytes": 158572,
+      "storedSha256": "e565bdb443a1eca09d01b6ddaf94fa59e5050e02f004af3a387bcc1692e34d0e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1366x768-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 170100,
+      "rawSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "storedBytes": 170100,
+      "storedSha256": "1f65ed3a3e55f594f70d4b3616be6d40f3c67236c5dbe4e85e761ba118d0a633",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 177232,
+      "rawSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "storedBytes": 177232,
+      "storedSha256": "3dc18dffbd0f53fd2799870ea8f48200c658dccb6599843aa20419544c93321f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png",
+      "encoding": "identity",
+      "rawBytes": 187380,
+      "rawSha256": "50f46469a2ff8f18537aca275b0dec40a4adb41a6c990de0b0e1f1bfa03a518d",
+      "storedBytes": 187380,
+      "storedSha256": "50f46469a2ff8f18537aca275b0dec40a4adb41a6c990de0b0e1f1bfa03a518d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-all-disabled-native-four-panes.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/formula-dense-electron-content-1008x641.png",
+      "encoding": "identity",
+      "rawBytes": 120894,
+      "rawSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "storedBytes": 120894,
+      "storedSha256": "b05e7b6337f33d112d236377675bed6d06f0fee0ffd4104471d929a6caeb6056",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/formula-dense-electron-content-1008x641.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1024x680-dark.png",
+      "encoding": "identity",
+      "rawBytes": 113136,
+      "rawSha256": "ff977702ce7bb51cf32b74383a3096d9d3bab4446dd18d57bf55795f360527a6",
+      "storedBytes": 113136,
+      "storedSha256": "ff977702ce7bb51cf32b74383a3096d9d3bab4446dd18d57bf55795f360527a6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1024x680-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1024x680-light.png",
+      "encoding": "identity",
+      "rawBytes": 119184,
+      "rawSha256": "0effa808aabab05a3bdeb05def115dc9089dbf11a187f2d565711b7999d7ccbd",
+      "storedBytes": 119184,
+      "storedSha256": "0effa808aabab05a3bdeb05def115dc9089dbf11a187f2d565711b7999d7ccbd",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1024x680-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1366x705-dark.png",
+      "encoding": "identity",
+      "rawBytes": 140526,
+      "rawSha256": "251a1c45034fe4734d614e167fc43d902e757551831f66316b6697e9dff3e1f4",
+      "storedBytes": 140526,
+      "storedSha256": "251a1c45034fe4734d614e167fc43d902e757551831f66316b6697e9dff3e1f4",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1366x705-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1366x705-light.png",
+      "encoding": "identity",
+      "rawBytes": 146511,
+      "rawSha256": "cc4d9c18a1914bbff196b2d56c65b633b4cf241ec9b6f35f5c8f78bd34ea9745",
+      "storedBytes": 146511,
+      "storedSha256": "cc4d9c18a1914bbff196b2d56c65b633b4cf241ec9b6f35f5c8f78bd34ea9745",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1366x705-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1440x900-dark.png",
+      "encoding": "identity",
+      "rawBytes": 166308,
+      "rawSha256": "3ea69e637d5b0b60142895e65ce70683ccbab79fa9c654eeadd196cb6c99cd41",
+      "storedBytes": 166308,
+      "storedSha256": "3ea69e637d5b0b60142895e65ce70683ccbab79fa9c654eeadd196cb6c99cd41",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1440x900-dark.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-1440x900-light.png",
+      "encoding": "identity",
+      "rawBytes": 173344,
+      "rawSha256": "0b6b706f0fb2c1ddcf622ad15a2e38b1d3ac3c18ae4a8b2bd1da02c608cf41d9",
+      "storedBytes": 173344,
+      "storedSha256": "0b6b706f0fb2c1ddcf622ad15a2e38b1d3ac3c18ae4a8b2bd1da02c608cf41d9",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-1440x900-light.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-macd-maximized.png",
+      "encoding": "identity",
+      "rawBytes": 128306,
+      "rawSha256": "b3fb9dd9cc90def4d8b060a9983738a1983fbb41d4b205d8ad296cc0b305ca78",
+      "storedBytes": 128306,
+      "storedSha256": "b3fb9dd9cc90def4d8b060a9983738a1983fbb41d4b205d8ad296cc0b305ca78",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-macd-maximized.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-macd-off.png",
+      "encoding": "identity",
+      "rawBytes": 146996,
+      "rawSha256": "8f72f0b02c9f104119c3e3cb1bac59ec0f6c0f62b8d3d93ac784b60f4fc53902",
+      "storedBytes": 146996,
+      "storedSha256": "8f72f0b02c9f104119c3e3cb1bac59ec0f6c0f62b8d3d93ac784b60f4fc53902",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-macd-off.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-replay-inline.png",
+      "encoding": "identity",
+      "rawBytes": 124386,
+      "rawSha256": "da160d88963b87570bf9beb9d4d50b8d601e56195c2aa0e95a64ecee0487027b",
+      "storedBytes": 124386,
+      "storedSha256": "da160d88963b87570bf9beb9d4d50b8d601e56195c2aa0e95a64ecee0487027b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-replay-inline.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-resize-1024x680.png",
+      "encoding": "identity",
+      "rawBytes": 113509,
+      "rawSha256": "b09041b743fabaef073389ae57cdfc0f378e99195cc33dec8cfecf3daf10977a",
+      "storedBytes": 113509,
+      "storedSha256": "b09041b743fabaef073389ae57cdfc0f378e99195cc33dec8cfecf3daf10977a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-resize-1024x680.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/layout-fill-resize-1440x900.png",
+      "encoding": "identity",
+      "rawBytes": 172231,
+      "rawSha256": "0b667aa8fbe1d47bc72d86419058a27c45ebc1cb93f77d44d274bd22dec0e704",
+      "storedBytes": 172231,
+      "storedSha256": "0b667aa8fbe1d47bc72d86419058a27c45ebc1cb93f77d44d274bd22dec0e704",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/layout-fill-resize-1440x900.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/origin-guard-legitimate-page.png",
+      "encoding": "identity",
+      "rawBytes": 67488,
+      "rawSha256": "a9ac4621bc007ad3d970744d1d8cf400539638163a590ce5078d3aab7053201f",
+      "storedBytes": 67488,
+      "storedSha256": "a9ac4621bc007ad3d970744d1d8cf400539638163a590ce5078d3aab7053201f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/origin-guard-legitimate-page.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/pane-resize-0-default.png",
+      "encoding": "identity",
+      "rawBytes": 155244,
+      "rawSha256": "91f5180e85fc1410553c67872f8b8ce3049bebaf7c5acce2c69a7eadcd2b8037",
+      "storedBytes": 155244,
+      "storedSha256": "91f5180e85fc1410553c67872f8b8ce3049bebaf7c5acce2c69a7eadcd2b8037",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/pane-resize-0-default.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/pane-resize-0-multi.png",
+      "encoding": "identity",
+      "rawBytes": 141093,
+      "rawSha256": "6e5f19b0435836c9175f1f6bb78a7a23eaaba2ff63e2eea3dbdca1eb68979321",
+      "storedBytes": 141093,
+      "storedSha256": "6e5f19b0435836c9175f1f6bb78a7a23eaaba2ff63e2eea3dbdca1eb68979321",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/pane-resize-0-multi.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/pane-resize-1-default.png",
+      "encoding": "identity",
+      "rawBytes": 155387,
+      "rawSha256": "e9fc1a344fdf26a3b97b65e88c07f6a567bf6b769f8f874f666c39cdbdc243a6",
+      "storedBytes": 155387,
+      "storedSha256": "e9fc1a344fdf26a3b97b65e88c07f6a567bf6b769f8f874f666c39cdbdc243a6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/pane-resize-1-default.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/screenshots/pane-resize-1-multi.png",
+      "encoding": "identity",
+      "rawBytes": 141433,
+      "rawSha256": "6ff1aa4981ed1794f8d8154154bf2f5e98528275de40062bfb2abe2c0cfeaf98",
+      "storedBytes": 141433,
+      "storedSha256": "6ff1aa4981ed1794f8d8154154bf2f5e98528275de40062bfb2abe2c0cfeaf98",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/screenshots/pane-resize-1-multi.png"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/server.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 852868,
+      "rawSha256": "17ce0419c890605ee10832d4aef0c55e82358e23f241f4c16c40ba21c9d5d3fe",
+      "storedBytes": 48273,
+      "storedSha256": "91c834e9806e2dc449b89f05ba22b1ced80849c8501cfcf3b289ca6afafee10f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/server.log"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/test-results/.last-run.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 96,
+      "rawSha256": "f2a52a4fd90559668e4b710c8a472e433ee5edda9269bc9f69503f7c6fd02455",
+      "storedBytes": 105,
+      "storedSha256": "c4d5c62f97f6e250fe9326e23d062f43b42c340718767d6fcece470e41f7fcc6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/test-results/.last-run.json"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/artifacts/test-results/recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放/error-context.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 12581,
+      "rawSha256": "f7704a7d74a11a8cf7fd6488bc899ca3cb31f1dc8abfa03a46242752f4ff8ea7",
+      "storedBytes": 4495,
+      "storedSha256": "a4768a816f666658946c8bf89207042ac3af5f10358c8b0a377c49788ea53615",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/artifacts/test-results/recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放/error-context.md"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/manifest.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1596,
+      "rawSha256": "e9fb106f4a31d8c56f2cd826ddb94dc269f40c52dccaeb303828eeeec9207e35",
+      "storedBytes": 399,
+      "storedSha256": "6e8063745eeef183a158a41791f281ce637acc7a3a97621fecdd38a4933f2ed0",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/run-841877c0-d471-479d-8169-577c4d7a1606/manifest.json"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 764,
+      "rawSha256": "09c3262342a6deb56c4a7bb092cfeb3ac88a7f863258cdd240cc4e0ed864a682",
+      "storedBytes": 358,
+      "storedSha256": "67c7686e0fcc3410a32ee9dcbbd4c5cb8133a8746f0b7fbf0f4d88488694f924",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-related-green-v3.log"
+    },
+    {
+      "storedPath": "runs/layout-related-green-v3/wrapper.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1362,
+      "rawSha256": "8dad2a55f1a9f396f084b52373a9b2dcc699ae8eb3fbffa3798fb0827aa3a080",
+      "storedBytes": 700,
+      "storedSha256": "5b575a1970705bf2541b175f7a702a41170e935df2a9b46ffc2241800fbec234",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/layout-related-green-v3.receipt.json"
+    },
+    {
+      "storedPath": "support/drag-driver-review/e2e__formula-chart.spec.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 3419,
+      "rawSha256": "cfb6d85080694e85b074cc00a63bb42e27c2b2e2e783a1dd607a88ef77315174",
+      "storedBytes": 1382,
+      "storedSha256": "1cd70dfcd58edd5f1a606836f27207ae341953ee04cba4481c3048fc797ba8c2",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/e2e__formula-chart.spec.ts"
+    },
+    {
+      "storedPath": "support/drag-driver-review/node_modules__klinecharts__dist__index.esm.js.gz",
+      "encoding": "gzip",
+      "rawBytes": 4010,
+      "rawSha256": "aeeb5dc3b46ebbddb2d2f00bd51fd28f551bc95a945adac04949518076f0acbb",
+      "storedBytes": 1054,
+      "storedSha256": "102469bb81fb479f8b31ef32056ba8811218fb3be85a0b632914e87078a30fd8",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/node_modules__klinecharts__dist__index.esm.js"
+    },
+    {
+      "storedPath": "support/drag-driver-review/node_modules__klinecharts__dist__umd__klinecharts.js.gz",
+      "encoding": "gzip",
+      "rawBytes": 7609,
+      "rawSha256": "9a764bcc12e7c5d8fe18f7d4ed97066af3e7b2a02b1f6446d4df7af95684c67e",
+      "storedBytes": 2142,
+      "storedSha256": "39e95208d9c93e19085135c0b4cf2cb87c8f1615025de34dbdaf5e171318789b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/node_modules__klinecharts__dist__umd__klinecharts.js"
+    },
+    {
+      "storedPath": "support/drag-driver-review/node_modules__klinecharts__package.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 769,
+      "rawSha256": "ce2f70d40db8baa007d69a7ad2c46dad89e8a5c14253e12c219fef05cb57bcd8",
+      "storedBytes": 400,
+      "storedSha256": "d73ffd7e8632b944ed1397b3734d20c94ab9a8e556c7752967011bbd37c4b515",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/node_modules__klinecharts__package.json"
+    },
+    {
+      "storedPath": "support/drag-driver-review/review.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 3967,
+      "rawSha256": "592d8999708c4a7e5cb4357cb0fb7478de002c177e25a836647a04eafa21be70",
+      "storedBytes": 2560,
+      "storedSha256": "b3130b28c346386ae4ff33391c7e5fb9283d2a7429bdd1328df192c2a793ef5c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/review.md"
+    },
+    {
+      "storedPath": "support/drag-driver-review/review.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2446,
+      "rawSha256": "565abb696d31ceddbe31e142c3e2db397a4918bc1ba4c7188574e6552e5fe013",
+      "storedBytes": 1099,
+      "storedSha256": "15160ce8a9977b02fc5ddfa001db4b48f9429f201d0d144059001b2ee6d444f4",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/review.receipt.json"
+    },
+    {
+      "storedPath": "support/drag-driver-review/terminal-move-driver.snippet.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 449,
+      "rawSha256": "fa9763103344076bc781f13024b51d91cc9eba93c0e700015dbbe82b7892498d",
+      "storedBytes": 296,
+      "storedSha256": "fdd1a596c826ec4fd33c0a174eaa7c5bcf73e1574dde36fc79f4168e6991ce37",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-drag-driver-review/terminal-move-driver.snippet.ts"
+    },
+    {
+      "storedPath": "support/final-preparation/preparation.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 3024,
+      "rawSha256": "72e4bc6037c1546777eda33fafe393f0e966089921197d1fd4eb2aad987d44df",
+      "storedBytes": 1136,
+      "storedSha256": "0a9a3302103d1eee93c0efe22f59e57f5a720f1ef649d0f57012c9cb4c8f013d",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/preparation.receipt.json"
+    },
+    {
+      "storedPath": "support/final-preparation/product-f945.patch.gz",
+      "encoding": "gzip",
+      "rawBytes": 17263,
+      "rawSha256": "fec9e58f1b09c92cd9373bbe1d3d5fefd418b1efa713300217aaa8aa9392dd04",
+      "storedBytes": 5848,
+      "storedSha256": "8fa383eefa157a51b2c106fa8ccf5075cabc9eadaf2f7ce06ee33c80faa00dc3",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/product-f945.patch"
+    },
+    {
+      "storedPath": "support/final-preparation/README.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 2002,
+      "rawSha256": "85dbc1252fbf24aaf69b164fcfba102143fc58f472aa437fe75f27d0acf61812",
+      "storedBytes": 1067,
+      "storedSha256": "28bb2025725996e21d9e902ed1e722e944da66685cd7dd570109b736fd6dec60",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/README.md"
+    },
+    {
+      "storedPath": "support/final-preparation/types-cache-removal.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 0,
+      "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "storedBytes": 20,
+      "storedSha256": "46b50c321b39e89a491b6727a01628c34245605a30beb3e7414c5e01cff90e6e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/types-cache-removal.log"
+    },
+    {
+      "storedPath": "support/final-preparation/types-cache-removal.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 168,
+      "rawSha256": "bf0758b978f6425fab4d02196e49b185b344a3fa1b590f43c5172e5f12c8e659",
+      "storedBytes": 161,
+      "storedSha256": "9f02439ceb25ed8fa187011d99c7eced34ab745c3966ab743badb9a957dfa5b8",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/types-cache-removal.receipt.json"
+    },
+    {
+      "storedPath": "support/final-preparation/types-first.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 0,
+      "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "storedBytes": 20,
+      "storedSha256": "46b50c321b39e89a491b6727a01628c34245605a30beb3e7414c5e01cff90e6e",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/types-first.log"
+    },
+    {
+      "storedPath": "support/final-preparation/unit-cache-removal.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 267,
+      "rawSha256": "7dbf8d1e9c609a992f77ecb394f9c0aada8d4be7f93acb0abe640d8ede769c78",
+      "storedBytes": 215,
+      "storedSha256": "9e933686da6eaa3fc9ae7aa4c76de609774a89d27bd9753d090b302647ebec7c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/unit-cache-removal.log"
+    },
+    {
+      "storedPath": "support/final-preparation/unit-cache-removal.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 311,
+      "rawSha256": "a3c9537e769f6f5580abaf63ee3820cec9272959b8d0f170301d6ec2bdfefe27",
+      "storedBytes": 236,
+      "storedSha256": "f192c07eac873a2d0a2529f6cf4b97301c854e2939f1c87f4307f3dc0d7becd0",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/unit-cache-removal.receipt.json"
+    },
+    {
+      "storedPath": "support/final-preparation/unit-first.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 268,
+      "rawSha256": "d72511f63aca3b52566ebebfe85c328fa5ac75221295eba88352085987589563",
+      "storedBytes": 216,
+      "storedSha256": "48afe9acd4bf35a7c05e7f353dcb2322da391124864af96a0799077f6a83c95a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-final-preparation/unit-first.log"
+    },
+    {
+      "storedPath": "support/fixed-source-v5/formula-chart.spec.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 30129,
+      "rawSha256": "081f33d8e6e1b15f81dd91dac44416254161c02d9add1ce4d155d5382b16e4de",
+      "storedBytes": 7534,
+      "storedSha256": "8acb6cd616bbe95bd12ff3460ed4b0684976d129c46feb490e238ecaeae8cb5b",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-final-evidence/fixed-source-v5/formula-chart.spec.ts"
+    },
+    {
+      "storedPath": "support/fixed-source-v5/snapshot.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 668,
+      "rawSha256": "3b296ea49bddf7ec3df27587bc0055ad0f627461a3bce57b70fd41c0d9a58ba3",
+      "storedBytes": 365,
+      "storedSha256": "4d02208aeaea5559a473e278195157661008e93060252e85580de2148a5d3b0a",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-final-evidence/fixed-source-v5/snapshot.receipt.json"
+    },
+    {
+      "storedPath": "support/implemented-review/review.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 6249,
+      "rawSha256": "dae9dc3713a6210e78267470b6479a407c2d705a9d40f0006a01c32971383174",
+      "storedBytes": 3858,
+      "storedSha256": "5925b024fc79b99dc4e5d5c9658be41ac9e60f71ef69d88043cbaca44d42b788",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/review.md"
+    },
+    {
+      "storedPath": "support/implemented-review/review.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 4430,
+      "rawSha256": "cd4673ada5b0dcdc5a315fdf85807b63cd61b94e8de4ec1e3aea927503245b81",
+      "storedBytes": 1822,
+      "storedSha256": "419bbf1d12d0a17f8dc6132d064c0e14e5209ed6c966c839a48376ebfe974dfa",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/review.receipt.json"
+    },
+    {
+      "storedPath": "support/implemented-review/source/e2e__formula-chart.spec.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 28105,
+      "rawSha256": "31f9c43f0e0f3404897d548d3f77a9f983d41d4824fa34530a82c868322575ef",
+      "storedBytes": 7181,
+      "storedSha256": "d2cd9aff5e73efd4592883609f8bcb9f87c5f45df99544c3a4031a1894be819c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/e2e__formula-chart.spec.ts"
+    },
+    {
+      "storedPath": "support/implemented-review/source/node_modules__klinecharts__dist__index.d.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 1436,
+      "rawSha256": "e7518c4dcf2ff306fd1c5a79f3ec7545f8120b5f8a0b1ac2d072652c60df4628",
+      "storedBytes": 585,
+      "storedSha256": "04e3daa27eb510c91629d7aeb37163bf74c5193b646fae9136b0fe5455feb441",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/node_modules__klinecharts__dist__index.d.ts"
+    },
+    {
+      "storedPath": "support/implemented-review/source/node_modules__klinecharts__dist__umd__klinecharts.js.gz",
+      "encoding": "gzip",
+      "rawBytes": 12609,
+      "rawSha256": "48e60b742534e80a99a728b1ed8c222de9f86dc35bd9de874c279eac665e6b90",
+      "storedBytes": 2680,
+      "storedSha256": "bc6172611bb1c19804bd3bad866589176103e7e205cf903a820348f2bda92e7f",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/node_modules__klinecharts__dist__umd__klinecharts.js"
+    },
+    {
+      "storedPath": "support/implemented-review/source/server__test__chart-pane-layout.test.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 2565,
+      "rawSha256": "5369cb581dbb74777f3c1275eac4949c417fb330df4567d6286dc623a4332d5d",
+      "storedBytes": 953,
+      "storedSha256": "07aba074c5fb19005d7c6e1f7a7be3e38cd2c1e0ebb9f9e4afe724e4847bada6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/server__test__chart-pane-layout.test.ts"
+    },
+    {
+      "storedPath": "support/implemented-review/source/web__src__chartPaneLayout.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 1725,
+      "rawSha256": "a2605ee875919516d601acaa998315624ccc36d7dc18894f59ea1f7c599e1cf0",
+      "storedBytes": 654,
+      "storedSha256": "77540f887cace6f0d978470ab2b206da339de2a9441d1b3592f425f691d39de4",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/web__src__chartPaneLayout.ts"
+    },
+    {
+      "storedPath": "support/implemented-review/source/web__src__components__KlineChart.vue.gz",
+      "encoding": "gzip",
+      "rawBytes": 164342,
+      "rawSha256": "8f61f32edffb354d63b9c60410c62b0d9911821c18315f73bafc3d05528a1852",
+      "storedBytes": 51955,
+      "storedSha256": "ee6fe6f7b29c47ee0b4965a1e803560cf2fbe66feb09951f2fbeb8efbc6cc3bc",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-implemented-review/source/web__src__components__KlineChart.vue"
+    },
+    {
+      "storedPath": "support/initial-preparation/candidate.patch.gz",
+      "encoding": "gzip",
+      "rawBytes": 11532,
+      "rawSha256": "3780a3dfd74404fb2352866d440ebd8e939d2f53c415969b8a31691f25a7c510",
+      "storedBytes": 4419,
+      "storedSha256": "db93398e8dc8b04ff15b8dfef3ca0e5734fea94b32df68f7f40464231458a553",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/candidate.patch"
+    },
+    {
+      "storedPath": "support/initial-preparation/final-hashes.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 539,
+      "rawSha256": "90c2c835c94f654b7ccbe017638fcf2a6369c823d3172d575b676148bf05d764",
+      "storedBytes": 315,
+      "storedSha256": "63ae48fefa48dde8d42bea76d7411e9db02946681e48547ff3838fa1a3575eee",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/final-hashes.json"
+    },
+    {
+      "storedPath": "support/initial-preparation/formula-chart.e2e.snippet.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 12835,
+      "rawSha256": "a0eb18b78dcf47ffbbe461551ccdb0c14fdbc75b57a78f1b80c5e5c8ee6723b6",
+      "storedBytes": 3431,
+      "storedSha256": "b42599ac4d4c2d66714265c37e146c3441e6f227b9a0eeefa99a2a7a3fba67a1",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/formula-chart.e2e.snippet.ts"
+    },
+    {
+      "storedPath": "support/initial-preparation/README.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 4487,
+      "rawSha256": "415c3ee6f39cfc7794fed7034126240bbcdc319d64d2fc6df64dbe9f14bce4bc",
+      "storedBytes": 2219,
+      "storedSha256": "2062cb2b704f759bf02ca02e435878597d828ead937d674de29f5423e9b8e076",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/README.md"
+    },
+    {
+      "storedPath": "support/initial-preparation/red-e2e.patch.gz",
+      "encoding": "gzip",
+      "rawBytes": 13254,
+      "rawSha256": "18c1e2bfd7fe80fc2cdb0fa350865d80a097e058b0ed749c1560ca9333ce10c9",
+      "storedBytes": 3536,
+      "storedSha256": "606ce6c90c19204d1ce7e9d5e56043ce9158157e37d7c6071702841f582f33b8",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/red-e2e.patch"
+    },
+    {
+      "storedPath": "support/initial-preparation/run-journey.ps1.gz",
+      "encoding": "gzip",
+      "rawBytes": 1745,
+      "rawSha256": "3264d340b4d94d037218c315695d0252420a808007b28497dd5eec7a46d6ae2b",
+      "storedBytes": 902,
+      "storedSha256": "9292933c1a8c61b134d43fdd181035d517e90d532da502aca1094edb6de2da13",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-preparation/run-journey.ps1"
+    },
+    {
+      "storedPath": "support/initial-product-review/review.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 1740,
+      "rawSha256": "65763c284b82a0750306a3bb7fb9f25195746f784f03e3a7533c3a1f8fea7655",
+      "storedBytes": 968,
+      "storedSha256": "7e42e1f1780c1cdffc12371ee87ce01b8ede9ce0be92a0b3bf8b4d02ef1b6cb6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-review/review.md"
+    },
+    {
+      "storedPath": "support/initial-product-review/review.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7482,
+      "rawSha256": "bad75bc6146b683434756565b78bd14de0c491652c4850aa6ebd939ce074e1cf",
+      "storedBytes": 2919,
+      "storedSha256": "d4143363c9b4b6efdaabbc2a32244da10b75308553db8a4ea9ac0b45faa29d73",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-review/review.receipt.json"
+    },
+    {
+      "storedPath": "support/mutation-runner/offline-wrapper-probes.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 351,
+      "rawSha256": "ce8dd63261386ecc9482a6500d35dfaffdafa6522d3eef01c448654742336692",
+      "storedBytes": 177,
+      "storedSha256": "82f78c1a0819f09c400cf8ae1f72c2f5e6ec2041c889566f986cd70c013fc759",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/offline-wrapper-probes.receipt.json"
+    },
+    {
+      "storedPath": "support/mutation-runner/preparation.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 1835,
+      "rawSha256": "a8ee58b59739a4790a670384d78cbfca3b7a992ec74a04128c398bbd1619fb13",
+      "storedBytes": 736,
+      "storedSha256": "3d0f9c08c1a091b9821531e4d1883590eb1e694404f5e0eb91f9ee1fe5208414",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/preparation.receipt.json"
+    },
+    {
+      "storedPath": "support/mutation-runner/README.md.gz",
+      "encoding": "gzip",
+      "rawBytes": 3081,
+      "rawSha256": "302639d03f61014b1ffb8e9a7a1954e361db3dc0b3b18da349141daf69c5c58e",
+      "storedBytes": 1950,
+      "storedSha256": "5391d9d1f1b818c9d0c37c23d1e631e7086a9dc49329173a9835d198f955aca4",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/README.md"
+    },
+    {
+      "storedPath": "support/mutation-runner/run-layout-mutation.ps1.gz",
+      "encoding": "gzip",
+      "rawBytes": 8402,
+      "rawSha256": "87afe308888fab71fd0474fe36d2dbc075d7ac6d740078085798305239a82dfc",
+      "storedBytes": 2589,
+      "storedSha256": "383025b9a9d3689bbdf9d057a1e4ed543d451c75c3fd07457afd066fdc2c4ff7",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/run-layout-mutation.ps1"
+    },
+    {
+      "storedPath": "support/mutation-runner/run-mutant-A.ps1.gz",
+      "encoding": "gzip",
+      "rawBytes": 141,
+      "rawSha256": "4cbbdebb5e2b5b18f948fee9dd301966689b7a9f62aa494fff6554af66a028c3",
+      "storedBytes": 146,
+      "storedSha256": "51685dc2034c805dcceb0cee02fc813a89730dc0f765b9ec6411f1f215e5bc83",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/run-mutant-A.ps1"
+    },
+    {
+      "storedPath": "support/mutation-runner/run-mutant-B.ps1.gz",
+      "encoding": "gzip",
+      "rawBytes": 141,
+      "rawSha256": "8d442fe7a92c65fa79842ef936da610ed53d6ec25efb412ed70edbb0a295e99a",
+      "storedBytes": 147,
+      "storedSha256": "d66ba3c6a08310f7b7422824cedaee62d6a7330e90013d33dfc8aca360ba3da3",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/run-mutant-B.ps1"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-A-no-main-reserve-v1/journey-wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1303,
+      "rawSha256": "5cc4ab2fdd4a738dec01343016c01cc9c9796ca984f0cc1d24f777221d1157f8",
+      "storedBytes": 485,
+      "storedSha256": "afb0c5306482d4ed9a70194944657e67996f84b7cba97a5fbf1728e6f382b41c",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-A-no-main-reserve-v1/journey-wrapper.log"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-A-no-main-reserve-v1/mutation.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2864,
+      "rawSha256": "1793e7e334c8aaf453be153376208324ae38ee7ed5ff5789e90443a8ee27ab14",
+      "storedBytes": 1154,
+      "storedSha256": "bc2f20c1930882d85ad28f00f6d911e71a49aecb294f01925196f327506ebede",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-A-no-main-reserve-v1/mutation.receipt.json"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-A-no-main-reserve-v1/source-before.bin.gz",
+      "encoding": "gzip",
+      "rawBytes": 164103,
+      "rawSha256": "99afbf345f0f7eae54e2304b47b0961247d1bfd31cf72ad5d1e240bfd0a1c2b7",
+      "storedBytes": 51908,
+      "storedSha256": "45b2eaf8861346c5bac60cba4891d4767189d3396bb66491826be176622a6e06",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-A-no-main-reserve-v1/source-before.bin"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-B-no-inverse-v1/journey-wrapper.log.gz",
+      "encoding": "gzip",
+      "rawBytes": 1304,
+      "rawSha256": "12f38d785893a72ca9a5c12c62cdefa623bd89d4fbf703be2e1bcd1a3b7c8454",
+      "storedBytes": 486,
+      "storedSha256": "64947d575474b15f34a75bf55815f4049c771f71287ead8d66d55dd8638ff0fd",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-B-no-inverse-v1/journey-wrapper.log"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-B-no-inverse-v1/mutation.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 2828,
+      "rawSha256": "13c58d8b2b92be465e36e547b2451e586c0ddfd6b1f5f9a8bbd7ba8b8ab749ae",
+      "storedBytes": 1151,
+      "storedSha256": "660bad5f9e7415dd7121faa4ad4894033cbccff96b182fcbf583a8b3507920f6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-B-no-inverse-v1/mutation.receipt.json"
+    },
+    {
+      "storedPath": "support/mutations/layout-mutant-B-no-inverse-v1/source-before.bin.gz",
+      "encoding": "gzip",
+      "rawBytes": 164103,
+      "rawSha256": "99afbf345f0f7eae54e2304b47b0961247d1bfd31cf72ad5d1e240bfd0a1c2b7",
+      "storedBytes": 51908,
+      "storedSha256": "45b2eaf8861346c5bac60cba4891d4767189d3396bb66491826be176622a6e06",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-layout-mutations/layout-mutant-B-no-inverse-v1/source-before.bin"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/current-product.patch.gz",
+      "encoding": "gzip",
+      "rawBytes": 31921,
+      "rawSha256": "4acdf69e233ea6a8c282eece0319469180932f7d0550163adea524cc922835d8",
+      "storedBytes": 9209,
+      "storedSha256": "fd90905b8955a69666d5274a4acfe16d0f696658a3c1de650abeeb128e8b4114",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/current-product.patch"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/held-resize-failure/browser-results.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 21393,
+      "rawSha256": "4daeb5a9e4531bb8e08415f9790ee8dc2a1777a6ae26bd88b12cff859aa9301b",
+      "storedBytes": 3363,
+      "storedSha256": "048a871e8c3606a5cecf6e0f8b2a0a3c7703218a70a7897ff2c5aff891b45ee6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/held-resize-failure/browser-results.json"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/held-resize-failure/dense-compressed-separator-drag.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 7640,
+      "rawSha256": "51312c5d2613f6e605d1834fe8c3ca1630fa36cae15a702e3ab4cf24b1e8d8f7",
+      "storedBytes": 375,
+      "storedSha256": "e480525cf47de3a544cab9304bbe73b3e7ca268c74012ad3cb919d3508633124",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/held-resize-failure/dense-compressed-separator-drag.json"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/snapshot.receipt.json.gz",
+      "encoding": "gzip",
+      "rawBytes": 3323,
+      "rawSha256": "7be4075be8cf42b3f6fa76d0c5e057fbdb803ac0455bd95b5729bb96da50bfd7",
+      "storedBytes": 1082,
+      "storedSha256": "7a40f2dc0ad7f80e2850038008a9b51371ef9a77f9ea762c70c2f960580e7b64",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/snapshot.receipt.json"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/source/e2e/formula-chart.spec.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 29844,
+      "rawSha256": "907d952b5b77a67b12d5dafd9baf54909a2ce257c87d4763ad2188a4771b73f6",
+      "storedBytes": 7437,
+      "storedSha256": "15b165f37c999f68a9f654fbc50659dde27e5e41edbdaf0b557e4d96487ca9dc",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/source/e2e/formula-chart.spec.ts"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/source/server/test/chart-pane-layout.test.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 2565,
+      "rawSha256": "5369cb581dbb74777f3c1275eac4949c417fb330df4567d6286dc623a4332d5d",
+      "storedBytes": 953,
+      "storedSha256": "07aba074c5fb19005d7c6e1f7a7be3e38cd2c1e0ebb9f9e4afe724e4847bada6",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/source/server/test/chart-pane-layout.test.ts"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/source/web/src/chartPaneLayout.ts.gz",
+      "encoding": "gzip",
+      "rawBytes": 1725,
+      "rawSha256": "a2605ee875919516d601acaa998315624ccc36d7dc18894f59ea1f7c599e1cf0",
+      "storedBytes": 654,
+      "storedSha256": "77540f887cace6f0d978470ab2b206da339de2a9441d1b3592f425f691d39de4",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/source/web/src/chartPaneLayout.ts"
+    },
+    {
+      "storedPath": "support/root-followup-snapshot/source/web/src/components/KlineChart.vue.gz",
+      "encoding": "gzip",
+      "rawBytes": 164103,
+      "rawSha256": "99afbf345f0f7eae54e2304b47b0961247d1bfd31cf72ad5d1e240bfd0a1c2b7",
+      "storedBytes": 51908,
+      "storedSha256": "45b2eaf8861346c5bac60cba4891d4767189d3396bb66491826be176622a6e06",
+      "sourceAbsolute": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-pane-layout-root-followup-review/source/web/src/components/KlineChart.vue"
+    },
+    {
+      "storedPath": "verification-summary.json",
+      "encoding": "identity",
+      "rawBytes": 39219,
+      "rawSha256": "60603f6dc3e14526b34b65c053bfe1460624f0e00ac890bed18564436fc5f4cd",
+      "storedBytes": 39219,
+      "storedSha256": "60603f6dc3e14526b34b65c053bfe1460624f0e00ac890bed18564436fc5f4cd",
+      "generated": true
+    }
+  ],
+  "summary": {
+    "runs": 9,
+    "entries": 244,
+    "rawBytes": 12913438,
+    "storedBytes": 10788836
+  },
+  "selfExclusion": "manifest.json cannot list its own digest; external package receipt binds manifest and ZIP bytes."
+}

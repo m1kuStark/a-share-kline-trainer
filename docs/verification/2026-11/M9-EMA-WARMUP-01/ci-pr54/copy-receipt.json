@@ -1,0 +1,635 @@
+{
+  "capturedAt": "2026-11-17T19:11:04.780987+00:00",
+  "sourceDirectory": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci",
+  "archiveDirectory": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-EMA-WARMUP-01\\ci-pr54\\ci-capture",
+  "copyMethod": "shutil.copytree(copy_function=shutil.copy2); every source and destination compared as bytes",
+  "fileCount": 77,
+  "totalBytes": 789176,
+  "allByteEqual": true,
+  "zip": {
+    "archiveRelativePath": "ci-capture/run-logs.zip",
+    "bytes": 103033,
+    "sha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+    "crcPassed": true,
+    "entryCount": 32,
+    "originalCaptureByteEqual": true
+  },
+  "files": [
+    {
+      "sourceRelativePath": "8a1efe35746a.txt",
+      "archiveRelativePath": "ci-capture/8a1efe35746a.txt",
+      "bytes": 7684,
+      "sourceSha256": "cefaefb29a3bec693faba4e0251e3bb156a564a89101c19fe4c573b0f411bd40",
+      "archiveSha256": "cefaefb29a3bec693faba4e0251e3bb156a564a89101c19fe4c573b0f411bd40",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "capture.py",
+      "archiveRelativePath": "ci-capture/capture.py",
+      "bytes": 3047,
+      "sourceSha256": "da08bc09eed7b4aced7ed95f0155027ff3216b38e8b9362833e2f40a701168da",
+      "archiveSha256": "da08bc09eed7b4aced7ed95f0155027ff3216b38e8b9362833e2f40a701168da",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "ci-signals.compressed.txt",
+      "archiveRelativePath": "ci-capture/ci-signals.compressed.txt",
+      "bytes": 7780,
+      "sourceSha256": "2993cfa438155f8555f470ebb459c36d6d3a0504ef0df3cb528ee71e448b8a8d",
+      "archiveSha256": "2993cfa438155f8555f470ebb459c36d6d3a0504ef0df3cb528ee71e448b8a8d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "ci-signals.compression.stderr",
+      "archiveRelativePath": "ci-capture/ci-signals.compression.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "ci-signals.raw.txt",
+      "archiveRelativePath": "ci-capture/ci-signals.raw.txt",
+      "bytes": 7684,
+      "sourceSha256": "cefaefb29a3bec693faba4e0251e3bb156a564a89101c19fe4c573b0f411bd40",
+      "archiveSha256": "cefaefb29a3bec693faba4e0251e3bb156a564a89101c19fe4c573b0f411bd40",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "evidence-inventory.json",
+      "archiveRelativePath": "ci-capture/evidence-inventory.json",
+      "bytes": 19626,
+      "sourceSha256": "1714bf0be8dcfebbd23b1387aba5482f8a16f7d97ec17c98c8b70454c386def2",
+      "archiveSha256": "1714bf0be8dcfebbd23b1387aba5482f8a16f7d97ec17c98c8b70454c386def2",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "finalize_ci.py",
+      "archiveRelativePath": "ci-capture/finalize_ci.py",
+      "bytes": 2902,
+      "sourceSha256": "50aed93fab7df16f92d46cff4bf930126d846408d39711d4eb367f3931548d11",
+      "archiveSha256": "50aed93fab7df16f92d46cff4bf930126d846408d39711d4eb367f3931548d11",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "jobs-final.raw.json",
+      "archiveRelativePath": "ci-capture/jobs-final.raw.json",
+      "bytes": 7120,
+      "sourceSha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63",
+      "archiveSha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "jobs-final.receipt.json",
+      "archiveRelativePath": "ci-capture/jobs-final.receipt.json",
+      "bytes": 733,
+      "sourceSha256": "8f1261e90c174ef21c50b8985829f5877e2cb3c3c5321f127a7a0f647d931c60",
+      "archiveSha256": "8f1261e90c174ef21c50b8985829f5877e2cb3c3c5321f127a7a0f647d931c60",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "jobs-final.stderr",
+      "archiveRelativePath": "ci-capture/jobs-final.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "jobs-final.stdout",
+      "archiveRelativePath": "ci-capture/jobs-final.stdout",
+      "bytes": 7120,
+      "sourceSha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63",
+      "archiveSha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/000-0_pr-policy.txt",
+      "archiveRelativePath": "ci-capture/logs/000-0_pr-policy.txt",
+      "bytes": 15797,
+      "sourceSha256": "55a4e2da11a2ec871051979c11a8b3fabce9cd3a558048193b544ed298b1d4eb",
+      "archiveSha256": "55a4e2da11a2ec871051979c11a8b3fabce9cd3a558048193b544ed298b1d4eb",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/001-pr-policy_system.txt",
+      "archiveRelativePath": "ci-capture/logs/001-pr-policy_system.txt",
+      "bytes": 720,
+      "sourceSha256": "feaa06a4b62ae4fc38f95da6be0efa5c31b584a039bd008043926ec7f3428b63",
+      "archiveSha256": "feaa06a4b62ae4fc38f95da6be0efa5c31b584a039bd008043926ec7f3428b63",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/002-pr-policy_1_Set_up_job.txt",
+      "archiveRelativePath": "ci-capture/logs/002-pr-policy_1_Set_up_job.txt",
+      "bytes": 2113,
+      "sourceSha256": "ee8d503751b43204a372b3225922973c35c3d66fda8aa05a2054e50baf5b7a95",
+      "archiveSha256": "ee8d503751b43204a372b3225922973c35c3d66fda8aa05a2054e50baf5b7a95",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/003-pr-policy_2_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/003-pr-policy_2_Run_actions_checkout_v7.txt",
+      "bytes": 7760,
+      "sourceSha256": "eb85b4dc05d3d8682dcc3e366242eefa4c1fbf5d966fc277da6f40b9b19eb80f",
+      "archiveSha256": "eb85b4dc05d3d8682dcc3e366242eefa4c1fbf5d966fc277da6f40b9b19eb80f",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/004-pr-policy_3_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/004-pr-policy_3_Run_actions_setup-node_v7.txt",
+      "bytes": 917,
+      "sourceSha256": "12ea563592d8343cedec48e127b8c6cc278508fe680d47876781645ad4b37005",
+      "archiveSha256": "12ea563592d8343cedec48e127b8c6cc278508fe680d47876781645ad4b37005",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/005-pr-policy_4_Run_node_scripts_ci_check-pr-policy.mjs.txt",
+      "archiveRelativePath": "ci-capture/logs/005-pr-policy_4_Run_node_scripts_ci_check-pr-policy.mjs.txt",
+      "bytes": 359,
+      "sourceSha256": "2a36492a214d129015c10b35c51ba9a33805061b76b49b6879cf5609fdb8476f",
+      "archiveSha256": "2a36492a214d129015c10b35c51ba9a33805061b76b49b6879cf5609fdb8476f",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/006-pr-policy_7_Post_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/006-pr-policy_7_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 51,
+      "sourceSha256": "aff41e09ee2c58c3f76ce67ee32507020806a7a35e774583614a9049650b9261",
+      "archiveSha256": "aff41e09ee2c58c3f76ce67ee32507020806a7a35e774583614a9049650b9261",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/007-pr-policy_8_Post_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/007-pr-policy_8_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sourceSha256": "5dd371d9086959885effa0a6989c159997043db639e725c71865f461477ea84f",
+      "archiveSha256": "5dd371d9086959885effa0a6989c159997043db639e725c71865f461477ea84f",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/008-pr-policy_9_Complete_job.txt",
+      "archiveRelativePath": "ci-capture/logs/008-pr-policy_9_Complete_job.txt",
+      "bytes": 62,
+      "sourceSha256": "b866379fa0eb7a44c217c2b4cd75f8c0872e04a135ad95cc9ddebb9edb7d9e60",
+      "archiveSha256": "b866379fa0eb7a44c217c2b4cd75f8c0872e04a135ad95cc9ddebb9edb7d9e60",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/009-1_docs.txt",
+      "archiveRelativePath": "ci-capture/logs/009-1_docs.txt",
+      "bytes": 49410,
+      "sourceSha256": "b3734b4231896deb4e38109fad095afe8c00ba0c0ba8be1dda0861c737050f6e",
+      "archiveSha256": "b3734b4231896deb4e38109fad095afe8c00ba0c0ba8be1dda0861c737050f6e",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/010-docs_system.txt",
+      "archiveRelativePath": "ci-capture/logs/010-docs_system.txt",
+      "bytes": 586,
+      "sourceSha256": "59aa3c697b8fa9373dd5c4d109d59cb1fa587dd90f5f5636a0049bf3c2ee053f",
+      "archiveSha256": "59aa3c697b8fa9373dd5c4d109d59cb1fa587dd90f5f5636a0049bf3c2ee053f",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/011-docs_1_Set_up_job.txt",
+      "archiveRelativePath": "ci-capture/logs/011-docs_1_Set_up_job.txt",
+      "bytes": 2110,
+      "sourceSha256": "d062b54338baf2da92425a7ae613a499d2af0e141fdafcf93201a01c8d2c65e7",
+      "archiveSha256": "d062b54338baf2da92425a7ae613a499d2af0e141fdafcf93201a01c8d2c65e7",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/012-docs_2_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/012-docs_2_Run_actions_checkout_v7.txt",
+      "bytes": 7863,
+      "sourceSha256": "ce7b74898f379c82e145f451c4ce1ef7e3b6babb3b212f0dc006440c7d18d31d",
+      "archiveSha256": "ce7b74898f379c82e145f451c4ce1ef7e3b6babb3b212f0dc006440c7d18d31d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/013-docs_3_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/013-docs_3_Run_actions_setup-node_v7.txt",
+      "bytes": 1983,
+      "sourceSha256": "110d1f6731ee31a6a7b74b8980b51c63dcd47d0918c7d43cb4ff120c1b82e292",
+      "archiveSha256": "110d1f6731ee31a6a7b74b8980b51c63dcd47d0918c7d43cb4ff120c1b82e292",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/014-docs_4_Run_npm_ci.txt",
+      "archiveRelativePath": "ci-capture/logs/014-docs_4_Run_npm_ci.txt",
+      "bytes": 2712,
+      "sourceSha256": "50abf31a72b025716e8e1183e791cca15179616e54a2dc7395e4ef5e82180194",
+      "archiveSha256": "50abf31a72b025716e8e1183e791cca15179616e54a2dc7395e4ef5e82180194",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/015-docs_5_Run_npm_run_docscheck.txt",
+      "archiveRelativePath": "ci-capture/logs/015-docs_5_Run_npm_run_docscheck.txt",
+      "bytes": 28986,
+      "sourceSha256": "58a409a8b72b0fc9482de5c7ef88266078bf186371088bc7b7104606582a6e0d",
+      "archiveSha256": "58a409a8b72b0fc9482de5c7ef88266078bf186371088bc7b7104606582a6e0d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/016-docs_6_Run_npm_run_docsstatus_--_--check.txt",
+      "archiveRelativePath": "ci-capture/logs/016-docs_6_Run_npm_run_docsstatus_--_--check.txt",
+      "bytes": 935,
+      "sourceSha256": "4c033736b7589236dab8a13d52ca32331deab9d3c292c9595ccf934808a8535d",
+      "archiveSha256": "4c033736b7589236dab8a13d52ca32331deab9d3c292c9595ccf934808a8535d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/017-docs_11_Post_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/017-docs_11_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 230,
+      "sourceSha256": "46582066d94a7df948e64a4b64d077bc7e9a6ed49f02b0d3a72e75b0776a8d04",
+      "archiveSha256": "46582066d94a7df948e64a4b64d077bc7e9a6ed49f02b0d3a72e75b0776a8d04",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/018-docs_12_Post_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/018-docs_12_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sourceSha256": "35a214d05b39c57a34d1943f3ae9ae2f69a62e851a289aff3140408e6a33765d",
+      "archiveSha256": "35a214d05b39c57a34d1943f3ae9ae2f69a62e851a289aff3140408e6a33765d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/019-docs_13_Complete_job.txt",
+      "archiveRelativePath": "ci-capture/logs/019-docs_13_Complete_job.txt",
+      "bytes": 62,
+      "sourceSha256": "94c705ce6c48800f6cd101636e143f3d1eb103ce6787d1ba03a904b14b134b67",
+      "archiveSha256": "94c705ce6c48800f6cd101636e143f3d1eb103ce6787d1ba03a904b14b134b67",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/020-2_verify.txt",
+      "archiveRelativePath": "ci-capture/logs/020-2_verify.txt",
+      "bytes": 140177,
+      "sourceSha256": "dcae73218643c53a89cc43218cf3fb30d335c9847705e540d47ab523341df18d",
+      "archiveSha256": "dcae73218643c53a89cc43218cf3fb30d335c9847705e540d47ab523341df18d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/021-verify_system.txt",
+      "archiveRelativePath": "ci-capture/logs/021-verify_system.txt",
+      "bytes": 588,
+      "sourceSha256": "7e4c81fcf9c1062be5ada5eb3a5d7fd11319c0c60ee90c4d7d992a2a6b96685c",
+      "archiveSha256": "7e4c81fcf9c1062be5ada5eb3a5d7fd11319c0c60ee90c4d7d992a2a6b96685c",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/022-verify_1_Set_up_job.txt",
+      "archiveRelativePath": "ci-capture/logs/022-verify_1_Set_up_job.txt",
+      "bytes": 2243,
+      "sourceSha256": "edd9bec6d59acc48a99d6cff9fe353dc7a66ca649c592db821345bb9f422a401",
+      "archiveSha256": "edd9bec6d59acc48a99d6cff9fe353dc7a66ca649c592db821345bb9f422a401",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/023-verify_2_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/023-verify_2_Run_actions_checkout_v7.txt",
+      "bytes": 7760,
+      "sourceSha256": "1b76c6d6e7e07135baf201c1c8ac89cd52168b9755e90ea2e3cf5a19f65b776e",
+      "archiveSha256": "1b76c6d6e7e07135baf201c1c8ac89cd52168b9755e90ea2e3cf5a19f65b776e",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/024-verify_3_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/024-verify_3_Run_actions_setup-node_v7.txt",
+      "bytes": 1881,
+      "sourceSha256": "778fcb92f0c6a057c02ac18c39b98b285d10f78fa6c518df9eb42f45201fd8d8",
+      "archiveSha256": "778fcb92f0c6a057c02ac18c39b98b285d10f78fa6c518df9eb42f45201fd8d8",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/025-verify_4_Run_npm_ci.txt",
+      "archiveRelativePath": "ci-capture/logs/025-verify_4_Run_npm_ci.txt",
+      "bytes": 2609,
+      "sourceSha256": "f39162209090129ee4d34b12afc4655e7faefa0519a797b84b5fd61136223c9b",
+      "archiveSha256": "f39162209090129ee4d34b12afc4655e7faefa0519a797b84b5fd61136223c9b",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/026-verify_5_Run_npm_run_build.txt",
+      "archiveRelativePath": "ci-capture/logs/026-verify_5_Run_npm_run_build.txt",
+      "bytes": 2737,
+      "sourceSha256": "106c5d48891da7c4ef7c5630f2c28736449bc9675c1b878997bed3b093897a49",
+      "archiveSha256": "106c5d48891da7c4ef7c5630f2c28736449bc9675c1b878997bed3b093897a49",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/027-verify_6_Test_source_and_compiled_launcher.txt",
+      "archiveRelativePath": "ci-capture/logs/027-verify_6_Test_source_and_compiled_launcher.txt",
+      "bytes": 117415,
+      "sourceSha256": "76428a3a1589ea3f55ae8d8435d1a6c1652846fbcde5b0d5b6ec247fce15bba3",
+      "archiveSha256": "76428a3a1589ea3f55ae8d8435d1a6c1652846fbcde5b0d5b6ec247fce15bba3",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/028-verify_7_Retain_test_results.txt",
+      "archiveRelativePath": "ci-capture/logs/028-verify_7_Retain_test_results.txt",
+      "bytes": 714,
+      "sourceSha256": "c4e630e8f0811527767c9c96d629fe62b009aaec83586cfa0026246881768922",
+      "archiveSha256": "c4e630e8f0811527767c9c96d629fe62b009aaec83586cfa0026246881768922",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/029-verify_13_Post_Run_actions_setup-node_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/029-verify_13_Post_Run_actions_setup-node_v7.txt",
+      "bytes": 230,
+      "sourceSha256": "94f9292c0e41adae5bc3bfc0a30d9e5ebb89d43133487d11aca21cce48a1c8f1",
+      "archiveSha256": "94f9292c0e41adae5bc3bfc0a30d9e5ebb89d43133487d11aca21cce48a1c8f1",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/030-verify_14_Post_Run_actions_checkout_v7.txt",
+      "archiveRelativePath": "ci-capture/logs/030-verify_14_Post_Run_actions_checkout_v7.txt",
+      "bytes": 4553,
+      "sourceSha256": "54a063bf573069251a4e7acacdadf75ed37707491802c278018c8f0bb6b85c91",
+      "archiveSha256": "54a063bf573069251a4e7acacdadf75ed37707491802c278018c8f0bb6b85c91",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "logs/031-verify_15_Complete_job.txt",
+      "archiveRelativePath": "ci-capture/logs/031-verify_15_Complete_job.txt",
+      "bytes": 62,
+      "sourceSha256": "90c5c86513b713639b22eaff7ac51c9c4c9ab364bb3ef3a3d912510640033318",
+      "archiveSha256": "90c5c86513b713639b22eaff7ac51c9c4c9ab364bb3ef3a3d912510640033318",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-final.raw.json",
+      "archiveRelativePath": "ci-capture/pr-final.raw.json",
+      "bytes": 1103,
+      "sourceSha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a",
+      "archiveSha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-final.receipt.json",
+      "archiveRelativePath": "ci-capture/pr-final.receipt.json",
+      "bytes": 805,
+      "sourceSha256": "8cf848a0067b1e655acc615ecfc2b93fd1c62d53afeb4d5db259a26ac0d2906c",
+      "archiveSha256": "8cf848a0067b1e655acc615ecfc2b93fd1c62d53afeb4d5db259a26ac0d2906c",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-final.stderr",
+      "archiveRelativePath": "ci-capture/pr-final.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-final.stdout",
+      "archiveRelativePath": "ci-capture/pr-final.stdout",
+      "bytes": 1103,
+      "sourceSha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a",
+      "archiveSha256": "434279dd554eddcdd6474b85b19e9b50422bf29e68211c755d5c2d2a6ce8427a",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-initial.raw.json",
+      "archiveRelativePath": "ci-capture/pr-initial.raw.json",
+      "bytes": 1098,
+      "sourceSha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d",
+      "archiveSha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-initial.receipt.json",
+      "archiveRelativePath": "ci-capture/pr-initial.receipt.json",
+      "bytes": 811,
+      "sourceSha256": "9b18f30018b564ed56dc45b44341640680a020850f373ba3a7b83ff67baef0a4",
+      "archiveSha256": "9b18f30018b564ed56dc45b44341640680a020850f373ba3a7b83ff67baef0a4",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-initial.stderr",
+      "archiveRelativePath": "ci-capture/pr-initial.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "pr-initial.stdout",
+      "archiveRelativePath": "ci-capture/pr-initial.stdout",
+      "bytes": 1098,
+      "sourceSha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d",
+      "archiveSha256": "92bea8be18c0c74f5b6a756deb418daf3861185961bd3104abc606bac2d26d6d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "README.md",
+      "archiveRelativePath": "ci-capture/README.md",
+      "bytes": 1259,
+      "sourceSha256": "4c0cb5f773581ce40889f67aabeb3d578ad376ddc19d426a786a0dfb7fb8e609",
+      "archiveSha256": "4c0cb5f773581ce40889f67aabeb3d578ad376ddc19d426a786a0dfb7fb8e609",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-final.raw.json",
+      "archiveRelativePath": "ci-capture/required-final.raw.json",
+      "bytes": 546,
+      "sourceSha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c",
+      "archiveSha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-final.receipt.json",
+      "archiveRelativePath": "ci-capture/required-final.receipt.json",
+      "bytes": 809,
+      "sourceSha256": "05822dcf18c80d125bb41840e0793340dfc08073900735f953143afa74837dd9",
+      "archiveSha256": "05822dcf18c80d125bb41840e0793340dfc08073900735f953143afa74837dd9",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-final.stderr",
+      "archiveRelativePath": "ci-capture/required-final.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-final.stdout",
+      "archiveRelativePath": "ci-capture/required-final.stdout",
+      "bytes": 546,
+      "sourceSha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c",
+      "archiveSha256": "2f53868eabfc5e5e73be5f57569c9fc9cc0f7877b167532d93f4c5ca7c89a09c",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-initial.raw.json",
+      "archiveRelativePath": "ci-capture/required-initial.raw.json",
+      "bytes": 553,
+      "sourceSha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a",
+      "archiveSha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-initial.receipt.json",
+      "archiveRelativePath": "ci-capture/required-initial.receipt.json",
+      "bytes": 815,
+      "sourceSha256": "908d9c0ce9d01929215b1fad296d0a5319281320e92934c01710b83925efe949",
+      "archiveSha256": "908d9c0ce9d01929215b1fad296d0a5319281320e92934c01710b83925efe949",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-initial.stderr",
+      "archiveRelativePath": "ci-capture/required-initial.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "required-initial.stdout",
+      "archiveRelativePath": "ci-capture/required-initial.stdout",
+      "bytes": 553,
+      "sourceSha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a",
+      "archiveSha256": "c143b6d1fa267dea72d88e2bbb54a3cb877890439c587b176c25247096d2f45a",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "result.json",
+      "archiveRelativePath": "ci-capture/result.json",
+      "bytes": 29036,
+      "sourceSha256": "c4db027be43196f7b26733866f71a2356c2ac9e1c50465705cbb9811cf62d050",
+      "archiveSha256": "c4db027be43196f7b26733866f71a2356c2ac9e1c50465705cbb9811cf62d050",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-final.raw.json",
+      "archiveRelativePath": "ci-capture/run-final.raw.json",
+      "bytes": 14134,
+      "sourceSha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4",
+      "archiveSha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-final.receipt.json",
+      "archiveRelativePath": "ci-capture/run-final.receipt.json",
+      "bytes": 713,
+      "sourceSha256": "e561bcdfaccfa41a6d37168c872d91695e1ec0d3957d835925fd4c86ffd82d80",
+      "archiveSha256": "e561bcdfaccfa41a6d37168c872d91695e1ec0d3957d835925fd4c86ffd82d80",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-final.stderr",
+      "archiveRelativePath": "ci-capture/run-final.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-final.stdout",
+      "archiveRelativePath": "ci-capture/run-final.stdout",
+      "bytes": 14134,
+      "sourceSha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4",
+      "archiveSha256": "ba784b1d861476941d1386dc767910d9937e951790a09accc85476187bc469a4",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-initial.raw.json",
+      "archiveRelativePath": "ci-capture/run-initial.raw.json",
+      "bytes": 14131,
+      "sourceSha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163",
+      "archiveSha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-initial.receipt.json",
+      "archiveRelativePath": "ci-capture/run-initial.receipt.json",
+      "bytes": 719,
+      "sourceSha256": "b685ca3b2ca83fd63a61fddde2b1cf2a8d8bc31c897a276903639adea3eb5993",
+      "archiveSha256": "b685ca3b2ca83fd63a61fddde2b1cf2a8d8bc31c897a276903639adea3eb5993",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-initial.stderr",
+      "archiveRelativePath": "ci-capture/run-initial.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-initial.stdout",
+      "archiveRelativePath": "ci-capture/run-initial.stdout",
+      "bytes": 14131,
+      "sourceSha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163",
+      "archiveSha256": "aa44d77e2c9e0c22752e8c0551e5fbc1228f01447080ef6a9222a8f26f19e163",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-logs-archive.receipt.json",
+      "archiveRelativePath": "ci-capture/run-logs-archive.receipt.json",
+      "bytes": 740,
+      "sourceSha256": "aa0e326723584f30a7c3f61644ea4173bbcecbf1b27fc9ca6820aab8e102a97d",
+      "archiveSha256": "aa0e326723584f30a7c3f61644ea4173bbcecbf1b27fc9ca6820aab8e102a97d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-logs-archive.stderr",
+      "archiveRelativePath": "ci-capture/run-logs-archive.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-logs-archive.stdout",
+      "archiveRelativePath": "ci-capture/run-logs-archive.stdout",
+      "bytes": 103033,
+      "sourceSha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+      "archiveSha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-logs.zip",
+      "archiveRelativePath": "ci-capture/run-logs.zip",
+      "bytes": 103033,
+      "sourceSha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+      "archiveSha256": "e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-watch.receipt.json",
+      "archiveRelativePath": "ci-capture/run-watch.receipt.json",
+      "bytes": 782,
+      "sourceSha256": "badb5ef02c5bf224e7d90c123b661bddc52780fc49e7280f6eda01b3c17e398d",
+      "archiveSha256": "badb5ef02c5bf224e7d90c123b661bddc52780fc49e7280f6eda01b3c17e398d",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-watch.stderr",
+      "archiveRelativePath": "ci-capture/run-watch.stderr",
+      "bytes": 0,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "run-watch.stdout",
+      "archiveRelativePath": "ci-capture/run-watch.stdout",
+      "bytes": 3058,
+      "sourceSha256": "28a9af514a9e0c4b1dbd14d7939470b25609acd6fe18b0305d0684d6ede50149",
+      "archiveSha256": "28a9af514a9e0c4b1dbd14d7939470b25609acd6fe18b0305d0684d6ede50149",
+      "byteEqual": true
+    },
+    {
+      "sourceRelativePath": "verify_ci.py",
+      "archiveRelativePath": "ci-capture/verify_ci.py",
+      "bytes": 4006,
+      "sourceSha256": "cf745ebcfac0a8606841e48520e1c8436c542402b4d42fd44813738c8873703c",
+      "archiveSha256": "cf745ebcfac0a8606841e48520e1c8436c542402b4d42fd44813738c8873703c",
+      "byteEqual": true
+    }
+  ]
+}

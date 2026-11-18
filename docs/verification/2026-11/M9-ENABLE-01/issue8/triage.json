@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "issue": 8,
+  "recordedAt": "2026-11-18T01:14:48.0176885+08:00",
+  "reviewer": "/root/docs_audit",
+  "base": "b1ff3e9f241e60b3e85c7572084dbc306b259d08",
+  "repo": "D:\\Superlinear_Academy\\Stock_WorkSpace\\a-share-kline-trainer",
+  "readOnly": true,
+  "productModified": false,
+  "productUiRun": false,
+  "externalReplySent": false,
+  "taskCreated": false,
+  "whiteLine": {
+    "classification": "builtin-indicator-theme defect candidate",
+    "confidence": "high static",
+    "lightBackground": "#fbfcfb",
+    "library": "klinecharts 10.0.3",
+    "belongsToM9FormulaOutput": false,
+    "themeWatcherLine": 2072,
+    "file": "web/src/components/KlineChart.vue",
+    "liveReproduction": "not performed",
+    "mountLines": [
+      521,
+      523
+    ],
+    "fixedColor": "#f2f2f2",
+    "objects": [
+      "MACD DIF line/legend",
+      "KDJ K line/legend"
+    ],
+    "suggestedTaskId": "CHART-THEME-01 (not created)"
+  },
+  "installerExtraction": {
+    "classification": "unsupported equivalence; static analysis only",
+    "portableDetection": "PORTABLE_EXECUTABLE_DIR",
+    "target": "NSIS x64",
+    "defaultDataDir": "%USERPROFILE%\\.a-share-kline-trainer",
+    "installedPackageRun": false,
+    "manifestHashMatch": true,
+    "defaultUpdate": "electron-updater NSIS channel",
+    "equivalentToCurrentHead": "not established",
+    "unpackedAsarSha256": "FF8E3642E4440B44C6700E2C3FA056329AE1A7F64F0E8E4D0D172E1FCC4B35B6",
+    "archiveExtractionPerformed": false,
+    "localSetupSha256": "1AD9A47731ED4B8BD152A85FB958B365EDAD73E9E6AC28338AF8640F2F4F5E5C"
+  },
+  "limitUpStart": {
+    "implemented": false,
+    "decisionsPending": [
+      "historical limit definition and regime metadata",
+      "initial known date vs event-conditioned earlier start",
+      "sampling unit and repeated events",
+      "one-price/liquidity exclusions",
+      "history/warmup/forward length",
+      "blindness and insufficient data",
+      "separate mode/ranking comparability and no future outcomes in sampling"
+    ],
+    "implementationAuthorized": false,
+    "classification": "new feature proposal",
+    "blocksM9": false
+  },
+  "fingerprints": [
+    {
+      "path": "web/src/components/KlineChart.vue",
+      "sha256": "7CDC70A2368FC359DC9FE99F73FA687698C7DCAD30D2AC22BBDC50D384AC3803"
+    },
+    {
+      "path": "web/src/theme.ts",
+      "sha256": "A96708058909F14F17EEC25BC6D08BD6D8E0CCA4241DE8EE77748D339076BAE3"
+    },
+    {
+      "path": "desktop/electron-builder.yml",
+      "sha256": "69B385D5CA704271A5B0614A0C66219D163DF796787EC869CB1EBAA71A5690FD"
+    },
+    {
+      "path": "desktop/src/main.ts",
+      "sha256": "EFF7F303CD5A4A0307F9AB2AC6BA0C7D355CF0B523EB40AE0CCAA3C892D1824A"
+    },
+    {
+      "path": "desktop/src/desktop-config.ts",
+      "sha256": "7242D92ED861790E266734032500B12D2AF355E23597FFF6299D20731A74EBFA"
+    },
+    {
+      "path": "server/src/train/random-mode.ts",
+      "sha256": "DA79DC1EC90C07474BA243A5925719560F3E3AB396505EC12F191E2D066663EC"
+    }
+  ],
+  "report": "triage.md"
+}

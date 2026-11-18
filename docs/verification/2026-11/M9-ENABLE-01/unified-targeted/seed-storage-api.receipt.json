@@ -1,0 +1,29 @@
+{
+  "step": "seed-storage-api",
+  "program": "npx.cmd",
+  "args": [
+    "--no-install",
+    "vitest",
+    "run",
+    "--config",
+    "server/vitest.config.ts",
+    "server/test/formula-seed.test.ts",
+    "server/test/formulas/formula-storage.test.ts",
+    "server/test/formula-library-api.test.ts"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:13:59.9918134Z",
+  "endedAt": "2026-11-17T19:14:03.8968201Z",
+  "nativeExitCode": 0,
+  "head": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\seed-storage-api.log",
+  "bytes": 268,
+  "sha256": "92694834ac569fef9423a07775bc3faba144ac35dc90e56109c26ca55af783bc",
+  "environment": {
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+    "TRAINER_CONTROL_ROOT": null,
+    "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon"
+  },
+  "exitCapture": "LASTEXITCODE immediately after native command, no pipeline"
+}

@@ -1,0 +1,6 @@
+{
+  "finished": "2026-11-18T01:51:30.2515524+08:00",
+  "command": "gh api repos/m1kuStark/a-share-kline-trainer/dependency-graph/sbom",
+  "exitCode": 0,
+  "started": "2026-11-18T01:51:28.5602680+08:00"
+}

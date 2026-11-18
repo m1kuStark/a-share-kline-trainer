@@ -1,0 +1,59 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "full candidate original failure",
+      "passed": true
+    },
+    {
+      "check": "259/2/0 candidate stats",
+      "passed": true
+    },
+    {
+      "check": "source revision236 unchanged",
+      "passed": true
+    },
+    {
+      "check": "source and snapshot SHA equality",
+      "passed": true
+    },
+    {
+      "check": "CI snapshot required checks success",
+      "passed": true
+    },
+    {
+      "check": "v4 original script passed field retained",
+      "passed": true
+    },
+    {
+      "check": "v4 normal exits0",
+      "passed": true
+    },
+    {
+      "check": "six v4 frames with heights68,68,0,0,0,0",
+      "passed": true
+    },
+    {
+      "check": "CMD outer0 product0 launcher null",
+      "passed": true
+    },
+    {
+      "check": "desktop crash preserved",
+      "passed": true
+    },
+    {
+      "check": "desktop same freeze rerun0 preserved",
+      "passed": true
+    },
+    {
+      "check": "no old f701 evidence files",
+      "passed": true
+    },
+    {
+      "check": "no prohibited payload files",
+      "passed": true
+    }
+  ],
+  "noApplicationTestBuildRun": true,
+  "archiveSha256": "5437c4ae9f2febdddaf46d99786c7dd1898b5aaa4c15558a7c47e8267403a1bb"
+}

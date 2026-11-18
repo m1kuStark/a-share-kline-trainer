@@ -1,0 +1,23 @@
+{
+  "step": "status-regenerate",
+  "program": "npm.cmd",
+  "args": [
+    "run",
+    "docs:status"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:14:54.1718649Z",
+  "endedAt": "2026-11-17T19:14:55.6188785Z",
+  "nativeExitCode": 0,
+  "head": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\status-regenerate.log",
+  "bytes": 146,
+  "sha256": "b55a9d40ba039acd4c23b9becb17243352a5f3cabcbe8fd3d1b55df09114aed3",
+  "environment": {
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+    "TRAINER_CONTROL_ROOT": "D:\\Superlinear_Academy\\Stock_WorkSpace\\.control",
+    "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot"
+  },
+  "exitCapture": "LASTEXITCODE immediately after native command, no pipeline"
+}

@@ -1,0 +1,51 @@
+schema_version: "harness-matrix-v2"
+module: "formula-chart"
+spec_source: "M9-04C（docs/work-items/tasks/M9-04C.md / docs/proposals/M9-04-formula-product-ui.md）"
+note: "公式图表挂载：主图叠加/副图窗格、周期与推进重算、随机训练遮蔽、录像回放兼容。"
+axes:
+  placement: ["main", "sub"]
+  context: ["training", "replay"]
+  density: ["ordinary", "dense"]
+  random: ["none", "random_stock"]
+rows:
+  - id: "FORMULA-CHART-MAIN"
+    ears: "WHEN 训练图加载且存在启用的主图公式 THE SYSTEM SHALL 在主图 candle_pane 渲染公式输出线，并随推进/周期切换重算"
+    axes: {placement: "main", context: "training"}
+    oracle: "E2E：创建主图公式→训练图 candle_pane 出现 FORMULA_* 指标；推进/切周K后仍在且数据更新；截图可读"
+    test_ids:
+      - "e2e/formula-chart.spec.ts::公式图表：主图叠加与副图窗格可见，周期切换与推进后仍存在"
+    status: "covered"
+  - id: "FORMULA-CHART-SUB"
+    ears: "WHEN 存在启用的副图公式 THE SYSTEM SHALL 为其创建独立窗格（与 VOL/MACD/KDJ 同 pane 机制），可拖动/最大化且回放同样渲染"
+    axes: {placement: "sub", context: "training|replay"}
+    oracle: "E2E：副图公式产生新 pane（paneId≠candle_pane、多输出共用同一 pane）；只读回放页同样出现公式窗格"
+    test_ids:
+      - "e2e/formula-chart.spec.ts::公式图表：主图叠加与副图窗格可见，周期切换与推进后仍存在"
+      - "e2e/formula-chart.spec.ts::公式图表：只读回放页按录像 bars 渲染公式"
+    status: "covered"
+  - id: "FORMULA-CHART-RANDOM-MASK"
+    ears: "WHEN 随机训练图渲染公式 THE SYSTEM SHALL 不旁路 M7-01：使用已遮蔽 bars、不注入 StockContext，上下文函数报人话原因"
+    axes: {random: "random_stock"}
+    oracle: "E2E：random_stock 训练图普通 MA 公式照常渲染；NAMELIKE 公式显示上下文缺失人话提示且页面不出现真实名称/代码"
+    test_ids:
+      - "e2e/formula-chart.spec.ts::公式图表：随机训练不泄露隐藏信息（上下文函数人话提示）"
+    status: "covered"
+  - id: "FORMULA-CHART-RECORDING-PANES"
+    ears: "WHEN 录制捕获 paneHeights THE SYSTEM SHALL 跳过公式 pane，不得把公式窗格高度写回 candle_pane；回放按当前公式渲染"
+    axes: {context: "replay"}
+    oracle: "单测：语义映射跳过公式 pane，candle_pane 高度保持；回放页公式窗格可见（E2E）"
+    test_ids:
+      - "server/test/formula-chart.test.ts::录像 paneHeights 捕获跳过公式 pane，不写回 candle_pane"
+      - "e2e/formula-chart.spec.ts::公式图表：只读回放页按录像 bars 渲染公式"
+    status: "covered"
+  - id: "FORMULA-CHART-DENSE-LAYOUT"
+    ears: "WHEN 启用多个公式副图且正常布局高度不足 THE SYSTEM SHALL 保留主K线和全部启用窗格可见，窗口放大后恢复首选高度，不改变无公式时的原生拖拽及最大化语义"
+    axes: {placement: "sub", context: "training|replay", density: "dense"}
+    oracle: "M9-04C已批准的主图与独立副图显示合同、CHART-LAYOUT-01宿主布局合同；2026-11-18实包主K为0的明确呈现缺陷按ai-harness低风险直修授权修复。正常态各pane大于0；100px仅呈现保留默认，空间不足按比例压缩，不冻结为任意密度可读性承诺。"
+    test_ids:
+      - "e2e/formula-chart.spec.ts::dense formula panes keep main K lines visible and restore roomy pane heights"
+      - "e2e/formula-chart.spec.ts::公式图表：只读回放页按录像 bars 渲染公式"
+      - "server/test/chart-pane-layout.test.ts::retains main and every configured subpane minimum at the captured 628px host"
+      - "server/test/chart-pane-layout.test.ts::scales all effective minima proportionally when the configured floors cannot fit"
+      - "server/test/chart-pane-layout.test.ts::rejects width, height, pane removal, insertion, reordering and unavailable host"
+    status: "covered"

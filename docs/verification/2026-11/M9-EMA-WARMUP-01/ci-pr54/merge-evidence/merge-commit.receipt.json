@@ -1,0 +1,22 @@
+{
+  "name": "merge-commit",
+  "args": [
+    "gh",
+    "api",
+    "repos/m1kuStark/a-share-kline-trainer/commits/58ba0ffc13458fb136c7d885b62ee0c898d4bab8"
+  ],
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:11:05.928030+00:00",
+  "endedAt": "2026-11-17T19:11:07.386304+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "archiveRelativePath": "merge-evidence/merge-commit.stdout",
+    "bytes": 544128,
+    "sha256": "ae0d8e91591abde2e3a081a7fe0df958f35ce56cca8b0f77f67156c48f2df91c"
+  },
+  "stderr": {
+    "archiveRelativePath": "merge-evidence/merge-commit.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

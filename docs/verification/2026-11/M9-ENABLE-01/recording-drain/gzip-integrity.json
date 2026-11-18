@@ -1,0 +1,137 @@
+[
+  {
+    "path": "original-exports-8418/two-year-initial.json.gz",
+    "compressedBytes": 34273,
+    "gzipSha256": "e436988028f8f2e0cbd57205ea000e51890eddc2a7b03537f8142c3124b9acad",
+    "jsonBytes": 167965,
+    "jsonSha256": "d7a958ed73c270f43d64d6f798f6193a41aa0a8a17336d76e8890316f7f47f16",
+    "schemaVersion": 2,
+    "complete": true,
+    "sessionId": "4069f57b-a9ae-404d-866b-70b18e2667ea",
+    "events": 0,
+    "checkpoints": 1,
+    "gaps": [],
+    "app": {
+      "version": "1.3.8",
+      "gitCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+      "dirty": true,
+      "chartLibrary": "10.0.3"
+    },
+    "environment": {
+      "timezone": "Asia/Shanghai",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1
+    }
+  },
+  {
+    "path": "original-exports-8418/two-year-final.json.gz",
+    "compressedBytes": 636191,
+    "gzipSha256": "0f9a1fde3d5514a6b0bc04f034ba14e98034eede0fd204fddd93b7b136958ee1",
+    "jsonBytes": 4219137,
+    "jsonSha256": "4ceacc3327caf6be72d4385c57a82b1eee14459a35e9203577966273c7706751",
+    "schemaVersion": 2,
+    "complete": true,
+    "sessionId": "4069f57b-a9ae-404d-866b-70b18e2667ea",
+    "events": 974,
+    "checkpoints": 975,
+    "gaps": [],
+    "app": {
+      "version": "1.3.8",
+      "gitCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+      "dirty": true,
+      "chartLibrary": "10.0.3"
+    },
+    "environment": {
+      "timezone": "Asia/Shanghai",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1
+    }
+  },
+  {
+    "path": "diagnosis/controlled-browser/old-green.json.gz",
+    "compressedBytes": 635705,
+    "gzipSha256": "30c652d33528ff7957271a5e69c7d779102c359ef33e5b94359940a47c25318a",
+    "jsonBytes": 4218668,
+    "jsonSha256": "24930f32dd9ea93717bdaa74d6ba3e03fe02efaf5569945ba3a47f8adaa4032f",
+    "schemaVersion": 2,
+    "complete": true,
+    "sessionId": "70533749-616b-493a-8835-ae29f6c75454",
+    "events": 974,
+    "checkpoints": 975,
+    "gaps": [],
+    "app": {
+      "version": "1.3.8",
+      "gitCommit": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+      "dirty": true,
+      "chartLibrary": "10.0.3"
+    },
+    "environment": {
+      "timezone": "Asia/Shanghai",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1
+    }
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/two-year-initial.json.gz",
+    "compressedBytes": 34274,
+    "gzipSha256": "48119102c3335e0ac87d815225990cec9c7819dde759dc304ed7f3255988394d",
+    "jsonBytes": 167963,
+    "jsonSha256": "5d705317497543598e480b74067baac8ef5ed54e4d356b25d8e3da8c07c160c4",
+    "schemaVersion": 2,
+    "complete": true,
+    "sessionId": "c32d8991-15b9-4493-a167-800bbf9f06d3",
+    "events": 0,
+    "checkpoints": 1,
+    "gaps": [],
+    "app": {
+      "version": "1.3.8",
+      "gitCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+      "dirty": true,
+      "chartLibrary": "10.0.3"
+    },
+    "environment": {
+      "timezone": "Asia/Shanghai",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1
+    }
+  },
+  {
+    "path": "journey-green-b8cb/artifacts/screenshots/two-year-final.json.gz",
+    "compressedBytes": 636120,
+    "gzipSha256": "f03b8d2d9da1720b8019397c489a3bce64391ffd854da449e8b5d382a3af1813",
+    "jsonBytes": 4218652,
+    "jsonSha256": "13361acc2b9474c8d4d910fd15883c138e6819343b032b4463be66c7437946e7",
+    "schemaVersion": 2,
+    "complete": true,
+    "sessionId": "c32d8991-15b9-4493-a167-800bbf9f06d3",
+    "events": 974,
+    "checkpoints": 975,
+    "gaps": [],
+    "app": {
+      "version": "1.3.8",
+      "gitCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+      "dirty": true,
+      "chartLibrary": "10.0.3"
+    },
+    "environment": {
+      "timezone": "Asia/Shanghai",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "dpr": 1
+    }
+  }
+]

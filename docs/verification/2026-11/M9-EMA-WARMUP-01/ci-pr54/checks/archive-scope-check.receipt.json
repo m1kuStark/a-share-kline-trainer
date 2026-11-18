@@ -1,0 +1,26 @@
+{
+  "name": "archive-scope-check",
+  "args": [
+    "git",
+    "diff",
+    "--check",
+    "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+    "--",
+    "docs/verification/2026-11/M9-EMA-WARMUP-01/"
+  ],
+  "cwd": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "environmentOverrides": {},
+  "startedAt": "2026-11-17T19:15:42.680859+00:00",
+  "endedAt": "2026-11-17T19:15:42.767280+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "archiveRelativePath": "checks/archive-scope-check.stdout",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "archiveRelativePath": "checks/archive-scope-check.stderr",
+    "bytes": 145,
+    "sha256": "03fa0dd43af0fef623350aa1c0ea66a701a079876e19c1bfed5a605fb13be8a7"
+  }
+}

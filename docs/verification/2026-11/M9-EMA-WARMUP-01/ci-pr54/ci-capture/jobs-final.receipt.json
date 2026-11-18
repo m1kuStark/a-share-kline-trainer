@@ -1,0 +1,21 @@
+{
+  "name": "jobs-final",
+  "args": [
+    "gh",
+    "api",
+    "repos/m1kuStark/a-share-kline-trainer/actions/runs/44152821795/jobs?per_page=100"
+  ],
+  "startedAt": "2026-11-17T19:00:07.231305+00:00",
+  "endedAt": "2026-11-17T19:00:08.358745+00:00",
+  "nativeExitCode": 0,
+  "stdout": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\jobs-final.stdout",
+    "bytes": 7120,
+    "sha256": "2a6e916f00b0c148c6a6cd77e30774acb65ffe0ceca127d6dd9037c47c5b1d63"
+  },
+  "stderr": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-EMA-WARMUP-01-ci\\jobs-final.stderr",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

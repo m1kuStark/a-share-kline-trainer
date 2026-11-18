@@ -1,0 +1,5 @@
+﻿2026-11-17T18:54:42.1598043Z ##[group]Run node scripts/ci/check-pr-policy.mjs
+2026-11-17T18:54:42.1598792Z [36;1mnode scripts/ci/check-pr-policy.mjs[0m
+2026-11-17T18:54:42.2883653Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-17T18:54:42.2884177Z ##[endgroup]
+2026-11-17T18:54:42.7065621Z PR policy OK: maintainer branch

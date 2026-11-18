@@ -1,0 +1,28 @@
+{
+  "step": "formula-ui-binding",
+  "program": "node",
+  "args": [
+    "D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/scripts/check-binding.mjs",
+    "--repo",
+    "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+    "--matrix",
+    "D:/Superlinear_Academy/Stock_WorkSpace/.zcode/skills/ai-harness/matrix/formula-ui.yaml",
+    "--strict",
+    "--include-untracked"
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:17:43.1966361Z",
+  "endedAt": "2026-11-17T19:17:44.0274997Z",
+  "nativeExitCode": 0,
+  "head": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\formula-ui-binding.log",
+  "bytes": 205,
+  "sha256": "b02a19293828a57d6720c9786d952341d5c1b4d3595bdcad43aa3819c7a75bf2",
+  "environment": {
+    "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot",
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+    "TRAINER_CONTROL_ROOT": null
+  },
+  "exitCapture": "LASTEXITCODE immediately after native command, no pipeline"
+}

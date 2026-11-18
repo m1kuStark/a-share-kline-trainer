@@ -1,0 +1,14 @@
+{
+  "head": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+  "reviewedFile": "web/src/formula-engine/interpreter/functions/math.ts",
+  "engineBeforeHash": "96841db54525c3817c04c67b5cc1dbf96b732acfadddb1e387c8941170709348",
+  "engineAfterHash": "96841db54525c3817c04c67b5cc1dbf96b732acfadddb1e387c8941170709348",
+  "engineUnchanged": true,
+  "optionalPatchCheckExit": 0,
+  "optionalPatchHash": "1e8fe30f9a72092a90c3f218037e16e506974f10a3bd1334e3f052ab2190c1b7",
+  "serverSourceBundlePresent": false,
+  "diagnosticExit": 0,
+  "candidateValidationExit": 0,
+  "reviewerWrites": "cache only",
+  "verifiedAt": "2026-11-17T17:49:06.5099999Z"
+}

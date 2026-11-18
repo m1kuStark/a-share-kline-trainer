@@ -1,0 +1,1880 @@
+{
+  "schema": "m9-first-failed-candidate-summary-v1",
+  "capturedAt": "2026-11-17T20:30:36.030412+00:00",
+  "sourceCommit": "f70137182ac75635b006d567b34616cc9a9f1bd4",
+  "runId": "run-42206f8c-3a30-4e98-9c72-822f4ad8382a",
+  "isFinalPass": false,
+  "nativeExitCode": 1,
+  "verificationPassed": false,
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 1,
+      "error": "Error: Command exited with 1; see C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\journey.log"
+    }
+  ],
+  "counts": {
+    "total": 261,
+    "passed": 229,
+    "failed": 18,
+    "explicitSkipped": 1,
+    "didNotRun": 13,
+    "flaky": 0
+  },
+  "rawJsonStats": {
+    "startTime": "2026-11-17T19:36:07.092Z",
+    "duration": 2661571.322,
+    "expected": 229,
+    "skipped": 14,
+    "unexpected": 18,
+    "flaky": 0
+  },
+  "countExplanation": "JSON skipped=14 combines one explicit skip with thirteen serial did-not-run tests. There was one attempt per test, retries=0.",
+  "categories": {
+    "pane-count-4-to-5": 15,
+    "D28-timeout": 1,
+    "replay-hover-target-missing": 1,
+    "initial-buy-not-filled": 1
+  },
+  "failures": [
+    {
+      "file": "journey.spec.ts",
+      "line": 141,
+      "column": 1,
+      "title": "Act2a 线段绘制编辑删除",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 0,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22430,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts:112:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts:142:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+              "column": 96,
+              "line": 112
+            },
+            "snippet": " \u001b[90m 110 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.training-meta'\u001b[39m))\u001b[33m.\u001b[39mtoContainText(\u001b[32m'时长 3个月'\u001b[39m)\n \u001b[90m 111 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 112 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m     |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 113 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 114 |\u001b[39m   \u001b[90m// 控制台滚动到底，露出完整工具条\u001b[39m\n \u001b[90m 115 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'.console-scroll'\u001b[39m)\u001b[33m.\u001b[39mevaluate((el\u001b[33m:\u001b[39m \u001b[33mHTMLElement\u001b[39m) \u001b[33m=>\u001b[39m { el\u001b[33m.\u001b[39mscrollTop \u001b[33m=\u001b[39m el\u001b[33m.\u001b[39mscrollHeight })"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+                "column": 96,
+                "line": 112
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  110 |   await expect(page.locator('.training-meta')).toContainText('时长 3个月')\n  111 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 112 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n      |                                                                                                ^\n  113 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  114 |   // 控制台滚动到底，露出完整工具条\n  115 |   await page.locator('.console-scroll').evaluate((el: HTMLElement) => { el.scrollTop = el.scrollHeight })\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts:112:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts:142:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:45:37.942Z",
+          "annotations": [
+            {
+              "type": "serial",
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+                "line": 0,
+                "column": 0
+              }
+            }
+          ],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\journey-Act2a-线段绘制编辑删除\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "column": 96,
+            "line": 112
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/journey-Act2a-线段绘制编辑删除/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 56,
+      "column": 1,
+      "title": "KDJ subchart mounts by default with the VOL/MACD panes intact",
+      "suiteTitles": [
+        "kdj-indicator.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 1,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 24157,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:57:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+              "column": 96,
+              "line": 35
+            },
+            "snippet": " \u001b[90m 33 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 34 |\u001b[39m   \u001b[90m// 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 35 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 36 |\u001b[39m }\n \u001b[90m 37 |\u001b[39m\n \u001b[90m 38 |\u001b[39m \u001b[90m// UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+                "column": 96,
+                "line": 35
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  33 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  34 |   // 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\n> 35 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  36 | }\n  37 |\n  38 | // UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:57:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:01.203Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+            "column": 96,
+            "line": 35
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/kdj-indicator-KDJ-subchart-1e12c-h-the-VOL-MACD-panes-intact/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 72,
+      "column": 1,
+      "title": "toggling KDJ off/on takes effect immediately and persists across reload",
+      "suiteTitles": [
+        "kdj-indicator.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 2,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21940,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:73:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+              "column": 96,
+              "line": 35
+            },
+            "snippet": " \u001b[90m 33 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 34 |\u001b[39m   \u001b[90m// 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 35 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 36 |\u001b[39m }\n \u001b[90m 37 |\u001b[39m\n \u001b[90m 38 |\u001b[39m \u001b[90m// UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+                "column": 96,
+                "line": 35
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  33 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  34 |   // 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\n> 35 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  36 | }\n  37 |\n  38 | // UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:73:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:26.501Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+            "column": 96,
+            "line": 35
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/kdj-indicator-toggling-KDJ-22d7a--and-persists-across-reload/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "kdj-indicator.spec.ts",
+      "line": 93,
+      "column": 1,
+      "title": "KDJ pane participates in box select, dbl-click maximize and drawing like other panes",
+      "suiteTitles": [
+        "kdj-indicator.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 3,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22632,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:94:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+              "column": 96,
+              "line": 35
+            },
+            "snippet": " \u001b[90m 33 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 34 |\u001b[39m   \u001b[90m// 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 35 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 36 |\u001b[39m }\n \u001b[90m 37 |\u001b[39m\n \u001b[90m 38 |\u001b[39m \u001b[90m// UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+                "column": 96,
+                "line": 35
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  33 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  34 |   // 默认偏好（开）：candle/VOL/MACD/KDJ 四个绘图窗格\n> 35 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  36 | }\n  37 |\n  38 | // UI-TOOLBAR-01/02 起划线工具面板是默认左下停靠的浮层，会盖住图表左下区域（KDJ 窗格所在处）；\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:35:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts:94:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:49.581Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\kdj-indicator.spec.ts",
+            "column": 96,
+            "line": 35
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/kdj-indicator-KDJ-pane-par-11f81-nd-drawing-like-other-panes/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "layout-fill.spec.ts",
+      "line": 185,
+      "column": 1,
+      "title": "training chart fills the available height at three desktop sizes in both themes",
+      "suiteTitles": [
+        "layout-fill.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 4,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22123,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:187:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+              "column": 96,
+              "line": 175
+            },
+            "snippet": " \u001b[90m 173 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 174 |\u001b[39m   \u001b[90m// 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 175 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m     |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 176 |\u001b[39m }\n \u001b[90m 177 |\u001b[39m\n \u001b[90m 178 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m setTheme(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m mode\u001b[33m:\u001b[39m \u001b[32m'dark'\u001b[39m \u001b[33m|\u001b[39m \u001b[32m'light'\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+                "column": 96,
+                "line": 175
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  173 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  174 |   // 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\n> 175 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n      |                                                                                                ^\n  176 | }\n  177 |\n  178 | async function setTheme(page: Page, mode: 'dark' | 'light'): Promise<void> {\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:187:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:47:13.388Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+            "column": 96,
+            "line": 175
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/layout-fill-training-chart-0ae38-esktop-sizes-in-both-themes/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "layout-fill.spec.ts",
+      "line": 206,
+      "column": 1,
+      "title": "fill invariants survive MACD toggle, maximize/restore and window resize",
+      "suiteTitles": [
+        "layout-fill.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 5,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22431,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:209:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+              "column": 96,
+              "line": 175
+            },
+            "snippet": " \u001b[90m 173 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 174 |\u001b[39m   \u001b[90m// 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 175 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m     |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 176 |\u001b[39m }\n \u001b[90m 177 |\u001b[39m\n \u001b[90m 178 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m setTheme(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m mode\u001b[33m:\u001b[39m \u001b[32m'dark'\u001b[39m \u001b[33m|\u001b[39m \u001b[32m'light'\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+                "column": 96,
+                "line": 175
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  173 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  174 |   // 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\n> 175 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n      |                                                                                                ^\n  176 | }\n  177 |\n  178 | async function setTheme(page: Page, mode: 'dark' | 'light'): Promise<void> {\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:209:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:47:36.653Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\layout-fill-fill-invariant-8c674-e-restore-and-window-resize\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+            "column": 96,
+            "line": 175
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/layout-fill-fill-invariant-8c674-e-restore-and-window-resize/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "layout-fill.spec.ts",
+      "line": 267,
+      "column": 1,
+      "title": "replay page keeps the inline quote and fills the frame without an empty row",
+      "suiteTitles": [
+        "layout-fill.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 6,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22010,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:270:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+              "column": 96,
+              "line": 175
+            },
+            "snippet": " \u001b[90m 173 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 174 |\u001b[39m   \u001b[90m// 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 175 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m     |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 176 |\u001b[39m }\n \u001b[90m 177 |\u001b[39m\n \u001b[90m 178 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m setTheme(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m mode\u001b[33m:\u001b[39m \u001b[32m'dark'\u001b[39m \u001b[33m|\u001b[39m \u001b[32m'light'\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+                "column": 96,
+                "line": 175
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  173 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  174 |   // 默认偏好：candle/VOL/MACD/KDJ 四个绘图窗格\n> 175 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n      |                                                                                                ^\n  176 | }\n  177 |\n  178 | async function setTheme(page: Page, mode: 'dark' | 'light'): Promise<void> {\n    at createTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:175:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts:270:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:48:00.208Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\layout-fill.spec.ts",
+            "column": 96,
+            "line": 175
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/layout-fill-replay-page-ke-f2c37--frame-without-an-empty-row/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "m3-tools.spec.ts",
+      "line": 802,
+      "column": 1,
+      "title": "M3 D28 文本线段混选编辑文本颜色内容并刷新恢复",
+      "suiteTitles": [
+        "m3-tools.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "timedOut",
+      "category": "D28-timeout",
+      "observation": "D28 用例超过 60000ms；完整 locator 错误保留在 results/errors",
+      "errorMessageWithoutAnsi": "Test timeout of 60000ms exceeded.",
+      "originalResults": [
+        {
+          "workerIndex": 7,
+          "parallelIndex": 0,
+          "status": "timedOut",
+          "duration": 60046,
+          "error": {
+            "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+            "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+          },
+          "errors": [
+            {
+              "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+            },
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\m3-tools.spec.ts",
+                "column": 68,
+                "line": 813
+              },
+              "message": "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.text-edit-panel').getByRole('button', { name: '确定', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button data-v-1a54b31e=\"\">确定</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div></div> from <div tabindex=\"-1\" data-v-1a54b31e=\"\" class=\"chart-host\" k-line-chart-id=\"k_line_chart_1\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div></div> from <div tabindex=\"-1\" data-v-1a54b31e=\"\" class=\"chart-host\" k-line-chart-id=\"k_line_chart_1\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    90 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div></div> from <div tabindex=\"-1\" data-v-1a54b31e=\"\" class=\"chart-host\" k-line-chart-id=\"k_line_chart_1\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\n\n  811 |   await expect(textPanel).toBeVisible()\n  812 |   await textPanel.locator('textarea').fill('原始标注')\n> 813 |   await textPanel.getByRole('button', { name: '确定', exact: true }).click()\n      |                                                                    ^\n  814 |   await expect.poll(async () => (await drawings(page)).length).toBe(2)\n  815 |   const text = (await drawings(page)).find(item => item.name === 'textAnnotation')!\n  816 |   await toolButton(page, '多选').click()\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\m3-tools.spec.ts:813:68"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:54:43.668Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\m3-tools-M3-D28-文本线段混选编辑文本颜色内容并刷新恢复\\error-context.md"
+            }
+          ]
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/m3-tools-M3-D28-文本线段混选编辑文本颜色内容并刷新恢复/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "column": 5,
+      "title": "candle/VOL separator owns diagonal left/right drags in default mode",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 8,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21173,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:58:47.056Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-candle-VOL-sep-d60b6-right-drags-in-default-mode\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-candle-VOL-sep-d60b6-right-drags-in-default-mode/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "column": 5,
+      "title": "VOL/MACD separator owns diagonal left/right drags in default mode",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 9,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21700,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:59:09.003Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-VOL-MACD-separ-6b813-right-drags-in-default-mode\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-VOL-MACD-separ-6b813-right-drags-in-default-mode/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "column": 5,
+      "title": "candle/VOL separator owns diagonal left/right drags in multi mode",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 10,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 23541,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:59:31.902Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-candle-VOL-sep-5092c-t-right-drags-in-multi-mode\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-candle-VOL-sep-5092c-t-right-drags-in-multi-mode/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 120,
+      "column": 5,
+      "title": "VOL/MACD separator owns diagonal left/right drags in multi mode",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 11,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21930,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:122:7"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:59:56.570Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-VOL-MACD-separ-bb339-t-right-drags-in-multi-mode\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-VOL-MACD-separ-bb339-t-right-drags-in-multi-mode/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 138,
+      "column": 1,
+      "title": "Ctrl separator drag preserves selection through the right axis side",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 12,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21826,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:139:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:139:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:00:19.559Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-Ctrl-separator-2c918-through-the-right-axis-side\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-Ctrl-separator-2c918-through-the-right-axis-side/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "pane-resize.spec.ts",
+      "line": 149,
+      "column": 1,
+      "title": "separator drag preserves an active drawing tool and maximized panes remain usable",
+      "suiteTitles": [
+        "pane-resize.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 13,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22931,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:150:3",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+              "column": 96,
+              "line": 28
+            },
+            "snippet": " \u001b[90m 26 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.loading-dot'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 27 |\u001b[39m   \u001b[90m// M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 28 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 29 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'combobox'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'吸附'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mselectOption(\u001b[32m'normal'\u001b[39m)\n \u001b[90m 30 |\u001b[39m }\n \u001b[90m 31 |\u001b[39m"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+                "column": 96,
+                "line": 28
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  26 |   await expect(page.locator('.loading-dot')).not.toBeVisible()\n  27 |   // M6-01：KDJ 副图默认随偏好挂载（candle/VOL/MACD/KDJ）\n> 28 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  29 |   await page.getByRole('combobox', { name: '吸附', exact: true }).selectOption('normal')\n  30 | }\n  31 |\n    at openChart (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:28:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts:150:3"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:00:42.489Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\pane-resize-separator-drag-ce676-ximized-panes-remain-usable\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\pane-resize.spec.ts",
+            "column": 96,
+            "line": 28
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/pane-resize-separator-drag-ce676-ximized-panes-remain-usable/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "percent-hover.spec.ts",
+      "line": 220,
+      "column": 1,
+      "title": "replay view computes the card from the replayed series, first bar shows the gray placeholder",
+      "suiteTitles": [
+        "percent-hover.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "replay-hover-target-missing",
+      "observation": "可见窗口内上涨 K 线悬停目标为 null",
+      "errorMessageWithoutAnsi": "Error: 可见窗口内存在可悬停的上涨 K 线\n\nexpect(received).toBeTruthy()\n\nReceived: null",
+      "originalResults": [
+        {
+          "workerIndex": 14,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 8422,
+          "error": {
+            "message": "Error: 可见窗口内存在可悬停的上涨 K 线\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+            "stack": "Error: 可见窗口内存在可悬停的上涨 K 线\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at pickHoverTargets (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts:107:42)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts:237:19",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts",
+              "column": 42,
+              "line": 107
+            },
+            "snippet": " \u001b[90m 105 |\u001b[39m     \u001b[36mreturn\u001b[39m { up\u001b[33m,\u001b[39m down\u001b[33m,\u001b[39m mid\u001b[33m:\u001b[39m mids[\u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mfloor(mids\u001b[33m.\u001b[39mlength \u001b[33m/\u001b[39m \u001b[35m2\u001b[39m)] \u001b[33m??\u001b[39m \u001b[36mnull\u001b[39m }\n \u001b[90m 106 |\u001b[39m   })\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 107 |\u001b[39m   expect(picked\u001b[33m.\u001b[39mup\u001b[33m,\u001b[39m \u001b[32m'可见窗口内存在可悬停的上涨 K 线'\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\n \u001b[90m     |\u001b[39m                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 108 |\u001b[39m   expect(picked\u001b[33m.\u001b[39mdown\u001b[33m,\u001b[39m \u001b[32m'可见窗口内存在可悬停的下跌 K 线'\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\n \u001b[90m 109 |\u001b[39m   expect(picked\u001b[33m.\u001b[39mmid\u001b[33m,\u001b[39m \u001b[32m'可见窗口内存在可悬停的居中 K 线'\u001b[39m)\u001b[33m.\u001b[39mtoBeTruthy()\n \u001b[90m 110 |\u001b[39m   \u001b[36mreturn\u001b[39m picked"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts",
+                "column": 42,
+                "line": 107
+              },
+              "message": "Error: 可见窗口内存在可悬停的上涨 K 线\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n\n  105 |     return { up, down, mid: mids[Math.floor(mids.length / 2)] ?? null }\n  106 |   })\n> 107 |   expect(picked.up, '可见窗口内存在可悬停的上涨 K 线').toBeTruthy()\n      |                                          ^\n  108 |   expect(picked.down, '可见窗口内存在可悬停的下跌 K 线').toBeTruthy()\n  109 |   expect(picked.mid, '可见窗口内存在可悬停的居中 K 线').toBeTruthy()\n  110 |   return picked\n    at pickHoverTargets (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts:107:42)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts:237:19"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:01:25.351Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\percent-hover-replay-view--85689--shows-the-gray-placeholder\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\percent-hover.spec.ts",
+            "column": 42,
+            "line": 107
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/percent-hover-replay-view--85689--shows-the-gray-placeholder/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "recording-long.spec.ts",
+      "line": 26,
+      "column": 1,
+      "title": "两年前复权训练含交易画线周期切换，可压缩导出并离线回放",
+      "suiteTitles": [
+        "recording-long.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "initial-buy-not-filled",
+      "observation": "initialBuyFilled 预期 true、实际 false",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false",
+      "originalResults": [
+        {
+          "workerIndex": 18,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 29008,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts:66:28",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts",
+              "column": 28,
+              "line": 66
+            },
+            "snippet": " \u001b[90m 64 |\u001b[39m     \u001b[36mif\u001b[39m (filled) { initialBuyFilled \u001b[33m=\u001b[39m \u001b[36mtrue\u001b[39m\u001b[33m;\u001b[39m \u001b[36mbreak\u001b[39m }\n \u001b[90m 65 |\u001b[39m   }\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 66 |\u001b[39m   expect(initialBuyFilled)\u001b[33m.\u001b[39mtoBe(\u001b[36mtrue\u001b[39m)\n \u001b[90m    |\u001b[39m                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 67 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'刷新图表'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m }))\u001b[33m.\u001b[39mtoBeEnabled()\n \u001b[90m 68 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'卖出'\u001b[39m\u001b[33m,\u001b[39m exact\u001b[33m:\u001b[39m \u001b[36mtrue\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 69 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.status-message'\u001b[39m))\u001b[33m.\u001b[39mtoHaveClass(\u001b[35m/error-text/\u001b[39m)"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts",
+                "column": 28,
+                "line": 66
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  64 |     if (filled) { initialBuyFilled = true; break }\n  65 |   }\n> 66 |   expect(initialBuyFilled).toBe(true)\n     |                            ^\n  67 |   await expect(page.getByRole('button', { name: '刷新图表', exact: true })).toBeEnabled()\n  68 |   await page.getByRole('button', { name: '卖出', exact: true }).click()\n  69 |   await expect(page.locator('.status-message')).toHaveClass(/error-text/)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts:66:28"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:19:58.873Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\recording-long.spec.ts",
+            "column": 28,
+            "line": 66
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/recording-long-两年前复权训练含交易画线周期切换，可压缩导出并离线回放/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "uiux-training.spec.ts",
+      "line": 145,
+      "column": 1,
+      "title": "training keeps trading and drawing available together without shifting chart or advance target",
+      "suiteTitles": [
+        "uiux-training.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 15,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 21909,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:24:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:150:16",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+              "column": 96,
+              "line": 24
+            },
+            "snippet": " \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.drawing-save-status'\u001b[39m))\u001b[33m.\u001b[39mtoHaveText(\u001b[32m'已保存'\u001b[39m)\n \u001b[90m 23 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.training-grid'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoHaveAttribute(\u001b[32m'inert'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m   \u001b[36mawait\u001b[39m settle(page)\n \u001b[90m 26 |\u001b[39m   \u001b[36mreturn\u001b[39m id\n \u001b[90m 27 |\u001b[39m }"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+                "column": 96,
+                "line": 24
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  22 |   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')\n  23 |   await expect(page.locator('.training-grid')).not.toHaveAttribute('inert', '')\n> 24 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  25 |   await settle(page)\n  26 |   return id\n  27 | }\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:24:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:150:16"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:18:48.208Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\uiux-training-training-kee-35179-ing-chart-or-advance-target\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+            "column": 96,
+            "line": 24
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/uiux-training-training-kee-35179-ing-chart-or-advance-target/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    },
+    {
+      "file": "uiux-training.spec.ts",
+      "line": 188,
+      "column": 1,
+      "title": "training keeps enlarged text and every drawing entry reachable by local wheel at actual minimum content size",
+      "suiteTitles": [
+        "uiux-training.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "unexpected",
+      "annotations": [],
+      "resultStatus": "failed",
+      "category": "pane-count-4-to-5",
+      "observation": "默认四窗格断言收到五窗格",
+      "errorMessageWithoutAnsi": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 4\nReceived: 5\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+      "originalResults": [
+        {
+          "workerIndex": 16,
+          "parallelIndex": 0,
+          "status": "failed",
+          "duration": 22040,
+          "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:24:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:191:14",
+            "location": {
+              "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+              "column": 96,
+              "line": 24
+            },
+            "snippet": " \u001b[90m 22 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.drawing-save-status'\u001b[39m))\u001b[33m.\u001b[39mtoHaveText(\u001b[32m'已保存'\u001b[39m)\n \u001b[90m 23 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.training-grid'\u001b[39m))\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoHaveAttribute(\u001b[32m'inert'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 24 |\u001b[39m   \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39mpoll(() \u001b[33m=>\u001b[39m page\u001b[33m.\u001b[39mevaluate(() \u001b[33m=>\u001b[39m (window \u001b[36mas\u001b[39m any)\u001b[33m.\u001b[39m__trainerChart\u001b[33m?.\u001b[39mpanes()\u001b[33m.\u001b[39mlength))\u001b[33m.\u001b[39mtoBe(\u001b[35m4\u001b[39m)\n \u001b[90m    |\u001b[39m                                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 25 |\u001b[39m   \u001b[36mawait\u001b[39m settle(page)\n \u001b[90m 26 |\u001b[39m   \u001b[36mreturn\u001b[39m id\n \u001b[90m 27 |\u001b[39m }"
+          },
+          "errors": [
+            {
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+                "column": 96,
+                "line": 24
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m4\u001b[39m\nReceived: \u001b[31m5\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  22 |   await expect(page.locator('.drawing-save-status')).toHaveText('已保存')\n  23 |   await expect(page.locator('.training-grid')).not.toHaveAttribute('inert', '')\n> 24 |   await expect.poll(() => page.evaluate(() => (window as any).__trainerChart?.panes().length)).toBe(4)\n     |                                                                                                ^\n  25 |   await settle(page)\n  26 |   return id\n  27 | }\n    at openTraining (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:24:96)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts:191:14"
+            }
+          ],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T20:19:10.838Z",
+          "annotations": [],
+          "attachments": [
+            {
+              "name": "error-context",
+              "contentType": "text/markdown",
+              "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-42206f8c-3a30-4e98-9c72-822f4ad8382a\\artifacts\\test-results\\uiux-training-training-kee-a871d-actual-minimum-content-size\\error-context.md"
+            }
+          ],
+          "errorLocation": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\uiux-training.spec.ts",
+            "column": 96,
+            "line": 24
+          }
+        }
+      ],
+      "errorContextMembers": [
+        "run/artifacts/test-results/uiux-training-training-kee-a871d-actual-minimum-content-size/error-context.md"
+      ],
+      "causalLimit": "Observed failure only; no claim that every category has the same root cause."
+    }
+  ],
+  "explicitSkips": [
+    {
+      "file": "migration-v127.spec.ts",
+      "line": 216,
+      "column": 1,
+      "title": "v1.2.7 真实包：隔离起服→播种→导出工具→合并包→新版导入回放全链路",
+      "suiteTitles": [
+        "migration-v127.spec.ts"
+      ],
+      "expectedStatus": "skipped",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "skip",
+          "description": "MIG_V127_PACKAGE 未设置：需要本地 v1.2.7 包路径才能运行迁移真实链路",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\migration-v127.spec.ts",
+            "line": 214,
+            "column": 6
+          }
+        }
+      ],
+      "reason": [
+        "MIG_V127_PACKAGE 未设置：需要本地 v1.2.7 包路径才能运行迁移真实链路"
+      ],
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:57:50.422Z",
+          "annotations": [
+            {
+              "type": "skip",
+              "description": "MIG_V127_PACKAGE 未设置：需要本地 v1.2.7 包路径才能运行迁移真实链路",
+              "location": {
+                "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\migration-v127.spec.ts",
+                "line": 214,
+                "column": 6
+              }
+            }
+          ],
+          "attachments": []
+        }
+      ]
+    }
+  ],
+  "didNotRun": [
+    {
+      "file": "journey.spec.ts",
+      "line": 163,
+      "column": 1,
+      "title": "Act2d 空白点击解除持久选中（选中状态机）",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.771Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 177,
+      "column": 1,
+      "title": "Act2b 射线延伸段可选中",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 187,
+      "column": 1,
+      "title": "Act2c 直线两端延伸段可选中",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 198,
+      "column": 1,
+      "title": "Act2e 水平线系三工具（D5~D7）",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 228,
+      "column": 1,
+      "title": "Act3a 轴拖拽进主图缩放持续（不中断）",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 246,
+      "column": 1,
+      "title": "Act3b 手动轴后框选无纵向叠加",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 267,
+      "column": 1,
+      "title": "Act3c 按线拖拽只动线段不动图",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 291,
+      "column": 1,
+      "title": "Act3d 中键平移整图且松键不残留",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 324,
+      "column": 1,
+      "title": "Act4a 多选模式框选批量选中且不缩放",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 351,
+      "column": 1,
+      "title": "Act4b Ctrl+点选累加与批量删除",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 370,
+      "column": 1,
+      "title": "Act4c 选项卡式批量编辑",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 401,
+      "column": 1,
+      "title": "Act4d 副图画线与多选框选（主副图同权）",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    },
+    {
+      "file": "journey.spec.ts",
+      "line": 441,
+      "column": 1,
+      "title": "Act6 主题切换持久化",
+      "suiteTitles": [
+        "journey.spec.ts"
+      ],
+      "expectedStatus": "passed",
+      "status": "skipped",
+      "annotations": [
+        {
+          "type": "serial",
+          "location": {
+            "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\journey.spec.ts",
+            "line": 0,
+            "column": 0
+          }
+        }
+      ],
+      "reason": "Journey is serial; previous Act2a failed at the four-pane assertion. Playwright reports skipped with expectedStatus=passed and the list reporter counts did not run.",
+      "trigger": {
+        "file": "journey.spec.ts",
+        "line": 141,
+        "title": "Act2a 线段绘制编辑删除"
+      },
+      "originalResults": [
+        {
+          "workerIndex": -1,
+          "parallelIndex": -1,
+          "status": "skipped",
+          "duration": 0,
+          "errors": [],
+          "stdout": [],
+          "stderr": [],
+          "retry": 0,
+          "startTime": "2026-11-17T19:46:00.772Z",
+          "annotations": [],
+          "attachments": []
+        }
+      ]
+    }
+  ],
+  "proofPresence": {
+    "sourcePath": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer/.runs/candidate-proof.json",
+    "existsAtCapture": false,
+    "association": "absent; failed run issued no promotion proof"
+  },
+  "controlIsolation": {
+    "wrapperNativeExitCode": 1,
+    "gates": {
+      "sharedStatusBefore": 0,
+      "sharedStatusAfter": 0,
+      "candidate": 1
+    },
+    "cleanup": {
+      "localSnapshotRemoved": true,
+      "sourceUnchanged": true,
+      "snapshotUnchanged": true
+    },
+    "allFourRecordedControlHashesEqual": true,
+    "recordedControlSha256": "9f643e75a9dfde04af2e5ded84fc4b1463604199e22ae5b57abffd572fe29276",
+    "sourceRevision": 235,
+    "limit": "Equality independently checked within the original wrapper receipt; current real control file was not reopened or modified."
+  },
+  "limits": [
+    "Archive and extraction only; no product/server/browser/test process run and no database access.",
+    "Fifteen pane-count failures match the fixture-leak symptom; the other three remain separate observed failures requiring investigation.",
+    "Original errors and bytes retained; derived summary strips ANSI only for readability.",
+    "No promotion proof exists at capture for this failed run.",
+    "Later RED/GREEN or final candidate success must use separate run evidence."
+  ]
+}

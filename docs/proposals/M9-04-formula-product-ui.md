@@ -33,7 +33,7 @@
 - 不做：选股扫描、条件单联动、公式云同步、任意脚本执行（只执行公式 DSL）。
 - 公式来源可信度：公式为用户本机文本；引擎执行按既有沙箱（无 IO/网络能力）。
 - 内置示例已随 M9-04D 入库（PR #47）；A 卡不 seed。
-- 当前实现的 3 个内置示例默认 `enabled=0`，设置页可见、可预览，但尚无 UI 启停开关；图表启用需要通过公式库 API。此实施差距见 [M9-04D 验证记录](../verification/2026-11/M9-04D/README.md)，后继任务需明确 UI 启停及开箱显示范围，再组织整批验收；本次维护不改变冻结行为或默认值。
+- 3 个内置示例新建时默认 `enabled=0`；设置页启停控件曾因保存请求遗漏 enabled，且内置请求夹带受保护 name/source 而返回403；该保存缺口现由M9-ENABLE-01修复并有专项收据。2026-11-18 用户已批准默认停用、逐个开启后自动按预设主/副图显示；[M9-ENABLE-01](../work-items/tasks/M9-ENABLE-01.md)负责闭环保存、刷新和整批候选，精确规则见[公式规格](../specs/formulas.md)。历史[M9-04D证据](../verification/2026-11/M9-04D/README.md)保留原运行结论；开发批准不代替用户验收。
 
 ## 五、评审修订（2026-11-17，实施后冻结调整）
 
@@ -43,3 +43,11 @@
 - 引擎加载：生产加载构建期 bundle；dev/测试回退 `FormulaEngine.ts`＋`futureFunctions.ts` 纯值入口（不能加载 index.ts，其把纯类型按值导出）。
 - 错误消息：统一中文前缀＋行/列；常见引擎消息映射中文，未知细节保留原文便于排查。
 - 发布打包：ZIP/桌面包的 server/dist 必须包含 `formulas/engine-bundle/index.mjs`（`scripts/release/build.mjs` 已纳入 `.mjs`）。
+
+## 历史：2026-11-18 EMA批准前的候选阻断
+
+三示例默认停用、逐个开启自动按预设主副图显示已获批准；保存修复和回归由[M9-ENABLE-01](../work-items/tasks/M9-ENABLE-01.md)接续。QINIU DEA全空来自公共EMA前导NaN暖机，独立引擎范围尚待用户决定；不得删曲线有效值断言或修改示例公式来交付。完整候选、Windows包及人工验收仍未完成。
+
+## 后继：独立修复已合入，整批继续验证
+
+用户随后批准独立M9-EMA-WARMUP-01，修复由PR54合入main58ba0ff；保存缺口已有启停专项6/6和种子/存储/API专项13/13收据。完整候选f701371仍有Journey失败，当前active，须修复后完整复跑并完成Windows实包与用户整批验收，当前状态见[公式规格](../specs/formulas.md)及[M9验证记录](../verification/2026-11/M9-ENABLE-01/README.md)。

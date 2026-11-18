@@ -1,0 +1,32 @@
+﻿2026-11-17T18:54:59.7943518Z Post job cleanup.
+2026-11-17T18:55:00.0087231Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-17T18:55:00.0482208Z git version 2.56.0.windows.4
+2026-11-17T18:55:00.0547475Z Temporarily overriding HOME='D:\a\_temp\bbd581eb-d05b-4d89-b8c3-60d5fdc3a7bc' before making global git config changes
+2026-11-17T18:55:00.0548467Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T18:55:00.0557391Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\a-share-kline-trainer\a-share-kline-trainer
+2026-11-17T18:55:00.0874502Z Removing SSH command configuration
+2026-11-17T18:55:00.0884003Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T18:55:00.1242160Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-17T18:55:00.6905427Z Removing HTTP extra header
+2026-11-17T18:55:00.6914148Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T18:55:00.7251076Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-17T18:55:01.2778119Z Removing includeIf entries pointing to credentials config files
+2026-11-17T18:55:01.2787534Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T18:55:01.3088865Z includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git.path
+2026-11-17T18:55:01.3089776Z includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git/worktrees/*.path
+2026-11-17T18:55:01.3090414Z includeif.gitdir:/github/workspace/.git.path
+2026-11-17T18:55:01.3090891Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T18:55:01.3128116Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git.path
+2026-11-17T18:55:01.3393123Z D:\a\_temp\git-credentials-92dd51f4-c9c4-4ae5-a0f1-9080cf957835.config
+2026-11-17T18:55:01.3429898Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git.path D\:\\a\\_temp\\git\-credentials\-92dd51f4\-c9c4\-4ae5\-a0f1\-9080cf957835\.config
+2026-11-17T18:55:01.3722694Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git/worktrees/*.path
+2026-11-17T18:55:01.3977577Z D:\a\_temp\git-credentials-92dd51f4-c9c4-4ae5-a0f1-9080cf957835.config
+2026-11-17T18:55:01.4012488Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/a-share-kline-trainer/a-share-kline-trainer/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-92dd51f4\-c9c4\-4ae5\-a0f1\-9080cf957835\.config
+2026-11-17T18:55:01.4306787Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-17T18:55:01.4565963Z /github/runner_temp/git-credentials-92dd51f4-c9c4-4ae5-a0f1-9080cf957835.config
+2026-11-17T18:55:01.4604690Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-92dd51f4\-c9c4\-4ae5\-a0f1\-9080cf957835\.config
+2026-11-17T18:55:01.4895758Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T18:55:01.5146756Z /github/runner_temp/git-credentials-92dd51f4-c9c4-4ae5-a0f1-9080cf957835.config
+2026-11-17T18:55:01.5179813Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-92dd51f4\-c9c4\-4ae5\-a0f1\-9080cf957835\.config
+2026-11-17T18:55:01.5468042Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-17T18:55:02.0231033Z Removing credentials config 'D:\a\_temp\git-credentials-92dd51f4-c9c4-4ae5-a0f1-9080cf957835.config'

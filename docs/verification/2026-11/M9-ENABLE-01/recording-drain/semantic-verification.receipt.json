@@ -1,0 +1,411 @@
+{
+  "createdAt": "2026-11-18T04:08:09.355749+00:00",
+  "checks": [
+    {
+      "name": "original_journey_native_exit",
+      "passed": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "original_journey_controller_log_hash",
+      "passed": true,
+      "actual": "09c3262342a6deb56c4a7bb092cfeb3ac88a7f863258cdd240cc4e0ed864a682",
+      "expected": "09c3262342a6deb56c4a7bb092cfeb3ac88a7f863258cdd240cc4e0ed864a682"
+    },
+    {
+      "name": "original_journey_run_identity",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "original_reporter_expected",
+      "passed": true,
+      "actual": 18,
+      "expected": 18
+    },
+    {
+      "name": "original_reporter_unexpected",
+      "passed": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "original_import_json_truncation",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "original_await_line140",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "gzip_schema_original-exports-8418/two-year-initial.json.gz",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "gzip_complete_original-exports-8418/two-year-initial.json.gz",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "gzip_schema_original-exports-8418/two-year-final.json.gz",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "gzip_complete_original-exports-8418/two-year-final.json.gz",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "gzip_schema_diagnosis/controlled-browser/old-green.json.gz",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "gzip_complete_diagnosis/controlled-browser/old-green.json.gz",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "gzip_schema_journey-green-b8cb/artifacts/screenshots/two-year-initial.json.gz",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "gzip_complete_journey-green-b8cb/artifacts/screenshots/two-year-initial.json.gz",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "gzip_schema_journey-green-b8cb/artifacts/screenshots/two-year-final.json.gz",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "gzip_complete_journey-green-b8cb/artifacts/screenshots/two-year-final.json.gz",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "failed_final_gzip_original_sha",
+      "passed": true,
+      "actual": "0f9a1fde3d5514a6b0bc04f034ba14e98034eede0fd204fddd93b7b136958ee1",
+      "expected": "0f9a1fde3d5514a6b0bc04f034ba14e98034eede0fd204fddd93b7b136958ee1"
+    },
+    {
+      "name": "failed_final_export_counts",
+      "passed": true,
+      "actual": [
+        4219137,
+        974,
+        975
+      ],
+      "expected": [
+        4219137,
+        974,
+        975
+      ]
+    },
+    {
+      "name": "failed_final_duplicate_probe_input_identical",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "native_probe_completed",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "native_probe_external_requests",
+      "passed": true,
+      "actual": [],
+      "expected": []
+    },
+    {
+      "name": "native_probe_page_errors",
+      "passed": true,
+      "actual": [],
+      "expected": []
+    },
+    {
+      "name": "native_uninjected_current/original",
+      "passed": true,
+      "actual": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "expected": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "native_uninjected_current/candidate",
+      "passed": true,
+      "actual": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "expected": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "native_uninjected_old-green/original",
+      "passed": true,
+      "actual": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "expected": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "native_uninjected_old-green/candidate",
+      "passed": true,
+      "actual": [
+        20,
+        20,
+        20,
+        20
+      ],
+      "expected": [
+        20,
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "scheduled_native_probe_completed",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "scheduled_original_all_truncated",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "scheduled_candidate_all_complete",
+      "passed": true,
+      "actual": 9,
+      "expected": 9
+    },
+    {
+      "name": "deterministic_original_fails",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "deterministic_candidate_complete",
+      "passed": true,
+      "actual": 5,
+      "expected": 5
+    },
+    {
+      "name": "unit_red_native_exit",
+      "passed": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "unit_red_original_source_unchanged",
+      "passed": true,
+      "actual": "9ead6891f7b7dd6dd1d0ff85734f94994397228cbdb14ab7024a7b707953c4df",
+      "expected": "9ead6891f7b7dd6dd1d0ff85734f94994397228cbdb14ab7024a7b707953c4df"
+    },
+    {
+      "name": "unit_red_log_hash",
+      "passed": true,
+      "actual": "e0c89e8d3ec6e138f224d185f181d53a16eed75041005dfafcd0807d33ceeb9b",
+      "expected": "e0c89e8d3ec6e138f224d185f181d53a16eed75041005dfafcd0807d33ceeb9b"
+    },
+    {
+      "name": "unit_red_expected_tail_failure",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "unit_red_filtered_25",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "unit_green_native_exit",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "unit_green_full_no_name_filter",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "unit_green_all_44_pass",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "final_product_matches_unit_green",
+      "passed": true,
+      "actual": "1536368e2ba6e080c96d4d18c05ab40aa43cf4f38278c0e826bd0b0c10716180",
+      "expected": "1536368e2ba6e080c96d4d18c05ab40aa43cf4f38278c0e826bd0b0c10716180"
+    },
+    {
+      "name": "final_test_matches_unit_green",
+      "passed": true,
+      "actual": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4",
+      "expected": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4"
+    },
+    {
+      "name": "green_test_equals_red_test",
+      "passed": true,
+      "actual": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4",
+      "expected": "c6db633a296533d80d0923900f1d6beab7c6b8bcab594318b55ef1e1dfa29da4"
+    },
+    {
+      "name": "all_original_test_bodies_preserved",
+      "passed": true,
+      "actual": "normalized source equality",
+      "expected": "baseline f945 source after removing only new test and vi import"
+    },
+    {
+      "name": "product_only_normal_drain_insertion",
+      "passed": true,
+      "actual": "normalized source equality",
+      "expected": "baseline f945 after removing only three inserted lines"
+    },
+    {
+      "name": "green_journey_native_exit",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "green_journey_controller_log_hash",
+      "passed": true,
+      "actual": "28cbc5f1e1a6e65314c3eedd72c4ec07e571de8360376535a2fa96e48a8c8ab7",
+      "expected": "28cbc5f1e1a6e65314c3eedd72c4ec07e571de8360376535a2fa96e48a8c8ab7"
+    },
+    {
+      "name": "same_controller_script_sha",
+      "passed": true,
+      "actual": "3264d340b4d94d037218c315695d0252420a808007b28497dd5eec7a46d6ae2b",
+      "expected": "3264d340b4d94d037218c315695d0252420a808007b28497dd5eec7a46d6ae2b"
+    },
+    {
+      "name": "green_journey_expected",
+      "passed": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "green_journey_unexpected",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "green_journey_skipped",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "green_journey_flaky",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "green_journey_metrics",
+      "passed": true,
+      "actual": [
+        483,
+        974,
+        975,
+        975
+      ],
+      "expected": [
+        483,
+        974,
+        975,
+        975
+      ]
+    },
+    {
+      "name": "green_journey_page_errors",
+      "passed": true,
+      "actual": [],
+      "expected": []
+    },
+    {
+      "name": "green_final_gzip_counts",
+      "passed": true,
+      "actual": [
+        636120,
+        4218652,
+        974,
+        975
+      ],
+      "expected": [
+        636120,
+        4218652,
+        974,
+        975
+      ]
+    },
+    {
+      "name": "green_png_signature",
+      "passed": true,
+      "actual": "89504e470d0a1a0a",
+      "expected": "89504e470d0a1a0a"
+    }
+  ],
+  "passed": true,
+  "independentProductReview": "pending_root; this receipt verifies archived facts and identity only"
+}

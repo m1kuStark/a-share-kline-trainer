@@ -1,0 +1,6 @@
+{
+  "finished": "2026-11-18T01:51:29.4417648+08:00",
+  "command": "gh api repos/m1kuStark/a-share-kline-trainer/dependabot/alerts/48",
+  "started": "2026-11-18T01:51:28.5100383+08:00",
+  "exitCode": 0
+}

@@ -9,7 +9,7 @@
   "milestone": "ENG",
   "base_commit": "b1ff3e9f241e60b3e85c7572084dbc306b259d08",
   "summary": "已观测原生产实现正确终止受管父孙进程、保留日志并释放目录；确定两条显式15s测试预算短于20–30s taskkill上界，超时后异步命令未先排空还会撞到目录回收。本片仅修测试生命周期与预算，增加detached孙进程、树外哨兵、目录释放和原始取消理由断言；撤去/T的两条真实变异均因孙存活失败。生产实现保持原字节，完整npm test与审查结果见本任务验证记录。",
-  "next_action": "正式全量3023测试exit0，独立只读审查Critical/Important/Minor均0；root已将runtime三行L2提升并strict0。补齐共享文档门禁后走独立PR/CI，完整候选与Journey由后继M9整批同提交验证；本片无产品代码修改，不代表M9人工验收。",
+  "next_action": "PR51已合入；生产文件字节未改。完整本地3023项通过；CI首次设置用例超时、准确同head第二次完整通过均保留。工程实现已落地，完整候选/包与人工验收归后继M9，不能把review标签当成仍待重做。",
   "allowed_paths": [
     "scripts/runtime/run.ts",
     "server/test/runtime-isolation.test.ts",
@@ -37,7 +37,7 @@
     "docs/verification/2026-11/ENG-HEALTH-02/validation.md",
     "docs/verification/2026-11/RUNTIME-CANCEL-02/validation.md"
   ],
-  "integration_ref": null,
+  "integration_ref": "f4bbc6af283562c8d567918fb4a59f3f51d71ffe",
   "acceptance_ref": null
 }
 ```

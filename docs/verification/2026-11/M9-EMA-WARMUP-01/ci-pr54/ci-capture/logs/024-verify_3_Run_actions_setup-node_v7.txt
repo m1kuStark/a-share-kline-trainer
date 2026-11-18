@@ -1,0 +1,25 @@
+﻿2026-11-17T18:54:29.9390759Z ##[group]Run actions/setup-node@v7
+2026-11-17T18:54:29.9391067Z with:
+2026-11-17T18:54:29.9391228Z   node-version: 24.15.0
+2026-11-17T18:54:29.9391401Z   cache: npm
+2026-11-17T18:54:29.9391555Z   check-latest: false
+2026-11-17T18:54:29.9393715Z   token: ***
+2026-11-17T18:54:29.9393900Z   package-manager-cache: true
+2026-11-17T18:54:29.9394101Z ##[endgroup]
+2026-11-17T18:54:30.0924046Z Attempting to download 24.15.0...
+2026-11-17T18:54:30.6535365Z Acquiring 24.15.0 - x64 from https://github.com/actions/node-versions/releases/download/24.15.0-24511264946/node-24.15.0-win32-x64.7z
+2026-11-17T18:54:30.9942891Z Extracting ...
+2026-11-17T18:54:32.8522146Z Adding to the cache ...
+2026-11-17T18:54:35.9291652Z ##[group]Environment details
+2026-11-17T18:54:37.0042909Z node: v24.15.0
+2026-11-17T18:54:37.0043174Z npm: 11.12.1
+2026-11-17T18:54:37.0043331Z yarn: 1.22.22
+2026-11-17T18:54:37.0043732Z ##[endgroup]
+2026-11-17T18:54:37.0591357Z [command]C:\Windows\system32\cmd.exe /D /S /C "C:\hostedtoolcache\windows\node\24.15.0\x64\npm.cmd config get cache"
+2026-11-17T18:54:37.2979666Z C:\npm\cache
+2026-11-17T18:54:37.5291755Z Cache hit for: node-cache-Windows-x64-npm-4e2f0f32db3df56f64e8c7b1b76bf68add25ca22752a8e2a3fd8f4abc14bab9e
+2026-11-17T18:54:38.0401490Z Received 55618044 of 55618044 (100.0%), 120.0 MBs/sec
+2026-11-17T18:54:38.0404038Z Cache Size: ~53 MB (55618044 B)
+2026-11-17T18:54:38.0431353Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/147e899f-465a-4266-a0c3-3240e9348e26/cache.tzst -P -C D:/a/a-share-kline-trainer/a-share-kline-trainer --force-local --use-compress-program "zstd -d"
+2026-11-17T18:54:42.0266612Z Cache restored successfully
+2026-11-17T18:54:42.0308808Z Cache restored from key: node-cache-Windows-x64-npm-4e2f0f32db3df56f64e8c7b1b76bf68add25ca22752a8e2a3fd8f4abc14bab9e

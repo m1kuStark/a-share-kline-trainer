@@ -22,6 +22,8 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 
 主图、VOL、MACD 的绘图区同权，时间轴排除。多选框选不缩放；关闭多选会清空集合和自绘锚点。选中层为 18px 黄芯白圈，随选中、可见范围和拖动重算，线体保留原色。hover 只改变指针。
 
+公式副图预算复用原生分隔手势，记录宿主宽高、pane 顺序、初始高度和压缩比例，拖动时暂停预算。完成后副/副反算首选，主/副提交全部副图可见布局；resize 不改首选。几何/窗格变化作废提交，cancel 丢弃增量并恢复首选。
+
 源码复核待验证：当前 `onHostMouseDown` 的 Ctrl/多选分支位于价格轴判断之前，`paneIdAt` 只按 y 判 pane，分支内没有排除价格轴；不能据旧说明声称“多选下轴拖拽已保证可用”。应以真实事件核对该组合，再决定是否调整守卫顺序。
 
 ## 视窗、日期和标记
@@ -46,6 +48,7 @@ MA-01：主图顶部“MA 设置”按钮打开原生模态dialog，绘图取点
 | 图表 window | pointermove；pointerup 手势处理；pointerup 历史记录；pointercancel 分隔取消；keydown capture；pointerdown capture 全局关闭 | 两处 `onUnmounted` 成对移除 |
 | 图表区间统计 | window blur取消未完成统计选择/菜单；pointercancel沿已有入口取消 | 对应onUnmounted移除blur；无额外持久化或计时器 |
 | 图表实例与尺寸 | visible-range 订阅；ResizeObserver；待执行微任务 | 库公开 `dispose(host)`；observer disconnect；微任务检查 `disposed` |
+| 公式副图预算 | 复用尺寸/指针监听；合并 requestAnimationFrame；首选与手势快照 | 卸载取消帧并清状态；帧检查 `disposed`，监听沿原链释放 |
 | 图表录制与回放 | 150ms尾沿捕获/用户视窗操作计时器；回放恢复requestAnimationFrame | `cancelChartCapture()`、`cancelViewportOperation()`、`cancelReplayRestore()`；只读/卸载/程序恢复时不发捕获反馈 |
 | Training | keydown；pagehide；document visibilitychange；保存/短提示计时器 | 卸载移除、清计时器并尝试 flush |
 | App / dataStatus | window focus；document visibilitychange；状态轮询；提醒动画计时器 | 卸载移除并 `cancelDataWatchers()`、清动画计时器 |

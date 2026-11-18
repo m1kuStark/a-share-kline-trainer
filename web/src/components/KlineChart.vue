@@ -5,6 +5,7 @@ import '../overlays'
 import '../indicators'
 import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import { appKdjSubchart, appVolSubchart, appMacdSubchart } from '../appSettings'
+import { allocateSubPaneHeights, paneResizeGeometryMatches, type PaneResizeGeometry } from '../chartPaneLayout'
 import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
 import { DrawingHistory, serializeDrawings, applyDrawingPrices, type Drawing } from '../drawingState'
@@ -522,6 +523,95 @@ const SUBCHART_PREFS: Record<ToggleableIndicator, { enabled: () => boolean; moun
   // KDJ 配色 proposed_default（K 白/D 黄/J 紫洋红，通达信习惯；M6-01 待用户验收确认），经 styles.lines 传入
   KDJ: { enabled: () => appKdjSubchart.value, mount: () => { chart!.createIndicator({ name: 'KDJ', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }, { color: '#d446d6' }] } }, false) } },
 }
+// Separate preferred requests from effective budget heights; growing the host restores them.
+const paneHeightRequests = new Map<string, { height: number; minHeight: number }>()
+let paneBudgetFrame: number | null = null
+let originalMainMinHeight: number | null = null
+let lastPaneBudgetFraction = 1
+// Only a native separator gesture may rewrite preferred requests. Resize/replay/maximize may not.
+let paneBudgetDragPending = false
+let paneBudgetGesture: (PaneResizeGeometry & { heights: Map<string, number>; fraction: number }) | null = null
+function paneBudgetGeometry(): PaneResizeGeometry | null {
+  if (!chart || !host.value) return null
+  const options = chart.getPaneOptions()
+  const panes = (Array.isArray(options) ? options : options ? [options] : []).filter(pane => pane.id !== 'x_axis_pane')
+  if (panes.some(pane => pane.state !== 'normal')) return null
+  return { width: host.value.clientWidth, height: host.value.clientHeight, paneIds: panes.map(pane => pane.id) }
+}
+function clearPaneBudgetGesture(): void {
+  paneBudgetGesture = null
+  paneBudgetDragPending = false
+}
+function schedulePaneBudget(): void {
+  // Invalidate synchronously too: a resize/topology change and return during one gesture must not be mistaken for drag.
+  if (paneBudgetGesture && !paneResizeGeometryMatches(paneBudgetGesture, paneBudgetGeometry())) clearPaneBudgetGesture()
+  if (paneBudgetFrame !== null || disposed) return
+  paneBudgetFrame = requestAnimationFrame(() => {
+    paneBudgetFrame = null
+    if (!chart || !host.value || disposed || paneResizePointerId !== null) return
+    const options = chart.getPaneOptions()
+    const panes = (Array.isArray(options) ? options : options ? [options] : []).filter(pane => pane.id !== 'x_axis_pane')
+    if (panes.some(pane => pane.state !== 'normal')) { clearPaneBudgetGesture(); return }
+    const candle = panes.find(pane => pane.id === 'candle_pane')
+    if (!candle) return
+    const subs = panes.filter(pane => pane.id !== 'candle_pane')
+    const live = new Set(subs.map(pane => pane.id))
+    for (const id of paneHeightRequests.keys()) if (!live.has(id)) { paneHeightRequests.delete(id) }
+    const formulaPanes = formulaPaneIdsOf(chart.getIndicators())
+    if (!subs.some(pane => formulaPanes.has(pane.id))) {
+      // Ordinary four-pane charts keep native separator behavior, including deliberate small main panes.
+      for (const pane of subs) {
+        const request = paneHeightRequests.get(pane.id)
+        if (request) chart.setPaneOptions({ id: pane.id, ...request })
+      }
+      if (originalMainMinHeight !== null) {
+        chart.setPaneOptions({ id: candle.id, minHeight: originalMainMinHeight })
+        originalMainMinHeight = null
+      }
+      paneHeightRequests.clear()
+      clearPaneBudgetGesture()
+      lastPaneBudgetFraction = 1
+      return
+    }
+    originalMainMinHeight ??= candle.minHeight
+    const gesture = paneBudgetGesture
+    const reconcileDrag = paneBudgetDragPending && gesture !== null && paneResizeGeometryMatches(gesture, paneBudgetGeometry())
+    clearPaneBudgetGesture()
+    const changes = subs.map(pane => {
+      const previous = reconcileDrag ? gesture!.heights.get(pane.id) : undefined
+      const wanted = paneHeightRequests.get(pane.id) ?? { height: pane.height, minHeight: pane.minHeight }
+      const delta = reconcileDrag && previous !== undefined ? pane.height - previous : 0
+      return { pane, wanted, delta }
+    })
+    // A sub/sub drag conserves total sub height. A main/sub drag changes that total.
+    const mainBoundaryDrag = reconcileDrag && Math.abs(changes.reduce((sum, item) => sum + item.delta, 0)) > 0.01
+    const requested = changes.map(({ pane, wanted, delta }) => {
+      // Main-boundary gesture explicitly commits the visible sub layout as the new preference.
+      // This keeps main flexible above the presentation floor and avoids a ratcheting main minimum.
+      const height = mainBoundaryDrag ? pane.height
+        : wanted.height + (gesture && gesture.fraction > 0 ? delta / gesture.fraction : 0)
+      const request = { height: Math.max(wanted.minHeight, height), minHeight: wanted.minHeight }
+      paneHeightRequests.set(pane.id, request)
+      return { id: pane.id, ...request }
+    })
+    const axisHeight = chart.getSize('x_axis_pane')?.height ?? 0
+    const available = host.value.clientHeight - axisHeight - subs.length * chart.getStyles().separator.size
+    // New presentation default for this proposal, subject to operator acceptance; not a historic threshold.
+    const mainFloor = 100
+    const minimum = requested.reduce((sum, pane) => sum + pane.minHeight, 0)
+    const minimumScale = Math.min(1, Math.max(0, available) / Math.max(1, mainFloor + minimum))
+    const budget = Math.max(0, available - mainFloor * minimumScale)
+    const total = requested.reduce((sum, pane) => sum + pane.height, 0)
+    lastPaneBudgetFraction = minimumScale < 1 ? 0 : total <= budget ? 1 : (budget - minimum) / (total - minimum)
+    const effectiveMainMinimum = mainFloor * minimumScale
+    if (Math.abs(candle.minHeight - effectiveMainMinimum) > 0.01) chart.setPaneOptions({ id: candle.id, minHeight: effectiveMainMinimum })
+    const allocation = allocateSubPaneHeights(available, mainFloor, requested)
+    for (const pane of allocation) {
+      const current = subs.find(item => item.id === pane.id)!
+      if (Math.abs(current.height - pane.height) > 0.01 || Math.abs(current.minHeight - pane.minHeight) > 0.01) chart.setPaneOptions(pane)
+    }
+  })
+}
 function applySubchartPanes(): void {
   if (!chart) return
   for (const name of ['VOL', 'MACD', 'KDJ'] as ToggleableIndicator[]) {
@@ -529,6 +619,7 @@ function applySubchartPanes(): void {
     if (SUBCHART_PREFS[name].enabled() && !existing.length) SUBCHART_PREFS[name].mount()
     else if (!SUBCHART_PREFS[name].enabled() && existing.length) chart.removeIndicator({ name })
   }
+  schedulePaneBudget()
 }
 
 // ===== M9-04C 公式指标：主图挂 candle_pane，副图每个公式一个 pane（与 VOL/MACD/KDJ 同 pane 机制） =====
@@ -604,6 +695,7 @@ function applyFormulaIndicators(): void {
       }
     })
   }
+  schedulePaneBudget()
 }
 function drawings(): Drawing[] {
   return drawingsAt(activeMirrorBasis())
@@ -909,8 +1001,13 @@ function applyReplayView(view: ReplayViewport | undefined): void {
       // 语义副图当前不存在（如录像带 KDJ 高度但 KDJ 偏好已关）：跳过该项，
       // 不得把副图高度写回 fallback 的 candle_pane（回放按当前开关渲染，M6-01 边界）
       if (name !== 'candle_pane' && actualPaneId(name) === 'candle_pane') continue
+      clearPaneBudgetGesture()
+      const replayPaneId = actualPaneId(name)
+      const previous = paneHeightRequests.get(replayPaneId)
+      if (previous) paneHeightRequests.set(replayPaneId, { ...previous, height })
       chart.setPaneOptions({ id: actualPaneId(name), height })
     }
+    schedulePaneBudget()
     if (Number.isFinite(view.barSpace) && view.barSpace > 0) chart.setBarSpace(view.barSpace)
     const anchor = view.toTimestamp ?? view.fromTimestamp
     if (anchor !== null && Number.isFinite(anchor)) {
@@ -1149,6 +1246,14 @@ function isOverPaneSeparator(event: MouseEvent | PointerEvent): boolean {
   return false
 }
 function beginPaneResize(event: PointerEvent): void {
+  clearPaneBudgetGesture()
+  const geometry = paneBudgetGeometry()
+  if (geometry && chart) {
+    const options = chart.getPaneOptions()
+    const panes = Array.isArray(options) ? options : options ? [options] : []
+    paneBudgetGesture = { ...geometry, heights: new Map(panes.map(pane => [pane.id, pane.height])), fraction: lastPaneBudgetFraction }
+    paneBudgetDragPending = true
+  }
   paneResizePointerId = event.pointerId
   selecting = false
   multiDragStart = null
@@ -1161,7 +1266,12 @@ function beginPaneResize(event: PointerEvent): void {
 }
 function onPaneResizeCancel(event: PointerEvent): void {
   if (statisticsGesture?.pointerId === event.pointerId) closeStatistics()
-  if (event.pointerId === paneResizePointerId) paneResizePointerId = null
+  if (event.pointerId === paneResizePointerId) {
+    paneResizePointerId = null
+    // Cancellation restores the last accepted preference; only a completed gesture may commit a delta.
+    clearPaneBudgetGesture()
+    schedulePaneBudget()
+  }
 }
 function onPointerDown(event: PointerEvent): void {
   const eventTarget = event.target as Element | null
@@ -1391,6 +1501,7 @@ function onPaneDblClick(event: MouseEvent): void {
   const maximized = list.find(pane => pane.id === paneId)?.state === 'maximize'
   for (const pane of list) if (pane.state === 'maximize' && pane.id !== paneId) chart.setPaneOptions({ id: pane.id, state: 'normal' })
   chart.setPaneOptions({ id: paneId, state: maximized ? 'normal' : 'maximize' })
+  schedulePaneBudget()
 }
 // 用户画线命中判定：指针落在画线锚点（±8px）或线体（点到线段距离≤7px）上时，放行给库内选择/拖拽，
 // 不启动框选——否则拖动已画线段会与框选缩放重叠（用户 D1 验收反馈）。阈值与计划 D25 hover 加粗一致。
@@ -1978,7 +2089,7 @@ function dispatchSyntheticAxisMove(event: PointerEvent): void {
 function resetLibraryClick(): void {
   ;(chart as unknown as { _chartEvent?: { _event?: { _resetClickTimeout?: () => void } } } | null)?._chartEvent?._event?._resetClickTimeout?.()
 }
-function completePointerAction(): void { queueMicrotask(() => { updateAnchorDots(); recordDrawings() }) }
+function completePointerAction(): void { schedulePaneBudget(); queueMicrotask(() => { updateAnchorDots(); recordDrawings() }) }
 onMounted(() => {
   configurePhasePriceRange()
   // RF2-02：初始 props 即为遮蔽/换算态时（如直接恢复运行中的随机会话）也要在挂载期生效
@@ -1988,7 +2099,7 @@ onMounted(() => {
   window.addEventListener('pointerup', completePointerAction)
   window.addEventListener('pointercancel', onPaneResizeCancel)
   chart?.subscribeAction('onVisibleRangeChange', updateMarkerRail)
-  markerResizeObserver = new ResizeObserver(() => { closeMeasurement(); enforceVisibleLimit(); updateMarkerRail() })
+  markerResizeObserver = new ResizeObserver(() => { schedulePaneBudget(); closeMeasurement(); enforceVisibleLimit(); updateMarkerRail() })
   if (host.value) markerResizeObserver.observe(host.value)
   updateMarkerRail()
   if (props.savedDrawings && props.bars.length) restoreDrawings(props.savedDrawings.filter(item => (item.timeframe ?? '1D') === props.timeframe), true)
@@ -2047,7 +2158,7 @@ onMounted(() => {
     yAxisRange: () => (chart?.getYAxes({ paneId: 'candle_pane' })[0] as unknown as { getRange?: () => { from: number; to: number } } | undefined)?.getRange?.() ?? null,
   })
 })
-onUnmounted(() => { disposed = true; markerResizeObserver?.disconnect(); window.removeEventListener('pointerup', completePointerAction); window.removeEventListener('pointercancel', onPaneResizeCancel) })
+onUnmounted(() => { disposed = true; paneResizePointerId = null; clearPaneBudgetGesture(); paneHeightRequests.clear(); if (paneBudgetFrame !== null) cancelAnimationFrame(paneBudgetFrame); paneBudgetFrame = null; markerResizeObserver?.disconnect(); window.removeEventListener('pointerup', completePointerAction); window.removeEventListener('pointercancel', onPaneResizeCancel) })
 // 前复权推进（DRAW-02）：喂新K线前按旧基准捕获画线快照，喂完再统一投影到新基准。
 // 基准推进与图形数量解耦（advanceRenderedBasis）：图上无画线（空图/清空/撤销到空）也必须
 // 推进目标基准，否则跨权息后新建画线被盖印旧基准，下次普通刷新遭二次投影错位；

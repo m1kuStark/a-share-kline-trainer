@@ -1,0 +1,6 @@
+{
+  "command": "gh api advisories/GHSA-hqmv-qgp3-jx75",
+  "finished": "2026-11-18T01:52:50.6747635+08:00",
+  "exitCode": 1,
+  "started": "2026-11-18T01:52:49.7401185+08:00"
+}

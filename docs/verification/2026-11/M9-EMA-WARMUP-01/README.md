@@ -59,3 +59,11 @@ root 已逐文件核对冻结的六个指纹，读取实际 EMA 补丁、独立 
 最终 `check-binding.mjs --strict --include-untracked` 原生退出 0：13 行 covered=13、open=0、RED=0；L1 名称可解析，五条新增 EMA 行的 L2 由手算/旧精确向量/独立指数权重及实际回退变异锁定。`docs:check` 退出 0（0 error、182 条长度/历史字段等提醒）、`docs:impact -- --base df6cedd82fa3fe591615724259f83d16f6bb70fa --task M9-EMA-WARMUP-01`、`docs:status -- --check`、`git diff --check` 均退出 0。完整原始输出和即时退出码见 [root-gates](root-gates/docs-check.receipt.json)，矩阵快照及 SHA256 见 [matrix-final.json](artifacts/matrix-final.json)。
 
 这是独立修复的集成门禁。后继 M9 统一候选仍须完成浏览器整批、主代理视觉、Windows 生产包和录像回放；此处未补造这些结果或人工验收。
+
+## GitHub CI 与实际合入（2026-11-18）
+
+[PR #54 归档](ci-pr54/README.md)保留 Source checks run `44152821795` attempt 1 的原始 JSON、9 组 CLI 收据、日志 ZIP 与 32 个日志条目。required `docs`、`verify`、`pr-policy` 全部 SUCCESS；同次完整 CI `npm test` 为 server 2664/2664、desktop 369/369，共 3033 项。故障注入用例预期 stderr 保留，初始 pending 快照不作为成功证据。
+
+CI 实际测试 `893b1aa437a42a04d865311f0410f3647f64da13`（head `a7df3f800a838746a2d4509cc3ca96e005bec121` 与 base `df6cedd82fa3fe591615724259f83d16f6bb70fa` 的临时合并提交）。GitHub 后续只读查询确认 PR 于 `2026-11-17T19:01:39Z`（北京时间 2026-11-18 03:01:39）合入 main，实际提交为 `58ba0ffc13458fb136c7d885b62ee0c898d4bab8`，与 CI 测试提交分别记录。
+
+缓存 77 个文件、789176 字节已逐字节复制并核对 SHA256，见 [复制收据](ci-pr54/copy-receipt.json)。原日志 ZIP 为 103033 字节，SHA256 `e1db95d32f43ec992ca74cc8bb330844629c2064b66e4889407532ca29e507ef`，CRC 通过。此处只追加 CI/合入与归档事实，保留前述本地失败、修正过程和 M9 整体验收边界。

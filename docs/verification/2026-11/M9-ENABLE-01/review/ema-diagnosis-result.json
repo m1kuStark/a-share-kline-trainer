@@ -1,0 +1,36 @@
+{
+  "verdict": "M9 full acceptance blocked; separate scope approval required",
+  "severity": {
+    "minor": 0,
+    "important": 1,
+    "critical": 0
+  },
+  "rootCause": "EMA seeds at absolute period-1, poisoning chained input with leading NaN permanently",
+  "head": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+  "engineDiffFromHeadExit": 0,
+  "diagnostic": {
+    "deaFiniteCount": 0,
+    "oracleCrossIndexes": [
+      61,
+      93
+    ],
+    "oracleFiniteCount": 87,
+    "oracleFirstFinite": 33,
+    "actualCrossIndexes": [],
+    "exit": 0
+  },
+  "candidateOnly": {
+    "finiteInputComparisons": 108,
+    "patchCheckExit": 0,
+    "boundaryCases": 5,
+    "applied": false,
+    "laterNonFiniteCompatibilityChecks": 3
+  },
+  "report": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-diagnosis.md",
+  "reportSha256": "6e38a80e02f837df729973932fbb73b38493ebd75960f1c774a4c8d9416241e9",
+  "optionalPatch": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\ema-leading-nan.optional.patch",
+  "optionalPatchSha256": "1e8fe30f9a72092a90c3f218037e16e506974f10a3bd1334e3f052ab2190c1b7",
+  "repositoryWrites": false,
+  "matrixWrites": false,
+  "browserStarted": false
+}

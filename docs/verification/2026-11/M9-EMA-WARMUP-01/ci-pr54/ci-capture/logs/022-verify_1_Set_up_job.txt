@@ -1,0 +1,34 @@
+﻿2026-11-17T18:54:20.1123689Z Current runner version: '2.338.2'
+2026-11-17T18:54:20.1170515Z ##[group]Runner Image Provisioner
+2026-11-17T18:54:20.1171448Z Hosted Compute Agent
+2026-11-17T18:54:20.1171994Z Version: 20261103.629
+2026-11-17T18:54:20.1172494Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-17T18:54:20.1173046Z Build Date: 2026-11-03T17:26:59Z
+2026-11-17T18:54:20.1173631Z Worker ID: {74c03fcf-9b72-4472-97a7-6d25fbfc6f5c}
+2026-11-17T18:54:20.1174155Z Region: eastus2
+2026-11-17T18:54:20.1174567Z Cloud: Azure
+2026-11-17T18:54:20.1174994Z ##[endgroup]
+2026-11-17T18:54:20.1176037Z ##[group]Operating System
+2026-11-17T18:54:20.1176531Z Microsoft Windows Server 2025
+2026-11-17T18:54:20.1177012Z 10.0.26100
+2026-11-17T18:54:20.1177505Z Datacenter
+2026-11-17T18:54:20.1177917Z ##[endgroup]
+2026-11-17T18:54:20.1178340Z ##[group]Runner Image
+2026-11-17T18:54:20.1178855Z Image: windows-2025-vs2026
+2026-11-17T18:54:20.1179318Z Version: 20261103.298.1
+2026-11-17T18:54:20.1180159Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261103.298/images/windows/Windows2025-VS2026-Readme.md
+2026-11-17T18:54:20.1181775Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261103.298
+2026-11-17T18:54:20.1182566Z ##[endgroup]
+2026-11-17T18:54:20.1183536Z ##[group]GITHUB_TOKEN Permissions
+2026-11-17T18:54:20.1184958Z Contents: read
+2026-11-17T18:54:20.1185399Z Metadata: read
+2026-11-17T18:54:20.1185790Z ##[endgroup]
+2026-11-17T18:54:20.1187767Z Secret source: Actions
+2026-11-17T18:54:20.1188657Z Cache mode: write
+2026-11-17T18:54:20.1189347Z Prepare workflow directory
+2026-11-17T18:54:20.1515254Z Prepare all required actions
+2026-11-17T18:54:20.1554545Z Getting action download info
+2026-11-17T18:54:20.3431479Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-17T18:54:20.6449469Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-17T18:54:20.7864235Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-17T18:54:20.9754832Z Complete job name: verify

@@ -1,0 +1,101 @@
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* task/M9-EMA-WARMUP-01 Source checks m1kuStark/a-share-kline-trainer#54 · 44152821795
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+* verify (ID 134285471528)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run build
+  * Test source and compiled launcher
+  * Retain test results
+  * Post Run actions/setup-node@v7
+  * Post Run actions/checkout@v7
+✓ docs in 43s (ID 134285473750)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run docs:check
+  ✓ Run npm run docs:status -- --check
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ pr-policy in 28s (ID 134285473860)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run node scripts/ci/check-pr-policy.mjs
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* task/M9-EMA-WARMUP-01 Source checks m1kuStark/a-share-kline-trainer#54 · 44152821795
+Triggered via pull_request about 4 minutes ago
+
+JOBS
+* verify (ID 134285471528)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run build
+  * Test source and compiled launcher
+  * Retain test results
+  * Post Run actions/setup-node@v7
+  * Post Run actions/checkout@v7
+✓ docs in 43s (ID 134285473750)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run docs:check
+  ✓ Run npm run docs:status -- --check
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ pr-policy in 28s (ID 134285473860)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run node scripts/ci/check-pr-policy.mjs
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ task/M9-EMA-WARMUP-01 Source checks m1kuStark/a-share-kline-trainer#54 · 44152821795
+Triggered via pull_request about 5 minutes ago
+
+JOBS
+✓ verify in 4m50s (ID 134285471528)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run build
+  ✓ Test source and compiled launcher
+  ✓ Retain test results
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ docs in 43s (ID 134285473750)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run npm ci
+  ✓ Run npm run docs:check
+  ✓ Run npm run docs:status -- --check
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ pr-policy in 28s (ID 134285473860)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7
+  ✓ Run node scripts/ci/check-pr-policy.mjs
+  ✓ Post Run actions/setup-node@v7
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job

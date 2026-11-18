@@ -1,0 +1,37 @@
+{
+  "step": "workflow-resume-m9",
+  "program": "npm.cmd",
+  "args": [
+    "run",
+    "workflow:state",
+    "--",
+    "task",
+    "--control-root",
+    "D:/Superlinear_Academy/Stock_WorkSpace/.control",
+    "--id",
+    "M9-ENABLE-01",
+    "--status",
+    "active",
+    "--owner",
+    "integrator",
+    "--summary",
+    "EMA PR54 integrated; exact workflow fixture cleanup completed; unified M9 validation underway.",
+    "--next-action",
+    "Complete full M9 source, visual and Windows package acceptance; user review pending; no release."
+  ],
+  "cwd": "C:/Users/Stark_Du666/.codex/worktrees/m9-enable-01/a-share-kline-trainer",
+  "startedAt": "2026-11-17T19:12:02.4603384Z",
+  "endedAt": "2026-11-17T19:12:03.6390659Z",
+  "nativeExitCode": 0,
+  "head": "3ec3d730a477ca305566eda28a6b1ddc190e2262",
+  "log": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-20261118\\workflow-resume-m9.log",
+  "bytes": 39878,
+  "sha256": "d84ef9e6eecb48f136fec12da1ed0f708ed4210e3e5350a506277ca82db62f9e",
+  "environment": {
+    "TRAINER_CONTROL_ROOT": "D:\\Superlinear_Academy\\Stock_WorkSpace\\.control",
+    "TRAINER_TDX_FORMULA_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\tdx\\选股公式",
+    "TRAINER_FORMULA_CORPUS_DIR": "D:\\Superlinear_Academy\\Stock_WorkSpace\\ai-harness-lab\\formula-recon",
+    "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\tdx-snapshot"
+  },
+  "exitCapture": "LASTEXITCODE immediately after native command, no pipeline"
+}

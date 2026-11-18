@@ -27,7 +27,7 @@
     "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "ENG-PLAN-01已由PR50合入b1ff3e9；RUNTIME-CANCEL-02由PR51合入f4bbc6a，CI首轮设置用例超时及同提交第二次完整通过均保留。依赖安全维护本地验证和独立审查通过，完成其独立PR/CI和告警核对，再组织M9整批候选。不据工程测试推断人工验收或授权发布。"
+  "next_action": "PR50—52已合入并回填integration_ref，告警48自动fixed；PR43仍待当前主线与包验证。EMA已由PR54合入58ba0ff；M9整批候选、同提交Windows包及用户验收待完成，接续与失败历史见docs/verification/2026-11/M9-ENABLE-01/README.md；不发布。"
 }
 ```
 

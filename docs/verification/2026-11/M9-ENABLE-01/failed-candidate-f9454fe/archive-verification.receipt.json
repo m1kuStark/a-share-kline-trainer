@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "f9454fec92017eba74de2904abf9982deb685ab4",
+  "applicationTestBuildOrGitHubCommandsRun": false,
+  "repoControlMatrixWrites": false,
+  "archivePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-f945-evidence-archive\\M9-f9454fe-evidence.zip",
+  "archiveBytes": 9503874,
+  "archiveSha256": "5437c4ae9f2febdddaf46d99786c7dd1898b5aaa4c15558a7c47e8267403a1bb",
+  "sourceCopyFilesVerified": 311,
+  "zipMembersVerified": 317,
+  "errors": [],
+  "passed": true,
+  "bundle": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-f945-evidence-archive\\bundle",
+  "includedOriginalFiles": 311,
+  "omittedFiles": 320,
+  "identicalAliases": 7,
+  "largeTraceCount": 3,
+  "largeTraceBytes": 109161677,
+  "finishedAt": "2026-11-18T03:26:35.477857+00:00"
+}

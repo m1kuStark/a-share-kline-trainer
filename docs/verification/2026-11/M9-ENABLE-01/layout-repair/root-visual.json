@@ -1,0 +1,53 @@
+{
+  "limits": [
+    "Screenshots and runtime assertions are engineering evidence; same-commit packaged replay and human acceptance pending",
+    "100px main reserve is a proposed presentation default pending user acceptance"
+  ],
+  "scope": "Root viewed actual Journey screenshots: 1440x900,1366x768,1024x768 in both themes, plus 1008x641 content viewport",
+  "run": "99cc271f-0f3a-4213-8fdc-858236eb85d8",
+  "screenshots": [
+    {
+      "sha256": "ef676e8d23a8b2276937c0f72f6076e16e2b60d35bac4e0150715c07ba347155",
+      "name": "formula-dense-1024x768-dark.png"
+    },
+    {
+      "sha256": "d36d37494a4ea4786e744507fb29add6ce4a1faa277cd1161ae5d301b8ec3621",
+      "name": "formula-dense-1024x768-light.png"
+    },
+    {
+      "sha256": "20911c89c8f8ac8f7ff4ce5e28dffb619c6d7bd6dd0d5cf256eb4377a7866e8d",
+      "name": "formula-dense-1366x768-dark.png"
+    },
+    {
+      "sha256": "209596353c3145e5522c5860a39f9f5aeb6e3059f70caa5a89c99990c0d77225",
+      "name": "formula-dense-1366x768-light.png"
+    },
+    {
+      "sha256": "697cbde473caae586e010b0e17c5de00015335b0525cd6c1e9ebf63a1effa5e2",
+      "name": "formula-dense-1440x900-dark.png"
+    },
+    {
+      "sha256": "7dd61b52b972da3be408cb37231e19884c5a6492e160aaaf989e38d4e202f160",
+      "name": "formula-dense-1440x900-light.png"
+    },
+    {
+      "sha256": "0ba2c2694b543f0d3a5e4939a86be525aa5c3185e9618ae2a1f1fbd89582f0eb",
+      "name": "formula-dense-all-disabled-native-four-panes.png"
+    },
+    {
+      "sha256": "2e35ece92b592ec98f2e9b2851ca16837f1fc352e6849d5f8fb2095f20c71c93",
+      "name": "formula-dense-electron-content-1008x641.png"
+    }
+  ],
+  "testSha256": "081f33d8e6e1b15f81dd91dac44416254161c02d9add1ce4d155d5382b16e4de",
+  "observations": [
+    "Main candles and all six subpanes remain present; palette closed; trade controls remain usable without page scroll",
+    "1008x641 retains plots but native indicators near 30px have dense legends/grid; not a general readability guarantee",
+    "Light MACD DIF/KDJ K remain low contrast, separately triaged Issue8; not changed here"
+  ],
+  "sourceSha256": "99afbf345f0f7eae54e2304b47b0961247d1bfd31cf72ad5d1e240bfd0a1c2b7",
+  "schemaVersion": 1,
+  "head": "f9454fec92017eba74de2904abf9982deb685ab4",
+  "at": "2026-11-18T03:53:55.2829289Z",
+  "reviewer": "root"
+}

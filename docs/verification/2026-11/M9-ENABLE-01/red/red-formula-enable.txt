@@ -1,0 +1,8 @@
+
+> a-share-kline-trainer@1.3.8 journey
+> tsx scripts/runtime.ts journey e2e/formula-enable.spec.ts --retries=0
+
+Run manifest: C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\.runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\manifest.json
+Isolated server: http://127.0.0.1:2425
+Evidence retained: C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\.runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts
+Command exited with 1; see C:\Users\Stark_Du666\.codex\worktrees\m9-enable-01\a-share-kline-trainer\.runs\run-59e8bc10-9892-412f-9a5c-4fda6828f7d4\artifacts\journey.log

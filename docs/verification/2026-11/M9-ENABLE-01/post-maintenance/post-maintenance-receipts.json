@@ -1,0 +1,16 @@
+[
+  {
+    "command": "npm run build",
+    "exitCode": 0,
+    "startedAt": "2026-11-17T18:01:56.3747481Z",
+    "endedAt": "2026-11-17T18:02:10.2140778Z",
+    "log": "build-maintenance.log"
+  },
+  {
+    "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/formula-seed.test.ts server/test/formulas/formula-storage.test.ts server/test/formula-library-api.test.ts",
+    "exitCode": 0,
+    "startedAt": "2026-11-17T18:02:10.2227763Z",
+    "endedAt": "2026-11-17T18:02:13.5271323Z",
+    "log": "server-targeted-maintenance.log"
+  }
+]

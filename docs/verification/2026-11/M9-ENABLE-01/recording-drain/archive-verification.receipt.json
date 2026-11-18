@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-11-18T04:09:01.839200+00:00",
+  "nativeExit": 0,
+  "archive": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-recording-drain-final-evidence\\M9-recording-drain-evidence.zip",
+  "archiveBytes": 3270409,
+  "archiveSha256": "1720c52c46d20838bd1f256ce4a7ec88fc9d7ef098895d6a7c7b656bfe942685",
+  "zipMembers": 96,
+  "manifestEntries": 95,
+  "manifestSha256": "d764eb054f35a7aa3d88443bd4aa260926e79e8cc872317bb9372063e10f5eb2",
+  "totalUncompressedBytes": 6336943,
+  "zipCrcPass": true,
+  "memberHashPass": true,
+  "memberSetExact": true,
+  "safePaths": true,
+  "excludedProfilesDatabaseAndTdxAbsent": true,
+  "zipEqualsBundle": true,
+  "originalCopyProvenanceUnchangedCount": 86,
+  "semanticChecksPassed": 56,
+  "independentProductReview": "pending_root; not inferred from archive verification"
+}

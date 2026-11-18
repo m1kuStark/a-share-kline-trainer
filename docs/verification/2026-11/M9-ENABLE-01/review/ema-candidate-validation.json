@@ -1,0 +1,33 @@
+{
+  "scope": "CACHE-ONLY optional patch demonstration; production engine unchanged",
+  "cases": [
+    {
+      "name": "hand-computed leading NaN mean seed",
+      "result": "passed"
+    },
+    {
+      "name": "nested period3 EMA",
+      "result": "passed"
+    },
+    {
+      "name": "all NaN",
+      "result": "passed"
+    },
+    {
+      "name": "insufficient valid warmup",
+      "result": "passed"
+    },
+    {
+      "name": "period1 leading NaN",
+      "result": "passed"
+    }
+  ],
+  "unchangedFiniteInputComparisons": 108,
+  "laterNonFiniteCompatibilityComparisons": 3,
+  "candidateComposedDEA": {
+    "firstFinite": 33,
+    "finiteCount": 87,
+    "allFiniteValues": 7
+  },
+  "productionEngineAcceptance": "still RED; full engine/server/chart/UI rerun required after separate approval"
+}

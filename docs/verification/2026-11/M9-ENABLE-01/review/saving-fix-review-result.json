@@ -1,0 +1,76 @@
+{
+  "scope": "saving correction plus final E2E waits",
+  "initialHead": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+  "reviewHead": "c83cae6a880e059c91bcf85c0daf7b8ba59d938e",
+  "diffSha256": "4603d76266603b0c7f4af336d5b957889d41c32cd394bfbf820d8761e099a56b",
+  "fileHashes": [
+    {
+      "path": "web/src/components/FormulaSettings.vue",
+      "sha256": "a87b3c40e635e4a0f4bb4c180c0149b0d3e4335799b47ceaf47a028e84d5d714"
+    },
+    {
+      "path": "web/src/api.ts",
+      "sha256": "661e627dbb7e2975978868e960c6ce304ade89abd808157825d885d37b0eac18"
+    },
+    {
+      "path": "server/src/formulas/seed.ts",
+      "sha256": "2b024222b20d0fed6a121b0fb7ccc024b58b2ab390ad2ae3d1f573b54771d26d"
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "sha256": "0ce599c2fd66d1a308ccf939f077217180cf4aa4d48e83597c1a7daef33bb587"
+    },
+    {
+      "path": "e2e/formula-enable.spec.ts",
+      "sha256": "bba7429692e6a5157033b91b3d69a77ea9f55cfb5095f0b8521732274258888e"
+    }
+  ],
+  "scopedNewFindings": {
+    "minor": 0,
+    "important": 0,
+    "critical": 0
+  },
+  "completeDeliveryFindings": {
+    "minor": 0,
+    "important": 1,
+    "critical": 0
+  },
+  "knownBlocker": "EMA leading NaN permanently poisons DEA and suppresses B1",
+  "verdict": "draft review evidence only; full delivery blocked; no merge-ready verdict",
+  "waits": "readiness-only; original semantic assertions retained",
+  "evidence": {
+    "backend": {
+      "files": 3,
+      "fileSelectionProvenance": "root-provided; log omits invocation/file list",
+      "nativeExit": 0,
+      "passed": 12,
+      "nativeExitProvenance": "root-provided; no matching exit receipt among inspected siblings",
+      "countsIndependentlyRead": true,
+      "logSha256": "56c475caf824776de5f70265ee4f6828c867809f9a555c5b34d8b8b91f0ed3e2"
+    },
+    "newEnableJourneys": {
+      "run": "run-6698a681-156b-49c2-956f-edc72f314b56",
+      "passed": 4,
+      "failed": 1,
+      "independentlyRead": true
+    },
+    "existingFormulaManagerChart": {
+      "run": "run-6eb1ecab-8032-4fac-a5bb-80aa2dc58a2b",
+      "nativeExit": 0,
+      "flaky": 0,
+      "nativeExitProvenance": "root-provided",
+      "independentlyRead": true,
+      "skipped": 0,
+      "expected": 8,
+      "unexpected": 0
+    }
+  },
+  "fiveFileHashesRechecked": true,
+  "diffHashRecheckedAfterHeadAdvance": true,
+  "repositoryWrites": false,
+  "matrixWrites": false,
+  "ledgerWrites": false,
+  "browserStarted": false,
+  "report": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-ENABLE-01-review\\saving-fix-review.md",
+  "reportSha256": "3925acb7e74bd3533f085a3c05774d99f04c194d7197ab0b573d62b6af45d112"
+}

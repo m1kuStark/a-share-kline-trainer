@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
+import { randomInt } from 'node:crypto'
 import { runtime, evidencePath } from './runtime'
 
 test('本机页面正常读写，其他站点无法读取历史或修改设置', async ({ page }) => {
@@ -20,11 +21,20 @@ test('本机页面正常读写，其他站点无法读取历史或修改设置',
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
     response.end('<!doctype html><title>隔离外站夹具</title>外站来源验证')
   })
-  foreign.listen(0, '127.0.0.1')
-  await once(foreign, 'listening')
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      foreign.listen(randomInt(20_000, 60_001), '127.0.0.1')
+      await once(foreign, 'listening')
+      break
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE' || attempt === 9) throw error
+    }
+  }
   try {
     const port = (foreign.address() as { port: number }).port
     await page.goto(`http://127.0.0.1:${port}`)
+    await expect(page).toHaveTitle('隔离外站夹具')
+    expect(await page.evaluate(() => location.origin)).not.toBe(new URL(run.baseURL!).origin)
     const results = await page.evaluate(async baseURL => {
       const read = await fetch(`${baseURL}/api/trainings/history`).then(response => `read:${response.status}`, () => 'blocked')
       const write = await fetch(`${baseURL}/api/settings/app`, {

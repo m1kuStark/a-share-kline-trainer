@@ -1,0 +1,547 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-18T02:03:41.9465057+08:00",
+  "reviewer": "/root/local_health",
+  "readOnlySourceInspection": true,
+  "repositoryMutated": false,
+  "browserExecuted": false,
+  "worktree": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "decisionBoundary": [
+    "M9 partial fix remains blocked/draft per root; this report does not approve integration, acceptance or release.",
+    "EMA scope unanswered: no implementation performed by this task.",
+    "Hashes identify existing bytes; they do not prove visual correctness or complete source reproducibility."
+  ],
+  "finalRun": {
+    "runId": "run-6698a681-156b-49c2-956f-edc72f314b56",
+    "manifestCommit": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+    "manifestCommitIsCompleteDirtyTreeIdentity": false,
+    "createdAt": "2026-11-17T17:37:04.602Z",
+    "stats": {
+      "startTime": "2026-11-17T17:37:15.621Z",
+      "duration": 100637.104,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "failures": [
+      {
+        "title": "公式启停：内置 QINIU_B1_SUB 按预设位置显示、刷新和停用",
+        "file": "formula-enable.spec.ts",
+        "line": 170,
+        "tests": [
+          {
+            "status": "unexpected",
+            "expectedStatus": "passed",
+            "results": {
+              "status": "failed",
+              "errors": [
+                {
+                  "location": {
+                    "file": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts",
+                    "column": 93,
+                    "line": 141
+                  },
+                  "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[2m    true,\u001b[22m\n\u001b[32m-   true,\u001b[39m\n\u001b[31m+   false,\u001b[39m\n\u001b[2m    true,\u001b[22m\n\u001b[2m  ]\u001b[22m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  139 |     await dialog.getByRole('button', { name: '关闭', exact: true }).click()\n  140 |     await expect.poll(() => chartLines(page, id)).toHaveLength(preset.lines)\n> 141 |     await expect.poll(async () => (await chartLines(page, id)).map(line => line.hasResult)).toEqual(Array(preset.lines).fill(true))\n      |                                                                                             ^\n  142 |     const lines = await chartLines(page, id)\n  143 |     expect(lines.every(line => line.hasResult)).toBe(true)\n  144 |     expect(new Set(lines.map(line => line.paneId)).size).toBe(1)\n    at exerciseBuiltin (C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:141:93)\n    at C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\e2e\\formula-enable.spec.ts:171:3"
+                }
+              ],
+              "attachments": [
+                {
+                  "name": "error-context",
+                  "contentType": "text/markdown",
+                  "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用\\error-context.md"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "nativeExitCode": {
+      "value": null,
+      "source": "root 提供；本任务未取得独立 native-process 收据，不从 wrapper 文本推断",
+      "independentNativeReceiptFound": false,
+      "wrapperLog": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable-results.txt",
+      "wrapperText": "Command exited with 1"
+    },
+    "verdict": "blocked: 4 passed / 1 failed; QINIU_B1_SUB hasResult [true,false,true] instead of [true,true,true]",
+    "files": [
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\manifest.json",
+        "proposedArchiveRelativePath": "final-attempt/manifest.json",
+        "role": "run identity",
+        "bytes": 1596,
+        "sha256": "f4c34ec94a82e38b2c5ba97fe04b486a4345bf2f9ebe352a6eadbe5f587a9308"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\browser-results.json",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/browser-results.json",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 14975,
+        "sha256": "e1ff92374a30fd8d5c9155ad021f736ef61ea171ca2977a6e21baf8edaed041e"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\build-server.log",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/build-server.log",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 190,
+        "sha256": "34c8408c9263ce1f2a3d89b3755dc0b0c7762b269d113bf9ce09e6d24d26ced7"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\build-web.log",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/build-web.log",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 947,
+        "sha256": "fedf2e0ea9e5877c5bf5f95826175caffed97e02249db600c94884ad5c7e3b4f"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\html\\data\\1d20198c73eedc70c34e4ed6a8759431972352c0.md",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/html/data/1d20198c73eedc70c34e4ed6a8759431972352c0.md",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 19864,
+        "sha256": "060191d4ebeeede89bb3b139a97656a775c09558b8e4081cccaa173e2aa9bc90"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\html\\index.html",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/html/index.html",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 562694,
+        "sha256": "156e17a0b4fff79defcf9b4ef03aaf0a0396ae37e268ffa7da78adc69a0e59fd"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\journey.log",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/journey.log",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 2758,
+        "sha256": "2596ad678a6787093f77dd2b97cadea0d5d4c78e943bcc99bbbc3a443135be34"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-MA_BULL_MAIN.png",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/screenshots/formula-enabled-MA_BULL_MAIN.png",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 177927,
+        "sha256": "f4e2095262401178c93f35150f3b9502fc2ee7c259767885426840f22b4d0dac"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-WEEK_MACD_SUB.png",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/screenshots/formula-enabled-WEEK_MACD_SUB.png",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 157385,
+        "sha256": "28ecfa6d91c8f4b0339b140d85fa63f29127624403aa78a6af42d7ef8bd546db"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\server.log",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/server.log",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 134967,
+        "sha256": "05a1ef2e200b4eb85c37e54acc56a985a0afe84f413d81dfdcd037e85b2a3f54"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\.last-run.json",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/test-results/.last-run.json",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 96,
+        "sha256": "7fc263104a085487eed0d8f819e52953ad686b3e81347a2e0bf1a105c865c32b"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\test-results\\formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用\\error-context.md",
+        "proposedArchiveRelativePath": "final-attempt/artifacts/test-results/formula-enable-公式启停：内置-QINIU-B1-SUB-按预设位置显示、刷新和停用/error-context.md",
+        "role": "raw final browser/build/server evidence",
+        "bytes": 19864,
+        "sha256": "060191d4ebeeede89bb3b139a97656a775c09558b8e4081cccaa173e2aa9bc90"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\logs\\operations.log",
+        "proposedArchiveRelativePath": "final-attempt/logs/operations.log",
+        "role": "run operation log",
+        "bytes": 57506,
+        "sha256": "d14386797530da698a64484a87969bad0c4110952d573106c8e593d70e7f0bdc"
+      }
+    ],
+    "failedQiniuScreenshotPresent": false,
+    "existingScreenshots": [
+      "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-MA_BULL_MAIN.png",
+      "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6698a681-156b-49c2-956f-edc72f314b56\\artifacts\\screenshots\\formula-enabled-WEEK_MACD_SUB.png"
+    ]
+  },
+  "existingRepositoryEvidence": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\green-attempt1\\journey.raw.b64",
+      "proposedArchiveRelativePath": "green-attempt1/journey.raw.b64",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 9956,
+      "sha256": "1bb5c54bf045b49761c634b6f18771c892477b57a264bae7fe559b91f5adee73"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\green-attempt2\\journey.raw.b64",
+      "proposedArchiveRelativePath": "green-attempt2/journey.raw.b64",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 3364,
+      "sha256": "cdc523fde2548561d5d4fd310c0b5f8e51271a8e62519f08bb2829b1cbc1bc30"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\issue8\\triage.json",
+      "proposedArchiveRelativePath": "issue8/triage.json",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 3115,
+      "sha256": "98a69369b7b1fd5d00f24a9e2a011eaceaa030289252baa02b2e406976413373"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\issue8\\triage.md",
+      "proposedArchiveRelativePath": "issue8/triage.md",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 7530,
+      "sha256": "417e6a5dcc60e6dd4b3a384e578d32cc0f3c03b79cafa5a7a3753153bc0b1769"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\pr43\\review-result.json",
+      "proposedArchiveRelativePath": "pr43/review-result.json",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 3176,
+      "sha256": "54b1dbbda6c918ccc53463272e0d75930130e8948ae13f72e138ae86a558715d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\pr43\\review.md",
+      "proposedArchiveRelativePath": "pr43/review.md",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 9425,
+      "sha256": "dbfb510bfecf001737c0671f8be91f18d2bf211225331ad969c66421f284e62a"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\README.md",
+      "proposedArchiveRelativePath": "README.md",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 1643,
+      "sha256": "3f4b5aa72ce1336a07ff12aa3d63dda372ee63ac1ea18f9df9db8620b99589cb"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\red\\literal-journey.raw.b64",
+      "proposedArchiveRelativePath": "red/literal-journey.raw.b64",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 11644,
+      "sha256": "a4eb9fe20366dfe6fadd1a22684f13239974f21f6c89a72fb14f5b4a0871e071"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\red\\red-formula-enable.txt",
+      "proposedArchiveRelativePath": "red/red-formula-enable.txt",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 625,
+      "sha256": "5ff65f7d825ccdd7c6854abd6d44c27efee8ac3b41cee317b330cfbeadd418af"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\red\\red-journey-detail.txt",
+      "proposedArchiveRelativePath": "red/red-journey-detail.txt",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 8326,
+      "sha256": "59053324b124d2dba8bc5120dfa40790810c5dd4c47077ccaad12289957bd998"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\runtime-ci\\attempt2.json",
+      "proposedArchiveRelativePath": "runtime-ci/attempt2.json",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 407,
+      "sha256": "6405225b55ef7f6acc5aa38413d75abbdc5974deb36ad9782f16529416c4c21d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\runtime-ci\\attempt2.raw.b64",
+      "proposedArchiveRelativePath": "runtime-ci/attempt2.raw.b64",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 357000,
+      "sha256": "b26243f87761169034d9d07d0f6453bad23f4b6b0da911223079cdadb98100ce"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\runtime-ci\\first-verify.raw.b64",
+      "proposedArchiveRelativePath": "runtime-ci/first-verify.raw.b64",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 168472,
+      "sha256": "1fe612710087d544b25f004b729d6a8e42c8eda5d897fe5c17adb9fd0c9ea50d"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\runtime-ci\\README.md",
+      "proposedArchiveRelativePath": "runtime-ci/README.md",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 1534,
+      "sha256": "00c6a8ffa4e3ae522d3a936da422bfa93b07a573ffb2f05f9958eae9dabdd1cd"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01\\runtime-ci\\settings-isolated.txt",
+      "proposedArchiveRelativePath": "runtime-ci/settings-isolated.txt",
+      "role": "already present in repository evidence directory; not acceptance",
+      "bytes": 1787,
+      "sha256": "4b9bc1ae1abb59aa101b5c96a6cdd44f8a2564eef7e874c7fce6921c6a9eba5e"
+    }
+  ],
+  "cacheWrapperRecords": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable-results.txt",
+      "proposedArchiveRelativePath": "cache-logs/green-formula-enable-results.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 625,
+      "sha256": "f4bcbfef657b2339803f67585bd44e21e46d626fda4413e4b666281581cd3d39"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable-ready.txt",
+      "proposedArchiveRelativePath": "cache-logs/green-formula-enable-ready.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 626,
+      "sha256": "fbdfa8dfb1e99fe17d43952f11f2bea5ee58a71fc6a4688276c9aa070ad17a06"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-formula-enable.txt",
+      "proposedArchiveRelativePath": "cache-logs/green-formula-enable.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 625,
+      "sha256": "c428c02b30b2996643ebc1772ff6989620a119fdc886bf654c9136395c37a0e7"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-existing-formulas.txt",
+      "proposedArchiveRelativePath": "cache-logs/green-existing-formulas.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 482,
+      "sha256": "ed2b666e8834191236c03b94c428592be84b21bff30588563027dcd637711e58"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\green-server-targeted.txt",
+      "proposedArchiveRelativePath": "cache-logs/green-server-targeted.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 268,
+      "sha256": "56c475caf824776de5f70265ee4f6828c867809f9a555c5b34d8b8b91f0ed3e2"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-formula-enable.log",
+      "proposedArchiveRelativePath": "cache-logs/red-formula-enable.log",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 625,
+      "sha256": "5ff65f7d825ccdd7c6854abd6d44c27efee8ac3b41cee317b330cfbeadd418af"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-journey-detail.log",
+      "proposedArchiveRelativePath": "cache-logs/red-journey-detail.log",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 8326,
+      "sha256": "59053324b124d2dba8bc5120dfa40790810c5dd4c47077ccaad12289957bd998"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\red-literal.txt",
+      "proposedArchiveRelativePath": "cache-logs/red-literal.txt",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 626,
+      "sha256": "67dee4437ad4ba366c3426b7e0ddff7cf26db8e8281fda9123b221a790c526a4"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\manifest-current.md",
+      "proposedArchiveRelativePath": "cache-logs/manifest-current.md",
+      "role": "wrapper or preparation record; filename is not verdict",
+      "bytes": 3645,
+      "sha256": "31330046bd81598857743219d985a48f120c21f8c6de7bc26dc1b931b6fc704e"
+    }
+  ],
+  "issue8": {
+    "runId": "run-d29a01d3-a4f4-440b-b6fb-2c86ae705216",
+    "manifestCommit": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+    "componentSha256": "7cdc70a2368fc359dc9fe99f73fa687698c7dcad30d2ac22bbdc50d384ac3803",
+    "productModified": false,
+    "fixture": "HTTP POST to isolated run database",
+    "pageErrors": [],
+    "viewports": [
+      {
+        "filename": "issue8-1600-light.png",
+        "width": 1600,
+        "theme": "light",
+        "scrollWidth": 1600,
+        "clientWidth": 1600
+      },
+      {
+        "filename": "issue8-1600-dark.png",
+        "width": 1600,
+        "theme": "dark",
+        "scrollWidth": 1600,
+        "clientWidth": 1600
+      },
+      {
+        "filename": "issue8-1280-light.png",
+        "width": 1280,
+        "theme": "light",
+        "scrollWidth": 1280,
+        "clientWidth": 1280
+      },
+      {
+        "filename": "issue8-1280-dark.png",
+        "width": 1280,
+        "theme": "dark",
+        "scrollWidth": 1280,
+        "clientWidth": 1280
+      }
+    ],
+    "scriptReportedExitCode": 0,
+    "scriptReportedExitCodeIsNativeReceipt": false,
+    "nativeExitCode": {
+      "value": null,
+      "source": "root 提供；live-result.json 与 live-run.txt 只自报 0，不能推断原生退出码",
+      "independentNativeReceiptFound": false
+    },
+    "visualReviewPerformedByThisTask": false,
+    "files": [
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1600-light.png",
+        "proposedArchiveRelativePath": "issue8/live/issue8-1600-light.png",
+        "role": "Issue 8 existing live evidence",
+        "bytes": 180381,
+        "sha256": "3aafdad09d82cac7e49a311ec869ee9fdd75080966f64ff832cd1ee87923f65c"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1600-dark.png",
+        "proposedArchiveRelativePath": "issue8/live/issue8-1600-dark.png",
+        "role": "Issue 8 existing live evidence",
+        "bytes": 175547,
+        "sha256": "ea62bc958e2bceec36676a764a330b50dbbe5c9eb6300e91cd33001b7ed91ae3"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1280-light.png",
+        "proposedArchiveRelativePath": "issue8/live/issue8-1280-light.png",
+        "role": "Issue 8 existing live evidence",
+        "bytes": 148193,
+        "sha256": "aea0bbca9e73bddc3c5af354f2be304e749b3bf24b6c024b264281ef3fa4163c"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\issue8-1280-dark.png",
+        "proposedArchiveRelativePath": "issue8/live/issue8-1280-dark.png",
+        "role": "Issue 8 existing live evidence",
+        "bytes": 142496,
+        "sha256": "18f3ce18c5ac8ec76c14d8c4e45864f9e192d806b6cb9c2f1379c7b7c37d863e"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live\\live-result.json",
+        "proposedArchiveRelativePath": "issue8/live/live-result.json",
+        "role": "Issue 8 existing live evidence",
+        "bytes": 7938,
+        "sha256": "ab3d025346e2b55c21b8d2ee9252a43462958b712ff1aa217e06b08d8287baed"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\Issue8-readonly-triage\\live-run.txt",
+        "proposedArchiveRelativePath": "issue8/live-run.txt",
+        "role": "script summary stdout; not independent native process receipt",
+        "bytes": 99,
+        "sha256": "12793ed36067c4022fb908950c7b880f8dfcc95e5f2f6805fcde15f0ec999b67"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\issue8-live.mts",
+        "proposedArchiveRelativePath": "issue8/issue8-live.mts",
+        "role": "exact live script; do not execute as part of archive",
+        "bytes": 3682,
+        "sha256": "1382f90260848eda2d80bf6f415ca3d80da4beb30290657ef4910d8c0fd9bf74"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-d29a01d3-a4f4-440b-b6fb-2c86ae705216\\manifest.json",
+        "proposedArchiveRelativePath": "issue8/live/manifest.json",
+        "role": "Issue 8 live run identity",
+        "bytes": 1592,
+        "sha256": "398643f139ff0ec206782df3569cdfc6bd5af370e43f9e5ed2cf06bfa23d0de9"
+      }
+    ],
+    "limits": [
+      "Existing live screenshots and no pageErrors do not establish theme defect resolution.",
+      "Earlier triage.json describes static-only status; keep as dated static record and link live supplement.",
+      "This report did not inspect screenshots visually, operate browser or rerun tests."
+    ]
+  },
+  "preparationOnly": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-acceptance-zip-brief.md",
+      "proposedArchiveRelativePath": "preparation-only/m9-acceptance-zip-brief.md",
+      "role": "prepared acceptance support; not proof of execution or acceptance",
+      "bytes": 3475,
+      "sha256": "702ece4110206e8536ceeb227653c49210091c9bf7d580725c19d71d52962a01"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-packaged-acceptance.cjs",
+      "proposedArchiveRelativePath": "preparation-only/m9-packaged-acceptance.cjs",
+      "role": "prepared acceptance support; not proof of execution or acceptance",
+      "bytes": 24216,
+      "sha256": "b7a10880ea8d107b89a805a548697d0c5dc990c35e5df58cc2b18411ae7e311c"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-script-handoff.md",
+      "proposedArchiveRelativePath": "preparation-only/m9-script-handoff.md",
+      "role": "prepared acceptance support; not proof of execution or acceptance",
+      "bytes": 4803,
+      "sha256": "f93de79f5dd01285343903c3eb78b13b3ab7e21428b1992a87083b121bde6ed2"
+    },
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-acceptance-brief\\m9-script-preparation.json",
+      "proposedArchiveRelativePath": "preparation-only/m9-script-preparation.json",
+      "role": "prepared acceptance support; not proof of execution or acceptance",
+      "bytes": 1009,
+      "sha256": "6e5a666582bcc511ec2fc3a586f4de04916c7509c4a3e4bad23419e668954343"
+    }
+  ],
+  "archiveRecommendation": {
+    "destinationRoot": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\docs\\verification\\2026-11\\M9-ENABLE-01",
+    "action": "root may copy the inventoried byte-identical files using proposedArchiveRelativePath, then verify SHA256; this task performed no copy",
+    "mustKeep": [
+      "final-attempt manifest, browser-results, journey/build/server logs, operations log, error-context and both existing final screenshots",
+      "all RED and intermediate failed attempts; never rename green-prefixed files into passing verdicts",
+      "Issue 8 four live PNGs, result JSON, live manifest, script, summary and dated static triage"
+    ],
+    "excludeByDefault": [
+      "trainer.sqlite and raw TDX snapshot: not required for this compact evidence archive; keep original .runs directory until root decides retention",
+      "generated web/server trees and duplicate HTML data may stay external if explicitly indexed by SHA256; do not claim full replayability",
+      "preparation-only scripts are optional reference material and never acceptance results"
+    ],
+    "beforeDeletingWorktree": "Copy selected evidence, verify every archived digest against this inventory, preserve the blocked failure, and capture exact code patch/source identity separately."
+  },
+  "postMaintenance": {
+    "receiptSource": "root provided; dedicated receipt file read and fingerprinted; this task did not execute commands",
+    "receipt": [
+      {
+        "command": "npm run build",
+        "exitCode": 0,
+        "startedAt": "2026-11-17T18:01:56.3747481Z",
+        "endedAt": "2026-11-17T18:02:10.2140778Z",
+        "log": "build-maintenance.log"
+      },
+      {
+        "command": "npx --no-install vitest run --config server/vitest.config.ts server/test/formula-seed.test.ts server/test/formulas/formula-storage.test.ts server/test/formula-library-api.test.ts",
+        "exitCode": 0,
+        "startedAt": "2026-11-17T18:02:10.2227763Z",
+        "endedAt": "2026-11-17T18:02:13.5271323Z",
+        "log": "server-targeted-maintenance.log"
+      }
+    ],
+    "files": [
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\post-maintenance-receipts.json",
+        "proposedArchiveRelativePath": "post-maintenance/post-maintenance-receipts.json",
+        "role": "root provided native exit receipt and associated new dependency tree verification log; observed read-only",
+        "bytes": 576,
+        "sha256": "eb1e2fda64862aaf64fa38c9821617824eda34b513b158b0861dfffeac2f230e"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\build-maintenance.log",
+        "proposedArchiveRelativePath": "post-maintenance/build-maintenance.log",
+        "role": "root provided native exit receipt and associated new dependency tree verification log; observed read-only",
+        "bytes": 1333,
+        "sha256": "0c84306976702a27524c3b22aaf9f7f35fbe3438e4480e3aa12102f4206e6e49"
+      },
+      {
+        "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\server-targeted-maintenance.log",
+        "proposedArchiveRelativePath": "post-maintenance/server-targeted-maintenance.log",
+        "role": "root provided native exit receipt and associated new dependency tree verification log; observed read-only",
+        "bytes": 268,
+        "sha256": "4b51824a5dca10596a14e3604715e40d28e898d4167d725f8889894f7696b668"
+      }
+    ],
+    "scope": "build native 0; targeted server 3 files / 12 tests native 0; does not replace failing browser journey"
+  },
+  "observedSourceChanges": [
+    {
+      "source": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\m9-enable-01-20261118\\manifest-current.md",
+      "observedAt": "2026-11-18T02:05:36.5354021+08:00",
+      "previousBytes": 3505,
+      "previousSha256": "beeb5bcc7a5d0aa1f70bb1297ca9b2bd7f9627d5f7619fc92355f95e7d1eed10",
+      "currentBytes": 3645,
+      "currentSha256": "31330046bd81598857743219d985a48f120c21f8c6de7bc26dc1b931b6fc704e",
+      "note": "root actively maintaining the source; current inventory refreshed, previous contents were not snapshotted by this task"
+    }
+  ]
+}

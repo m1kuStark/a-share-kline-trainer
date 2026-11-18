@@ -1,0 +1,31 @@
+{
+  "head": "f392eee24c64eab1f9d0cbe713a87d1f78a4de41",
+  "diffSha256": "4603d76266603b0c7f4af336d5b957889d41c32cd394bfbf820d8761e099a56b",
+  "paths": [
+    {
+      "path": "web/src/components/FormulaSettings.vue",
+      "sha256": "a87b3c40e635e4a0f4bb4c180c0149b0d3e4335799b47ceaf47a028e84d5d714"
+    },
+    {
+      "path": "web/src/api.ts",
+      "sha256": "661e627dbb7e2975978868e960c6ce304ade89abd808157825d885d37b0eac18"
+    },
+    {
+      "path": "server/src/formulas/seed.ts",
+      "sha256": "2b024222b20d0fed6a121b0fb7ccc024b58b2ab390ad2ae3d1f573b54771d26d"
+    },
+    {
+      "path": "server/test/formula-seed.test.ts",
+      "sha256": "0ce599c2fd66d1a308ccf939f077217180cf4aa4d48e83597c1a7daef33bb587"
+    },
+    {
+      "path": "e2e/formula-enable.spec.ts",
+      "sha256": "bba7429692e6a5157033b91b3d69a77ea9f55cfb5095f0b8521732274258888e"
+    }
+  ],
+  "capturedAt": "2026-11-17T17:53:45.2619405Z",
+  "headAtFinalReview": "c83cae6a880e059c91bcf85c0daf7b8ba59d938e",
+  "finalDiffSha256": "4603d76266603b0c7f4af336d5b957889d41c32cd394bfbf820d8761e099a56b",
+  "fiveFileHashesRechecked": true,
+  "recheckedAt": "2026-11-17T17:59:53.8151125Z"
+}

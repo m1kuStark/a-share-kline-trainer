@@ -8,29 +8,46 @@
   "state": "review",
   "milestone": "ENG",
   "base_commit": "f4bbc6af283562c8d567918fb4a59f3f51d71ffe",
-  "summary": "2026-11-18 独立本地候选：两条父包与 child 请求范围限定的 override 及生产 glob 锁定副本均升级至 minimatch 11.0.9，legacy 3.1.5/5.1.9 保留。npm ci/ls、20 项版本与消费者 API 检查、full/production audit、3023 项测试、build、portable 与 NSIS x64 打包、隔离包内模块运行均通过；候选待集成审查，不代表 GitHub 告警已关闭或用户验收。",
-  "next_action": "独立五维审查 C0/I0/M0，已吸收 PR50/51 主线；更新聚合门禁后创建独立 PR，核对当前 head 的 CI 并合入，再刷新 Dependabot 告警。安装向导、完整 UI 与用户验收不由模块探针替代。",
-  "allowed_paths": ["package.json", "package-lock.json", "docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/**"],
+  "summary": "2026-11-18 PR52已合入main df6cedd：两条父包与 child 请求范围限定的 override 及生产 glob 锁定副本均升级至 minimatch 11.0.9，legacy 3.1.5/5.1.9 保留。npm ci/ls、20 项版本与消费者 API 检查、full/production audit、3023 项测试、build、portable 与 NSIS x64 打包、隔离包内模块运行均通过；合入后复核告警48已自动fixed，未dismiss；包内模块探针不代表完整安装/UI或用户验收，后继整批由M9-ENABLE-01接续。",
+  "next_action": "PR52已合入；三项required checks首轮成功。告警48于2026-11-17T17:50:36Z自动fixed，未dismiss，开放告警0；云端9条语料提前返回不能冒充本机实盘语料。PR43单独评审后保留开放，缺当前主线集成和Electron包运行验证。",
+  "allowed_paths": [
+    "package.json",
+    "package-lock.json",
+    "docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md",
+    "docs/work-items/milestones/ENG.md",
+    "docs/work-items/README.md",
+    "docs/status.md",
+    "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/**"
+  ],
   "depends_on": [],
   "docs_impact": {
-    "update": ["docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md", "docs/work-items/milestones/ENG.md", "docs/work-items/README.md", "docs/status.md"],
+    "update": [
+      "docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md",
+      "docs/work-items/milestones/ENG.md",
+      "docs/work-items/README.md",
+      "docs/status.md"
+    ],
     "reason": "构建依赖升级需要明确受影响链、兼容性与打包收据，不能以当前 CI 绿色替代安全修复。"
   },
-  "verification_refs": ["docs/verification/2026-11/DEP-SEC-MINIMATCH-01/README.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md", "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/review-dependency.md"],
-  "integration_ref": null,
+  "verification_refs": [
+    "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/README.md",
+    "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md",
+    "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/review-dependency.md"
+  ],
+  "integration_ref": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
   "acceptance_ref": null
 }
 ```
 
 ## 公告与候选范围（2026-11-18 核对）
 
-- GHSA-g3hv-75wg-m249 范围 `>=7.0.0,<11.0.1`，修复版 `11.0.1`。GitHub alert #48 在本轮远端核对时仍 open。
+- GHSA-g3hv-75wg-m249 范围 `>=7.0.0,<11.0.1`，修复版 `11.0.1`。立项时 alert #48 为 open；PR52合入后于2026-11-17T17:50:36Z自动fixed，未dismiss。
 - 开发链：`electron-builder@26.18.0 → app-builder-lib@26.18.0 → minimatch@10.2.6`；另经 `@electron/universal@2.0.3` 使用 `minimatch@9.0.9`。
 - 生产链 `@fastify/static → glob → minimatch@11.0.5` 不在旧公告范围，但落入新增 GHSA-hqmv-qgp3-jx75 的 `11.0.3–11.0.7` 范围（公告头部修复版 `11.0.8`）；此次一并刷新到 `11.0.9`。公告正文仍含旧的“无修复版”措辞，按头部版本范围与当前发布元数据判断，并保留原始公告。
 - 生产 `npm audit --omit=dev` 基线为 0 漏洞，未报告上述新公告；不能用该结果替代上游范围核对。
 - 不全局放开 Dependabot major 忽略；覆盖选择器同时限定父包版本与原始 child 请求范围，避免 npm 的跨层级 override 污染 legacy 3.x/5.x。后续升级父包须重新核对适用范围。
 - 当前默认静态服务采用 wildcard 路由，项目未传入 glob 模式；构建匹配模式来自仓库配置。已确认依赖版本暴露，尚未证明产品存在可由攻击者触发的资源耗尽路径。
-- 本卡不授予发布权限；本地候选尚未推送、创建 PR、合并或关闭远端告警。
+- 本卡不授予发布权限。PR52已合入，远端告警自动fixed；Windows安装向导、完整UI与人工验收未由包内模块探针证明。后继收据见 [M9前置记录](../../verification/2026-11/M9-ENABLE-01/prerequisites/pr52/followup-summary.md)。
 - 来源及本轮检查边界见[健康检查](../../verification/2026-11/ENG-HEALTH-02/README.md)。
 
 ## 验证交接

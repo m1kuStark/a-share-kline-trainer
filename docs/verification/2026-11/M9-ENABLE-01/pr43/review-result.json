@@ -1,0 +1,103 @@
+{
+  "review_id": "PR43-static-review",
+  "date": "2026-11-18",
+  "timezone": "Asia/Shanghai",
+  "host": "github.com",
+  "account": "m1kuStark",
+  "repo": "m1kuStark/a-share-kline-trainer",
+  "pr": 43,
+  "reviewed_head": "87c368f2556ba25d3fceef14ea89065307dc8ef0",
+  "verified_main": "2c66477f0c4875ac3a100338fdbc42b4878dadd8",
+  "merge_base": "53b516f6a12738faf492272b3173befe6e9e435d",
+  "ahead": 1,
+  "behind": 10,
+  "verdict": "修后可合",
+  "critical": 0,
+  "important": 2,
+  "minor": 0,
+  "important_ids": [
+    "CURRENT-MAIN-INTEGRATION-UNVERIFIED",
+    "ELECTRON-RUNTIME-PACKAGE-UNVERIFIED"
+  ],
+  "ci": {
+    "server_tests": 2641,
+    "run": 43922271829,
+    "date_utc": "2026-11-16",
+    "pr_policy": "success",
+    "verify": "success",
+    "actual_infrastructure_retry": false,
+    "docs": "success",
+    "server_files": 185,
+    "desktop_tests": 369,
+    "desktop_files": 34,
+    "head": "87c368f2556ba25d3fceef14ea89065307dc8ef0"
+  },
+  "queries": {
+    "gh_pr_diff_exit": 0,
+    "gh_compare_exit": 0,
+    "gh_pr_view_exit": 0,
+    "upstream_release_api_exit": 0,
+    "gh_run_log_exit": 0,
+    "gh_contents_exit": 0,
+    "gh_main_ref_exit": 0,
+    "gh_run_view_exit": 0,
+    "gh_preflight_exit": 0
+  },
+  "dynamic_verification_performed": false,
+  "repository_writes_performed": false,
+  "github_writes_performed": false,
+  "cache_fingerprints": [
+    {
+      "file": "pr43.json",
+      "sha256": "4146f9011941041fc6da415838370a48a0d80982fd1d4b7c9ce3cfd7226eb6f0"
+    },
+    {
+      "file": "pr43.diff",
+      "sha256": "ebe313009932aac6d4d09955960f44feb329b2447092807e204af42434a5a0c9"
+    },
+    {
+      "file": "pr-package.json",
+      "sha256": "811d9a99262fb478d4d90e07d98fc710f1134f8f40a08064319aad68599615a2"
+    },
+    {
+      "file": "pr-package-lock.json",
+      "sha256": "2310c7fa30d438bc9594c57781268b91a35595fda02a05af419ab8838c70c41b"
+    },
+    {
+      "file": "compare-current-main.json",
+      "sha256": "ab7276369e3bb81bb97fa68c614a00840421d877b09f894e37c83281f9de1aa8"
+    },
+    {
+      "file": "main-since-fork.json",
+      "sha256": "5bcb97e3da322e04a524a807146761e43e6f46747274cd7c5d880910f2299104"
+    },
+    {
+      "file": "run43922271829.json",
+      "sha256": "1dfc06f751a9274c69933131de8c792afded19ff4863dd20a3130e8283a66d3c"
+    },
+    {
+      "file": "run43922271829.log",
+      "sha256": "100539603f63bd807e08bd00235780f0c2605e5211d1e41f8beb2692801b7ec9"
+    },
+    {
+      "file": "electron-v44.11.0.md",
+      "sha256": "f6d78c61c4450fa779a1afe28fa9b490a6ade4973114904bef4951fce7fa17a7"
+    },
+    {
+      "file": "electron-v44.11.1.md",
+      "sha256": "9eddd749118d4b075432a475c4c786b1262623e4d1fe31b68d6cb47cd539204c"
+    },
+    {
+      "file": "electron-v44.11.2.md",
+      "sha256": "aca2827481a37356350aff3d6d5cc7bda0070c14918bed3f884293a14ba79f1e"
+    },
+    {
+      "file": "electron-v44.11.3.md",
+      "sha256": "3b367907a0c32cfa92fbec73e767f7a95aacca0c6689ed5cb9fdec4a60ebfc00"
+    },
+    {
+      "file": "review.md",
+      "sha256": "dbfb510bfecf001737c0671f8be91f18d2bf211225331ad969c66421f284e62a"
+    }
+  ]
+}

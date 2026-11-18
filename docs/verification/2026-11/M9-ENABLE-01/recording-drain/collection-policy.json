@@ -1,0 +1,13 @@
+{
+  "scope": "Read-only evidence collection; original files preserved",
+  "excluded": [
+    "Browser profiles, caches, cookies and browser state",
+    "SQLite database and TDX market-data snapshot",
+    "Compiled server/web runtime trees (built web hashes retained)",
+    "Future independent review, which root will supply separately"
+  ],
+  "sourceIdentity": "Both Journey manifests use HEAD f9454fe; source files were dirty. Unit GREEN receipt plus final source hashes identify the repair; do not infer identical source from manifest commit alone.",
+  "candidateDifference": "External candidate awaits normal draining directly; final production repair awaits normal draining.catch while retaining original error classification.",
+  "reviewStatus": "pending_root_independent_review",
+  "coverageLimit": "Existing exception/budget cases were rerun in the complete 44-test files; the new test adds only normal queued-tail drain coverage. No claim that all exception scenarios were newly covered."
+}
