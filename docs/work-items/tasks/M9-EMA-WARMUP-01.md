@@ -8,8 +8,8 @@
   "state": "review",
   "milestone": "M9",
   "base_commit": "df6cedd82fa3fe591615724259f83d16f6bb70fa",
-  "summary": "公共EMA前导NaN暖机已完成：专项112项、真实语料43项、完整server2664＋desktop369同次3033项通过；回退修复8项语义失败，独立五维审查可合入。仅正整数周期契约，M9整批/Windows包/用户验收另行执行。",
-  "next_action": "独立修复已由PR54合入main；M9-ENABLE-01负责最终统一候选、浏览器整批、视觉与Windows包及录像回放，待用户整批验收。",
+  "summary": "公共EMA前导NaN暖机独立修复由PR54合入，专项、真实语料、正常输入兼容和变异证据保留。后继M9-ENABLE-01的C2完整候选、同提交Windows包及主代理UI检查通过，PR55已合入；用户整批验收待完成。",
+  "next_action": "沿M9-ENABLE-01工程交接和稳定ZIP完成用户整批验收；保留独立EMA证据与正整数周期契约，不把后继结果改绑为本卡原测试或补造acceptance_ref。",
   "allowed_paths": [
     "web/src/formula-engine/interpreter/functions/math.ts",
     "server/test/formula-engine/interpreter/functions/math.test.ts",
@@ -61,3 +61,5 @@ TDD和验证：先保存专项原生RED，修复后执行函数/引擎/seed/char
 ## 工程验证与后继
 
 专项 RED→GREEN、真实语料、完整3033项、实际变异及独立五维审查收据均已归档于[验证记录](../../verification/2026-11/M9-EMA-WARMUP-01/README.md)。首次原生崩溃和后续控制环境污染失败原样保留；正常输入浮点向量和旧验收断言保持。当前 review 表示独立修复具备集成条件，M9 浏览器/Windows包和人工验收没有由此转正。
+
+后继状态：PR54已合入58ba0ff；统一候选C2=35729e4完成完整候选、同提交ZIP/CMD/实包和主代理UI检查，PR55集成为2e3704f。当前交付与限制见[M9工程交接](../../verification/2026-11/M9-ENABLE-01/engineering-handoff.md)；用户验收仍待完成，原独立测试的绑定保持不变。

@@ -1,0 +1,2131 @@
+{
+  "schemaVersion": 2,
+  "policyVersion": "candidate-review-policy/1",
+  "profile": "full",
+  "reason": "path is not eligible plain Markdown: docs/specs/README.md",
+  "visual": "required",
+  "changeSet": {
+    "entries": [
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/proposals/M9-04-formula-product-ui.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/proposals/development-batch-2026-11.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/proposals/development-plan-2026-11.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/specs/README.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/specs/chart/display.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/specs/formulas.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/status.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/archive-result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-check.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-check.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-check.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-diff.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-diff.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-scope-diff.stdout.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-verify.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-verify.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/archive-verify.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/diff-check.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/diff-check.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/diff-check.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-after-status.compressed.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-after-status.compression.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-after-status.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-after-status.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-after-status.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-final.compressed.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-final.compression.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-final.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-final.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check-final.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-check.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-impact.compressed.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-impact.compression.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-impact.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-impact.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/docs-impact.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/storage-verify.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/storage-verify.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/storage-verify.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/checks/verify-archive.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/8a1efe35746a.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/capture.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/ci-signals.compressed.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/ci-signals.compression.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/ci-signals.raw.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/evidence-inventory.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/finalize_ci.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/jobs-final.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/jobs-final.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/jobs-final.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/jobs-final.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/000-0_pr-policy.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/001-pr-policy_system.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/002-pr-policy_1_Set_up_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/003-pr-policy_2_Run_actions_checkout_v7.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/004-pr-policy_3_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/005-pr-policy_4_Run_node_scripts_ci_check-pr-policy.mjs.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/006-pr-policy_7_Post_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/007-pr-policy_8_Post_Run_actions_checkout_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/008-pr-policy_9_Complete_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/009-1_docs.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/010-docs_system.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/011-docs_1_Set_up_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/012-docs_2_Run_actions_checkout_v7.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/013-docs_3_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/014-docs_4_Run_npm_ci.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/015-docs_5_Run_npm_run_docscheck.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/016-docs_6_Run_npm_run_docsstatus_--_--check.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/017-docs_11_Post_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/018-docs_12_Post_Run_actions_checkout_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/019-docs_13_Complete_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/020-2_verify.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/021-verify_system.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/022-verify_1_Set_up_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/023-verify_2_Run_actions_checkout_v7.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/024-verify_3_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/025-verify_4_Run_npm_ci.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/026-verify_5_Run_npm_run_build.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/027-verify_6_Test_source_and_compiled_launcher.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/028-verify_7_Retain_test_results.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/029-verify_13_Post_Run_actions_setup-node_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/030-verify_14_Post_Run_actions_checkout_v7.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/logs/031-verify_15_Complete_job.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-final.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-final.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-final.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-final.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-initial.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-initial.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-initial.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/pr-initial.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-final.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-final.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-final.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-final.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-initial.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-initial.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-initial.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/required-initial.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-final.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-final.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-final.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-final.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-initial.raw.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-initial.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-initial.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-initial.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-logs-archive.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-logs-archive.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-logs-archive.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-logs.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-watch.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-watch.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/run-watch.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/ci-capture/verify_ci.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/copy-receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/merge-commit.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/merge-commit.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/merge-commit.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/pr-merged.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/pr-merged.stderr"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/merge-evidence/pr-merged.stdout"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/storage-conversion-preimage.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-EMA-WARMUP-01/ci-pr54/storage-conversion.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/archive-handoff.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/archive-handoff.md.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/archive-index.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/green-existing-formulas.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/green-formula-enable-ready.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/green-formula-enable-results.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/green-formula-enable.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/green-server-targeted.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/manifest-current.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/red-formula-enable.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/red-journey-detail.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/cache-logs/red-literal.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/control-cleanup-plan.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/control-integrity-evidence.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/control-integrity-report.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/independent-after-review.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/inspect-control.cjs.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/recover-control.mjs.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/recovery.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/trainer-state.after-recovery.json.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/control-recovery/trainer-state.before-recovery.json.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/ema-scope-approval.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/existing-formula-journeys/artifacts/browser-results.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/existing-formula-journeys/artifacts/journey.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/existing-formula-journeys/manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/artifact-index.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/copy-integrity.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/failure-summary.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/failure-summary.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/first-failed-candidate-f701371.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f701371/verify-archive.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f9454fe/M9-f9454fe-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f9454fe/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f9454fe/archive-index.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f9454fe/archive-semantics.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/failed-candidate-f9454fe/archive-verification.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/browser-results.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/build-server.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/build-web.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/html/data/1d20198c73eedc70c34e4ed6a8759431972352c0.md.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/html/index.html.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/journey.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/screenshots/formula-enabled-MA_BULL_MAIN.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/screenshots/formula-enabled-WEEK_MACD_SUB.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/artifacts/server.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/logs/operations.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-attempt/manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/artifact-index.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/asar/asar-boundary-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/copy-integrity.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/home-isolation/home-isolation-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/journey-fixture/journey-fixture-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/review/review-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/source-ci/logs-44160559239.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/source-ci/source-ci-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/final-prior/verify-stage.py"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/green-attempt1/journey.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/green-attempt2/journey.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/issue8-live.mts.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live-run.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/issue8-1280-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/issue8-1280-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/issue8-1600-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/issue8-1600-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/live-result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/live/manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/triage.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/issue8/triage.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/M9-layout-final-evidence.manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/M9-layout-final-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/final-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/final-review.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/package.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/layout-repair/root-visual.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/matrix-review/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/matrix-review/formula-chart.yaml"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/matrix-review/recording-inflate-drain.yaml"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/post-maintenance/build-maintenance.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/post-maintenance/matrix-after-saving.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/post-maintenance/npm-ci-maintenance.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/post-maintenance/post-maintenance-receipts.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/post-maintenance/server-targeted-maintenance.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/pr43/review-result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/pr43/review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-only/m9-acceptance-zip-brief.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-only/m9-packaged-acceptance.cjs.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-only/m9-script-handoff.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-only/m9-script-preparation.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-repair/M9-freeze-preparation-evidence.copy-integrity.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-repair/M9-freeze-preparation-evidence.manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/preparation-repair/M9-freeze-preparation-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/cleanup-20261118.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependabot-open-postmerge-all.exit.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependabot-open-postmerge-all.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependabot48-postmerge.exit.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependabot48-postmerge.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependency-sbom-postmerge.exit.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/dependency-sbom-postmerge.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/followup-summary.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/followup-summary.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/new-advisory-global.exit.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/new-advisory-global.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/new-advisory-upstream.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/pr52-final.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/required-checks-final.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/source-checks-complete.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/source-checks-execution-boundaries.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/pr52/source-checks-final.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/review-dependency.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/prerequisites/review-dependency.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/M9-recording-drain-evidence.zip"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/archive-index.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/archive-verification.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/collection-policy.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/final-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/final-review.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/gzip-integrity.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/provenance.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/recording-drain/semantic-verification.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/red/literal-journey.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/red/red-formula-enable.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/red/red-journey-detail.txt"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/browser-results.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/command.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1008x641-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1008x641-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1024x768-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1024x768-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1366x768-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1366x768-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1440x900-dark.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/formula-dense-replay-1440x900-light.png"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/replay-density/manifest.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-candidate-validation.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-candidate-validation.mts.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-candidate-validation.raw.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnosis-result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnosis.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnostic.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnostic.mts.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnostic.raw.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-leading-nan.optional.patch.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/ema-review-receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/formula-ui-l2-static.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review-final.diff.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review-receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review-result.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/runtime-ci/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/runtime-ci/attempt2.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/runtime-ci/attempt2.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/runtime-ci/first-verify.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/runtime-ci/settings-isolated.txt.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/shortcut-readiness.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/source-identity.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/README.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/five-browser-results.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/five-journey.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-enable-expanded.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-enable-expanded.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-enable-integrated.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-enable-integrated.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-ui-binding.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-ui-binding.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/formula-ui-final.yaml"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/npm-ci.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/npm-ci.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/production-build-prerequisite.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/production-build-prerequisite.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/seed-storage-api.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/seed-storage-api.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/six-browser-results.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/six-journey.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/status-regenerate.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/status-regenerate.receipt.json"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/workflow-resume-m9.log.raw.b64"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/verification/2026-11/M9-ENABLE-01/unified-targeted/workflow-resume-m9.receipt.json"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/README.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/milestones/ENG.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/milestones/GH-202611.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/milestones/M9.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/DEP-SEC-MINIMATCH-01.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/ENG-PLAN-01.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/M9-04B.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/M9-04C.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/M9-04D.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/M9-EMA-WARMUP-01.md"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "docs/work-items/tasks/M9-ENABLE-01.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "docs/work-items/tasks/RUNTIME-CANCEL-02.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "e2e/README.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "e2e/formula-chart.spec.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "e2e/formula-enable.spec.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "e2e/local-origin.spec.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "e2e/m3-round3.spec.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "e2e/recording-long.spec.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "scripts/acceptance/Start-Acceptance.ps1"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "server/src/formulas/seed.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "server/test/chart-pane-layout.test.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "server/test/formula-seed.test.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "server/test/formulas/formula-storage.test.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "server/test/recording-file.test.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/api.ts"
+      },
+      {
+        "sourceMode": "000000",
+        "targetMode": "100644",
+        "status": "A",
+        "path": "web/src/chartPaneLayout.ts"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/components/FormulaSettings.vue"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/components/KlineChart.vue"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/components/docs/interaction.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/components/docs/library-adapter.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/recording/recording-file.md"
+      },
+      {
+        "sourceMode": "100644",
+        "targetMode": "100644",
+        "status": "M",
+        "path": "web/src/recording/recordingFile.ts"
+      }
+    ],
+    "fingerprint": "16994887e3dec58883909c5d8496f19fc5a97215b852270006cda2ade4902632"
+  },
+  "taskId": "M9-ENABLE-01",
+  "baseCommit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "testedCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "passed": true,
+  "checks": [
+    {
+      "name": "docs",
+      "exitCode": 0
+    },
+    {
+      "name": "impact",
+      "exitCode": 0
+    },
+    {
+      "name": "unit",
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "snapshot",
+      "exitCode": 0
+    },
+    {
+      "name": "m2",
+      "exitCode": 0
+    },
+    {
+      "name": "journey",
+      "exitCode": 0
+    }
+  ],
+  "runManifest": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253\\manifest.json",
+  "cleanBefore": true,
+  "cleanAfter": true,
+  "createdAt": "2026-11-18T06:31:14.456Z"
+}

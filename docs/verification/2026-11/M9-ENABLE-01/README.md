@@ -2,7 +2,9 @@
 
 批准范围见[首批批准记录](../ENG-PLAN-01/approval.md)，产品口径见[公式规格](../../../specs/formulas.md)。本页记录工程检查，不代替 M9 用户整批验收或发布许可。
 
-当前接续：EMA已由PR54合入；首批公式启停已有专项证据，f701、f945及4fce44d的f33完整候选失败均保留。f33为261通过、1失败，无候选proof；4fce44d同提交实包v7通过不能抵消完整候选失败。[快捷键准备诊断](shortcut-readiness.md)确认录制初始化的独立准备窗口，最小补齐m3测试等待后须冻结新候选、完整复跑并重构建同提交Windows包。下文blocked与待拍板描述为批准前快照，不代表当前仍待同一许可。用户整批验收与发布仍未发生。
+当前接续：C2=35729e4完整候选、同提交Windows ZIP/CMD/实包及主代理UI检查通过，PR55已合入I=2e3704f；本次报告E仅补证据/任务元信息并继承C2工程结果，最终SHA/PR另记仓外交付回执。当前结论、包身份与限制见[工程交接](engineering-handoff.md)，精确proof与正式archive见[C2最终证据](c2-final/README.md)。f701、f945、4fce44d/f33及C2首轮unit失败均保留，未与定向绿拼接；用户整批验收与发布仍未发生。
+
+除上方当前接续外，下文为各轮历史执行记录，blocked、待拍板、待完整复跑或待实包等描述只适用于当时范围；最终状态沿C2入口核对，不改写旧结论。
 
 本轮另发现并精确清理共享控制台账中的测试夹具投影，保留全部真实记录，见[恢复记录](control-recovery/README.md)。恢复未触及个人训练数据；后续单测与控制目录隔离。
 
@@ -74,3 +76,9 @@ f945完整候选Journey为259通过、2失败、0跳过，无成功proof；资�
 相关19项运行8418为18通过、1失败：两年训练导出完整，导入时JSON截断，后续等不到回放按钮。真实原生解压器的调度实验确认先cancel后draining会丢尾；未注入调度的外部探针也可通过，机制证明不等于原时序精确复现。新增单测RED丢末尾123字节，正常排空后清理的最小修复使文件/合并包44项通过；后继真实两年runb8cb原生0，483步、974事件、975检查点，导出462ms、导入374ms、无pageerror。原失败、RED/GREEN和独立审查见[录制修复证据](recording-drain/README.md)。
 
 公式图表矩阵5行及录制排空矩阵1行已核对L2并通过strict解析；运行范围与产品接受分开记录。两变异分别被主图68<99.9和压缩拖动松手回弹9.84px检出，源码逐字节恢复。上述定向结果不拼接为整轮绿；新候选、同提交实包和用户验收仍待后继收据。
+
+## C2最终完整候选与交付
+
+[C2最终证据](c2-final/README.md)记录run-f3c3ca72的完整同轮通过；[精确proof](c2-final/tested-candidate-proof.json)绑定35729e4/tree b669e429。本机unit直接运行Vitest server配置，189文件/2670项通过；M2 24/24，Journey262/262且零跳过/异常/flaky，八项检查均原生退出0；38.4分钟仅为Journey耗时。desktop369来自同C2的独立远端CI，不属于f3同轮；CI的synthetic checkout与语料提前return边界见[工程交接](engineering-handoff.md)。C2首轮run-e1e47169在unit慢健康夹具readiness超时原生退出1，未运行后续检查；与并行构建时间重叠已证，CPU因果未证。旧4fce44d/f33为261通过/1失败且无proof，受控hold机制和另五次自然通过未证明其精确按键时序，详见[快捷键准备诊断](shortcut-readiness.md)。
+
+同C2的v1.3.8 ZIP已验证组包、字节回读、实际CMD启动及关闭、实包公式启停和录制导入回放与重启持久化；[主代理UI记录](c2-final/manual-ui.json)单独确认20张原始截图检查，不回写原实包收据中的visualAcceptance=pending。C/I/E身份、完整SHA、正式archive和用户待确认限制统一见[工程交接](engineering-handoff.md)。

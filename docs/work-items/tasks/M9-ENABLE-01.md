@@ -5,11 +5,11 @@
   "id": "M9-ENABLE-01",
   "title": "修复公式启停保存并准备 M9 整批验收候选",
   "owner": "integrator",
-  "state": "active",
+  "state": "review",
   "milestone": "M9",
   "base_commit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
-  "summary": "EMA已由PR54合入；启停、密集布局与录制排空修复已有专项证据，旧完整候选失败均保留。待冻结新候选完整复跑，再验证同提交Windows包并交用户验收。",
-  "next_action": "归档原失败和本轮回归，冻结新候选并完整复跑（含官方v1.2.7迁移），验证同提交Windows包、CMD入口、真实导出导入回放及重启持久化，再交用户验收；不发布。",
+  "summary": "C2本机完整候选通过：unit直接运行Vitest server配置，189文件/2670项通过，M2 24、Journey262且零跳过；同提交Windows ZIP、CMD入口、实包录制回放与主代理UI检查通过。PR55已合入；旧失败保留，用户整批验收待完成。",
+  "next_action": "按稳定ZIP旁用户验收指南交付M9整批人工验收，确认回放与密集布局限制，收到用户决定后再记录acceptance_ref；本次报告E仅补证据/任务元信息并继承C2工程结果，最终SHA/PR另记仓外交付回执，不发布。",
   "allowed_paths": [
     "web/src/components/FormulaSettings.vue",
     "web/src/api.ts",
@@ -31,6 +31,7 @@
     "docs/status.md",
     "docs/release/M9-ENABLE-01.md",
     "docs/verification/2026-11/M9-ENABLE-01/**",
+    "docs/verification/README.md",
     "CHANGELOG.md",
     "docs/work-items/tasks/ENG-PLAN-01.md",
     "docs/work-items/tasks/RUNTIME-CANCEL-02.md",
@@ -73,20 +74,25 @@
       "docs/work-items/milestones/M9.md",
       "docs/work-items/README.md",
       "docs/status.md",
+      "docs/verification/README.md",
+      "docs/release/M9-ENABLE-01.md",
       "e2e/README.md",
       "docs/specs/chart/display.md",
       "web/src/components/docs/library-adapter.md",
       "web/src/components/docs/interaction.md",
       "web/src/recording/recording-file.md"
     ],
-    "reason": "冻结已批准的内置启停口径，纠正已有开关却未持久化的实施描述；记录整批候选与人工验收边界。集成人另回填本批前置任务的实际合入引用、阶段计划和Issue8分诊；不修改前置实现或补造人工验收。"
+    "reason": "冻结已批准的内置启停口径，纠正已有开关却未持久化的实施描述；记录整批候选与人工验收边界。集成人另回填本批前置任务的实际合入引用、阶段计划和Issue8分诊；全局verification README只补当前证据导航，不修改前置实现或补造人工验收。"
   },
   "verification_refs": [
     "docs/verification/2026-11/M9-ENABLE-01/README.md",
     "docs/verification/2026-11/M9-ENABLE-01/review/saving-fix-review.md",
-    "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnosis.md"
+    "docs/verification/2026-11/M9-ENABLE-01/review/ema-diagnosis.md",
+    "docs/verification/2026-11/M9-ENABLE-01/c2-final/README.md",
+    "docs/verification/2026-11/M9-ENABLE-01/engineering-handoff.md"
   ],
-  "integration_ref": null,
+  "tested_commit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "integration_ref": "2e3704f2b3ddae6c5774b27ab085aea7467fe1b2",
   "acceptance_ref": null
 }
 ```
@@ -100,6 +106,8 @@
 2026-11-18 集成人范围补记：本批前置卡合并后，在此卡回填真实 integration_ref 和下一步，并同步 ENG/GH 阶段入口与已批准的执行计划；Issue #8 仅复现、分诊及形成后续方案，证据归本卡 verification。不会修改该反馈对应产品行为，也不向 Issue 自动回复。
 
 ## 2026-11-18 接续状态
+
+以下至快捷键准备修复为历史执行记录，保留当时失败、阻断和待办结论；当前结果以文末“C2最终交付”及其证据入口为准。
 
 原立项基线为2c66477；已签名合入维护主线 df6cedd82fa3fe591615724259f83d16f6bb70fa，本轮归档时HEAD为c83cae6。前导NaN的EMA修复明确超出本卡“不改变公式引擎语义”的范围，已提交独立方案，未获答复，未应用候选补丁。当前blocked是交付阻断，不表示启停字段补丁未保存。
 
@@ -128,3 +136,9 @@
 候选4fce44d的完整运行f33为261通过、1失败：m3-round3首次右括号后仍为日K，未产生候选证明。独立受控实验确认，原open的图表等待条件完成时录制仍可能准备中，真实快捷键会按保护规则被拦截；解除准备后同一真实按键成功。无hold五次均通过，原失败没有按键时点记录，故不宣称精确复现f33或确认产品热键回归。
 
 本次仅给m3-round3的open补现有套件使用的training-grid无inert等待，保持双向周期、输入、自定义和未完成画线隔离等全部断言及超时。生产逻辑不改；诊断、首次EPERM准备失败及复跑边界见[准备诊断](../../verification/2026-11/M9-ENABLE-01/shortcut-readiness.md)。修正后冻结新提交，从头完整候选并重构建同提交Windows包，旧4fce44d结果不改绑。
+
+## C2最终交付（2026-11-18）
+
+测试对象C2为35729e4，PR55集成提交I为2e3704f，两者tree均为b669e429；本次报告E仅补证据/任务元信息并继承C2工程结果，最终SHA/PR另记仓外交付回执。C2首轮unit的慢健康夹具readiness超时保留，随后串行完整运行f3c3ca72的八项检查均原生退出0：unit直接运行Vitest server配置，189文件/2670项通过；M2 24/24、Journey262/262，零跳过、零unexpected、零flaky。desktop369来自同C2的独立远端CI，不属于f3同轮，CI语料覆盖边界见工程交接。旧f701、f945和4fce44d/f33失败均保留，不与定向运行拼接。
+
+同C2的v1.3.8 ZIP已组包、回读核对并实际走CMD入口；实包完成公式启停、训练、真实导出导入回放和重启持久化，主代理查看20张原始截图。完整来源、失败边界、包及正式archive SHA见[工程交接](../../verification/2026-11/M9-ENABLE-01/engineering-handoff.md)和[C2最终证据](../../verification/2026-11/M9-ENABLE-01/c2-final/README.md)。当前review表示工程交付待用户验收；acceptance_ref仍为null，未发布。

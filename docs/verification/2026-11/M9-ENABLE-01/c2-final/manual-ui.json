@@ -1,0 +1,151 @@
+{
+  "kind": "manual-ui",
+  "testedCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "reviewer": "root",
+  "outcome": "passed",
+  "reviewedAt": "2026-11-18T06:20:33.6238837Z",
+  "artifacts": [
+    ".runs/manual-ui-35729e4/training-all-builtins-1440x900-dark.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1440x900-light.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1366x768-dark.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1366x768-light.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1024x768-dark.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1024x768-light.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1008x641-dark.png",
+    ".runs/manual-ui-35729e4/training-all-builtins-1008x641-light.png",
+    ".runs/manual-ui-35729e4/formula-create-main.png",
+    ".runs/manual-ui-35729e4/formula-create-sub.png",
+    ".runs/manual-ui-35729e4/restart-persisted-formula.png",
+    ".runs/manual-ui-35729e4/builtin-QINIU_B1_SUB-enabled-chart.png",
+    ".runs/manual-ui-35729e4/builtin-WEEK_MACD_SUB-enabled-chart.png",
+    ".runs/manual-ui-35729e4/training-weekly.png",
+    ".runs/manual-ui-35729e4/training-monthly.png",
+    ".runs/manual-ui-35729e4/training-after-advance.png",
+    ".runs/manual-ui-35729e4/first-boot-replay-first.png",
+    ".runs/manual-ui-35729e4/first-boot-replay-progress.png",
+    ".runs/manual-ui-35729e4/second-boot-imported-gzip-replay-first.png",
+    ".runs/manual-ui-35729e4/second-boot-imported-gzip-replay-progress.png"
+  ],
+  "fingerprints": [
+    {
+      "bytes": 229698,
+      "sha256": "431774ff3e32a309266fa9e871687dfa541492ad7c24ed84c284ac16439ba74b",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1440x900-dark.png"
+    },
+    {
+      "bytes": 228634,
+      "sha256": "60b6cd8a58d61dd7c0a2b158500360fa41a82b85b6cd131543d27f95c18333a1",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1440x900-light.png"
+    },
+    {
+      "bytes": 205985,
+      "sha256": "f3c19a83f91e7b48cd3f6b273245325b69105e6b27f5df75324313c5446d80b4",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1366x768-dark.png"
+    },
+    {
+      "bytes": 206427,
+      "sha256": "f457c8498d16fc5ad1b25a90a56f7051f62b3e13153e1acf5bc208a3a6ecef0d",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1366x768-light.png"
+    },
+    {
+      "bytes": 165869,
+      "sha256": "a9a63d5fee68573d3e8baf1d22f1c19653ea0bd5cb77d4a441fdb44d52a84e3c",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1024x768-dark.png"
+    },
+    {
+      "bytes": 169315,
+      "sha256": "5547cc7164508f0e77ae61cc8df6e425d17ccc084fa17e081aa8444988c75fa3",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1024x768-light.png"
+    },
+    {
+      "bytes": 147711,
+      "sha256": "d271e3346a33604adb71b9a601f5eee77aa04620f731c89394ba666c89f940c0",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1008x641-dark.png"
+    },
+    {
+      "bytes": 151768,
+      "sha256": "2d7e60bfd62fc8fed0fd8194954f4760c368d3471eb6010d854b5f1f2caa39a8",
+      "path": ".runs/manual-ui-35729e4/training-all-builtins-1008x641-light.png"
+    },
+    {
+      "bytes": 61429,
+      "sha256": "09b506986f68cb7c6354025616c05de4b6ee1e47b33af27f6163f40a245d122f",
+      "path": ".runs/manual-ui-35729e4/formula-create-main.png"
+    },
+    {
+      "bytes": 64003,
+      "sha256": "99da931f67df0e9398b983ca4332ba042949ce8eca6cc3530153f221e9680324",
+      "path": ".runs/manual-ui-35729e4/formula-create-sub.png"
+    },
+    {
+      "bytes": 76089,
+      "sha256": "440e49b9fd98b364c3c756c894e0805de626a022a200690085c85b8e2c4485e6",
+      "path": ".runs/manual-ui-35729e4/restart-persisted-formula.png"
+    },
+    {
+      "bytes": 129201,
+      "sha256": "af31e80b53433f66ce31427f48ab4f6e9102b5f676657479716e4c82e5cd1924",
+      "path": ".runs/manual-ui-35729e4/builtin-QINIU_B1_SUB-enabled-chart.png"
+    },
+    {
+      "bytes": 128843,
+      "sha256": "80f83e59806df7683f983f119dafd052b460363a021baf9d019458e3b3953c18",
+      "path": ".runs/manual-ui-35729e4/builtin-WEEK_MACD_SUB-enabled-chart.png"
+    },
+    {
+      "bytes": 140197,
+      "sha256": "16cc90468918c7b0a5449ee2a38259a9404ca7980fa69c48de3fc9861e0b732c",
+      "path": ".runs/manual-ui-35729e4/training-weekly.png"
+    },
+    {
+      "bytes": 130074,
+      "sha256": "09a1e229692ff496b9a5d8e5c6350b3acbb29a5e7dca2a4f0b17fa3eabb335d5",
+      "path": ".runs/manual-ui-35729e4/training-monthly.png"
+    },
+    {
+      "bytes": 139760,
+      "sha256": "15ea8e3623c846e79f87dfbb8db237e2906f35f35edba59be6caff01bb35e8f6",
+      "path": ".runs/manual-ui-35729e4/training-after-advance.png"
+    },
+    {
+      "bytes": 133529,
+      "sha256": "e8eb8d52d9bf5044bcf33b58825f922d02dc6ad2cd098a7d028c2708aa5797a0",
+      "path": ".runs/manual-ui-35729e4/first-boot-replay-first.png"
+    },
+    {
+      "bytes": 131438,
+      "sha256": "d9c8e15699da6d62c581820fd2c7c7d852023eac2cecde43ab29b947088de017",
+      "path": ".runs/manual-ui-35729e4/first-boot-replay-progress.png"
+    },
+    {
+      "bytes": 133529,
+      "sha256": "e8eb8d52d9bf5044bcf33b58825f922d02dc6ad2cd098a7d028c2708aa5797a0",
+      "path": ".runs/manual-ui-35729e4/second-boot-imported-gzip-replay-first.png"
+    },
+    {
+      "bytes": 131438,
+      "sha256": "d9c8e15699da6d62c581820fd2c7c7d852023eac2cecde43ab29b947088de017",
+      "path": ".runs/manual-ui-35729e4/second-boot-imported-gzip-replay-progress.png"
+    }
+  ],
+  "method": "Root invoked the actual packaged Electron v7 journey and personally opened all 20 original screenshots via view_image, including eight theme/size compositions, formula settings, QINIU/WEEK curves, day/week/month progression and local/imported replay before/after advance. Runtime behavior is supported by the unchanged reviewed v7 real UI runner; screenshots do not prove human acceptance.",
+  "observations": [
+    "Main candles, formula curves, time axes and account actions remain visible in all eight compositions; no error overlay observed.",
+    "Formula editor fields, enable checkbox and save controls are reachable by the panel scroll. Restarted formula list retains custom main/sub formulas.",
+    "QINIU and WEEK lines render; local/imported replay advance from day 1 to day 2 with matching current formula panes.",
+    "Advance screenshot captured account odometer mid-animation; this still frame is not an animation-quality acceptance."
+  ],
+  "limitations": [
+    "Main K remains only 100px in dense layouts; at 1008x641 built-in panes and legends are cramped. Arbitrary-density readability is not established.",
+    "Light built-in MACD DIF and KDJ K remain low contrast (existing Issue 8); this task does not fix that issue.",
+    "Replay uses current formula library; formula pane heights are not recorded and formula-pane drawings fall back to the main pane.",
+    "Recording metadata may be unknown or inherit ancestor Git identity; package source is established by build/ASAR/ZIP identity.",
+    "No NSIS install/overwrite or human acceptance performed."
+  ],
+  "pageErrors": [],
+  "packageResultSha256": "e2125b9029bf695a295e0c6aab59e37c0640e20ee165dd8bfdf87b009c52b90c",
+  "nativeReceiptSha256": "0aeb021d7269918834c8c693e541eea9e58112b8d8081d64b488f163eff4b84c",
+  "userAcceptance": null,
+  "publicationApproval": null
+}
