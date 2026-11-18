@@ -1,0 +1,12 @@
+{
+  "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "retryOf": "run-e1e47169-915f-4938-8e10-705604a5183d",
+  "startedAt": "2026-11-18T05:45:35.5739856Z",
+  "TRAINER_FORMULA_CORPUS_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/ai-harness-lab/formula-recon",
+  "TDX_ROOT": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-6eb1ecab-8032-4fac-a5bb-80aa2dc58a2b\\tdx-snapshot",
+  "snapshotSha256": "1149d6447ef3cf4e564691cbd0bfd75ce2a402c9f1d17a2062184e38ff08fba5",
+  "commit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "MIG_V127_PACKAGE": "C:/Users/Stark_Du666/.codex/headroom-cache/M9-v127-fixture/package/kline-trainer-v1.2.7-windows-x64",
+  "reason": "Initial fixture readiness timeout before lock scenario; unchanged isolated entire file 52/52 native0. Retry all checks, no source/assertion/timeout changes. No production build concurrent with unit.",
+  "TRAINER_TDX_FORMULA_DIR": "D:/Superlinear_Academy/Stock_WorkSpace/tdx/选股公式"
+}

@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "kind": "C2-evidence-archive",
+  "archiveVerified": true,
+  "tested_commit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "tested_tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "base_commit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "evidence_commit": null,
+  "integration_ref": null,
+  "acceptance_ref": null,
+  "startedAt": "2026-11-18T07:13:13.1517836Z",
+  "completedAt": "2026-11-18T07:13:36.1647106Z",
+  "sourceBefore": {
+    "head": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+    "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+    "porcelain": "",
+    "checkedAt": "2026-11-18T07:13:13.7131371Z"
+  },
+  "sourceAfter": {
+    "head": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+    "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+    "porcelain": "",
+    "checkedAt": "2026-11-18T07:13:36.1322347Z"
+  },
+  "candidateRuns": [
+    {
+      "group": "candidate-C2-original-e1",
+      "runId": "run-e1e47169-915f-4938-8e10-705604a5183d",
+      "passed": false,
+      "nativeExitCode": 1,
+      "checks": [
+        {
+          "name": "docs",
+          "exitCode": 0
+        },
+        {
+          "name": "impact",
+          "exitCode": 0
+        },
+        {
+          "name": "unit",
+          "exitCode": 1,
+          "error": "Error: Command exited with 1; see C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-e1e47169-915f-4938-8e10-705604a5183d\\artifacts\\unit.log"
+        }
+      ],
+      "journeyStats": null
+    },
+    {
+      "group": "candidate-C2-final",
+      "runId": "run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253",
+      "passed": true,
+      "nativeExitCode": 0,
+      "checks": [
+        {
+          "name": "docs",
+          "exitCode": 0
+        },
+        {
+          "name": "impact",
+          "exitCode": 0
+        },
+        {
+          "name": "unit",
+          "exitCode": 0
+        },
+        {
+          "name": "types",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "snapshot",
+          "exitCode": 0
+        },
+        {
+          "name": "m2",
+          "exitCode": 0
+        },
+        {
+          "name": "journey",
+          "exitCode": 0
+        }
+      ],
+      "journeyStats": {
+        "startTime": "2026-11-18T05:52:49.616Z",
+        "duration": 2303685.092,
+        "expected": 262,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "bindingNativeExitCode": 0,
+  "binding": {
+    "kind": "read-only-C2-binding-check",
+    "task": "M9-ENABLE-01",
+    "baseCommit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+    "testedCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+    "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+    "assessment": {
+      "schemaVersion": 2,
+      "profile": "full",
+      "visual": "required"
+    },
+    "proof": {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\candidate-proof.json",
+      "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+    },
+    "manifest": {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253\\manifest.json",
+      "sha256": "1a55337e8fc821efa8c141b22e699940ef64d445a273a8ef12a0cdedd5361d37"
+    },
+    "manualUi": {
+      "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\manual-ui-35729e4\\manual-ui.json",
+      "sha256": "6d144a328ab2c59ccd30fa6907f4332eac493f015bf340f3a411f7f8a1d19235"
+    },
+    "scope": "Structural evidence binding only; does not establish human visual acceptance or publication approval."
+  },
+  "ciScope": {
+    "sourceCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+    "sourceTree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+    "syntheticCheckout": "513f61075b518e5e8b0d9d531ca1bda3df113f47",
+    "syntheticTree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+    "sameTree": true,
+    "runId": 44245346043,
+    "runStatus": "completed",
+    "runConclusion": "success",
+    "reviewChecks": [
+      {
+        "name": "docs",
+        "conclusion": "success",
+        "completedAt": "2026-11-18T05:36:32Z"
+      },
+      {
+        "name": "verify",
+        "conclusion": "success",
+        "completedAt": "2026-11-18T05:40:45Z"
+      },
+      {
+        "name": "pr-policy",
+        "conclusion": "success",
+        "completedAt": "2026-11-18T05:36:15Z"
+      }
+    ],
+    "rawRequiredChecks": [
+      {
+        "id": 134602822583,
+        "name": "docs",
+        "head_sha": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+        "status": "completed",
+        "conclusion": "success",
+        "app": "github-actions"
+      },
+      {
+        "id": 134602822277,
+        "name": "verify",
+        "head_sha": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+        "status": "completed",
+        "conclusion": "success",
+        "app": "github-actions"
+      },
+      {
+        "id": 134602821940,
+        "name": "pr-policy",
+        "head_sha": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+        "status": "completed",
+        "conclusion": "success",
+        "app": "github-actions"
+      }
+    ],
+    "reportedCounts": {
+      "serverFiles": 189,
+      "serverTests": 2670,
+      "desktopFiles": 34,
+      "desktopTests": 369,
+      "totalFiles": 223,
+      "totalTests": 3039,
+      "corpusEarlyReturnPassed": 7,
+      "assertionCoverageNotInferred": true
+    },
+    "corpusEarlyReturnPassed": 7,
+    "testResultsArtifactCount": 0,
+    "reviewReceiptSha256": "192627ec7bbe1be0c455e3bf7f2ca6231d5054cfcf396f10908992cd8f1fa9ff",
+    "artifactIndexSha256": "da0575a001085859a6c1c4de1256a427a6de2674ccdc9f7c23ca9b8113bde099",
+    "rawCheckRunsSha256": "828e00ca2182ecdbc45fc2a06ed5363d4c6e7ecdd52da6bc0f48cbee0478d227",
+    "rawRunSha256": "d18e09a4f6f22c33b87f2eda5b4c2404501d43c5708234857c0be27cc13c8583",
+    "rawSourceCommitSha256": "39837ada26fcbbfd76a518ae32228029f543a352fdce97daafbde29e61c76086"
+  },
+  "archive": {
+    "bytes": 10749387,
+    "entries": 518,
+    "sha256": "de777837c746e80cecfd8a55d3c5a7b9e595ba9aa27e33d7a7d4aa331948395f",
+    "file": "evidence.zip"
+  },
+  "fileManifestSha256": "bc9f409eed9a1a67e1b9db48751df282ce5121734e939c892b2515e351a65340",
+  "externalReferenceCount": 12,
+  "limitations": [
+    "Archive integrity is not user acceptance or publication approval",
+    "Old C failed candidate and successful package are preserved in immutable external archive",
+    "C2 e1 unit failure is retained; final full retry is a separate run",
+    "Targeted8 was pre-freeze dirty-worktree verification, not a clean C2 full run",
+    "Dynamic controlled hold establishes a mechanism, not exact reproduction of the old race",
+    "Recording metadata may be unknown or inherit ancestor Git identity; never used as C2 source proof",
+    "CI scope/omissions/artifact availability come from the actual current CI audit, not old totals",
+    "NSIS manual install/upgrade and human acceptance are not inferred",
+    "No tag/Release/upload/feed change by this tool"
+  ]
+}

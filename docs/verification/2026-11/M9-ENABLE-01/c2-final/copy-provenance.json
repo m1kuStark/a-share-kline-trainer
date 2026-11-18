@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "kind": "C2-Git-copy-line-ending-provenance",
+  "recordedAt": "2026-11-18T08:38:01.215Z",
+  "testedCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "testedTree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "sourceCopyReceipt": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-c2-final-preparation\\copy-c2-final.receipt.json",
+    "bytes": 16293,
+    "sha256": "2661a768d3cc9761586892574767d5ec68da03d2a67e19e6b44988eea3e0009d"
+  },
+  "comparison": "node:util isDeepStrictEqual(JSON.parse(original UTF-8), JSON.parse(published UTF-8))",
+  "normalizationScope": "Remove only each CR byte immediately followed by LF; no JSON serialization or other byte changes",
+  "sourceHashSemantics": "Hashes embedded in result, file-manifest, preflight and binding records describe historical original source/archive bytes, not normalized Git copies; use each published hash below for this directory",
+  "files": [
+    {
+      "relativePath": "archive-execution/archive-v3.native.receipt.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-c2-archive-execution\\archive-v3.native.receipt.json",
+      "original": {
+        "bytes": 122,
+        "sha256": "fd1dee3d12ab283fa9db88dda2ac50a7b0f7dc11f91fbd5295df96529e223dd4"
+      },
+      "published": {
+        "bytes": 117,
+        "sha256": "809848da451963a912434c932c5eacf4332ce235b47af8d531838ebfcaaa7145"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 5,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "archive-execution/preflight-v3.native.receipt.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-c2-archive-execution\\preflight-v3.native.receipt.json",
+      "original": {
+        "bytes": 244,
+        "sha256": "194c4e85543da3b4c10eaa4570ace051a0fb58275c275d7f2d05f8da2f53fbee"
+      },
+      "published": {
+        "bytes": 237,
+        "sha256": "1f3e81594849e0606afd45225b70b5c04c2fad5e72e9c9a8f34414b8e255e440"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 7,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "archive-execution/preflight-v3.stdout.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-c2-archive-execution\\preflight-v3.stdout.json",
+      "original": {
+        "bytes": 239963,
+        "sha256": "4d9a7ee73328d3e04afb2899fefb2ccb696ed2faf26052542ebdfc1ca87a7e89"
+      },
+      "published": {
+        "bytes": 235613,
+        "sha256": "1e80a0a4c4f15f964fc20fd9739b0e0fa28b6b6488c8afc386875d062e1136e8"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 4350,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "candidate-invocation.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-35729e4\\candidate-serial-retry\\invocation.json",
+      "original": {
+        "bytes": 1006,
+        "sha256": "855c16f059434082b005c51e73826e3025be930f2153812cea0bf4138fafc48c"
+      },
+      "published": {
+        "bytes": 994,
+        "sha256": "8371f6e809c51963b85ddb2a1e1f3eae212e8f870ba0f97ea847caca0c277f97"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 12,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "candidate-isolation.receipt.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-35729e4\\candidate-serial-retry\\candidate-isolation.receipt.json",
+      "original": {
+        "bytes": 1369,
+        "sha256": "3e49b33028909b0028e289381f6599b055caa8f44d1c8b321ab0bce6ca7dd5fc"
+      },
+      "published": {
+        "bytes": 1341,
+        "sha256": "61dc72b4d7f85278381b569144742ac4b5d217f94434fb59b148bf65cd4493d7"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 28,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "candidate-native-exit.receipt.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-35729e4\\candidate-serial-retry\\outer-execution.receipt.json",
+      "original": {
+        "bytes": 155,
+        "sha256": "f3007191afb0ce143c61fc3c915c3dc2a38e890e39d71b91e30a1ad4a614b317"
+      },
+      "published": {
+        "bytes": 149,
+        "sha256": "2fdf656d69317fdd6157aecd21f67aa2a57cb0b4fc3258da0052d74759966c82"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 6,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "manual-ui.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\manual-ui-35729e4\\manual-ui.json",
+      "original": {
+        "bytes": 7496,
+        "sha256": "6d144a328ab2c59ccd30fa6907f4332eac493f015bf340f3a411f7f8a1d19235"
+      },
+      "published": {
+        "bytes": 7345,
+        "sha256": "eb42975030c0b72ab251b68aa674cf214c09ceb9ae365bc866175e2c581e4cb1"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 151,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "retained-archive/file-manifest.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-35729e4-retained-archive\\file-manifest.json",
+      "original": {
+        "bytes": 236641,
+        "sha256": "bc9f409eed9a1a67e1b9db48751df282ce5121734e939c892b2515e351a65340"
+      },
+      "published": {
+        "bytes": 232397,
+        "sha256": "99cdbdad6a094b9096bc60a23a3fa8ea5cba91ca617f353053430aa097664047"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 4244,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "retained-archive/result.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-35729e4-retained-archive\\result.json",
+      "original": {
+        "bytes": 7357,
+        "sha256": "6bd0b383e5f095981e0a31fe43c6dc659348d2041370da54980d29ecc68ad9f7"
+      },
+      "published": {
+        "bytes": 7146,
+        "sha256": "572047063e6d7f729ff70b974969b240f57fa111dcab87c0386f91a07f2a5377"
+      },
+      "transform": "CRLF-to-LF-only",
+      "removedCrBytes": 211,
+      "byteIdenticalToOriginal": false,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "root-binding-check.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\headroom-cache\\M9-final-run-35729e4\\root-binding-check.json",
+      "original": {
+        "bytes": 1176,
+        "sha256": "9b83a172fb87ad04416a715f10d8359b3031977c58e9830d06a27dc54162b859"
+      },
+      "published": {
+        "bytes": 1176,
+        "sha256": "9b83a172fb87ad04416a715f10d8359b3031977c58e9830d06a27dc54162b859"
+      },
+      "transform": "none-byte-identical",
+      "removedCrBytes": 0,
+      "byteIdenticalToOriginal": true,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "tested-candidate-manifest.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253\\manifest.json",
+      "original": {
+        "bytes": 1595,
+        "sha256": "1a55337e8fc821efa8c141b22e699940ef64d445a273a8ef12a0cdedd5361d37"
+      },
+      "published": {
+        "bytes": 1595,
+        "sha256": "1a55337e8fc821efa8c141b22e699940ef64d445a273a8ef12a0cdedd5361d37"
+      },
+      "transform": "none-byte-identical",
+      "removedCrBytes": 0,
+      "byteIdenticalToOriginal": true,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "tested-candidate-proof.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\candidate-proof.json",
+      "original": {
+        "bytes": 70508,
+        "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+      },
+      "published": {
+        "bytes": 70508,
+        "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+      },
+      "transform": "none-byte-identical",
+      "removedCrBytes": 0,
+      "byteIdenticalToOriginal": true,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    },
+    {
+      "relativePath": "tested-candidate-verification.json",
+      "sourcePath": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253\\artifacts\\verification.json",
+      "original": {
+        "bytes": 70508,
+        "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+      },
+      "published": {
+        "bytes": 70508,
+        "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+      },
+      "transform": "none-byte-identical",
+      "removedCrBytes": 0,
+      "byteIdenticalToOriginal": true,
+      "jsonParseDeepEqual": true,
+      "originalSourceUnchanged": true
+    }
+  ],
+  "copiedJsonFileCount": 13,
+  "normalizedJsonFileCount": 9,
+  "byteIdenticalJsonFileCount": 4,
+  "allJsonParseDeepEqual": true,
+  "allOriginalSourcesUnchanged": true,
+  "generatedFiles": [
+    {
+      "relativePath": "README.md",
+      "role": "New source-and-scope index, not an original copied artifact"
+    },
+    {
+      "relativePath": "copy-provenance.json",
+      "role": "New byte/parsed-value transfer record, not an original product result"
+    }
+  ],
+  "productExecuted": false,
+  "gitIndexWritten": false,
+  "limitation": "Transfer representation only. Does not rebind original proof to an integration/evidence commit or add product, user-acceptance or release conclusions."
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "read-only-C2-binding-check",
+  "task": "M9-ENABLE-01",
+  "baseCommit": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "testedCommit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "tree": "b669e42987324fe527b2b48677ac66a78ad8c252",
+  "assessment": {
+    "schemaVersion": 2,
+    "profile": "full",
+    "visual": "required"
+  },
+  "proof": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\candidate-proof.json",
+    "sha256": "a8c1e40aceb993926e988fabfc3624797e3fd41c69ad48132701d88ce9f25090"
+  },
+  "manifest": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\run-f3c3ca72-e6e3-424d-bc0f-3665c11ff253\\manifest.json",
+    "sha256": "1a55337e8fc821efa8c141b22e699940ef64d445a273a8ef12a0cdedd5361d37"
+  },
+  "manualUi": {
+    "path": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.runs\\manual-ui-35729e4\\manual-ui.json",
+    "sha256": "6d144a328ab2c59ccd30fa6907f4332eac493f015bf340f3a411f7f8a1d19235"
+  },
+  "scope": "Structural evidence binding only; does not establish human visual acceptance or publication approval."
+}

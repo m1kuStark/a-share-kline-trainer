@@ -1,5 +1,7 @@
 # 验证与验收证据
 
+[M9整批工程交接（2026-11-18）](2026-11/M9-ENABLE-01/engineering-handoff.md)与[C2最终证据](2026-11/M9-ENABLE-01/c2-final/README.md)：完整候选、同提交Windows ZIP/CMD/实包及主代理UI检查通过，PR55已合入；旧失败保留，用户整批验收与发布未发生。本次报告E仅补证据/任务元信息并继承C2工程结果，最终SHA/PR另记仓外交付回执。
+
 [ENG-PLAN-01（2026-11-18）](2026-11/ENG-PLAN-01/README.md)记录首批开发批准、22卡集成事实与原20项E2E静态对账；未运行产品或新增用户验收。
 
 最近一次工程健康核对见 [ENG-HEALTH-02（2026-11-17）](2026-11/ENG-HEALTH-02/README.md)。当前开发沿[状态](../status.md)与对应任务接续；发布状态按[发布协议](../engineering/release.md)核对 GitHub Release、tag 与更新 feed，不能由历史报告标题推断。

@@ -1,0 +1,28 @@
+{
+  "task": "M9-ENABLE-01",
+  "repo": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer",
+  "base": "58ba0ffc13458fb136c7d885b62ee0c898d4bab8",
+  "startedAt": "2026-11-18T05:45:36.0578518Z",
+  "scriptSha256": "23b31db48eda00ce67353a9a1e8a2d3e728f73cdcdfd92b2b24b0e4865f9f62a",
+  "sourceControl": "D:\\Superlinear_Academy\\Stock_WorkSpace\\.control\\trainer-state.json",
+  "localSnapshot": "C:\\Users\\Stark_Du666\\.codex\\worktrees\\m9-enable-01\\a-share-kline-trainer\\.control\\trainer-state.json",
+  "gates": {
+    "candidate": 0,
+    "sharedStatusBefore": 0,
+    "sharedStatusAfter": 0
+  },
+  "cleanup": {
+    "localSnapshotRemoved": true,
+    "snapshotUnchanged": true,
+    "sourceUnchanged": true
+  },
+  "commit": "35729e4ac28696fc174a12e6cef6d1e9b0944f2b",
+  "sourceSha256": "026bd5f9db226e98b61ca6f5a6f315fc6e74e5032a6a8becd7c62954c88d1c74",
+  "sourceRevision": 238,
+  "snapshotBeforeSha256": "026bd5f9db226e98b61ca6f5a6f315fc6e74e5032a6a8becd7c62954c88d1c74",
+  "snapshotAfterSha256": "026bd5f9db226e98b61ca6f5a6f315fc6e74e5032a6a8becd7c62954c88d1c74",
+  "sourceAfterSha256": "026bd5f9db226e98b61ca6f5a6f315fc6e74e5032a6a8becd7c62954c88d1c74",
+  "endedAt": "2026-11-18T06:31:20.4674530Z",
+  "nativeExitCode": 0,
+  "exitCodeCapture": "$LASTEXITCODE immediately after each native command; no pipeline"
+}

@@ -1,0 +1,7 @@
+{
+  "shell": "pwsh",
+  "scriptSha256": "92921e732a487e7739544a294322c03ebc51c3db4bbb191f275a82a17c08cf90",
+  "command": "archive-c2-evidence.v3.ps1 -PreflightOnly",
+  "nativeExitCode": 0,
+  "observedAt": "2026-11-18T07:10:57.1589984Z"
+}
