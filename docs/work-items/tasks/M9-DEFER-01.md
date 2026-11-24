@@ -6,8 +6,8 @@
   "summary": "用户不在家，明确延后 M9 验收；完整候选独立保存在 task/M9-ACCEPT-HOLD，不发布。",
   "verification_refs": ["docs/verification/2026-11/M9-DEFER-01/README.md"],
   "base_commit": "fe0989736ebf7428deb6dafcf1dbba992c2b50dc",
-  "next_action": "在独立 PR 核验公式 UI/API/打包接线撤出、存量 DB 不破坏与普通训练/回放回归；门禁与检查通过前不改 main。",
-  "state": "active",
+  "next_action": "PR #60 已合入。用户回来后验原 C2 包；若认可，在届时 main 上另开恢复 PR。直接合并留存分支不会恢复功能。",
+  "state": "closed",
   "docs_impact": {
     "update": [
       "docs/work-items/tasks/M9-DEFER-01.md",
@@ -17,7 +17,7 @@
     "reason": "保留 M9 原证据与用户验收空值；状态与代码所在分支分别表述。"
   },
   "owner": "integrator",
-  "integration_ref": null,
+  "integration_ref": "0b7d5d027f7ed40aff8bab465c29693d613cb3a4",
   "allowed_paths": [
     "web/src/formula-engine/**",
     "web/src/chartPaneLayout.ts",

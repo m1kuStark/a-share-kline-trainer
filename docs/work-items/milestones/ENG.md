@@ -18,7 +18,9 @@
     "ENG-HEALTH-02",
     "DEP-SEC-MINIMATCH-01",
     "RUNTIME-CANCEL-02",
-    "ENG-PLAN-01"
+    "ENG-PLAN-01",
+    "PACK-ZIP-COMPAT-01",
+    "ENG-RECON-02"
   ],
   "verification_refs": [
     "docs/verification/2026-11/ENG-HEALTH-02/README.md",
@@ -27,7 +29,7 @@
     "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "PR50—52已合入并回填integration_ref，告警48自动fixed；PR43按独立依赖维护任务接续。EMA已由PR54合入；M9的C2完整候选、同提交Windows包及主代理UI检查通过，PR55已合入。下一步交用户整批验收；本次报告E仅补证据/任务元信息并继承C2工程结果，最终SHA/PR另记仓外交付回执。接续与失败历史见docs/verification/2026-11/M9-ENABLE-01/engineering-handoff.md；不发布。"
+  "next_action": "Windows 打包修复 #59、M9 撤出 #60 已合入。优先分诊公开预览版启动失败 #58；两个依赖 PR 分开验证。M9 留验收分支，不发布。"
 }
 ```
 
