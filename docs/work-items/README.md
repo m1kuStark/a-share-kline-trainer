@@ -1,5 +1,6 @@
 # 任务与阶段
 
+- [CHART-RULER-DESIGN-01](tasks/CHART-RULER-DESIGN-01.md)：#41 确认价格尺不替代区间统计；新交互方案与已实现范围分开。
 - [CHART-CONTRAST-01](tasks/CHART-CONTRAST-01.md)：#8 浅色模式只把 DIF/K 白线换成黑线；保留黄、紫和线宽。 #64 已合入，用户已确认。
 - [ENG-RECON-03](tasks/ENG-RECON-03.md)：回填本项验收及主线提交，不代表整版验收。
 
