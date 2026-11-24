@@ -26,6 +26,8 @@ directories:
 files:
   - desktop/dist/**
   - server/dist/**
+  # tsc 会保留上次构建的输出；验收隔离期不能把旧 M9 编译文件带进 app.asar。
+  - "!server/dist/formulas{,/**}"
   - web/dist/**
   - package.json
   # 仅排除前端框架本体（vite 已把产物打进 web/dist；pinia 唯一依赖 vue，一并排除）。

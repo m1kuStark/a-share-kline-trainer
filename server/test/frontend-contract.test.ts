@@ -499,8 +499,7 @@ describe('M2 chart interaction contract', () => {
     // 顶栏负向断言：胶囊按钮与其分组容器不复存在（注释亦不留关键词——源码注释也是契约文本）
     expect(training).not.toMatch(/motion-toggle|动效开关/)
     // 设置面板：分栏结构可扩展（activeSection 增 'animation' 档；nav 按钮平铺追加）
-    expect(settings).toMatch(/'defaults' \| 'preferences' \| 'animation' \| 'formula' \| 'data'/)
-    expect(settings).toMatch(/>公式指标<\/button>/)
+    expect(settings).toMatch(/'defaults' \| 'preferences' \| 'animation' \| 'data'/)
     expect(settings).toMatch(/activeSection = 'animation'">动画效果<\/button>/)
     expect(settings).toMatch(/aria-label="动画效果"/)
     // 首项"数字滚动动效"开关：读 appOdoMotion、切换 setOdoMotion（即改即生效，localStorage）
@@ -516,9 +515,6 @@ describe('M2 chart interaction contract', () => {
     // devDependencies 于 PACK-01（桌面 exe 形态）按派发简报授权新增 electron＋electron-builder，
     // 均为构建工具链，不进生产依赖；dependencies 于 PACK-04（更新通道整合）按派发简报显式授权
     // 新增 electron-updater（桌面主进程运行时依赖，随 exe 打包；ODO 动效自身仍零依赖）。
-    // M9-04A：服务端公式引擎 bundle 需构建期 esbuild（devDependency，构建工具链，不进生产依赖），
-    // 用户 2026-11-16 拍板默认方案；引擎源码仍唯一在 web/src/formula-engine，不新增运行时依赖。
-    // M9-04A：devDependencies 增加构建期 esbuild（引擎 bundle 工具链，非运行时依赖；用户 2026-11-16 拍板）
     const raw = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> }
     expect(Object.keys(raw.dependencies).sort()).toEqual(['@fastify/cors', '@fastify/static', 'electron-updater', 'fastify', 'klinecharts', 'lucide-vue-next', 'pinia', 'pinyin-pro', 'vue'])
     expect(Object.keys(raw.devDependencies).sort()).toEqual(['@playwright/test', '@types/node', '@vitejs/plugin-vue', 'concurrently', 'electron', 'electron-builder', 'esbuild', 'tsx', 'typescript', 'vite', 'vitest', 'vue-tsc'])
