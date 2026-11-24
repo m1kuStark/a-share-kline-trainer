@@ -6,7 +6,11 @@ const customMaColor = '#123456'
 type Ink = Record<string, { color: string; background: string; curve: boolean; width?: number }>
 type Probes = Window & {
   __indicatorInk: { reset(): void; read(): Ink }
-  __trainerChart: { ma(): { colors: string[] }; indicatorPanes(): string[] }
+  __trainerChart: {
+    ma(): { colors: string[] }; indicatorPanes(): string[]; bars(): { timestamp: number }[]
+    indicatorResult(name: string): Record<string, number>[]
+    pointToPixel(timestamp: number, value: number, pane: string): { x: number; y: number }
+  }
 }
 
 // Observe actual canvas paint only. Match legend and curve across layers of
@@ -90,6 +94,50 @@ async function verifyPaint(page: Page, mode: 'light' | 'dark') {
     expect(new Set([ink.K.color, ink.D.color, ink.J.color]).size).toBe(3)
   }).toPass({ timeout: 15_000 })
 }
+// The legend and a same-colour curve in the same pane are not enough: swapping
+// K and D strokes alone must fail. Look for actual ink at each named result's y.
+async function verifySeriesGeometry(page: Page) {
+  const scores = await page.evaluate(() => {
+    const chart = (window as Probes).__trainerChart, ink = (window as Probes).__indicatorInk.read()
+    const host = document.querySelector('.chart-host')!, origin = host.getBoundingClientRect()
+    const layers = Array.from(host.querySelectorAll('canvas')).filter(c => c.width && c.height).map(c => ({
+      rect: c.getBoundingClientRect(), pixels: c.getContext('2d')!.getImageData(0, 0, c.width, c.height),
+    }))
+    const result: Record<string, { hits: number; sampled: number }> = {}, bars = chart.bars()
+    for (const [pane, keys] of [['MACD', ['DIF', 'DEA']], ['KDJ', ['K', 'D', 'J']]] as const) {
+      const data = chart.indicatorResult(pane)
+      for (const key of keys) {
+        let hits = 0, sampled = 0
+        const rgb = ink[key].color.match(/[a-f\d]{2}/gi)!.map(h => parseInt(h, 16))
+        data.forEach((row, i) => {
+          if (!row || !bars[i] || keys.some(k => !Number.isFinite(row[k.toLowerCase()]))) return
+          const at = (k: string) => chart.pointToPixel(bars[i].timestamp, row[k.toLowerCase()], pane)
+          const p = at(key)
+          if (keys.some(k => k !== key && Math.abs(at(k).y - p.y) < 7)) return
+          const x = origin.left + p.x, y = origin.top + p.y
+          const targets = layers.filter(({ rect: r }) => x >= r.left + 2 && x < r.right - 2 && y >= r.top + 24 && y < r.bottom - 2)
+          if (!targets.length) return
+          sampled++
+          const found = targets.some(({ rect: r, pixels }) => {
+            const cx = Math.round((x - r.left) * pixels.width / r.width), cy = Math.round((y - r.top) * pixels.height / r.height)
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+              const offset = 4 * ((cy + dy) * pixels.width + cx + dx)
+              if (pixels.data[offset + 3] >= 70 && rgb.every((v, k) => Math.abs(v - pixels.data[offset + k]) <= 5)) return true
+            }
+            return false
+          })
+          if (found) hits++
+        })
+        result[key] = { hits, sampled }
+      }
+    }
+    return result
+  })
+  for (const n of names) {
+    expect(scores[n].sampled, `${n}: insufficient separated points`).toBeGreaterThanOrEqual(5)
+    expect(scores[n].hits / scores[n].sampled, `${n} pixels at its own values: ${JSON.stringify(scores[n])}`).toBeGreaterThan(.65)
+  }
+}
 const reset = (page: Page) => page.evaluate(() => (window as Probes).__indicatorInk.reset())
 async function verifyMa(page: Page) {
   await expect.poll(() => page.evaluate(() => (window as Probes).__trainerChart.ma()?.colors[0])).toBe(customMaColor)
@@ -155,8 +203,10 @@ test('weekly chart changes only the white DIF and K strokes when switching theme
   await expect.poll(() => page.evaluate(() => (window as Probes).__indicatorInk.read().K?.background)).toBe('#f7f9f8')
   await page.mouse.move(1435, 895)
   await verifyPaint(page, 'light')
+  await verifySeriesGeometry(page)
   await page.screenshot({ path: evidencePath('indicator-week-light.png') })
   await reset(page); await page.getByRole('button', { name: '切换到深色主题', exact: true }).click()
   await verifyPaint(page, 'dark')
+  await verifySeriesGeometry(page)
   await page.screenshot({ path: evidencePath('indicator-week-dark.png') })
 })
