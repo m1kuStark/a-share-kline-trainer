@@ -1,5 +1,7 @@
 # 任务与阶段
 
+> 2026-11-24：M9 候选移至 `task/M9-ACCEPT-HOLD` 待人工验收；本文涉及公式的能力是候选范围。撤出与恢复见 [M9-DEFER-01](tasks/M9-DEFER-01.md)。
+
 - [M9-ENABLE-01 公式启停与整批候选](tasks/M9-ENABLE-01.md)：review；C2完整候选、同提交Windows ZIP/CMD/实包及主代理UI检查通过，PR55已合入；[工程交接](../verification/2026-11/M9-ENABLE-01/engineering-handoff.md)，待用户整批验收。
 - [M9-EMA-WARMUP-01 公共 EMA 暖机](tasks/M9-EMA-WARMUP-01.md)：PR54已合入58ba0ffc，独立数值与兼容性证据保留；后继M9统一候选及Windows包工程检查通过，用户验收待完成。
 
