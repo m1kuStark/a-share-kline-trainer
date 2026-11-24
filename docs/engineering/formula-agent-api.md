@@ -1,5 +1,7 @@
 # 公式校验/求值 agent 接口（本地只读）
 
+> 2026-11-24：M9 候选移至 `task/M9-ACCEPT-HOLD` 待人工验收；本文涉及公式的能力是候选范围。撤出与恢复见 [M9-DEFER-01](../work-items/tasks/M9-DEFER-01.md)。
+
 > 适用：M9-04A 服务端契约（M9-04D 文档化）；供 DeepSeek/codex 等本机工具在生成通达信公式后校验与试算。
 > **只读边界**：这些接口不写训练、成交、画线、录像、账户，也不下单；公式库 CRUD 只改公式库本身。
 > 服务只监听本机回环地址（Host/Origin 校验见 server README「本机 HTTP 边界」），不是远程 API。

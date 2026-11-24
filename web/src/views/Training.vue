@@ -9,8 +9,8 @@ import { buildArchiveFileName, describeRecordingForArchive } from '../recording/
 import KlineChart from '../components/KlineChart.vue'
 import ToolGlyph from '../components/ToolGlyph.vue'
 import {
-  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, fetchFormulas, fetchFormulaContext, orderTriggerDirection, placeTrainingOrder, revealRandomTraining, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
-  type Bar, type FormulaView, type OrderView, type RandomRevealTraining, type Tier, type Timeframe, type TrainingSnapshot,
+  abandonTraining, advanceTraining, cancelTrainingOrder, fetchTrainingBars, orderTriggerDirection, placeTrainingOrder, revealRandomTraining, retrainTraining, settleTraining, tradeTraining, fetchDrawings, saveDrawings,
+  type Bar, type OrderView, type RandomRevealTraining, type Tier, type Timeframe, type TrainingSnapshot,
 } from '../api'
 import { DRAW_TOOLS } from '../drawTools'
 import { SerialDrawingSaver, type Drawing } from '../drawingState'
@@ -24,13 +24,12 @@ import {
   saveKeyboardShortcuts, shortcutId, type KeyboardShortcutPreferences, type ShortcutAction,
 } from '../keyboardShortcuts'
 import { fetchKeyboardShortcuts, appKdjSubchart, appVolSubchart, appMacdSubchart, setKdjSubchart, setVolSubchart, setMacdSubchart, appOdoMotion } from '../appSettings'
-import { trainingSettingsOpen, settingsSavedVersion } from '../settingsPanel'
+import { trainingSettingsOpen } from '../settingsPanel'
 import { previousDailyClose } from '../phasePrice'
 import { createRollCounter, formatEquity, formatReturnPct, rollDisplayEquity } from '../odometer'
 import { dataOutcomeSeq, dataRefreshError, dataRefreshMessage, dataRefreshOutcome, dataStatus, dataUpdating, refreshDataNow } from '../dataStatus'
 import { Undo2, Redo2, Trash2, ChevronDown, ChevronUp, Settings2, Check, RotateCcw, GripVertical, Plus, Minus, ArrowLeft, ArrowRight, Info, StepForward, RefreshCw, SkipForward, Eye, EyeOff, Pencil, Pin, PinOff, MoveDiagonal2 } from 'lucide-vue-next'
 import { withWeekday } from '../dateLabels'
-import { evaluateFormulaChart, formulaChartStatus, type FormulaChartRender, type FormulaStockContext } from '../formulaIndicators'
 
 const props = defineProps<{ snapshot: TrainingSnapshot; recordingOptions?: { enabled: boolean; params?: Record<string, unknown> } }>()
 const emit = defineEmits<{ ended: []; 'open-history': []; retrained: [TrainingSnapshot] }>()
@@ -467,73 +466,6 @@ function onToolbarKeydown(event: KeyboardEvent): void {
 }
 
 const training = computed(() => snapshot.value.training)
-
-// ===== M9-04C 公式图表挂载：浏览器侧对图表当前已加载 bars 求值；主图/副图渲染由 KlineChart 负责 =====
-const formulas = ref<FormulaView[]>([])
-const formulaBars = ref<Bar[]>([])
-const formulaLines = ref<FormulaChartRender[]>([])
-const formulaStockContext = shallowRef<FormulaStockContext | null>(null)
-const formulaError = ref('')
-let formulaEvalVersion = 0
-let formulaLibraryVersion = 0
-const formulaConfigVersion = ref(0)
-const formulaStatusText = computed(() => formulaError.value || formulaChartStatus(formulaLines.value))
-/** M7-01 边界：随机训练/盲训不注入 StockContext；回放页无训练上下文同理 */
-function formulaContextAllowed(): boolean {
-  const info = training.value
-  return !!info && !info.random && !info.blind
-}
-function evaluateChartFormulas(): void {
-  const version = ++formulaEvalVersion
-  const context = formulaContextAllowed() ? formulaStockContext.value : null
-  const renders = evaluateFormulaChart({ bars: formulaBars.value, formulas: formulas.value, stockContext: context })
-  if (version !== formulaEvalVersion) return
-  formulaLines.value = renders
-  formulaError.value = ''
-}
-async function ensureFormulaStockContext(): Promise<void> {
-  const info = training.value
-  if (!formulaContextAllowed() || !info?.code) { formulaStockContext.value = null; return }
-  if (formulaStockContext.value?.code === info.code) return
-  try {
-    const payload = await fetchFormulaContext(info.code)
-    if (!formulaContextAllowed()) { formulaStockContext.value = null; return }
-    formulaStockContext.value = {
-      code: payload.code,
-      name: payload.name,
-      industry: payload.industry
-        ? { name: payload.industry.name, ...(payload.industry.blockCode ? { blockCode: payload.industry.blockCode } : {}), ...(payload.industry.indexCode ? { indexCode: payload.industry.indexCode } : {}) }
-        : null,
-      industryIndexBars: payload.industryIndexBars,
-    }
-  } catch {
-    formulaStockContext.value = null
-  }
-}
-async function refreshFormulas(): Promise<void> {
-  const version = ++formulaLibraryVersion
-  try {
-    const payload = await fetchFormulas()
-    if (version !== formulaLibraryVersion) return
-    formulas.value = payload.formulas
-    formulaConfigVersion.value += 1
-    await ensureFormulaStockContext()
-    if (version === formulaLibraryVersion) evaluateChartFormulas()
-  } catch (error) {
-    formulaError.value = '公式读取失败：' + (error instanceof Error ? error.message : '未知错误')
-  }
-}
-function onFormulaBarsExtended(list: Bar[]): void {
-  if (!list.length) return
-  formulaBars.value = list
-}
-onMounted(() => { void refreshFormulas() })
-watch(settingsSavedVersion, () => { void refreshFormulas() })
-// 设置面板关闭后刷新（公式管理 UI 当前不广播 settingsSavedVersion，关闭面板是公式库变更的可靠时点）
-watch(trainingSettingsOpen, open => { if (!open) void refreshFormulas() })
-watch(formulaBars, () => evaluateChartFormulas())
-watch(formulas, () => evaluateChartFormulas())
-
 // 周/月观察也使用本轮已截断的日线前收，避免聚合周期改变阶段线涨跌颜色。
 const previousClose = computed(() => previousDailyClose(dailyForRecording.value?.bars ?? [], training.value.currentPhase ?? 'close'))
 const account = computed(() => snapshot.value.account)
@@ -744,7 +676,6 @@ async function load(): Promise<void> {
     snapshot.value = { training: payload.training, account: payload.account, trades: payload.trades, orders: payload.orders ?? [] }
     drawingPriceBasis.value = payload.drawingPriceBasis ?? null
     bars.value = payload.bars
-    formulaBars.value = payload.bars
     chartCostPrice.value = payload.chartCostPrice ?? null
     hasMoreBars.value = payload.hasMore
     await nextTick()
@@ -1245,7 +1176,6 @@ void load()
 
     <section class="training-grid" :inert="preparingRecording">
       <div class="chart-panel">
-        <p v-if="formulaStatusText" class="formula-chart-status" role="status">{{ formulaStatusText }}</p>
         <KlineChart
           ref="chartRef" :bars="bars" :trades="snapshot.trades" :orders="snapshot.orders"
           :cost-price="account.costPrice" :chart-cost-price="chartCostPrice"
@@ -1257,8 +1187,6 @@ void load()
           :magnet="magnet" :saved-drawings="initialDrawings" :all-drawings="allDrawings" :training-id="training.id"
           :hide-dates="axisDateHidden" :date-shift-days="axisDateShiftDays"
           :price-mirror="priceMirror"
-          :formula-lines="formulaLines" :formula-config-version="formulaConfigVersion"
-          @bars-extended="onFormulaBarsExtended"
           @chart-capture="recording.capture" @operation="recording.operation" @capture-error="recording.fail"
           @visible-count="visibleCount = $event"
           @viewport-dates="chartViewport = $event"
@@ -1553,5 +1481,4 @@ void load()
 .order-item-status.rejected { color: #b3413a; }
 :global(body.dark .order-item-status.filled){ color: var(--color-down-panel); }
 :global(body.dark .order-item-status.rejected){ color: var(--color-up-panel); }
-.formula-chart-status { margin: 2px 10px 4px; font-size: var(--font-size-xs); color: var(--text-secondary, #51637a); overflow-wrap: anywhere; }
 </style>

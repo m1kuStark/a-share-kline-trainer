@@ -56,9 +56,9 @@ expect(source).toMatch(/defineExpose\(\{ zoomBy, panBy, moveCrosshair, resetView
     expect(capture).not.toMatch(/props\.bars/)
     // 语义窗格：跳过 x 轴、只收正高度
     const heights = blockOf(source, 'function semanticPaneHeights(', 'function captureState(')
-    expect(heights).toMatch(/pane\.id !== 'x_axis_pane'/)
-    expect(heights).toMatch(/formulaPaneIdsOf\(/)
-    expect(heights).toMatch(/paneHeightsForCapture\(measured, formulaPaneIds, paneName\)/)
+    expect(heights).toMatch(/pane\.id === 'x_axis_pane'/)
+    expect(heights).toMatch(/height > 0/)
+    expect(heights).toMatch(/paneName\(pane\.id\)/)
   })
 
   it('schedules a 150ms trailing-edge capture after feed completion, history load and viewport changes', async () => {

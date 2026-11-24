@@ -1,5 +1,7 @@
 # 公式指标
 
+> 2026-11-24：M9 候选移至 `task/M9-ACCEPT-HOLD` 待人工验收；本文涉及公式的能力是候选范围。撤出与恢复见 [M9-DEFER-01](../work-items/tasks/M9-DEFER-01.md)。
+
 首批仅用于图表显示：主图叠加与独立副图，不联动选股扫描、条件单或账户操作。引擎与 API 实施依据见 [M9 产品化方案](../proposals/M9-04-formula-product-ui.md)及[只读接口](../engineering/formula-agent-api.md)。
 
 ## 启停与保存

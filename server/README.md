@@ -9,7 +9,6 @@ Fastify 提供行情、训练和画线 API，SQLite 保存业务记录及数据�
 | 修改推进、交易、结算或账户 | [train](./src/train/README.md) | 产品口径以 [训练规则](../docs/specs/training/rules.md) 为准 |
 | 修改 TDX 解析、聚合或复权 | [tdx](./src/tdx/README.md) | 涉及训练可见区间时补读 train 生命周期 |
 | 修改画线保存或旧库兼容 | [drawings.ts](./src/drawings.ts)、[db.ts](./src/db.ts) | 同时核对 [图表交互规格](../docs/specs/chart/interaction.md) 与前端保存调用 |
-| 修改公式库/公式校验/只读求值 | [formulas](./src/formulas/api.ts) | M9-04A：SQLite 公式库、通达信文本导入、只读 validate/evaluate；引擎 bundle 构建见 [scripts/build/formula-engine-bundle.mjs](../scripts/build/formula-engine-bundle.mjs)，引擎唯一来源 web/src/formula-engine |
 | 读取录制版本/规则/权息 | [recording-context.ts](./src/recording-context.ts) | 只读GET，权息截止训练可见日，禁止返回TDX路径；[合同](../docs/engineering/recording-contract.md)、[便携版元数据](../docs/engineering/public-source.md) |
 | 修改启动或配置 | [index.ts](./src/index.ts)、[config.ts](./src/config.ts) | 环境变量为 `TDX_ROOT`、`TRAINER_DB`、`HOST`、`PORT`；启动可通过 `OPEN_BROWSER=0` 关闭自动打开浏览器 |
 | 选择验证范围 | [验证协议](../docs/engineering/testing.md) | 真实数据验证命令见 [scripts](../scripts/README.md) |

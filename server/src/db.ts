@@ -81,20 +81,6 @@ export function migrateDatabase(database: DatabaseSync): void {
       added INTEGER NOT NULL DEFAULT 0, removed INTEGER NOT NULL DEFAULT 0, revised INTEGER NOT NULL DEFAULT 0,
       source_kind TEXT NOT NULL, source_max_date TEXT, message TEXT NOT NULL DEFAULT ''
     );
-    -- M9-04A：公式库（用户本机公式；随数据目录备份/迁移；builtin=内置示例，后续 M9-04D seed）
-    CREATE TABLE IF NOT EXISTS formulas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      description TEXT NOT NULL DEFAULT '',
-      placement TEXT NOT NULL DEFAULT 'main',
-      source TEXT NOT NULL,
-      enabled INTEGER NOT NULL DEFAULT 1,
-      builtin INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-    -- 公式名唯一（大小写不敏感：跨公式引用按 ASCII 标识符，避免 DUP/dup 并存）
-    CREATE UNIQUE INDEX IF NOT EXISTS formulas_name_unique ON formulas (name COLLATE NOCASE);
   `)
   addColumnIfMissing(database, 'trainings', 'market', "TEXT NOT NULL DEFAULT 'sh'")
   addColumnIfMissing(database, 'trainings', 'current_date', 'TEXT')

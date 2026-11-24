@@ -18,7 +18,7 @@
     "build:desktop": "npm run typecheck:web && npm run build:server && npm run build:web && npm run build:desktop:main && node desktop/scripts/package-desktop.mjs",
     "test:desktop": "vitest run --config desktop/vitest.config.ts",
     "typecheck:web": "vue-tsc --noEmit -p web/tsconfig.json",
-    "build:server": "tsc -p server/tsconfig.json && node scripts/build/formula-engine-bundle.mjs",
+    "build:server": "tsc -p server/tsconfig.json",
     "build:web": "vite build --config web/vite.config.ts",
     "start": "node server/dist/index.js",
     "test": "vitest run --config server/vitest.config.ts && npm run test:desktop",

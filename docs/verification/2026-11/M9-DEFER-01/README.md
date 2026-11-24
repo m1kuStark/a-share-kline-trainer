@@ -1,0 +1,13 @@
+# M9-DEFER-01 隔离说明
+
+用户于 2026-11-24 明确表示目前无法人工验收，要求 M9 留分支、不进入主线。`task/M9-ACCEPT-HOLD` 已由远端 readback 核实指向 `fe0989736ebf7428deb6dafcf1dbba992c2b50dc`，包含原 C2 工程证据。原始 ZIP 及其 SHA 不变；未验收、未授权发布。
+
+隔离 PR 从同一提交切出，移出引擎、产品 API/CLI、UI、图表挂载、三示例和专属测试。旧预览标签仍指向原始提交，本 PR 不改写历史。现有 SQLite 公式表不 DROP、不迁移、不写入；新数据库不创建该表。录像 gzip 排空、取消生命周期、来源隔离测试、Windows 验收启动脚本与 minimatch 修复均保留；训练、交易、内置 MA/MACD/KDJ、区间测量不是 M9。
+
+验收返回时用原 C2 包；认可后，在届时的 `main` 上新开恢复 PR，反向应用本次撤出差异、适配其后维护，重新核对 DB、回放、完整候选和 Windows 包。由于候选本来就是主线祖先，直接 merge 留存分支不会恢复功能。
+
+本轮 RED：在改产品前，真实 Fastify / SQLite 两例失败，GET /api/formulas 实际返回 200，首次 migrateDatabase 会创建 formulas。撤出后同样测试两例通过；已另行运行生产构建。全量测试与浏览器检查分别记账；旧候选的 262/262 不能复用于本次产品撤出。
+
+独立审查补强：使用 Fastify onRoute 锁住整个公式前缀；真实 electron-builder matcher 的增量旧文件对照先红后绿，明确排除 server/dist/formulas 子树。保留桌面迁移页面直接使用的 esbuild 开发依赖。首次全量单测运行过程中待迁移的旧测试文件发生变化导致发现失败，该轮不计为通过。
+
+286fc50 验证：新 [设置页实景](settings-ready.png) 为本轮独立 SHA 校验快照的真实 Edge 运行（1 passed，0 skipped/flaky/failed，原生 0）。Windows Electron unpacked 实包通过污染旧 bundle 夹具验证：ASAR 6200 项，server 入口存在，公式目录及旧文件为 0，SHA256 698d8af35b097eaa16003cff63b2133676455a6411ee3ccff0f1f34f69ea1455。普通下载打包遇 ETIMEDOUT，后以本机缓存的精确 Electron 44.10.2 复跑成功，未运行安装/升级。主线共享解压失败由独立 PR59 合入 6c56648；本分支仅合流，不重写共同历史。

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { execFile, spawn, type ChildProcess } from 'node:child_process'
-import { access, mkdir, open, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, open, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -226,12 +226,6 @@ export async function runNode(run: RunManifest, args: string[], logName: string,
 
 export async function buildRun(run: RunManifest, mode: 'journey' | 'production', options: { signal?: AbortSignal } = {}): Promise<void> {
   await runNode(run, [join(run.root, 'node_modules/typescript/bin/tsc'), '-p', 'server/tsconfig.json', '--outDir', run.serverDir], 'build-server.log', options)
-  // M9-04A 引擎 bundle 与 npm run build:server 同源：journey 直接 tsc 编译，需显式把 bundle 写入 run.serverDir。
-  // 项目夹具（projectFixture/测试临时根）只复制 server/src、没有 web/src，跳过 bundle（该形态不调用公式接口）。
-  const engineEntry = join(run.root, 'web', 'src', 'formula-engine', 'index.ts')
-  if (await access(engineEntry).then(() => true, () => false)) {
-    await runNode(run, [join(run.root, 'scripts/build/formula-engine-bundle.mjs'), '--outdir', join(run.serverDir, 'formulas', 'engine-bundle')], 'build-server.log', options)
-  }
   await runNode(run, [join(run.root, 'node_modules/vite/bin/vite.js'), 'build', '--config', 'web/vite.config.ts', '--mode', mode], 'build-web.log', options)
 }
 
