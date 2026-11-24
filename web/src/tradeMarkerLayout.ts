@@ -14,6 +14,13 @@ interface ProjectedTradeGroup {
   trades: TradeView[]
 }
 
+export function tradePeriodTimestamp(dateText: string, timeframe: Timeframe): number {
+  const date = new Date(`${dateText}T00:00:00Z`)
+  if (timeframe === '1W') date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7))
+  if (timeframe === '1M') date.setUTCDate(1)
+  return date.getTime()
+}
+
 export function groupTradeMarkers(
   trades: readonly TradeView[],
   timeframe: Timeframe,
@@ -27,10 +34,7 @@ export function groupTradeMarkers(
   const groups = new Map<string, ProjectedTradeGroup>()
 
   for (const trade of trades) {
-    const date = new Date(`${trade.date}T00:00:00Z`)
-    if (timeframe === '1W') date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7))
-    if (timeframe === '1M') date.setUTCDate(1)
-    const timestamp = date.getTime()
+    const timestamp = tradePeriodTimestamp(trade.date, timeframe)
     if (!Number.isFinite(timestamp)) continue
     const x = project(timestamp)
     if (x === null || !Number.isFinite(x) || x < 0 || x > width) continue

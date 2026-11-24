@@ -20,6 +20,7 @@ import { loadToolStylePreferences } from '../toolFavorites'
 import { MAX_VISIBLE_BARS, CHART_RIGHT_MARGIN_PX } from '../chartNavigation'
 import { nearestIndexByTimestamp, replayRestoreScrollDistance, replayRightOffsetBars, type ReplayViewport } from '../recording/replayViewport'
 import TradeMarkerRail from '../TradeMarkerRail.vue'
+import { tradePeriodTimestamp } from '../tradeMarkerLayout'
 import MaSettingsDialog from './MaSettingsDialog.vue'
 import ChartQuote from './ChartQuote.vue'
 import RangeStatisticsDialog from './RangeStatisticsDialog.vue'
@@ -883,17 +884,14 @@ function currentPriceColor(): string {
   return phasePriceColor(props.currentPrice, props.previousClose)
 }
 
-function tradeTimestamp(date: string): number {
-  if (props.timeframe === '1W') { const day = new Date(`${date}T00:00:00Z`); day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7)); return day.getTime() }
-  if (props.timeframe === '1M') return Date.parse(`${date.slice(0, 7)}-01T00:00:00Z`)
-  return Date.parse(`${date}T00:00:00Z`)
-}
+const showFillMarks = ref(false)
+watch(showFillMarks, visible => chart?.overrideOverlay({ name: 'bsMark', visible }))
 
 function refreshMarks(): void {
   if (!chart) return
   chart.removeOverlay({ name: 'bsMark' }); chart.removeOverlay({ name: 'costLine' }); chart.removeOverlay({ name: 'phasePriceLine' }); chart.removeOverlay({ name: 'orderTriggerMark' })
   orderTooltip.value = null
-  for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', points: [{ timestamp: tradeTimestamp(trade.date), value: displayValue(trade.chartPrice ?? trade.price) }], extendData: { side: trade.side, shares: trade.shares, price: trade.chartPrice ?? trade.price } })
+  for (const trade of props.trades) chart.createOverlay({ name: 'bsMark', visible: showFillMarks.value, points: [{ timestamp: tradePeriodTimestamp(trade.date, props.timeframe), value: displayValue(trade.chartPrice ?? trade.price) }], extendData: { side: trade.side } })
   const cost = props.chartCostPrice ?? props.costPrice
   if (cost !== null && cost > 0) chart.createOverlay({ name: 'costLine', points: [{ value: displayValue(cost) }], extendData: cost })
   if (hasPhasePrice(props.currentPrice)) {
@@ -2017,7 +2015,10 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
   </Teleport>
   <ChartQuote v-else :period-label="periodLabel" :quote="quote" :source="quoteIndex === null ? '最近已知K线' : '光标K线'" />
   <div class="chart-wrap">
-    <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
+    <div class="chart-view-controls">
+      <button type="button" class="fill-marks-trigger" aria-label="主图成交标记" :aria-pressed="showFillMarks" title="在成交价显示 B/S；底部逐笔明细不受影响" @click="showFillMarks = !showFillMarks">成交点</button>
+      <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
+    </div>
     <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
     <button v-if="maHistoryError" class="ma-history-error" role="alert" @click="ensureMaHistory">{{ maHistoryError }}，点击重试</button>
     <div ref="host" class="chart-host" tabindex="-1" :class="{ 'statistics-selecting': statisticsArmed || statisticsGesture }"></div>
@@ -2080,9 +2081,11 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
 </template>
 
 <style scoped>
-.ma-settings-trigger { position: absolute; top: 5px; right: 90px; z-index: 4; border: 1px solid var(--surface-border); border-radius: 4px; padding: 3px 8px; background: var(--control-background); color: var(--text-secondary); font-size: var(--font-size-xs); }
+.chart-view-controls { position: absolute; top: 5px; right: 90px; z-index: 4; display: flex; gap: 4px; }
+.fill-marks-trigger, .ma-settings-trigger { border: 1px solid var(--surface-border); border-radius: 4px; padding: 3px 8px; background: var(--control-background); color: var(--text-secondary); font-size: var(--font-size-xs); }
 .ma-settings-trigger:disabled { opacity: .5; cursor: default; }
-.ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
+.fill-marks-trigger[aria-pressed="true"] { color: var(--text-primary); border-color: currentColor; }
+.fill-marks-trigger:focus-visible, .ma-settings-trigger:focus-visible { outline: 2px solid #54b8cc; }
 .ma-history-error { position: absolute; top: 35px; right: 90px; z-index: 4; padding: 4px 8px; border: 1px solid var(--surface-border); border-radius: 4px; background: var(--surface-background); color: var(--text-primary); font-size: var(--font-size-sm); }
 /* CHART-LAYOUT-01（用户 2026-11-10 Issue #8 反馈）：图表宿主铺满面板可用高度。
    原先 3 行 grid（auto/minmax(0,1fr)/40px）假定行情条总在 frame 流内；训练页 ChartQuote 被

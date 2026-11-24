@@ -26,7 +26,7 @@
 | `overrideYAxis({createRange})` | 正常主图轴的公开范围回调仅在可视范围包含末根时纳入有效阶段价，随后仍由库添加 gap padding；保证跳空开盘价可见，不伪造 K 线或注入未来 OHLC。10.0.3 的 overrideYAxis 重设自动范围标志，故回调仅在挂载时注册一次，以闭包读取阶段价，主题/订单刷新不重复注册。历史视窗返回原默认范围，手动纵轴和副图范围规则不变；当前仅 normal 单右轴，切换对数轴前须重新评估映射。 |
 | figure `attrs.width` | [indicators.ts](../../indicators.ts) 用它覆盖 MACD 柱宽为 2/5；覆盖主题前核对实际绘制键。 |
 | 数据 forward 前插自锚定 | `loadEarlierBars` 不作额外滚动补偿；验证补历史后时间锚点不漂移。 |
-| `drawText` 强制左上对齐 | 历史 bsMark 绘制自行补字母偏移；对象保留但当前不出图，成交显示由独立标记条负责。 |
+| `drawText` 强制左上对齐 | bsMark 箭尖锚定成交价；字母通过 text figure 的 align/baseline 定位。用 xAxis.convertFromPixel 回查当前周期数据，时间戳不相等不画；底部独立标记条保留明细。 |
 | `getSize` 的 bounding | right/bottom 恒为 0；命中只能使用 left+width / top+height，不能拿空字段作边界。 |
 | `convertToPixel/convertFromPixel` 默认 `absolute=false` | y 默认相对 pane，不加/减 bounding.top。命中几何、按点换算等 host 坐标必须 `absolute: true`；主图 top=0 会掩盖副图错误。第一击所在 pane 决定 overlay 落点。 |
 | `getYAxes({ paneId })[0]` | 当前单右轴。启用双轴前重查可见轴、命中与缩放目标，不得沿用首轴假设。 |
