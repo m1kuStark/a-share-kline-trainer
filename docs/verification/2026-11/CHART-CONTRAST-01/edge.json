@@ -1,0 +1,121 @@
+{
+  "task": "CHART-CONTRAST-01",
+  "base": "fdd4441adf8f39141492adef1a1dd051b43ca85f",
+  "run": "run-4b70682f-0a5b-456d-a476-d79ed8f822ae",
+  "command": "npm run journey -- --retries=0 e2e/indicator-contrast.spec.ts e2e/chart-analysis.spec.ts",
+  "exit": 0,
+  "stats": {
+    "startTime": "2026-11-24T11:24:45.275Z",
+    "duration": 100593.723,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "Shift 两次点击 K 线形成区间测量：起止收盘/K线数/区间高低，拖动边界实时更新",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "两点测量的所有权与取消：画线/多选/价格轴/滚轮/周期切换/失焦均按既有仲裁",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "周K/月K 两点区间统计跟随当前周期 K 线，Select Box 边界落在 K 线中心",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "quote is visible without dwell, tracks mouse/keyboard and never exposes unknown open-phase OHLC",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "right drag and menu selection calculate inclusive ranges without requests or viewport/drawing changes",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "range statistics and point measurement stay on real prices while the price mirror is on",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "statistics and persistent quote fit both themes and desktop sizes; drawing right-click retains priority",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "recording replay supports statistics with no training writes",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "random-time quote and range statistics keep dates concealed",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "chart-analysis.spec.ts",
+      "title": "顶栏不再提供测量入口：Shift 两次点击仍是唯一区间测量方式",
+      "outcome": "expected",
+      "attempts": 1
+    },
+    {
+      "file": "indicator-contrast.spec.ts",
+      "title": "built-in indicator curves and legends follow theme across mount, toggle and replay",
+      "outcome": "expected",
+      "attempts": 1
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "indicator-1280-dark.png",
+      "sha256": "97910ece81a2afb3636599184a4ac3516bb9962ed3a7d9305e0676edb5fbd250"
+    },
+    {
+      "file": "indicator-1280-light.png",
+      "sha256": "8c1054a1bfe6e23a15c76f542085b19e81ebdf693defd7bcada561f52c2b6eb1"
+    },
+    {
+      "file": "indicator-1600-dark.png",
+      "sha256": "04d798c306919de7d3ef96769233f44a0580c27f537d5d13d628dd9c7ee3e375"
+    },
+    {
+      "file": "indicator-1600-light.png",
+      "sha256": "4dd4c6f4d3c6f700b8301c8cf42ffb932a3ed2a3c697642716b8d90078bb91f7"
+    },
+    {
+      "file": "indicator-replay-light.png",
+      "sha256": "891a72944b79a9d016577332f5e8b53786e34941341bc946ff50a18f08841878"
+    }
+  ],
+  "red": {
+    "foreground": "#f2f2f2",
+    "ratio": 1.0885228177324557,
+    "run": "run-70411c16-794b-48b8-af22-6e61dc87d0f4",
+    "nominalBackground": "#fbfcfb",
+    "exit": 1
+  },
+  "mutation": {
+    "foreground": "#747474",
+    "ratio": 4.420386334307723,
+    "run": "run-3e1857d0-f85d-4af8-aa56-66645d787ac4",
+    "actualBackground": "#f7f9f8",
+    "exit": 1
+  },
+  "fullJourney": false,
+  "humanAccepted": false
+}

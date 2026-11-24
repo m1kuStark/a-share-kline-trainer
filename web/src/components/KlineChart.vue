@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { init, dispose, utils, type Chart, type DataLoadMore, type KLineData, type OverlayCreate, type OverlayCreateFiguresCallbackParams, type OverlayEvent, type Overlay, type Coordinate, type Point } from 'klinecharts'
 import '../overlays'
 import '../indicators'
-import { chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
+import { builtinLineStyles, chartStyles, theme, DRAW_DEFAULT_COLOR } from '../theme'
 import { appKdjSubchart, appVolSubchart, appMacdSubchart } from '../appSettings'
 import type { Bar, OrderView, Timeframe, TradeView } from '../api'
 import { orderTriggerDirection } from '../api'
@@ -514,9 +514,8 @@ function actualPaneId(name: string): string {
 type ToggleableIndicator = 'VOL' | 'MACD' | 'KDJ'
 const SUBCHART_PREFS: Record<ToggleableIndicator, { enabled: () => boolean; mount: () => void }> = {
   VOL: { enabled: () => appVolSubchart.value, mount: () => { chart!.createIndicator({ name: 'VOL', styles: { bars: [{ upColor: '#ef4444', downColor: '#16a34a', noChangeColor: '#94a3b8' }] } }, false) } },
-  MACD: { enabled: () => appMacdSubchart.value, mount: () => { chart!.createIndicator({ name: 'MACD', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }] } }, false) } },
-  // KDJ 配色 proposed_default（K 白/D 黄/J 紫洋红，通达信习惯；M6-01 待用户验收确认），经 styles.lines 传入
-  KDJ: { enabled: () => appKdjSubchart.value, mount: () => { chart!.createIndicator({ name: 'KDJ', styles: { lines: [{ color: '#f2f2f2' }, { color: '#f5c343' }, { color: '#d446d6' }] } }, false) } },
+  MACD: { enabled: () => appMacdSubchart.value, mount: () => { chart!.createIndicator({ name: 'MACD', styles: builtinLineStyles('MACD', theme.value) }, false) } },
+  KDJ: { enabled: () => appKdjSubchart.value, mount: () => { chart!.createIndicator({ name: 'KDJ', styles: builtinLineStyles('KDJ', theme.value) }, false) } },
 }
 function applySubchartPanes(): void {
   if (!chart) return
@@ -1984,6 +1983,14 @@ watch(() => props.bars, () => {
   }
 })
 watch(() => [props.trades, props.costPrice, props.chartCostPrice, props.currentPrice, props.previousClose, props.orders], refreshMarks, { deep: true }); watch(theme, value => { chart?.setStyles(chartStyles(value)); applyLastPriceStyle() })
+watch(theme, value => {
+  if (!chart) return
+  for (const name of ['MACD', 'KDJ'] as const) {
+    for (const { paneId } of chart.getIndicators({ name })) {
+      chart.overrideIndicator({ name, paneId, styles: builtinLineStyles(name, value) })
+    }
+  }
+})
 // CHART-INVERT-01 多空反转开关切换：立即重喂全序列（真实 ⇄ 镜像显示域），既有画线先按
 // **切换前**显示域快照（drawingsAt(wasBasis) 反解到真实价）捕获，重喂后原样恢复
 // （restoreDrawings 按新显示域镜像喂入）。快照为空（无画线）时无需恢复；周期面不重建
