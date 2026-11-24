@@ -271,7 +271,8 @@ describe('M2 chart interaction contract', () => {
     expect(chart).toMatch(/createIndicator\(\{ name: 'MA'[^;]*\}, true\); applySubchartPanes\(\);/)
     expect(chart).toMatch(/function applySubchartPanes\(\): void/)
     expect(chart).toMatch(/chart\.removeIndicator\(\{ name \}\)/)
-    expect(chart).toMatch(/styles: \{ lines: \[\{ color: '#f2f2f2' \}, \{ color: '#f5c343' \}, \{ color: '#d446d6' \}\] \}/)
+    expect(chart).toContain("name: 'KDJ', styles: builtinLineStyles('KDJ', theme.value)")
+    expect(chart).toContain("name: 'MACD', styles: builtinLineStyles('MACD', theme.value)")
     // 开关：任一副图偏好切换立即生效（watch），并且不发 chart.viewport（非用户导航）
     expect(chart).toMatch(/watch\(\[appKdjSubchart, appVolSubchart, appMacdSubchart\], \(\) => \{ applySubchartPanes\(\); scheduleChartCapture\(\) \}\)/)
     // 副图同等语义：paneName/actualPaneId 两处判定都纳入 KDJ（画线持久化与录像 paneHeights 的语义名）

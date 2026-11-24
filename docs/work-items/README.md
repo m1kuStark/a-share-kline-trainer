@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [CHART-CONTRAST-01](tasks/CHART-CONTRAST-01.md)：#8 浅色模式只把 DIF/K 白线换成黑线；保留黄、紫和线宽。
+
 > 2026-11-24：M9 候选移至 `task/M9-ACCEPT-HOLD` 待人工验收；PR #60 已撤出可执行公式模块，本文涉及公式的能力仅在留存分支。撤出与恢复见 [M9-DEFER-01](tasks/M9-DEFER-01.md)。
 - [PACK-ZIP-COMPAT-01](tasks/PACK-ZIP-COMPAT-01.md)：PR #59 已合入，Windows 解压修复未混入依赖升级。
 - [ENG-RECON-02](tasks/ENG-RECON-02.md)：#59/#60 的集成与验证收据。
