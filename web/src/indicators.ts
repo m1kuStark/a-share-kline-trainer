@@ -4,7 +4,7 @@ interface MacdResult { dif: number; dea: number; macd: number }
 export interface KdjPoint { k: number; d: number; j: number }
 
 // 通达信 APP 标准 MACD：柱体一律实心、红正绿负（不用内置的"增空减实"描边画法），
-// DIF 白 / DEA 黄，配色在 createIndicator 的 styles.lines 中传入。
+// DIF / DEA 的线与图例共享窗格的主题色。
 registerIndicator({
   name: 'MACD',
   shortName: 'MACD',
@@ -66,9 +66,7 @@ export function computeKdj(bars: Array<{ high?: number; low?: number; close?: nu
   })
 }
 
-// KDJ 副图：K/D/J 三条 line；默认配色 K 白 '#f2f2f2' / D 黄 '#f5c343' / J 紫洋红 '#d446d6'
-// 为 proposed_default（通达信默认习惯，M6-01 待用户验收确认），颜色经 createIndicator 的
-// styles.lines 传入（与 MACD 同一机制），不在模板内写死以便后续主题化。
+// K/D/J 共用窗格主题色；不改变 RSV/SMA 的计算。
 registerIndicator({
   name: 'KDJ',
   shortName: 'KDJ',
