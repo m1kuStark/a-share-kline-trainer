@@ -36,8 +36,8 @@
     "docs/status.md",
     "docs/verification/2026-11/CHART-FILL-MARKS-01/**"
   ],
-  "state": "active",
-  "next_action": "先验证旧图层不出图；实现局部显示开关和精确锚点；复核实际绘图及底部详情。",
+  "state": "review",
+  "next_action": "候选仅在任务分支，草稿 PR 待确认；Windows 进程取消全量门禁仍需复核，不合并、打包或发布。",
   "base_commit": "fdd4441adf8f39141492adef1a1dd051b43ca85f"
 }
 ```
