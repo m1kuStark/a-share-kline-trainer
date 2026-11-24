@@ -1,0 +1,12 @@
+{
+  "testedCommit": "30732815fdf834029665765df51dcc1c2a7dd717",
+  "command": "node node_modules/vitest/vitest.mjs run --config server/vitest.config.ts server/test/release-package.test.ts server/test/settings-app.test.ts --reporter=json --outputFile=<local-receipt>",
+  "exitCode": 0,
+  "files": 2,
+  "testsPassed": 33,
+  "failed": 0,
+  "pending": 0,
+  "newTest": "PowerShell packaging helpers (win32) extracts on Windows PowerShell without the overwrite overload and never clobbers output",
+  "newTestStatus": "passed",
+  "localReportSha256": "47cda4ddf6da4c169d9f9b0d7fc8c8b04a990561804bc25f30a1f6035d74085f"
+}
