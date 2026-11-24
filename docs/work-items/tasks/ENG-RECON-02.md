@@ -7,7 +7,7 @@
   "owner": "integrator",
   "state": "review",
   "milestone": "ENG",
-  "base_commit": "0b7d5d027f7ed40aff8bab465c29693d613cb3a4",
+  "base_commit": "ba8f87dd1dc5cc2e302b6b752df9ba38f9abbfbb",
   "summary": "只对账 PR #59、#60 与原始验证收据；保留 M9 人工验收空值。",
   "next_action": "检查文档与统一状态一致后走文档 PR。不改变产品、候选或发布渠道。",
   "allowed_paths": [

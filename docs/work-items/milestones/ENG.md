@@ -29,7 +29,7 @@
     "docs/verification/2026-11/DEP-SEC-MINIMATCH-01/integration.md"
   ],
   "acceptance_ref": null,
-  "next_action": "Windows 打包修复 #59、M9 撤出 #60 已合入。优先分诊公开预览版启动失败 #58；两个依赖 PR 分开验证。M9 留验收分支，不发布。"
+  "next_action": "Windows 打包修复 #59、M9 撤出 #60 已合入。生产依赖 #57 已经 Windows 实包验证后合入。优先跟进预览版启动失败 #58；开发依赖 #53 在新基线上独立验。M9 留验收分支，不发布。"
 }
 ```
 

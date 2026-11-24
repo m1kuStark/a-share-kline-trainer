@@ -9,7 +9,7 @@
   "owner": "integrator",
   "base_commit": "fe0989736ebf7428deb6dafcf1dbba992c2b50dc",
   "summary": "两个依赖 PR 与未改依赖的 main 均复现打包工具 Expand-Archive 三参数重载错误，独立修复，不改依赖。",
-  "next_action": "PR #59 已合入。依赖 PR #57、#53 按各自的新基线验证，不复用旧 CI。",
+  "next_action": "PR #59 已合入。依赖 PR #57 已重新验证并合入；#53 仍须在新基线上复核 Windows 实包及回放。",
   "allowed_paths": [
     "scripts/release/build.mjs",
     "server/test/release-package.test.ts",
