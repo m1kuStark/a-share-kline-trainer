@@ -422,6 +422,35 @@ describe.skipIf(process.platform !== 'win32')('PowerShell packaging helpers (win
     }
   }, 60000)
 
+  it('extracts on Windows PowerShell without the overwrite overload and never clobbers output', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'relpack-framework-'))
+    try {
+      const ps1 = join(dir, 'package-tools.ps1'), source = join(dir, 'payload [1].txt')
+      const zip = join(dir, 'archive [1].zip'), out = join(dir, 'output [1]')
+      // powershell.exe (not pwsh): mirror the Actions Archive module failure if the
+      // helper delegates to the cmdlet despite the missing Boolean overload.
+      const marker = "$ErrorActionPreference = 'Stop'"
+      const stub = [
+        'function Expand-Archive { param([string]$LiteralPath, [string]$DestinationPath)',
+        '  Add-Type -AssemblyName System.IO.Compression.FileSystem',
+        "  if ($null -eq [IO.Compression.ZipFile].GetMethod('ExtractToDirectory', [type[]]@([string], [string], [bool]))) { throw 'fixture: unavailable ExtractToDirectory overwrite overload' }",
+        '  Microsoft.PowerShell.Archive\\Expand-Archive -LiteralPath $LiteralPath -DestinationPath $DestinationPath',
+        '}',
+      ].join('\r\n')
+      await writeFile(ps1, PACKAGE_PS1.replace(marker, `${marker}\r\n${stub}`))
+      await writeFile(source, 'verified payload')
+      await runPowerShellScript(ps1, ['-Mode', 'compress', '-Source', source, '-Destination', zip])
+      await mkdir(out)
+      const args = ['-Mode', 'extract', '-Source', zip, '-Destination', out]
+      await runPowerShellScript(ps1, args)
+      const dest = join(out, 'payload [1].txt')
+      expect(await readFile(dest, 'utf8')).toBe('verified payload')
+      await writeFile(dest, 'retain existing')
+      await expect(runPowerShellScript(ps1, args)).rejects.toThrow()
+      expect(await readFile(dest, 'utf8')).toBe('retain existing')
+    } finally { await rm(dir, { recursive: true, force: true }) }
+  }, 60000)
+
   it('turns a failed cmdlet into a rejected run instead of a silent exit 0', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'relpack-ps1-fail-'))
     try {
