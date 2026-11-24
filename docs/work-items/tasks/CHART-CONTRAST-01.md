@@ -8,8 +8,8 @@
   "milestone": "M6",
   "owner": "integrator",
   "base_commit": "fdd4441adf8f39141492adef1a1dd051b43ca85f",
-  "summary": "#8：内置副图首线目前在浅底仍为白色。主题切换、重挂与回放同源；个人均线、画线、指标计算和 M9 均不在范围。",
-  "next_action": "按本卡收据复核，单独提 PR；不关闭整个 #8，不打包或替代维护者验收。",
+  "summary": "#8：浅色主题只把 MACD DIF、KDJ K 的原白线换成纯黑；黄线、紫线、线宽和深色主题均保持不变。训练与回放同源，不改指标计算或用户 MA。",
+  "next_action": "草稿 PR #64：用同段周 K 核对深色白线、浅色黑线和不变的黄紫线；不关闭整个 #8，不打包或替代维护者验收。",
   "allowed_paths": [
     "docs/work-items/tasks/CHART-CONTRAST-01.md",
     "web/src/components/KlineChart.vue",
@@ -30,7 +30,7 @@
       "docs/status.md",
       "docs/specs/chart/display.md"
     ],
-    "reason": "#8：内置副图首线目前在浅底仍为白色。主题切换、重挂与回放同源；个人均线、画线、指标计算和 M9 均不在范围。"
+    "reason": "#8：浅色主题只把 MACD DIF、KDJ K 的原白线换成纯黑；黄线、紫线、线宽和深色主题均保持不变。训练与回放同源，不改指标计算或用户 MA。"
   },
   "verification_refs": ["docs/verification/2026-11/CHART-CONTRAST-01/README.md"],
   "integration_ref": null,

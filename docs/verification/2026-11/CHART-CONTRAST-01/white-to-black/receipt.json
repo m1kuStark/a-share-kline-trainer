@@ -1,0 +1,46 @@
+{
+  "task": "CHART-CONTRAST-01",
+  "run": "run-8d4668c8-e9e9-4b99-bfe4-741bef7a532b",
+  "command": "npm run journey -- --retries=0 e2e/indicator-contrast.spec.ts e2e/chart-analysis.spec.ts",
+  "stats": {
+    "startTime": "2026-11-24T13:16:08.552Z",
+    "duration": 93715.03700000001,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    "Shift 两次点击 K 线形成区间测量：起止收盘/K线数/区间高低，拖动边界实时更新",
+    "两点测量的所有权与取消：画线/多选/价格轴/滚轮/周期切换/失焦均按既有仲裁",
+    "周K/月K 两点区间统计跟随当前周期 K 线，Select Box 边界落在 K 线中心",
+    "quote is visible without dwell, tracks mouse/keyboard and never exposes unknown open-phase OHLC",
+    "right drag and menu selection calculate inclusive ranges without requests or viewport/drawing changes",
+    "range statistics and point measurement stay on real prices while the price mirror is on",
+    "statistics and persistent quote fit both themes and desktop sizes; drawing right-click retains priority",
+    "recording replay supports statistics with no training writes",
+    "random-time quote and range statistics keep dates concealed",
+    "顶栏不再提供测量入口：Shift 两次点击仍是唯一区间测量方式",
+    "built-in indicator curves and legends follow theme across mount, toggle and replay",
+    "weekly chart changes only the white DIF and K strokes when switching theme"
+  ],
+  "screenshots": {
+    "indicator-week-dark.png": "a1436a89a312991b0f17301c83985c304245f707fa62f8a28353e04263fe8bcf",
+    "indicator-week-light.png": "f23f3105102d6c9062813bf0b79624c82da8c337972c5664a64c302f696ae6af",
+    "indicator-replay-light.png": "9bd083b8d05d45294c809f35ff23998d1accbf4b478b1467728ce8e1a3694ec8"
+  },
+  "comparison": {
+    "file": "week-theme-comparison.png",
+    "sha256": "8dfa3baa3ddd119343ec20119a848fff050cfd2cbb61114fe4ae697b30aa7593",
+    "crop_xyxy": [
+      89,
+      625,
+      801,
+      828
+    ],
+    "resized": false
+  },
+  "redRun": "run-4cb06d8a-0436-4d7d-be11-6faa70d35a48",
+  "fullJourney": false,
+  "humanAccepted": false
+}

@@ -26,9 +26,7 @@ const candleLegendTemplate: CandleTooltipLegendsCustomCallback = () => []
 
 // klinecharts uses each indicator figure's line color for its legend as well.
 export function builtinLineStyles(name: 'MACD' | 'KDJ', mode: UiTheme) {
-  const palette = mode === 'dark'
-    ? ['#f2f2f2', '#f5c343', '#d446d6']
-    : ['#344656', '#885900', '#96369e']
+  const palette = [mode === 'light' ? '#000000' : '#f2f2f2', '#f5c343', '#d446d6']
   return { lines: palette.slice(0, name === 'MACD' ? 2 : 3).map(color => ({ color })) }
 }
 
