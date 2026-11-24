@@ -1,5 +1,7 @@
 # 任务与阶段
 
+- [PACK-ZIP-COMPAT-01](tasks/PACK-ZIP-COMPAT-01.md)：Windows runner 解压兼容；不混入依赖 PR。
+
 - [M9-ENABLE-01 公式启停与整批候选](tasks/M9-ENABLE-01.md)：review；C2完整候选、同提交Windows ZIP/CMD/实包及主代理UI检查通过，PR55已合入；[工程交接](../verification/2026-11/M9-ENABLE-01/engineering-handoff.md)，待用户整批验收。
 - [M9-EMA-WARMUP-01 公共 EMA 暖机](tasks/M9-EMA-WARMUP-01.md)：PR54已合入58ba0ffc，独立数值与兼容性证据保留；后继M9统一候选及Windows包工程检查通过，用户验收待完成。
 

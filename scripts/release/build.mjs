@@ -406,7 +406,14 @@ export async function findBrokenPackageLinks(stagingRoot, mdFiles) {
 export const PACKAGE_PS1 = [
   'param([string]$Mode, [string]$Source, [string]$Destination)',
   "$ErrorActionPreference = 'Stop'",
-  "if ($Mode -eq 'extract') { Expand-Archive -LiteralPath $Source -DestinationPath $Destination }",
+  "if ($Mode -eq 'extract') {",
+  '  Add-Type -AssemblyName System.IO.Compression.FileSystem',
+  // Some Archive module revisions call the (String,String,Boolean) overload even
+  // on .NET Framework where it does not exist. Select before any file is written.
+  "  $overwrite = [IO.Compression.ZipFile].GetMethod('ExtractToDirectory', [type[]]@([string], [string], [bool]))",
+  '  if ($null -eq $overwrite) { [IO.Compression.ZipFile]::ExtractToDirectory($Source, $Destination) }',
+  '  else { Expand-Archive -LiteralPath $Source -DestinationPath $Destination }',
+  '}',
   "elseif ($Mode -eq 'compress') { Compress-Archive -LiteralPath $Source -DestinationPath $Destination -CompressionLevel Optimal }",
   'else { throw "Unknown mode: $Mode" }',
 ].join('\r\n')
