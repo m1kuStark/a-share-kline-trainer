@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 import KlineChart from '../components/KlineChart.vue'
-import { fetchFormulas, type Bar, type FormulaView, type Timeframe } from '../api'
+import type { Timeframe } from '../api'
 import type { RecordingFile, RecordingGap } from '../recording/types'
 import type { CompactRecordingFile } from '../recording/compactTypes'
 import type { ReplayViewport } from '../recording/replayViewport'
@@ -22,8 +22,6 @@ import {
 } from '../recording/compactReplay'
 import { describeGap, gapCoveringSeq, summarizeGaps } from '../recording/replay'
 import { cycleDirection, nextTimeframe } from '../chartNavigation'
-import { evaluateFormulaChart, formulaChartStatus, type FormulaChartRender } from '../formulaIndicators'
-import { settingsSavedVersion } from '../settingsPanel'
 
 // REC-03 按交易日回放：只消费传入的已校验录制（v1 或 v2 紧凑），不依赖服务端训练数据。
 // 倒退/前进/空格=一个已录交易日；观察周期（日/周/月）与播放日期独立，跨日保持；
@@ -51,39 +49,6 @@ const drawingEpoch = ref(0)
 /** 重挂前视窗（含瞬态右侧空隔，REPLAY-VIEWPORT-01）：重挂后按时间戳＋空隔恢复，空白预留不丢 */
 const replayView = ref<ReplayViewport | null>(null)
 const chartRef = ref<InstanceType<typeof KlineChart> | null>(null)
-
-// ===== M9-04C 只读回放公式渲染：使用回放 bars 求值（无 StockContext；M7-01 边界不变） =====
-const formulas = ref<FormulaView[]>([])
-const formulaBars = ref<Bar[]>([])
-const formulaLines = ref<FormulaChartRender[]>([])
-const formulaConfigVersion = ref(0)
-let formulaLibraryVersion = 0
-const formulaStatusText = computed(() => formulaChartStatus(formulaLines.value))
-function evaluateReplayFormulas(): void {
-  formulaLines.value = evaluateFormulaChart({ bars: formulaBars.value, formulas: formulas.value, stockContext: null })
-}
-async function refreshReplayFormulas(): Promise<void> {
-  const version = ++formulaLibraryVersion
-  try {
-    const payload = await fetchFormulas()
-    if (version !== formulaLibraryVersion) return
-    formulas.value = payload.formulas
-    formulaConfigVersion.value += 1
-    evaluateReplayFormulas()
-  } catch {
-    formulas.value = []
-    formulaLines.value = []
-  }
-}
-function onReplayBarsExtended(list: Bar[]): void {
-  if (!list.length) return
-  formulaBars.value = list
-}
-onMounted(() => { void refreshReplayFormulas() })
-watch(settingsSavedVersion, () => { void refreshReplayFormulas() })
-watch(() => observation.value?.bars, list => { formulaBars.value = list ?? []; evaluateReplayFormulas() }, { immediate: true })
-watch(formulas, () => evaluateReplayFormulas())
-
 /** CHART-INVERT-01 多空反转（视图层镜像）：回放页同款开关（默认关、不持久化）——
  *  回放按镜像序列重算指标、水印防混淆；纯视图，不改写录像数据 */
 const priceMirror = ref(false)
@@ -458,8 +423,6 @@ onBeforeUnmount(() => {
             :saved-drawings="state.drawings"
             :replay-view="replayView ?? undefined"
             :price-mirror="priceMirror"
-            :formula-lines="formulaLines" :formula-config-version="formulaConfigVersion"
-            @bars-extended="onReplayBarsExtended"
           />
           <div v-else class="replay-chart-empty">
             <strong>该日期没有图表快照</strong>

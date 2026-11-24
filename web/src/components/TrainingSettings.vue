@@ -21,7 +21,6 @@ import {
   appOdoMotion, setOdoMotion,
 } from '../appSettings'
 import { DRAW_TOOLS } from '../drawTools'
-import FormulaSettings from './FormulaSettings.vue'
 import { DEFAULT_FAVORITE_TOOLS, DEFAULT_TOOL_STYLE, loadFavoriteTools, loadToolStylePreferences, saveFavoriteTools, saveToolStylePreferences, type ToolStylePreference, type ToolStylePreferences } from '../toolFavorites'
 import {
   SHORTCUT_ACTIONS, SHORTCUT_ACTION_LABELS,
@@ -44,7 +43,7 @@ const emit = defineEmits<{ close: []; 'tdx-connected': []; 'open-migration': [] 
 // UPD-NOTIFY-01：首页更新提示跳转入口——打开即直入指定分栏，并（desktop 通道）以主进程
 // boot 自动检查的结果为初值呈现；两个 prop 均缺省时行为与既有打开完全一致（默认分栏＋手动检查）。
 const props = defineProps<{
-  initialSection?: 'defaults' | 'preferences' | 'animation' | 'formula' | 'data' | 'about'
+  initialSection?: 'defaults' | 'preferences' | 'animation' | 'data' | 'about'
   seededUpdateNotice?: { latestVersion: string, releaseNotes: string | null } | null
 }>()
 
@@ -82,7 +81,7 @@ function applyFeePreset(wan: number, minimum: number): void {
   saveSuccess.value = ''
 }
 const adjustMode = ref<'forward' | 'raw'>('forward')
-const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'formula' | 'data' | 'about'>(props.initialSection ?? 'defaults')
+const activeSection = ref<'defaults' | 'preferences' | 'animation' | 'data' | 'about'>(props.initialSection ?? 'defaults')
 const favoriteToolNames = ref(loadFavoriteTools(localStorage))
 const toolPreferences = ref<ToolStylePreferences>(loadToolStylePreferences(localStorage))
 const selectedTool = ref(favoriteToolNames.value[0] ?? DEFAULT_FAVORITE_TOOLS[0])
@@ -988,7 +987,6 @@ function close(): void {
           <button type="button" :class="{ selected: activeSection === 'defaults' }" @click="activeSection = 'defaults'">默认设置</button>
           <button type="button" :class="{ selected: activeSection === 'preferences' }" @click="activeSection = 'preferences'">偏好设置</button>
           <button type="button" :class="{ selected: activeSection === 'animation' }" @click="activeSection = 'animation'">动画效果</button>
-          <button type="button" :class="{ selected: activeSection === 'formula' }" @click="activeSection = 'formula'">公式指标</button>
           <button type="button" :class="{ selected: activeSection === 'data' }" @click="activeSection = 'data'">数据目录</button>
           <button type="button" :class="{ selected: activeSection === 'about' }" @click="activeSection = 'about'">关于与更新</button>
         </nav>
@@ -1123,7 +1121,6 @@ function close(): void {
           </span>
         </label>
       </section>
-      <FormulaSettings v-if="activeSection === 'formula'" />
       <section v-if="activeSection === 'data'" class="settings-section" aria-label="数据目录">
         <h4 class="settings-subsection">训练数据目录</h4>
         <p class="settings-section-note">
