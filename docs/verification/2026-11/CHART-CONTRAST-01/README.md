@@ -9,6 +9,6 @@
 - 前测（`run-4cb06d8a-0436-4d7d-be11-6faa70d35a48`）：在暂存于工作树的蓝/橙/玫红试色上，真实周 K 的颜色序列断言按预期失败，exit 1。该试色未提交。
 
 - [同一周 K 深浅对照](white-to-black/week-theme-comparison.png)（从实图同坐标裁切，无缩放或重绘）；[深色整屏](white-to-black/indicator-week-dark.png)、[浅色整屏](white-to-black/indicator-week-light.png)、[浅色回放](white-to-black/indicator-replay-light.png)。周 K 是贵州茅台 600519，训练推进至 2025-01-03，视口 1440×900。
-- [本次 Edge 收据](white-to-black/receipt.json)：隔离运行、零重试，2 条指标专测及 10 条既有区间统计/读数回归全部通过。断言读取实际 Canvas 图例文字颜色、同窗格曲线颜色及线宽；覆盖切换、重新挂载、自选 MA 和回放。构建 exit 0，前端契约单测 37/37；strict 绑定：KDJ 6/6、图表分析 6/6、区间测量 7/7。本轮未跑全量 Journey、未打包，也不代表人工验收。
+- [本次 Edge 收据](white-to-black/receipt.json)：隔离运行、零重试，2 条指标专测及 10 条既有区间统计/读数回归全部通过。除图例及线宽外，周 K 用指标各自的计算值投影到画布，在远离交叉点处核对实际曲线像素。反例只互换 K/D 笔画颜色、保留正确图例，K 的 36 个可区分点命中 0 个，测试如期失败。收据记录干净受测提交、源码/测试哈希及 GREEN/反例的实际退出码。另覆盖切换、重新挂载、自选 MA 和回放。构建 exit 0，前端契约单测 37/37；strict 绑定：KDJ 6/6、图表分析 6/6、区间测量 7/7。本轮未跑全量 Journey、未打包，也不代表人工验收。
 
 [历史候选 d205343 的前测、临界色变异与旧截图](candidate-d205343.md)仅留作追溯，不代表本轮口径。

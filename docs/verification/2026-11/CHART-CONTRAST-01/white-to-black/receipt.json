@@ -1,10 +1,10 @@
 {
   "task": "CHART-CONTRAST-01",
-  "run": "run-8d4668c8-e9e9-4b99-bfe4-741bef7a532b",
+  "run": "run-5b043ad5-2dcc-4a08-afbf-c92a85634adb",
   "command": "npm run journey -- --retries=0 e2e/indicator-contrast.spec.ts e2e/chart-analysis.spec.ts",
   "stats": {
-    "startTime": "2026-11-24T13:16:08.552Z",
-    "duration": 93715.03700000001,
+    "startTime": "2026-11-24T13:27:23.668Z",
+    "duration": 123510.79699999999,
     "expected": 12,
     "skipped": 0,
     "unexpected": 0,
@@ -26,8 +26,8 @@
   ],
   "screenshots": {
     "indicator-week-dark.png": "a1436a89a312991b0f17301c83985c304245f707fa62f8a28353e04263fe8bcf",
-    "indicator-week-light.png": "f23f3105102d6c9062813bf0b79624c82da8c337972c5664a64c302f696ae6af",
-    "indicator-replay-light.png": "9bd083b8d05d45294c809f35ff23998d1accbf4b478b1467728ce8e1a3694ec8"
+    "indicator-week-light.png": "34924a07d378c5cef6329174a39aa7e96d73682c8fa9cf7f912f6ad8179f75b4",
+    "indicator-replay-light.png": "a371cd5483b734028761b415435fac37fa8f7395a8bf47e4d94e58089d1a0111"
   },
   "comparison": {
     "file": "week-theme-comparison.png",
@@ -42,5 +42,26 @@
   },
   "redRun": "run-4cb06d8a-0436-4d7d-be11-6faa70d35a48",
   "fullJourney": false,
-  "humanAccepted": false
+  "humanAccepted": false,
+  "exit": 0,
+  "testedCommit": "f9360a4e0d79291444ced6ec8b1c0fb87d01ecee",
+  "worktreeCleanAtLaunch": true,
+  "sourcesSha256": {
+    "web/src/theme.ts": "04ad2fa79544ad724eb4888f2b6e18fcb517ad88702a5d30fc042310b6a1682c",
+    "web/src/indicators.ts": "6f911306424efb7178dcffc1376dce9467d5607bdb4852ff27769158e63a679c",
+    "web/src/components/KlineChart.vue": "ec68ab8fca05c61bd7fcfbdc5533ea76709b4851c3c7a3d0e02c25510ac7d802",
+    "e2e/indicator-contrast.spec.ts": "834dad955aeb31d0261aeb799dc8cc1666593ca2b70ca7a7471ff6fcd36afee4"
+  },
+  "gitBlobs": {
+    "web/src/theme.ts": "067711f8e213904cf5eccd321a3a8b914822c3b9",
+    "web/src/indicators.ts": "ad039bb8525e41f4c62d6d7772cfa2fb425ceee6",
+    "web/src/components/KlineChart.vue": "b2330a3c1b6a27bd977098ad3d93ffdb955dd828",
+    "e2e/indicator-contrast.spec.ts": "8ee4b7efc75595498536f3633bdaa63ffce2c4c6"
+  },
+  "strokeSwapNegativeControl": {
+    "run": "run-76efbae0-4428-473b-bd3e-2f423eab736d",
+    "exit": 1,
+    "mutatedTestSha256": "3fe68489b9477ce4c01060cb6b7428da59747e7a47406674b877b111c0bff916",
+    "error": "Error: K pixels at its own values: {\"hits\":0,\"sampled\":36}"
+  }
 }
