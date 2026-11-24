@@ -21,6 +21,7 @@
   "allowed_paths": [
     "web/src/formula-engine/**",
     "web/src/chartPaneLayout.ts",
+    "desktop/electron-builder.yml", "desktop/test/m9-package-isolation.test.ts", "docs/specs/README.md",
     "server/test/chart-pane-layout.test.ts",
     "e2e/m9-deferred.spec.ts",
     "web/src/components/FormulaSettings.vue",
@@ -33,7 +34,7 @@
     "web/src/views/SessionReplay.vue",
     "web/README.md",
     "server/src/formulas/**",
-    "server/src/api.ts",
+    "server/src/api.ts", "server/src/tdx/industry.ts",
     "server/src/index.ts",
     "server/src/db.ts",
     "server/test/formula*",

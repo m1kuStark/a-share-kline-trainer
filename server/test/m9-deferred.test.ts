@@ -7,10 +7,13 @@ import { migrateDatabase } from '../src/db.js'
 it('M9 hold isolates formula routes while ordinary settings remain registered', async () => {
   const db = new DatabaseSync(':memory:')
   const app = Fastify()
+  const registered: string[] = []
+  app.addHook('onRoute', route => { registered.push(route.url) })
   try {
     migrateDatabase(db)
     await registerApi(app, { host: '127.0.0.1', port: 0, databasePath: ':memory:', tdxRoot: null }, db)
     await app.ready()
+    expect(registered.filter(url => /^\/api\/formulas(?:\/|$)/.test(url))).toEqual([])
     expect((await app.inject('/api/settings/app')).statusCode).toBe(200)
     for (const path of ['/api/formulas', '/api/formulas/context?code=600000']) {
       expect((await app.inject(path)).statusCode, path).toBe(404)

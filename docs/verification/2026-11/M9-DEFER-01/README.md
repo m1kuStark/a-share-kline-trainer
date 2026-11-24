@@ -7,3 +7,5 @@
 验收返回时用原 C2 包；认可后，在届时的 `main` 上新开恢复 PR，反向应用本次撤出差异、适配其后维护，重新核对 DB、回放、完整候选和 Windows 包。由于候选本来就是主线祖先，直接 merge 留存分支不会恢复功能。
 
 本轮 RED：在改产品前，真实 Fastify / SQLite 两例失败，GET /api/formulas 实际返回 200，首次 migrateDatabase 会创建 formulas。撤出后同样测试两例通过；已另行运行生产构建。全量测试与浏览器检查分别记账；旧候选的 262/262 不能复用于本次产品撤出。
+
+独立审查补强：使用 Fastify onRoute 锁住整个公式前缀；真实 electron-builder matcher 的增量旧文件对照先红后绿，明确排除 server/dist/formulas 子树。保留桌面迁移页面直接使用的 esbuild 开发依赖。首次全量单测运行过程中待迁移的旧测试文件发生变化导致发现失败，该轮不计为通过。
