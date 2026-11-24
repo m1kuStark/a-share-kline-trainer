@@ -37,7 +37,7 @@
     "docs/verification/2026-11/CHART-FILL-MARKS-01/**"
   ],
   "state": "review",
-  "next_action": "候选仅在任务分支，草稿 PR 待确认；Windows 进程取消全量门禁仍需复核，不合并、打包或发布。",
+  "next_action": "PR #66 供审阅：新基线的 Windows 全量、独立 CI 与 Edge 组合回归通过。查看同柱 B/S 与逐笔详情；未记录成交点人工验收，不打包或发布。",
   "base_commit": "fdd4441adf8f39141492adef1a1dd051b43ca85f"
 }
 ```
