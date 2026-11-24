@@ -6,10 +6,10 @@ import * as layout from '../../web/src/tradeMarkerLayout'
 
 const ts = Date.parse('2025-01-03T00:00:00Z')
 const template = registerOverlay.mock.calls.map(([item]) => item).find(item => item.name === 'bsMark')
-function figures(side: string, x = 90, y = 70, bar = ts) {
+function figures(side: string, x = 90, y = 70, bar = ts, pixelIndex = 1) {
   return template.createPointFigures({ coordinates: [{ x, y }], bounding: { width: 200, height: 100 },
     overlay: { points: [{ timestamp: ts, value: 25 }], extendData: { side, shares: 100, price: 35 } },
-    xAxis: { convertFromPixel: () => 1 }, chart: { getDataList: () => [{ timestamp: ts - 86400000 }, { timestamp: bar }] } })
+    xAxis: { convertFromPixel: () => pixelIndex }, chart: { getDataList: () => [{ timestamp: ts - 86400000 }, { timestamp: bar }] } })
 }
 describe('fill marker geometry', () => {
   it('renders buy and sell figures at the exact period bar and rejects missing bars', () => {
@@ -28,6 +28,11 @@ describe('fill marker geometry', () => {
     expect(figures('buy', -1)).toEqual([])
     expect(figures('sell', 90, 101)).toEqual([])
     expect(figures('buy', 90, NaN)).toEqual([])
+  })
+  it('does not lose a disclosed fill when neighbouring candles share a pixel', () => {
+    // Under 1px/bar, a round trip can resolve to the neighbouring candle.
+    expect(figures('buy', 23, 70, ts, 0).some((f: any) => f.type === 'polygon')).toBe(true)
+    expect(figures('buy', 23, 70, ts + 86400000, 0)).toEqual([])
   })
   it('uses the UTC period start for both chart and rail', () => {
     for (const [tf, expected] of [['1D', '2025-01-03'], ['1W', '2024-12-30'], ['1M', '2025-01-01']] as const) {

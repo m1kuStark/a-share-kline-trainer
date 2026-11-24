@@ -4,10 +4,10 @@ import type { TradeView } from '../web/src/api'
 
 const toggle = (page: Page) => page.getByRole('button', { name: '主图成交标记', exact: true })
 const rail = (page: Page) => page.locator('.trade-marker-badge')
-async function start(page: Page) {
+async function start(page: Page, startDate = '2025-01-02') {
   const active = (await (await page.request.get('/api/trainings/active')).json()).training
   if (active) await page.request.post(`/api/trainings/${active.id}/abandon`)
-  const response = await page.request.post('/api/trainings', { data: { code: '600519', tier: '1Y', start_date: '2025-01-02', initial_cash: 100_000_000 } })
+  const response = await page.request.post('/api/trainings', { data: { code: '600519', tier: '1Y', start_date: startDate, initial_cash: 100_000_000 } })
   expect(response.status()).toBe(201)
   return (await response.json()).training.id as number
 }
@@ -41,7 +41,14 @@ test('paints execution glyphs at the confirmed bars and hides only chart glyphs'
   const { trades } = await (await page.request.get(`/api/trainings/${id}/bars?tf=1D`)).json() as { trades: TradeView[] }
   expect(trades.map(t => t.side)).toEqual(['buy','sell'])
   await page.goto('/'); await expect(rail(page)).toHaveCount(2)
-  await expect(toggle(page)).toHaveAttribute('aria-pressed','false'); await toggle(page).click()
+  const advances: string[] = []
+  page.on('request', req => { if (req.method() === 'POST' && req.url().endsWith('/next')) advances.push(req.url()) })
+  // A native button inside the inert startup grid cannot receive keyboard focus.
+  await expect(page.locator('.training-grid[inert]')).toHaveCount(0)
+  await expect(toggle(page)).toHaveAttribute('aria-pressed','false')
+  await toggle(page).focus(); await expect(toggle(page)).toBeFocused(); await page.keyboard.press('Space')
+  await expect(toggle(page)).toHaveAttribute('aria-pressed','true')
+  await expect(page.locator('.training-current-date')).toContainText('2025-01-03')
   for (const [tab, timestamps] of [['日K',['2025-01-02','2025-01-03']], ['周K',['2024-12-30','2024-12-30']], ['月K',['2025-01-01','2025-01-01']]] as const) {
     await page.getByRole('tab', { name: tab, exact: true }).click()
     for (const [i, t] of trades.entries()) {
@@ -67,6 +74,7 @@ test('paints execution glyphs at the confirmed bars and hides only chart glyphs'
   await toggle(page).click(); await expect.poll(() => hasArrow(page,ts,trades[0])).toBe(false)
   await expect(rail(page)).toHaveCount(2); await rail(page).first().click()
   await expect(page.locator('.trade-marker-details')).toBeVisible()
+  expect(advances).toEqual([])
   expect(await page.evaluate(() => (window as any).__trainerChart.drawings())).toHaveLength(0)
 })
 
@@ -80,10 +88,35 @@ test('replay paints only fills already present in the current frame', async ({ p
   const done = page.waitForEvent('download'); await page.getByRole('button',{ name:'导出录制',exact:true }).click()
   const file = evidencePath('fill-recording.json.gz'); await (await done).saveAs(file)
   await page.getByRole('button',{ name:'训练录像',exact:true }).click(); await page.getByLabel('导入录制',{exact:true}).setInputFiles(file)
-  await expect(page.getByRole('button',{name:'关闭回放'})).toBeVisible(); await toggle(page).click()
+  await expect(page.getByRole('button',{name:'关闭回放'})).toBeVisible()
+  const firstDay = page.getByRole('button',{name:'回到第一天'})
+  if (await firstDay.isEnabled()) await firstDay.click()
+  await expect(firstDay).toBeDisabled()
+  await expect(page.getByRole('button', { name:'下一日',exact:true })).toBeEnabled()
+  await toggle(page).focus(); await expect(toggle(page)).toBeFocused(); await page.keyboard.press('Space')
+  await expect(toggle(page)).toHaveAttribute('aria-pressed','true'); await expect(firstDay).toBeDisabled()
   await page.getByRole('button',{name:'跳到最后一天'}).click(); await expect(rail(page)).toHaveCount(1)
   const ts = Date.parse('2025-01-03T00:00:00Z')
   await expect.poll(() => hasArrow(page,ts,trade)).toBe(true)
   await page.getByRole('button',{name:'回到第一天'}).click(); await expect(rail(page)).toHaveCount(0)
   await expect.poll(() => hasArrow(page,ts,trade)).toBe(false)
+})
+
+test('uses the adjusted chart price after a dividend and keeps the raw fill price on the rail', async ({ page }) => {
+  const id = await start(page, '2024-12-19')
+  expect((await page.request.post(`/api/trainings/${id}/trade`, { data: { side: 'buy', shares: 100 } })).ok()).toBe(true)
+  expect((await page.request.post(`/api/trainings/${id}/next`)).ok()).toBe(true)
+  const trades: TradeView[] = (await (await page.request.get(`/api/trainings/${id}/bars?tf=1D`)).json()).trades
+  expect(trades).toHaveLength(1)
+  const [trade] = trades
+  expect(trade.date).toBe('2024-12-19')
+  expect(trade.price - trade.chartPrice!).toBeCloseTo(23.882, 2)
+  await page.goto('/')
+  await toggle(page).click()
+  const timestamp = Date.parse('2024-12-19T00:00:00Z')
+  await expect.poll(() => hasArrow(page, timestamp, trade)).toBe(true)
+  expect(await hasArrow(page, timestamp, { ...trade, chartPrice: trade.price })).toBe(false)
+  await rail(page).click()
+  const price = page.locator('.trade-marker-details .details-facts div', { hasText: '成交价' }).locator('dd')
+  await expect(price).toHaveText(`${trade.price.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 元`)
 })

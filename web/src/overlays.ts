@@ -1,16 +1,19 @@
 import { registerOverlay } from 'klinecharts'
+import { nearestIndexByTimestamp } from './recording/replayViewport'
 
 // Passive fill glyph. The rail remains the only interactive trade detail view.
 registerOverlay<{ side: 'buy' | 'sell' }>({
   name: 'bsMark', totalStep: 1, lock: true, needDefaultPointFigure: false,
-  createPointFigures: ({ chart, overlay, coordinates, bounding, xAxis }) => {
+  createPointFigures: ({ chart, overlay, coordinates, bounding }) => {
     const point = coordinates[0], timestamp = overlay.points[0]?.timestamp
-    if (!point || timestamp == null || !xAxis) return []
+    if (!point || timestamp == null) return []
     const { x, y } = point
     if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > bounding.width || y < 0 || y > bounding.height) return []
     // Library projection can extrapolate or choose a neighbouring candle. An
     // open-phase fill, for example, may not have a disclosed daily bar yet.
-    if (chart.getDataList()[xAxis.convertFromPixel(x)]?.timestamp !== timestamp) return []
+    // A pixel can represent more than one disclosed bar at minimum zoom.
+    const bars = chart.getDataList()
+    if (bars[nearestIndexByTimestamp(bars, timestamp)]?.timestamp !== timestamp) return []
     const buy = overlay.extendData.side === 'buy', dir = buy ? 1 : -1
     // Keep opposite fills distinguishable even on the same weekly/monthly candle.
     const labelX = x - dir * 8

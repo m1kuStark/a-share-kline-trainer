@@ -2016,7 +2016,7 @@ defineExpose({ zoomBy, panBy, moveCrosshair, resetView, deleteSelected, clearMul
   <ChartQuote v-else :period-label="periodLabel" :quote="quote" :source="quoteIndex === null ? '最近已知K线' : '光标K线'" />
   <div class="chart-wrap">
     <div class="chart-view-controls">
-      <button type="button" class="fill-marks-trigger" aria-label="主图成交标记" :aria-pressed="showFillMarks" title="在成交价显示 B/S；底部逐笔明细不受影响" @click="showFillMarks = !showFillMarks">成交点</button>
+      <button type="button" class="fill-marks-trigger" aria-label="主图成交标记" :aria-pressed="showFillMarks" title="在成交价显示 B/S；底部逐笔明细不受影响" @keydown.space.stop @click="showFillMarks = !showFillMarks">成交点</button>
       <button class="ma-settings-trigger" aria-label="设置均线" title="设置主图均线周期和颜色" :disabled="!!props.drawTool" @click="openMaSettings">MA 设置</button>
     </div>
     <MaSettingsDialog v-if="maSettingsOpen" @close="closeMaSettings" />
