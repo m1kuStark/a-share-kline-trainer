@@ -1,12 +1,28 @@
 import { registerOverlay } from 'klinecharts'
+import { nearestIndexByTimestamp } from './recording/replayViewport'
 
-export interface BsMarkData { side: 'buy' | 'sell'; shares: number; price: number }
-
-// Keep engine marker identity for counts/exclusions; the separate rail renders trades.
-registerOverlay({
-  name: 'bsMark',
-  totalStep: 1,
-  createPointFigures: () => [],
+// Passive fill glyph. The rail remains the only interactive trade detail view.
+registerOverlay<{ side: 'buy' | 'sell' }>({
+  name: 'bsMark', totalStep: 1, lock: true, needDefaultPointFigure: false,
+  createPointFigures: ({ chart, overlay, coordinates, bounding }) => {
+    const point = coordinates[0], timestamp = overlay.points[0]?.timestamp
+    if (!point || timestamp == null) return []
+    const { x, y } = point
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > bounding.width || y < 0 || y > bounding.height) return []
+    // Library projection can extrapolate or choose a neighbouring candle. An
+    // open-phase fill, for example, may not have a disclosed daily bar yet.
+    // A pixel can represent more than one disclosed bar at minimum zoom.
+    const bars = chart.getDataList()
+    if (bars[nearestIndexByTimestamp(bars, timestamp)]?.timestamp !== timestamp) return []
+    const buy = overlay.extendData.side === 'buy', dir = buy ? 1 : -1
+    // Keep opposite fills distinguishable even on the same weekly/monthly candle.
+    const labelX = x - dir * 8
+    const color = buy ? '#e88918' : '#24a6d9'
+    return [
+      { type: 'polygon', attrs: { coordinates: [{ x, y }, { x: labelX - 5, y: y + dir * 8 }, { x: labelX + 5, y: y + dir * 8 }] }, styles: { style: 'fill', color }, ignoreEvent: true },
+      { type: 'text', attrs: { x: labelX, y: y + dir * 8, text: buy ? 'B' : 'S', align: 'center', baseline: buy ? 'top' : 'bottom' }, styles: { size: 10, weight: 'bold', color: '#ffffff', backgroundColor: buy ? '#995411' : '#166887', paddingLeft: 2, paddingRight: 2, borderSize: 0 }, ignoreEvent: true },
+    ]
+  },
 })
 
 // M2 摊薄成本线：锁定，不参与鼠标交互。

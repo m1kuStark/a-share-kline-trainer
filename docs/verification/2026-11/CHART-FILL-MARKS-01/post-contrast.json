@@ -1,0 +1,35 @@
+{
+  "testedCommit": "d4169ea3092d515dea9e5d7f6a0e8f5eacc481ae",
+  "contrastBaseline": "053f48d31b38a70c148ac35c78150e2522769652",
+  "fullUnit": {
+    "command": "npm test",
+    "exit": 0,
+    "server": 1835,
+    "desktop": 370
+  },
+  "journey": {
+    "command": "npm run journey -- --retries=0 e2e/indicator-contrast.spec.ts e2e/fill-marker.spec.ts e2e/trade-marker-details.spec.ts e2e/chart-analysis.spec.ts",
+    "run": "run-61a3197a-cbac-4302-afc4-abef0c74e4d1",
+    "exit": 0,
+    "stats": {
+      "startTime": "2026-11-24T13:48:55.454Z",
+      "duration": 268981.41199999995,
+      "expected": 24,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "screenshotsSha256": {
+      "fill-markers-training.png": "93b66c8840730522eaf1415af4a9aecd5df48468cf985e440f3640c2bce017af",
+      "fill-markers-week-light.png": "67a04a7f6a3dfe10367c1a27c0b2eac61b75c9224844443b3debba79f82cd92c"
+    }
+  },
+  "hostedVerify": {
+    "commit": "d4169ea3092d515dea9e5d7f6a0e8f5eacc481ae",
+    "url": "https://github.com/m1kuStark/a-share-kline-trainer/actions/runs/45406511923/job/138488587118",
+    "conclusion": "SUCCESS",
+    "runner": "windows-latest"
+  },
+  "fullJourney": false,
+  "fillMarkersHumanAccepted": false
+}

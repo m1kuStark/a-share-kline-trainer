@@ -7,6 +7,7 @@
 - [PACK-ZIP-COMPAT-01](tasks/PACK-ZIP-COMPAT-01.md)：PR #59 已合入，Windows 解压修复未混入依赖升级。
 - [ENG-RECON-02](tasks/ENG-RECON-02.md)：#59/#60 的集成与验证收据。
 
+- [CHART-FILL-MARKS-01 主图成交点](tasks/CHART-FILL-MARKS-01.md)：#8 的独立任务；底部逐笔详情和区间统计均保留，不涉及 M9。
 - [M9-ENABLE-01 公式启停与整批候选](tasks/M9-ENABLE-01.md)：review；C2完整候选、同提交Windows ZIP/CMD/实包及主代理UI检查通过，PR55已合入；[工程交接](../verification/2026-11/M9-ENABLE-01/engineering-handoff.md)，待用户整批验收。
 - [M9-EMA-WARMUP-01 公共 EMA 暖机](tasks/M9-EMA-WARMUP-01.md)：PR54已合入58ba0ffc，独立数值与兼容性证据保留；后继M9统一候选及Windows包工程检查通过，用户验收待完成。
 
